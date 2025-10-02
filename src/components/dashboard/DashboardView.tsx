@@ -203,7 +203,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
         marginBottom: '2rem' 
       }}>
         <div>
-          <h2 style={{ margin: 0, color: '#38BDF8', fontWeight: '600' }}>Monthly Review</h2>
+          <h2 style={{ margin: 0, color: 'var(--text-primary)', fontWeight: '600' }}>Monthly Review</h2>
           <p style={{ margin: '0.5rem 0 0 0', color: '#9CA3AF', fontSize: '0.9rem' }}>
             Your emotional journey over the last {timeRange} days
           </p>
@@ -358,9 +358,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
             initial="hidden"
             animate="visible"
             style={{
-              background: '#1F2937',
+              background: 'rgba(255, 255, 255, 0.03)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
               borderRadius: '12px',
-              border: '1px solid #374151',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
               padding: '1.5rem'
             }}
           >

@@ -80,9 +80,11 @@ const MonthlyHighlights: React.FC<MonthlyHighlightsProps> = ({ insights, timeRan
 
   return (
     <div style={{
-      background: '#1F2937',
+      background: 'rgba(255, 255, 255, 0.03)',
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
       borderRadius: '12px',
-      border: '1px solid #374151',
+      border: '1px solid rgba(255, 255, 255, 0.08)',
       padding: '1.5rem'
     }}>
       <h3 style={{ 

@@ -21,8 +21,8 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [analysis, setAnalysis] = useState<EnhancedAIAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [conversationalOnly, setConversationalOnly] = useState<string>('');
   const [lastAnalyzedContent, setLastAnalyzedContent] = useState<string>('');
+  const [isContentChangedDismissed, setIsContentChangedDismissed] = useState(false);
   const [activeTab, setActiveTab] = useState<AnalysisTab>('chat');
   // Removed unused preview state to satisfy strict TS
   // const [isResponseExpanded, setIsResponseExpanded] = useState(false);
@@ -382,8 +382,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
   // Check if content has changed since last analysis
   const contentHasChanged = note?.content !== lastAnalyzedContent;
 
-  const hasConversationalResponse = conversationalOnly || 
-                                   (analysis && analysis.conversational_response) || 
+  const hasConversationalResponse = (analysis && analysis.conversational_response) || 
                                    savedAIResponse?.ai_response_text;
 
   // Helper function to truncate text for preview
@@ -534,17 +533,16 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
 
   const hasSavedInsights = !!savedAIResponse?.ai_insights;
   const insightsToShow = hasSavedInsights ? savedAIResponse.ai_insights : analysis;
-  const hasAnalysis = analysis !== null || savedAIResponse?.ai_response_text || conversationalOnly;
+  const hasAnalysis = analysis !== null || savedAIResponse?.ai_response_text;
 
   // Debug logging
   console.log('🔍 AIAnalysis render state:', {
+    noteId: note?.id,
     hasAnalysis,
-    hasSavedInsights,
-    insightsToShow: !!insightsToShow,
+    hasConversationalResponse,
     isAnalyzing,
     savedAIResponse: !!savedAIResponse,
-    analysis: !!analysis,
-    conversationalOnly: !!conversationalOnly
+    analysis: !!analysis
   });
 
   return (
@@ -658,22 +656,45 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
             </button>
           </div>
 
-          {/* Content changed indicator */}
-          {hasAnalysis && contentHasChanged && !isAnalyzing && (
+          {/* Content changed indicator - subtle and dismissible */}
+          {contentHasChanged && !isContentChangedDismissed && (
             <div style={{
-              padding: '1rem',
-              background: 'rgba(245, 158, 11, 0.1)',
-              border: '1px solid rgba(245, 158, 11, 0.3)',
-              borderRadius: '12px',
-              marginBottom: '1.5rem',
+              padding: '0.75rem 1rem',
+              background: 'rgba(245, 158, 11, 0.05)',
+              border: '1px solid rgba(245, 158, 11, 0.15)',
+              borderRadius: '8px',
+              marginBottom: '1rem',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem'
+              justifyContent: 'space-between',
+              gap: '1rem'
             }}>
-              <span>⚠️</span>
-              <span style={{ color: '#F59E0B', fontSize: '0.9rem' }}>
-                Content has changed since last analysis. Click "Regenerate" for fresh insights.
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontSize: '0.85rem' }}>⚠️</span>
+                <span style={{ color: '#D97706', fontSize: '0.85rem', opacity: 0.9 }}>
+                  Content updated — consider regenerating for fresh insights
+                </span>
+              </div>
+              <button
+                onClick={() => setIsContentChangedDismissed(true)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#9CA3AF',
+                  cursor: 'pointer',
+                  padding: '0.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontSize: '1.1rem',
+                  opacity: 0.6,
+                  transition: 'opacity 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}
+                title="Dismiss"
+              >
+                ×
+              </button>
             </div>
           )}
 
@@ -708,7 +729,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
           {/* Loading handled by ImmersiveLoadingScreen - no inline loading needed */}
 
           {/* Analysis Results - Tabbed Interface */}
-          {(hasAnalysis || conversationalOnly) && !isAnalyzing && (
+          {hasAnalysis && !isAnalyzing && (
             <div className="card" style={{ padding: '0', background: 'transparent', border: 'none', boxShadow: 'none' }}>
               {/* Tab Navigation - Glassmorphic Design */}
               <div style={{ 
@@ -856,33 +877,36 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                             title="Copy to clipboard"
                             style={{ 
                               position: 'absolute',
-                              top: '1rem',
-                              right: '1rem',
-                              fontSize: '0.8rem',
-                              background: 'var(--bg-tertiary)',
+                              top: '0.5rem',
+                              right: '0.5rem',
+                              fontSize: '1.2rem',
+                              background: 'rgba(255, 255, 255, 0.05)',
                               color: 'var(--text-secondary)',
-                              border: '1px solid var(--border-color)',
+                              border: '1px solid rgba(255, 255, 255, 0.1)',
                               borderRadius: '6px',
-                              padding: '0.5rem 0.75rem',
+                              padding: '0.5rem',
                               cursor: 'pointer',
                               transition: 'all 0.2s ease',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '0.5rem',
-                              zIndex: 10
+                              justifyContent: 'center',
+                              width: '2rem',
+                              height: '2rem',
+                              zIndex: 10,
+                              backdropFilter: 'blur(10px)'
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.background = 'var(--bg-quaternary)';
+                              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
                               e.currentTarget.style.color = 'var(--text-primary)';
                               e.currentTarget.style.borderColor = 'var(--accent-primary)';
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.background = 'var(--bg-tertiary)';
+                              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
                               e.currentTarget.style.color = 'var(--text-secondary)';
-                              e.currentTarget.style.borderColor = 'var(--border-color)';
+                              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
                             }}
                           >
-                            📋 Copy
+                            📋
                           </button>
                           <InsightsReport insights={insightsToShow.insights_report} />
                         </div>
@@ -900,7 +924,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.25rem' }}>
                           <button
                             onClick={() => copyToClipboard(
-                              analysis?.conversational_response || rawAIResponse || conversationalOnly || ''
+                              analysis?.conversational_response || rawAIResponse || ''
                             )}
                             style={{ 
                               fontSize: '0.8rem',

@@ -283,7 +283,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 key={note.id}
                 style={{
                   padding: '0.75rem 1rem',
-                  background: isSelected ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+                  background: isSelected ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
                   color: isSelected ? 'var(--text)' : 'var(--text-secondary)',
                   cursor: 'pointer',
                   borderRadius: 6,
@@ -292,6 +292,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   position: 'relative',
                   transition: 'all 0.2s ease',
                   filter: isBlurred ? 'blur(4px)' : 'none',
+                  border: isSelected ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid transparent',
                 }}
                 onMouseEnter={(e) => {
                   if (!isSelected) {

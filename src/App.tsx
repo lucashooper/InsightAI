@@ -314,7 +314,17 @@ const App: React.FC = () => {
             <div style={{ padding: '0.5rem 1rem' }}>
               {/* Title removed for analysis view - now handled in AIAnalysis component */}
               {activeView === 'dashboard' && (
-                <h1 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-primary)' }}>
+                <h1 style={{ 
+                  margin: 0, 
+                  fontSize: '2.5rem',
+                  textAlign: 'center',
+                  background: 'linear-gradient(135deg, #e0e7ff 0%, #a5b4fc 50%, #818cf8 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  fontWeight: '700',
+                  letterSpacing: '-0.02em'
+                }}>
                   Dashboard & Trends
                 </h1>
               )}
