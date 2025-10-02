@@ -5,9 +5,10 @@ import { PremiumIcons } from '../icons/PremiumIcons';
 interface DiaryEditorProps {
   note: DiaryEntry | null;
   onSave: (note: Partial<DiaryEntry>) => Promise<void>;
+  onNavigateToAnalysis?: () => void;
 }
 
-const DiaryEditor: React.FC<DiaryEditorProps> = ({ note, onSave }) => {
+const DiaryEditor: React.FC<DiaryEditorProps> = ({ note, onSave, onNavigateToAnalysis }) => {
   console.log('📝 DiaryEditor render:', { 
     hasNote: !!note, 
     noteTitle: note?.title, 
@@ -513,13 +514,132 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({ note, onSave }) => {
           <span>{isRecording ? 'Recording...' : 'Voice Input'}</span>
         </button>
 
+        {/* Spacer to push analysis button to the right */}
+        <div style={{ flex: 1 }} />
+
+        {/* Analysis Indicators - Only show if entry has been analyzed */}
+        {note?.isAnalyzed && note?.analysisSummary && (
+          <div style={{
+            display: 'flex',
+            gap: '0.5rem',
+            alignItems: 'center'
+          }}>
+            {note.analysisSummary.positiveCount > 0 && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                padding: '0.25rem 0.5rem',
+                background: 'rgba(34, 197, 94, 0.15)',
+                border: '1px solid rgba(34, 197, 94, 0.3)',
+                borderRadius: '12px',
+                fontSize: '0.75rem',
+                fontWeight: '600',
+                color: '#22c55e'
+              }}>
+                <span>✨</span>
+                <span>{note.analysisSummary.positiveCount}</span>
+              </div>
+            )}
+            {note.analysisSummary.opportunityCount > 0 && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                padding: '0.25rem 0.5rem',
+                background: 'rgba(245, 158, 11, 0.15)',
+                border: '1px solid rgba(245, 158, 11, 0.3)',
+                borderRadius: '12px',
+                fontSize: '0.75rem',
+                fontWeight: '600',
+                color: '#f59e0b'
+              }}>
+                <span>⚠️</span>
+                <span>{note.analysisSummary.opportunityCount}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Conditional Analyze/View Insights Button */}
+        {note?.isAnalyzed ? (
+          <button
+            onClick={onNavigateToAnalysis}
+            title="View your AI insights"
+            aria-label="View insights"
+            style={{
+              padding: '0.5rem 1.25rem',
+              background: 'linear-gradient(135deg, var(--accent-primary) 0%, #4c9aff 100%)',
+              border: 'none',
+              borderRadius: '6px',
+              color: 'white',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 2px 8px rgba(56, 189, 248, 0.25)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(56, 189, 248, 0.35)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(56, 189, 248, 0.25)';
+            }}
+          >
+            <PremiumIcons.Brain size={16} />
+            <span>View Insights</span>
+          </button>
+        ) : (
+          <button
+            onClick={onNavigateToAnalysis}
+            disabled={!content || content.length < 50}
+            title={content?.length < 50 ? 'Write at least 50 characters to analyze' : 'Analyze this entry with AI'}
+            aria-label="Analyze entry"
+            style={{
+              padding: '0.5rem 1.25rem',
+              background: content?.length >= 50 ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              color: content?.length >= 50 ? 'var(--text-primary)' : 'var(--text-secondary)',
+              cursor: content?.length >= 50 ? 'pointer' : 'not-allowed',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              transition: 'all 0.2s ease',
+              opacity: content?.length >= 50 ? 1 : 0.6
+            }}
+            onMouseEnter={(e) => {
+              if (content?.length >= 50) {
+                e.currentTarget.style.background = 'var(--bg-quaternary)';
+                e.currentTarget.style.borderColor = 'var(--accent-primary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (content?.length >= 50) {
+                e.currentTarget.style.background = 'var(--bg-tertiary)';
+                e.currentTarget.style.borderColor = 'var(--border-color)';
+              }
+            }}
+          >
+            <PremiumIcons.Brain size={16} />
+            <span>Analyze Entry</span>
+          </button>
+        )}
+
         {/* Voice Error Message */}
         {voiceError && (
           <span style={{
             fontSize: '0.75rem',
             color: '#ef4444',
             fontStyle: 'italic',
-            marginLeft: '0.5rem'
+            width: '100%'
           }}>
             {voiceError}
           </span>

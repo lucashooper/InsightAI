@@ -21,6 +21,12 @@ export interface DiaryEntry {
       suggestion: string;
     };
   };
+  isAnalyzed?: boolean;
+  analysisSummary?: {
+    positiveCount: number;
+    opportunityCount: number;
+    totalInsights: number;
+  };
 }
 
 export interface MoodDataPoint {

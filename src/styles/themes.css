@@ -1,22 +1,22 @@
-/* Default Theme (Premium Dark - Obsidian Style) */
+/* Default Theme (Premium True Black - OLED Optimized) */
 :root {
-  --bg-primary: #0d1117;
-  --bg-secondary: #161b22;
-  --bg-tertiary: #21262d;
-  --bg-quaternary: #30363d;
-  --text-primary: #f0f6fc;
-  --text-secondary: #8b949e;
-  --text-tertiary: #6e7681;
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --bg-tertiary: #141414;
+  --bg-quaternary: #1f1f1f;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0a0;
+  --text-tertiary: #707070;
   --accent-primary: #58a6ff;
   --accent-secondary: #3fb950;
   --accent-warning: #d29922;
   --accent-danger: #f85149;
-  --border-color: #30363d;
-  --border-muted: #21262d;
-  --shadow-color: rgba(0, 0, 0, 0.6);
-  --overlay-color: rgba(0, 0, 0, 0.8);
-  --hover-overlay: rgba(255, 255, 255, 0.03);
-  --active-overlay: rgba(255, 255, 255, 0.06);
+  --border-color: #2a2a2a;
+  --border-muted: #1a1a1a;
+  --shadow-color: rgba(0, 0, 0, 0.9);
+  --overlay-color: rgba(0, 0, 0, 0.95);
+  --hover-overlay: rgba(255, 255, 255, 0.05);
+  --active-overlay: rgba(255, 255, 255, 0.08);
 }
 
 /* Dusk Theme */

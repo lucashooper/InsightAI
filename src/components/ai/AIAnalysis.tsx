@@ -5,8 +5,8 @@ import { aiService } from '../../services/aiService';
 import { storageAdapter } from '../../services/storageAdapter';
 import InsightsReport from './InsightsReport';
 import ChatBubble from './ChatBubble';
-import Spinner from './Spinner';
 import TriggerTimeline from './TriggerTimeline';
+import ImmersiveLoadingScreen from './ImmersiveLoadingScreen';
 
 interface AIAnalysisProps {
   note: DiaryEntry | null;
@@ -22,7 +22,6 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
   const [analysis, setAnalysis] = useState<EnhancedAIAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [conversationalOnly, setConversationalOnly] = useState<string>('');
-  const [isGettingConversational, setIsGettingConversational] = useState(false);
   const [lastAnalyzedContent, setLastAnalyzedContent] = useState<string>('');
   const [activeTab, setActiveTab] = useState<AnalysisTab>('chat');
   // Removed unused preview state to satisfy strict TS
@@ -119,13 +118,21 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
     if (note?.content && note.content.length > 50) {
       const contentChanged = note.content !== lastAnalyzedContent;
       const hasAnalysis = note.ai_analysis || savedAIResponse?.ai_response_text;
+      const isAlreadyAnalyzed = note.isAnalyzed;
       
       console.log('Auto-analysis check:', { 
         contentLength: note.content.length, 
         contentChanged, 
         hasAnalysis: !!hasAnalysis,
+        isAlreadyAnalyzed,
         lastAnalyzedContent: lastAnalyzedContent.substring(0, 50) + '...'
       });
+      
+      // Skip auto-analysis if entry is already marked as analyzed
+      if (isAlreadyAnalyzed) {
+        console.log('Entry already analyzed - skipping auto-analysis');
+        return;
+      }
       
       // Auto-analyze if content changed significantly and no analysis exists
       if (contentChanged && !hasAnalysis) {
@@ -133,7 +140,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
         handleAnalyze(true); // true = auto-analyze
       }
     }
-  }, [note?.content, lastAnalyzedContent, note?.ai_analysis, savedAIResponse]);
+  }, [note?.content, lastAnalyzedContent, note?.ai_analysis, savedAIResponse, note?.isAnalyzed]);
 
   const handleAnalyze = async (isAutoAnalyze = false) => {
     if (!note?.content) {
@@ -191,6 +198,23 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
           // Save the full analysis object to ai_insights
           await storageAdapter.saveAIInsights(note.id, result);
           console.log('✅ AI analysis saved to database with new persistence system');
+          
+          // Calculate analysis summary for quick stats
+          const positiveCount = result.insights_report?.keyTakeaways?.filter(t => t.sentiment === 'positive').length || 0;
+          const opportunityCount = result.insights_report?.keyTakeaways?.filter(t => t.sentiment === 'opportunity').length || 0;
+          const totalInsights = result.insights_report?.keyTakeaways?.length || 0;
+          
+          // Update the note with analysis flag and summary
+          if (onUpdateNote) {
+            onUpdateNote(note.id, {
+              isAnalyzed: true,
+              analysisSummary: {
+                positiveCount,
+                opportunityCount,
+                totalInsights
+              }
+            });
+          }
           
           // Reload the saved response
           await loadSavedAIResponse(note.id);
@@ -337,73 +361,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
     }
   };
 
-  const handleConversationalOnly = async () => {
-    if (!note?.content) {
-      setError('No content to analyze');
-      return;
-    }
-
-    setIsGettingConversational(true);
-    setError(null); // Clear any previous errors
-
-    try {
-      console.log('🚀 Getting conversational response for note:', note.id);
-      const response = await aiService.getConversationalResponse(note.content);
-      console.log('✅ Conversational response received:', response.substring(0, 100) + '...');
-      
-      setConversationalOnly(response);
-      setActiveTab('chat');
-      
-      // Initialize conversation history with the conversational response
-      setConversationHistory([{
-        role: 'assistant',
-        content: response
-      }]);
-      
-      // Save the conversational response to database
-      if (note.id) {
-        try {
-          await storageAdapter.saveAIResponse(note.id, {
-            conversationalResponse: response,
-            structuredInsights: null, // Only saving conversational response
-          });
-          console.log('✅ Conversational response saved to database');
-          // Update local state in App
-          if (onUpdateNote) {
-            onUpdateNote(note.id, {
-              ai_response_text: response,
-              ai_last_analyzed: new Date().toISOString()
-            });
-          }
-          await loadSavedAIResponse(note.id);
-        } catch (dbError) {
-          console.error('❌ Failed to save conversational response to database:', dbError);
-          // Don't throw here - the response was successful, just couldn't save
-        }
-      }
-    } catch (err) {
-      
-      let errorMessage = 'Failed to get conversational response. Please try again.';
-      
-      if (err instanceof Error) {
-        if (err.message.includes('Groq API error')) {
-          if (err.message.includes('429')) {
-            errorMessage = 'AI service is busy. Please wait a moment and try again.';
-          } else if (err.message.includes('401') || err.message.includes('403')) {
-            errorMessage = 'AI service authentication failed. Please check your settings.';
-          } else if (err.message.includes('500')) {
-            errorMessage = 'AI service is temporarily unavailable. Please try again later.';
-          } else {
-            errorMessage = `AI service error: ${err.message}`;
-          }
-        }
-      }
-      
-      setError(errorMessage);
-    } finally {
-      setIsGettingConversational(false);
-    }
-  };
+  // handleConversationalOnly removed - Chat with Prism button removed from UI
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -591,6 +549,9 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
 
   return (
     <>
+      {/* Immersive Full-Screen Loading */}
+      <ImmersiveLoadingScreen isVisible={isAnalyzing || isRegenerating} />
+      
       {(!hasAnalysis && !isAnalyzing) ? (
         <div style={{ 
           textAlign: 'center', 
@@ -620,10 +581,81 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
           </button>
         </div>
       ) : (
-        <div style={{ padding: '2rem', maxWidth: '100%' }}>
-          {/* Simplified Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-            <h2 style={{ margin: 0, color: '#38BDF8', fontWeight: '600' }}>Prism's Analysis</h2>
+        <div style={{ padding: '2rem 3rem', maxWidth: '100%' }}>
+          {/* Centered Header with Entry Date */}
+          <div style={{ textAlign: 'center', marginBottom: '3rem', position: 'relative' }}>
+            <h1 style={{ 
+              margin: '0 0 1rem 0', 
+              background: 'linear-gradient(135deg, #e0e7ff 0%, #a5b4fc 50%, #818cf8 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              fontWeight: '700',
+              fontSize: '2.5rem',
+              letterSpacing: '-0.02em'
+            }}>
+              Prism's Analysis
+            </h1>
+            {note && (
+              <p style={{ 
+                margin: 0, 
+                color: 'var(--text-secondary)', 
+                fontSize: '1.1rem',
+                fontWeight: '400',
+                fontStyle: 'italic',
+                fontFamily: '"Georgia", "Times New Roman", serif',
+                letterSpacing: '0.02em',
+                opacity: 0.85
+              }}>
+                "{note.title || new Date(note.created_at).toLocaleDateString('en-US', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric'
+                })}"
+              </p>
+            )}
+            {/* Regenerate button positioned absolutely in top-right */}
+            <button
+              onClick={handleRegenerate}
+              disabled={isRegenerating || isAnalyzing}
+              title="Regenerate analysis with fresh AI insights"
+              aria-label="Regenerate analysis"
+              style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                padding: '0.5rem 1rem',
+                background: isRegenerating ? 'var(--bg-secondary)' : 'var(--bg-tertiary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '6px',
+                color: 'var(--text-secondary)',
+                cursor: isRegenerating || isAnalyzing ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                transition: 'all 0.2s ease',
+                opacity: isRegenerating || isAnalyzing ? 0.5 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (!isRegenerating && !isAnalyzing) {
+                  e.currentTarget.style.background = 'var(--bg-quaternary)';
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                  e.currentTarget.style.borderColor = 'var(--accent-primary)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isRegenerating && !isAnalyzing) {
+                  e.currentTarget.style.background = 'var(--bg-tertiary)';
+                  e.currentTarget.style.color = 'var(--text-secondary)';
+                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                }
+              }}
+            >
+              <span style={{ fontSize: '1rem' }}>🔄</span>
+              <span>{isRegenerating ? 'Regenerating...' : 'Regenerate'}</span>
+            </button>
           </div>
 
           {/* Content changed indicator */}
@@ -673,44 +705,23 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
             </div>
           )}
 
-          {/* Loading State - In-Place Overlay */}
-          {isAnalyzing && (
-            <div className="card" style={{ padding: '0', position: 'relative' }}>
-              {/* Loading Overlay */}
-              <div className="regeneration-overlay" style={{ borderRadius: '16px' }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🧠</div>
-                <h3 style={{ marginBottom: '1rem', color: '#E5E7EB', fontSize: '1.5rem' }}>Prism is analyzing your thoughts...</h3>
-                <p style={{ color: '#9CA3AF', marginBottom: '1.5rem', textAlign: 'center', maxWidth: '400px' }}>
-                  Our AI is reading your entry and generating personalized insights.
-                </p>
-                <Spinner size="large" />
-              </div>
-              
-              {/* Placeholder content structure */}
-              <div style={{ 
-                padding: '2rem',
-                background: '#1F2937',
-                borderRadius: '16px',
-                border: '1px solid #374151',
-                minHeight: '300px'
-              }}>
-                {/* This content is hidden behind the overlay but provides structure */}
-              </div>
-            </div>
-          )}
+          {/* Loading handled by ImmersiveLoadingScreen - no inline loading needed */}
 
           {/* Analysis Results - Tabbed Interface */}
           {(hasAnalysis || conversationalOnly) && !isAnalyzing && (
-            <div className="card" style={{ padding: '0' }}>
-              {/* Tab Navigation */}
+            <div className="card" style={{ padding: '0', background: 'transparent', border: 'none', boxShadow: 'none' }}>
+              {/* Tab Navigation - Glassmorphic Design */}
               <div style={{ 
                 display: 'flex', 
-                borderBottom: '2px solid var(--border-color)',
-                background: 'var(--bg-tertiary)',
+                background: 'rgba(255, 255, 255, 0.03)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
                 borderTopLeftRadius: '16px',
                 borderTopRightRadius: '16px',
                 position: 'relative',
-                alignItems: 'center'
+                alignItems: 'center',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
               }}>
                 <div style={{ display: 'flex', flex: 1 }}>
                   {hasConversationalResponse && (
@@ -720,19 +731,32 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                       style={{
                         flex: 1,
                         padding: '1.25rem 1rem',
-                        background: 'transparent',
+                        background: activeTab === 'chat' ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
                         border: 'none',
                         cursor: 'pointer',
                         borderTopLeftRadius: '16px',
-                        color: activeTab === 'chat' ? '#FFFFFF' : '#9CA3AF',
+                        color: activeTab === 'chat' ? '#FFFFFF' : '#a0a0a0',
                         fontWeight: activeTab === 'chat' ? '600' : '500',
                         fontSize: '0.95rem',
-                        transition: 'color 0.3s ease',
+                        transition: 'all 0.2s ease',
                         position: 'relative',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '0.5rem'
+                        gap: '0.5rem',
+                        backdropFilter: activeTab === 'chat' ? 'blur(10px)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (activeTab !== 'chat') {
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                          e.currentTarget.style.color = '#ffffff';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (activeTab !== 'chat') {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = '#a0a0a0';
+                        }
                       }}
                     >
                       💬 Prism's Response
@@ -746,18 +770,31 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                       style={{
                         flex: 1,
                         padding: '1.25rem 1rem',
-                        background: 'transparent',
+                        background: activeTab === 'insights' ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
                         border: 'none',
                         cursor: 'pointer',
-                        color: activeTab === 'insights' ? '#FFFFFF' : '#9CA3AF',
+                        color: activeTab === 'insights' ? '#FFFFFF' : '#a0a0a0',
                         fontWeight: activeTab === 'insights' ? '600' : '500',
                         fontSize: '0.95rem',
-                        transition: 'color 0.3s ease',
+                        transition: 'all 0.2s ease',
                         position: 'relative',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '0.5rem'
+                        gap: '0.5rem',
+                        backdropFilter: activeTab === 'insights' ? 'blur(10px)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (activeTab !== 'insights') {
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                          e.currentTarget.style.color = '#ffffff';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (activeTab !== 'insights') {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = '#a0a0a0';
+                        }
                       }}
                     >
                       📊 Structured Insights
@@ -771,57 +808,37 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                       style={{
                         flex: 1,
                         padding: '1.25rem 1rem',
-                        background: 'transparent',
+                        background: activeTab === 'trends' ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
                         border: 'none',
                         cursor: 'pointer',
                         borderTopRightRadius: '16px',
-                        color: activeTab === 'trends' ? '#FFFFFF' : '#9CA3AF',
+                        color: activeTab === 'trends' ? '#FFFFFF' : '#a0a0a0',
                         fontWeight: activeTab === 'trends' ? '600' : '500',
                         fontSize: '0.95rem',
-                        transition: 'color 0.3s ease',
+                        transition: 'all 0.2s ease',
                         position: 'relative',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '0.5rem'
+                        gap: '0.5rem',
+                        backdropFilter: activeTab === 'trends' ? 'blur(10px)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (activeTab !== 'trends') {
+                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                          e.currentTarget.style.color = '#ffffff';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (activeTab !== 'trends') {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = '#a0a0a0';
+                        }
                       }}
                     >
                       📈 Trends
                     </button>
                   )}
-                </div>
-                
-                {/* Action buttons */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0 1rem' }}>
-                  <button
-                    className="primary-button"
-                    onClick={handleConversationalOnly}
-                    disabled={isGettingConversational || !note?.content}
-                    style={{
-                      fontSize: '0.9rem',
-                      padding: '0.5rem 1rem',
-                      marginLeft: '0.5rem',
-                      opacity: isGettingConversational || !note?.content ? 0.5 : 1,
-                      cursor: isGettingConversational || !note?.content ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    💬 Chat with Prism
-                  </button>
-                  
-                  <button
-                    className="primary-button"
-                    onClick={handleRegenerate}
-                    disabled={isRegenerating}
-                    style={{
-                      fontSize: '0.9rem',
-                      padding: '0.5rem 1rem',
-                      marginLeft: '0.5rem',
-                      opacity: isRegenerating ? 0.6 : 1,
-                      cursor: isRegenerating ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    {isRegenerating ? '⏳ Regenerating...' : '🔄 Regenerate'}
-                  </button>
                 </div>
               </div>
 
@@ -832,34 +849,43 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                   <div>
                     {insightsToShow?.insights_report ? (
                       <div>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+                        <div style={{ position: 'relative' }}>
+                          {/* Copy button positioned at top-right of response */}
                           <button
                             onClick={() => copyToClipboard(insightsToShow.insights_report?.conversationalSummary || '')}
+                            title="Copy to clipboard"
                             style={{ 
+                              position: 'absolute',
+                              top: '1rem',
+                              right: '1rem',
                               fontSize: '0.8rem',
-                              background: 'transparent',
-                              color: '#9CA3AF',
-                              border: '1px solid #374151',
-                              borderRadius: '8px',
-                              padding: '0.5rem 1rem',
+                              background: 'var(--bg-tertiary)',
+                              color: 'var(--text-secondary)',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: '6px',
+                              padding: '0.5rem 0.75rem',
                               cursor: 'pointer',
-                              transition: 'all 0.2s ease'
+                              transition: 'all 0.2s ease',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              zIndex: 10
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.background = 'rgba(56, 189, 248, 0.05)';
-                              e.currentTarget.style.color = '#E5E7EB';
-                              e.currentTarget.style.borderColor = '#38BDF8';
+                              e.currentTarget.style.background = 'var(--bg-quaternary)';
+                              e.currentTarget.style.color = 'var(--text-primary)';
+                              e.currentTarget.style.borderColor = 'var(--accent-primary)';
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.background = 'transparent';
-                              e.currentTarget.style.color = '#9CA3AF';
-                              e.currentTarget.style.borderColor = '#374151';
+                              e.currentTarget.style.background = 'var(--bg-tertiary)';
+                              e.currentTarget.style.color = 'var(--text-secondary)';
+                              e.currentTarget.style.borderColor = 'var(--border-color)';
                             }}
                           >
                             📋 Copy
                           </button>
+                          <InsightsReport insights={insightsToShow.insights_report} />
                         </div>
-                        <InsightsReport insights={insightsToShow.insights_report} isRegenerating={isRegenerating} />
                         
                         {/* Trigger Timeline */}
                         {(shouldShowTimeline || isGeneratingTimeline) && (

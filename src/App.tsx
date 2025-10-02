@@ -257,9 +257,25 @@ const App: React.FC = () => {
     <ThemeProvider>
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <AnimatedBackground />
-        <div style={{ position: 'absolute', top: 8, right: 32, zIndex: 10 }}>
-          <DarkModeToggle />
-        </div>
+        {/* Grouped Control Panel - Top Right - Hide on Analysis Tab */}
+        {!(activeView === 'editor' && activeTab === 'analysis') && (
+          <div style={{ 
+            position: 'absolute', 
+            top: '1rem', 
+            right: '1rem', 
+            zIndex: 10,
+            display: 'flex',
+            gap: '0.5rem',
+            alignItems: 'center',
+            background: 'var(--bg-secondary)',
+            padding: '0.5rem',
+            borderRadius: '8px',
+            border: '1px solid var(--border-color)',
+            boxShadow: '0 2px 8px var(--shadow-color)'
+          }}>
+            <DarkModeToggle />
+          </div>
+        )}
         <div style={{ display: 'flex', flex: 1, minHeight: 0, width: '100%', overflow: 'hidden' }} className={isFocusMode ? 'focus-mode' : ''}>
           {!isFocusMode && (
             <Sidebar 
@@ -296,11 +312,7 @@ const App: React.FC = () => {
             transition: 'filter 0.3s ease',
           }}>
             <div style={{ padding: '0.5rem 1rem' }}>
-              {activeView === 'editor' && activeTab !== 'editor' && (
-                <h1 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-primary)' }}>
-                  {selectedNote?.title || 'AI-Powered Mental Health Diary'}
-                </h1>
-              )}
+              {/* Title removed for analysis view - now handled in AIAnalysis component */}
               {activeView === 'dashboard' && (
                 <h1 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-primary)' }}>
                   Dashboard & Trends
@@ -318,44 +330,9 @@ const App: React.FC = () => {
               )}
             </div>
             
-            {activeView === 'editor' && selectedNote && (
-              <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', alignItems: 'center', padding: '0 1rem 1rem 1rem', width: '100%', boxSizing: 'border-box', overflow: 'hidden', marginBottom: '2rem' }}>
-                <div style={{ display: 'flex', flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                  <button
-                    onClick={() => setActiveTab('editor')}
-                    style={{
-                      padding: '0.75rem 1.5rem',
-                      background: activeTab === 'editor' ? 'var(--accent-primary)' : 'transparent',
-                      color: 'var(--text-primary)',
-                      border: 'none',
-                      cursor: 'pointer',
-                      borderBottom: activeTab === 'editor' ? '2px solid var(--accent-primary)' : 'none',
-                      flexShrink: 0,
-                      fontSize: '18px',
-                      fontWeight: '600',
-                      lineHeight: '1.2',
-                    }}
-                  >
-                    Editor
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('analysis')}
-                    style={{
-                      padding: '0.75rem 1.5rem',
-                      background: activeTab === 'analysis' ? 'var(--accent-primary)' : 'transparent',
-                      color: 'var(--text-primary)',
-                      border: 'none',
-                      cursor: 'pointer',
-                      borderBottom: activeTab === 'analysis' ? '2px solid var(--accent-primary)' : 'none',
-                      flexShrink: 0,
-                      fontSize: '18px',
-                      fontWeight: '600',
-                      lineHeight: '1.2',
-                    }}
-                  >
-                    Prism's Analysis
-                  </button>
-                </div>
+            {activeView === 'editor' && selectedNote && activeTab === 'editor' && (
+              <div style={{ padding: '0 1rem 1rem 1rem', width: '100%', boxSizing: 'border-box', marginBottom: '1rem' }}>
+                {/* Simplified - no tab buttons, just clean space */}
                 <button
                   onClick={() => setIsFocusMode(!isFocusMode)}
                   style={{
@@ -392,15 +369,19 @@ const App: React.FC = () => {
                 activeTab === 'editor' ? (
                   <DiaryEditor 
                     note={selectedNote} 
-                    onSave={handleSave} 
+                    onSave={handleSave}
+                    onNavigateToAnalysis={() => setActiveTab('analysis')}
                   />
                 ) : (
                   <AIAnalysis 
                     note={selectedNote} 
                     setActiveView={setActiveView}
                     onUpdateNote={(id, updates) => {
-                      setNotes(prevNotes => prevNotes.map(n => n.id === id ? { ...n, ...updates } : n));
-                      if (selectedNote && selectedNote.id === id) {
+                      const updatedNotes = notes.map(n => 
+                        n.id === id ? { ...n, ...updates } : n
+                      );
+                      setNotes(updatedNotes);
+                      if (selectedNote?.id === id) {
                         setSelectedNote({ ...selectedNote, ...updates });
                       }
                     }}
