@@ -823,6 +823,7 @@ section, .section {
   flex-direction: column;
   gap: 24px;
   padding: 20px;
+  background: transparent;
 }
 
 .summary-section {

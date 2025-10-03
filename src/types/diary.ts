@@ -27,6 +27,17 @@ export interface DiaryEntry {
     opportunityCount: number;
     totalInsights: number;
   };
+  detectedPatterns?: Array<{
+    keyword: string;
+    category: 'health' | 'emotional' | 'behavioral';
+    frequency: number;
+    lastMentioned: string;
+    color: string;
+    contexts: string[];
+  }>;
+  // Legacy fields for compatibility
+  date?: string;
+  timestamp?: string;
 }
 
 export interface MoodDataPoint {

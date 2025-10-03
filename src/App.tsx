@@ -10,10 +10,13 @@ import AIAnalysis from './components/ai/AIAnalysis';
 import DashboardView from './components/dashboard/DashboardView';
 import SettingsView from './components/settings/SettingsView';
 import AlertsView from './components/alerts/AlertsView';
+import PlaybookView from './components/playbook/PlaybookView';
 import AnimatedBackground from './components/common/AnimatedBackground';
 import { storageAdapter } from './services/storageAdapter';
 import { supabase } from './services/supabaseClient';
 import { PremiumIcons } from './components/icons/PremiumIcons';
+import { keywordHighlightService } from './services/keywordHighlightService';
+import type { DetectedPattern } from './services/keywordHighlightService';
 
 const DarkModeToggle: React.FC = () => {
   const [dark, setDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -42,12 +45,14 @@ const App: React.FC = () => {
   const [notes, setNotes] = useState<DiaryEntry[]>([]);
   const [selectedNote, setSelectedNote] = useState<DiaryEntry | null>(null);
   const [activeTab, setActiveTab] = useState<'editor' | 'analysis'>('editor');
-  const [activeView, setActiveView] = useState<'editor' | 'dashboard' | 'settings' | 'alerts'>('editor');
+  const [activeView, setActiveView] = useState<'editor' | 'dashboard' | 'settings' | 'alerts' | 'playbook'>('editor');
   const [isLoading, setIsLoading] = useState(true);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [blurredNoteIds, setBlurredNoteIds] = useState<Set<string>>(new Set());
   const [streakData, setStreakData] = useState({ currentStreak: 0, longestStreak: 0, lastEntryDate: null as string | null });
   const [unreadAlertsCount, setUnreadAlertsCount] = useState(0);
+  const [detectedPatterns, setDetectedPatterns] = useState<DetectedPattern[]>([]);
+  const [highlightingEnabled, setHighlightingEnabled] = useState(true);
 
   // Debug logging for state changes
   useEffect(() => {
@@ -103,9 +108,17 @@ const App: React.FC = () => {
       console.log('📋 Fetched notes:', fetchedNotes.map(n => ({ id: n.id, title: n.title, updated_at: n.updated_at })));
       
       setNotes(fetchedNotes);
-      if (fetchedNotes.length > 0 && !selectedNote) {
-        console.log('🎯 Setting initial selected note:', fetchedNotes[0].title);
-        setSelectedNote(fetchedNotes[0]);
+      
+      // Detect patterns across all notes
+      if (fetchedNotes.length > 0) {
+        const patterns = keywordHighlightService.detectPatterns(fetchedNotes);
+        console.log('🔍 Detected patterns:', patterns);
+        setDetectedPatterns(patterns);
+        
+        if (!selectedNote) {
+          console.log('🎯 Setting initial selected note:', fetchedNotes[0].title);
+          setSelectedNote(fetchedNotes[0]);
+        }
       }
     } catch (error) {
       console.error('❌ Error loading notes:', error);
@@ -380,6 +393,9 @@ const App: React.FC = () => {
                   <DiaryEditor 
                     note={selectedNote} 
                     onSave={handleSave}
+                    detectedPatterns={detectedPatterns}
+                    highlightingEnabled={highlightingEnabled}
+                    onToggleHighlighting={() => setHighlightingEnabled(!highlightingEnabled)}
                     onNavigateToAnalysis={() => setActiveTab('analysis')}
                   />
                 ) : (
@@ -404,6 +420,17 @@ const App: React.FC = () => {
                     const note = notes.find(n => n.id === id);
                     if (note) {
                       setSelectedNote(note);
+                    }
+                  }}
+                />
+              ) : activeView === 'playbook' ? (
+                <PlaybookView
+                  onNavigateToEntry={(entryId) => {
+                    const note = notes.find(n => n.id === entryId);
+                    if (note) {
+                      setSelectedNote(note);
+                      setActiveView('editor');
+                      setActiveTab('editor');
                     }
                   }}
                 />

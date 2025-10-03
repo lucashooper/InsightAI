@@ -3,14 +3,16 @@ import type { DiaryEntry } from '../../types/diary';
 import type { EnhancedAIAnalysis, TimelineEvent } from '../../services/aiService';
 import { aiService } from '../../services/aiService';
 import { storageAdapter } from '../../services/storageAdapter';
+import { actionableInsightsService } from '../../services/actionableInsightsService';
 import InsightsReport from './InsightsReport';
 import ChatBubble from './ChatBubble';
 import TriggerTimeline from './TriggerTimeline';
 import ImmersiveLoadingScreen from './ImmersiveLoadingScreen';
+import { PremiumIcons } from '../icons/PremiumIcons';
 
 interface AIAnalysisProps {
   note: DiaryEntry | null;
-  setActiveView: (view: 'editor' | 'dashboard' | 'settings' | 'alerts') => void;
+  setActiveView: (view: 'editor' | 'dashboard' | 'settings' | 'alerts' | 'playbook') => void;
   onUpdateNote: (id: string, updates: Partial<DiaryEntry>) => void;
 }
 
@@ -203,6 +205,16 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
           const positiveCount = result.insights_report?.keyTakeaways?.filter(t => t.sentiment === 'positive').length || 0;
           const opportunityCount = result.insights_report?.keyTakeaways?.filter(t => t.sentiment === 'opportunity').length || 0;
           const totalInsights = result.insights_report?.keyTakeaways?.length || 0;
+          
+          // Generate actionable insights from coping strategies
+          if (result.coping_strategies?.suggested && note.id) {
+            try {
+              actionableInsightsService.generateSuggestionsFromAnalysis(result, note.id);
+              console.log('✅ Actionable insights generated and saved to playbook');
+            } catch (err) {
+              console.error('Error generating actionable insights:', err);
+            }
+          }
           
           // Update the note with analysis flag and summary
           if (onUpdateNote) {
@@ -651,46 +663,49 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                 }
               }}
             >
-              <span style={{ fontSize: '1rem' }}>🔄</span>
+              <PremiumIcons.RefreshCw size={16} color="currentColor" />
               <span>{isRegenerating ? 'Regenerating...' : 'Regenerate'}</span>
             </button>
           </div>
 
-          {/* Content changed indicator - subtle and dismissible */}
+          {/* Content changed indicator - subtle badge in top right */}
           {contentHasChanged && !isContentChangedDismissed && (
             <div style={{
-              padding: '0.75rem 1rem',
-              background: 'rgba(245, 158, 11, 0.05)',
-              border: '1px solid rgba(245, 158, 11, 0.15)',
-              borderRadius: '8px',
-              marginBottom: '1rem',
+              position: 'absolute',
+              top: '1rem',
+              right: '1rem',
+              padding: '0.4rem 0.75rem',
+              background: 'rgba(245, 158, 11, 0.08)',
+              border: '1px solid rgba(245, 158, 11, 0.25)',
+              borderRadius: '20px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '1rem'
+              gap: '0.5rem',
+              fontSize: '0.75rem',
+              color: '#D97706',
+              opacity: 0.85,
+              zIndex: 10,
+              backdropFilter: 'blur(10px)'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ fontSize: '0.85rem' }}>⚠️</span>
-                <span style={{ color: '#D97706', fontSize: '0.85rem', opacity: 0.9 }}>
-                  Content updated — consider regenerating for fresh insights
-                </span>
-              </div>
+              <span style={{ fontSize: '0.7rem' }}>⚠️</span>
+              <span>Content updated</span>
               <button
                 onClick={() => setIsContentChangedDismissed(true)}
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: '#9CA3AF',
+                  color: '#D97706',
                   cursor: 'pointer',
-                  padding: '0.25rem',
+                  padding: '0',
                   display: 'flex',
                   alignItems: 'center',
-                  fontSize: '1.1rem',
-                  opacity: 0.6,
+                  fontSize: '1rem',
+                  marginLeft: '0.25rem',
+                  opacity: 0.7,
                   transition: 'opacity 0.2s ease'
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
                 title="Dismiss"
               >
                 ×
@@ -742,20 +757,20 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                 position: 'relative',
                 alignItems: 'center',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+                borderBottom: 'none'
               }}>
-                <div style={{ display: 'flex', flex: 1 }}>
-                  {hasConversationalResponse && (
+                <div style={{ display: 'flex', flex: 1, gap: '0.5rem', padding: '0.5rem' }}>
+                  {(hasConversationalResponse || analysis) && (
                     <button
                       onClick={() => setActiveTab('chat')}
                       className={`tab-button ${activeTab === 'chat' ? 'active' : ''}`}
                       style={{
                         flex: 1,
-                        padding: '1.25rem 1rem',
-                        background: activeTab === 'chat' ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
+                        padding: '1rem 1.5rem',
+                        background: activeTab === 'chat' ? 'rgba(255, 255, 255, 0.04)' : 'transparent',
                         border: 'none',
                         cursor: 'pointer',
-                        borderTopLeftRadius: '16px',
+                        borderRadius: '12px',
                         color: activeTab === 'chat' ? '#FFFFFF' : '#a0a0a0',
                         fontWeight: activeTab === 'chat' ? '600' : '500',
                         fontSize: '0.95rem',
@@ -765,7 +780,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '0.5rem',
-                        backdropFilter: activeTab === 'chat' ? 'blur(10px)' : 'none'
+                        backdropFilter: 'none'
                       }}
                       onMouseEnter={(e) => {
                         if (activeTab !== 'chat') {
@@ -780,7 +795,8 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                         }
                       }}
                     >
-                      💬 Prism's Response
+                      <PremiumIcons.Brain size={18} color="currentColor" />
+                      <span>Prism's Response</span>
                     </button>
                   )}
                   
@@ -790,10 +806,11 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                       className={`tab-button ${activeTab === 'insights' ? 'active' : ''}`}
                       style={{
                         flex: 1,
-                        padding: '1.25rem 1rem',
-                        background: activeTab === 'insights' ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
+                        padding: '1rem 1.5rem',
+                        background: activeTab === 'insights' ? 'rgba(255, 255, 255, 0.04)' : 'transparent',
                         border: 'none',
                         cursor: 'pointer',
+                        borderRadius: '12px',
                         color: activeTab === 'insights' ? '#FFFFFF' : '#a0a0a0',
                         fontWeight: activeTab === 'insights' ? '600' : '500',
                         fontSize: '0.95rem',
@@ -803,7 +820,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '0.5rem',
-                        backdropFilter: activeTab === 'insights' ? 'blur(10px)' : 'none'
+                        backdropFilter: 'none'
                       }}
                       onMouseEnter={(e) => {
                         if (activeTab !== 'insights') {
@@ -818,7 +835,8 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                         }
                       }}
                     >
-                      📊 Structured Insights
+                      <PremiumIcons.BarChart size={18} color="currentColor" />
+                      <span>Structured Insights</span>
                     </button>
                   )}
                   
@@ -828,11 +846,11 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                       className={`tab-button ${activeTab === 'trends' ? 'active' : ''}`}
                       style={{
                         flex: 1,
-                        padding: '1.25rem 1rem',
-                        background: activeTab === 'trends' ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
+                        padding: '1rem 1.5rem',
+                        background: activeTab === 'trends' ? 'rgba(255, 255, 255, 0.04)' : 'transparent',
                         border: 'none',
                         cursor: 'pointer',
-                        borderTopRightRadius: '16px',
+                        borderRadius: '12px',
                         color: activeTab === 'trends' ? '#FFFFFF' : '#a0a0a0',
                         fontWeight: activeTab === 'trends' ? '600' : '500',
                         fontSize: '0.95rem',
@@ -842,7 +860,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '0.5rem',
-                        backdropFilter: activeTab === 'trends' ? 'blur(10px)' : 'none'
+                        backdropFilter: 'none'
                       }}
                       onMouseEnter={(e) => {
                         if (activeTab !== 'trends') {
@@ -857,7 +875,8 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                         }
                       }}
                     >
-                      📈 Trends
+                      <PremiumIcons.TrendingUp size={18} color="currentColor" />
+                      <span>Trends</span>
                     </button>
                   )}
                 </div>
@@ -868,7 +887,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                 {/* Chat Tab */}
                 {activeTab === 'chat' && (
                   <div>
-                    {insightsToShow?.insights_report ? (
+                    {insightsToShow?.insights_report && (
                       <div>
                         <div style={{ position: 'relative' }}>
                           {/* Copy button positioned at top-right of response */}
@@ -906,7 +925,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                               e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
                             }}
                           >
-                            📋
+                            <PremiumIcons.Copy size={16} color="currentColor" />
                           </button>
                           <InsightsReport insights={insightsToShow.insights_report} />
                         </div>
@@ -918,38 +937,6 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                             isLoading={isGeneratingTimeline}
                           />
                         )}
-                      </div>
-                    ) : (
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.25rem' }}>
-                          <button
-                            onClick={() => copyToClipboard(
-                              analysis?.conversational_response || rawAIResponse || ''
-                            )}
-                            style={{ 
-                              fontSize: '0.8rem',
-                              background: 'transparent',
-                              color: '#9CA3AF',
-                              border: '1px solid #374151',
-                              borderRadius: '8px',
-                              padding: '0.5rem 1rem',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.background = 'rgba(56, 189, 248, 0.05)';
-                              e.currentTarget.style.color = '#E5E7EB';
-                              e.currentTarget.style.borderColor = '#38BDF8';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.background = 'transparent';
-                              e.currentTarget.style.color = '#9CA3AF';
-                              e.currentTarget.style.borderColor = '#374151';
-                            }}
-                          >
-                            📋 Copy
-                          </button>
-                        </div>
                       </div>
                     )}
                     {/* Chat Log Area */}
@@ -994,9 +981,8 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                     <div className="chat-input-container" style={{
                       marginTop: '1rem',
                       padding: '1rem',
-                      background: '#1F2937',
-                      borderRadius: '12px',
-                      border: '1px solid #374151'
+                      background: 'var(--bg-primary)',
+                      borderTop: '1px solid var(--border-color)'
                     }}>
                       <div style={{
                         display: 'flex',
@@ -1012,10 +998,10 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                             minHeight: '44px',
                             maxHeight: '120px',
                             padding: '0.75rem',
-                            background: '#111827',
-                            border: '1px solid #374151',
+                            background: 'var(--bg-secondary)',
+                            border: '1px solid var(--border-color)',
                             borderRadius: '8px',
-                            color: '#E5E7EB',
+                            color: 'var(--text-primary)',
                             fontSize: '0.9rem',
                             lineHeight: '1.5',
                             resize: 'vertical',
@@ -1072,14 +1058,43 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
 
                 {/* Insights Tab */}
                 {activeTab === 'insights' && insightsToShow && (
-                  <div>
-                    <h3 className="card-title">
-                      <span className="icon">📊</span>
+                  <div style={{
+                    maxWidth: '1400px',
+                    margin: '0 auto',
+                    width: '100%'
+                  }}>
+                    <h3 style={{
+                      fontSize: '1.5rem',
+                      fontWeight: '600',
+                      color: '#E5E7EB',
+                      marginBottom: '2rem',
+                      textAlign: 'center',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      <PremiumIcons.BarChart size={24} color="#E5E7EB" />
                       Structured Insights
                     </h3>
                     
-                    {/* Mood Analysis Card */}
-                    <div className="analysis-card">
+                    {/* Responsive Grid Layout */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
+                      gap: '1.75rem',
+                      marginBottom: '2rem'
+                    }}>
+                      {/* Mood Analysis Card */}
+                      <div className="analysis-card" style={{
+                        background: 'rgba(255, 255, 255, 0.03)',
+                        backdropFilter: 'blur(10px)',
+                        WebkitBackdropFilter: 'blur(10px)',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        padding: '1.5rem',
+                        height: '100%'
+                      }}>
                       <h4 className="card-title">
                         <span className="icon">📈</span>
                         Mood Analysis
@@ -1106,11 +1121,19 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                           <span className="stat-value">{insightsToShow.mood_analysis.confidence}%</span>
                         </div>
                       </div>
-                    </div>
+                      </div>
 
-                    {/* Key Themes Card */}
-                    {insightsToShow.key_themes.length > 0 && (
-                      <div className="analysis-card">
+                      {/* Key Themes Card */}
+                      {insightsToShow.key_themes.length > 0 && (
+                        <div className="analysis-card" style={{
+                          background: 'rgba(255, 255, 255, 0.03)',
+                          backdropFilter: 'blur(10px)',
+                          WebkitBackdropFilter: 'blur(10px)',
+                          borderRadius: '12px',
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                          padding: '1.5rem',
+                          height: '100%'
+                        }}>
                         <h4 className="card-title">
                           <span className="icon">🎯</span>
                           Key Themes
@@ -1140,16 +1163,53 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                             </div>
                           ))}
                         </div>
-                      </div>
-                    )}
+                        </div>
+                      )}
 
-                    {/* Coping Strategies Card */}
-                    {insightsToShow.coping_strategies.suggested.length > 0 && (
-                      <div className="analysis-card">
-                        <h4 className="card-title">
-                          <span className="icon">🛡️</span>
-                          Coping Strategies
-                        </h4>
+                      {/* Coping Strategies Card */}
+                      {insightsToShow.coping_strategies.suggested.length > 0 && (
+                        <div className="analysis-card" style={{
+                          background: 'rgba(255, 255, 255, 0.03)',
+                          backdropFilter: 'blur(10px)',
+                          WebkitBackdropFilter: 'blur(10px)',
+                          borderRadius: '12px',
+                          border: '1px solid rgba(255, 255, 255, 0.08)',
+                          padding: '1.5rem',
+                          height: '100%'
+                        }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                          <h4 className="card-title" style={{ margin: 0 }}>
+                            <span className="icon">🛡️</span>
+                            Coping Strategies
+                          </h4>
+                          <button
+                            onClick={() => {
+                              if (note?.id) {
+                                actionableInsightsService.generateSuggestionsFromAnalysis(
+                                  { coping_strategies: insightsToShow.coping_strategies },
+                                  note.id
+                                );
+                                alert('Strategies saved to your Personal Playbook!');
+                              }
+                            }}
+                            style={{
+                              padding: '0.5rem 0.75rem',
+                              background: '#3b82f6',
+                              border: 'none',
+                              borderRadius: '6px',
+                              color: 'white',
+                              fontSize: '0.8rem',
+                              cursor: 'pointer',
+                              fontWeight: '500',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem'
+                            }}
+                          >
+                            <PremiumIcons.Target size={14} />
+                            Add to Playbook
+                          </button>
+                        </div>
                         <div style={{ display: 'grid', gap: '1rem' }}>
                           {insightsToShow.coping_strategies.suggested.map((strategy: any, index: number) => (
                             <div key={index} style={{
@@ -1177,8 +1237,9 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                             </div>
                           ))}
                         </div>
-                      </div>
-                    )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 

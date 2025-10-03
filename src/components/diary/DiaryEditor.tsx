@@ -1,14 +1,26 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { DiaryEntry } from '../../types/diary';
 import { PremiumIcons } from '../icons/PremiumIcons';
+import type { DetectedPattern } from '../../services/keywordHighlightService';
+import { HighlightedText } from './HighlightedText';
 
 interface DiaryEditorProps {
   note: DiaryEntry | null;
   onSave: (note: Partial<DiaryEntry>) => Promise<void>;
   onNavigateToAnalysis?: () => void;
+  detectedPatterns?: DetectedPattern[];
+  highlightingEnabled?: boolean;
+  onToggleHighlighting?: () => void;
 }
 
-const DiaryEditor: React.FC<DiaryEditorProps> = ({ note, onSave, onNavigateToAnalysis }) => {
+const DiaryEditor: React.FC<DiaryEditorProps> = ({ 
+  note, 
+  onSave, 
+  onNavigateToAnalysis,
+  detectedPatterns = [],
+  highlightingEnabled = false,
+  onToggleHighlighting
+}) => {
   console.log('📝 DiaryEditor render:', { 
     hasNote: !!note, 
     noteTitle: note?.title, 
@@ -206,13 +218,12 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({ note, onSave, onNavigateToAna
 
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newContent = e.target.value;
+    setContent(e.target.value);
     console.log('✏️ Content changed:', { 
       fromLength: content.length, 
-      toLength: newContent.length,
-      change: newContent.length - content.length
+      toLength: e.target.value.length,
+      change: e.target.value.length - content.length
     });
-    setContent(newContent);
   };
 
   const handleContentKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -537,7 +548,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({ note, onSave, onNavigateToAna
                 fontWeight: '600',
                 color: '#22c55e'
               }}>
-                <span>✨</span>
+                <PremiumIcons.Sparkles size={12} color="#22c55e" />
                 <span>{note.analysisSummary.positiveCount}</span>
               </div>
             )}
@@ -554,7 +565,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({ note, onSave, onNavigateToAna
                 fontWeight: '600',
                 color: '#f59e0b'
               }}>
-                <span>⚠️</span>
+                <PremiumIcons.Sprout size={12} color="#f59e0b" />
                 <span>{note.analysisSummary.opportunityCount}</span>
               </div>
             )}
@@ -633,6 +644,37 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({ note, onSave, onNavigateToAna
           </button>
         )}
 
+        {/* Highlighting Toggle Button */}
+        {onToggleHighlighting && detectedPatterns.length > 0 && (
+          <button
+            onClick={onToggleHighlighting}
+            title={highlightingEnabled ? 'Hide pattern highlights' : 'Show pattern highlights'}
+            aria-label="Toggle keyword highlighting"
+            style={{
+              padding: '0.5rem',
+              background: highlightingEnabled ? 'rgba(245, 158, 11, 0.1)' : 'var(--bg-secondary)',
+              border: `1px solid ${highlightingEnabled ? '#F59E0B' : 'var(--border-color)'}`,
+              borderRadius: '6px',
+              color: highlightingEnabled ? '#F59E0B' : 'var(--text-secondary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.875rem',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = highlightingEnabled ? 'rgba(245, 158, 11, 0.15)' : 'var(--bg-tertiary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = highlightingEnabled ? 'rgba(245, 158, 11, 0.1)' : 'var(--bg-secondary)';
+            }}
+          >
+            <PremiumIcons.Eye size={16} />
+            <span style={{ fontSize: '0.75rem' }}>{detectedPatterns.length}</span>
+          </button>
+        )}
+
         {/* Voice Error Message */}
         {voiceError && (
           <span style={{
@@ -646,37 +688,85 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({ note, onSave, onNavigateToAna
         )}
       </div>
       
-      {/* Main Content Textarea */}
-      <textarea
-        className="diary-textarea"
-        spellCheck={false}
-        value={content}
-        onChange={handleContentChange}
-        onKeyDown={handleContentKeyDown}
-        placeholder="Your thoughts go here..."
-        style={{
-          flex: 1,
-          width: '100%',
-          maxWidth: '100%',
-          minHeight: '600px',
-          fontSize: '1.15rem',
-          lineHeight: '1.7',
-          background: 'transparent',
-          color: 'var(--text)',
-          border: 'none',
-          outline: 'none',
-          padding: '0',
-          resize: 'none',
-          fontFamily: 'inherit',
-          wordWrap: 'break-word',
-          overflowWrap: 'break-word',
-          wordBreak: 'break-all',
-          whiteSpace: 'pre-wrap',
-          boxSizing: 'border-box',
-          overflow: 'hidden',
-          hyphens: 'auto',
-        }}
-      />
+      {/* Main Content Area - Toggle between Edit and Highlight View */}
+      {highlightingEnabled && detectedPatterns.length > 0 && content && content.length > 50 ? (
+        /* Highlighted Read-Only View */
+        <div
+          onClick={() => onToggleHighlighting?.()} // Click to edit
+          style={{
+            flex: 1,
+            width: '100%',
+            maxWidth: '100%',
+            minHeight: '600px',
+            fontSize: '1.15rem',
+            lineHeight: '1.7',
+            color: 'var(--text)',
+            padding: '0',
+            fontFamily: 'inherit',
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word',
+            whiteSpace: 'pre-wrap',
+            boxSizing: 'border-box',
+            overflow: 'auto',
+            cursor: 'pointer',
+            position: 'relative'
+          }}
+          title="Click to edit"
+        >
+          <HighlightedText 
+            content={content}
+            patterns={detectedPatterns}
+            isEnabled={true}
+          />
+          {/* Edit Hint Overlay */}
+          <div style={{
+            position: 'absolute',
+            bottom: '1rem',
+            right: '1rem',
+            padding: '0.5rem 0.75rem',
+            background: 'rgba(0, 0, 0, 0.8)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            borderRadius: '6px',
+            fontSize: '0.75rem',
+            color: '#9CA3AF',
+            pointerEvents: 'none'
+          }}>
+            Click anywhere to edit
+          </div>
+        </div>
+      ) : (
+        /* Editable Textarea */
+        <textarea
+          className="diary-textarea"
+          spellCheck={false}
+          value={content}
+          onChange={handleContentChange}
+          onKeyDown={handleContentKeyDown}
+          placeholder="Your thoughts go here..."
+          style={{
+            flex: 1,
+            width: '100%',
+            maxWidth: '100%',
+            minHeight: '600px',
+            fontSize: '1.15rem',
+            lineHeight: '1.7',
+            background: 'transparent',
+            color: 'var(--text)',
+            border: 'none',
+            outline: 'none',
+            padding: '0',
+            resize: 'none',
+            fontFamily: 'inherit',
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word',
+            wordBreak: 'break-all',
+            whiteSpace: 'pre-wrap',
+            boxSizing: 'border-box',
+            overflow: 'hidden',
+            hyphens: 'auto',
+          }}
+        />
+      )}
         
         {/* Footer with Save Info and Button */}
         <div style={{ 

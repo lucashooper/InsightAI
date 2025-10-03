@@ -3,6 +3,7 @@ import type { DiaryEntry } from '../../types/diary';
 import StreakDisplay from './StreakDisplay';
 import { downloadNoteAsTxt } from '../../utils/downloadUtils';
 import { PremiumIcons } from '../icons/PremiumIcons';
+import { entryBadgeService } from '../../services/entryBadgeService';
 
 interface SidebarProps {
   notes: DiaryEntry[];
@@ -10,7 +11,7 @@ interface SidebarProps {
   onSelect: (id: string) => void;
   onAdd: () => void;
   onDelete: (id: string) => void;
-  setActiveView: (view: 'editor' | 'dashboard' | 'settings' | 'alerts') => void;
+  setActiveView: (view: 'editor' | 'dashboard' | 'settings' | 'alerts' | 'playbook') => void;
   streakData?: { currentStreak: number; longestStreak: number; lastEntryDate: string | null };
   unreadAlertsCount?: number;
   blurredNoteIds?: Set<string>;
@@ -170,6 +171,42 @@ const Sidebar: React.FC<SidebarProps> = ({
         <span>Dashboard</span>
       </button>
       
+      {/* Playbook Button */}
+      <button 
+        onClick={() => setActiveView('playbook')}
+        style={{
+          margin: '0 1rem 0.5rem 1rem',
+          width: 'calc(100% - 2rem)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          padding: '0.75rem 1rem',
+          background: 'transparent',
+          border: '1px solid rgba(156, 163, 175, 0.2)',
+          borderRadius: '8px',
+          color: 'var(--text-secondary)',
+          cursor: 'pointer',
+          transition: 'all 0.2s ease',
+          fontSize: '0.9rem',
+          fontWeight: '500',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'rgba(156, 163, 175, 0.1)';
+          e.currentTarget.style.borderColor = 'rgba(156, 163, 175, 0.4)';
+          e.currentTarget.style.color = 'var(--text)';
+          e.currentTarget.style.transform = 'translateY(-1px)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'transparent';
+          e.currentTarget.style.borderColor = 'rgba(156, 163, 175, 0.2)';
+          e.currentTarget.style.color = 'var(--text-secondary)';
+          e.currentTarget.style.transform = 'translateY(0)';
+        }}
+      >
+        <PremiumIcons.Target size={18} color="currentColor" />
+        <span>Playbook</span>
+      </button>
+      
       {/* Alerts Button */}
       <button 
         onClick={() => setActiveView('alerts')}
@@ -311,12 +348,33 @@ const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => handleNoteClick(note.id, note.title)}
                   style={{ flex: 1 }}
                 >
+                  {/* Title with Sentiment Dot and Analyzed Badge */}
                   <div style={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
                     fontSize: '0.9rem',
                     marginBottom: '0.25rem',
                     lineHeight: '1.3'
                   }}>
-                    {note.title || 'Untitled'}
+                    {/* Sentiment Indicator Dot */}
+                    <div style={{
+                      width: '7px',
+                      height: '7px',
+                      borderRadius: '50%',
+                      background: entryBadgeService.getSentimentColorHex(
+                        entryBadgeService.getBadgeForEntry(note).sentimentColor
+                      ),
+                      flexShrink: 0,
+                      boxShadow: `0 0 4px ${entryBadgeService.getSentimentColorHex(
+                        entryBadgeService.getBadgeForEntry(note).sentimentColor
+                      )}40`
+                    }} />
+                    <span style={{ flex: 1 }}>{note.title || 'Untitled'}</span>
+                    {/* Analyzed Badge */}
+                    {entryBadgeService.getBadgeForEntry(note).isAnalyzed && (
+                      <PremiumIcons.Check size={12} color="#22c55e" />
+                    )}
                   </div>
                   <div style={{ 
                     fontSize: '0.75rem', 
@@ -329,9 +387,35 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <div style={{ 
                     fontSize: '0.7rem', 
                     opacity: 0.5,
-                    lineHeight: '1.2'
+                    lineHeight: '1.2',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
                   }}>
-                    {formatDate(note.created_at)}
+                    <span>{formatDate(note.created_at)}</span>
+                    {/* Theme Icons */}
+                    <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+                      {entryBadgeService.getBadgeForEntry(note).themeIcons.map((icon, idx) => (
+                        <span
+                          key={idx}
+                          title={entryBadgeService.getThemeLabel(icon)}
+                          style={{
+                            fontSize: '0.7rem',
+                            opacity: 0.6,
+                            transition: 'opacity 0.2s ease',
+                            cursor: 'help'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.opacity = '1';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.opacity = '0.6';
+                          }}
+                        >
+                          {entryBadgeService.getThemeEmoji(icon)}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 {onToggleNotePrivacy && (

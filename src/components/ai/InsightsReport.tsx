@@ -1,5 +1,6 @@
 import React from 'react';
 import Spinner from './Spinner';
+import { PremiumIcons } from '../icons/PremiumIcons';
 
 interface KeyTakeaway {
   insight: string;
@@ -73,8 +74,13 @@ const InsightsReport: React.FC<InsightsReportProps> = ({ insights, isRegeneratin
 
       {/* Quantified Summary */}
       <div className="insights-summary">
-        <p>
-          Prism found ✨ <strong>{positiveCount}</strong> positive takeaways and 🌱 <strong>{opportunityCount}</strong> opportunities for growth in your entry.
+        <p style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            Prism found <PremiumIcons.Sparkles size={16} color="#22c55e" /> <strong>{positiveCount}</strong> positive takeaways and
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            <PremiumIcons.Sprout size={16} color="#f59e0b" /> <strong>{opportunityCount}</strong> opportunities for growth in your entry.
+          </span>
         </p>
       </div>
 
@@ -103,8 +109,9 @@ const InsightsReport: React.FC<InsightsReportProps> = ({ insights, isRegeneratin
       {/* Actionable Suggestion */}
       <div className="actionable-section">
         <div className="actionable-card">
-          <h4 className="actionable-title">
-            🎯 {insights.actionableSuggestion.title}
+          <h4 className="actionable-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <PremiumIcons.Target size={18} color="currentColor" />
+            {insights.actionableSuggestion.title}
           </h4>
           <p className="actionable-suggestion">
             {insights.actionableSuggestion.suggestion}

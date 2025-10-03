@@ -6,8 +6,10 @@ import SentimentFlowChart from './SentimentFlowChart';
 import InsightBreakdownChart from './InsightBreakdownChart';
 import MonthlyHighlights from './MonthlyHighlights';
 import GrowthOpportunities from './GrowthOpportunities';
+import ComparisonView from '../comparison/ComparisonView';
 import { storageAdapter } from '../../services/storageAdapter';
 import type { DiaryEntry } from '../../types/diary';
+import { PremiumIcons } from '../icons/PremiumIcons';
 
 interface SentimentDataPoint {
   date: string;
@@ -51,6 +53,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
   const [growthOpportunities, setGrowthOpportunities] = useState<GrowthOpportunity[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [timeRange, setTimeRange] = useState(30);
+  const [showComparison, setShowComparison] = useState(false);
 
   // Animation variants
   const containerVariants = {
@@ -216,18 +219,68 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
             disabled={isLoading}
             style={{
               padding: '0.5rem 1rem',
-              borderRadius: '8px',
-              border: '1px solid #374151',
-              background: '#1F2937',
-              color: '#E5E7EB',
-              fontSize: '0.9rem',
-              cursor: 'pointer'
+              borderRadius: '6px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-secondary)',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--bg-tertiary)';
+              e.currentTarget.style.color = 'var(--text-primary)';
+              e.currentTarget.style.borderColor = 'var(--accent-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--bg-secondary)';
+              e.currentTarget.style.color = 'var(--text-secondary)';
+              e.currentTarget.style.borderColor = 'var(--border-color)';
             }}
           >
             <option value={7}>Last 7 Days</option>
             <option value={30}>Last 30 Days</option>
             <option value={90}>Last 90 Days</option>
           </select>
+          
+          {/* Compare Entries Button */}
+          <button
+            onClick={() => setShowComparison(true)}
+            disabled={isLoading || notes.length < 2}
+            style={{
+              padding: '0.5rem 1rem',
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              color: 'var(--text-secondary)',
+              cursor: notes.length < 2 ? 'not-allowed' : 'pointer',
+              opacity: notes.length < 2 ? 0.5 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              if (notes.length >= 2) {
+                e.currentTarget.style.background = 'var(--bg-tertiary)';
+                e.currentTarget.style.color = 'var(--text-primary)';
+                e.currentTarget.style.borderColor = 'var(--accent-primary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (notes.length >= 2) {
+                e.currentTarget.style.background = 'var(--bg-secondary)';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+                e.currentTarget.style.borderColor = 'var(--border-color)';
+              }
+            }}
+          >
+            <PremiumIcons.BarChart size={16} />
+            <span>Compare Entries</span>
+          </button>
           
           {/* Export PDF Button */}
           <button
@@ -236,39 +289,68 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
             disabled={isLoading || notes.length === 0}
             style={{
               padding: '0.5rem 1rem',
-              borderRadius: '8px',
-              border: '1px solid #374151',
-              background: '#1F2937',
-              color: '#E5E7EB',
-              fontSize: '0.9rem',
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              color: 'var(--text-secondary)',
               cursor: notes.length === 0 ? 'not-allowed' : 'pointer',
               opacity: notes.length === 0 ? 0.5 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.875rem',
+              fontWeight: '500',
               transition: 'all 0.2s ease'
             }}
             onMouseEnter={(e) => {
               if (notes.length > 0) {
-                e.currentTarget.style.background = '#374151';
+                e.currentTarget.style.background = 'var(--bg-tertiary)';
+                e.currentTarget.style.color = 'var(--text-primary)';
+                e.currentTarget.style.borderColor = 'var(--accent-primary)';
               }
             }}
             onMouseLeave={(e) => {
               if (notes.length > 0) {
-                e.currentTarget.style.background = '#1F2937';
+                e.currentTarget.style.background = 'var(--bg-secondary)';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+                e.currentTarget.style.borderColor = 'var(--border-color)';
               }
             }}
           >
-            📄 Export PDF
+            <PremiumIcons.Download size={16} />
+            <span>{isLoading ? 'Generating...' : 'Export PDF'}</span>
           </button>
           
           <button
-            className="primary-button"
             onClick={() => loadDashboardData()}
             disabled={isLoading}
             style={{
-              fontSize: '0.9rem',
-              padding: '0.5rem 1rem'
+              padding: '0.5rem 1rem',
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--bg-tertiary)';
+              e.currentTarget.style.color = 'var(--text-primary)';
+              e.currentTarget.style.borderColor = 'var(--accent-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--bg-secondary)';
+              e.currentTarget.style.color = 'var(--text-secondary)';
+              e.currentTarget.style.borderColor = 'var(--border-color)';
             }}
           >
-            {isLoading ? '🔄 Loading...' : '🔄 Refresh Data'}
+            <PremiumIcons.Refresh size={16} />
+            <span>{isLoading ? 'Loading...' : 'Refresh Data'}</span>
           </button>
         </div>
       </div>
@@ -285,7 +367,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
             borderRadius: '12px',
             border: '1px solid #374151'
           }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📊</div>
+            <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
+              <PremiumIcons.BarChart size={48} color="#9CA3AF" />
+            </div>
             <h4 style={{ color: '#E5E7EB', marginBottom: '0.5rem' }}>Loading Monthly Review...</h4>
             <p style={{ margin: 0, fontSize: '0.9rem' }}>
               Analyzing your insights and patterns...
@@ -370,9 +454,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
               margin: '0 0 1rem 0', 
               color: '#E5E7EB', 
               fontSize: '1.25rem',
-              fontWeight: '600'
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
             }}>
-              📈 {getTimeRangeLabel(timeRange)} Summary
+              <PremiumIcons.BarChart size={20} color="#E5E7EB" />
+              {getTimeRangeLabel(timeRange)} Summary
             </h3>
             <div style={{ 
               display: 'grid', 
@@ -386,7 +474,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
                 border: '1px solid rgba(34, 197, 94, 0.2)',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📝</div>
+                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}>
+                  <PremiumIcons.Notes size={32} color="#22c55e" />
+                </div>
                 <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#22c55e' }}>
                   {notes.length}
                 </div>
@@ -402,7 +492,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
                 border: '1px solid rgba(34, 197, 94, 0.2)',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✨</div>
+                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}>
+                  <PremiumIcons.Sparkles size={32} color="#22c55e" />
+                </div>
                 <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#22c55e' }}>
                   {positiveInsights.length}
                 </div>
@@ -418,7 +510,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
                 border: '1px solid rgba(245, 158, 11, 0.2)',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🌱</div>
+                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}>
+                  <PremiumIcons.Sprout size={32} color="#f59e0b" />
+                </div>
                 <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#f59e0b' }}>
                   {growthOpportunities.length}
                 </div>
@@ -434,7 +528,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
                 border: '1px solid rgba(59, 130, 246, 0.2)',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🍩</div>
+                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}>
+                  <PremiumIcons.FileText size={32} color="#3b82f6" />
+                </div>
                 <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#3b82f6' }}>
                   {categoryData.length}
                 </div>
@@ -450,7 +546,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
                 border: '1px solid rgba(139, 92, 246, 0.2)',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📊</div>
+                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}>
+                  <PremiumIcons.BarChart size={32} color="#8b5cf6" />
+                </div>
                 <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#8b5cf6' }}>
                   {sentimentData.length}
                 </div>
@@ -500,6 +598,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
           </motion.div>
         )}
       </div>
+      
+      {/* Comparison Modal */}
+      {showComparison && (
+        <ComparisonView
+          entries={notes}
+          onClose={() => setShowComparison(false)}
+          onSelectEntry={(entryId) => {
+            setShowComparison(false);
+            setActiveNoteId(entryId);
+            setActiveView('editor');
+          }}
+        />
+      )}
     </div>
   );
 };

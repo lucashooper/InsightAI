@@ -1,4 +1,5 @@
 import React from 'react';
+import { PremiumIcons } from '../icons/PremiumIcons';
 
 interface PositiveInsight {
   insight: string;
@@ -69,7 +70,9 @@ const MonthlyHighlights: React.FC<MonthlyHighlightsProps> = ({ insights, timeRan
         borderRadius: '12px',
         border: '1px solid #374151'
       }}>
-        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✨</div>
+        <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
+          <PremiumIcons.Sparkles size={48} color="#9CA3AF" />
+        </div>
         <h4 style={{ color: '#E5E7EB', marginBottom: '0.5rem' }}>No Wins Yet</h4>
         <p style={{ margin: '0', fontSize: '0.9rem' }}>
           Your positive insights and achievements will appear here once you have some analysis.
@@ -91,9 +94,13 @@ const MonthlyHighlights: React.FC<MonthlyHighlightsProps> = ({ insights, timeRan
         margin: '0 0 1.5rem 0', 
         color: '#E5E7EB',
         fontSize: '1.25rem',
-        fontWeight: '600'
+        fontWeight: '600',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem'
       }}>
-        ✨ Your Wins {getTimeRangeLabel(timeRange)} ({insights.length})
+        <PremiumIcons.Sparkles size={20} color="#22c55e" />
+        Your Wins {getTimeRangeLabel(timeRange)} ({insights.length})
       </h3>
       
       <div style={{ display: 'grid', gap: '1rem' }}>
@@ -187,9 +194,14 @@ const MonthlyHighlights: React.FC<MonthlyHighlightsProps> = ({ insights, timeRan
         padding: '1rem',
         background: 'rgba(34, 197, 94, 0.05)',
         borderRadius: '8px',
-        border: '1px solid rgba(34, 197, 94, 0.1)'
+        border: '1px solid rgba(34, 197, 94, 0.1)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '0.5rem'
       }}>
-        🎉 You've made {insights.length} positive discoveries {getTimeRangeLabel(timeRange).toLowerCase()}! Keep up the great work.
+        <PremiumIcons.Trophy size={16} color="#22c55e" />
+        You've made {insights.length} positive discoveries {getTimeRangeLabel(timeRange).toLowerCase()}! Keep up the great work.
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import React from 'react';
+import { PremiumIcons } from '../icons/PremiumIcons';
 
 interface GrowthOpportunity {
   insight: string;
@@ -69,7 +70,9 @@ const GrowthOpportunities: React.FC<GrowthOpportunitiesProps> = ({ insights, tim
         borderRadius: '12px',
         border: '1px solid #374151'
       }}>
-        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🌱</div>
+        <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
+          <PremiumIcons.Sprout size={48} color="#9CA3AF" />
+        </div>
         <h4 style={{ color: '#E5E7EB', marginBottom: '0.5rem' }}>No Growth Areas Yet</h4>
         <p style={{ margin: '0', fontSize: '0.9rem' }}>
           Your growth opportunities will appear here once you have some analysis.
@@ -91,9 +94,13 @@ const GrowthOpportunities: React.FC<GrowthOpportunitiesProps> = ({ insights, tim
         margin: '0 0 1.5rem 0', 
         color: '#E5E7EB',
         fontSize: '1.25rem',
-        fontWeight: '600'
+        fontWeight: '600',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem'
       }}>
-        🌱 Your Focus Areas {getTimeRangeLabel(timeRange)} ({insights.length})
+        <PremiumIcons.Sprout size={20} color="#f59e0b" />
+        Your Focus Areas {getTimeRangeLabel(timeRange)} ({insights.length})
       </h3>
       
       <div style={{ display: 'grid', gap: '1rem' }}>
@@ -187,9 +194,14 @@ const GrowthOpportunities: React.FC<GrowthOpportunitiesProps> = ({ insights, tim
         padding: '1rem',
         background: 'rgba(245, 158, 11, 0.05)',
         borderRadius: '8px',
-        border: '1px solid rgba(245, 158, 11, 0.1)'
+        border: '1px solid rgba(245, 158, 11, 0.1)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '0.5rem'
       }}>
-        🌱 You have {insights.length} growth opportunities to explore {getTimeRangeLabel(timeRange).toLowerCase()}. Each one is a step toward personal development.
+        <PremiumIcons.Target size={16} color="#f59e0b" />
+        You have {insights.length} growth opportunities to explore {getTimeRangeLabel(timeRange).toLowerCase()}. Each one is a step toward personal development.
       </div>
     </div>
   );

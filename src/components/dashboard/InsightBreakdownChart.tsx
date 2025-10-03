@@ -1,5 +1,6 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { PremiumIcons } from '../icons/PremiumIcons';
 
 interface CategoryDataPoint {
   name: string;
@@ -86,7 +87,9 @@ const InsightBreakdownChart: React.FC<InsightBreakdownChartProps> = ({ data, tim
         borderRadius: '12px',
         border: '1px solid #374151'
       }}>
-        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🍩</div>
+        <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
+          <PremiumIcons.FileText size={48} color="#9CA3AF" />
+        </div>
         <h4 style={{ color: '#E5E7EB', marginBottom: '0.5rem' }}>No Insights Yet</h4>
         <p style={{ margin: '0', fontSize: '0.9rem' }}>
           Your insight categories will appear here once you have some analysis.
@@ -113,9 +116,14 @@ const InsightBreakdownChart: React.FC<InsightBreakdownChartProps> = ({ data, tim
         color: '#E5E7EB',
         fontSize: '1.25rem',
         fontWeight: '600',
-        textAlign: 'center'
+        textAlign: 'center',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '0.5rem'
       }}>
-        🍩 Insight Categories
+        <PremiumIcons.FileText size={20} color="#E5E7EB" />
+        Insight Categories
       </h3>
       
       <ResponsiveContainer width="100%" height={300}>
