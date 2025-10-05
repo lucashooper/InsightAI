@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { PremiumIcons } from '../icons/PremiumIcons';
 import { actionableInsightsService } from '../../services/actionableInsightsService';
+import { dailyProtocolService } from '../../services/dailyProtocolService';
+import Emoji from '../common/Emoji';
 import type { ActionableInsight } from '../../types/actionableInsight';
+import type { DailyProtocol } from '../../types/dailyProtocol';
 
 interface PlaybookViewProps {
   onNavigateToEntry?: (entryId: string) => void;
@@ -11,6 +14,9 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry }) => {
   const [insights, setInsights] = useState<ActionableInsight[]>([]);
   const [filter, setFilter] = useState<'all' | 'suggested' | 'active' | 'completed'>('active');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showProtocolForm, setShowProtocolForm] = useState(false);
+  const [dailyProtocols, setDailyProtocols] = useState<DailyProtocol[]>([]);
+  const [activeSection, setActiveSection] = useState<'strategies' | 'protocols'>('protocols');
   const [newStrategy, setNewStrategy] = useState({
     title: '',
     description: '',
@@ -32,9 +38,22 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry }) => {
 
   const commonEmojis = ['✨', '💪', '🏃', '👥', '🧘', '😴', '🥗', '🎯', '🌟', '💡', '🔥', '🌈', '🎨', '📚', '🎵', '🌱', '☕', '🍃', '💝', '🌸'];
 
+  const [newProtocol, setNewProtocol] = useState({
+    title: '',
+    description: '',
+    emoji: '✨',
+    category: 'anytime' as DailyProtocol['category'],
+    estimatedTime: '5-10 minutes'
+  });
+
   useEffect(() => {
     loadInsights();
+    loadProtocols();
   }, [filter]);
+
+  const loadProtocols = () => {
+    setDailyProtocols(dailyProtocolService.getActiveProtocols());
+  };
 
   const loadInsights = () => {
     if (filter === 'all') {
@@ -53,6 +72,22 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry }) => {
     if (confirm('Remove this insight from your playbook?')) {
       actionableInsightsService.deleteInsight(insightId);
       loadInsights();
+    }
+  };
+
+  const handleProtocolToggle = (protocolId: string) => {
+    if (dailyProtocolService.isCompletedToday(protocolId)) {
+      dailyProtocolService.uncompleteProtocol(protocolId);
+    } else {
+      dailyProtocolService.completeProtocol(protocolId);
+    }
+    loadProtocols(); // Refresh to show updated state
+  };
+
+  const handleDeleteProtocol = (protocolId: string) => {
+    if (confirm('Delete this daily protocol?')) {
+      dailyProtocolService.deleteProtocol(protocolId);
+      loadProtocols();
     }
   };
 
@@ -318,7 +353,7 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry }) => {
           </p>
         </div>
         <button
-          onClick={() => setShowCreateForm(true)}
+          onClick={() => activeSection === 'protocols' ? setShowProtocolForm(true) : setShowCreateForm(true)}
           style={{
             padding: '0.75rem 1.25rem',
             background: '#3b82f6',
@@ -346,11 +381,68 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry }) => {
           }}
         >
           <PremiumIcons.Plus size={18} />
-          <span>Add Strategy</span>
+          <span>{activeSection === 'protocols' ? 'Add Protocol' : 'Add Strategy'}</span>
         </button>
       </div>
 
-      {/* Filter Tabs */}
+      {/* Section Tabs - Daily Protocols vs Strategies */}
+      <div style={{
+        display: 'flex',
+        gap: '0.5rem',
+        marginBottom: '2rem',
+        padding: '0.5rem',
+        background: 'rgba(255, 255, 255, 0.03)',
+        borderRadius: '12px',
+        border: '1px solid rgba(255, 255, 255, 0.08)'
+      }}>
+        <button
+          onClick={() => setActiveSection('protocols')}
+          style={{
+            flex: 1,
+            padding: '0.75rem 1rem',
+            background: activeSection === 'protocols' ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+            border: activeSection === 'protocols' ? '1px solid #3b82f6' : '1px solid transparent',
+            borderRadius: '8px',
+            color: activeSection === 'protocols' ? '#3b82f6' : '#9CA3AF',
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+            fontWeight: activeSection === 'protocols' ? '600' : '400',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem'
+          }}
+        >
+          <span style={{ fontSize: '1.1rem' }}>📅</span>
+          <span>Daily Protocols</span>
+        </button>
+        <button
+          onClick={() => setActiveSection('strategies')}
+          style={{
+            flex: 1,
+            padding: '0.75rem 1rem',
+            background: activeSection === 'strategies' ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+            border: activeSection === 'strategies' ? '1px solid #3b82f6' : '1px solid transparent',
+            borderRadius: '8px',
+            color: activeSection === 'strategies' ? '#3b82f6' : '#9CA3AF',
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+            fontWeight: activeSection === 'strategies' ? '600' : '400',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem'
+          }}
+        >
+          <span style={{ fontSize: '1.1rem' }}>💡</span>
+          <span>Strategies</span>
+        </button>
+      </div>
+
+      {/* Strategies Filter Tabs */}
+      {activeSection === 'strategies' && (
       <div style={{
         display: 'flex',
         gap: '0.5rem',
@@ -383,9 +475,10 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry }) => {
           </button>
         ))}
       </div>
+      )}
 
       {/* Insights Grid */}
-      {insights.length === 0 ? (
+      {activeSection === 'strategies' && (insights.length === 0 ? (
         <div style={{
           textAlign: 'center',
           padding: '4rem 2rem',
@@ -410,6 +503,243 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry }) => {
           {insights.map(insight => (
             <InsightCard key={insight.id} insight={insight} />
           ))}
+        </div>
+      ))}
+
+      {/* Daily Protocols Section */}
+      {activeSection === 'protocols' && (
+        <div>
+          {dailyProtocols.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '4rem 2rem',
+              color: '#9CA3AF'
+            }}>
+              <span style={{ fontSize: '4rem' }}>📅</span>
+              <h3 style={{ margin: '1rem 0 0.5rem 0', color: '#E5E7EB' }}>
+                No Daily Protocols Yet
+              </h3>
+              <p style={{ margin: 0, fontSize: '0.9rem' }}>
+                Create recurring daily habits to track your progress and build streaks.
+              </p>
+              <button
+                onClick={() => setShowProtocolForm(true)}
+                style={{
+                  marginTop: '1.5rem',
+                  padding: '0.75rem 1.5rem',
+                  background: '#3b82f6',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: 'white',
+                  fontSize: '0.9rem',
+                  cursor: 'pointer',
+                  fontWeight: '600'
+                }}
+              >
+                Create Your First Protocol
+              </button>
+            </div>
+          ) : (
+            <div style={{
+              display: 'grid',
+              gap: '1rem'
+            }}>
+              {dailyProtocols.map(protocol => {
+                const stats = dailyProtocolService.getStats(protocol.id);
+                const isCompletedToday = dailyProtocolService.isCompletedToday(protocol.id);
+                const history = dailyProtocolService.getCompletionHistory(protocol.id, 30);
+
+                return (
+                  <div
+                    key={protocol.id}
+                    style={{
+                      padding: '1.5rem',
+                      background: isCompletedToday 
+                        ? 'rgba(34, 197, 94, 0.08)' 
+                        : 'rgba(255, 255, 255, 0.03)',
+                      border: isCompletedToday
+                        ? '1px solid rgba(34, 197, 94, 0.3)'
+                        : '1px solid rgba(255, 255, 255, 0.08)',
+                      borderRadius: '12px',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                      {/* Checkbox */}
+                      <button
+                        onClick={() => handleProtocolToggle(protocol.id)}
+                        style={{
+                          width: '2.5rem',
+                          height: '2.5rem',
+                          borderRadius: '50%',
+                          border: isCompletedToday ? '2px solid #22c55e' : '2px solid rgba(255, 255, 255, 0.2)',
+                          background: isCompletedToday ? '#22c55e' : 'transparent',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '1.2rem',
+                          transition: 'all 0.2s ease',
+                          flexShrink: 0
+                        }}
+                      >
+                        {isCompletedToday && '✓'}
+                      </button>
+
+                      <div style={{ flex: 1 }}>
+                        {/* Title and emoji */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          marginBottom: '0.5rem'
+                        }}>
+                          <Emoji emoji={protocol.emoji} size={24} />
+                          <h3 style={{
+                            margin: 0,
+                            fontSize: '1.1rem',
+                            fontWeight: '600',
+                            color: '#E5E7EB',
+                            textDecoration: isCompletedToday ? 'line-through' : 'none',
+                            opacity: isCompletedToday ? 0.7 : 1
+                          }}>
+                            {protocol.title}
+                          </h3>
+                        </div>
+
+                        {protocol.description && (
+                          <p style={{
+                            margin: '0 0 1rem 0',
+                            fontSize: '0.875rem',
+                            color: '#9CA3AF',
+                            lineHeight: '1.5'
+                          }}>
+                            {protocol.description}
+                          </p>
+                        )}
+
+                        {/* Meta info */}
+                        <div style={{
+                          display: 'flex',
+                          gap: '1rem',
+                          flexWrap: 'wrap',
+                          marginBottom: '1rem',
+                          fontSize: '0.75rem',
+                          color: '#6b7280'
+                        }}>
+                          <div style={{
+                            padding: '0.25rem 0.5rem',
+                            background: 'rgba(59, 130, 246, 0.1)',
+                            border: '1px solid rgba(59, 130, 246, 0.2)',
+                            borderRadius: '4px',
+                            color: '#3b82f6'
+                          }}>
+                            {dailyProtocolService.getCategoryIcon(protocol.category)} {dailyProtocolService.getCategoryLabel(protocol.category)}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <PremiumIcons.Clock size={12} color="#6b7280" />
+                            {protocol.estimatedTime}
+                          </div>
+                        </div>
+
+                        {/* Streak Stats */}
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(3, 1fr)',
+                          gap: '1rem',
+                          padding: '1rem',
+                          background: 'rgba(255, 255, 255, 0.03)',
+                          borderRadius: '8px',
+                          marginBottom: '1rem'
+                        }}>
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{
+                              fontSize: '1.5rem',
+                              fontWeight: '700',
+                              color: stats.currentStreak > 0 ? '#f59e0b' : '#6b7280',
+                              marginBottom: '0.25rem'
+                            }}>
+                              🔥 {stats.currentStreak}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>
+                              Current Streak
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{
+                              fontSize: '1.5rem',
+                              fontWeight: '700',
+                              color: '#22c55e',
+                              marginBottom: '0.25rem'
+                            }}>
+                              🏆 {stats.longestStreak}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>
+                              Best Streak
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{
+                              fontSize: '1.5rem',
+                              fontWeight: '700',
+                              color: '#3b82f6',
+                              marginBottom: '0.25rem'
+                            }}>
+                              {stats.completionRate}%
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>
+                              Completion
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 30-day history visualization */}
+                        <div style={{
+                          display: 'flex',
+                          gap: '2px',
+                          marginBottom: '0.75rem'
+                        }}>
+                          {history.slice(-30).map((day, idx) => (
+                            <div
+                              key={idx}
+                              title={day.date}
+                              style={{
+                                flex: 1,
+                                height: '24px',
+                                background: day.completed ? '#22c55e' : 'rgba(255, 255, 255, 0.08)',
+                                borderRadius: '2px',
+                                transition: 'all 0.2s ease'
+                              }}
+                            />
+                          ))}
+                        </div>
+
+                        {/* Delete button */}
+                        <button
+                          onClick={() => handleDeleteProtocol(protocol.id)}
+                          style={{
+                            padding: '0.5rem 0.75rem',
+                            background: 'transparent',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            borderRadius: '6px',
+                            color: '#ef4444',
+                            fontSize: '0.8rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                          }}
+                        >
+                          <PremiumIcons.Trash size={14} color="#ef4444" />
+                          <span>Delete Protocol</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -729,6 +1059,294 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry }) => {
                   }}
                 >
                   Create Strategy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Create Daily Protocol Modal */}
+      {showProtocolForm && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '2rem'
+        }}>
+          <div style={{
+            background: 'var(--bg-primary)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '16px',
+            padding: '2rem',
+            maxWidth: '600px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'auto'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1.5rem'
+            }}>
+              <h2 style={{
+                margin: 0,
+                fontSize: '1.5rem',
+                color: '#E5E7EB',
+                fontWeight: '600'
+              }}>
+                Create Daily Protocol
+              </h2>
+              <button
+                onClick={() => setShowProtocolForm(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#9CA3AF',
+                  cursor: 'pointer',
+                  fontSize: '1.5rem',
+                  padding: '0.25rem'
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              dailyProtocolService.saveProtocol({
+                title: newProtocol.title,
+                description: newProtocol.description,
+                emoji: newProtocol.emoji,
+                category: newProtocol.category,
+                estimatedTime: newProtocol.estimatedTime,
+                isActive: true
+              });
+              setNewProtocol({
+                title: '',
+                description: '',
+                emoji: '✨',
+                category: 'anytime',
+                estimatedTime: '5-10 minutes'
+              });
+              setShowProtocolForm(false);
+              loadProtocols();
+            }}>
+              {/* Emoji Picker */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '0.5rem',
+                  fontSize: '0.875rem',
+                  color: '#9CA3AF',
+                  fontWeight: '500'
+                }}>
+                  Choose an emoji
+                </label>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(10, 1fr)',
+                  gap: '0.5rem',
+                  padding: '1rem',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255, 255, 255, 0.08)'
+                }}>
+                  {commonEmojis.map(emoji => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => setNewProtocol({...newProtocol, emoji})}
+                      style={{
+                        padding: '0.5rem',
+                        background: newProtocol.emoji === emoji ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
+                        border: newProtocol.emoji === emoji ? '2px solid #3b82f6' : '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '6px',
+                        fontSize: '1.5rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Title */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '0.5rem',
+                  fontSize: '0.875rem',
+                  color: '#9CA3AF',
+                  fontWeight: '500'
+                }}>
+                  Protocol name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newProtocol.title}
+                  onChange={(e) => setNewProtocol({...newProtocol, title: e.target.value})}
+                  placeholder="e.g., Morning meditation"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '8px',
+                    color: '#E5E7EB',
+                    fontSize: '0.95rem',
+                    outline: 'none',
+                    transition: 'border-color 0.2s ease'
+                  }}
+                  onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
+                  onBlur={(e) => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+                />
+              </div>
+
+              {/* Description */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{
+                  display: 'block',
+                  marginBottom: '0.5rem',
+                  fontSize: '0.875rem',
+                  color: '#9CA3AF',
+                  fontWeight: '500'
+                }}>
+                  Description
+                </label>
+                <textarea
+                  value={newProtocol.description}
+                  onChange={(e) => setNewProtocol({...newProtocol, description: e.target.value})}
+                  placeholder="What does this daily habit involve?"
+                  rows={2}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '8px',
+                    color: '#E5E7EB',
+                    fontSize: '0.95rem',
+                    outline: 'none',
+                    resize: 'vertical',
+                    fontFamily: 'inherit',
+                    transition: 'border-color 0.2s ease'
+                  }}
+                  onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
+                  onBlur={(e) => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+                />
+              </div>
+
+              {/* Category & Time */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
+                <div>
+                  <label style={{
+                    display: 'block',
+                    marginBottom: '0.5rem',
+                    fontSize: '0.875rem',
+                    color: '#9CA3AF',
+                    fontWeight: '500'
+                  }}>
+                    Time of day
+                  </label>
+                  <select
+                    value={newProtocol.category}
+                    onChange={(e) => setNewProtocol({...newProtocol, category: e.target.value as any})}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '8px',
+                      color: '#E5E7EB',
+                      fontSize: '0.95rem',
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="morning">🌅 Morning</option>
+                    <option value="afternoon">☀️ Afternoon</option>
+                    <option value="evening">🌙 Evening</option>
+                    <option value="anytime">⏰ Anytime</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{
+                    display: 'block',
+                    marginBottom: '0.5rem',
+                    fontSize: '0.875rem',
+                    color: '#9CA3AF',
+                    fontWeight: '500'
+                  }}>
+                    Estimated time
+                  </label>
+                  <input
+                    type="text"
+                    value={newProtocol.estimatedTime}
+                    onChange={(e) => setNewProtocol({...newProtocol, estimatedTime: e.target.value})}
+                    placeholder="e.g., 5-10 minutes"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '8px',
+                      color: '#E5E7EB',
+                      fontSize: '0.95rem',
+                      outline: 'none',
+                      transition: 'border-color 0.2s ease'
+                    }}
+                    onFocus={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
+                    onBlur={(e) => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowProtocolForm(false)}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'transparent',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '8px',
+                    color: '#9CA3AF',
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: '#3b82f6',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: 'white',
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  Create Protocol
                 </button>
               </div>
             </form>
