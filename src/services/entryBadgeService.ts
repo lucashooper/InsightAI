@@ -136,10 +136,14 @@ class EntryBadgeService {
    * Generate badge data for an entry
    */
   getBadgeForEntry(entry: DiaryEntry): EntryBadge {
+    // Check if entry has been analyzed
+    const hasAnalysis = !!(entry.isAnalyzed || entry.ai_structured_insights || entry.ai_insights);
+    
     return {
-      sentimentColor: this.determineSentimentColor(entry),
+      // Show gray for unanalyzed entries, otherwise determine color
+      sentimentColor: hasAnalysis ? this.determineSentimentColor(entry) : 'gray',
       themeIcons: this.extractThemeIcons(entry),
-      isAnalyzed: !!entry.isAnalyzed || !!entry.ai_structured_insights
+      isAnalyzed: hasAnalysis
     };
   }
 

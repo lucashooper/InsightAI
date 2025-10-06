@@ -1,0 +1,12 @@
+27th recap
+September 28, 2025 at 12:23 AM
+
+Pretty good, 7/ 10.
+
+Was fairly locked in, I did sleep in a bit, I woke up at 10 or something and then napped a bit longer and got out of bed at like 11:30 or something. Not sure if this is inherently bad, as I know that when I am tired during the day I am way less productive, but, that morning fatigue when you are in bed is kind of inevitable and maybe I should of just pushed through it.
+
+anyway, woke up, for the most part, I stuck to the Signal over Noise routine, didn't really go on IG or tiktok, I did briefly go on tiktok, but for the most part I didn't. I can definitely feel my focus increase when I do this, so it is definitely something I should stick to.
+
+Wake up, don't check notifications etc, maybe briefly look at my phone to see if anyone has called me, but no IG, no tiktok. In fact I can leave my phone on do not disturb, near the bed, away from the work station (eg where my laptop is) and then go on the laptop, few tabs open, no YT etc, just Lock in website, and the stuff I need to work on. And then a clear notepad list of what needs to be done. Thats the ideal schedule, and then periodically / after a few hours checking whatsapp in case something important is going on.
+
+Today I got some decent work done, the git structure is looking much cleaner now. I definitely could of been quicker and more efficient, and I should sometimes, think more medium term about spending time creating better systems and structures so I can operate more efficiently. For example, I have been constantly running SQL commands manually, when apparently I can just install the Supabse CLI in Windsurf and the AI can run them for me, this would be much more efficient and save me time, in fact, lets do it now.

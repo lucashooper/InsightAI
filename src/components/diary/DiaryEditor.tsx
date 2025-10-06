@@ -11,15 +11,19 @@ interface DiaryEditorProps {
   detectedPatterns?: DetectedPattern[];
   highlightingEnabled?: boolean;
   onToggleHighlighting?: () => void;
+  isFocusMode?: boolean;
+  onToggleFocusMode?: () => void;
 }
 
 const DiaryEditor: React.FC<DiaryEditorProps> = ({ 
   note, 
-  onSave, 
+  onSave,
   onNavigateToAnalysis,
   detectedPatterns = [],
   highlightingEnabled = false,
-  onToggleHighlighting
+  onToggleHighlighting,
+  isFocusMode = false,
+  onToggleFocusMode
 }) => {
   console.log('📝 DiaryEditor render:', { 
     hasNote: !!note, 
@@ -387,7 +391,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
       position: 'relative'
     }}>
       {/* Title Input */}
-      <div style={{ marginBottom: '1rem' }}>
+      <div style={{ marginBottom: '1rem', marginTop: '2.5rem' }}>
         <input
           className="diary-title-input"
           spellCheck={false}
@@ -525,6 +529,42 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
           <span>{isRecording ? 'Recording...' : 'Voice Input'}</span>
         </button>
 
+        {/* Fullscreen Toggle Button - Icon Only */}
+        {onToggleFocusMode && (
+          <button
+            onClick={onToggleFocusMode}
+            title={isFocusMode ? 'Exit Focus Mode (F11)' : 'Enter Focus Mode (F11)'}
+            aria-label={isFocusMode ? 'Exit focus mode' : 'Enter focus mode'}
+            style={{
+              padding: '0.5rem',
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '6px',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '1.1rem',
+              transition: 'all 0.2s ease',
+              minWidth: '36px',
+              minHeight: '36px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--bg-tertiary)';
+              e.currentTarget.style.color = 'var(--text-primary)';
+              e.currentTarget.style.borderColor = 'var(--accent-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--bg-secondary)';
+              e.currentTarget.style.color = 'var(--text-secondary)';
+              e.currentTarget.style.borderColor = 'var(--border-color)';
+            }}
+          >
+            <span>{isFocusMode ? '⏹️' : '⛶'}</span>
+          </button>
+        )}
+
         {/* Spacer to push analysis button to the right */}
         <div style={{ flex: 1 }} />
 
@@ -533,7 +573,8 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
           <div style={{
             display: 'flex',
             gap: '0.5rem',
-            alignItems: 'center'
+            alignItems: 'center',
+            marginRight: '1rem'
           }}>
             {note.analysisSummary.positiveCount > 0 && (
               <div style={{
@@ -781,54 +822,23 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
           maxWidth: '100%'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: 0, overflow: 'hidden' }}>
-            <small style={{ opacity: 0.6, fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
-              Press Enter on title or Ctrl+S to save
-            </small>
-            {isSaving && (
-              <small style={{ color: 'var(--accent)', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
+            {isSaving ? (
+              <small style={{ color: 'var(--accent-primary)', fontSize: '0.875rem', whiteSpace: 'nowrap', fontWeight: '500' }}>
                 Saving...
               </small>
-            )}
-            {lastSaved && !isSaving && (
-              <small style={{ opacity: 0.5, fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
-                Last saved: {lastSaved.toLocaleTimeString()}
+            ) : lastSaved ? (
+              <small style={{ opacity: 0.5, fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
+                Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </small>
+            ) : (
+              <small style={{ opacity: 0.4, fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
+                Auto-saves as you type
               </small>
             )}
           </div>
-          <button 
-            onClick={handleSave}
-            disabled={isSaving}
-            style={{
-              padding: '0.75rem 1.5rem',
-              background: isSaving ? '#666' : 'var(--primary)',
-              color: 'var(--text)',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: isSaving ? 'not-allowed' : 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: '500',
-              transition: 'all 0.2s ease',
-              flexShrink: 0,
-              marginLeft: '1rem',
-            }}
-            onMouseEnter={(e) => {
-              if (!isSaving) {
-                e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(56, 189, 248, 0.25)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isSaving) {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-              }
-            }}
-          >
-            {isSaving ? 'Saving...' : 'Save'}
-          </button>
         </div>
     </div>
   );
 };
 
-export default DiaryEditor; 
+export default DiaryEditor;

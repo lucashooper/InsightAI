@@ -1,0 +1,12 @@
+24th, night time
+September 24, 2025 at 11:21 PM
+
+Haven't been locked in recently when I have been at home, gooning a bit too much, playing crossy road and getting distracted, biting my nails.
+
+Recently, my bad habits and lack of focus kind of converged and culminated into a big blunder with the remelife project, for some reason, somehow the Wallet RCB started routing to the old RCB, lots of things started breaking, it all began when there were some Netlify deploy issues, which I believe had something to do with NextJS. Anyway, I could've saved myself a lot of time and annoyance if I was more organised and thorough and had forced myself to fix the git push stuff from before. We are nearly at the finish line for Luki now, everything looks quite good, the X is coming together, my Dad is getting reputable people to follow and affiliate themself with the project. The market is in a bit of a downturn now, but it should turn around soon, in October, thats generally how it works.
+
+So the main point is, stay focused, don't fuck things up. I shouldn't need to lock in like crazy, tommorow I need to just ensure everything works again, make the codebase more clear, eg one NextJS project? Fix git deployment, better backup system, multi git branches (maybe) etc, and I am ofc going to hangout with my friends a bit while I am here, but I should try stay clearheaded and not let myself get too distracted.
+
+When I think about Blui and Gramps, two projects with massive opportunity, there were several major key blunders I made. Blui was mainly not ensuring I got my own wallets / not a proper sell strategy, so I missed out on tens of thousands, possibly hundreds of thousands of profit ( we all did), and for Gramps, we overcomplicated the website, but most importantly, we didn't do a pumpfun fair launch and majorly fucked up by having loads and loads of insider wallets.
+
+Some things are hard to predict, but I should indeed try and be as thorough as possible for Luki to ensure its sucess, ofc, it shouldn't, in theory be the end of the world if there are a few issues and bugs for the Remelife launch, thats expected for a lot of projects, but I need to be clear headed and in control, we all do. Especially since I will be across the world from my Brother and my Father. Anddddd I just gooned at night.. Debatable how bad it is at the end of the day though.

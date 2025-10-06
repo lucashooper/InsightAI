@@ -2,16 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../../contexts/ThemeContext';
 import MigrationHelper from '../migration/MigrationHelper';
+import { importDiaryEntries } from '../../utils/importDiaryEntries';
 
 interface SettingsViewProps {
   setActiveView: React.Dispatch<React.SetStateAction<'editor' | 'dashboard' | 'settings' | 'alerts'>>;
 }
-
 const SettingsView: React.FC<SettingsViewProps> = ({ setActiveView }) => {
   const { theme, setTheme } = useTheme();
   const [remindersEnabled, setRemindersEnabled] = useState(false);
   const [reminderTime, setReminderTime] = useState('20:00');
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
 
   useEffect(() => {
     // Load saved settings
@@ -94,6 +96,25 @@ const SettingsView: React.FC<SettingsViewProps> = ({ setActiveView }) => {
           });
         }, delay);
       });
+    }
+  };
+
+  const handleImportDiaryEntries = async () => {
+    setIsImporting(true);
+    setImportResult(null);
+    
+    try {
+      const result = await importDiaryEntries();
+      setImportResult(result);
+    } catch (error) {
+      console.error('Import failed:', error);
+      setImportResult({
+        success: 0,
+        failed: 1,
+        errors: [error instanceof Error ? error.message : 'Unknown error occurred']
+      });
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -369,11 +390,112 @@ const SettingsView: React.FC<SettingsViewProps> = ({ setActiveView }) => {
         )}
       </motion.div>
 
-      {/* Data Migration */}
+      {/* Import Diary Entries */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
+        style={{
+          background: 'var(--bg-secondary)',
+          borderRadius: '12px',
+          border: '1px solid var(--border-color)',
+          padding: '1.5rem',
+          marginTop: '2rem'
+        }}
+      >
+        <h2 style={{ 
+          margin: '0 0 1rem 0', 
+          color: 'var(--text-primary)', 
+          fontSize: '1.5rem',
+          fontWeight: '600'
+        }}>
+          📥 Import Diary Entries
+        </h2>
+        <p style={{ 
+          margin: '0 0 1.5rem 0', 
+          color: 'var(--text-secondary)', 
+          fontSize: '0.9rem' 
+        }}>
+          Import all diary entries from the Diary_entries folder into your notes
+        </p>
+        
+        <button
+          onClick={handleImportDiaryEntries}
+          disabled={isImporting}
+          style={{
+            padding: '0.75rem 1.5rem',
+            borderRadius: '8px',
+            border: 'none',
+            background: isImporting ? 'var(--text-secondary)' : 'var(--accent-primary)',
+            color: 'white',
+            cursor: isImporting ? 'not-allowed' : 'pointer',
+            fontSize: '1rem',
+            fontWeight: '500',
+            transition: 'all 0.2s ease',
+            opacity: isImporting ? 0.6 : 1
+          }}
+        >
+          {isImporting ? '⏳ Importing...' : '📥 Import Entries'}
+        </button>
+
+        {importResult && (
+          <div style={{
+            marginTop: '1.5rem',
+            padding: '1rem',
+            borderRadius: '8px',
+            background: importResult.failed === 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+            border: `1px solid ${importResult.failed === 0 ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
+          }}>
+            <p style={{ 
+              margin: '0 0 0.5rem 0', 
+              color: 'var(--text-primary)', 
+              fontWeight: '600' 
+            }}>
+              {importResult.failed === 0 ? '✅ Import Successful!' : '⚠️ Import Completed with Errors'}
+            </p>
+            <p style={{ margin: '0 0 0.5rem 0', color: 'var(--text-secondary)' }}>
+              Successfully imported: <strong>{importResult.success}</strong> entries
+            </p>
+            {importResult.failed > 0 && (
+              <>
+                <p style={{ margin: '0 0 0.5rem 0', color: 'var(--text-secondary)' }}>
+                  Failed: <strong>{importResult.failed}</strong> entries
+                </p>
+                {importResult.errors.length > 0 && (
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <p style={{ margin: '0 0 0.25rem 0', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                      Errors:
+                    </p>
+                    {importResult.errors.map((error, idx) => (
+                      <p key={idx} style={{ 
+                        margin: '0.25rem 0', 
+                        color: 'var(--accent-danger)', 
+                        fontSize: '0.875rem',
+                        fontFamily: 'monospace'
+                      }}>
+                        • {error}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+            <p style={{ 
+              margin: '0.75rem 0 0 0', 
+              color: 'var(--text-secondary)', 
+              fontSize: '0.875rem' 
+            }}>
+              💡 Refresh the page to see your imported entries in the notes list
+            </p>
+          </div>
+        )}
+      </motion.div>
+
+      {/* Data Migration */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
         style={{
           background: 'var(--bg-secondary)',
           borderRadius: '12px',

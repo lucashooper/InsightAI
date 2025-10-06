@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { DiaryEntry } from '../../types/diary';
 import StreakDisplay from './StreakDisplay';
 import { downloadNoteAsTxt } from '../../utils/downloadUtils';
 import { PremiumIcons } from '../icons/PremiumIcons';
 import { entryBadgeService } from '../../services/entryBadgeService';
+import ContextMenu from './ContextMenu';
 
 interface SidebarProps {
   notes: DiaryEntry[];
@@ -11,6 +12,7 @@ interface SidebarProps {
   onSelect: (id: string) => void;
   onAdd: () => void;
   onDelete: (id: string) => void;
+  onRename: (id: string, newTitle: string) => void;
   setActiveView: (view: 'editor' | 'dashboard' | 'settings' | 'alerts' | 'playbook') => void;
   streakData?: { currentStreak: number; longestStreak: number; lastEntryDate: string | null };
   unreadAlertsCount?: number;
@@ -24,12 +26,17 @@ const Sidebar: React.FC<SidebarProps> = ({
   onSelect, 
   onAdd, 
   onDelete,
+  onRename,
   setActiveView,
   streakData,
   unreadAlertsCount = 0,
   blurredNoteIds = new Set(),
   onToggleNotePrivacy
 }) => {
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; noteId: string } | null>(null);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState<string>('');
+  
   console.log('📋 Sidebar render:', {
     notesCount: notes.length,
     selectedId,
@@ -42,7 +49,20 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const getPreview = (content: string) => {
-    return content.length > 50 ? content.substring(0, 50) + '...' : content;
+    if (!content) return 'No content';
+    
+    // Find first complete sentence or take first 80 chars
+    const sentenceEnd = content.search(/[.!?]\s/);
+    if (sentenceEnd !== -1 && sentenceEnd <= 80) {
+      return content.substring(0, sentenceEnd + 1);
+    }
+    
+    // Fallback: 80 chars max, try to break at word boundary
+    if (content.length <= 80) return content;
+    
+    const truncated = content.substring(0, 80);
+    const lastSpace = truncated.lastIndexOf(' ');
+    return (lastSpace > 60 ? truncated.substring(0, lastSpace) : truncated) + '...';
   };
 
   const handleNoteClick = (noteId: string, noteTitle: string) => {
@@ -64,6 +84,34 @@ const Sidebar: React.FC<SidebarProps> = ({
   const handleDownloadClick = (note: DiaryEntry) => {
     console.log('📥 Sidebar download button clicked:', { noteId: note.id, noteTitle: note.title });
     downloadNoteAsTxt(note);
+  };
+
+  const startRename = (noteId: string, currentTitle: string) => {
+    setEditingNoteId(noteId);
+    setEditingTitle(currentTitle);
+  };
+
+  const finishRename = () => {
+    if (editingNoteId) {
+      const trimmedTitle = editingTitle.trim();
+      if (trimmedTitle) {
+        onRename(editingNoteId, trimmedTitle);
+        setEditingNoteId(null);
+        setEditingTitle('');
+      } else {
+        // Validation: restore original title if empty
+        const originalNote = notes.find(n => n.id === editingNoteId);
+        if (originalNote) {
+          setEditingTitle(originalNote.title);
+        }
+        // Don't exit edit mode, let user try again
+      }
+    }
+  };
+
+  const cancelRename = () => {
+    setEditingNoteId(null);
+    setEditingTitle('');
   };
 
   return (
@@ -318,9 +366,13 @@ const Sidebar: React.FC<SidebarProps> = ({
             return (
               <div
                 key={note.id}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setContextMenu({ x: e.clientX, y: e.clientY, noteId: note.id });
+                }}
                 style={{
                   padding: '0.75rem 1rem',
-                  background: isSelected ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
+                  background: editingNoteId === note.id ? '#1a1a1a' : (isSelected ? 'rgba(255, 255, 255, 0.05)' : 'transparent'),
                   color: isSelected ? 'var(--text)' : 'var(--text-secondary)',
                   cursor: 'pointer',
                   borderRadius: 6,
@@ -329,16 +381,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                   position: 'relative',
                   transition: 'all 0.2s ease',
                   filter: isBlurred ? 'blur(4px)' : 'none',
-                  border: isSelected ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid transparent',
+                  border: editingNoteId === note.id ? '1px solid #3b82f6' : (isSelected ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid transparent'),
                 }}
                 onMouseEnter={(e) => {
-                  if (!isSelected) {
+                  if (!isSelected && editingNoteId !== note.id) {
                     e.currentTarget.style.background = 'rgba(156, 163, 175, 0.05)';
                     e.currentTarget.style.color = 'var(--text)';
                   }
                 }}
                 onMouseLeave={(e) => {
-                  if (!isSelected) {
+                  if (!isSelected && editingNoteId !== note.id) {
                     e.currentTarget.style.background = 'transparent';
                     e.currentTarget.style.color = 'var(--text-secondary)';
                   }
@@ -370,10 +422,39 @@ const Sidebar: React.FC<SidebarProps> = ({
                         entryBadgeService.getBadgeForEntry(note).sentimentColor
                       )}40`
                     }} />
-                    <span style={{ flex: 1 }}>{note.title || 'Untitled'}</span>
-                    {/* Analyzed Badge */}
-                    {entryBadgeService.getBadgeForEntry(note).isAnalyzed && (
-                      <PremiumIcons.Check size={12} color="#22c55e" />
+                    {editingNoteId === note.id ? (
+                      <input
+                        type="text"
+                        value={editingTitle}
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            finishRename();
+                          } else if (e.key === 'Escape') {
+                            e.preventDefault();
+                            cancelRename();
+                          }
+                        }}
+                        onBlur={finishRename}
+                        onFocus={(e) => e.target.select()}
+                        autoFocus
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          flex: 1,
+                          background: '#1a1a1a',
+                          border: '1px solid #3b82f6',
+                          borderRadius: '4px',
+                          padding: '2px 6px',
+                          color: 'var(--text)',
+                          fontSize: '0.9rem',
+                          outline: 'none',
+                          fontFamily: 'inherit',
+                          lineHeight: '1.3'
+                        }}
+                      />
+                    ) : (
+                      <span style={{ flex: 1 }}>{note.title || 'Untitled'}</span>
                     )}
                   </div>
                   <div style={{ 
@@ -480,40 +561,50 @@ const Sidebar: React.FC<SidebarProps> = ({
                 >
                   <PremiumIcons.Download size={14} color="var(--accent-primary)" />
                 </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteClick(note.id, note.title);
-                  }}
-                  style={{
-                    position: 'absolute',
-                    right: '0.5rem',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#ff4444',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    padding: '0.25rem',
-                    opacity: 0.7,
-                    transition: 'opacity 0.2s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.opacity = '1';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.opacity = '0.7';
-                  }}
-                  title="Delete note"
-                >
-                  <PremiumIcons.X size={12} color="var(--accent-danger)" />
-                </button>
               </div>
             );
           })
         )}
       </nav>
+      
+      {/* Context Menu */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+          items={[
+            {
+              label: 'Rename',
+              icon: <PremiumIcons.Edit size={16} />,
+              onClick: () => {
+                const note = notes.find(n => n.id === contextMenu.noteId);
+                if (note) {
+                  startRename(note.id, note.title);
+                }
+              }
+            },
+            {
+              label: 'Download as TXT',
+              icon: <PremiumIcons.Download size={16} />,
+              onClick: () => {
+                const note = notes.find(n => n.id === contextMenu.noteId);
+                if (note) handleDownloadClick(note);
+              }
+            },
+            { label: '', onClick: () => {}, separator: true },
+            {
+              label: 'Delete',
+              icon: <PremiumIcons.X size={16} />,
+              danger: true,
+              onClick: () => {
+                const note = notes.find(n => n.id === contextMenu.noteId);
+                if (note) handleDeleteClick(note.id, note.title);
+              }
+            }
+          ]}
+        />
+      )}
     </aside>
   );
 };

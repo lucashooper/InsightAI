@@ -258,6 +258,33 @@ const App: React.FC = () => {
     }
   }, [notes]);
 
+  const handleRename = useCallback(async (id: string, newTitle: string) => {
+    console.log('✏️ handleRename called with id:', id, 'newTitle:', newTitle);
+    try {
+      await storageAdapter.updateNote(id, { title: newTitle });
+      console.log('✅ Note renamed in database');
+      
+      setNotes(prevNotes => {
+        const updatedNotes = prevNotes.map(n => 
+          n.id === id ? { ...n, title: newTitle } : n
+        );
+        console.log('📋 Notes array after rename:', updatedNotes.map(n => ({ id: n.id, title: n.title })));
+        return updatedNotes;
+      });
+      
+      setSelectedNote(prevSelected => {
+        if (prevSelected?.id === id) {
+          const updated = { ...prevSelected, title: newTitle };
+          console.log('🎯 Updated selectedNote after rename:', { id: updated.id, title: updated.title });
+          return updated;
+        }
+        return prevSelected;
+      });
+    } catch (error) {
+      console.error('❌ Error renaming note:', error);
+    }
+  }, []);
+
   console.log('🔄 App component rendering with:', {
     notesCount: notes.length,
     selectedNoteId: selectedNote?.id,
@@ -297,6 +324,7 @@ const App: React.FC = () => {
               selectedId={selectedNote?.id || null}
               notes={notes}
               onDelete={handleDelete}
+              onRename={handleRename}
               setActiveView={setActiveView}
               streakData={streakData}
               unreadAlertsCount={unreadAlertsCount}
@@ -353,37 +381,6 @@ const App: React.FC = () => {
               )}
             </div>
             
-            {activeView === 'editor' && selectedNote && activeTab === 'editor' && (
-              <div style={{ padding: '0 1rem 1rem 1rem', width: '100%', boxSizing: 'border-box', marginBottom: '1rem' }}>
-                {/* Simplified - no tab buttons, just clean space */}
-                <button
-                  onClick={() => setIsFocusMode(!isFocusMode)}
-                  style={{
-                    padding: '0.5rem',
-                    background: 'transparent',
-                    color: 'var(--text-secondary)',
-                    border: 'none',
-                    cursor: 'pointer',
-                    borderRadius: '4px',
-                    fontSize: '1.1rem',
-                    transition: 'all 0.2s ease',
-                    flexShrink: 0,
-                    marginLeft: '0.5rem',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(156, 163, 175, 0.1)';
-                    e.currentTarget.style.color = 'var(--text-primary)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.color = 'var(--text-secondary)';
-                  }}
-                  title={isFocusMode ? 'Exit Focus Mode' : 'Enter Focus Mode'}
-                >
-                  {isFocusMode ? '⏹️' : '⛶'}
-                </button>
-              </div>
-            )}
             
             <div style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
               {isLoading ? (
@@ -397,6 +394,8 @@ const App: React.FC = () => {
                     highlightingEnabled={highlightingEnabled}
                     onToggleHighlighting={() => setHighlightingEnabled(!highlightingEnabled)}
                     onNavigateToAnalysis={() => setActiveTab('analysis')}
+                    isFocusMode={isFocusMode}
+                    onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
                   />
                 ) : (
                   <AIAnalysis 
