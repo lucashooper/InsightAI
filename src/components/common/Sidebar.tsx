@@ -13,6 +13,7 @@ interface SidebarProps {
   onAdd: () => void;
   onDelete: (id: string) => void;
   onRename: (id: string, newTitle: string) => void;
+  onReorder?: (notes: DiaryEntry[]) => void;
   setActiveView: (view: 'editor' | 'dashboard' | 'settings' | 'alerts' | 'playbook') => void;
   streakData?: { currentStreak: number; longestStreak: number; lastEntryDate: string | null };
   unreadAlertsCount?: number;
@@ -27,6 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onAdd, 
   onDelete,
   onRename,
+  onReorder,
   setActiveView,
   streakData,
   unreadAlertsCount = 0,
@@ -36,6 +38,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; noteId: string } | null>(null);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState<string>('');
+  const [draggedNoteId, setDraggedNoteId] = useState<string | null>(null);
+  const [dragOverNoteId, setDragOverNoteId] = useState<string | null>(null);
   
   console.log('📋 Sidebar render:', {
     notesCount: notes.length,
@@ -112,6 +116,46 @@ const Sidebar: React.FC<SidebarProps> = ({
   const cancelRename = () => {
     setEditingNoteId(null);
     setEditingTitle('');
+  };
+
+  const handleDragStart = (e: React.DragEvent, noteId: string) => {
+    setDraggedNoteId(noteId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', e.currentTarget.innerHTML);
+  };
+
+  const handleDragOver = (e: React.DragEvent, noteId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverNoteId(noteId);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverNoteId(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, dropNoteId: string) => {
+    e.preventDefault();
+    
+    if (!draggedNoteId || draggedNoteId === dropNoteId || !onReorder) return;
+    
+    const draggedIndex = notes.findIndex(n => n.id === draggedNoteId);
+    const dropIndex = notes.findIndex(n => n.id === dropNoteId);
+    
+    if (draggedIndex === -1 || dropIndex === -1) return;
+    
+    const reorderedNotes = [...notes];
+    const [draggedNote] = reorderedNotes.splice(draggedIndex, 1);
+    reorderedNotes.splice(dropIndex, 0, draggedNote);
+    
+    onReorder(reorderedNotes);
+    setDraggedNoteId(null);
+    setDragOverNoteId(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedNoteId(null);
+    setDragOverNoteId(null);
   };
 
   return (
@@ -363,9 +407,18 @@ const Sidebar: React.FC<SidebarProps> = ({
             });
             
             const isBlurred = blurredNoteIds.has(note.id);
+            const isDragging = draggedNoteId === note.id;
+            const isDragOver = dragOverNoteId === note.id;
+            
             return (
               <div
                 key={note.id}
+                draggable={editingNoteId !== note.id}
+                onDragStart={(e) => handleDragStart(e, note.id)}
+                onDragOver={(e) => handleDragOver(e, note.id)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, note.id)}
+                onDragEnd={handleDragEnd}
                 onContextMenu={(e) => {
                   e.preventDefault();
                   setContextMenu({ x: e.clientX, y: e.clientY, noteId: note.id });
@@ -374,14 +427,15 @@ const Sidebar: React.FC<SidebarProps> = ({
                   padding: '0.75rem 1rem',
                   background: editingNoteId === note.id ? '#1a1a1a' : (isSelected ? 'rgba(255, 255, 255, 0.05)' : 'transparent'),
                   color: isSelected ? 'var(--text)' : 'var(--text-secondary)',
-                  cursor: 'pointer',
+                  cursor: isDragging ? 'grabbing' : 'pointer',
                   borderRadius: 6,
                   margin: '0.25rem 0',
                   fontWeight: isSelected ? 600 : 400,
                   position: 'relative',
                   transition: 'all 0.2s ease',
                   filter: isBlurred ? 'blur(4px)' : 'none',
-                  border: editingNoteId === note.id ? '1px solid #3b82f6' : (isSelected ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid transparent'),
+                  border: isDragOver ? '2px solid #3b82f6' : (editingNoteId === note.id ? '1px solid #3b82f6' : (isSelected ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid transparent')),
+                  opacity: isDragging ? 0.5 : 1,
                 }}
                 onMouseEnter={(e) => {
                   if (!isSelected && editingNoteId !== note.id) {
@@ -482,15 +536,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                           title={entryBadgeService.getThemeLabel(icon)}
                           style={{
                             fontSize: '0.7rem',
-                            opacity: 0.6,
-                            transition: 'opacity 0.2s ease',
-                            cursor: 'help'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.opacity = '1';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.opacity = '0.6';
+                            opacity: 0.9
                           }}
                         >
                           {entryBadgeService.getThemeEmoji(icon)}
@@ -531,42 +577,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                     {isBlurred ? '👁️' : '🙈'}
                   </button>
                 )}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDownloadClick(note);
-                  }}
-                  style={{
-                    position: 'absolute',
-                    right: onToggleNotePrivacy ? '3.5rem' : '2rem',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#38bdf8',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    padding: '0.25rem',
-                    opacity: 0,
-                    transition: 'opacity 0.2s ease',
-                    zIndex: 10,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.opacity = '1';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.opacity = '0';
-                  }}
-                  title="Download as .txt file"
-                >
-                  <PremiumIcons.Download size={14} color="var(--accent-primary)" />
-                </button>
               </div>
             );
           })
         )}
       </nav>
-      
       {/* Context Menu */}
       {contextMenu && (
         <ContextMenu

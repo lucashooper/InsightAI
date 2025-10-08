@@ -67,6 +67,18 @@ export const PremiumIcons = {
     </svg>
   ),
 
+  Menu: ({ size = 20, className = '', color = 'currentColor' }: IconProps) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+      <path
+        d="M3 12h18M3 6h18M3 18h18"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
+
   // Action Icons
   Plus: ({ size = 20, className = '', color = 'currentColor' }: IconProps) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>

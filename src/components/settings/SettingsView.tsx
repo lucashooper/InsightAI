@@ -5,7 +5,7 @@ import MigrationHelper from '../migration/MigrationHelper';
 import { importDiaryEntries } from '../../utils/importDiaryEntries';
 
 interface SettingsViewProps {
-  setActiveView: React.Dispatch<React.SetStateAction<'editor' | 'dashboard' | 'settings' | 'alerts'>>;
+  setActiveView: React.Dispatch<React.SetStateAction<'editor' | 'dashboard' | 'settings' | 'alerts' | 'playbook'>>;
 }
 const SettingsView: React.FC<SettingsViewProps> = ({ setActiveView }) => {
   const { theme, setTheme } = useTheme();

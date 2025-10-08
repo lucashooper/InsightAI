@@ -379,7 +379,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
 
   console.log('📝 DiaryEditor: Showing editable view for note:', note.title);
   return (
-    <div className="diary-textarea-container" style={{ 
+    <div className="diary-editor-container diary-textarea-container" style={{ 
       height: '100%', 
       display: 'flex', 
       flexDirection: 'column',
@@ -649,32 +649,32 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
         ) : (
           <button
             onClick={onNavigateToAnalysis}
-            disabled={!content || content.length < 50}
-            title={content?.length < 50 ? 'Write at least 50 characters to analyze' : 'Analyze this entry with AI'}
+            disabled={!content || content.trim().length === 0}
+            title={!content || content.trim().length === 0 ? 'Write something to analyze' : 'Analyze this entry with AI'}
             aria-label="Analyze entry"
             style={{
               padding: '0.5rem 1.25rem',
-              background: content?.length >= 50 ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
+              background: content && content.trim().length > 0 ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
               border: '1px solid var(--border-color)',
               borderRadius: '6px',
-              color: content?.length >= 50 ? 'var(--text-primary)' : 'var(--text-secondary)',
-              cursor: content?.length >= 50 ? 'pointer' : 'not-allowed',
+              color: content && content.trim().length > 0 ? 'var(--text-primary)' : 'var(--text-secondary)',
+              cursor: content && content.trim().length > 0 ? 'pointer' : 'not-allowed',
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
               fontSize: '0.875rem',
               fontWeight: '500',
               transition: 'all 0.2s ease',
-              opacity: content?.length >= 50 ? 1 : 0.6
+              opacity: content && content.trim().length > 0 ? 1 : 0.6
             }}
             onMouseEnter={(e) => {
-              if (content?.length >= 50) {
+              if (content && content.trim().length > 0) {
                 e.currentTarget.style.background = 'var(--bg-quaternary)';
                 e.currentTarget.style.borderColor = 'var(--accent-primary)';
               }
             }}
             onMouseLeave={(e) => {
-              if (content?.length >= 50) {
+              if (content && content.trim().length > 0) {
                 e.currentTarget.style.background = 'var(--bg-tertiary)';
                 e.currentTarget.style.borderColor = 'var(--border-color)';
               }

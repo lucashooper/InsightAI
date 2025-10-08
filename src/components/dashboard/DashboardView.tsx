@@ -34,14 +34,13 @@ interface PositiveInsight {
 interface GrowthOpportunity {
   insight: string;
   sentiment: "positive" | "opportunity";
-  category: string;
   noteId: string;
   noteTitle: string;
   noteDate: string;
 }
 
 interface DashboardViewProps {
-  setActiveView: React.Dispatch<React.SetStateAction<'editor' | 'dashboard' | 'settings' | 'alerts'>>;
+  setActiveView: React.Dispatch<React.SetStateAction<'editor' | 'dashboard' | 'settings' | 'alerts' | 'playbook'>>;
   setActiveNoteId: (id: string) => void;
 }
 

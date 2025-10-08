@@ -3,6 +3,7 @@ import type { DiaryEntry } from './types/diary';
 import './styles/base.css';
 import './styles/darkModeToggle.css';
 import './styles/themes.css';
+import './styles/mobile.css';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Sidebar from './components/common/Sidebar';
 import DiaryEditor from './components/diary/DiaryEditor';
@@ -53,6 +54,7 @@ const App: React.FC = () => {
   const [unreadAlertsCount, setUnreadAlertsCount] = useState(0);
   const [detectedPatterns, setDetectedPatterns] = useState<DetectedPattern[]>([]);
   const [highlightingEnabled, setHighlightingEnabled] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Debug logging for state changes
   useEffect(() => {
@@ -128,14 +130,13 @@ const App: React.FC = () => {
   };
 
   const handleSelect = useCallback((id: string) => {
-    console.log('👆 handleSelect called with id:', id);
+    console.log('📝 Note selected by id:', id);
     const note = notes.find(n => n.id === id);
-    console.log('🎯 Found note to select:', note ? { id: note.id, title: note.title } : 'NOT FOUND');
-    
     if (note) {
       setSelectedNote(note);
+      setActiveView('editor'); // Switch to editor view
       setActiveTab('editor');
-      setActiveView('editor'); // Switch back to editor view when note is selected
+      setIsMobileMenuOpen(false); // Close mobile menu
       console.log('✅ Note selected successfully');
     } else {
       console.error('❌ Note not found in notes array:', { id, notesCount: notes.length });
@@ -285,6 +286,11 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const handleReorder = useCallback((reorderedNotes: DiaryEntry[]) => {
+    console.log('🔄 handleReorder called');
+    setNotes(reorderedNotes);
+  }, []);
+
   console.log('🔄 App component rendering with:', {
     notesCount: notes.length,
     selectedNoteId: selectedNote?.id,
@@ -295,8 +301,26 @@ const App: React.FC = () => {
 
   return (
     <ThemeProvider>
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }} className="app-container">
         <AnimatedBackground />
+        
+        {/* Mobile Menu Button */}
+        {!isFocusMode && (
+          <button
+            className="mobile-menu-button"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            <PremiumIcons.Menu size={24} />
+          </button>
+        )}
+        
+        {/* Mobile Sidebar Backdrop */}
+        <div 
+          className={`sidebar-backdrop ${isMobileMenuOpen ? 'active' : ''}`}
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+        
         {/* Grouped Control Panel - Top Right - Hide on Analysis Tab */}
         {!(activeView === 'editor' && activeTab === 'analysis') && (
           <div style={{ 
@@ -318,14 +342,19 @@ const App: React.FC = () => {
         )}
         <div style={{ display: 'flex', flex: 1, minHeight: 0, width: '100%', overflow: 'hidden' }} className={isFocusMode ? 'focus-mode' : ''}>
           {!isFocusMode && (
-            <Sidebar 
+            <div className={`sidebar-container ${isMobileMenuOpen ? 'sidebar-open' : ''}`}>
+              <Sidebar 
               onSelect={handleSelect} 
               onAdd={handleAdd} 
               selectedId={selectedNote?.id || null}
               notes={notes}
               onDelete={handleDelete}
               onRename={handleRename}
-              setActiveView={setActiveView}
+              onReorder={handleReorder}
+              setActiveView={(view) => {
+                setActiveView(view);
+                setIsMobileMenuOpen(false); // Close mobile menu
+              }}
               streakData={streakData}
               unreadAlertsCount={unreadAlertsCount}
               blurredNoteIds={blurredNoteIds}
@@ -340,7 +369,8 @@ const App: React.FC = () => {
                   return newSet;
                 });
               }}
-            />
+              />
+            </div>
           )}
           <main style={{ 
             flex: 1, 
@@ -356,7 +386,8 @@ const App: React.FC = () => {
               {/* Title removed for analysis view - now handled in AIAnalysis component */}
               {activeView === 'dashboard' && (
                 <h1 style={{ 
-                  margin: 0, 
+                  margin: 0,
+                  marginTop: '2.5rem',
                   fontSize: '2.5rem',
                   textAlign: 'center',
                   background: 'linear-gradient(135deg, #e0e7ff 0%, #a5b4fc 50%, #818cf8 100%)',
@@ -424,12 +455,25 @@ const App: React.FC = () => {
                 />
               ) : activeView === 'playbook' ? (
                 <PlaybookView
+                  existingNoteIds={notes.map(n => n.id)}
                   onNavigateToEntry={(entryId) => {
+                    console.log('=== APP.TSX: onNavigateToEntry called ===');
+                    console.log('Entry ID:', entryId);
+                    console.log('Total notes available:', notes.length);
+                    console.log('All note IDs:', notes.map(n => n.id));
+                    
                     const note = notes.find(n => n.id === entryId);
+                    console.log('Found note:', note ? { id: note.id, title: note.title } : 'NOT FOUND');
+                    
                     if (note) {
+                      console.log('✅ Navigating to note:', note.title);
                       setSelectedNote(note);
                       setActiveView('editor');
                       setActiveTab('editor');
+                    } else {
+                      console.error('❌ Note not found! Entry ID:', entryId);
+                      console.error('This means the sourceEntryId on the insight does not match any note ID');
+                      alert(`Could not find entry with ID: ${entryId}\n\nThis entry may have been deleted.`);
                     }
                   }}
                 />

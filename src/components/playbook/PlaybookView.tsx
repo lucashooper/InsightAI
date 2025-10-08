@@ -8,13 +8,23 @@ import type { DailyProtocol } from '../../types/dailyProtocol';
 
 interface PlaybookViewProps {
   onNavigateToEntry?: (entryId: string) => void;
+  existingNoteIds?: string[]; // Add this to check if source entries exist
 }
 
-const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry }) => {
-  const [insights, setInsights] = useState<ActionableInsight[]>([]);
+interface ConsolidatedInsight extends ActionableInsight {
+  count: number;
+  sourceEntryIds: string[];
+  allIds: string[]; // All insight IDs that were merged
+  dates: string[];
+}
+
+const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existingNoteIds }) => {
+  const [insights, setInsights] = useState<ConsolidatedInsight[]>([]);
   const [filter, setFilter] = useState<'all' | 'suggested' | 'active' | 'completed'>('active');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showProtocolForm, setShowProtocolForm] = useState(false);
+  const [showSourceEntriesModal, setShowSourceEntriesModal] = useState(false);
+  const [selectedInsight, setSelectedInsight] = useState<ConsolidatedInsight | null>(null);
   const [dailyProtocols, setDailyProtocols] = useState<DailyProtocol[]>([]);
   const [activeSection, setActiveSection] = useState<'strategies' | 'protocols'>('protocols');
   const [newStrategy, setNewStrategy] = useState({
@@ -56,11 +66,116 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry }) => {
   };
 
   const loadInsights = () => {
+    let loadedInsights: ActionableInsight[];
     if (filter === 'all') {
-      setInsights(actionableInsightsService.getInsights());
+      loadedInsights = actionableInsightsService.getInsights();
     } else {
-      setInsights(actionableInsightsService.getInsightsByStatus(filter));
+      loadedInsights = actionableInsightsService.getInsightsByStatus(filter);
     }
+    
+    console.log('=== LOADED INSIGHTS ===');
+    console.log('Filter:', filter);
+    console.log('Count:', loadedInsights.length);
+    console.log('Insights with sourceEntryId:', 
+      loadedInsights.filter(i => i.sourceEntryId).length
+    );
+    console.log('Sample insight:', loadedInsights[0]);
+    
+    // Clean up orphaned insights if we have note IDs to check against
+    if (existingNoteIds && existingNoteIds.length > 0) {
+      const orphanedInsights = loadedInsights.filter(
+        insight => insight.sourceEntryId && !existingNoteIds.includes(insight.sourceEntryId)
+      );
+      
+      if (orphanedInsights.length > 0) {
+        console.warn('⚠️ Found orphaned insights (source entries deleted):', orphanedInsights.length);
+        console.log('Orphaned insight IDs:', orphanedInsights.map(i => ({ 
+          insightId: i.id, 
+          title: i.title,
+          missingEntryId: i.sourceEntryId 
+        })));
+        
+        // Auto-delete orphaned insights
+        orphanedInsights.forEach(insight => {
+          console.log(`🗑️ Auto-deleting orphaned insight: ${insight.title}`);
+          actionableInsightsService.deleteInsight(insight.id);
+        });
+        
+        // Reload after cleanup
+        if (filter === 'all') {
+          loadedInsights = actionableInsightsService.getInsights();
+        } else {
+          loadedInsights = actionableInsightsService.getInsightsByStatus(filter);
+        }
+        console.log('✅ Cleaned up. Remaining insights:', loadedInsights.length);
+      }
+    }
+    
+    // Consolidate duplicates
+    const consolidated = consolidateDuplicates(loadedInsights);
+    console.log('📊 Consolidated:', loadedInsights.length, '→', consolidated.length, 'unique strategies');
+    
+    setInsights(consolidated);
+  };
+  
+  const consolidateDuplicates = (insights: ActionableInsight[]): ConsolidatedInsight[] => {
+    const grouped = insights.reduce((acc, insight) => {
+      // Normalize title for grouping (lowercase, trim)
+      const key = insight.title.toLowerCase().trim();
+      
+      if (acc[key]) {
+        // Duplicate found - merge
+        acc[key].count += 1;
+        if (insight.sourceEntryId) {
+          acc[key].sourceEntryIds.push(insight.sourceEntryId);
+        }
+        acc[key].allIds.push(insight.id);
+        acc[key].dates.push(insight.createdAt);
+      } else {
+        // New strategy
+        acc[key] = {
+          ...insight,
+          count: 1,
+          sourceEntryIds: insight.sourceEntryId ? [insight.sourceEntryId] : [],
+          allIds: [insight.id],
+          dates: [insight.createdAt]
+        };
+      }
+      
+      return acc;
+    }, {} as Record<string, ConsolidatedInsight>);
+    
+    // Convert to array and sort by frequency (highest first)
+    return Object.values(grouped).sort((a, b) => b.count - a.count);
+  };
+  
+  const getPriorityColor = (count: number): { bg: string; border: string; text: string } => {
+    if (count >= 7) {
+      return {
+        bg: 'rgba(239, 68, 68, 0.15)',
+        border: 'rgba(239, 68, 68, 0.4)',
+        text: '#F87171'
+      };
+    }
+    if (count >= 4) {
+      return {
+        bg: 'rgba(249, 115, 22, 0.15)',
+        border: 'rgba(249, 115, 22, 0.4)',
+        text: '#FB923C'
+      };
+    }
+    if (count >= 2) {
+      return {
+        bg: 'rgba(251, 191, 36, 0.15)',
+        border: 'rgba(251, 191, 36, 0.4)',
+        text: '#FCD34D'
+      };
+    }
+    return {
+      bg: 'rgba(59, 130, 246, 0.1)',
+      border: 'rgba(59, 130, 246, 0.3)',
+      text: '#60A5FA'
+    };
   };
 
   const handleStatusChange = (insightId: string, newStatus: ActionableInsight['status']) => {
@@ -91,8 +206,18 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry }) => {
     }
   };
 
-  const InsightCard: React.FC<{ insight: ActionableInsight }> = ({ insight }) => {
+  const InsightCard: React.FC<{ insight: ConsolidatedInsight }> = ({ insight }) => {
     const progress = actionableInsightsService.getProgress(insight.id);
+    const priorityColors = getPriorityColor(insight.count);
+    
+    // Debug logging
+    console.log('Insight card:', {
+      id: insight.id,
+      title: insight.title,
+      count: insight.count,
+      hasSourceEntry: !!insight.sourceEntryId,
+      sourceEntryId: insight.sourceEntryId
+    });
 
     return (
       <div style={{
@@ -100,14 +225,46 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry }) => {
         background: 'rgba(255, 255, 255, 0.03)',
         border: '1px solid rgba(255, 255, 255, 0.08)',
         borderRadius: '12px',
-        transition: 'all 0.2s ease'
+        transition: 'all 0.2s ease',
+        width: '100%',
+        boxSizing: 'border-box',
+        position: 'relative'
       }}>
+        {/* Frequency Badge */}
+        {insight.count > 1 && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '12px',
+              right: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '6px 12px',
+              borderRadius: '20px',
+              fontSize: '13px',
+              fontWeight: '600',
+              background: priorityColors.bg,
+              border: `1px solid ${priorityColors.border}`,
+              color: priorityColors.text,
+              backdropFilter: 'blur(10px)',
+              cursor: 'help',
+              animation: insight.count >= 7 ? 'subtle-pulse 2s ease-in-out infinite' : 'none'
+            }}
+            title={`Suggested ${insight.count} times\nClick "View Source Entries" to see all`}
+          >
+            <span style={{ fontSize: '14px' }}>🔁</span>
+            <span>×{insight.count}</span>
+          </div>
+        )}
+
         {/* Header */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-start',
-          marginBottom: '0.75rem'
+          marginBottom: '0.75rem',
+          paddingRight: insight.count > 1 ? '70px' : '0' // Make room for badge
         }}>
           <div style={{ flex: 1 }}>
             <div style={{
@@ -286,21 +443,93 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry }) => {
             </>
           )}
 
-          {insight.sourceEntryId && onNavigateToEntry && (
+          {insight.sourceEntryIds.length > 0 && onNavigateToEntry && (
             <button
-              onClick={() => onNavigateToEntry(insight.sourceEntryId!)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (insight.count === 1) {
+                  // Single source entry - navigate directly
+                  console.log('=== VIEW SOURCE ENTRY CLICKED (SINGLE) ===');
+                  console.log('Source Entry ID:', insight.sourceEntryIds[0]);
+                  
+                  // Check if source entry still exists
+                  if (existingNoteIds && !existingNoteIds.includes(insight.sourceEntryIds[0])) {
+                    console.error('❌ Source entry no longer exists!');
+                    const shouldDelete = confirm(
+                      `The source entry for "${insight.title}" has been deleted.\n\nWould you like to remove this strategy from your playbook?`
+                    );
+                    if (shouldDelete) {
+                      handleDelete(insight.id);
+                    }
+                    return;
+                  }
+                  
+                  onNavigateToEntry(insight.sourceEntryIds[0]);
+                } else {
+                  // Multiple source entries - show modal
+                  console.log('=== VIEW SOURCE ENTRIES CLICKED (MULTIPLE) ===');
+                  console.log('Count:', insight.count);
+                  console.log('Source Entry IDs:', insight.sourceEntryIds);
+                  setSelectedInsight(insight);
+                  setShowSourceEntriesModal(true);
+                }
+              }}
               style={{
                 padding: '0.5rem 0.75rem',
-                background: 'transparent',
+                background: 'rgba(139, 92, 246, 0.1)',
                 border: '1px solid rgba(139, 92, 246, 0.4)',
                 borderRadius: '6px',
                 color: '#8b5cf6',
                 fontSize: '0.8rem',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                fontWeight: '500',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(139, 92, 246, 0.2)';
+                e.currentTarget.style.borderColor = '#8b5cf6';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)';
+                e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
               }}
             >
-              View Source Entry
+              {insight.count === 1 ? 'View Source Entry' : `View ${insight.count} Source Entries`}
             </button>
+          )}
+          
+          {/* High Priority Warning */}
+          {insight.count >= 4 && (
+            <div style={{
+              padding: '0.5rem 0.75rem',
+              background: 'rgba(249, 115, 22, 0.1)',
+              border: '1px solid rgba(249, 115, 22, 0.3)',
+              borderRadius: '6px',
+              fontSize: '0.75rem',
+              color: '#FB923C',
+              fontWeight: '500',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              ⚠️ Recurring pattern - consider addressing this
+            </div>
+          )}
+          
+          {!insight.sourceEntryIds.length && !onNavigateToEntry && (
+            insight.sourceEntryId && !onNavigateToEntry && (
+              <div style={{
+                padding: '0.5rem 0.75rem',
+                fontSize: '0.75rem',
+                color: '#ef4444',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                borderRadius: '6px'
+              }}>
+                ⚠️ Navigation not available (missing handler)
+              </div>
+            )
           )}
 
           <button
@@ -322,8 +551,164 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry }) => {
     );
   };
 
+  // Source Entries Modal Component
+  const SourceEntriesModal = () => {
+    if (!showSourceEntriesModal || !selectedInsight) return null;
+
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0, 0, 0, 0.8)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+        padding: '2rem'
+      }}
+      onClick={() => setShowSourceEntriesModal(false)}
+      >
+        <div style={{
+          background: 'var(--bg-primary)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '16px',
+          padding: '2rem',
+          maxWidth: '600px',
+          width: '100%',
+          maxHeight: '80vh',
+          overflow: 'auto'
+        }}
+        onClick={(e) => e.stopPropagation()}
+        >
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '1.5rem'
+          }}>
+            <h2 style={{
+              margin: 0,
+              fontSize: '1.5rem',
+              color: '#E5E7EB',
+              fontWeight: '600'
+            }}>
+              Source Entries
+            </h2>
+            <button
+              onClick={() => setShowSourceEntriesModal(false)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#9CA3AF',
+                cursor: 'pointer',
+                fontSize: '1.5rem',
+                padding: '0.25rem'
+              }}
+            >
+              ×
+            </button>
+          </div>
+
+          <p style={{
+            margin: '0 0 1rem 0',
+            color: '#9CA3AF',
+            fontSize: '0.9rem'
+          }}>
+            "{selectedInsight.title}" was suggested in <strong>{selectedInsight.count} entries</strong>:
+          </p>
+
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem'
+          }}>
+            {selectedInsight.dates.map((date, i) => {
+              const entryId = selectedInsight.sourceEntryIds[i];
+              const isDeleted = existingNoteIds && !existingNoteIds.includes(entryId);
+              
+              return (
+                <button
+                  key={i}
+                  onClick={() => {
+                    if (isDeleted) {
+                      alert('This entry has been deleted');
+                      return;
+                    }
+                    setShowSourceEntriesModal(false);
+                    onNavigateToEntry?.(entryId);
+                  }}
+                  disabled={isDeleted}
+                  style={{
+                    padding: '1rem',
+                    background: isDeleted ? 'rgba(255, 255, 255, 0.01)' : 'rgba(255, 255, 255, 0.03)',
+                    border: isDeleted ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '8px',
+                    color: isDeleted ? '#9CA3AF' : '#E5E7EB',
+                    fontSize: '0.9rem',
+                    cursor: isDeleted ? 'not-allowed' : 'pointer',
+                    textAlign: 'left',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    transition: 'all 0.2s ease',
+                    opacity: isDeleted ? 0.5 : 1
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isDeleted) {
+                      e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)';
+                      e.currentTarget.style.borderColor = '#3b82f6';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isDeleted) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                      e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                    }
+                  }}
+                >
+                  <PremiumIcons.Calendar size={16} color={isDeleted ? '#9CA3AF' : '#60A5FA'} />
+                  <div style={{ flex: 1 }}>
+                    <div>{new Date(date).toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric',
+                      weekday: 'short'
+                    })}</div>
+                    {isDeleted && (
+                      <div style={{ fontSize: '0.75rem', color: '#ef4444', marginTop: '0.25rem' }}>
+                        Entry deleted
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+    <>
+      {/* CSS Animation */}
+      <style>{`
+        @keyframes subtle-pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
+        }
+      `}</style>
+      
+    <div style={{ 
+      padding: '2rem', 
+      width: '100%',
+      maxWidth: 'none',
+      margin: '0 auto',
+      boxSizing: 'border-box'
+    }}>
       {/* Header */}
       <div style={{
         display: 'flex',
@@ -477,6 +862,9 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry }) => {
       </div>
       )}
 
+      {/* Source Entries Modal */}
+      <SourceEntriesModal />
+      
       {/* Insights Grid */}
       {activeSection === 'strategies' && (insights.length === 0 ? (
         <div style={{
@@ -497,8 +885,11 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry }) => {
       ) : (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-          gap: '1.5rem'
+          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+          gap: '1.5rem',
+          width: '100%',
+          maxWidth: '1600px',
+          margin: '0 auto'
         }}>
           {insights.map(insight => (
             <InsightCard key={insight.id} insight={insight} />
@@ -1354,6 +1745,7 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry }) => {
         </div>
       )}
     </div>
+    </>
   );
 };
 

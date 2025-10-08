@@ -1,0 +1,966 @@
+/* ============================================
+   MOBILE RESPONSIVE STYLES
+   ============================================ */
+
+/* Mobile breakpoints */
+/* - Mobile: < 768px */
+/* - Tablet: 768px - 1024px */
+/* - Desktop: > 1024px */
+
+/* ============================================
+   GLOBAL MOBILE ADJUSTMENTS
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Reduce root font size for mobile */
+  :root {
+    font-size: 14px;
+  }
+
+  /* Reset body padding */
+  body {
+    padding: 0;
+    min-width: 100vw;
+  }
+
+  /* Full width on mobile */
+  #root {
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+
+  /* Ensure full viewport height */
+  .app-container {
+    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
+  }
+}
+
+/* ============================================
+   SIDEBAR - MOBILE DRAWER
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Hide sidebar by default on mobile */
+  .sidebar-container {
+    position: fixed !important;
+    left: -280px;
+    top: 0;
+    bottom: 0;
+    width: 280px !important;
+    max-width: 80vw !important;
+    z-index: 1000;
+    transition: left 0.3s ease-in-out;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Show sidebar when open */
+  .sidebar-container.sidebar-open {
+    left: 0;
+  }
+
+  /* Overlay backdrop */
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+  }
+
+  .sidebar-backdrop.active {
+    display: block;
+    opacity: 1;
+  }
+
+  /* Mobile menu button */
+  .mobile-menu-button {
+    display: flex !important;
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 998;
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px var(--shadow-color, rgba(0, 0, 0, 0.1));
+    color: var(--text-primary);
+  }
+
+  .mobile-menu-button:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--accent-primary);
+  }
+
+  .mobile-menu-button:active {
+    transform: scale(0.95);
+  }
+}
+
+/* Hide mobile menu button on desktop */
+@media (min-width: 769px) {
+  .mobile-menu-button {
+    display: none !important;
+  }
+
+  .sidebar-backdrop {
+    display: none !important;
+  }
+}
+
+/* ============================================
+   MAIN CONTENT AREA
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Full width main content on mobile */
+  main {
+    max-width: 100vw !important;
+    width: 100vw !important;
+    padding: 0 !important;
+  }
+
+  /* Adjust padding for mobile */
+  main > div {
+    padding: 0.5rem !important;
+  }
+}
+
+/* ============================================
+   DIARY EDITOR - MOBILE
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Editor container */
+  .diary-editor-container {
+    padding: 0.5rem !important;
+  }
+
+  /* Title input */
+  .diary-editor-container input[type="text"] {
+    font-size: 1.5rem !important;
+    padding: 0.75rem !important;
+  }
+
+  /* Textarea */
+  .diary-editor-container textarea {
+    font-size: 1rem !important;
+    padding: 0.75rem !important;
+    min-height: 300px !important;
+  }
+
+  /* Toolbar buttons */
+  .diary-toolbar,
+  div[style*="display: flex"][style*="gap"] {
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+    padding: 0.75rem 0.5rem !important;
+  }
+
+  .diary-toolbar button,
+  .diary-editor-container button {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.875rem !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+  
+  /* Hide button text on very small screens, keep icons */
+  @media (max-width: 380px) {
+    .diary-toolbar button span:not([class*="icon"]) {
+      display: none;
+    }
+  }
+
+  /* Word count and indicators */
+  .diary-stats {
+    font-size: 0.8rem !important;
+    flex-wrap: wrap !important;
+  }
+}
+
+/* ============================================
+   AI ANALYSIS VIEW - MOBILE
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* ===== AI ANALYSIS CONTAINER ===== */
+  .ai-analysis-container {
+    padding: 1rem 1.25rem !important;
+    max-width: 100% !important;
+    overflow-x: hidden;
+  }
+
+  /* ===== HEADER SECTION - PRISM'S ANALYSIS ===== */
+  .ai-analysis-container h1 {
+    font-size: 1.75rem !important;
+    margin-bottom: 0.5rem !important;
+    letter-spacing: -0.01em !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Entry subtitle (date/title) */
+  .ai-analysis-container > div:first-child p {
+    font-size: 0.875rem !important;
+    opacity: 0.7 !important;
+    margin-top: 0.25rem !important;
+  }
+
+  /* Regenerate button - mobile positioning */
+  .ai-analysis-container button[title*="Regenerate"] {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    margin-top: 1rem !important;
+    width: 100% !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.875rem !important;
+    min-height: 48px !important;
+  }
+
+  /* ===== SECTION HEADINGS ===== */
+  .ai-analysis-container h2 {
+    font-size: 1.25rem !important;
+    line-height: 1.3 !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .ai-analysis-container h3 {
+    font-size: 1.125rem !important;
+    line-height: 1.4 !important;
+  }
+
+  .ai-analysis-container h4 {
+    font-size: 1rem !important;
+    line-height: 1.4 !important;
+  }
+
+  /* ===== TAB NAVIGATION - PREMIUM MOBILE ===== */
+  .ai-analysis-container > div > div[style*="display: flex"] {
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 0.5rem !important;
+    padding: 0.75rem 0.5rem !important;
+    margin: 0 -0.5rem !important;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+  }
+
+  .ai-analysis-container > div > div[style*="display: flex"]::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+  }
+
+  /* Tab buttons */
+  .tab-button,
+  .ai-analysis-container button[style*="flex: 1"] {
+    padding: 0.875rem 1.25rem !important;
+    font-size: 0.875rem !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    min-height: 48px !important;
+    border-radius: 10px !important;
+  }
+
+  /* Active tab indicator */
+  .tab-button.active {
+    font-weight: 600 !important;
+  }
+
+  /* ===== PRISM'S RESPONSE TEXT BOX ===== */
+  .ai-analysis-container .card,
+  .ai-analysis-container div[style*="background"][style*="padding"] {
+    padding: 1.25rem !important;
+    margin-bottom: 1.5rem !important;
+    border-radius: 12px !important;
+  }
+
+  /* Response text content */
+  .ai-analysis-container .card p,
+  .ai-analysis-container div[style*="background"] p {
+    font-size: 0.9375rem !important; /* 15px */
+    line-height: 1.7 !important;
+    margin-bottom: 1rem !important;
+  }
+
+  /* Copy button in corner */
+  .ai-analysis-container button[style*="position: absolute"][style*="top"] {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    padding: 12px !important;
+    top: 0.5rem !important;
+    right: 0.5rem !important;
+  }
+
+  /* ===== KEY INSIGHTS SECTION ===== */
+  .ai-analysis-container h2 + div,
+  .insights-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+
+  /* Individual insight cards */
+  .ai-analysis-container div[style*="border"][style*="padding"] {
+    padding: 1.25rem !important;
+    margin-bottom: 1rem !important;
+    border-radius: 12px !important;
+  }
+
+  /* Colored text (self-improvement, anxiety, etc.) */
+  .ai-analysis-container span[style*="color: #"],
+  .ai-analysis-container span[style*="color:#"] {
+    font-weight: 600 !important;
+    /* Ensure minimum contrast */
+    filter: brightness(1.1) saturate(1.2) !important;
+  }
+
+  /* Badge buttons (COPING STRATEGY, AREA FOR GROWTH, etc.) */
+  .ai-analysis-container button[style*="text-transform"],
+  .ai-analysis-container div[style*="text-transform"] {
+    font-size: 0.6875rem !important; /* 11px */
+    padding: 0.4rem 0.875rem !important;
+    letter-spacing: 0.05em !important;
+    border-radius: 12px !important;
+    white-space: nowrap !important;
+  }
+
+  /* ===== "PRISM FOUND" SUMMARY BOX ===== */
+  .ai-analysis-container div[style*="purple"][style*="padding"] {
+    padding: 1.5rem !important;
+    margin: 1.5rem 0 !important;
+    border-radius: 14px !important;
+  }
+
+  .ai-analysis-container div[style*="purple"] p {
+    font-size: 0.9375rem !important;
+    line-height: 1.6 !important;
+  }
+
+  /* Numbers in summary (2, 1) */
+  .ai-analysis-container div[style*="purple"] strong,
+  .ai-analysis-container div[style*="purple"] span[style*="font-weight"] {
+    font-size: 1.125rem !important;
+  }
+
+  /* Emoji sizing */
+  .ai-analysis-container div[style*="purple"] span:first-child {
+    font-size: 1.5rem !important;
+    margin-right: 0.5rem !important;
+  }
+
+  /* ===== "ONE THING TO TRY NEXT" SECTION ===== */
+  .ai-analysis-container div[style*="background: rgba"][style*="purple"] {
+    padding: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
+    border-radius: 14px !important;
+  }
+
+  .ai-analysis-container div[style*="background: rgba"] p {
+    font-size: 0.875rem !important;
+    line-height: 1.65 !important;
+  }
+
+  /* ===== CHAT INPUT SECTION ===== */
+  .chat-input-container {
+    padding: 1rem !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    background: var(--bg-primary) !important;
+    border-top: 1px solid var(--border-color) !important;
+    z-index: 10 !important;
+  }
+
+  /* Chat input field */
+  .chat-input-container textarea,
+  .chat-input-container input[type="text"] {
+    font-size: 16px !important; /* Prevent iOS zoom */
+    padding: 1rem !important;
+    min-height: 48px !important;
+    line-height: 1.5 !important;
+    border-radius: 12px !important;
+  }
+
+  /* Send button (arrow icon) */
+  .chat-input-container button[aria-label*="Send"],
+  .chat-input-container button:last-child {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    padding: 12px !important;
+    border-radius: 12px !important;
+  }
+
+  /* ===== ANALYSIS CARDS & GRIDS ===== */
+  .analysis-card {
+    margin-bottom: 1rem !important;
+    padding: 1.25rem !important;
+    border-radius: 12px !important;
+  }
+
+  /* Single column layouts */
+  .analysis-grid,
+  .insights-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+}
+
+/* ============================================
+   DASHBOARD VIEW - MOBILE
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Dashboard header */
+  .dashboard-header h1 {
+    font-size: 1.75rem !important;
+    margin-top: 1rem !important;
+  }
+
+  /* Chart containers */
+  .dashboard-chart-container {
+    height: 250px !important;
+    margin-bottom: 1rem !important;
+  }
+
+  /* Stats cards */
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  .stat-card {
+    padding: 1rem !important;
+  }
+
+  .stat-card h3 {
+    font-size: 1rem !important;
+  }
+
+  .stat-card .stat-value {
+    font-size: 1.5rem !important;
+  }
+}
+
+/* ============================================
+   SETTINGS VIEW - MOBILE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .settings-container {
+    padding: 1rem !important;
+  }
+
+  .settings-section {
+    padding: 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .settings-section h2 {
+    font-size: 1.25rem !important;
+  }
+
+  .settings-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.5rem !important;
+  }
+}
+
+/* ============================================
+   ALERTS VIEW - MOBILE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .alerts-container {
+    padding: 1rem !important;
+  }
+
+  .alert-card {
+    padding: 1rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .alert-card h3 {
+    font-size: 1rem !important;
+  }
+
+  .alert-actions {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+
+  .alert-actions button {
+    width: 100% !important;
+  }
+}
+
+/* ============================================
+   PLAYBOOK VIEW - MOBILE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .playbook-container {
+    padding: 1rem !important;
+  }
+
+  .playbook-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  .playbook-card {
+    padding: 1rem !important;
+  }
+}
+
+/* ============================================
+   MODALS & DIALOGS - MOBILE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .modal-container {
+    padding: 1rem !important;
+    max-width: 95vw !important;
+  }
+
+  .modal-header h2 {
+    font-size: 1.25rem !important;
+  }
+
+  .modal-content {
+    padding: 1rem !important;
+  }
+
+  .modal-actions {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+
+  .modal-actions button {
+    width: 100% !important;
+  }
+}
+
+/* ============================================
+   LOADING SCREENS - MOBILE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .immersive-loading-screen {
+    padding: 2rem 1rem !important;
+  }
+
+  .loading-content h2 {
+    font-size: 1.25rem !important;
+  }
+
+  .loading-animation {
+    transform: scale(0.8) !important;
+  }
+}
+
+/* ============================================
+   BUTTONS & INTERACTIVE ELEMENTS - MOBILE
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Increase touch target sizes to 48px (Apple HIG standard) */
+  button,
+  a,
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: 48px;
+    min-width: 48px;
+  }
+
+  /* Ensure proper tap feedback */
+  button:active,
+  a:active {
+    opacity: 0.8;
+    transform: scale(0.97);
+    transition: all 0.1s ease;
+  }
+
+  /* Primary buttons */
+  .primary-button {
+    padding: 0.875rem 1.5rem !important;
+    font-size: 1rem !important;
+    width: 100%;
+    min-height: 48px !important;
+  }
+
+  /* Secondary buttons */
+  .secondary-button {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.9rem !important;
+  }
+
+  /* Icon buttons */
+  .icon-button {
+    width: 48px !important;
+    height: 48px !important;
+    padding: 12px !important;
+  }
+}
+
+/* ============================================
+   FORMS & INPUTS - MOBILE
+   ============================================ */
+
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  select,
+  textarea {
+    font-size: 16px !important; /* Prevent zoom on iOS */
+    padding: 0.75rem !important;
+    width: 100% !important;
+  }
+
+  .form-group {
+    margin-bottom: 1rem !important;
+  }
+
+  label {
+    font-size: 0.9rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+}
+
+/* ============================================
+   CONTEXT MENU - MOBILE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .context-menu {
+    min-width: 200px !important;
+    max-width: 90vw !important;
+  }
+
+  .context-menu-item {
+    padding: 0.75rem 1rem !important;
+    font-size: 0.9rem !important;
+    min-height: 44px;
+  }
+}
+
+/* ============================================
+   SCROLLBARS - MOBILE
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Hide scrollbars on mobile for cleaner look */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+  }
+}
+
+/* ============================================
+   FOCUS MODE - MOBILE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .focus-mode {
+    padding: 0 !important;
+  }
+
+  .focus-mode textarea {
+    min-height: calc(100vh - 120px) !important;
+  }
+}
+
+/* ============================================
+   TABLET OPTIMIZATIONS (768px - 1024px)
+   ============================================ */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  /* Slightly reduce sidebar width on tablets */
+  .sidebar-container {
+    width: 220px !important;
+  }
+
+  main {
+    max-width: calc(100vw - 220px) !important;
+  }
+
+  /* Two-column grids on tablet */
+  .analysis-grid,
+  .insights-grid,
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Reduce font sizes slightly */
+  h1 {
+    font-size: 2rem !important;
+  }
+
+  h2 {
+    font-size: 1.5rem !important;
+  }
+}
+
+/* ============================================
+   LANDSCAPE MOBILE (Mobile but landscape)
+   ============================================ */
+
+@media (max-width: 900px) and (orientation: landscape) {
+  /* Reduce vertical padding in landscape */
+  .diary-editor-container,
+  .ai-analysis-container,
+  .dashboard-container {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+
+  /* Compact toolbar in landscape */
+  .diary-toolbar {
+    padding: 0.5rem !important;
+  }
+
+  /* Smaller headers in landscape */
+  h1 {
+    font-size: 1.5rem !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+}
+
+/* ============================================
+   SAFE AREA INSETS (iPhone notch support)
+   ============================================ */
+
+@supports (padding: env(safe-area-inset-top)) {
+  @media (max-width: 768px) {
+    body {
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
+
+    .mobile-menu-button {
+      top: calc(1rem + env(safe-area-inset-top));
+      left: calc(1rem + env(safe-area-inset-left));
+    }
+
+    .sidebar-container {
+      padding-top: env(safe-area-inset-top);
+    }
+  }
+}
+
+/* ============================================
+   DARK MODE MOBILE ADJUSTMENTS
+   ============================================ */
+
+@media (max-width: 768px) {
+  [data-theme="dark"] .sidebar-container {
+    background: var(--bg-primary);
+    border-right: 1px solid var(--border-color);
+  }
+
+  [data-theme="dark"] .sidebar-backdrop {
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+
+  [data-theme="dark"] .mobile-menu-button {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+  }
+}
+
+/* ============================================
+   TOUCH & HOVER STATES
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Remove hover states on touch devices */
+  @media (hover: none) {
+    button:hover,
+    a:hover,
+    .clickable:hover {
+      opacity: 1 !important;
+      transform: none !important;
+    }
+  }
+
+  /* Add active states for better touch feedback */
+  button:active,
+  a:active,
+  .clickable:active {
+    opacity: 0.7;
+    transform: scale(0.98);
+  }
+}
+
+/* ============================================
+   VERY SMALL PHONES (320px - 390px)
+   ============================================ */
+
+@media (max-width: 390px) {
+  /* Tighter spacing for very small screens */
+  .ai-analysis-container {
+    padding: 0.75rem 1rem !important;
+  }
+
+  /* Smaller header */
+  .ai-analysis-container h1 {
+    font-size: 1.5rem !important;
+  }
+
+  /* Compact tabs */
+  .tab-button,
+  .ai-analysis-container button[style*="flex: 1"] {
+    padding: 0.75rem 1rem !important;
+    font-size: 0.8125rem !important;
+  }
+
+  /* Smaller text boxes */
+  .ai-analysis-container .card,
+  .ai-analysis-container div[style*="background"][style*="padding"] {
+    padding: 1rem !important;
+  }
+
+  /* Smaller badges */
+  .ai-analysis-container button[style*="text-transform"],
+  .ai-analysis-container div[style*="text-transform"] {
+    font-size: 0.625rem !important;
+    padding: 0.35rem 0.75rem !important;
+  }
+}
+
+/* ============================================
+   IPHONE 12 PRO & SIMILAR (390px width)
+   ============================================ */
+
+@media (width: 390px) and (max-height: 844px) {
+  /* Optimized for exact iPhone 12 Pro dimensions */
+  .ai-analysis-container {
+    padding: 1rem 1.125rem !important;
+  }
+
+  /* Perfect tab sizing */
+  .tab-button {
+    padding: 0.875rem 1.125rem !important;
+  }
+}
+
+/* ============================================
+   COLOR CONTRAST IMPROVEMENTS FOR MOBILE
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Ensure text meets WCAG AA standards */
+  .ai-analysis-container {
+    --text-primary: rgba(255, 255, 255, 0.95);
+    --text-secondary: rgba(255, 255, 255, 0.75);
+    --text-tertiary: rgba(255, 255, 255, 0.6);
+  }
+
+  /* Ensure colored keywords are vibrant for outdoor reading */
+  .ai-analysis-container span[style*="color: #10b981"],
+  .ai-analysis-container span[style*="color:#10b981"] {
+    color: #22c55e !important; /* Brighter green */
+  }
+
+  .ai-analysis-container span[style*="color: #f59e0b"],
+  .ai-analysis-container span[style*="color:#f59e0b"] {
+    color: #fb923c !important; /* Brighter orange */
+  }
+
+  .ai-analysis-container span[style*="color: #ef4444"],
+  .ai-analysis-container span[style*="color:#ef4444"] {
+    color: #f87171 !important; /* Brighter red */
+  }
+}
+
+/* ============================================
+   PERFORMANCE OPTIMIZATIONS FOR MOBILE
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Reduce animations on mobile */
+  * {
+    animation-duration: 0.2s !important;
+    transition-duration: 0.2s !important;
+  }
+
+  /* Reduce motion for performance */
+  @media (prefers-reduced-motion: no-preference) {
+    * {
+      animation-duration: 0.3s !important;
+    }
+  }
+
+  /* Optimize scroll performance */
+  .ai-analysis-container {
+    -webkit-overflow-scrolling: touch;
+    will-change: scroll-position;
+  }
+
+  /* Prevent layout shift */
+  img,
+  video {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* ============================================
+   HAMBURGER MENU IMPROVEMENTS
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Ensure proper hamburger menu sizing */
+  .mobile-menu-button {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Visual weight improvement */
+  .mobile-menu-button svg,
+  .mobile-menu-button span {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  /* Clear tap feedback */
+  .mobile-menu-button:active {
+    background: var(--bg-quaternary) !important;
+    transform: scale(0.95) !important;
+  }
+}

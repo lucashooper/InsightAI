@@ -1,0 +1,946 @@
+/* =====================================================
+   INSIGHTAI PREMIUM MARKETING SITE STYLES
+   =====================================================
+   
+   FILE STRUCTURE:
+   1. CSS Variables (:root) - Colors, spacing, shadows
+   2. Global Styles - Body, typography, resets
+   3. Utility Classes - Reusable components
+   4. Hero Section - Top of page with title + dashboard preview
+   5. Features Section - 6 cards ("AI-Powered Insights", etc.)
+   6. Security Section - "Sync securely" with 3 features
+   7. Philosophy Section - "Your data, your rules" with gem
+   8. CTA Section - Call-to-action buttons
+   9. Footer - Links and copyright
+   10. Responsive - Mobile/tablet breakpoints
+   
+   ===================================================== */
+
+/* ===== FONT IMPORT ===== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ===== CSS RESET ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* =====================================================
+   CSS VARIABLES (DESIGN TOKENS)
+   ===================================================== */
+:root {
+  /* ===== BACKGROUND COLORS ===== 
+     Used for: Page backgrounds, cards, overlays */
+  --bg-deep-black: hsl(0 0% 0%);
+  --bg-black: hsl(0 0% 4%);
+  --bg-dark: hsl(0 0% 7%);
+  --bg-darker: hsl(0 0% 6%);
+  --bg-card: hsl(0 0% 100% / 0.03);
+  --bg-card-hover: hsl(0 0% 100% / 0.05);
+  
+  /* ===== TEXT COLORS ===== 
+     --text-primary: Headings, important text (100% white, fully opaque)
+     --text-secondary: Body text, descriptions (75% opacity)
+     --text-tertiary: Muted text, captions (60% opacity) */
+  --text-primary: hsl(0 0% 100%);
+  --text-secondary: hsl(0 0% 100% / 0.75);
+  --text-tertiary: hsl(0 0% 100% / 0.6);
+  
+  /* ===== ACCENT COLORS ===== 
+     Brand colors for buttons, links, highlights
+     Purple: 262° hue | Blue: 239° hue */
+  --accent-purple: hsl(262 83% 58%);
+  --accent-purple-light: hsl(262 72% 77%);
+  --accent-blue: hsl(239 84% 67%);
+  --accent-blue-light: hsl(236 89% 75%);
+  /* ===== GRADIENTS ===== 
+     Used for: Backgrounds, glows, overlays */
+  --gradient-primary: linear-gradient(135deg, hsl(262 72% 77%) 0%, hsl(236 89% 75%) 50%, hsl(239 84% 67%) 100%);
+  --gradient-glow: radial-gradient(circle at center, hsl(262 83% 58% / 0.4) 0%, transparent 70%);
+  
+  /* ===== BORDERS ===== 
+     Glass morphism style borders */
+  --border-glass: hsl(0 0% 100% / 0.08);
+  --border-glass-hover: hsl(0 0% 100% / 0.15);
+  
+  /* ===== SHADOWS & GLOWS ===== 
+     Depth and highlighting effects */
+  --shadow-sm: 0 2px 8px hsl(0 0% 0% / 0.3);
+  --shadow-md: 0 8px 32px hsl(0 0% 0% / 0.4);
+  --shadow-lg: 0 20px 60px hsl(0 0% 0% / 0.5);
+  --shadow-xl: 0 40px 80px hsl(0 0% 0% / 0.6);
+  --glow-purple: 0 0 40px hsl(262 83% 58% / 0.3);
+  --glow-purple-strong: 0 0 60px hsl(262 83% 58% / 0.5);
+  
+  /* ===== SPACING SYSTEM ===== 
+     Based on 8px grid (space-1 = 8px, space-2 = 16px, etc.) */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 40px;
+  --space-6: 48px;
+  --space-8: 64px;
+  --space-10: 80px;
+  
+  /* ===== ANIMATIONS ===== 
+     Transition speeds for hover effects */
+  --transition-fast: 150ms ease;
+  --transition-normal: 300ms ease;
+  --transition-slow: 500ms ease;
+}
+
+/* Global Styles */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg-deep-black);
+  color: var(--text-primary);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+.App {
+  position: relative;
+  z-index: 1;
+}
+
+/* Typography */
+h1 {
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased;
+}
+
+h2 {
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased;
+}
+
+h3 {
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased;
+}
+
+h4, h5, h6 {
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+}
+
+/* Container Utilities */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+.container-wide {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+/* Glassmorphism Card Styles */
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border-glass);
+  border-radius: 20px;
+  padding: var(--space-5);
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-normal);
+  position: relative;
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.1), transparent);
+  border-radius: 20px 20px 0 0;
+}
+
+/* Hover effects removed for cleaner experience */
+
+.glass-card-large {
+  background: var(--bg-card);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border-glass);
+  border-radius: 24px;
+  padding: var(--space-8);
+  box-shadow: var(--shadow-lg);
+}
+
+.glass-card-small {
+  background: var(--bg-card);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border-glass);
+  border-radius: 16px;
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Hover effect removed for cleaner look */
+
+/* =====================================================
+   HERO SECTION
+   ===================================================== 
+   Top section with "InsightAI" title, tagline, button,
+   and dashboard preview image with purple glow.
+   
+   EDITS HERE AFFECT:
+   - Main title "InsightAI"
+   - Tagline "Understand yourself. Build better habits."
+   - "Try Insight Today!" button
+   - Dashboard preview window with macOS dots
+   ===================================================== */
+.hero-section {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) var(--space-4);
+  position: relative;
+  background: radial-gradient(ellipse at top center, hsl(239 84% 67% / 0.15) 0%, transparent 60%);
+}
+
+.hero-content {
+  text-align: center;
+  max-width: 1200px;
+  position: relative;
+  z-index: 10;
+}
+
+.hero-title {
+  font-size: clamp(3rem, 8vw, 6.5rem);
+  font-weight: 600;
+  margin-bottom: var(--space-3);
+  letter-spacing: 0.00em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.hero-title-gradient {
+  background: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(240 7% 84%) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-tagline {
+  font-size: clamp(1.25rem, 3vw, 1.875rem);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-6);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.cta-button {
+  display: inline-block;
+  padding: 11px 40px;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+  color: hsl(0 0% 100%);
+  background: linear-gradient(135deg, hsl(262 100% 77% / 0.78), hsl(262 73% 55%));
+  border: 1px solid hsl(0 0% 100% / 0.1);
+  border-radius: 18px;
+  cursor: pointer;
+  text-decoration: none;
+  text-shadow: 0 1px 2px hsl(0 0% 0% / 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px hsl(262 83% 58% / 0.3);
+  position: relative;
+}
+
+/* Removed ::before overlay effect */
+
+/* Button hover effects removed */
+
+/* Dashboard Preview with 3D Effect */
+.dashboard-preview {
+  margin-top: var(--space-8);
+  perspective: 1500px;
+}
+
+.preview-window {
+  max-width: 1000px;
+  margin: 0 auto;
+  background: var(--bg-dark);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 40px 100px hsl(262 83% 58% / 0.5),
+              0 20px 60px hsl(262 83% 58% / 0.4),
+              0 0 80px hsl(262 83% 58% / 0.3);
+  border: 1px solid hsl(262 83% 58% / 0.3);
+  position: relative;
+}
+
+/* Float animation removed */
+
+/* Preview hover removed */
+
+.window-header {
+  background: linear-gradient(180deg, hsl(0 0% 10%) 0%, hsl(0 0% 8%) 100%);
+  padding: var(--space-2);
+  border-bottom: 1px solid hsl(0 0% 100% / 0.05);
+}
+
+.window-dots {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  opacity: 0.8;
+}
+
+.dot.red { background: hsl(3 100% 67%); }
+.dot.yellow { background: hsl(43 100% 59%); }
+.dot.green { background: hsl(131 68% 47%); }
+
+.dashboard-screenshot {
+  width: 100%;
+  height: auto;
+  display: block;
+  position: relative;
+  -webkit-mask-image: linear-gradient(to bottom, 
+    hsl(0 0% 0% / 0.95) 0%, 
+    hsl(0 0% 0%) 10%, 
+    hsl(0 0% 0%) 85%, 
+    hsl(0 0% 0% / 0.95) 95%, 
+    hsl(0 0% 0% / 0.85) 100%);
+  mask-image: linear-gradient(to bottom, 
+    hsl(0 0% 0% / 0.95) 0%, 
+    hsl(0 0% 0%) 10%, 
+    hsl(0 0% 0%) 85%, 
+    hsl(0 0% 0% / 0.95) 95%, 
+    hsl(0 0% 0% / 0.85) 100%);
+}
+
+/* =====================================================
+   FEATURES SECTION - 6 CARDS
+   ===================================================== 
+   The 6 feature cards under "Everything you need"
+   
+   CARDS:
+   1. AI-Powered Insights
+   2. Beautiful Dashboards
+   3. Pattern Recognition
+   4. Privacy First
+   5. Smart Editor
+   6. Beautiful Themes
+   
+   EDITS HERE AFFECT:
+   - Card backgrounds (currently gray: hsl(0 0% 60%))
+   - Card borders
+   - Card shadows/depth
+   - Icon circles
+   - Text inside cards
+   ===================================================== */
+.features-section {
+  padding: var(--space-10) var(--space-4);
+  position: relative;
+}
+
+.section-title {
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  text-align: center;
+  margin-bottom: var(--space-3);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.section-subtitle {
+  text-align: center;
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-8);
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.7;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: var(--space-6);
+  row-gap: var(--space-6);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.feature-card {
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  /* BACKGROUND - Change this for card color */
+  background: linear-gradient(135deg, hsl(262 30% 18%), hsl(220 30% 15%));
+  
+  padding: var(--space-6);
+  
+  /* BORDER - 55px thick purple border */
+  
+  border-radius: 24px;
+  
+  /* SHADOWS - Purple glow + depth */
+  box-shadow: 0 0 30px hsl(262 93% 58% / 0.4), 
+              0 12px 48px hsl(0 0% 0% / 0.6),
+              inset 0 1px 0 hsla(0, 0%, 100%, 0.3);
+}
+
+/* Feature card hover effects removed for static appearance */
+
+.feature-icon-container {
+  width: 88px;
+  height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, hsl(262 83% 58% / 0.19), hsl(217 91% 60% / 0.15));
+  border-radius: 50%;
+  margin: 0 auto var(--space-4);
+  position: relative;
+  transition: all var(--transition-normal);
+}
+
+.feature-icon-container::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(135deg, hsl(262 83% 58% / 0.4), hsl(217 91% 60% / 0.4));
+  -webkit-mask: linear-gradient(hsl(0 0% 100%) 0 0) content-box, linear-gradient(hsl(0 0% 100%) 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  z-index: -1;
+}
+
+.feature-icon-container::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, hsl(262 83% 58% / 0.3), transparent 70%);
+  filter: blur(15px);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+  z-index: -2;
+}
+
+/* Icon hover effects removed */
+
+.feature-icon-svg {
+  color: var(--accent-purple-light);
+  filter: drop-shadow(0 0 8px hsla(0, 56%, 44%, 0.4));
+}
+
+.feature-title {
+  font-size: 1.5rem;
+  margin-bottom: var(--space-2);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-align: center;
+}
+
+.feature-description {
+  color: var(--text-secondary);
+  line-height: 1.7;
+  flex: 1;
+  font-size: 1.0625rem;
+  text-align: center;
+}
+
+/* =====================================================
+   SECURITY SECTION - "SYNC SECURELY"
+   ===================================================== 
+   The 3 security features in a row
+   
+   FEATURES:
+   1. Fine-grained control
+   2. Version history
+   3. Collaboration
+   
+   EDITS HERE AFFECT:
+   - Layout of 3 boxes (currently in a row)
+   - Icon circles
+   - Text and descriptions
+   ===================================================== */
+.security-section {
+  padding: var(--space-10) var(--space-4);
+  background: radial-gradient(ellipse at center, hsl(262 83% 58% / 0.08) 0%, transparent 70%);
+}
+
+.security-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-title-large {
+  font-size: clamp(3rem, 6vw, 4.5rem);
+  font-weight: 600;
+  margin-bottom: var(--space-4);
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+}
+
+.section-description-large {
+  font-size: 1.375rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-8);
+  line-height: 1.8;
+}
+
+.learn-more {
+  color: var(--accent-purple-light);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color var(--transition-fast);
+  border-bottom: 1px solid transparent;
+}
+
+.learn-more:hover {
+  color: var(--accent-blue-light);
+  border-bottom-color: var(--accent-blue-light);
+}
+
+.security-features {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-5);
+  justify-content: center;
+  align-items: stretch;
+  flex-wrap: nowrap;
+}
+
+.security-feature {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+  text-align: center;
+  flex: 1 1 0;
+  min-width: 280px;
+}
+
+.feature-icon-container-medium {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, hsl(262 83% 58% / 0.15), hsl(217 91% 60% / 0.15));
+  border-radius: 50%;
+  position: relative;
+  transition: all var(--transition-normal);
+}
+
+.feature-icon-container-medium::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(135deg, hsl(262 83% 58% / 0.4), hsl(217 91% 60% / 0.4));
+  -webkit-mask: linear-gradient(hsl(0 0% 100%) 0 0) content-box, linear-gradient(hsl(0 0% 100%) 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  z-index: -1;
+}
+
+.feature-icon-container-medium::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, hsl(262 83% 58% / 0.25), transparent 70%);
+  filter: blur(12px);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+  z-index: -2;
+}
+
+/* Sync section icon hover effects removed */
+
+.feature-icon-svg-medium {
+  color: var(--accent-purple-light);
+}
+
+.feature-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.feature-subtitle {
+  font-size: 1.5rem;
+  font-weight: 500;
+  margin-bottom: var(--space-2);
+  letter-spacing: 0.01em;
+  text-align: center;
+}
+
+.feature-text {
+  font-size: 1.125rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  text-align: center;
+}
+
+/* ===== PHILOSOPHY SECTION ===== */
+.philosophy-section {
+  padding: var(--space-10) var(--space-4);
+  position: relative;
+}
+
+.philosophy-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-10);
+  max-width: 1200px;
+  margin: 0 auto;
+  align-items: center;
+}
+
+.philosophy-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.philosophy-item {
+  padding: var(--space-4);
+  border-left: 2px solid var(--accent-purple);
+  transition: all var(--transition-normal);
+}
+
+.philosophy-item:hover {
+  border-left-color: var(--accent-blue-light);
+  padding-left: var(--space-5);
+}
+
+.philosophy-title {
+  font-size: 1.875rem;
+  font-weight: 500;
+  margin-bottom: var(--space-2);
+  letter-spacing: 0.01em;
+}
+
+.philosophy-description {
+  font-size: 1.125rem;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.text-highlight {
+  color: var(--accent-purple-light);
+  font-weight: 500;
+}
+
+.philosophy-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.gem-container {
+  margin-bottom: var(--space-4);
+  position: relative;
+  animation: float 8s ease-in-out infinite;
+}
+
+.gem-icon {
+  width: 240px;
+  height: 240px;
+  filter: drop-shadow(0 10px 40px hsl(262 83% 58% / 0.5));
+  animation: rotate3d 20s linear infinite;
+}
+
+@keyframes rotate3d {
+  0% {
+    transform: rotateY(0deg);
+  }
+  100% {
+    transform: rotateY(360deg);
+  }
+}
+
+.philosophy-brand {
+  font-size: 3.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-2);
+}
+
+.philosophy-cta-text {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  margin: var(--space-2) 0;
+}
+
+.philosophy-cta-link {
+  display: inline-block;
+  color: var(--accent-purple-light);
+  font-size: 1.125rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 2px solid var(--accent-purple);
+  padding-bottom: 4px;
+  transition: all var(--transition-normal);
+}
+
+.philosophy-cta-link:hover {
+  color: var(--accent-blue-light);
+  border-color: var(--accent-blue-light);
+  transform: translateY(-2px);
+}
+
+/* ===== SPARK IDEAS SECTION ===== */
+.spark-section {
+  padding: var(--space-10) var(--space-4);
+  text-align: center;
+  background: radial-gradient(ellipse at center, hsl(262 83% 58% / 0.15) 0%, transparent 70%);
+}
+
+.spark-title {
+  font-size: clamp(3rem, 6vw, 5rem);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* ===== CTA SECTION ===== */
+.cta-section {
+  padding: var(--space-10) var(--space-4);
+  text-align: center;
+  background: radial-gradient(ellipse at center, hsl(239 84% 67% / 0.1) 0%, transparent 70%);
+}
+
+.cta-title {
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-weight: 600;
+  margin-bottom: var(--space-3);
+  letter-spacing: 0.01em;
+}
+
+.cta-description {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-6);
+}
+
+.cta-buttons {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.cta-button.secondary {
+  background: transparent;
+  border: 2px solid var(--accent-purple);
+  color: var(--text-primary);
+  box-shadow: none;
+}
+
+.cta-button.secondary:hover {
+  background: hsl(262 83% 58% / 0.1);
+  border-color: var(--accent-blue-light);
+  box-shadow: var(--glow-purple);
+}
+
+/* ===== FOOTER ===== */
+.footer {
+  padding: var(--space-8) var(--space-4);
+  background: linear-gradient(180deg, transparent 0%, hsl(262 83% 58% / 0.05) 100%);
+  border-top: 1px solid var(--border-glass);
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-6);
+  max-width: 1200px;
+  margin: 0 auto var(--space-6);
+}
+
+.footer-brand {
+  grid-column: 1 / -1;
+}
+
+.footer-logo {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: var(--space-2);
+}
+
+.footer-tagline {
+  color: var(--text-secondary);
+  font-size: 1.125rem;
+}
+
+.footer-column h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: var(--space-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent-purple-light);
+}
+
+.footer-links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.footer-links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.footer-links a:hover {
+  color: var(--text-primary);
+}
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-glass);
+  color: var(--text-tertiary);
+  font-size: 0.875rem;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .philosophy-content {
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+  
+  .gem-icon {
+    width: 180px;
+    height: 180px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container-wide {
+    padding: 0 var(--space-3);
+  }
+  
+  .security-section,
+  .philosophy-section {
+    padding: var(--space-8) var(--space-3);
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+  
+  .section-title-large {
+    font-size: 2.5rem;
+  }
+  
+  .section-description-large {
+    font-size: 1.125rem;
+  }
+  
+  .security-features {
+    gap: var(--space-3);
+  }
+  
+  .security-feature {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .philosophy-title {
+    font-size: 1.5rem;
+  }
+  
+  .philosophy-description {
+    font-size: 1rem;
+  }
+  
+  .cta-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .cta-button {
+    width: 100%;
+    max-width: 320px;
+  }
+  
+  .footer-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .footer-bottom {
+    flex-direction: column;
+    gap: var(--space-2);
+    text-align: center;
+  }
+}
+
+/* ===== UTILITY CLASSES ===== */
+.text-center {
+  text-align: center;
+}
+
+.mb-4 {
+  margin-bottom: var(--space-4);
+}
+
+.mt-8 {
+  margin-top: var(--space-8);
+}
+
+/* Performance Optimizations */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

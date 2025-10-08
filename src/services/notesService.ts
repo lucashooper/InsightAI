@@ -261,51 +261,36 @@ export const notesService = {
 
   // Process sentiment flow data for the stacked bar chart
   processSentimentFlowData(notes: DiaryEntry[]) {
-    const sentimentData: { [key: string]: { wellbeingScore: number; resilienceScore: number } } = {};
-    
-    notes.forEach(note => {
-      if (note.ai_insights) {
+    // Show each note as a separate point for better visualization
+    return notes
+      .filter(note => note.ai_insights) // Only include notes with AI insights
+      .map(note => {
         const date = new Date(note.created_at).toLocaleDateString('en-US', { 
           month: 'short', 
           day: '2-digit' 
         });
         
-        if (!sentimentData[date]) {
-          sentimentData[date] = { wellbeingScore: 0, resilienceScore: 0 };
-        }
-        
         // Use the new dual-axis scores
         const wellbeingScore = note.ai_insights.wellbeingScore || 5;
         const resilienceScore = note.ai_insights.resilienceScore || 3;
         
-        // For days with multiple entries, average the scores
-        const existingWellbeing = sentimentData[date].wellbeingScore;
-        const existingResilience = sentimentData[date].resilienceScore;
-        
-        if (existingWellbeing === 0) {
-          // First entry for this date
-          sentimentData[date].wellbeingScore = wellbeingScore;
-          sentimentData[date].resilienceScore = resilienceScore;
-        } else {
-          // Average with existing entries for this date
-          sentimentData[date].wellbeingScore = (existingWellbeing + wellbeingScore) / 2;
-          sentimentData[date].resilienceScore = (existingResilience + resilienceScore) / 2;
-        }
-      }
-    });
-    
-    // Convert to array format for Recharts
-    return Object.entries(sentimentData).map(([date, scores]) => ({
-      date,
-      wellbeingScore: Math.round(scores.wellbeingScore * 10) / 10, // Round to 1 decimal place
-      resilienceScore: Math.round(scores.resilienceScore * 10) / 10
-    }));
+        return {
+          date: `${date} ${new Date(note.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`,
+          wellbeingScore: Math.round(wellbeingScore * 10) / 10,
+          resilienceScore: Math.round(resilienceScore * 10) / 10
+        };
+      })
+      .sort((a, b) => {
+        // Sort chronologically
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        return dateA.getTime() - dateB.getTime();
+      });
   },
 
   // Process category breakdown data for the donut chart
   processCategoryData(notes: DiaryEntry[]) {
     const categoryCounts: { [key: string]: number } = {};
-    
     notes.forEach(note => {
       if (note.ai_insights?.insights_report?.keyTakeaways) {
         note.ai_insights.insights_report.keyTakeaways.forEach((takeaway: any) => {

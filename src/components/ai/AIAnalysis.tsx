@@ -45,6 +45,9 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
   const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
   const [isGeneratingTimeline, setIsGeneratingTimeline] = useState(false);
   const [shouldShowTimeline, setShouldShowTimeline] = useState(false);
+  
+  // Track if we're loading saved analysis
+  const [isLoadingSavedAnalysis, setIsLoadingSavedAnalysis] = useState(false);
 
   // Load saved analysis when note changes
   useEffect(() => {
@@ -85,6 +88,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
 
   // Load saved AI response from database
   const loadSavedAIResponse = async (noteId: string) => {
+    setIsLoadingSavedAnalysis(true);
     try {
       // First check if the new schema exists
       const hasNewSchema = await storageAdapter.checkAISchema();
@@ -104,14 +108,15 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
         
         // Check if we need to clear error messages
         await clearSavedErrors();
-      } else {
         // Fallback to legacy method
         console.log('🔄 Using legacy AI response loading...');
         setSavedAIResponse(null);
       }
     } catch (error) {
-      console.error('Failed to load saved AI response:', error);
+      console.error('❌ Failed to load saved AI response:', error);
       setSavedAIResponse(null);
+    } finally {
+      setIsLoadingSavedAnalysis(false);
     }
   };
 
@@ -547,9 +552,18 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
   const insightsToShow = hasSavedInsights ? savedAIResponse.ai_insights : analysis;
   const hasAnalysis = analysis !== null || savedAIResponse?.ai_response_text;
 
+  // Auto-trigger analysis when no analysis exists (only after saved analysis has loaded)
+  useEffect(() => {
+    if (!isLoadingSavedAnalysis && !hasAnalysis && !isAnalyzing && note?.content) {
+      console.log('🚀 Auto-triggering analysis (no existing analysis found)');
+      handleAnalyze(true);
+    }
+  }, [note?.id, isLoadingSavedAnalysis, hasAnalysis, isAnalyzing]); // Wait for saved analysis to load
+
   // Debug logging
   console.log('🔍 AIAnalysis render state:', {
     noteId: note?.id,
+    isLoadingSavedAnalysis,
     hasAnalysis,
     hasConversationalResponse,
     isAnalyzing,
@@ -562,36 +576,8 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
       {/* Immersive Full-Screen Loading */}
       <ImmersiveLoadingScreen isVisible={isAnalyzing || isRegenerating} />
       
-      {(!hasAnalysis && !isAnalyzing) ? (
-        <div style={{ 
-          textAlign: 'center', 
-          padding: '3rem',
-          background: '#1F2937',
-          borderRadius: '16px',
-          border: '1px solid #374151'
-        }}>
-          <div style={{ fontSize: '4rem', marginBottom: '1.5rem' }}>🧠</div>
-          <h3 style={{ marginBottom: '1rem', color: '#E5E7EB' }}>Ready for Analysis</h3>
-          <p style={{ marginBottom: '2rem', color: '#9CA3AF' }}>
-            Click "Analyze Entry" to get AI-powered insights about your thoughts and feelings.
-          </p>
-          <button 
-            className="primary-button"
-            onClick={() => handleAnalyze(false)} 
-            style={{ 
-              fontSize: '1.1rem', 
-              padding: '1rem 2rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              boxShadow: '0 4px 12px rgba(56, 189, 248, 0.25)'
-            }}
-          >
-            🧠 Analyze Entry
-          </button>
-        </div>
-      ) : (
-        <div style={{ padding: '2rem 3rem', maxWidth: '100%' }}>
+      {(hasAnalysis || isAnalyzing) && (
+        <div className="ai-analysis-container" style={{ padding: '2rem 3rem', maxWidth: '100%' }}>
           {/* Centered Header with Entry Date */}
           <div style={{ textAlign: 'center', marginBottom: '3rem', position: 'relative' }}>
             <h1 style={{ 
