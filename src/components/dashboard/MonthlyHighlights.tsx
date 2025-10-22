@@ -18,23 +18,22 @@ interface MonthlyHighlightsProps {
 }
 
 const MonthlyHighlights: React.FC<MonthlyHighlightsProps> = ({ insights, timeRange = 30, setActiveView, setActiveNoteId }) => {
+  const [showAll, setShowAll] = React.useState(false);
+  const INITIAL_DISPLAY_COUNT = 10;
+  
   // Handle insight card click
   const handleInsightClick = (noteId: string) => {
     setActiveNoteId(noteId);
     setActiveView('editor');
   };
+  
+  // Sort wins by most recent first (you can adjust this logic)
+  const sortedInsights = [...insights];
+  
+  const displayedInsights = showAll ? sortedInsights : sortedInsights.slice(0, INITIAL_DISPLAY_COUNT);
+  const remainingCount = sortedInsights.length - INITIAL_DISPLAY_COUNT;
 
-  // Get time range label
-  const getTimeRangeLabel = (range: number) => {
-    switch (range) {
-      case 7: return 'This Week';
-      case 30: return 'This Month';
-      case 90: return 'This Quarter';
-      default: return `This Period`;
-    }
-  };
-
-  // Parse highlighted phrases from insight text (reusing logic from InsightsReport)
+  // Parse highlighted phrases from insight text
   const parseHighlightedText = (text: string) => {
     const parts = text.split(/(\*[^*]+\*)/);
     return parts.map((part, index) => {
@@ -43,7 +42,6 @@ const MonthlyHighlights: React.FC<MonthlyHighlightsProps> = ({ insights, timeRan
         return (
           <span
             key={index}
-            className="highlighted-phrase positive"
             style={{
               backgroundColor: 'rgba(34, 197, 94, 0.15)',
               padding: '2px 4px',
@@ -60,26 +58,15 @@ const MonthlyHighlights: React.FC<MonthlyHighlightsProps> = ({ insights, timeRan
     });
   };
 
-  if (insights.length === 0) {
-    return (
-      <div style={{
-        textAlign: 'center',
-        padding: '3rem',
-        color: '#9CA3AF',
-        background: '#1F2937',
-        borderRadius: '12px',
-        border: '1px solid #374151'
-      }}>
-        <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
-          <PremiumIcons.Sparkles size={48} color="#9CA3AF" />
-        </div>
-        <h4 style={{ color: '#E5E7EB', marginBottom: '0.5rem' }}>No Wins Yet</h4>
-        <p style={{ margin: '0', fontSize: '0.9rem' }}>
-          Your positive insights and achievements will appear here once you have some analysis.
-        </p>
-      </div>
-    );
-  }
+  // Get time range label
+  const getTimeRangeLabel = (range: number) => {
+    switch (range) {
+      case 7: return 'This Week';
+      case 30: return 'This Month';
+      case 90: return 'This Quarter';
+      default: return `This Period`;
+    }
+  };
 
   return (
     <div style={{
@@ -90,21 +77,30 @@ const MonthlyHighlights: React.FC<MonthlyHighlightsProps> = ({ insights, timeRan
       border: '1px solid rgba(255, 255, 255, 0.08)',
       padding: '1.5rem'
     }}>
-      <h3 style={{ 
-        margin: '0 0 1.5rem 0', 
-        color: '#E5E7EB',
-        fontSize: '1.25rem',
-        fontWeight: '600',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem'
-      }}>
-        <PremiumIcons.Sparkles size={20} color="#22c55e" />
-        Your Wins {getTimeRangeLabel(timeRange)} ({insights.length})
-      </h3>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h3 style={{ 
+          margin: '0 0 0.5rem 0', 
+          color: '#E5E7EB',
+          fontSize: '1.25rem',
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          <PremiumIcons.Sparkles size={20} color="#22c55e" />
+          What's Working ({insights.length})
+        </h3>
+        <p style={{
+          margin: 0,
+          fontSize: '0.875rem',
+          color: 'rgba(255, 255, 255, 0.6)'
+        }}>
+          Strategies that are helping you thrive
+        </p>
+      </div>
       
       <div style={{ display: 'grid', gap: '1rem' }}>
-        {insights.map((insight, index) => (
+        {displayedInsights.map((insight, index) => (
           <div
             key={index}
             onClick={() => handleInsightClick(insight.noteId)}
@@ -144,10 +140,10 @@ const MonthlyHighlights: React.FC<MonthlyHighlightsProps> = ({ insights, timeRan
             
             {/* Insight content */}
             <div style={{ marginBottom: '1rem' }}>
-              <p style={{ 
-                margin: '0', 
-                fontSize: '1rem', 
-                color: '#E5E7EB', 
+              <p style={{
+                margin: '0',
+                fontSize: '1rem',
+                color: '#E5E7EB',
                 lineHeight: '1.6',
                 fontWeight: '500'
               }}>
@@ -186,25 +182,66 @@ const MonthlyHighlights: React.FC<MonthlyHighlightsProps> = ({ insights, timeRan
         ))}
       </div>
       
-      <div style={{ 
-        marginTop: '1.5rem', 
-        fontSize: '0.875rem', 
-        color: '#9CA3AF',
-        textAlign: 'center',
-        padding: '1rem',
-        background: 'rgba(34, 197, 94, 0.05)',
-        borderRadius: '8px',
-        border: '1px solid rgba(34, 197, 94, 0.1)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '0.5rem'
-      }}>
-        <PremiumIcons.Trophy size={16} color="#22c55e" />
-        You've made {insights.length} positive discoveries {getTimeRangeLabel(timeRange).toLowerCase()}! Keep up the great work.
-      </div>
+      {/* View All / Show Less Button */}
+      {!showAll && remainingCount > 0 && (
+        <button
+          onClick={() => setShowAll(true)}
+          style={{
+            width: '100%',
+            padding: '16px',
+            marginTop: '1rem',
+            background: 'rgba(34, 197, 94, 0.1)',
+            border: '1px solid rgba(34, 197, 94, 0.3)',
+            borderRadius: '12px',
+            color: '#22c55e',
+            fontSize: '0.9rem',
+            fontWeight: '500',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(34, 197, 94, 0.15)';
+            e.currentTarget.style.borderColor = 'rgba(34, 197, 94, 0.5)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(34, 197, 94, 0.1)';
+            e.currentTarget.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+          }}
+        >
+          View All {insights.length} Wins →
+        </button>
+      )}
+      {showAll && sortedInsights.length > INITIAL_DISPLAY_COUNT && (
+        <button
+          onClick={() => setShowAll(false)}
+          style={{
+            width: '100%',
+            padding: '12px',
+            background: 'transparent',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '12px',
+            color: 'rgba(255, 255, 255, 0.6)',
+            fontSize: '0.875rem',
+            fontWeight: '500',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+          }}
+        >
+          ↑ Show Less
+        </button>
+      )}
     </div>
   );
 };
 
-export default MonthlyHighlights; 
+export default MonthlyHighlights;

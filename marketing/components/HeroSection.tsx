@@ -5,14 +5,14 @@ const HeroSection: React.FC = () => {
     <section className="hero-section">
       <div className="hero-content">
         <h1 className="hero-title">
-          <span className="hero-title-gradient">Insight</span>
-          <span className="gradient-text">AI</span>
+          Discover yourself<br />
+          <span className="gradient-text-insight">with Insight.</span>
         </h1>
         <p className="hero-tagline">
-          Understand yourself. Build better habits. Take control.
+          Meet Insight. A toolkit for understanding yourself and your habits, allowing you to find a routine that works for you, based on the data.
         </p>
-        <button className="cta-button primary">
-          Try Insight Today!
+        <button className="cta-button-premium">
+          Join Insight
         </button>
         
         {/* Dashboard Preview */}

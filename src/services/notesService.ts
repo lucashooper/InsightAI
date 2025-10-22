@@ -20,6 +20,13 @@ export const notesService = {
 
   // Create a new note
   async createNote(title: string, content: string): Promise<DiaryEntry> {
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error('User must be authenticated to create notes');
+    }
+
     const { data, error } = await supabase
       .from('notes')
       .insert([
@@ -27,6 +34,7 @@ export const notesService = {
           title,
           content,
           mood_score: 5, // Default mood score
+          user_id: user.id,
         }
       ])
       .select()
@@ -274,10 +282,20 @@ export const notesService = {
         const wellbeingScore = note.ai_insights.wellbeingScore || 5;
         const resilienceScore = note.ai_insights.resilienceScore || 3;
         
+        // Get snippet from entry (first 80 characters)
+        const snippet = note.content 
+          ? note.content.length > 80 
+            ? note.content.substring(0, 80) + '...'
+            : note.content
+          : '';
+        
         return {
           date: `${date} ${new Date(note.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`,
           wellbeingScore: Math.round(wellbeingScore * 10) / 10,
-          resilienceScore: Math.round(resilienceScore * 10) / 10
+          resilienceScore: Math.round(resilienceScore * 10) / 10,
+          entryId: note.id,
+          entryTitle: note.title,
+          entrySnippet: snippet
         };
       })
       .sort((a, b) => {

@@ -10,8 +10,8 @@ import DiaryEditor from './components/diary/DiaryEditor';
 import AIAnalysis from './components/ai/AIAnalysis';
 import DashboardView from './components/dashboard/DashboardView';
 import SettingsView from './components/settings/SettingsView';
-import AlertsView from './components/alerts/AlertsView';
 import PlaybookView from './components/playbook/PlaybookView';
+import MyNotesView from './components/notes/MyNotesView';
 import AnimatedBackground from './components/common/AnimatedBackground';
 import { storageAdapter } from './services/storageAdapter';
 import { supabase } from './services/supabaseClient';
@@ -46,12 +46,11 @@ const App: React.FC = () => {
   const [notes, setNotes] = useState<DiaryEntry[]>([]);
   const [selectedNote, setSelectedNote] = useState<DiaryEntry | null>(null);
   const [activeTab, setActiveTab] = useState<'editor' | 'analysis'>('editor');
-  const [activeView, setActiveView] = useState<'editor' | 'dashboard' | 'settings' | 'alerts' | 'playbook'>('editor');
+  const [activeView, setActiveView] = useState<'editor' | 'dashboard' | 'settings' | 'playbook' | 'mynotes'>('editor');
   const [isLoading, setIsLoading] = useState(true);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [blurredNoteIds, setBlurredNoteIds] = useState<Set<string>>(new Set());
   const [streakData, setStreakData] = useState({ currentStreak: 0, longestStreak: 0, lastEntryDate: null as string | null });
-  const [unreadAlertsCount, setUnreadAlertsCount] = useState(0);
   const [detectedPatterns, setDetectedPatterns] = useState<DetectedPattern[]>([]);
   const [highlightingEnabled, setHighlightingEnabled] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -82,26 +81,6 @@ const App: React.FC = () => {
     }
   }, [notes]);
 
-  // Load unread alerts count
-  useEffect(() => {
-    const loadUnreadAlertsCount = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const count = await storageAdapter.getUnreadCount();
-          setUnreadAlertsCount(count);
-        } else {
-          // No user authenticated, set count to 0
-          setUnreadAlertsCount(0);
-        }
-      } catch (error) {
-        console.error('Error loading unread alerts count:', error);
-        setUnreadAlertsCount(0);
-      }
-    };
-
-    loadUnreadAlertsCount();
-  }, []);
 
   const loadNotes = async () => {
     try {
@@ -356,7 +335,6 @@ const App: React.FC = () => {
                 setIsMobileMenuOpen(false); // Close mobile menu
               }}
               streakData={streakData}
-              unreadAlertsCount={unreadAlertsCount}
               blurredNoteIds={blurredNoteIds}
               onToggleNotePrivacy={(noteId) => {
                 setBlurredNoteIds(prev => {
@@ -398,16 +376,6 @@ const App: React.FC = () => {
                   letterSpacing: '-0.02em'
                 }}>
                   Dashboard & Trends
-                </h1>
-              )}
-              {activeView === 'settings' && (
-                <h1 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-primary)' }}>
-                  Settings
-                </h1>
-              )}
-              {activeView === 'alerts' && (
-                <h1 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-primary)' }}>
-                  Pattern Alerts
                 </h1>
               )}
             </div>
@@ -477,10 +445,18 @@ const App: React.FC = () => {
                     }
                   }}
                 />
-              ) : activeView === 'alerts' ? (
-                <AlertsView />
+              ) : activeView === 'mynotes' ? (
+                <MyNotesView
+                  setActiveView={setActiveView}
+                  setActiveNoteId={(id) => {
+                    const note = notes.find(n => n.id === id);
+                    if (note) {
+                      setSelectedNote(note);
+                    }
+                  }}
+                />
               ) : (
-                <SettingsView setActiveView={setActiveView} />
+                <SettingsView />
               )}
             </div>
           </main>

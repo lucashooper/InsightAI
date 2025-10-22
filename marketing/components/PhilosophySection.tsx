@@ -32,31 +32,8 @@ const PhilosophySection: React.FC = () => {
           </div>
           
           <div className="philosophy-visual">
-            <div className="gem-container">
-              <svg className="gem-icon" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <linearGradient id="gemGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#a78bfa" />
-                    <stop offset="50%" stopColor="#818cf8" />
-                    <stop offset="100%" stopColor="#6366f1" />
-                  </linearGradient>
-                </defs>
-                <polygon 
-                  points="100,20 160,80 140,160 60,160 40,80" 
-                  fill="url(#gemGradient)"
-                  opacity="0.9"
-                />
-                <polygon 
-                  points="100,20 160,80 100,100" 
-                  fill="#7c3aed"
-                  opacity="0.7"
-                />
-                <polygon 
-                  points="100,20 40,80 100,100" 
-                  fill="#8b5cf6"
-                  opacity="0.8"
-                />
-              </svg>
+            <div className="logo-container">
+              <img src="/Insight-logo.png" alt="Insight" className="philosophy-logo" />
             </div>
             <h2 className="philosophy-brand">
               Insight<span className="gradient-text">AI</span>

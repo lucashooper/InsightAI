@@ -8,6 +8,7 @@ interface SentimentDataPoint {
   resilienceScore: number;
   entryId?: string;
   entryTitle?: string;
+  entrySnippet?: string;
 }
 
 interface SentimentFlowChartProps {
@@ -45,7 +46,8 @@ const SentimentFlowChart: React.FC<SentimentFlowChartProps> = ({ data, timeRange
           borderRadius: '8px',
           padding: '12px',
           color: '#E5E7EB',
-          minWidth: '180px'
+          minWidth: '220px',
+          maxWidth: '320px'
         }}>
           <p style={{ margin: '0 0 8px 0', fontWeight: '600', fontSize: '0.875rem' }}>{label}</p>
           {payload.map((entry: any, index: number) => (
@@ -55,7 +57,7 @@ const SentimentFlowChart: React.FC<SentimentFlowChartProps> = ({ data, timeRange
               fontSize: '14px',
               fontWeight: '500'
             }}>
-              Score: {entry.value}/10
+              {entry.name === 'wellbeingScore' ? 'Well-being' : 'Resilience'}: {entry.value}/10
             </p>
           ))}
           {dataPoint?.entryTitle && (
@@ -63,13 +65,35 @@ const SentimentFlowChart: React.FC<SentimentFlowChartProps> = ({ data, timeRange
               marginTop: '8px',
               paddingTop: '8px',
               borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-              fontSize: '0.75rem',
-              color: '#3b82f6',
-              cursor: 'pointer'
-            }}
-            onClick={() => dataPoint.entryId && onViewEntry?.(dataPoint.entryId)}
-            >
-              View entry from this day →
+            }}>
+              <div style={{
+                fontSize: '0.8rem',
+                fontWeight: '600',
+                color: '#E5E7EB',
+                marginBottom: '4px'
+              }}>
+                Entry: "{dataPoint.entryTitle}"
+              </div>
+              {dataPoint.entrySnippet && (
+                <div style={{
+                  fontSize: '0.75rem',
+                  color: '#9CA3AF',
+                  lineHeight: '1.4',
+                  marginBottom: '6px'
+                }}>
+                  {dataPoint.entrySnippet}
+                </div>
+              )}
+              <div style={{
+                fontSize: '0.7rem',
+                color: '#3b82f6',
+                cursor: 'pointer',
+                marginTop: '4px'
+              }}
+              onClick={() => dataPoint.entryId && onViewEntry?.(dataPoint.entryId)}
+              >
+                View full entry →
+              </div>
             </div>
           )}
         </div>

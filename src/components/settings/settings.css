@@ -1,0 +1,79 @@
+/* Settings Page Responsive Layout */
+
+.settings-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.settings-header {
+  text-align: center;
+  font-size: 32px;
+  font-weight: 600;
+  margin-top: 24px;
+  margin-bottom: 48px;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.settings-section {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 32px;
+}
+
+/* Theme options horizontal layout */
+.theme-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+/* Full-width sections */
+.migration-section {
+  grid-column: 1 / -1;
+}
+
+/* Responsive breakpoints */
+@media (max-width: 1024px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .settings-section {
+    grid-column: 1 !important;
+  }
+  
+  .settings-page {
+    padding: 32px 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  .settings-header {
+    font-size: 28px;
+    margin-bottom: 32px;
+  }
+  
+  .settings-section {
+    padding: 24px;
+  }
+  
+  .theme-options {
+    grid-template-columns: 1fr;
+  }
+  
+  .settings-page {
+    padding: 24px 16px;
+  }
+}

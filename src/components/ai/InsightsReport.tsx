@@ -1,6 +1,8 @@
 import React from 'react';
 import Spinner from './Spinner';
 import { PremiumIcons } from '../icons/PremiumIcons';
+import { InsightActionCard } from './InsightActionCard';
+import { Tag } from '../common/Tag';
 
 interface KeyTakeaway {
   insight: string;
@@ -22,9 +24,11 @@ interface InsightsReportData {
 interface InsightsReportProps {
   insights: InsightsReportData;
   isRegenerating?: boolean;
+  noteId?: string;
+  setActiveView?: (view: 'editor' | 'dashboard' | 'settings' | 'playbook') => void;
 }
 
-const InsightsReport: React.FC<InsightsReportProps> = ({ insights, isRegenerating = false }) => {
+const InsightsReport: React.FC<InsightsReportProps> = ({ insights, isRegenerating = false, noteId, setActiveView }) => {
   // Parse highlighted phrases from insight text
   const parseHighlightedText = (text: string, sentiment: "positive" | "opportunity") => {
     const parts = text.split(/(\*[^*]+\*)/);
@@ -97,9 +101,17 @@ const InsightsReport: React.FC<InsightsReportProps> = ({ insights, isRegeneratin
                 <p className="insight-text">
                   {parseHighlightedText(takeaway.insight, takeaway.sentiment)}
                 </p>
-                <span className="category-tag">
+                <Tag variant={takeaway.sentiment === 'positive' ? 'success' : 'warning'} size="sm">
                   {takeaway.category}
-                </span>
+                </Tag>
+                {/* Add to Playbook button for opportunity insights */}
+                {takeaway.sentiment === 'opportunity' && (
+                  <InsightActionCard 
+                    insight={takeaway}
+                    noteId={noteId}
+                    setActiveView={setActiveView}
+                  />
+                )}
               </div>
             </div>
           ))}

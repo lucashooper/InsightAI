@@ -1,19 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { userProfileService } from '../../services/userProfileService';
+import type { UserProfile } from '../../services/userProfileService';
 import MigrationHelper from '../migration/MigrationHelper';
 import { importDiaryEntries } from '../../utils/importDiaryEntries';
+import './settings.css';
 
-interface SettingsViewProps {
-  setActiveView: React.Dispatch<React.SetStateAction<'editor' | 'dashboard' | 'settings' | 'alerts' | 'playbook'>>;
-}
-const SettingsView: React.FC<SettingsViewProps> = ({ setActiveView }) => {
+const SettingsView: React.FC = () => {
   const { theme, setTheme } = useTheme();
+  const { user, signOut } = useAuth();
   const [remindersEnabled, setRemindersEnabled] = useState(false);
   const [reminderTime, setReminderTime] = useState('20:00');
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [isImporting, setIsImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
+  const [newUsername, setNewUsername] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     // Load saved settings
@@ -31,7 +37,20 @@ const SettingsView: React.FC<SettingsViewProps> = ({ setActiveView }) => {
     if ('Notification' in window) {
       setNotificationPermission(Notification.permission);
     }
-  }, []);
+
+    // Load user profile
+    const loadUserProfile = async () => {
+      if (user) {
+        const profile = await userProfileService.getUserProfile(user.id);
+        if (profile) {
+          setUserProfile(profile);
+          setNewUsername(profile.username);
+        }
+      }
+    };
+
+    loadUserProfile();
+  }, [user]);
 
   const handleThemeChange = (newTheme: 'midnight' | 'dusk' | 'light') => {
     setTheme(newTheme);
@@ -118,6 +137,38 @@ const SettingsView: React.FC<SettingsViewProps> = ({ setActiveView }) => {
     }
   };
 
+  const handleUsernameUpdate = async () => {
+    if (!user || !newUsername.trim()) return;
+    
+    const updatedProfile = await userProfileService.updateUserProfile(user.id, {
+      username: newUsername.trim()
+    });
+    
+    if (updatedProfile) {
+      setUserProfile(updatedProfile);
+      setIsEditingUsername(false);
+    }
+  };
+
+  const handleProfilePictureUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user || !event.target.files || event.target.files.length === 0) return;
+    
+    const file = event.target.files[0];
+    setUploadingImage(true);
+    
+    const imageUrl = await userProfileService.uploadProfilePicture(user.id, file);
+    
+    if (imageUrl && userProfile) {
+      setUserProfile({ ...userProfile, profile_picture_url: imageUrl });
+    }
+    
+    setUploadingImage(false);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
   const themes = [
     {
       id: 'midnight' as const,
@@ -152,58 +203,185 @@ const SettingsView: React.FC<SettingsViewProps> = ({ setActiveView }) => {
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}
-    >
-      {/* Header */}
-      <div style={{ marginBottom: '2rem' }}>
-        <button
-          onClick={() => setActiveView('dashboard')}
+    <div className="settings-page">
+      <motion.h1 
+        className="settings-header"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        Settings
+      </motion.h1>
+
+      <div className="settings-grid">
+
+        {/* Profile Management */}
+        <motion.div
+          className="settings-section profile-section"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
           style={{
-            background: 'none',
-            border: 'none',
-            color: 'var(--accent-primary)',
-            cursor: 'pointer',
-            fontSize: '1rem',
-            marginBottom: '1rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
+            background: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '16px',
+            padding: '32px'
           }}
         >
-          ← Back to Dashboard
-        </button>
-        <h1 style={{ 
-          margin: 0, 
+        <h2 style={{ 
+          margin: '0 0 1rem 0', 
           color: 'var(--text-primary)', 
-          fontSize: '2rem',
+          fontSize: '1.5rem',
           fontWeight: '600'
         }}>
-          Settings
-        </h1>
-        <p style={{ 
-          margin: '0.5rem 0 0 0', 
-          color: 'var(--text-secondary)', 
-          fontSize: '1rem' 
-        }}>
-          Customize your InsightAI experience
-        </p>
-      </div>
+          👤 Profile
+        </h2>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '1.5rem' }}>
+          {/* Profile Picture */}
+          <div style={{ position: 'relative' }}>
+            <img 
+              src={userProfile?.profile_picture_url || '/Ocean-Swirl.webp'} 
+              alt="Profile"
+              style={{
+                width: '100px',
+                height: '100px',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '3px solid var(--accent-primary)'
+              }}
+            />
+            <label 
+              htmlFor="profile-picture-upload"
+              style={{
+                position: 'absolute',
+                bottom: '0',
+                right: '0',
+                background: 'var(--accent-primary)',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: uploadingImage ? 'wait' : 'pointer',
+                border: '2px solid var(--bg-secondary)'
+              }}
+            >
+              {uploadingImage ? '⏳' : '📷'}
+            </label>
+            <input
+              id="profile-picture-upload"
+              type="file"
+              accept="image/*"
+              onChange={handleProfilePictureUpload}
+              disabled={uploadingImage}
+              style={{ display: 'none' }}
+            />
+          </div>
+          
+          {/* User Info */}
+          <div style={{ flex: 1 }}>
+            <div style={{ marginBottom: '1rem' }}>
+              {isEditingUsername ? (
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    value={newUsername}
+                    onChange={(e) => setNewUsername(e.target.value)}
+                    style={{
+                      padding: '0.5rem',
+                      borderRadius: '6px',
+                      border: '1px solid var(--border-color)',
+                      background: 'var(--bg-tertiary)',
+                      color: 'var(--text-primary)',
+                      fontSize: '1rem'
+                    }}
+                  />
+                  <button
+                    onClick={handleUsernameUpdate}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: 'var(--accent-primary)',
+                      color: 'white',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ✓
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditingUsername(false);
+                      setNewUsername(userProfile?.username || '');
+                    }}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      borderRadius: '6px',
+                      border: '1px solid var(--border-color)',
+                      background: 'transparent',
+                      color: 'var(--text-primary)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.25rem' }}>
+                    {userProfile?.username || 'User'}
+                  </h3>
+                  <button
+                    onClick={() => setIsEditingUsername(true)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--accent-primary)',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    ✏️
+                  </button>
+                </div>
+              )}
+            </div>
+            <p style={{ margin: '0 0 0.5rem 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+              {userProfile?.email || user?.email}
+            </p>
+            <button
+              onClick={handleSignOut}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '6px',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                background: 'rgba(239, 68, 68, 0.1)',
+                color: '#ef4444',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                fontWeight: '500',
+                marginTop: '0.5rem'
+              }}
+            >
+              🚪 Sign Out
+            </button>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Theme Selection */}
       <motion.div
+        className="settings-section theme-section"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
         style={{
-          background: 'var(--bg-secondary)',
-          borderRadius: '12px',
-          border: '1px solid var(--border-color)',
-          padding: '1.5rem',
-          marginBottom: '2rem'
+          background: 'rgba(255, 255, 255, 0.03)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '16px',
+          padding: '32px'
         }}
       >
         <h2 style={{ 
@@ -222,13 +400,18 @@ const SettingsView: React.FC<SettingsViewProps> = ({ setActiveView }) => {
           Choose your preferred color scheme
         </p>
         
-        <div style={{ display: 'grid', gap: '1rem' }}>
+        <div className="theme-options" style={{ 
+          display: 'flex', 
+          gap: '16px',
+          marginTop: '16px'
+        }}>
           {themes.map((themeOption) => (
             <div
               key={themeOption.id}
               onClick={() => handleThemeChange(themeOption.id)}
               style={{
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 gap: '1rem',
                 padding: '1rem',
@@ -271,7 +454,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ setActiveView }) => {
                 }} />
               </div>
               
-              <div style={{ flex: 1 }}>
+              <div style={{ textAlign: 'center' }}>
                 <h3 style={{ 
                   margin: '0 0 0.25rem 0', 
                   color: 'var(--text-primary)', 
@@ -300,18 +483,19 @@ const SettingsView: React.FC<SettingsViewProps> = ({ setActiveView }) => {
             </div>
           ))}
         </div>
-      </motion.div>
+        </motion.div>
 
-      {/* Daily Reminders */}
-      <motion.div
+        {/* Daily Reminders */}
+        <motion.div
+        className="settings-section reminders-section"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
         style={{
-          background: 'var(--bg-secondary)',
-          borderRadius: '12px',
-          border: '1px solid var(--border-color)',
-          padding: '1.5rem'
+          background: 'rgba(255, 255, 255, 0.03)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '16px',
+          padding: '32px'
         }}
       >
         <h2 style={{ 
@@ -392,15 +576,15 @@ const SettingsView: React.FC<SettingsViewProps> = ({ setActiveView }) => {
 
       {/* Import Diary Entries */}
       <motion.div
+        className="settings-section import-section"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
         style={{
-          background: 'var(--bg-secondary)',
-          borderRadius: '12px',
-          border: '1px solid var(--border-color)',
-          padding: '1.5rem',
-          marginTop: '2rem'
+          background: 'rgba(255, 255, 255, 0.03)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '16px',
+          padding: '32px'
         }}
       >
         <h2 style={{ 
@@ -491,17 +675,18 @@ const SettingsView: React.FC<SettingsViewProps> = ({ setActiveView }) => {
         )}
       </motion.div>
 
-      {/* Data Migration */}
+      {/* Data Migration - Full Width */}
       <motion.div
+        className="settings-section migration-section"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
         style={{
-          background: 'var(--bg-secondary)',
-          borderRadius: '12px',
-          border: '1px solid var(--border-color)',
-          padding: '1.5rem',
-          marginTop: '2rem'
+          background: 'rgba(255, 255, 255, 0.03)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '16px',
+          padding: '32px',
+          gridColumn: '1 / -1'
         }}
       >
         <h2 style={{ 
@@ -521,8 +706,9 @@ const SettingsView: React.FC<SettingsViewProps> = ({ setActiveView }) => {
         </p>
         
         <MigrationHelper />
-      </motion.div>
-    </motion.div>
+        </motion.div>
+      </div>
+    </div>
   );
 };
 

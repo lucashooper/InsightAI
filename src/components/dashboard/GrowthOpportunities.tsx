@@ -18,23 +18,34 @@ interface GrowthOpportunitiesProps {
 }
 
 const GrowthOpportunities: React.FC<GrowthOpportunitiesProps> = ({ insights, timeRange = 30, setActiveView, setActiveNoteId }) => {
+  const [showAll, setShowAll] = React.useState(false);
+  const INITIAL_DISPLAY_COUNT = 5;
+  
   // Handle insight card click
   const handleInsightClick = (noteId: string) => {
     setActiveNoteId(noteId);
     setActiveView('editor');
   };
+  
+  // Sort insights by priority: Health > Mental Health > Area for Growth > Other
+  const sortedInsights = [...insights].sort((a, b) => {
+    const priorityOrder: Record<string, number> = {
+      'HEALTH': 4,
+      'MENTAL HEALTH': 3,
+      'AREA FOR GROWTH': 2,
+      'OTHER': 1
+    };
+    
+    const aPriority = priorityOrder[a.category.toUpperCase()] || 0;
+    const bPriority = priorityOrder[b.category.toUpperCase()] || 0;
+    
+    return bPriority - aPriority;
+  });
+  
+  const displayedInsights = showAll ? sortedInsights : sortedInsights.slice(0, INITIAL_DISPLAY_COUNT);
+  const remainingCount = sortedInsights.length - INITIAL_DISPLAY_COUNT;
 
-  // Get time range label
-  const getTimeRangeLabel = (range: number) => {
-    switch (range) {
-      case 7: return 'This Week';
-      case 30: return 'This Month';
-      case 90: return 'This Quarter';
-      default: return `This Period`;
-    }
-  };
-
-  // Parse highlighted phrases from insight text (reusing logic from InsightsReport)
+  // Parse highlighted phrases from insight text
   const parseHighlightedText = (text: string) => {
     const parts = text.split(/(\*[^*]+\*)/);
     return parts.map((part, index) => {
@@ -43,7 +54,6 @@ const GrowthOpportunities: React.FC<GrowthOpportunitiesProps> = ({ insights, tim
         return (
           <span
             key={index}
-            className="highlighted-phrase opportunity"
             style={{
               backgroundColor: 'rgba(245, 158, 11, 0.15)',
               padding: '2px 4px',
@@ -60,26 +70,15 @@ const GrowthOpportunities: React.FC<GrowthOpportunitiesProps> = ({ insights, tim
     });
   };
 
-  if (insights.length === 0) {
-    return (
-      <div style={{
-        textAlign: 'center',
-        padding: '3rem',
-        color: '#9CA3AF',
-        background: '#1F2937',
-        borderRadius: '12px',
-        border: '1px solid #374151'
-      }}>
-        <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
-          <PremiumIcons.Sprout size={48} color="#9CA3AF" />
-        </div>
-        <h4 style={{ color: '#E5E7EB', marginBottom: '0.5rem' }}>No Growth Areas Yet</h4>
-        <p style={{ margin: '0', fontSize: '0.9rem' }}>
-          Your growth opportunities will appear here once you have some analysis.
-        </p>
-      </div>
-    );
-  }
+  // Get time range label
+  const getTimeRangeLabel = (range: number) => {
+    switch (range) {
+      case 7: return 'This Week';
+      case 30: return 'This Month';
+      case 90: return 'This Quarter';
+      default: return `This Period`;
+    }
+  };
 
   return (
     <div style={{
@@ -90,21 +89,30 @@ const GrowthOpportunities: React.FC<GrowthOpportunitiesProps> = ({ insights, tim
       border: '1px solid rgba(255, 255, 255, 0.08)',
       padding: '1.5rem'
     }}>
-      <h3 style={{ 
-        margin: '0 0 1.5rem 0', 
-        color: '#E5E7EB',
-        fontSize: '1.25rem',
-        fontWeight: '600',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem'
-      }}>
-        <PremiumIcons.Sprout size={20} color="#f59e0b" />
-        Your Focus Areas {getTimeRangeLabel(timeRange)} ({insights.length})
-      </h3>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h3 style={{ 
+          margin: '0 0 0.5rem 0', 
+          color: '#E5E7EB',
+          fontSize: '1.25rem',
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          <PremiumIcons.Sprout size={20} color="#f59e0b" />
+          Patterns to Address ({insights.length})
+        </h3>
+        <p style={{
+          margin: 0,
+          fontSize: '0.875rem',
+          color: 'rgba(255, 255, 255, 0.6)'
+        }}>
+          Top priorities based on your recent entries
+        </p>
+      </div>
       
       <div style={{ display: 'grid', gap: '1rem' }}>
-        {insights.map((insight, index) => (
+        {displayedInsights.map((insight, index) => (
           <div
             key={index}
             onClick={() => handleInsightClick(insight.noteId)}
@@ -156,11 +164,7 @@ const GrowthOpportunities: React.FC<GrowthOpportunitiesProps> = ({ insights, tim
             </div>
             
             {/* Category tag */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{
                 fontSize: '0.75rem',
                 padding: '4px 8px',
@@ -186,25 +190,68 @@ const GrowthOpportunities: React.FC<GrowthOpportunitiesProps> = ({ insights, tim
         ))}
       </div>
       
-      <div style={{ 
-        marginTop: '1.5rem', 
-        fontSize: '0.875rem', 
-        color: '#9CA3AF',
-        textAlign: 'center',
-        padding: '1rem',
-        background: 'rgba(245, 158, 11, 0.05)',
-        borderRadius: '8px',
-        border: '1px solid rgba(245, 158, 11, 0.1)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '0.5rem'
-      }}>
-        <PremiumIcons.Target size={16} color="#f59e0b" />
-        You have {insights.length} growth opportunities to explore {getTimeRangeLabel(timeRange).toLowerCase()}. Each one is a step toward personal development.
-      </div>
+      {/* View All / Show Less Button */}
+      {!showAll && remainingCount > 0 && (
+        <button
+          onClick={() => setShowAll(true)}
+          style={{
+            width: '100%',
+            padding: '16px',
+            marginTop: '1rem',
+            background: 'rgba(245, 158, 11, 0.1)',
+            border: '1px solid rgba(245, 158, 11, 0.3)',
+            borderRadius: '12px',
+            color: '#f59e0b',
+            fontSize: '0.9rem',
+            fontWeight: '500',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(245, 158, 11, 0.15)';
+            e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.5)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(245, 158, 11, 0.1)';
+            e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+          }}
+        >
+          View {remainingCount} More Focus Areas →
+        </button>
+      )}
+      
+      {showAll && sortedInsights.length > INITIAL_DISPLAY_COUNT && (
+        <button
+          onClick={() => setShowAll(false)}
+          style={{
+            width: '100%',
+            padding: '12px',
+            marginTop: '1rem',
+            background: 'transparent',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '12px',
+            color: 'rgba(255, 255, 255, 0.6)',
+            fontSize: '0.875rem',
+            fontWeight: '500',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+          }}
+        >
+          ↑ Show Less
+        </button>
+      )}
     </div>
   );
 };
 
-export default GrowthOpportunities; 
+export default GrowthOpportunities;

@@ -7,6 +7,7 @@ import InsightBreakdownChart from './InsightBreakdownChart';
 import MonthlyHighlights from './MonthlyHighlights';
 import GrowthOpportunities from './GrowthOpportunities';
 import ComparisonView from '../comparison/ComparisonView';
+import NarrativeSummary from './NarrativeSummary';
 import { storageAdapter } from '../../services/storageAdapter';
 import type { DiaryEntry } from '../../types/diary';
 import { PremiumIcons } from '../icons/PremiumIcons';
@@ -15,6 +16,9 @@ interface SentimentDataPoint {
   date: string;
   wellbeingScore: number;
   resilienceScore: number;
+  entryId?: string;
+  entryTitle?: string;
+  entrySnippet?: string;
 }
 
 interface CategoryDataPoint {
@@ -40,7 +44,7 @@ interface GrowthOpportunity {
 }
 
 interface DashboardViewProps {
-  setActiveView: React.Dispatch<React.SetStateAction<'editor' | 'dashboard' | 'settings' | 'alerts' | 'playbook'>>;
+  setActiveView: React.Dispatch<React.SetStateAction<'editor' | 'dashboard' | 'settings' | 'playbook' | 'mynotes'>>;
   setActiveNoteId: (id: string) => void;
 }
 
@@ -384,9 +388,21 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
             animate="visible"
             style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}
           >
+            {/* Narrative Summary - At the top */}
+            <motion.div variants={itemVariants}>
+              <NarrativeSummary entries={notes} timeRange={timeRange} />
+            </motion.div>
+
             {/* Sentiment Flow Chart - Full Width */}
             <motion.div variants={itemVariants} style={{ gridColumn: '1 / -1' }}>
-              <SentimentFlowChart data={sentimentData} timeRange={timeRange} />
+              <SentimentFlowChart 
+                data={sentimentData} 
+                timeRange={timeRange}
+                onViewEntry={(entryId) => {
+                  setActiveNoteId(entryId);
+                  setActiveView('editor');
+                }}
+              />
             </motion.div>
             
             {/* Grid Layout for Other Components */}

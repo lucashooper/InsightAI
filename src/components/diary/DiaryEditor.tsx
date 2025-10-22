@@ -3,6 +3,7 @@ import type { DiaryEntry } from '../../types/diary';
 import { PremiumIcons } from '../icons/PremiumIcons';
 import type { DetectedPattern } from '../../services/keywordHighlightService';
 import { HighlightedText } from './HighlightedText';
+import CoWriterChat from './CoWriterChat';
 
 interface DiaryEditorProps {
   note: DiaryEntry | null;
@@ -45,6 +46,12 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
   const [isRecording, setIsRecording] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const recognitionRef = useRef<any>(null);
+  
+  // Co-Writer state
+  const [showCoWriter, setShowCoWriter] = useState(false);
+  const [showProbeButton, setShowProbeButton] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sync state with note prop
   useEffect(() => {
@@ -228,6 +235,23 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
       toLength: e.target.value.length,
       change: e.target.value.length - content.length
     });
+    
+    // Handle Probe Deeper button visibility
+    setIsTyping(true);
+    setShowProbeButton(false);
+    
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Show button 2 seconds after user stops typing (if content is sufficient)
+    if (e.target.value.length > 100 && !showCoWriter) {
+      typingTimeoutRef.current = setTimeout(() => {
+        setIsTyping(false);
+        setShowProbeButton(true);
+      }, 2000);
+    }
   };
 
   const handleContentKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -806,6 +830,67 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
             overflow: 'hidden',
             hyphens: 'auto',
           }}
+        />
+      )}
+      
+      {/* Probe Deeper Button - Contextual Mindsera-style */}
+      {showProbeButton && !showCoWriter && (
+        <div style={{
+          position: 'relative',
+          width: '100%',
+          pointerEvents: 'none'
+        }}>
+          <button
+            onClick={() => {
+              setShowCoWriter(true);
+              setShowProbeButton(false);
+            }}
+            style={{
+              position: 'absolute',
+              top: '-2.5rem',
+              left: '0',
+              padding: '0.5rem 1rem',
+              background: 'rgba(139, 92, 246, 0.1)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              borderRadius: '6px',
+              color: '#a78bfa',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.85rem',
+              fontWeight: '500',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 2px 8px rgba(139, 92, 246, 0.15)',
+              animation: 'fadeInUp 0.3s ease-out',
+              pointerEvents: 'auto',
+              zIndex: 10,
+              whiteSpace: 'nowrap'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(139, 92, 246, 0.15)';
+              e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.5)';
+              e.currentTarget.style.color = '#c4b5fd';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)';
+              e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
+              e.currentTarget.style.color = '#a78bfa';
+            }}
+          >
+            <span style={{ fontSize: '0.9rem' }}>🔮</span>
+            <span>Probe Deeper</span>
+          </button>
+        </div>
+      )}
+      
+      {/* Co-Writer Chat Component */}
+      {showCoWriter && (
+        <CoWriterChat 
+          entryContent={content}
+          onClose={() => setShowCoWriter(false)}
         />
       )}
         

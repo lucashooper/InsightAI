@@ -9,10 +9,11 @@ import ChatBubble from './ChatBubble';
 import TriggerTimeline from './TriggerTimeline';
 import ImmersiveLoadingScreen from './ImmersiveLoadingScreen';
 import { PremiumIcons } from '../icons/PremiumIcons';
+import { InsightBriefingModal } from '../modals/InsightBriefingModal';
 
 interface AIAnalysisProps {
   note: DiaryEntry | null;
-  setActiveView: (view: 'editor' | 'dashboard' | 'settings' | 'alerts' | 'playbook') => void;
+  setActiveView: (view: 'editor' | 'dashboard' | 'settings' | 'playbook') => void;
   onUpdateNote: (id: string, updates: Partial<DiaryEntry>) => void;
 }
 
@@ -48,6 +49,9 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
   
   // Track if we're loading saved analysis
   const [isLoadingSavedAnalysis, setIsLoadingSavedAnalysis] = useState(false);
+  
+  // Briefing Modal state
+  const [showBriefingModal, setShowBriefingModal] = useState(false);
 
   // Load saved analysis when note changes
   useEffect(() => {
@@ -96,7 +100,10 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
       if (hasNewSchema) {
         const aiResponse = await storageAdapter.getAIResponse(noteId);
         setSavedAIResponse(aiResponse);
-        console.log('Loaded saved AI response:', aiResponse);
+        console.log('📊 Loaded saved AI response:', aiResponse);
+        console.log('📊 Has ai_insights?', !!aiResponse?.ai_insights);
+        console.log('📊 Has insights_report?', !!aiResponse?.ai_insights?.insights_report);
+        console.log('📊 Key takeaways count:', aiResponse?.ai_insights?.insights_report?.keyTakeaways?.length || 0);
         
         // Initialize conversation history from saved response if available
         if (aiResponse?.ai_response_text && !aiResponse.ai_response_text.includes("Sorry, Prism's response could not be understood")) {
@@ -108,6 +115,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
         
         // Check if we need to clear error messages
         await clearSavedErrors();
+      } else {
         // Fallback to legacy method
         console.log('🔄 Using legacy AI response loading...');
         setSavedAIResponse(null);
@@ -235,6 +243,9 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
           
           // Reload the saved response
           await loadSavedAIResponse(note.id);
+          
+          // Show briefing modal after analysis completes
+          setShowBriefingModal(true);
         } catch (dbError) {
           console.error('❌ Failed to save AI analysis to database:', dbError);
           
@@ -550,15 +561,15 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
 
   const hasSavedInsights = !!savedAIResponse?.ai_insights;
   const insightsToShow = hasSavedInsights ? savedAIResponse.ai_insights : analysis;
-  const hasAnalysis = analysis !== null || savedAIResponse?.ai_response_text;
+  const hasAnalysis = analysis !== null || savedAIResponse?.ai_response_text || savedAIResponse?.ai_insights || note?.isAnalyzed;
 
   // Auto-trigger analysis when no analysis exists (only after saved analysis has loaded)
   useEffect(() => {
-    if (!isLoadingSavedAnalysis && !hasAnalysis && !isAnalyzing && note?.content) {
+    if (!isLoadingSavedAnalysis && !hasAnalysis && !isAnalyzing && note?.content && !note?.isAnalyzed) {
       console.log('🚀 Auto-triggering analysis (no existing analysis found)');
       handleAnalyze(true);
     }
-  }, [note?.id, isLoadingSavedAnalysis, hasAnalysis, isAnalyzing]); // Wait for saved analysis to load
+  }, [note?.id, isLoadingSavedAnalysis, hasAnalysis, isAnalyzing, note?.isAnalyzed]); // Wait for saved analysis to load
 
   // Debug logging
   console.log('🔍 AIAnalysis render state:', {
@@ -826,45 +837,6 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                     </button>
                   )}
                   
-                  {analysis && (
-                    <button
-                      onClick={() => setActiveTab('trends')}
-                      className={`tab-button ${activeTab === 'trends' ? 'active' : ''}`}
-                      style={{
-                        flex: 1,
-                        padding: '1rem 1.5rem',
-                        background: activeTab === 'trends' ? 'rgba(255, 255, 255, 0.04)' : 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        borderRadius: '12px',
-                        color: activeTab === 'trends' ? '#FFFFFF' : '#a0a0a0',
-                        fontWeight: activeTab === 'trends' ? '600' : '500',
-                        fontSize: '0.95rem',
-                        transition: 'all 0.2s ease',
-                        position: 'relative',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.5rem',
-                        backdropFilter: 'none'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (activeTab !== 'trends') {
-                          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                          e.currentTarget.style.color = '#ffffff';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (activeTab !== 'trends') {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = '#a0a0a0';
-                        }
-                      }}
-                    >
-                      <PremiumIcons.TrendingUp size={18} color="currentColor" />
-                      <span>Trends</span>
-                    </button>
-                  )}
                 </div>
               </div>
 
@@ -873,69 +845,33 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                 {/* Chat Tab */}
                 {activeTab === 'chat' && (
                   <div>
-                    {insightsToShow?.insights_report && (
-                      <div>
-                        <div style={{ position: 'relative' }}>
-                          {/* Copy button positioned at top-right of response */}
-                          <button
-                            onClick={() => copyToClipboard(insightsToShow.insights_report?.conversationalSummary || '')}
-                            title="Copy to clipboard"
-                            style={{ 
-                              position: 'absolute',
-                              top: '0.5rem',
-                              right: '0.5rem',
-                              fontSize: '1.2rem',
-                              background: 'rgba(255, 255, 255, 0.05)',
-                              color: 'var(--text-secondary)',
-                              border: '1px solid rgba(255, 255, 255, 0.1)',
-                              borderRadius: '6px',
-                              padding: '0.5rem',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s ease',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              width: '2rem',
-                              height: '2rem',
-                              zIndex: 10,
-                              backdropFilter: 'blur(10px)'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                              e.currentTarget.style.color = 'var(--text-primary)';
-                              e.currentTarget.style.borderColor = 'var(--accent-primary)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                              e.currentTarget.style.color = 'var(--text-secondary)';
-                              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                            }}
-                          >
-                            <PremiumIcons.Copy size={16} color="currentColor" />
-                          </button>
-                          <InsightsReport insights={insightsToShow.insights_report} />
-                        </div>
-                        
-                        {/* Trigger Timeline */}
-                        {(shouldShowTimeline || isGeneratingTimeline) && (
-                          <TriggerTimeline 
-                            events={timelineEvents} 
-                            isLoading={isGeneratingTimeline}
-                          />
-                        )}
+                    {/* Display full InsightsReport (without duplicate summary) */}
+                    {(insightsToShow?.insights_report || analysis?.insights_report) && (
+                      <div style={{ marginBottom: '2rem' }}>
+                        <InsightsReport 
+                          insights={insightsToShow?.insights_report || analysis?.insights_report} 
+                          noteId={note?.id}
+                          setActiveView={setActiveView}
+                        />
                       </div>
                     )}
+                    
                     {/* Chat Log Area */}
                     <div className="chat-log-area" style={{ marginBottom: '0.5rem' }}>
-                      {conversationHistory.length > 0 ? (
+                      {/* Show actionable suggestion as first message */}
+                      {(insightsToShow?.insights_report?.actionableSuggestion || analysis?.insights_report?.actionableSuggestion) && conversationHistory.length === 0 && (
+                        <ChatBubble 
+                          message={{
+                            role: 'assistant',
+                            content: `**One thing to try next:**\n\n${(insightsToShow?.insights_report?.actionableSuggestion || analysis?.insights_report?.actionableSuggestion)?.suggestion}`
+                          }}
+                        />
+                      )}
+                      
+                      {conversationHistory.length > 0 && (
                         conversationHistory.map((message, index) => (
                           <ChatBubble key={index} message={message} />
                         ))
-                      ) : (
-                        <div className="empty-chat-placeholder">
-                          <span className="prism-icon">🔮</span>
-                          <span>No response yet. Try regenerating the analysis.</span>
-                        </div>
                       )}
                       {/* Loading indicator for AI response */}
                       {isSendingMessage && (
@@ -978,7 +914,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                         <textarea
                           value={userInput}
                           onChange={(e) => setUserInput(e.target.value)}
-                          placeholder="Ask a follow-up question..."
+                          placeholder="Ask a follow-up question about these insights..."
                           style={{
                             flex: 1,
                             minHeight: '44px',
@@ -1064,14 +1000,15 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                       Structured Insights
                     </h3>
                     
-                    {/* Responsive Grid Layout */}
+                    {/* Two-Column Grid Layout for Desktop */}
                     <div style={{
                       display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
+                      gridTemplateColumns: window.innerWidth > 1024 ? '1fr 1fr' : '1fr',
                       gap: '1.75rem',
-                      marginBottom: '2rem'
+                      marginBottom: '2rem',
+                      alignItems: 'start'
                     }}>
-                      {/* Mood Analysis Card */}
+                      {/* Column 1: Mood Analysis Card */}
                       <div className="analysis-card" style={{
                         background: 'rgba(255, 255, 255, 0.03)',
                         backdropFilter: 'blur(10px)',
@@ -1079,7 +1016,8 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                         borderRadius: '12px',
                         border: '1px solid rgba(255, 255, 255, 0.08)',
                         padding: '1.5rem',
-                        height: '100%'
+                        height: '100%',
+                        gridRow: window.innerWidth > 1024 ? 'span 2' : 'auto'
                       }}>
                       <h4 className="card-title">
                         <span className="icon">📈</span>
@@ -1262,6 +1200,23 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
             </div>
           )}
         </div>
+      )}
+      
+      {/* Insight Briefing Modal */}
+      {analysis && showBriefingModal && (
+        <InsightBriefingModal
+          isOpen={showBriefingModal}
+          primaryEmotion={analysis.mood_analysis.primary_emotion}
+          emotionIntensity={analysis.mood_analysis.intensity}
+          summaryText={analysis.insights_report?.conversationalSummary || 'Your insights are ready to explore.'}
+          topEmotions={
+            analysis.mood_analysis.secondary_emotions.slice(0, 3).map((emotion, index) => ({
+              emotion: emotion,
+              percentage: Math.round((3 - index) * 15) // Simple percentage calculation
+            }))
+          }
+          onViewFullAnalysis={() => setShowBriefingModal(false)}
+        />
       )}
     </>
   );

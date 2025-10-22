@@ -683,5 +683,73 @@ Focus on identifying causal relationships and patterns that could explain today'
       console.error('Error generating trigger timeline:', error);
       throw error;
     }
+  },
+  
+  // Co-Writer: Conversational probing for deeper insight
+  async probeDeeper(entryContent: string, userQuestion: string, conversationContext: string = ''): Promise<string> {
+    // Apply rate limiting
+    await waitForRateLimit();
+
+    if (!GROQ_API_KEY) {
+      throw new Error('GROQ_API_KEY is not configured');
+    }
+
+    try {
+      const systemPrompt = `You are Prism, a compassionate AI co-writer helping someone explore their thoughts and emotions more deeply. You've been given access to their journal entry.
+
+Your role is to:
+- Ask thoughtful, probing questions that help them gain clarity
+- Point out patterns or connections they might not have noticed
+- Offer gentle observations without being prescriptive
+- Help them articulate feelings that may be difficult to express
+- Be warm, empathetic, and non-judgmental
+
+Keep your responses concise (2-3 sentences) and focused on helping them think deeper, not on giving advice.
+
+Journal Entry:
+${entryContent}
+
+${conversationContext ? `Previous Conversation:\n${conversationContext}\n` : ''}`;
+
+      const response = await fetch(GROQ_API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${GROQ_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            {
+              role: 'system',
+              content: systemPrompt
+            },
+            {
+              role: 'user',
+              content: userQuestion
+            }
+          ],
+          temperature: 0.8,
+          max_tokens: 300,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Groq API error: ${errorData.error?.message || response.statusText}`);
+      }
+
+      const data = await response.json();
+      const responseText = data.choices[0]?.message?.content || '';
+
+      if (!responseText) {
+        throw new Error('Empty response from Groq API');
+      }
+
+      return responseText.trim();
+    } catch (error) {
+      console.error('Error in probeDeeper:', error);
+      throw error;
+    }
   }
 };
