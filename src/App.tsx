@@ -14,7 +14,6 @@ import PlaybookView from './components/playbook/PlaybookView';
 import MyNotesView from './components/notes/MyNotesView';
 import AnimatedBackground from './components/common/AnimatedBackground';
 import { storageAdapter } from './services/storageAdapter';
-import { supabase } from './services/supabaseClient';
 import { PremiumIcons } from './components/icons/PremiumIcons';
 import { keywordHighlightService } from './services/keywordHighlightService';
 import type { DetectedPattern } from './services/keywordHighlightService';

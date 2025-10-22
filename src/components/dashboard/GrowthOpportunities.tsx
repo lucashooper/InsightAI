@@ -17,7 +17,7 @@ interface GrowthOpportunitiesProps {
   setActiveNoteId: (id: string) => void;
 }
 
-const GrowthOpportunities: React.FC<GrowthOpportunitiesProps> = ({ insights, timeRange = 30, setActiveView, setActiveNoteId }) => {
+const GrowthOpportunities: React.FC<GrowthOpportunitiesProps> = ({ insights, timeRange: _timeRange = 30, setActiveView, setActiveNoteId }) => {
   const [showAll, setShowAll] = React.useState(false);
   const INITIAL_DISPLAY_COUNT = 5;
   
@@ -70,15 +70,15 @@ const GrowthOpportunities: React.FC<GrowthOpportunitiesProps> = ({ insights, tim
     });
   };
 
-  // Get time range label
-  const getTimeRangeLabel = (range: number) => {
-    switch (range) {
-      case 7: return 'This Week';
-      case 30: return 'This Month';
-      case 90: return 'This Quarter';
-      default: return `This Period`;
-    }
-  };
+  // Get time range label - Unused for now
+  // const getTimeRangeLabel = (range: number) => {
+  //   switch (range) {
+  //     case 7: return 'This Week';
+  //     case 30: return 'This Month';
+  //     case 90: return 'This Quarter';
+  //     default: return `This Period`;
+  //   }
+  // };
 
   return (
     <div style={{

@@ -15,7 +15,7 @@ interface ComparisonInsight {
   suggestions: string[];
 }
 
-const ComparisonView: React.FC<ComparisonViewProps> = ({ entries, onClose, onSelectEntry }) => {
+const ComparisonView: React.FC<ComparisonViewProps> = ({ entries, onClose, onSelectEntry: _onSelectEntry }) => {
   const [selectedEntries, setSelectedEntries] = useState<DiaryEntry[]>([]);
   const [showInsights, setShowInsights] = useState(false);
 

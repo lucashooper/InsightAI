@@ -82,7 +82,6 @@ const NarrativeSummary: React.FC<NarrativeSummaryProps> = ({ entries, timeRange 
     // Middle - specific insights
     if (firstWeek.length > 0 && lastWeek.length > 0) {
       const firstWeekTitle = firstWeek[0]?.title || 'early entries';
-      const lastWeekTitle = lastWeek[lastWeek.length - 1]?.title || 'recent entries';
       
       narrative += `Your resilience was particularly strong in "${firstWeekTitle}". `;
       

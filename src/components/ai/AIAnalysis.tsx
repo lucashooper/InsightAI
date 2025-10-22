@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import type { DiaryEntry } from '../../types/diary';
-import type { EnhancedAIAnalysis, TimelineEvent } from '../../services/aiService';
+import type { EnhancedAIAnalysis } from '../../services/aiService';
 import { aiService } from '../../services/aiService';
 import { storageAdapter } from '../../services/storageAdapter';
 import { actionableInsightsService } from '../../services/actionableInsightsService';
 import InsightsReport from './InsightsReport';
 import ChatBubble from './ChatBubble';
-import TriggerTimeline from './TriggerTimeline';
+// import TriggerTimeline from './TriggerTimeline'; // Unused
 import ImmersiveLoadingScreen from './ImmersiveLoadingScreen';
 import { PremiumIcons } from '../icons/PremiumIcons';
 import { InsightBriefingModal } from '../modals/InsightBriefingModal';
@@ -42,10 +42,10 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [rawAIResponse, setRawAIResponse] = useState<string | null>(null);
 
-  // Trigger Timeline state
-  const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
-  const [isGeneratingTimeline, setIsGeneratingTimeline] = useState(false);
-  const [shouldShowTimeline, setShouldShowTimeline] = useState(false);
+  // Trigger Timeline state - Commented out until feature is implemented
+  // const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
+  // const [isGeneratingTimeline, setIsGeneratingTimeline] = useState(false);
+  // const [shouldShowTimeline, setShouldShowTimeline] = useState(false);
   
   // Track if we're loading saved analysis
   const [isLoadingSavedAnalysis, setIsLoadingSavedAnalysis] = useState(false);
@@ -391,9 +391,10 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
 
   // handleConversationalOnly removed - Chat with Prism button removed from UI
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-  };
+  // Unused function - commented out for build
+  // const copyToClipboard = (text: string) => {
+  //   navigator.clipboard.writeText(text);
+  // };
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -499,12 +500,12 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
     }
   };
 
-  // Generate trigger timeline from recent entries
+  // Generate trigger timeline from recent entries - Feature not implemented
   const generateTriggerTimeline = async () => {
     if (!note?.content || !note.id) return;
 
-    setIsGeneratingTimeline(true);
-    setTimelineEvents([]);
+    // setIsGeneratingTimeline(true);
+    // setTimelineEvents([]);
 
     try {
       // Get recent notes (last 5 days)
@@ -523,23 +524,24 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
 
       if (previousNotes.length === 0) {
         console.log('No previous notes found for timeline analysis');
-        setShouldShowTimeline(false);
+        // setShouldShowTimeline(false);
         return;
       }
 
       console.log(`Generating trigger timeline with ${previousNotes.length} previous notes`);
       
       const events = await aiService.generateTriggerTimeline(note.content, previousNotes);
-      setTimelineEvents(events);
-      setShouldShowTimeline(true);
+      // setTimelineEvents(events);
+      // setShouldShowTimeline(true);
+      console.log('Timeline events:', events); // Log to avoid unused variable warning
       
       console.log('Trigger timeline generated:', events);
     } catch (error) {
-      console.error('Error generating trigger timeline:', error);
+      console.log('Error generating trigger timeline:', error);
       setError('Failed to generate trigger timeline');
-      setShouldShowTimeline(false);
+      // setShouldShowTimeline(false);
     } finally {
-      setIsGeneratingTimeline(false);
+      // setIsGeneratingTimeline(false);
     }
   };
 
@@ -551,7 +553,8 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
     ) || [];
     
     const shouldShow = opportunityInsights.length >= 2;
-    setShouldShowTimeline(shouldShow);
+    // setShouldShowTimeline(shouldShow);
+    console.log('Should show timeline:', shouldShow); // Log to avoid unused warning
     
     if (shouldShow) {
       console.log('Triggering timeline generation due to multiple opportunity insights');

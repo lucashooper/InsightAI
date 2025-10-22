@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from 'react';
-import { PremiumIcons } from '../icons/PremiumIcons';
 
 interface ContextMenuItem {
   label: string;

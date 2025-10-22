@@ -68,8 +68,7 @@ export class LocalStorageService {
       title,
       content,
       created_at: now,
-      updated_at: now,
-      mood_score: 5 // Default mood score
+      updated_at: now
     };
 
     entries.unshift(newEntry); // Add to beginning for newest first

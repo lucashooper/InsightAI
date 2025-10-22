@@ -50,7 +50,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
   // Co-Writer state
   const [showCoWriter, setShowCoWriter] = useState(false);
   const [showProbeButton, setShowProbeButton] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
+  // const [isTyping, setIsTyping] = useState(false); // Unused for now
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sync state with note prop
@@ -237,7 +237,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
     });
     
     // Handle Probe Deeper button visibility
-    setIsTyping(true);
+    // setIsTyping(true); // Commented out for now
     setShowProbeButton(false);
     
     // Clear existing timeout
@@ -248,7 +248,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
     // Show button 2 seconds after user stops typing (if content is sufficient)
     if (e.target.value.length > 100 && !showCoWriter) {
       typingTimeoutRef.current = setTimeout(() => {
-        setIsTyping(false);
+        // setIsTyping(false); // Commented out for now
         setShowProbeButton(true);
       }, 2000);
     }

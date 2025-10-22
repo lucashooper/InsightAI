@@ -205,9 +205,9 @@ export class DataMigration {
   }> {
     try {
       // Test basic connection
-      const { data: testData, error: testError } = await supabase
+      const { count, error: testError } = await supabase
         .from('notes')
-        .select('count', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true });
 
       if (testError) {
         return {
@@ -220,7 +220,7 @@ export class DataMigration {
         };
       }
 
-      const notesCount = testData || 0;
+      const notesCount = count || 0;
 
       // Check for alerts
       let alertsCount = 0;

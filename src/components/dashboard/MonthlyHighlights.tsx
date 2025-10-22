@@ -17,7 +17,7 @@ interface MonthlyHighlightsProps {
   setActiveNoteId: (id: string) => void;
 }
 
-const MonthlyHighlights: React.FC<MonthlyHighlightsProps> = ({ insights, timeRange = 30, setActiveView, setActiveNoteId }) => {
+const MonthlyHighlights: React.FC<MonthlyHighlightsProps> = ({ insights, timeRange: _timeRange = 30, setActiveView, setActiveNoteId }) => {
   const [showAll, setShowAll] = React.useState(false);
   const INITIAL_DISPLAY_COUNT = 10;
   
@@ -58,15 +58,15 @@ const MonthlyHighlights: React.FC<MonthlyHighlightsProps> = ({ insights, timeRan
     });
   };
 
-  // Get time range label
-  const getTimeRangeLabel = (range: number) => {
-    switch (range) {
-      case 7: return 'This Week';
-      case 30: return 'This Month';
-      case 90: return 'This Quarter';
-      default: return `This Period`;
-    }
-  };
+  // Get time range label - Unused for now
+  // const getTimeRangeLabel = (range: number) => {
+  //   switch (range) {
+  //     case 7: return 'This Week';
+  //     case 30: return 'This Month';
+  //     case 90: return 'This Quarter';
+  //     default: return `This Period`;
+  //   }
+  // };
 
   return (
     <div style={{

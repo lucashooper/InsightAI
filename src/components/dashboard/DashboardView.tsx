@@ -38,6 +38,7 @@ interface PositiveInsight {
 interface GrowthOpportunity {
   insight: string;
   sentiment: "positive" | "opportunity";
+  category: string;
   noteId: string;
   noteTitle: string;
   noteDate: string;
