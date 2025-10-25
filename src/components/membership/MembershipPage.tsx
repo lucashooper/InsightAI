@@ -10,7 +10,7 @@ interface MembershipPageProps {
   showCloseButton?: boolean;
 }
 
-const MembershipPage: React.FC<MembershipPageProps> = ({ onSuccess, onSkip, showCloseButton = true }) => {
+const MembershipPage: React.FC<MembershipPageProps> = ({ onSkip, showCloseButton = true }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
