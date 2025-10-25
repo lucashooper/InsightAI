@@ -12,6 +12,9 @@ import NarrativeSummary from './NarrativeSummary';
 import { storageAdapter } from '../../services/storageAdapter';
 import type { DiaryEntry } from '../../types/diary';
 import { PremiumIcons } from '../icons/PremiumIcons';
+import { SkeletonDashboard } from '../common/SkeletonLoader';
+import PageContainer from '../common/PageContainer';
+import PageHeader from '../common/PageHeader';
 import '../../styles/page-layout.css';
 
 interface SentimentDataPoint {
@@ -57,7 +60,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
   const [categoryData, setCategoryData] = useState<CategoryDataPoint[]>([]);
   const [positiveInsights, setPositiveInsights] = useState<PositiveInsight[]>([]);
   const [growthOpportunities, setGrowthOpportunities] = useState<GrowthOpportunity[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [timeRange, setTimeRange] = useState(30);
   const [showComparison, setShowComparison] = useState(false);
 
@@ -203,21 +206,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
     }
   };
 
+  // Show skeleton during initial load
+  if (isLoading) {
+    return <SkeletonDashboard />;
+  }
+
   return (
-    <div className="page-container">
-      {/* Page Header */}
-      <div className="page-header">
-        <div className="header-content">
-          <div className="header-left">
-            <BarChart3 className="header-icon" size={24} />
-            <div>
-              <h1>Dashboard & Trends</h1>
-              <p className="header-subtitle">
-                Your emotional journey over the last {timeRange} days
-              </p>
-            </div>
-          </div>
-          <div className="header-actions">
+    <PageContainer>
+      <PageHeader
+        icon={<BarChart3 size={24} />}
+        title="Dashboard & Trends"
+        subtitle={`Your emotional journey over the last ${timeRange} days`}
+        actions={
+          <>
           {/* Date Range Selector */}
           <select
             value={timeRange}
@@ -358,11 +359,12 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
             <PremiumIcons.Refresh size={16} />
             <span>{isLoading ? 'Loading...' : 'Refresh Data'}</span>
           </button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Dashboard Content */}
-      <div className="page-content" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         {/* Loading State */}
         {isLoading && (
           <div style={{
@@ -629,8 +631,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
           }}
         />
       )}
-      </div>
-    </div>
+    </PageContainer>
   );
 };
 

@@ -424,37 +424,13 @@ const App: React.FC = () => {
             flex: 1, 
             display: 'flex', 
             flexDirection: 'column', 
-            minWidth: 0, 
-            maxWidth: 'calc(100vw - 240px)', 
-            overflow: 'hidden',
+            minWidth: 0,
+            minHeight: 0,
+            overflow: 'auto',
             filter: selectedNote && blurredNoteIds.has(selectedNote.id) ? 'blur(4px)' : 'none',
             transition: 'filter 0.3s ease',
           }}>
-            <div style={{ padding: '0.5rem 1rem' }}>
-              {/* Title removed for analysis view - now handled in AIAnalysis component */}
-              {activeView === 'dashboard' && (
-                <h1 style={{ 
-                  margin: 0,
-                  marginTop: '2.5rem',
-                  fontSize: '2.5rem',
-                  textAlign: 'center',
-                  background: 'linear-gradient(135deg, #e0e7ff 0%, #a5b4fc 50%, #818cf8 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  fontWeight: '700',
-                  letterSpacing: '-0.02em'
-                }}>
-                  Dashboard & Trends
-                </h1>
-              )}
-            </div>
-            
-            
-            <div style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
-              {isLoading ? (
-                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-primary)' }}>Loading...</div>
-              ) : activeView === 'editor' ? (
+              {activeView === 'editor' ? (
                 activeTab === 'editor' ? (
                   <DiaryEditor 
                     note={selectedNote} 
@@ -528,7 +504,6 @@ const App: React.FC = () => {
               ) : (
                 <SettingsView />
               )}
-            </div>
           </main>
         </div>
       </div>

@@ -2,8 +2,8 @@
 
 /* CSS Variables for consistent spacing */
 :root {
-  --page-margin-x: 8px; /* Reduced from 24px for wider pages */
-  --page-margin-y: 16px; /* Reduced from 20px */
+  --page-margin-x: 14px; /* Small margin for visual structure */
+  --page-margin-y: 8px; /* Small top/bottom margin - safe for all screens */
 }
 
 /* Main content wrapper */
@@ -16,17 +16,15 @@
 
 /* Page Container - Used on all main pages */
 .page-container {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
-  margin: var(--page-margin-y) var(--page-margin-x);
-  width: calc(100% - (var(--page-margin-x) * 2));
-  min-height: calc(100vh - 80px); /* Slightly shorter margin */
+  background: rgba(255, 255, 255, 0.045); /* Brighter for better visibility */
+  border: 1px solid rgba(255, 255, 255, 0.08); /* More visible border */
+  border-radius: 12px; /* Subtle rounded corners */
+  margin: var(--page-margin-y) var(--page-margin-x); /* Small margins */
+  width: calc(100% - (var(--page-margin-x) * 2)); /* Account for margins */
+  min-height: calc(100vh - 100px); /* Tall, leaving small gaps */
   display: flex;
   flex-direction: column;
-  
-  /* Subtle depth */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4); /* Slightly stronger depth */
 }
 
 /* Page Header */

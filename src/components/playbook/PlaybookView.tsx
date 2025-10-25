@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Target, Plus } from 'lucide-react';
 import { PremiumIcons } from '../icons/PremiumIcons';
+import PageContainer from '../common/PageContainer';
+import PageHeader from '../common/PageHeader';
 import { actionableInsightsService } from '../../services/actionableInsightsService';
 import { dailyProtocolService } from '../../services/dailyProtocolService';
 import Emoji from '../common/Emoji';
@@ -708,29 +710,43 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
         }
       `}</style>
       
-    <div className="page-container">
-      {/* Page Header */}
-      <div className="page-header">
-        <div className="header-content">
-          <div className="header-left">
-            <Target className="header-icon" size={24} />
-            <div>
-              <h1>Personal Playbook</h1>
-              <p className="header-subtitle">Track strategies that work for you</p>
-            </div>
-          </div>
+    <PageContainer>
+      <PageHeader
+        icon={<Target size={24} />}
+        title="Personal Playbook"
+        subtitle="Track strategies that work for you"
+        actions={
           <button
             className="add-protocol-button"
             onClick={() => activeSection === 'protocols' ? setShowProtocolForm(true) : setShowCreateForm(true)}
+            style={{
+              padding: '0.6rem 1.25rem',
+              background: '#8b5cf6',
+              border: 'none',
+              borderRadius: '8px',
+              color: '#ffffff',
+              fontSize: '0.9rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#7c3aed';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#8b5cf6';
+            }}
           >
             <Plus size={20} />
             {activeSection === 'protocols' ? 'Add Protocol' : 'Add Strategy'}
           </button>
-        </div>
-      </div>
+        }
+      />
 
-      {/* Page Content */}
-      <div className="page-content" style={{ padding: '20px 0 20px 0' }}>
+      <div style={{ padding: '20px 0 20px 0' }}>
 
       {/* Section Tabs - Daily Protocols vs Strategies */}
       <div style={{
@@ -749,18 +765,28 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
           style={{
             flex: 1,
             padding: '0.75rem 1rem',
-            background: activeSection === 'protocols' ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
-            border: activeSection === 'protocols' ? '1px solid #3b82f6' : '1px solid transparent',
+            background: activeSection === 'protocols' ? 'rgba(255, 255, 255, 0.06)' : 'transparent',
+            border: '1px solid transparent',
             borderRadius: '8px',
-            color: activeSection === 'protocols' ? '#3b82f6' : '#9CA3AF',
+            color: activeSection === 'protocols' ? '#E5E7EB' : '#9CA3AF',
             fontSize: '0.9rem',
             cursor: 'pointer',
-            fontWeight: activeSection === 'protocols' ? '600' : '400',
+            fontWeight: '500',
             transition: 'all 0.2s ease',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '0.5rem'
+          }}
+          onMouseEnter={(e) => {
+            if (activeSection !== 'protocols') {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (activeSection !== 'protocols') {
+              e.currentTarget.style.background = 'transparent';
+            }
           }}
         >
           <span style={{ fontSize: '1.1rem' }}>📅</span>
@@ -771,18 +797,28 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
           style={{
             flex: 1,
             padding: '0.75rem 1rem',
-            background: activeSection === 'strategies' ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
-            border: activeSection === 'strategies' ? '1px solid #3b82f6' : '1px solid transparent',
+            background: activeSection === 'strategies' ? 'rgba(255, 255, 255, 0.06)' : 'transparent',
+            border: '1px solid transparent',
             borderRadius: '8px',
-            color: activeSection === 'strategies' ? '#3b82f6' : '#9CA3AF',
+            color: activeSection === 'strategies' ? '#E5E7EB' : '#9CA3AF',
             fontSize: '0.9rem',
             cursor: 'pointer',
-            fontWeight: activeSection === 'strategies' ? '600' : '400',
+            fontWeight: '500',
             transition: 'all 0.2s ease',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '0.5rem'
+          }}
+          onMouseEnter={(e) => {
+            if (activeSection !== 'strategies') {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (activeSection !== 'strategies') {
+              e.currentTarget.style.background = 'transparent';
+            }
           }}
         >
           <span style={{ fontSize: '1.1rem' }}>💡</span>
@@ -807,10 +843,10 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
             onClick={() => setFilter(tab)}
             style={{
               padding: '0.5rem 1rem',
-              background: filter === tab ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-              border: filter === tab ? '1px solid #3b82f6' : '1px solid transparent',
+              background: filter === tab ? 'rgba(255, 255, 255, 0.06)' : 'transparent',
+              border: '1px solid transparent',
               borderRadius: '6px',
-              color: filter === tab ? '#3b82f6' : '#9CA3AF',
+              color: filter === tab ? '#E5E7EB' : '#9CA3AF',
               fontSize: '0.875rem',
               cursor: 'pointer',
               fontWeight: filter === tab ? '600' : '400',
@@ -1717,7 +1753,7 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
         </div>
       )}
       </div>
-    </div>
+    </PageContainer>
     </>
   );
 };

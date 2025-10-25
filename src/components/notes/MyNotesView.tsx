@@ -5,6 +5,9 @@ import type { DiaryEntry } from '../../types/diary';
 import { storageAdapter } from '../../services/storageAdapter';
 import { PremiumIcons } from '../icons/PremiumIcons';
 import { entryBadgeService } from '../../services/entryBadgeService';
+import { SkeletonNoteGrid } from '../common/SkeletonLoader';
+import PageContainer from '../common/PageContainer';
+import PageHeader from '../common/PageHeader';
 import '../../styles/page-layout.css';
 
 interface MyNotesViewProps {
@@ -65,8 +68,6 @@ const MyNotesView: React.FC<MyNotesViewProps> = ({ setActiveView, setActiveNoteI
     return filtered;
   };
 
-  const filteredNotes = getFilteredNotes();
-
   // Format date
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -98,33 +99,63 @@ const MyNotesView: React.FC<MyNotesViewProps> = ({ setActiveView, setActiveNoteI
     setActiveView('editor');
   };
 
+  const filteredNotes = getFilteredNotes();
+
+  // Show skeleton during initial load
+  if (isLoading) {
+    return (
+      <PageContainer>
+        <PageHeader
+          icon={<FileText size={24} />}
+          title="My Notes"
+          subtitle="Browse and organize your journal entries"
+        />
+        <SkeletonNoteGrid count={9} />
+      </PageContainer>
+    );
+  }
+
   return (
-    <div className="page-container">
-      {/* Page Header */}
-      <div className="page-header">
-        <div className="header-content">
-          <div className="header-left">
-            <FileText className="header-icon" size={24} />
-            <div>
-              <h1>My Notes</h1>
-              <p className="header-subtitle">
-                {filteredNotes.length} {filteredNotes.length === 1 ? 'entry' : 'entries'}
-                {filter !== 'all' && ` · ${filter}`}
-              </p>
-            </div>
-          </div>
+    <PageContainer>
+      <PageHeader
+        icon={<FileText size={24} />}
+        title="My Notes"
+        subtitle={`${filteredNotes.length} ${filteredNotes.length === 1 ? 'entry' : 'entries'}${filter !== 'all' ? ` · ${filter}` : ''}`}
+        actions={
           <button
             className="new-note-button"
             onClick={() => {
               setActiveNoteId('');
               setActiveView('editor');
             }}
+            style={{
+              padding: '0.6rem 1.25rem',
+              background: '#8b5cf6',
+              border: 'none',
+              borderRadius: '8px',
+              color: '#ffffff',
+              fontSize: '0.9rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#7c3aed';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#8b5cf6';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
           >
             <Plus size={20} />
             New Note
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Page Content */}
       <div className="page-content">
@@ -546,8 +577,8 @@ const MyNotesView: React.FC<MyNotesViewProps> = ({ setActiveView, setActiveNoteI
           }
         }
       `}</style>
-      </div>
     </div>
+    </PageContainer>
   );
 };
 

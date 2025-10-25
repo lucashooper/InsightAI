@@ -403,16 +403,14 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
 
   console.log('📝 DiaryEditor: Showing editable view for note:', note.title);
   return (
-    <div className="diary-editor-container diary-textarea-container" style={{ 
-      height: '100%', 
-      display: 'flex', 
+    <div style={{
+      height: '100%',
+      display: 'flex',
       flexDirection: 'column',
-      padding: '0.5rem 1rem',
-      width: '100%',
-      boxSizing: 'border-box',
-      maxWidth: '100%',
       overflow: 'hidden',
-      position: 'relative'
+      position: 'relative',
+      padding: '0.5rem 1.5rem 2rem 1.5rem',
+      boxSizing: 'border-box'
     }}>
       {/* Title Input */}
       <div style={{ marginBottom: '1rem', marginTop: '2.5rem' }}>
