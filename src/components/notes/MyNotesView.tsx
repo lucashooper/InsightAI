@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { FileText, Plus } from 'lucide-react';
 import type { DiaryEntry } from '../../types/diary';
 import { storageAdapter } from '../../services/storageAdapter';
 import { PremiumIcons } from '../icons/PremiumIcons';
 import { entryBadgeService } from '../../services/entryBadgeService';
+import '../../styles/page-layout.css';
 
 interface MyNotesViewProps {
   setActiveView: (view: 'editor' | 'dashboard' | 'settings' | 'playbook' | 'mynotes') => void;
@@ -97,90 +99,42 @@ const MyNotesView: React.FC<MyNotesViewProps> = ({ setActiveView, setActiveNoteI
   };
 
   return (
-    <div style={{
-      padding: '2rem',
-      paddingTop: '4rem',
-      maxWidth: '100%',
-      margin: '0 auto',
-      minHeight: '100vh'
-    }}>
-      {/* Header */}
-      <div style={{
-        marginBottom: '2rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1.5rem'
-      }}>
-        {/* Title and Stats */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '1rem'
-        }}>
-          <div>
-            <h1 style={{
-              margin: '0 0 0.5rem 0',
-              fontSize: '2rem',
-              fontWeight: '700',
-              color: '#FFFFFF',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.75rem'
-            }}>
-              <PremiumIcons.FileText size={28} color="#8b5cf6" />
-              My Notes
-            </h1>
-            <p style={{
-              margin: 0,
-              fontSize: '0.95rem',
-              color: '#9CA3AF'
-            }}>
-              {filteredNotes.length} {filteredNotes.length === 1 ? 'entry' : 'entries'}
-              {filter !== 'all' && ` · ${filter}`}
-            </p>
+    <div className="page-container">
+      {/* Page Header */}
+      <div className="page-header">
+        <div className="header-content">
+          <div className="header-left">
+            <FileText className="header-icon" size={24} />
+            <div>
+              <h1>My Notes</h1>
+              <p className="header-subtitle">
+                {filteredNotes.length} {filteredNotes.length === 1 ? 'entry' : 'entries'}
+                {filter !== 'all' && ` · ${filter}`}
+              </p>
+            </div>
           </div>
-
-          {/* New Note Button */}
           <button
+            className="new-note-button"
             onClick={() => {
               setActiveNoteId('');
               setActiveView('editor');
             }}
-            style={{
-              padding: '0.75rem 1.5rem',
-              background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
-              border: 'none',
-              borderRadius: '10px',
-              color: '#FFFFFF',
-              fontSize: '0.95rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              transition: 'all 0.2s ease',
-              boxShadow: '0 4px 16px rgba(139, 92, 246, 0.3)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 6px 20px rgba(139, 92, 246, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 16px rgba(139, 92, 246, 0.3)';
-            }}
           >
-            <PremiumIcons.Plus size={18} />
+            <Plus size={20} />
             New Note
           </button>
         </div>
+      </div>
 
-        {/* Filters and Search */}
-        <div style={{
+      {/* Page Content */}
+      <div className="page-content">
+        {/* Toolbar - Filters and Search */}
+        <div className="notes-toolbar" style={{
           display: 'flex',
           gap: '1rem',
+          marginBottom: '24px',
+          paddingBottom: '24px',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
           flexWrap: 'wrap',
           alignItems: 'center'
         }}>
@@ -289,9 +243,8 @@ const MyNotesView: React.FC<MyNotesViewProps> = ({ setActiveView, setActiveNoteI
             <option value="oldest">Oldest First</option>
           </select>
         </div>
-      </div>
 
-      {/* Loading State */}
+        {/* Loading State */}
       {isLoading && (
         <div 
           className="notes-grid"
@@ -593,6 +546,7 @@ const MyNotesView: React.FC<MyNotesViewProps> = ({ setActiveView, setActiveNoteI
           }
         }
       `}</style>
+      </div>
     </div>
   );
 };

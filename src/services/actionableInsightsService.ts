@@ -2,17 +2,24 @@
 // Manages personal playbook of mental health strategies
 
 import type { ActionableInsight, InsightProgress } from '../types/actionableInsight';
-
-const STORAGE_KEY_INSIGHTS = 'insightai_actionable_insights';
-const STORAGE_KEY_PROGRESS = 'insightai_insight_progress';
+import { supabase } from './supabaseClient';
 
 class ActionableInsightsService {
   /**
-   * Get all actionable insights
+   * Get user-specific storage key
    */
-  getInsights(): ActionableInsight[] {
+  private async getStorageKey(key: string): Promise<string> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('No authenticated user');
+    return `insightai_${user.id}_${key}`;
+  }
+  /**
+   * Get all actionable insights for current user
+   */
+  async getInsights(): Promise<ActionableInsight[]> {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY_INSIGHTS);
+      const key = await this.getStorageKey('actionable_insights');
+      const stored = localStorage.getItem(key);
       return stored ? JSON.parse(stored) : [];
     } catch (error) {
       console.error('Error loading actionable insights:', error);
@@ -23,8 +30,8 @@ class ActionableInsightsService {
   /**
    * Save an actionable insight
    */
-  saveInsight(insight: Omit<ActionableInsight, 'id' | 'createdAt'>): ActionableInsight {
-    const insights = this.getInsights();
+  async saveInsight(insight: Omit<ActionableInsight, 'id' | 'createdAt'>): Promise<ActionableInsight> {
+    const insights = await this.getInsights();
     const newInsight: ActionableInsight = {
       ...insight,
       id: `insight_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -32,19 +39,20 @@ class ActionableInsightsService {
     };
     
     insights.push(newInsight);
-    localStorage.setItem(STORAGE_KEY_INSIGHTS, JSON.stringify(insights));
+    const key = await this.getStorageKey('actionable_insights');
+    localStorage.setItem(key, JSON.stringify(insights));
     return newInsight;
   }
 
   /**
    * Update insight status
    */
-  updateInsightStatus(
+  async updateInsightStatus(
     insightId: string, 
     status: ActionableInsight['status'],
     notes?: string
-  ): void {
-    const insights = this.getInsights();
+  ): Promise<void> {
+    const insights = await this.getInsights();
     const insight = insights.find(i => i.id === insightId);
     
     if (insight) {
@@ -59,32 +67,36 @@ class ActionableInsightsService {
         insight.completedAt = new Date().toISOString();
       }
       
-      localStorage.setItem(STORAGE_KEY_INSIGHTS, JSON.stringify(insights));
+      const key = await this.getStorageKey('actionable_insights');
+      localStorage.setItem(key, JSON.stringify(insights));
     }
   }
 
   /**
    * Delete an insight
    */
-  deleteInsight(insightId: string): void {
-    const insights = this.getInsights();
+  async deleteInsight(insightId: string): Promise<void> {
+    const insights = await this.getInsights();
     const filtered = insights.filter(i => i.id !== insightId);
-    localStorage.setItem(STORAGE_KEY_INSIGHTS, JSON.stringify(filtered));
+    const key = await this.getStorageKey('actionable_insights');
+    localStorage.setItem(key, JSON.stringify(filtered));
   }
 
   /**
    * Get insights by status
    */
-  getInsightsByStatus(status: ActionableInsight['status']): ActionableInsight[] {
-    return this.getInsights().filter(i => i.status === status);
+  async getInsightsByStatus(status: ActionableInsight['status']): Promise<ActionableInsight[]> {
+    const insights = await this.getInsights();
+    return insights.filter(i => i.status === status);
   }
 
   /**
    * Get progress for an insight
    */
-  getProgress(insightId: string): InsightProgress | null {
+  async getProgress(insightId: string): Promise<InsightProgress | null> {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY_PROGRESS);
+      const key = await this.getStorageKey('insight_progress');
+      const stored = localStorage.getItem(key);
       const allProgress: InsightProgress[] = stored ? JSON.parse(stored) : [];
       return allProgress.find(p => p.insightId === insightId) || null;
     } catch (error) {
@@ -96,14 +108,15 @@ class ActionableInsightsService {
   /**
    * Record an attempt at an insight
    */
-  recordAttempt(
+  async recordAttempt(
     insightId: string,
     success: boolean,
     effectiveness?: number,
     note?: string
-  ): void {
+  ): Promise<void> {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY_PROGRESS);
+      const key = await this.getStorageKey('insight_progress');
+      const stored = localStorage.getItem(key);
       const allProgress: InsightProgress[] = stored ? JSON.parse(stored) : [];
       
       let progress = allProgress.find(p => p.insightId === insightId);
@@ -143,7 +156,7 @@ class ActionableInsightsService {
         }
       }
       
-      localStorage.setItem(STORAGE_KEY_PROGRESS, JSON.stringify(allProgress));
+      localStorage.setItem(key, JSON.stringify(allProgress));
     } catch (error) {
       console.error('Error recording attempt:', error);
     }
@@ -152,7 +165,7 @@ class ActionableInsightsService {
   /**
    * Generate suggested insights from AI analysis
    */
-  generateSuggestionsFromAnalysis(aiInsights: any, entryId: string): ActionableInsight[] {
+  async generateSuggestionsFromAnalysis(aiInsights: any, entryId: string): Promise<ActionableInsight[]> {
     const suggestions: Omit<ActionableInsight, 'id' | 'createdAt'>[] = [];
     
     // Parse coping strategies
@@ -171,7 +184,13 @@ class ActionableInsightsService {
       });
     }
     
-    return suggestions.map(s => this.saveInsight(s));
+    // Save all suggestions and return them
+    const savedSuggestions: ActionableInsight[] = [];
+    for (const suggestion of suggestions) {
+      const saved = await this.saveInsight(suggestion);
+      savedSuggestions.push(saved);
+    }
+    return savedSuggestions;
   }
 
   /**

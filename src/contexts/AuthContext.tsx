@@ -7,7 +7,9 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, username: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithGoogle: (credential: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,8 +49,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           'Created At': session.user.created_at,
           'Username': session.user.user_metadata?.username || 'N/A'
         });
+        
+        // Store current user ID to detect account switches
+        const storedUserId = localStorage.getItem('insight_ai_current_user');
+        if (storedUserId && storedUserId !== session.user.id) {
+          // User switched accounts - clear all localStorage data
+          console.log('🔄 User switched accounts - clearing old data');
+          const keysToKeep = ['insight_ai_current_user'];
+          const allKeys = Object.keys(localStorage);
+          allKeys.forEach(key => {
+            if (key.startsWith('insight_ai_') && !keysToKeep.includes(key)) {
+              localStorage.removeItem(key);
+            }
+          });
+        }
+        localStorage.setItem('insight_ai_current_user', session.user.id);
       } else {
         console.log('Session: null (user signed out)');
+        // Clear current user on sign out
+        localStorage.removeItem('insight_ai_current_user');
       }
       console.log('============================');
       
@@ -143,8 +162,84 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signInWithGoogle = async (credential: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: credential,
+      });
+
+      if (error) {
+        return { error };
+      }
+
+      // DON'T auto-create profile here - let AuthGate handle onboarding flow
+      // This ensures new users see username creation and membership screens
+
+      return { error: null };
+    } catch (err) {
+      return { error: err };
+    }
+  };
+
   const signOut = async () => {
+    // Clear all app data from localStorage before signing out
+    const allKeys = Object.keys(localStorage);
+    allKeys.forEach(key => {
+      if (key.startsWith('insight_ai_')) {
+        localStorage.removeItem(key);
+      }
+    });
+    
     await supabase.auth.signOut();
+  };
+
+  const deleteAccount = async () => {
+    try {
+      if (!user) {
+        return { error: { message: 'No user logged in' } };
+      }
+
+      console.log('Attempting to delete account for user:', user.id);
+
+      // Call the Supabase RPC function to delete everything
+      const { data, error: rpcError } = await supabase.rpc('delete_user');
+
+      console.log('Delete user RPC response:', data);
+
+      if (rpcError) {
+        console.error('Error calling delete_user RPC:', rpcError);
+        return { 
+          error: { 
+            message: 'Failed to delete account. Make sure the delete_user function is set up in Supabase. See supabase_delete_user_function.sql' 
+          } 
+        };
+      }
+
+      // Check if deletion was successful
+      if (data && !data.success) {
+        console.error('Delete failed:', data.error);
+        return { error: { message: data.error || 'Failed to delete account' } };
+      }
+
+      console.log('Account deleted successfully, clearing localStorage');
+
+      // Clear all localStorage
+      const allKeys = Object.keys(localStorage);
+      allKeys.forEach(key => {
+        if (key.startsWith('insight_ai_')) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      // Sign out
+      await supabase.auth.signOut();
+
+      return { error: null };
+    } catch (err) {
+      console.error('Delete account error:', err);
+      return { error: { message: 'An unexpected error occurred while deleting your account' } };
+    }
   };
 
   const value = {
@@ -152,7 +247,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
+    deleteAccount,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

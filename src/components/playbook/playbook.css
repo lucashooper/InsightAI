@@ -1,0 +1,190 @@
+/* Playbook Layout - Whop-inspired */
+.playbook-container {
+  display: grid;
+  grid-template-columns: 240px 1fr; /* Narrower sidebar, more space for main */
+  gap: 24px;
+  padding: 0 24px; /* Only horizontal padding to match other pages */
+  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Sidebar */
+.playbook-sidebar {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 24px;
+  height: fit-content;
+  position: sticky;
+  top: 24px;
+}
+
+.playbook-sidebar h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.sidebar-strategy-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.sidebar-strategy-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateX(4px);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.strategy-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.strategy-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.strategy-info h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #E5E7EB;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.strategy-streak {
+  font-size: 12px;
+  color: #9CA3AF;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.empty-state {
+  color: #9CA3AF;
+  font-size: 14px;
+  text-align: center;
+  padding: 16px;
+}
+
+/* Main content area */
+.playbook-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 500px;
+  width: 100%; /* Take full width */
+  flex: 1;
+}
+
+.empty-state-content {
+  text-align: center;
+  max-width: 600px; /* Wider max-width */
+  margin: 0 auto; /* Center within main */
+  padding: 0 40px; /* Add horizontal padding */
+}
+
+/* Premium icon card like Whop */
+.icon-card {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 24px;
+  
+  /* Premium depth treatment */
+  background: linear-gradient(135deg, rgba(20, 20, 30, 0.8), rgba(15, 15, 25, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  
+  position: relative;
+}
+
+/* Add noise texture to card */
+.icon-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='3.5' numOctaves='1' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+  border-radius: 24px;
+  pointer-events: none;
+}
+
+.calendar-icon {
+  color: #A78BFA;
+  filter: drop-shadow(0 4px 12px rgba(167, 139, 250, 0.4));
+}
+
+.empty-state-content h2 {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: white;
+}
+
+.empty-state-content p {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 32px 0;
+  line-height: 1.6;
+}
+
+.create-protocol-button {
+  padding: 16px 32px;
+  background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.3);
+  transition: all 0.3s;
+}
+
+.create-protocol-button:hover {
+  background: linear-gradient(135deg, #9D6FFF, #8B5CF6);
+  box-shadow: 0 6px 24px rgba(124, 58, 237, 0.5);
+  transform: translateY(-2px);
+}
+
+.create-protocol-button:active {
+  transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .playbook-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .playbook-sidebar {
+    position: relative;
+    top: 0;
+  }
+}
+
+/* Content grid when there are items */
+.playbook-content-grid {
+  display: grid;
+  gap: 16px;
+}

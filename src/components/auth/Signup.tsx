@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import Starfield from '../common/Starfield';
 import './auth.css';
 
 interface SignupProps {
@@ -36,6 +37,9 @@ const Signup: React.FC<SignupProps> = ({ onSwitchToLogin }) => {
 
   return (
     <div className="auth-container">
+      {/* Starfield background */}
+      <Starfield count={150} />
+      
       {/* Second animated orb - Blue */}
       <div style={{
         position: 'absolute',

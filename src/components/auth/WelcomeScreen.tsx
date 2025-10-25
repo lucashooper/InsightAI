@@ -15,6 +15,8 @@ const WelcomeScreen: React.FC = () => {
     setLoading(true);
     await userProfileService.completeWelcome(user.id);
     setLoading(false);
+    // Reload to trigger AuthGate to check updated profile
+    window.location.reload();
   };
 
   return (
@@ -46,33 +48,33 @@ const WelcomeScreen: React.FC = () => {
         pointerEvents: 'none'
       }} />
       
+      {/* Star background decoration - BEHIND the card */}
+      <div className="welcome-stars">
+        {[...Array(30)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="star"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 1, 0] }}
+            transition={{
+              duration: 2 + Math.random() * 2,
+              repeat: Infinity,
+              delay: Math.random() * 2,
+            }}
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+          />
+        ))}
+      </div>
+
       <motion.div
         className="welcome-card"
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
       >
-        {/* Star background decoration */}
-        <div className="welcome-stars">
-          {[...Array(20)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="star"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: [0, 1, 0] }}
-              transition={{
-                duration: 2 + Math.random() * 2,
-                repeat: Infinity,
-                delay: Math.random() * 2,
-              }}
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
-            />
-          ))}
-        </div>
-
         <div className="welcome-content">
           <motion.div
             className="logo-container"
@@ -103,7 +105,7 @@ const WelcomeScreen: React.FC = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            Your thoughts are the seeds of clarity. Let's nurture them together.
+            Your AI-powered diary that helps you understand yourself better
           </motion.p>
 
           <motion.div
@@ -133,20 +135,11 @@ const WelcomeScreen: React.FC = () => {
             transition={{ delay: 0.6 }}
             onClick={handleGetStarted}
             disabled={loading}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
             {loading ? 'Loading...' : "Let's Begin →"}
           </motion.button>
-
-          <motion.p
-            className="welcome-tip"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
-          >
-            💡 Tip: Write regularly to unlock the full power of AI insights
-          </motion.p>
         </div>
       </motion.div>
     </div>

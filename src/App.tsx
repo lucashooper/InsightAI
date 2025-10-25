@@ -18,28 +18,7 @@ import { PremiumIcons } from './components/icons/PremiumIcons';
 import { keywordHighlightService } from './services/keywordHighlightService';
 import type { DetectedPattern } from './services/keywordHighlightService';
 
-const DarkModeToggle: React.FC = () => {
-  const [dark, setDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-  }, [dark]);
-
-  return (
-    <label className="toggle-switch" title="Toggle dark mode">
-      <input
-        type="checkbox"
-        checked={dark}
-        onChange={() => setDark((d) => !d)}
-        style={{ display: 'none' }}
-      />
-      <span className="toggle-slider" />
-      <span style={{ marginLeft: 8, fontSize: '1.2rem' }}>
-        {dark ? <PremiumIcons.Moon size={16} /> : <PremiumIcons.Sun size={16} />}
-      </span>
-    </label>
-  );
-};
+// DarkModeToggle removed - theme control is now in Settings page only
 
 const App: React.FC = () => {
   const [notes, setNotes] = useState<DiaryEntry[]>([]);
@@ -299,25 +278,6 @@ const App: React.FC = () => {
           onClick={() => setIsMobileMenuOpen(false)}
         />
         
-        {/* Grouped Control Panel - Top Right - Hide on Analysis Tab */}
-        {!(activeView === 'editor' && activeTab === 'analysis') && (
-          <div style={{ 
-            position: 'absolute', 
-            top: '1rem', 
-            right: '1rem', 
-            zIndex: 10,
-            display: 'flex',
-            gap: '0.5rem',
-            alignItems: 'center',
-            background: 'var(--bg-secondary)',
-            padding: '0.5rem',
-            borderRadius: '8px',
-            border: '1px solid var(--border-color)',
-            boxShadow: '0 2px 8px var(--shadow-color)'
-          }}>
-            <DarkModeToggle />
-          </div>
-        )}
         <div style={{ display: 'flex', flex: 1, minHeight: 0, width: '100%', overflow: 'hidden' }} className={isFocusMode ? 'focus-mode' : ''}>
           {!isFocusMode && (
             <div className={`sidebar-container ${isMobileMenuOpen ? 'sidebar-open' : ''}`}>

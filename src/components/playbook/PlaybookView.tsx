@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { Calendar, Target, Plus } from 'lucide-react';
 import { PremiumIcons } from '../icons/PremiumIcons';
 import { actionableInsightsService } from '../../services/actionableInsightsService';
 import { dailyProtocolService } from '../../services/dailyProtocolService';
 import Emoji from '../common/Emoji';
 import type { ActionableInsight } from '../../types/actionableInsight';
 import type { DailyProtocol } from '../../types/dailyProtocol';
+import './playbook.css';
+import '../../styles/page-layout.css';
 
 interface PlaybookViewProps {
   onNavigateToEntry?: (entryId: string) => void;
@@ -65,12 +68,12 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
     setDailyProtocols(dailyProtocolService.getActiveProtocols());
   };
 
-  const loadInsights = () => {
+  const loadInsights = async () => {
     let loadedInsights: ActionableInsight[];
     if (filter === 'all') {
-      loadedInsights = actionableInsightsService.getInsights();
+      loadedInsights = await actionableInsightsService.getInsights();
     } else {
-      loadedInsights = actionableInsightsService.getInsightsByStatus(filter);
+      loadedInsights = await actionableInsightsService.getInsightsByStatus(filter);
     }
     
     console.log('=== LOADED INSIGHTS ===');
@@ -96,16 +99,16 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
         })));
         
         // Auto-delete orphaned insights
-        orphanedInsights.forEach(insight => {
+        for (const insight of orphanedInsights) {
           console.log(`🗑️ Auto-deleting orphaned insight: ${insight.title}`);
-          actionableInsightsService.deleteInsight(insight.id);
-        });
+          await actionableInsightsService.deleteInsight(insight.id);
+        }
         
         // Reload after cleanup
         if (filter === 'all') {
-          loadedInsights = actionableInsightsService.getInsights();
+          loadedInsights = await actionableInsightsService.getInsights();
         } else {
-          loadedInsights = actionableInsightsService.getInsightsByStatus(filter);
+          loadedInsights = await actionableInsightsService.getInsightsByStatus(filter);
         }
         console.log('✅ Cleaned up. Remaining insights:', loadedInsights.length);
       }
@@ -178,15 +181,15 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
     };
   };
 
-  const handleStatusChange = (insightId: string, newStatus: ActionableInsight['status']) => {
-    actionableInsightsService.updateInsightStatus(insightId, newStatus);
-    loadInsights();
+  const handleStatusChange = async (insightId: string, newStatus: ActionableInsight['status']) => {
+    await actionableInsightsService.updateInsightStatus(insightId, newStatus);
+    await loadInsights();
   };
 
-  const handleDelete = (insightId: string) => {
+  const handleDelete = async (insightId: string) => {
     if (confirm('Remove this insight from your playbook?')) {
-      actionableInsightsService.deleteInsight(insightId);
-      loadInsights();
+      await actionableInsightsService.deleteInsight(insightId);
+      await loadInsights();
     }
   };
 
@@ -207,7 +210,11 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
   };
 
   const InsightCard: React.FC<{ insight: ConsolidatedInsight }> = ({ insight }) => {
-    const progress = actionableInsightsService.getProgress(insight.id);
+    const [progress, setProgress] = React.useState<any>(null);
+    
+    React.useEffect(() => {
+      actionableInsightsService.getProgress(insight.id).then(setProgress);
+    }, [insight.id]);
     const priorityColors = getPriorityColor(insight.count);
     
     // Debug logging
@@ -425,8 +432,7 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
                     true,
                     effectiveness ? parseInt(effectiveness) : undefined,
                     note || undefined
-                  );
-                  loadInsights();
+                  ).then(() => loadInsights());
                 }}
                 style={{
                   padding: '0.5rem 0.75rem',
@@ -702,79 +708,37 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
         }
       `}</style>
       
-    <div style={{ 
-      padding: '2rem', 
-      width: '100%',
-      maxWidth: 'none',
-      margin: '0 auto',
-      boxSizing: 'border-box'
-    }}>
-      {/* Header */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '2rem'
-      }}>
-        <div>
-          <h1 style={{
-            margin: 0,
-            fontSize: '2rem',
-            fontWeight: '700',
-            color: '#E5E7EB',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem'
-          }}>
-            <PremiumIcons.Target size={32} color="#E5E7EB" />
-            Personal Playbook
-          </h1>
-          <p style={{
-            margin: '0.5rem 0 0 0',
-            color: '#9CA3AF',
-            fontSize: '0.95rem'
-          }}>
-            Track strategies that work for you
-          </p>
+    <div className="page-container">
+      {/* Page Header */}
+      <div className="page-header">
+        <div className="header-content">
+          <div className="header-left">
+            <Target className="header-icon" size={24} />
+            <div>
+              <h1>Personal Playbook</h1>
+              <p className="header-subtitle">Track strategies that work for you</p>
+            </div>
+          </div>
+          <button
+            className="add-protocol-button"
+            onClick={() => activeSection === 'protocols' ? setShowProtocolForm(true) : setShowCreateForm(true)}
+          >
+            <Plus size={20} />
+            {activeSection === 'protocols' ? 'Add Protocol' : 'Add Strategy'}
+          </button>
         </div>
-        <button
-          onClick={() => activeSection === 'protocols' ? setShowProtocolForm(true) : setShowCreateForm(true)}
-          style={{
-            padding: '0.75rem 1.25rem',
-            background: '#3b82f6',
-            border: 'none',
-            borderRadius: '8px',
-            color: 'white',
-            fontSize: '0.9rem',
-            cursor: 'pointer',
-            fontWeight: '600',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            transition: 'all 0.2s ease',
-            boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#2563eb';
-            e.currentTarget.style.transform = 'translateY(-1px)';
-            e.currentTarget.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.4)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#3b82f6';
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
-          }}
-        >
-          <PremiumIcons.Plus size={18} />
-          <span>{activeSection === 'protocols' ? 'Add Protocol' : 'Add Strategy'}</span>
-        </button>
       </div>
+
+      {/* Page Content */}
+      <div className="page-content" style={{ padding: '20px 0 20px 0' }}>
 
       {/* Section Tabs - Daily Protocols vs Strategies */}
       <div style={{
         display: 'flex',
         gap: '0.5rem',
         marginBottom: '2rem',
+        marginLeft: '24px',
+        marginRight: '24px',
         padding: '0.5rem',
         background: 'rgba(255, 255, 255, 0.03)',
         borderRadius: '12px',
@@ -832,6 +796,8 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
         display: 'flex',
         gap: '0.5rem',
         marginBottom: '2rem',
+        marginLeft: '24px',
+        marginRight: '24px',
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
         paddingBottom: '0.5rem'
       }}>
@@ -852,11 +818,6 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
             }}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            {tab !== 'all' && (
-              <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem' }}>
-                ({actionableInsightsService.getInsightsByStatus(tab).length})
-              </span>
-            )}
           </button>
         ))}
       </div>
@@ -899,46 +860,56 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
 
       {/* Daily Protocols Section */}
       {activeSection === 'protocols' && (
-        <div>
-          {dailyProtocols.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '4rem 2rem',
-              color: '#9CA3AF'
-            }}>
-              <span style={{ fontSize: '4rem' }}>📅</span>
-              <h3 style={{ margin: '1rem 0 0.5rem 0', color: '#E5E7EB' }}>
-                No Daily Protocols Yet
-              </h3>
-              <p style={{ margin: 0, fontSize: '0.9rem' }}>
-                Create recurring daily habits to track your progress and build streaks.
-              </p>
-              <button
-                onClick={() => setShowProtocolForm(true)}
-                style={{
-                  marginTop: '1.5rem',
-                  padding: '0.75rem 1.5rem',
-                  background: '#3b82f6',
-                  border: 'none',
-                  borderRadius: '8px',
-                  color: 'white',
-                  fontSize: '0.9rem',
-                  cursor: 'pointer',
-                  fontWeight: '600'
-                }}
-              >
-                Create Your First Protocol
-              </button>
-            </div>
-          ) : (
-            <div style={{
-              display: 'grid',
-              gap: '1rem'
-            }}>
-              {dailyProtocols.map(protocol => {
-                const stats = dailyProtocolService.getStats(protocol.id);
-                const isCompletedToday = dailyProtocolService.isCompletedToday(protocol.id);
-                const history = dailyProtocolService.getCompletionHistory(protocol.id, 30);
+        <div className="playbook-container">
+          {/* Sidebar - Active Protocols */}
+          <div className="playbook-sidebar">
+            <h3>Active Protocols</h3>
+            {dailyProtocols.length > 0 ? (
+              <div className="strategy-list">
+                {dailyProtocols.map(protocol => {
+                  const stats = dailyProtocolService.getStats(protocol.id);
+                  return (
+                    <div key={protocol.id} className="sidebar-strategy-card">
+                      <span className="strategy-icon">
+                        <Emoji emoji={protocol.emoji} size={20} />
+                      </span>
+                      <div className="strategy-info">
+                        <h4>{protocol.title}</h4>
+                        <span className="strategy-streak">
+                          🔥 {stats.currentStreak} day streak
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="empty-state">No active protocols yet</p>
+            )}
+          </div>
+
+          {/* Main Content */}
+          <div className="playbook-main">
+            {dailyProtocols.length === 0 ? (
+              <div className="empty-state-content">
+                <div className="icon-card">
+                  <Calendar className="calendar-icon" size={48} />
+                </div>
+                <h2>No Daily Protocols Yet</h2>
+                <p>Create recurring daily habits to track your progress and build streaks.</p>
+                <button
+                  onClick={() => setShowProtocolForm(true)}
+                  className="create-protocol-button"
+                >
+                  Create Your First Protocol
+                </button>
+              </div>
+            ) : (
+              <div className="playbook-content-grid" style={{ width: '100%' }}>
+                {dailyProtocols.map(protocol => {
+                  const stats = dailyProtocolService.getStats(protocol.id);
+                  const isCompletedToday = dailyProtocolService.isCompletedToday(protocol.id);
+                  const history = dailyProtocolService.getCompletionHistory(protocol.id, 30);
 
                 return (
                   <div
@@ -1129,8 +1100,9 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
                   </div>
                 );
               })}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -1198,7 +1170,7 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
                 estimatedTime: newStrategy.estimatedTime,
                 source: 'user_created',
                 status: 'active'
-              });
+              }).then(() => loadInsights());
               setNewStrategy({
                 title: '',
                 description: '',
@@ -1744,6 +1716,7 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
           </div>
         </div>
       )}
+      </div>
     </div>
     </>
   );

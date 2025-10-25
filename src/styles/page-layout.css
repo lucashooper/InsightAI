@@ -1,0 +1,227 @@
+/* Global Page Layout System - Whop-Inspired */
+
+/* CSS Variables for consistent spacing */
+:root {
+  --page-margin-x: 8px; /* Reduced from 24px for wider pages */
+  --page-margin-y: 16px; /* Reduced from 20px */
+}
+
+/* Main content wrapper */
+.main-content-area {
+  flex: 1;
+  overflow-y: auto;
+  background: #000000;
+  padding: 0;
+}
+
+/* Page Container - Used on all main pages */
+.page-container {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  margin: var(--page-margin-y) var(--page-margin-x);
+  width: calc(100% - (var(--page-margin-x) * 2));
+  min-height: calc(100vh - 80px); /* Slightly shorter margin */
+  display: flex;
+  flex-direction: column;
+  
+  /* Subtle depth */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Page Header */
+.page-header {
+  padding: 24px 24px 20px; /* Reduced padding */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.page-header h1 {
+  font-size: 28px;
+  font-weight: 600;
+  color: white;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-icon {
+  color: #A78BFA;
+  flex-shrink: 0;
+}
+
+.header-subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 4px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* Page Content */
+.page-content {
+  flex: 1;
+  padding: 20px 24px; /* Reduced padding for wider content */
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Centered content wrapper for grids */
+.page-content-wrapper {
+  width: 100%; /* Use full width, no max-width restriction */
+}
+
+/* Centered Content Pattern (for empty states) */
+.page-content-centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  text-align: center;
+  padding: 64px 32px;
+  min-height: 400px;
+}
+
+/* Empty State */
+.empty-state {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.empty-state-icon {
+  margin: 0 auto 32px;
+}
+
+.empty-state h2 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: white;
+}
+
+.empty-state p {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+  margin: 0 0 32px 0;
+}
+
+/* Action Buttons */
+.new-note-button,
+.add-protocol-button,
+.primary-action-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+  transition: all 0.2s;
+}
+
+.new-note-button:hover,
+.add-protocol-button:hover,
+.primary-action-button:hover {
+  background: linear-gradient(135deg, #9D6FFF, #8B5CF6);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+  transform: translateY(-1px);
+}
+
+.new-note-button:active,
+.add-protocol-button:active,
+.primary-action-button:active {
+  transform: translateY(0);
+}
+
+/* Secondary button style */
+.secondary-action-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondary-action-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .page-container {
+    margin: 16px;
+    border-radius: 12px;
+  }
+  
+  .page-header {
+    padding: 24px 24px 20px;
+  }
+  
+  .page-content {
+    padding: 24px;
+  }
+  
+  .page-content-centered {
+    padding: 48px 24px;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .header-actions {
+    width: 100%;
+  }
+  
+  .new-note-button,
+  .add-protocol-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    margin: 12px;
+    border-radius: 8px;
+  }
+  
+  .page-header h1 {
+    font-size: 24px;
+  }
+  
+  .empty-state h2 {
+    font-size: 20px;
+  }
+}

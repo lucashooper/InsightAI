@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Premium Membership - InsightAI</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', sans-serif;
+      background: #000000;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Starfield */
+    body::before {
+      content: '';
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      background: white;
+      pointer-events: none;
+      z-index: 0;
+      animation: stars-float 120s linear infinite;
+      box-shadow: 
+        100px 50px 0px 0px rgba(255,255,255,0.8),
+        300px 80px 0px 1px rgba(255,255,255,0.6),
+        500px 40px 0px 0px rgba(255,255,255,0.9),
+        700px 100px 0px 1px rgba(255,255,255,0.7),
+        900px 60px 0px 0px rgba(255,255,255,0.8),
+        1100px 90px 0px 1px rgba(255,255,255,0.5),
+        150px 200px 0px 0px rgba(255,255,255,0.7),
+        350px 180px 0px 1px rgba(255,255,255,0.9),
+        550px 220px 0px 0px rgba(255,255,255,0.6),
+        750px 190px 0px 1px rgba(255,255,255,0.8),
+        80px 350px 0px 0px rgba(255,255,255,0.9),
+        280px 320px 0px 1px rgba(255,255,255,0.7),
+        480px 380px 0px 0px rgba(255,255,255,0.8),
+        680px 340px 0px 1px rgba(255,255,255,0.6),
+        200px 500px 0px 0px rgba(255,255,255,0.8),
+        400px 520px 0px 1px rgba(255,255,255,0.9);
+    }
+
+    @keyframes stars-float {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-1000px); }
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 500px;
+      width: 100%;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .icon {
+      display: inline-flex;
+      padding: 1rem;
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(124, 58, 237, 0.2));
+      border-radius: 50%;
+      margin-bottom: 1.5rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem 0;
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .card {
+      background: linear-gradient(135deg, rgba(16, 16, 22, 0.98), rgba(12, 12, 18, 0.98));
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 20px;
+      padding: 2.5rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+
+    .pricing {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .price {
+      font-size: 4rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .currency {
+      font-size: 2rem;
+      color: #8b5cf6;
+    }
+
+    .period {
+      font-size: 1.25rem;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .trial {
+      text-align: center;
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #22c55e;
+      padding: 0.75rem;
+      border-radius: 12px;
+      font-weight: 600;
+      margin-bottom: 2rem;
+    }
+
+    .features {
+      list-style: none;
+      margin-bottom: 2rem;
+    }
+
+    .features li {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 0;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .checkmark {
+      color: #22c55e;
+      font-weight: bold;
+    }
+
+    .btn {
+      width: 100%;
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 1.25rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+    }
+
+    .note {
+      text-align: center;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.875rem;
+      margin-top: 1rem;
+    }
+
+    .skip {
+      width: 100%;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-top: 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .skip:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: rgba(255, 255, 255, 0.9);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="icon">✨</div>
+      <h1>Unlock Your Full Potential</h1>
+      <p class="subtitle">Start your 3-day free trial and experience premium insights</p>
+    </div>
+
+    <div class="card">
+      <div class="badge">👑 Premium</div>
+      
+      <div class="pricing">
+        <span class="currency">£</span><span class="price">5</span><span class="period">/month</span>
+      </div>
+
+      <div class="trial">🎉 3-Day Free Trial</div>
+
+      <ul class="features">
+        <li><span class="checkmark">✓</span> AI-Powered Deep Insights</li>
+        <li><span class="checkmark">✓</span> Advanced Pattern Recognition</li>
+        <li><span class="checkmark">✓</span> Personalized Growth Opportunities</li>
+        <li><span class="checkmark">✓</span> Mental Health Tracking</li>
+        <li><span class="checkmark">✓</span> Unlimited Entries & Analysis</li>
+        <li><span class="checkmark">✓</span> Real-time Sentiment Analysis</li>
+      </ul>
+
+      <button class="btn" onclick="startTrial()">Start Free Trial →</button>
+
+      <p class="note">Cancel anytime. No commitment required.</p>
+    </div>
+
+    <button class="skip" onclick="skip()">I'll decide later</button>
+  </div>
+
+  <script>
+    async function startTrial() {
+      const btn = document.querySelector('.btn');
+      btn.textContent = 'Processing...';
+      btn.disabled = true;
+
+      try {
+        const response = await fetch('/.netlify/functions/create-checkout-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            priceId: 'price_1SKrDtAN91Um40UbiS3HguVw'
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          throw new Error('No checkout URL received');
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+        btn.textContent = 'Start Free Trial →';
+        btn.disabled = false;
+      }
+    }
+
+    function skip() {
+      window.location.href = '/';
+    }
+  </script>
+</body>
+</html>

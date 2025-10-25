@@ -2,11 +2,20 @@ import { supabase } from './supabaseClient';
 import type { DiaryEntry } from '../types/diary';
 
 export const notesService = {
-  // Fetch all notes
+  // Fetch all notes for the current user
   async getNotes(): Promise<DiaryEntry[]> {
+    // Get current authenticated user
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      console.warn('No authenticated user - returning empty notes array');
+      return [];
+    }
+
     const { data, error } = await supabase
       .from('notes')
       .select('* , ai_insights')
+      .eq('user_id', user.id) // CRITICAL: Only fetch notes for this user!
       .order('updated_at', { ascending: false })
       .order('created_at', { ascending: false }); // Secondary sort for stable ordering
 
@@ -15,6 +24,7 @@ export const notesService = {
       throw error;
     }
 
+    console.log(`✅ Loaded ${data?.length || 0} notes for user ${user.id}`);
     return data || [];
   },
 
@@ -48,8 +58,14 @@ export const notesService = {
     return data;
   },
 
-  // Update a note
+  // Update a note (only if it belongs to the current user)
   async updateNote(id: string, updates: Partial<DiaryEntry>): Promise<DiaryEntry> {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error('User must be authenticated to update notes');
+    }
+
     const { data, error } = await supabase
       .from('notes')
       .update({
@@ -57,6 +73,7 @@ export const notesService = {
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
+      .eq('user_id', user.id) // SECURITY: Only update if it's the user's note
       .select()
       .single();
 
@@ -68,12 +85,19 @@ export const notesService = {
     return data;
   },
 
-  // Delete a note
+  // Delete a note (only if it belongs to the current user)
   async deleteNote(id: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error('User must be authenticated to delete notes');
+    }
+
     const { error } = await supabase
       .from('notes')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', user.id); // SECURITY: Only delete if it's the user's note
 
     if (error) {
       console.error('Error deleting note:', error);
@@ -248,14 +272,22 @@ export const notesService = {
     return data;
   },
 
-  // Get notes from the last 30 days for dashboard analytics
+  // Get notes from the last 30 days for dashboard analytics (current user only)
   async getNotesForDashboard(timeRange: number = 30): Promise<DiaryEntry[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      console.warn('No authenticated user - returning empty dashboard notes');
+      return [];
+    }
+
     const daysAgo = new Date();
     daysAgo.setDate(daysAgo.getDate() - timeRange);
     
     const { data, error } = await supabase
       .from('notes')
       .select('*, ai_insights')
+      .eq('user_id', user.id) // SECURITY: Only fetch user's own notes
       .gte('created_at', daysAgo.toISOString())
       .order('created_at', { ascending: true });
 
@@ -264,6 +296,7 @@ export const notesService = {
       throw error;
     }
 
+    console.log(`✅ Loaded ${data?.length || 0} dashboard notes for user ${user.id}`);
     return data || [];
   },
 

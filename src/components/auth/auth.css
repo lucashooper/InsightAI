@@ -327,7 +327,7 @@
 }
 
 .auth-button:hover {
-  transform: translateY(-2px);
+  transform: scale(1.02);
   box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
 }
 
@@ -336,9 +336,100 @@
 }
 
 .auth-button:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
+}
+
+/* OAuth Divider */
+.oauth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.5rem 0;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.875rem;
+}
+
+.oauth-divider::before,
+.oauth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.oauth-divider span {
+  padding: 0 1rem;
+}
+
+/* OAuth Buttons */
+.oauth-button {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  font-size: 1rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-weight: 500;
+}
+
+.oauth-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.oauth-button:active {
+  transform: translateY(0);
+}
+
+/* Google OAuth wrapper */
+.google-oauth-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.google-oauth-wrapper > div {
+  width: 100% !important;
+}
+
+/* Premium Google Button Styling */
+.google-oauth-wrapper button,
+.google-oauth-wrapper div[role="button"] {
+  width: 100% !important;
+  height: 48px !important;
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  transition: all 0.2s ease !important;
+  font-family: inherit !important;
+  font-size: 0.95rem !important;
+  font-weight: 500 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+.google-oauth-wrapper button:hover,
+.google-oauth-wrapper div[role="button"]:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.google-oauth-wrapper button:active,
+.google-oauth-wrapper div[role="button"]:active {
+  transform: translateY(0) !important;
+}
+
+.google-button svg {
+  flex-shrink: 0;
 }
 
 /* Error Message */
@@ -476,7 +567,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
     inset 0 0 20px rgba(0, 0, 0, 0.3);
   position: relative;
-  z-index: 10;
+  z-index: 3;
   overflow: hidden;
 }
 
@@ -511,15 +602,15 @@
   z-index: 2;
 }
 
-/* Star Background */
+/* Star Background - Full viewport coverage */
 .welcome-stars {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   pointer-events: none;
-  z-index: 0;
+  z-index: 1;
 }
 
 .star {
@@ -558,6 +649,8 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin-bottom: 1rem;
+  line-height: 1.2;
+  padding-bottom: 0.2rem; /* Prevent 'g' cutoff */
 }
 
 .welcome-subtitle {

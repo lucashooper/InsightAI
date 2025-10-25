@@ -48,6 +48,7 @@ export const InsightBriefingModal: React.FC<InsightBriefingModalProps> = ({
           style={{
             maxWidth: '1100px',
             width: '100%',
+            minHeight: '500px',
             height: 'auto',
             maxHeight: '85vh',
             position: 'relative',
@@ -122,8 +123,7 @@ export const InsightBriefingModal: React.FC<InsightBriefingModalProps> = ({
             display: 'grid',
             gridTemplateColumns: window.innerWidth > 768 ? '1fr 1fr' : '1fr',
             gap: '0',
-            height: '100%',
-            minHeight: '500px'
+            height: '100%'
           }}>
             {/* Left Panel - Narrative Summary */}
             <div style={{

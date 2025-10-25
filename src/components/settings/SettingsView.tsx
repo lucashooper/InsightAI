@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Settings as SettingsIcon } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { userProfileService } from '../../services/userProfileService';
 import type { UserProfile } from '../../services/userProfileService';
-import MigrationHelper from '../migration/MigrationHelper';
 import { importDiaryEntries } from '../../utils/importDiaryEntries';
 import './settings.css';
+import '../../styles/page-layout.css';
+import '../../styles/settings-layout.css';
 
 const SettingsView: React.FC = () => {
   const { theme, setTheme } = useTheme();
-  const { user, signOut } = useAuth();
+  const { user, signOut, deleteAccount } = useAuth();
   const [remindersEnabled, setRemindersEnabled] = useState(false);
   const [reminderTime, setReminderTime] = useState('20:00');
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
@@ -20,6 +22,8 @@ const SettingsView: React.FC = () => {
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [newUsername, setNewUsername] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     // Load saved settings
@@ -38,10 +42,15 @@ const SettingsView: React.FC = () => {
       setNotificationPermission(Notification.permission);
     }
 
-    // Load user profile
+    // Load user profile using FRESH SESSION
     const loadUserProfile = async () => {
-      if (user) {
-        const profile = await userProfileService.getUserProfile(user.id);
+      // Import supabase to get fresh session
+      const { supabase } = await import('../../services/supabaseClient');
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        console.log('Settings: Loading profile for user:', session.user.id);
+        const profile = await userProfileService.getUserProfile(session.user.id);
         if (profile) {
           setUserProfile(profile);
           setNewUsername(profile.username);
@@ -169,6 +178,23 @@ const SettingsView: React.FC = () => {
     await signOut();
   };
 
+  const handleDeleteAccount = async () => {
+    if (!showDeleteConfirm) {
+      setShowDeleteConfirm(true);
+      return;
+    }
+
+    setIsDeleting(true);
+    const { error } = await deleteAccount();
+    
+    if (error) {
+      alert('Failed to delete account: ' + (error.message || 'Unknown error'));
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+    // If successful, user will be logged out automatically
+  };
+
   const themes = [
     {
       id: 'midnight' as const,
@@ -203,17 +229,23 @@ const SettingsView: React.FC = () => {
   ];
 
   return (
-    <div className="settings-page">
-      <motion.h1 
-        className="settings-header"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        Settings
-      </motion.h1>
+    <div className="page-container">
+      {/* Page Header */}
+      <div className="page-header">
+        <div className="header-content">
+          <div className="header-left">
+            <SettingsIcon className="header-icon" size={24} />
+            <div>
+              <h1>Settings</h1>
+              <p className="header-subtitle">Manage your preferences and account</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <div className="settings-grid">
+      {/* Page Content */}
+      <div className="page-content">
+        <div className="settings-grid">
 
         {/* Profile Management */}
         <motion.div
@@ -239,7 +271,14 @@ const SettingsView: React.FC = () => {
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '1.5rem' }}>
           {/* Profile Picture */}
-          <div style={{ position: 'relative' }}>
+          <label 
+            htmlFor="profile-picture-upload"
+            style={{ 
+              position: 'relative',
+              cursor: uploadingImage ? 'wait' : 'pointer',
+              display: 'block'
+            }}
+          >
             <img 
               src={userProfile?.profile_picture_url || '/Ocean-Swirl.webp'} 
               alt="Profile"
@@ -248,28 +287,33 @@ const SettingsView: React.FC = () => {
                 height: '100px',
                 borderRadius: '50%',
                 objectFit: 'cover',
-                border: '3px solid var(--accent-primary)'
+                transition: 'all 0.2s ease',
+                opacity: uploadingImage ? 0.5 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (!uploadingImage) {
+                  e.currentTarget.style.opacity = '0.7';
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!uploadingImage) {
+                  e.currentTarget.style.opacity = '1';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }
               }}
             />
-            <label 
-              htmlFor="profile-picture-upload"
-              style={{
+            {uploadingImage && (
+              <div style={{
                 position: 'absolute',
-                bottom: '0',
-                right: '0',
-                background: 'var(--accent-primary)',
-                borderRadius: '50%',
-                width: '32px',
-                height: '32px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: uploadingImage ? 'wait' : 'pointer',
-                border: '2px solid var(--bg-secondary)'
-              }}
-            >
-              {uploadingImage ? '⏳' : '📷'}
-            </label>
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                fontSize: '2rem'
+              }}>
+                ⏳
+              </div>
+            )}
             <input
               id="profile-picture-upload"
               type="file"
@@ -278,7 +322,7 @@ const SettingsView: React.FC = () => {
               disabled={uploadingImage}
               style={{ display: 'none' }}
             />
-          </div>
+          </label>
           
           {/* User Info */}
           <div style={{ flex: 1 }}>
@@ -351,22 +395,55 @@ const SettingsView: React.FC = () => {
             <p style={{ margin: '0 0 0.5rem 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
               {userProfile?.email || user?.email}
             </p>
-            <button
-              onClick={handleSignOut}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '6px',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                background: 'rgba(239, 68, 68, 0.1)',
-                color: '#ef4444',
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-                fontWeight: '500',
-                marginTop: '0.5rem'
-              }}
-            >
-              🚪 Sign Out
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+              <button
+                onClick={handleSignOut}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  color: '#ef4444',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  fontWeight: '500'
+                }}
+              >
+                🚪 Sign Out
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={isDeleting}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '6px',
+                  border: showDeleteConfirm ? '2px solid #ef4444' : '1px solid rgba(239, 68, 68, 0.3)',
+                  background: showDeleteConfirm ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.05)',
+                  color: '#ef4444',
+                  cursor: isDeleting ? 'wait' : 'pointer',
+                  fontSize: '0.9rem',
+                  fontWeight: showDeleteConfirm ? '600' : '500'
+                }}
+              >
+                {isDeleting ? '⏳ Deleting...' : showDeleteConfirm ? '⚠️ Confirm Delete?' : '🗑️ Delete Account'}
+              </button>
+              {showDeleteConfirm && (
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    color: 'var(--text-primary)',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </motion.div>
@@ -675,38 +752,7 @@ const SettingsView: React.FC = () => {
         )}
       </motion.div>
 
-      {/* Data Migration - Full Width */}
-      <motion.div
-        className="settings-section migration-section"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        style={{
-          background: 'rgba(255, 255, 255, 0.03)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: '16px',
-          padding: '32px',
-          gridColumn: '1 / -1'
-        }}
-      >
-        <h2 style={{ 
-          margin: '0 0 1rem 0', 
-          color: 'var(--text-primary)', 
-          fontSize: '1.5rem',
-          fontWeight: '600'
-        }}>
-          🔄 Data Migration
-        </h2>
-        <p style={{ 
-          margin: '0 0 1.5rem 0', 
-          color: 'var(--text-secondary)', 
-          fontSize: '0.9rem' 
-        }}>
-          Migrate your existing diary entries from Supabase to local storage
-        </p>
-        
-        <MigrationHelper />
-        </motion.div>
+      </div>
       </div>
     </div>
   );

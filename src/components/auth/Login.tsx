@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
+import { GoogleLogin } from '@react-oauth/google';
+import type { CredentialResponse } from '@react-oauth/google';
 import { useAuth } from '../../contexts/AuthContext';
+import Starfield from '../common/Starfield';
 import './auth.css';
 
 interface LoginProps {
@@ -12,7 +15,7 @@ const Login: React.FC<LoginProps> = ({ onSwitchToSignup }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,8 +30,32 @@ const Login: React.FC<LoginProps> = ({ onSwitchToSignup }) => {
     }
   };
 
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    if (!credentialResponse.credential) {
+      setError('Google sign-in failed: No credential received');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    const { error: googleError } = await signInWithGoogle(credentialResponse.credential);
+
+    if (googleError) {
+      setError(googleError.message || 'Google sign-in failed');
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setError('Google sign-in was cancelled or failed');
+  };
+
   return (
     <div className="auth-container">
+      {/* Starfield background */}
+      <Starfield count={150} />
+      
       {/* Second animated orb - Blue */}
       <div style={{
         position: 'absolute',
@@ -52,8 +79,7 @@ const Login: React.FC<LoginProps> = ({ onSwitchToSignup }) => {
               className="auth-logo"
             />
           </div>
-          <h1 className="auth-title">Welcome Back</h1>
-          <p className="auth-subtitle">Sign in to continue your journey</p>
+          <h1 className="auth-title">Sign in to Insight</h1>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
@@ -70,7 +96,7 @@ const Login: React.FC<LoginProps> = ({ onSwitchToSignup }) => {
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com or username"
+              placeholder="your@email.com"
               required
               disabled={loading}
             />
@@ -112,6 +138,24 @@ const Login: React.FC<LoginProps> = ({ onSwitchToSignup }) => {
           <button type="submit" className="auth-button" disabled={loading}>
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
+
+          {/* OAuth Divider */}
+          <div className="oauth-divider">
+            <span>OR</span>
+          </div>
+
+          {/* Google OAuth Button */}
+          <div className="google-oauth-wrapper">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              theme="filled_black"
+              size="large"
+              text="continue_with"
+              shape="rectangular"
+              width="100%"
+            />
+          </div>
         </form>
 
         <div className="auth-footer">

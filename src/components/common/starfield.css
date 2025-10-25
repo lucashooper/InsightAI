@@ -1,0 +1,68 @@
+.starfield-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Base star styling */
+.star {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+/* Different star sizes */
+.star-small {
+  width: 1px;
+  height: 1px;
+  opacity: 0.3;
+  box-shadow: 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.star-medium {
+  width: 2px;
+  height: 2px;
+  opacity: 0.5;
+  box-shadow: 0 0 2px rgba(255, 255, 255, 0.6);
+}
+
+.star-large {
+  width: 3px;
+  height: 3px;
+  opacity: 0.7;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+}
+
+/* Twinkle animation */
+@keyframes twinkle {
+  0%, 100% { 
+    opacity: var(--base-opacity);
+    transform: scale(1);
+  }
+  50% { 
+    opacity: calc(var(--base-opacity) * 0.3);
+    transform: scale(0.8);
+  }
+}
+
+/* Slight shooting star effect for occasional stars */
+.star:nth-child(13n) {
+  animation: twinkle 3s ease-in-out infinite, shoot 8s linear infinite;
+}
+
+@keyframes shoot {
+  0%, 90% {
+    transform: translateX(0) translateY(0);
+  }
+  95% {
+    transform: translateX(100px) translateY(50px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0) translateY(0);
+    opacity: var(--base-opacity);
+  }
+}

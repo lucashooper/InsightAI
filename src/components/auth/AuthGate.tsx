@@ -4,7 +4,9 @@ import { userProfileService } from '../../services/userProfileService';
 import { supabase } from '../../services/supabaseClient';
 import Login from './Login';
 import Signup from './Signup';
+import UsernameScreen from './UsernameScreen';
 import WelcomeScreen from './WelcomeScreen';
+import MembershipPage from '../membership/MembershipPage';
 
 interface AuthGateProps {
   children: React.ReactNode;
@@ -13,30 +15,34 @@ interface AuthGateProps {
 const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
   const { user, loading } = useAuth();
   const [showSignup, setShowSignup] = useState(false);
+  const [showUsernameSetup, setShowUsernameSetup] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [showMembership, setShowMembership] = useState(false);
   const [checkingProfile, setCheckingProfile] = useState(true);
 
   useEffect(() => {
     const checkUserProfile = async () => {
-      if (user) {
+      // ALWAYS get fresh session to avoid stale user data
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        const currentUser = session.user;
         console.log('=== CHECKING USER PROFILE ===');
-        console.log('Current user ID:', user.id);
-        console.log('Current user email:', user.email);
-        console.log('User metadata:', user.user_metadata);
+        console.log('Session user ID:', currentUser.id);
+        console.log('Session user email:', currentUser.email);
+        console.log('User metadata:', currentUser.user_metadata);
         
-        // Get fresh session to verify we have the correct user
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log('Fresh session user ID:', session?.user?.id);
-        
-        if (session?.user?.id && session.user.id !== user.id) {
+        // Check for context/session mismatch
+        if (user && user.id !== currentUser.id) {
           console.error('⚠️ USER ID MISMATCH DETECTED!');
           console.error('Context user ID:', user.id);
-          console.error('Session user ID:', session.user.id);
-          console.error('This indicates a session conflict - using session user');
+          console.error('Session user ID:', currentUser.id);
+          console.error('USING SESSION USER (correct) instead of context user');
         }
         
         try {
-          let profile = await userProfileService.getUserProfile(user.id);
+          // Use session user ID, not context user ID
+          let profile = await userProfileService.getUserProfile(currentUser.id);
           console.log('Profile lookup result:', profile ? 'Found' : 'Not found');
           if (profile) {
             console.log('Profile user_id:', profile.user_id);
@@ -44,24 +50,21 @@ const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
           }
           
           if (!profile) {
-            // Create profile if it doesn't exist
-            console.log('Creating user profile for:', user.id);
-            profile = await userProfileService.createUserProfile(
-              user.id,
-              user.user_metadata.username || user.email?.split('@')[0] || 'User',
-              user.email || ''
-            );
-            
-            if (profile) {
-              setShowWelcome(true);
-            } else {
-              console.error('Failed to create user profile');
-              setShowWelcome(false);
-            }
-          } else if (!profile.has_completed_welcome) {
-            setShowWelcome(true);
-          } else {
+            // NEW USER - Show username setup screen
+            console.log('New user detected - showing username setup for:', currentUser.id);
+            setShowUsernameSetup(true);
             setShowWelcome(false);
+            setShowMembership(false);
+          } else if (!profile.has_completed_welcome) {
+            // EXISTING profile but hasn't completed onboarding - show welcome then membership
+            setShowUsernameSetup(false);
+            setShowWelcome(true);
+            setShowMembership(false);
+          } else {
+            // EXISTING user with completed onboarding
+            setShowUsernameSetup(false);
+            setShowWelcome(false);
+            setShowMembership(false);
           }
         } catch (error) {
           console.error('Error checking user profile:', error);
@@ -100,8 +103,38 @@ const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
     );
   }
 
+  // Show username setup for brand new users
+  if (showUsernameSetup) {
+    return (
+      <UsernameScreen 
+        onComplete={() => {
+          // After username is set, show welcome screen
+          setShowUsernameSetup(false);
+          setShowWelcome(true);
+        }}
+      />
+    );
+  }
+
+  // Show welcome screen (with features)
   if (showWelcome) {
     return <WelcomeScreen />;
+  }
+
+  // Show membership page
+  if (showMembership) {
+    return (
+      <MembershipPage 
+        onSuccess={() => {
+          // After successful payment, complete onboarding
+          setShowMembership(false);
+        }}
+        onSkip={() => {
+          // If user skips, complete onboarding anyway
+          setShowMembership(false);
+        }}
+      />
+    );
   }
 
   return <>{children}</>;

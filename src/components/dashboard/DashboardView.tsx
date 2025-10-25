@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, easeOut } from 'framer-motion';
+import { BarChart3 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import SentimentFlowChart from './SentimentFlowChart';
@@ -11,6 +12,7 @@ import NarrativeSummary from './NarrativeSummary';
 import { storageAdapter } from '../../services/storageAdapter';
 import type { DiaryEntry } from '../../types/diary';
 import { PremiumIcons } from '../icons/PremiumIcons';
+import '../../styles/page-layout.css';
 
 interface SentimentDataPoint {
   date: string;
@@ -87,7 +89,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
   const loadDashboardData = async (range: number = timeRange) => {
     setIsLoading(true);
     try {
-      const notesData = await storageAdapter.getNotesForDashboard(range);
+      // Get ALL analyzed entries - the function now ignores timeRange
+      const notesData = await storageAdapter.getNotesForDashboard();
       setNotes(notesData);
       
       // Process data for charts
@@ -201,21 +204,20 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
   };
 
   return (
-    <div id="dashboard-container" style={{ padding: '2rem', maxWidth: '100%' }}>
-      {/* Dashboard Header */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: '2rem' 
-      }}>
-        <div>
-          <h2 style={{ margin: 0, color: 'var(--text-primary)', fontWeight: '600' }}>Monthly Review</h2>
-          <p style={{ margin: '0.5rem 0 0 0', color: '#9CA3AF', fontSize: '0.9rem' }}>
-            Your emotional journey over the last {timeRange} days
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+    <div className="page-container">
+      {/* Page Header */}
+      <div className="page-header">
+        <div className="header-content">
+          <div className="header-left">
+            <BarChart3 className="header-icon" size={24} />
+            <div>
+              <h1>Dashboard & Trends</h1>
+              <p className="header-subtitle">
+                Your emotional journey over the last {timeRange} days
+              </p>
+            </div>
+          </div>
+          <div className="header-actions">
           {/* Date Range Selector */}
           <select
             value={timeRange}
@@ -360,7 +362,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
       </div>
 
       {/* Dashboard Content */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      <div className="page-content" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         {/* Loading State */}
         {isLoading && (
           <div style={{
@@ -627,8 +629,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
           }}
         />
       )}
+      </div>
     </div>
   );
 };
 
-export default DashboardView; 
+export default DashboardView;

@@ -222,7 +222,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
           // Generate actionable insights from coping strategies
           if (result.coping_strategies?.suggested && note.id) {
             try {
-              actionableInsightsService.generateSuggestionsFromAnalysis(result, note.id);
+              await actionableInsightsService.generateSuggestionsFromAnalysis(result, note.id);
               console.log('✅ Actionable insights generated and saved to playbook');
             } catch (err) {
               console.error('Error generating actionable insights:', err);
@@ -1110,9 +1110,9 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                             Coping Strategies
                           </h4>
                           <button
-                            onClick={() => {
+                            onClick={async () => {
                               if (note?.id) {
-                                actionableInsightsService.generateSuggestionsFromAnalysis(
+                                await actionableInsightsService.generateSuggestionsFromAnalysis(
                                   { coping_strategies: insightsToShow.coping_strategies },
                                   note.id
                                 );

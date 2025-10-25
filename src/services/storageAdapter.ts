@@ -4,7 +4,7 @@ import { PatternAlertsService } from './patternAlertsService';
 import type { DiaryEntry, PatternAlert, AlertType } from '../types/diary';
 
 // Configuration to switch between storage backends
-const USE_LOCAL_STORAGE = true; // Set to false to use Supabase
+const USE_LOCAL_STORAGE = false; // Set to false to use Supabase - CHANGED to load notes from database
 
 // Unified interface for both storage backends
 export const storageAdapter = {
