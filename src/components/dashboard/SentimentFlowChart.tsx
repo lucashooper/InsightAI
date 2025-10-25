@@ -108,9 +108,9 @@ const SentimentFlowChart: React.FC<SentimentFlowChartProps> = ({ data, timeRange
         textAlign: 'center',
         padding: '3rem',
         color: '#9CA3AF',
-        background: '#1F2937',
+        background: 'rgba(255, 255, 255, 0.03)',
         borderRadius: '12px',
-        border: '1px solid #374151'
+        border: '1px solid rgba(255, 255, 255, 0.08)'
       }}>
         <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
           <PremiumIcons.BarChart size={48} color="#9CA3AF" />

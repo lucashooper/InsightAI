@@ -772,7 +772,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
             overflowWrap: 'break-word',
             whiteSpace: 'pre-wrap',
             boxSizing: 'border-box',
-            overflow: 'auto',
+            overflow: 'hidden',
             cursor: 'pointer',
             position: 'relative'
           }}
@@ -824,11 +824,9 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
             fontFamily: 'inherit',
             wordWrap: 'break-word',
             overflowWrap: 'break-word',
-            wordBreak: 'break-all',
             whiteSpace: 'pre-wrap',
             boxSizing: 'border-box',
             overflow: 'hidden',
-            hyphens: 'auto',
           }}
         />
       )}
@@ -915,11 +913,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
               <small style={{ opacity: 0.5, fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
                 Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </small>
-            ) : (
-              <small style={{ opacity: 0.4, fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
-                Auto-saves as you type
-              </small>
-            )}
+            ) : null}
           </div>
         </div>
     </div>

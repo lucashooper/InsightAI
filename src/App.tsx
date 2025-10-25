@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import type { DiaryEntry } from './types/diary';
 import './styles/base.css';
 import './styles/darkModeToggle.css';
@@ -17,6 +17,10 @@ import { storageAdapter } from './services/storageAdapter';
 import { PremiumIcons } from './components/icons/PremiumIcons';
 import { keywordHighlightService } from './services/keywordHighlightService';
 import type { DetectedPattern } from './services/keywordHighlightService';
+import NoteTabBar from './components/common/NoteTabBar';
+import SearchModal from './components/common/SearchModal';
+import LeftToolbar from './components/common/LeftToolbar';
+import BookmarkDropdown from './components/common/BookmarkDropdown';
 
 // DarkModeToggle removed - theme control is now in Settings page only
 
@@ -32,6 +36,11 @@ const App: React.FC = () => {
   const [detectedPatterns, setDetectedPatterns] = useState<DetectedPattern[]>([]);
   const [highlightingEnabled, setHighlightingEnabled] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [openTabs, setOpenTabs] = useState<DiaryEntry[]>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [bookmarkedNoteIds, setBookmarkedNoteIds] = useState<Set<string>>(new Set());
+  const [isBookmarkDropdownOpen, setIsBookmarkDropdownOpen] = useState(false);
+  const bookmarkButtonRef = useRef<HTMLButtonElement>(null);
 
   // Debug logging for state changes
   useEffect(() => {
@@ -58,6 +67,30 @@ const App: React.FC = () => {
       setStreakData(streak);
     }
   }, [notes]);
+
+  // Add selected note to tabs
+  useEffect(() => {
+    if (selectedNote && !openTabs.find(tab => tab.id === selectedNote.id)) {
+      setOpenTabs(prev => {
+        // Limit to 6 tabs
+        const newTabs = [...prev, selectedNote];
+        return newTabs.slice(-6);
+      });
+    }
+  }, [selectedNote, openTabs]);
+
+  // Keyboard shortcut for search (Cmd/Ctrl + K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
 
   const loadNotes = async () => {
@@ -99,6 +132,33 @@ const App: React.FC = () => {
       console.error('❌ Note not found in notes array:', { id, notesCount: notes.length });
     }
   }, [notes]);
+
+  const handleCloseTab = useCallback((noteId: string) => {
+    setOpenTabs(prev => {
+      const newTabs = prev.filter(tab => tab.id !== noteId);
+      // If closing active tab, switch to another tab or clear selection
+      if (selectedNote?.id === noteId) {
+        if (newTabs.length > 0) {
+          setSelectedNote(newTabs[newTabs.length - 1]);
+        } else {
+          setSelectedNote(null);
+        }
+      }
+      return newTabs;
+    });
+  }, [selectedNote]);
+
+  const handleToggleBookmark = useCallback((noteId: string) => {
+    setBookmarkedNoteIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(noteId)) {
+        newSet.delete(noteId);
+      } else {
+        newSet.add(noteId);
+      }
+      return newSet;
+    });
+  }, []);
 
   const handleAdd = useCallback(async () => {
     try {
@@ -261,6 +321,55 @@ const App: React.FC = () => {
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }} className="app-container">
         <AnimatedBackground />
         
+        {/* Left Toolbar - Above Sidebar */}
+        {!isFocusMode && (
+          <LeftToolbar 
+            onSearchClick={() => setIsSearchOpen(true)} 
+            onBookmarkClick={() => setIsBookmarkDropdownOpen(!isBookmarkDropdownOpen)}
+            bookmarkButtonRef={bookmarkButtonRef}
+          />
+        )}
+        
+        {/* Bookmark Dropdown */}
+        <BookmarkDropdown
+          isOpen={isBookmarkDropdownOpen}
+          bookmarkedNotes={notes.filter(n => bookmarkedNoteIds.has(n.id))}
+          onSelectNote={(note) => {
+            setSelectedNote(note);
+            setActiveView('editor');
+            setActiveTab('editor');
+            setIsBookmarkDropdownOpen(false);
+          }}
+          onRemoveBookmark={handleToggleBookmark}
+          onClose={() => setIsBookmarkDropdownOpen(false)}
+          anchorRef={bookmarkButtonRef}
+        />
+        
+        {/* Search Modal */}
+        <SearchModal
+          isOpen={isSearchOpen}
+          notes={notes}
+          onClose={() => setIsSearchOpen(false)}
+          onSelectNote={(note) => {
+            setSelectedNote(note);
+            setActiveView('editor');
+            setActiveTab('editor');
+          }}
+        />
+        
+        {/* Note Tab Bar */}
+        {activeView === 'editor' && openTabs.length > 0 && !isFocusMode && (
+          <NoteTabBar
+            openNotes={openTabs}
+            activeNoteId={selectedNote?.id || null}
+            onSelectNote={(note) => {
+              setSelectedNote(note);
+              setActiveTab('editor');
+            }}
+            onCloseNote={handleCloseTab}
+          />
+        )}
+        
         {/* Mobile Menu Button */}
         {!isFocusMode && (
           <button
@@ -278,9 +387,9 @@ const App: React.FC = () => {
           onClick={() => setIsMobileMenuOpen(false)}
         />
         
-        <div style={{ display: 'flex', flex: 1, minHeight: 0, width: '100%', overflow: 'hidden' }} className={isFocusMode ? 'focus-mode' : ''}>
+        <div style={{ display: 'flex', flex: 1, minHeight: 0, width: '100%', overflow: 'hidden', marginTop: isFocusMode ? '0' : '48px' }} className={isFocusMode ? 'focus-mode' : ''}>
           {!isFocusMode && (
-            <div className={`sidebar-container ${isMobileMenuOpen ? 'sidebar-open' : ''}`}>
+            <div className={`sidebar-container ${isMobileMenuOpen ? 'sidebar-open' : ''}`} style={{ marginTop: '-48px' }}>
               <Sidebar 
               onSelect={handleSelect} 
               onAdd={handleAdd} 
@@ -306,6 +415,8 @@ const App: React.FC = () => {
                   return newSet;
                 });
               }}
+              onBookmarkNote={handleToggleBookmark}
+              bookmarkedNoteIds={bookmarkedNoteIds}
               />
             </div>
           )}

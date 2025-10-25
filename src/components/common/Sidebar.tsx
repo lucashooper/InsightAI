@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Star } from 'lucide-react';
 import type { DiaryEntry } from '../../types/diary';
 import StreakDisplay from './StreakDisplay';
 import { downloadNoteAsTxt } from '../../utils/downloadUtils';
@@ -19,6 +20,8 @@ interface SidebarProps {
   streakData?: { currentStreak: number; longestStreak: number; lastEntryDate: string | null };
   blurredNoteIds?: Set<string>;
   onToggleNotePrivacy?: (noteId: string) => void;
+  onBookmarkNote?: (noteId: string) => void;
+  bookmarkedNoteIds?: Set<string>;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -32,7 +35,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   setActiveView,
   streakData,
   blurredNoteIds = new Set(),
-  onToggleNotePrivacy
+  onToggleNotePrivacy,
+  onBookmarkNote,
+  bookmarkedNoteIds = new Set()
 }) => {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; noteId: string } | null>(null);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
@@ -168,12 +173,14 @@ const Sidebar: React.FC<SidebarProps> = ({
       padding: '2rem 0 1rem 0',
       boxSizing: 'border-box',
     }}>
-      <div style={{ 
-        padding: '0 1rem', 
-        marginBottom: '1rem', 
-        fontWeight: 600, 
-        fontSize: 18, 
+      <div style={{
+        fontSize: '0.875rem',
+        fontWeight: '600',
         color: 'var(--text-primary)',
+        opacity: 0.9,
+        marginTop: '30px',
+        marginLeft: '1rem',
+        marginBottom: '0.75rem',
         whiteSpace: 'nowrap',
         overflow: 'hidden',
         textOverflow: 'ellipsis'
@@ -567,6 +574,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                 if (note) {
                   startRename(note.id, note.title);
                 }
+              }
+            },
+            {
+              label: bookmarkedNoteIds.has(contextMenu.noteId) ? 'Remove Bookmark' : 'Bookmark Note',
+              icon: <Star size={16} fill={bookmarkedNoteIds.has(contextMenu.noteId) ? "#f59e0b" : "none"} color={bookmarkedNoteIds.has(contextMenu.noteId) ? "#f59e0b" : "currentColor"} />,
+              onClick: () => {
+                if (onBookmarkNote) {
+                  onBookmarkNote(contextMenu.noteId);
+                }
+                setContextMenu(null);
               }
             },
             {
