@@ -1,5 +1,19 @@
 /* Settings Page Responsive Layout */
 
+/* Spinner animation for loading icons */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
 .settings-page {
   max-width: 1400px;
   margin: 0 auto;

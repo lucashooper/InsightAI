@@ -2,8 +2,8 @@
 
 /* CSS Variables for consistent spacing */
 :root {
-  --page-margin-x: 14px; /* Small margin for visual structure */
-  --page-margin-y: 8px; /* Small top/bottom margin - safe for all screens */
+  --page-margin-x: 16px; /* Balanced margin for visual structure */
+  --page-margin-y: 12px; /* Small top/bottom margin - safe for all screens */
 }
 
 /* Main content wrapper */
@@ -29,7 +29,7 @@
 
 /* Page Header */
 .page-header {
-  padding: 24px 24px 20px; /* Reduced padding */
+  padding: 32px 24px 20px; /* Increased top padding for better spacing */
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 

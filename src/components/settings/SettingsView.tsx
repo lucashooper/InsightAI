@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings as SettingsIcon } from 'lucide-react';
+import { Settings as SettingsIcon, User, Edit2, LogOut, Trash2, Palette, Bell, Download, Check, X, Loader } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { userProfileService } from '../../services/userProfileService';
@@ -264,9 +264,13 @@ const SettingsView: React.FC = () => {
           margin: '0 0 1rem 0', 
           color: 'var(--text-primary)', 
           fontSize: '1.5rem',
-          fontWeight: '600'
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
         }}>
-          👤 Profile
+          <User size={24} style={{ color: 'var(--accent-primary)' }} />
+          Profile
         </h2>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '1.5rem' }}>
@@ -350,10 +354,13 @@ const SettingsView: React.FC = () => {
                       border: 'none',
                       background: 'var(--accent-primary)',
                       color: 'white',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem'
                     }}
                   >
-                    ✓
+                    <Check size={16} />
                   </button>
                   <button
                     onClick={() => {
@@ -366,10 +373,13 @@ const SettingsView: React.FC = () => {
                       border: '1px solid var(--border-color)',
                       background: 'transparent',
                       color: 'var(--text-primary)',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem'
                     }}
                   >
-                    ✕
+                    <X size={16} />
                   </button>
                 </div>
               ) : (
@@ -384,10 +394,12 @@ const SettingsView: React.FC = () => {
                       border: 'none',
                       color: 'var(--accent-primary)',
                       cursor: 'pointer',
-                      fontSize: '0.9rem'
+                      padding: '0.25rem',
+                      display: 'flex',
+                      alignItems: 'center'
                     }}
                   >
-                    ✏️
+                    <Edit2 size={16} />
                   </button>
                 </div>
               )}
@@ -406,10 +418,14 @@ const SettingsView: React.FC = () => {
                   color: '#ef4444',
                   cursor: 'pointer',
                   fontSize: '0.9rem',
-                  fontWeight: '500'
+                  fontWeight: '500',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
                 }}
               >
-                🚪 Sign Out
+                <LogOut size={16} />
+                Sign Out
               </button>
               <button
                 onClick={handleDeleteAccount}
@@ -425,7 +441,13 @@ const SettingsView: React.FC = () => {
                   fontWeight: showDeleteConfirm ? '600' : '500'
                 }}
               >
-                {isDeleting ? '⏳ Deleting...' : showDeleteConfirm ? '⚠️ Confirm Delete?' : '🗑️ Delete Account'}
+                {isDeleting ? (
+                  <><Loader size={16} className="spinner" /> Deleting...</>
+                ) : showDeleteConfirm ? (
+                  <><Trash2 size={16} /> Confirm Delete?</>
+                ) : (
+                  <><Trash2 size={16} /> Delete Account</>
+                )}
               </button>
               {showDeleteConfirm && (
                 <button
@@ -462,12 +484,16 @@ const SettingsView: React.FC = () => {
         }}
       >
         <h2 style={{ 
-          margin: '0 0 1rem 0', 
+          margin: '0 0 0.5rem 0', 
           color: 'var(--text-primary)', 
           fontSize: '1.5rem',
-          fontWeight: '600'
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
         }}>
-          🎨 Theme
+          <Palette size={24} style={{ color: 'var(--accent-primary)' }} />
+          Theme
         </h2>
         <p style={{ 
           margin: '0 0 1.5rem 0', 
@@ -576,12 +602,16 @@ const SettingsView: React.FC = () => {
         }}
       >
         <h2 style={{ 
-          margin: '0 0 1rem 0', 
+          margin: '0 0 0.5rem 0', 
           color: 'var(--text-primary)', 
           fontSize: '1.5rem',
-          fontWeight: '600'
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
         }}>
-          🔔 Daily Reminders
+          <Bell size={24} style={{ color: 'var(--accent-primary)' }} />
+          Daily Reminders
         </h2>
         <p style={{ 
           margin: '0 0 1.5rem 0', 
@@ -665,12 +695,16 @@ const SettingsView: React.FC = () => {
         }}
       >
         <h2 style={{ 
-          margin: '0 0 1rem 0', 
+          margin: '0 0 0.5rem 0', 
           color: 'var(--text-primary)', 
           fontSize: '1.5rem',
-          fontWeight: '600'
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
         }}>
-          📥 Import Diary Entries
+          <Download size={24} style={{ color: 'var(--accent-primary)' }} />
+          Import Diary Entries
         </h2>
         <p style={{ 
           margin: '0 0 1.5rem 0', 
@@ -696,7 +730,11 @@ const SettingsView: React.FC = () => {
             opacity: isImporting ? 0.6 : 1
           }}
         >
-          {isImporting ? '⏳ Importing...' : '📥 Import Entries'}
+          {isImporting ? (
+            <><Loader size={18} className="spinner" /> Importing...</>
+          ) : (
+            <><Download size={18} /> Import Entries</>
+          )}
         </button>
 
         {importResult && (

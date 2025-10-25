@@ -55,11 +55,24 @@ const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
             setShowUsernameSetup(true);
             setShowWelcome(false);
             setShowMembership(false);
-          } else if (!profile.has_completed_welcome) {
-            // EXISTING profile but hasn't completed onboarding - show welcome then membership
-            setShowUsernameSetup(false);
-            setShowWelcome(true);
+          } else if (!profile.username) {
+            // Profile exists but no username - show username setup
+            setShowUsernameSetup(true);
+            setShowWelcome(false);
             setShowMembership(false);
+          } else if (!profile.has_completed_welcome) {
+            // Has username but hasn't completed onboarding - check if they've seen welcome
+            const hasSeenWelcome = localStorage.getItem('insightai-welcome-seen');
+            if (!hasSeenWelcome) {
+              setShowUsernameSetup(false);
+              setShowWelcome(true);
+              setShowMembership(false);
+            } else {
+              // Seen welcome, show membership
+              setShowUsernameSetup(false);
+              setShowWelcome(false);
+              setShowMembership(true);
+            }
           } else {
             // EXISTING user with completed onboarding
             setShowUsernameSetup(false);
@@ -118,7 +131,9 @@ const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
 
   // Show welcome screen (with features)
   if (showWelcome) {
-    return <WelcomeScreen />;
+    return (
+      <WelcomeScreen />
+    );
   }
 
   // Show membership page

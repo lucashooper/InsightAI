@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Brain, TrendingUp, Target } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { userProfileService } from '../../services/userProfileService';
 import './auth.css';
 
 const WelcomeScreen: React.FC = () => {
@@ -13,9 +12,10 @@ const WelcomeScreen: React.FC = () => {
     if (!user) return;
     
     setLoading(true);
-    await userProfileService.completeWelcome(user.id);
+    // Mark welcome as seen (not completed yet - membership comes next)
+    localStorage.setItem('insightai-welcome-seen', 'true');
     setLoading(false);
-    // Reload to trigger AuthGate to check updated profile
+    // Reload to trigger AuthGate to show membership page
     window.location.reload();
   };
 

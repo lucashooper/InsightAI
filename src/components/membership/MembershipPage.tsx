@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { PremiumIcons } from '../icons/PremiumIcons';
+import { useAuth } from '../../contexts/AuthContext';
+import { userProfileService } from '../../services/userProfileService';
 import './membership.css';
 
 interface MembershipPageProps {
-  onSuccess: () => void;
+  onSuccess?: () => void;
   onSkip?: () => void;
   showCloseButton?: boolean;
 }
@@ -11,6 +13,21 @@ interface MembershipPageProps {
 const MembershipPage: React.FC<MembershipPageProps> = ({ onSuccess, onSkip, showCloseButton = true }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+
+  const handleSkip = async () => {
+    if (user) {
+      // Mark welcome as completed when user skips
+      await userProfileService.completeWelcome(user.id);
+      localStorage.removeItem('insightai-welcome-seen');
+    }
+    if (onSkip) {
+      onSkip();
+    } else {
+      // Default: reload to show main app
+      window.location.reload();
+    }
+  };
 
   const handleSubscribe = async () => {
     setIsLoading(true);
@@ -48,10 +65,10 @@ const MembershipPage: React.FC<MembershipPageProps> = ({ onSuccess, onSkip, show
   return (
     <div className="membership-container">
       {/* Close Button */}
-      {showCloseButton && onSkip && (
+      {showCloseButton && (
         <button
           className="membership-close-button"
-          onClick={onSkip}
+          onClick={handleSkip}
           aria-label="Close"
         >
           ✕
@@ -59,74 +76,28 @@ const MembershipPage: React.FC<MembershipPageProps> = ({ onSuccess, onSkip, show
       )}
       
       <div className="membership-content">
-        {/* Logo */}
-        <div className="membership-logo">
-          <img 
-            src="/Insight-logo.png" 
-            alt="InsightAI Logo" 
-            style={{
-              width: '80px',
-              height: '80px',
-              objectFit: 'contain',
-              marginBottom: '1rem'
-            }}
-          />
-        </div>
-
-        {/* Header */}
-        <div className="membership-header">
-          <div className="membership-icon">
-            <PremiumIcons.Sparkles size={48} />
+        {/* Pricing Card */}
+        <div className="pricing-card">
+          {/* Logo inside card */}
+          <div className="membership-logo">
+            <img 
+              src="/Insight-logo.png" 
+              alt="InsightAI Logo" 
+              className="logo-image"
+            />
           </div>
+
+          {/* Header */}
           <h1 className="membership-title">Unlock Your Full Potential</h1>
           <p className="membership-subtitle">
             Start your 3-day free trial and experience premium insights
           </p>
-        </div>
-
-        {/* Pricing Card */}
-        <div className="pricing-card">
-          <div className="pricing-badge">
-            <PremiumIcons.Crown size={16} />
-            <span>Premium</span>
-          </div>
           
+          {/* Price */}
           <div className="pricing-amount">
             <span className="currency">£</span>
             <span className="price">5</span>
             <span className="period">/month</span>
-          </div>
-
-          <div className="trial-badge">
-            🎉 3-Day Free Trial
-          </div>
-
-          {/* Features List */}
-          <div className="features-list">
-            <div className="feature-item">
-              <PremiumIcons.Sparkles size={20} color="#22c55e" />
-              <span>AI-Powered Deep Insights</span>
-            </div>
-            <div className="feature-item">
-              <PremiumIcons.TrendingUp size={20} color="#22c55e" />
-              <span>Advanced Pattern Recognition</span>
-            </div>
-            <div className="feature-item">
-              <PremiumIcons.Target size={20} color="#22c55e" />
-              <span>Personalized Growth Opportunities</span>
-            </div>
-            <div className="feature-item">
-              <PremiumIcons.Brain size={20} color="#22c55e" />
-              <span>Mental Health Tracking</span>
-            </div>
-            <div className="feature-item">
-              <PremiumIcons.Shield size={20} color="#22c55e" />
-              <span>Unlimited Entries & Analysis</span>
-            </div>
-            <div className="feature-item">
-              <PremiumIcons.Zap size={20} color="#22c55e" />
-              <span>Real-time Sentiment Analysis</span>
-            </div>
           </div>
 
           {/* CTA Button */}
@@ -161,8 +132,8 @@ const MembershipPage: React.FC<MembershipPageProps> = ({ onSuccess, onSkip, show
 
         {/* Skip Option */}
         {onSkip && (
-          <button className="skip-button" onClick={onSkip}>
-            Continue with Free Plan →
+          <button className="skip-button" onClick={handleSkip}>
+            Or Continue With Free Plan →
           </button>
         )}
 
