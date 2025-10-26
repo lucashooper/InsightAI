@@ -1,44 +1,53 @@
 import { LocalStorageService } from './localStorageService';
 import { notesService } from './notesService';
+import { encryptedNotesService } from './encryptedNotesService';
 import { PatternAlertsService } from './patternAlertsService';
 import type { DiaryEntry, PatternAlert, AlertType } from '../types/diary';
 
 // Configuration to switch between storage backends
-const USE_LOCAL_STORAGE = false; // Set to false to use Supabase - CHANGED to load notes from database
+// This is now dynamic based on user's privacy mode preference
+const getStorageMode = (): boolean => {
+  const privacyMode = localStorage.getItem('insightai-privacy-mode');
+  return privacyMode === 'true';
+};
 
 // Unified interface for both storage backends
 export const storageAdapter = {
-  // Notes/Diary Entries
+  // Notes/Diary Entries (with automatic encryption/decryption)
   async getNotes(): Promise<DiaryEntry[]> {
-    if (USE_LOCAL_STORAGE) {
+    if (getStorageMode()) {
       return LocalStorageService.getNotes();
     }
-    return notesService.getNotes();
+    // Use encrypted notes service which handles encryption automatically
+    return encryptedNotesService.getNotes();
   },
 
   async createNote(title: string, content: string): Promise<DiaryEntry> {
-    if (USE_LOCAL_STORAGE) {
+    if (getStorageMode()) {
       return LocalStorageService.createNote(title, content);
     }
-    return notesService.createNote(title, content);
+    // Use encrypted notes service which handles encryption automatically
+    return encryptedNotesService.createNote(title, content);
   },
 
   async updateNote(id: string, updates: Partial<DiaryEntry>): Promise<DiaryEntry> {
-    if (USE_LOCAL_STORAGE) {
+    if (getStorageMode()) {
       return LocalStorageService.updateNote(id, updates);
     }
-    return notesService.updateNote(id, updates);
+    // Use encrypted notes service which handles encryption automatically
+    return encryptedNotesService.updateNote(id, updates);
   },
 
   async deleteNote(id: string): Promise<void> {
-    if (USE_LOCAL_STORAGE) {
+    if (getStorageMode()) {
       return LocalStorageService.deleteNote(id);
     }
-    return notesService.deleteNote(id);
+    // Use encrypted notes service which handles encryption automatically
+    return encryptedNotesService.deleteNote(id);
   },
 
   async updateAIAnalysis(id: string, analysis: any): Promise<void> {
-    if (USE_LOCAL_STORAGE) {
+    if (getStorageMode()) {
       return LocalStorageService.updateAIAnalysis(id, analysis);
     }
     return notesService.updateAIAnalysis(id, analysis);
@@ -49,17 +58,18 @@ export const storageAdapter = {
     structuredInsights: any;
     insightsReport?: any;
   }): Promise<void> {
-    if (USE_LOCAL_STORAGE) {
+    if (getStorageMode()) {
       return LocalStorageService.saveAIResponse(id, responseData);
     }
     return notesService.saveAIResponse(id, responseData);
   },
 
   async saveAIInsights(id: string, insights: any): Promise<void> {
-    if (USE_LOCAL_STORAGE) {
+    if (getStorageMode()) {
       return LocalStorageService.saveAIInsights(id, insights);
     }
-    return notesService.saveAIInsights(id, insights);
+    // Use encrypted notes service which handles encryption automatically
+    return encryptedNotesService.saveAIInsights(id, insights);
   },
 
   async getAIResponse(id: string): Promise<{
@@ -68,14 +78,14 @@ export const storageAdapter = {
     ai_last_analyzed?: string;
     ai_insights?: any;
   } | null> {
-    if (USE_LOCAL_STORAGE) {
+    if (getStorageMode()) {
       return LocalStorageService.getAIResponse(id);
     }
     return notesService.getAIResponse(id);
   },
 
   async getNotesForDashboard(timeRange: number = 30): Promise<DiaryEntry[]> {
-    if (USE_LOCAL_STORAGE) {
+    if (getStorageMode()) {
       return LocalStorageService.getNotesForDashboard(timeRange);
     }
     return notesService.getNotesForDashboard(timeRange);
@@ -87,7 +97,7 @@ export const storageAdapter = {
     alertText: string,
     relatedNoteIds: string[]
   ): Promise<PatternAlert | null> {
-    if (USE_LOCAL_STORAGE) {
+    if (getStorageMode()) {
       return LocalStorageService.createAlert(alertType, alertText, relatedNoteIds);
     }
     // For Supabase, we need a userId - in a real app this would come from auth
@@ -96,7 +106,7 @@ export const storageAdapter = {
   },
 
   async getUserAlerts(): Promise<PatternAlert[]> {
-    if (USE_LOCAL_STORAGE) {
+    if (getStorageMode()) {
       return LocalStorageService.getUserAlerts();
     }
     const userId = 'default-user'; // This would be replaced with actual auth
@@ -104,7 +114,7 @@ export const storageAdapter = {
   },
 
   async getUnreadCount(): Promise<number> {
-    if (USE_LOCAL_STORAGE) {
+    if (getStorageMode()) {
       return LocalStorageService.getUnreadCount();
     }
     const userId = 'default-user'; // This would be replaced with actual auth
@@ -112,14 +122,14 @@ export const storageAdapter = {
   },
 
   async markAsRead(alertId: string): Promise<boolean> {
-    if (USE_LOCAL_STORAGE) {
+    if (getStorageMode()) {
       return LocalStorageService.markAsRead(alertId);
     }
     return PatternAlertsService.markAsRead(alertId);
   },
 
   async markAllAsRead(): Promise<boolean> {
-    if (USE_LOCAL_STORAGE) {
+    if (getStorageMode()) {
       return LocalStorageService.markAllAsRead();
     }
     const userId = 'default-user'; // This would be replaced with actual auth
@@ -127,7 +137,7 @@ export const storageAdapter = {
   },
 
   async deleteAlert(alertId: string): Promise<boolean> {
-    if (USE_LOCAL_STORAGE) {
+    if (getStorageMode()) {
       return LocalStorageService.deleteAlert(alertId);
     }
     return PatternAlertsService.deleteAlert(alertId);
@@ -138,7 +148,7 @@ export const storageAdapter = {
     alertText: string,
     hoursThreshold: number = 24
   ): Promise<boolean> {
-    if (USE_LOCAL_STORAGE) {
+    if (getStorageMode()) {
       return LocalStorageService.checkForDuplicateAlert(alertType, alertText, hoursThreshold);
     }
     const userId = 'default-user'; // This would be replaced with actual auth
@@ -167,14 +177,14 @@ export const storageAdapter = {
   },
 
   async debugDatabaseSchema(): Promise<void> {
-    if (USE_LOCAL_STORAGE) {
+    if (getStorageMode()) {
       return LocalStorageService.debugDatabaseSchema();
     }
     return notesService.debugDatabaseSchema();
   },
 
   async checkAISchema(): Promise<boolean> {
-    if (USE_LOCAL_STORAGE) {
+    if (getStorageMode()) {
       return LocalStorageService.checkAISchema();
     }
     return notesService.checkAISchema();
@@ -182,7 +192,7 @@ export const storageAdapter = {
 
   // Migration utilities
   async exportToLocalStorage(): Promise<void> {
-    if (USE_LOCAL_STORAGE) {
+    if (getStorageMode()) {
       console.log('Already using local storage');
       return;
     }
@@ -206,7 +216,7 @@ export const storageAdapter = {
   },
 
   async exportData() {
-    if (USE_LOCAL_STORAGE) {
+    if (getStorageMode()) {
       return LocalStorageService.exportData();
     }
     
@@ -225,12 +235,10 @@ export const storageAdapter = {
 // Export configuration for easy switching
 export const switchToLocalStorage = () => {
   console.log('🔄 Switching to Local Storage mode');
-  // In a real implementation, you'd update the USE_LOCAL_STORAGE constant
-  // For now, it's already set to true
+  localStorage.setItem('insightai-privacy-mode', 'true');
 };
 
 export const switchToSupabase = () => {
   console.log('🔄 Switching to Supabase mode');
-  // In a real implementation, you'd update the USE_LOCAL_STORAGE constant to false
-  console.log('⚠️ Remember to update USE_LOCAL_STORAGE constant in storageAdapter.ts');
+  localStorage.setItem('insightai-privacy-mode', 'false');
 };

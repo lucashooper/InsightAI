@@ -755,20 +755,20 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
         marginBottom: '2rem',
         marginLeft: '24px',
         marginRight: '24px',
-        padding: '0.5rem',
-        background: 'rgba(255, 255, 255, 0.03)',
-        borderRadius: '12px',
-        border: '1px solid rgba(255, 255, 255, 0.08)'
+        padding: '0.375rem',
+        background: 'rgba(255, 255, 255, 0.015)',
+        borderRadius: '14px',
+        border: '1px solid rgba(255, 255, 255, 0.04)'
       }}>
         <button
           onClick={() => setActiveSection('protocols')}
           style={{
             flex: 1,
             padding: '0.75rem 1rem',
-            background: activeSection === 'protocols' ? 'rgba(255, 255, 255, 0.06)' : 'transparent',
+            background: activeSection === 'protocols' ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
             border: '1px solid transparent',
-            borderRadius: '8px',
-            color: activeSection === 'protocols' ? '#E5E7EB' : '#9CA3AF',
+            borderRadius: '10px',
+            color: activeSection === 'protocols' ? '#E5E7EB' : '#6B7280',
             fontSize: '0.9rem',
             cursor: 'pointer',
             fontWeight: '500',
@@ -780,7 +780,7 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
           }}
           onMouseEnter={(e) => {
             if (activeSection !== 'protocols') {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
             }
           }}
           onMouseLeave={(e) => {
@@ -797,10 +797,10 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
           style={{
             flex: 1,
             padding: '0.75rem 1rem',
-            background: activeSection === 'strategies' ? 'rgba(255, 255, 255, 0.06)' : 'transparent',
+            background: activeSection === 'strategies' ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
             border: '1px solid transparent',
-            borderRadius: '8px',
-            color: activeSection === 'strategies' ? '#E5E7EB' : '#9CA3AF',
+            borderRadius: '10px',
+            color: activeSection === 'strategies' ? '#E5E7EB' : '#6B7280',
             fontSize: '0.9rem',
             cursor: 'pointer',
             fontWeight: '500',
@@ -812,7 +812,7 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
           }}
           onMouseEnter={(e) => {
             if (activeSection !== 'strategies') {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
             }
           }}
           onMouseLeave={(e) => {

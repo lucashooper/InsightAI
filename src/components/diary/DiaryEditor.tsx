@@ -16,7 +16,7 @@ interface DiaryEditorProps {
   onToggleFocusMode?: () => void;
 }
 
-const DiaryEditor: React.FC<DiaryEditorProps> = ({ 
+const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({ 
   note, 
   onSave,
   onNavigateToAnalysis,
@@ -26,13 +26,6 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
   isFocusMode = false,
   onToggleFocusMode
 }) => {
-  console.log('📝 DiaryEditor render:', { 
-    hasNote: !!note, 
-    noteTitle: note?.title, 
-    noteContent: note?.content?.substring(0, 50) + '...', 
-    noteId: note?.id 
-  });
-
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -101,7 +94,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
     }
   }, [note?.id, note?.title, note?.content]); // Depend on the actual note properties
 
-  // Auto-save functionality
+  // Auto-save functionality - memoized to prevent re-renders
   const debouncedSave = useCallback(
     debounce(async (title: string, content: string) => {
       saveCount.current += 1;
@@ -111,8 +104,6 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
         title,
         contentLength: content.length,
         lastSavedContent: lastSavedContent.current,
-        noteTitle: note?.title,
-        noteId: note?.id,
         isInitializing: isInitializing.current
       });
       
@@ -123,7 +114,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
       }
       
       // Only save if content has actually changed
-      if (title.trim() === (note?.title || '') && content.trim() === lastSavedContent.current) {
+      if (content.trim() === lastSavedContent.current) {
         console.log('⏭️ Skipping save - no changes detected');
         return;
       }
@@ -131,8 +122,8 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
       // IMPORTANT: Don't skip saving just because content is empty!
       // This could cause data loss if the note legitimately has no content
       // Only skip if we have no title AND no content AND no existing note content
-      if (!title.trim() && !content.trim() && !(note?.content || '').trim()) {
-        console.log('⏭️ Skipping save - completely empty note with no existing content');
+      if (!title.trim() && !content.trim()) {
+        console.log('⏭️ Skipping save - completely empty note');
         return;
       }
       
@@ -152,7 +143,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
         setIsSaving(false);
       }
     }, 1000), // Save after 1 second of inactivity
-    [onSave, note?.title, note?.content]
+    [onSave]
   );
 
   // Trigger auto-save when title or content changes (but not during initialization)
@@ -179,12 +170,12 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
     }
   }, [title, content, note?.id, debouncedSave]);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     console.log('💾 Manual save triggered');
     
-    // Only skip if we have no title AND no content AND no existing note content
-    if (!title.trim() && !content.trim() && !(note?.content || '').trim()) {
-      console.log('⏭️ Manual save skipped - completely empty note with no existing content');
+    // Only skip if we have no title AND no content
+    if (!title.trim() && !content.trim()) {
+      console.log('⏭️ Manual save skipped - completely empty note');
       return;
     }
     
@@ -202,15 +193,15 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [title, content, onSave]);
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newTitle = e.target.value;
     console.log('✏️ Title changed:', { from: title, to: newTitle });
     setTitle(newTitle);
-  };
+  }, [title]);
 
-  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleTitleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       console.log('⏎ Enter pressed on title - blurring title and focusing content');
@@ -224,11 +215,9 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
         textarea.focus();
       }
     }
-  };
+  }, []);
 
-
-
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleContentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setContent(e.target.value);
     console.log('✏️ Content changed:', { 
       fromLength: content.length, 
@@ -252,18 +241,18 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
         setShowProbeButton(true);
       }, 2000);
     }
-  };
+  }, [content, showCoWriter]);
 
-  const handleContentKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleContentKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.ctrlKey && e.key === 's') {
       e.preventDefault();
       console.log('⌨️ Ctrl+S pressed - triggering manual save');
       handleSave();
     }
-  };
+  }, [handleSave]);
 
   // Download entry as TXT file
-  const handleDownload = () => {
+  const handleDownload = useCallback(() => {
     if (!note) return;
     
     const date = note.created_at ? new Date(note.created_at) : new Date();
@@ -292,7 +281,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  };
+  }, [note, title, content]);
 
   // Voice-to-text functionality
   const initializeVoiceRecognition = useCallback(() => {
@@ -391,6 +380,66 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
     };
   }
 
+  useEffect(() => {
+    const editorElement = document.querySelector('[data-editor-container]');
+    const textareaElement = document.querySelector('textarea');
+    
+    if (!editorElement || !textareaElement) return;
+
+    const logDimensions = (event: string) => {
+      console.log(`📐 [${event}] Dimensions:`, {
+        editorWidth: editorElement.clientWidth,
+        editorHeight: editorElement.clientHeight,
+        textareaWidth: textareaElement.clientWidth,
+        textareaHeight: textareaElement.clientHeight,
+        windowInnerWidth: window.innerWidth,
+        windowInnerHeight: window.innerHeight,
+        visualViewportWidth: window.visualViewport?.width,
+        visualViewportHeight: window.visualViewport?.height,
+      });
+    };
+
+    // Log initial state
+    logDimensions('INITIAL');
+
+    // Track focus events
+    const onFocus = () => {
+      logDimensions('FOCUS');
+      // Check computed styles
+      const styles = window.getComputedStyle(editorElement);
+      console.log('🎨 Editor Computed Styles on Focus:', {
+        width: styles.width,
+        height: styles.height,
+        flex: styles.flex,
+        flexBasis: styles.flexBasis,
+        flexGrow: styles.flexGrow,
+        flexShrink: styles.flexShrink,
+        minWidth: styles.minWidth,
+        maxWidth: styles.maxWidth,
+      });
+    };
+
+    const onBlur = () => logDimensions('BLUR');
+    
+    // Track viewport changes
+    const onViewportResize = () => logDimensions('VIEWPORT_RESIZE');
+    
+    // Track window resize
+    const onWindowResize = () => logDimensions('WINDOW_RESIZE');
+
+    textareaElement.addEventListener('focus', onFocus);
+    textareaElement.addEventListener('blur', onBlur);
+    window.visualViewport?.addEventListener('resize', onViewportResize);
+    window.addEventListener('resize', onWindowResize);
+
+    return () => {
+      textareaElement.removeEventListener('focus', onFocus);
+      textareaElement.removeEventListener('blur', onBlur);
+      window.visualViewport?.removeEventListener('resize', onViewportResize);
+      window.removeEventListener('resize', onWindowResize);
+    };
+  }, []);
+
   if (!note) {
     console.log('📝 DiaryEditor: No note selected, showing placeholder');
     return (
@@ -401,10 +450,12 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
     );
   }
 
-  console.log('📝 DiaryEditor: Showing editable view for note:', note.title);
+  // Showing editable view
   return (
-    <div style={{
+    <div data-editor-container style={{
       height: '100%',
+      width: '100%',
+      minWidth: 0,
       display: 'flex',
       flexDirection: 'column',
       overflow: 'hidden',
@@ -423,9 +474,6 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
           onKeyDown={handleTitleKeyDown}
           placeholder="Note title..."
           style={{
-            width: '100% !important',
-            maxWidth: 'none !important',
-            padding: '0.75rem 0',
             border: 'none',
             background: 'transparent',
             color: 'var(--text)',
@@ -433,10 +481,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
             fontSize: '2rem',
             fontWeight: '600',
             lineHeight: '1.2',
-            letterSpacing: '0.01em',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
+            letterSpacing: '0.01em'
           }}
           onFocus={(e) => {
             e.target.style.borderBottomColor = 'var(--accent)';
@@ -476,7 +521,8 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
         gap: '0.75rem',
         marginBottom: '1.5rem',
         alignItems: 'center',
-        flexWrap: 'wrap'
+        flexWrap: 'wrap',
+        border: '2px solid blue' // DEBUG: Toolbar
       }}>
         {/* Download Button */}
         <button
@@ -495,7 +541,9 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
             gap: '0.5rem',
             fontSize: '0.875rem',
             fontWeight: '500',
-            transition: 'all 0.2s ease'
+            transition: 'all 0.2s ease',
+            minWidth: '36px',
+            minHeight: '36px'
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = 'var(--bg-tertiary)';
@@ -759,21 +807,15 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
           style={{
             flex: 1,
             width: '100%',
-            maxWidth: '100%',
+            minWidth: 0,
             minHeight: '600px',
             fontSize: '1.15rem',
             lineHeight: '1.7',
             color: 'var(--text)',
-            padding: '0',
             fontFamily: 'inherit',
-            wordWrap: 'break-word',
-            overflowWrap: 'break-word',
-            whiteSpace: 'pre-wrap',
-            boxSizing: 'border-box',
-            overflow: 'hidden',
             cursor: 'pointer',
             position: 'relative'
-          }}
+          } as React.CSSProperties}
           title="Click to edit"
         >
           <HighlightedText 
@@ -806,26 +848,6 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
           onChange={handleContentChange}
           onKeyDown={handleContentKeyDown}
           placeholder="Your thoughts go here..."
-          style={{
-            flex: 1,
-            width: '100%',
-            maxWidth: '100%',
-            minHeight: '600px',
-            fontSize: '1.15rem',
-            lineHeight: '1.7',
-            background: 'transparent',
-            color: 'var(--text)',
-            border: 'none',
-            outline: 'none',
-            padding: '0',
-            resize: 'none',
-            fontFamily: 'inherit',
-            wordWrap: 'break-word',
-            overflowWrap: 'break-word',
-            whiteSpace: 'pre-wrap',
-            boxSizing: 'border-box',
-            overflow: 'hidden',
-          }}
         />
       )}
       
@@ -916,6 +938,8 @@ const DiaryEditor: React.FC<DiaryEditorProps> = ({
         </div>
     </div>
   );
-};
+});
+
+DiaryEditor.displayName = 'DiaryEditor';
 
 export default DiaryEditor;

@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { userProfileService } from '../../services/userProfileService';
 import type { UserProfile } from '../../services/userProfileService';
 import { importDiaryEntries } from '../../utils/importDiaryEntries';
+import { storageAdapter, switchToLocalStorage, switchToSupabase } from '../../services/storageAdapter';
 import './settings.css';
 import '../../styles/page-layout.css';
 import '../../styles/settings-layout.css';
@@ -24,6 +25,9 @@ const SettingsView: React.FC = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [privacyMode, setPrivacyMode] = useState(false);
+  const [showPrivacyWarning, setShowPrivacyWarning] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     // Load saved settings
@@ -41,6 +45,10 @@ const SettingsView: React.FC = () => {
     if ('Notification' in window) {
       setNotificationPermission(Notification.permission);
     }
+
+    // Load privacy mode setting
+    const savedPrivacyMode = localStorage.getItem('insightai-privacy-mode');
+    setPrivacyMode(savedPrivacyMode === 'true');
 
     // Load user profile using FRESH SESSION
     const loadUserProfile = async () => {

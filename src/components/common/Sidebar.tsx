@@ -45,13 +45,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [draggedNoteId, setDraggedNoteId] = useState<string | null>(null);
   const [dragOverNoteId, setDragOverNoteId] = useState<string | null>(null);
   
-  console.log('📋 Sidebar render:', {
-    notesCount: notes.length,
-    selectedId,
-    noteIds: notes.map(n => n.id),
-    noteTitles: notes.map(n => n.title)
-  });
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
   };
@@ -74,23 +67,18 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const handleNoteClick = (noteId: string, noteTitle: string) => {
-    console.log('👆 Sidebar note clicked:', { noteId, noteTitle, currentSelectedId: selectedId });
     onSelect(noteId);
   };
 
   const handleAddClick = () => {
-    console.log('➕ Sidebar add button clicked');
     onAdd();
   };
 
   const handleDeleteClick = (noteId: string, noteTitle: string) => {
-    console.log('🗑️ Sidebar delete button clicked:', { noteId, noteTitle });
-    // Immediate deletion without confirmation
     onDelete(noteId);
   };
 
   const handleDownloadClick = (note: DiaryEntry) => {
-    console.log('📥 Sidebar download button clicked:', { noteId: note.id, noteTitle: note.title });
     downloadNoteAsTxt(note);
   };
 
@@ -385,12 +373,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         ) : (
           notes.map(note => {
             const isSelected = selectedId === note.id;
-            console.log(`📝 Rendering note item:`, { 
-              id: note.id, 
-              title: note.title, 
-              isSelected,
-              selectedId 
-            });
             
             const isBlurred = blurredNoteIds.has(note.id);
             const isDragging = draggedNoteId === note.id;

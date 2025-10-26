@@ -173,6 +173,21 @@
   border-color: rgba(255, 255, 255, 0.2);
 }
 
+/* Ensure consistent width for note area */
+.note-area {
+  width: 100%;
+  max-width: 800px; /* Set a max-width to prevent excessive shrinking */
+  margin: 0 auto; /* Center the note area */
+}
+
+/* Maintain consistent width on interaction */
+.note-area:focus,
+.note-area:active {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .page-container {

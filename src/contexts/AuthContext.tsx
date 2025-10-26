@@ -90,11 +90,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     if (error) {
+      console.error('Signup error:', error);
       return { error };
+    }
+
+    // Check if user already exists (Supabase returns user object even if email is taken)
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      console.warn('Email already registered:', email);
+      return {
+        error: {
+          message: 'This email is already registered. Please sign in instead or use a different email.'
+        } as any
+      };
     }
 
     // Check if email confirmation is required
     if (data.user && !data.session) {
+      console.log('Email confirmation required for:', email);
       // Email confirmation required - user will receive an email
       return { 
         error: { 

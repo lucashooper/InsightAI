@@ -3,9 +3,10 @@
   display: grid;
   grid-template-columns: 240px 1fr; /* Narrower sidebar, more space for main */
   gap: 24px;
-  padding: 0 24px; /* Only horizontal padding to match other pages */
+  padding: 0; /* Remove padding - let PageContainer handle it */
   flex: 1;
   width: 100%;
+  max-width: 100%; /* Full width like My Notes */
   box-sizing: border-box;
 }
 

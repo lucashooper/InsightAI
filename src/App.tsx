@@ -308,6 +308,18 @@ const App: React.FC = () => {
     setNotes(reorderedNotes);
   }, []);
 
+  const handleToggleHighlighting = useCallback(() => {
+    setHighlightingEnabled(!highlightingEnabled);
+  }, [highlightingEnabled]);
+
+  const handleNavigateToAnalysis = useCallback(() => {
+    setActiveTab('analysis');
+  }, []);
+
+  const handleToggleFocusMode = useCallback(() => {
+    setIsFocusMode(!isFocusMode);
+  }, [isFocusMode]);
+
   console.log('🔄 App component rendering with:', {
     notesCount: notes.length,
     selectedNoteId: selectedNote?.id,
@@ -318,7 +330,7 @@ const App: React.FC = () => {
 
   return (
     <ThemeProvider>
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }} className="app-container">
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', border: '5px solid cyan' }} className="app-container"> {/* DEBUG: App root */}
         <AnimatedBackground />
         
         {/* Left Toolbar - Above Sidebar */}
@@ -387,7 +399,7 @@ const App: React.FC = () => {
           onClick={() => setIsMobileMenuOpen(false)}
         />
         
-        <div style={{ display: 'flex', flex: 1, minHeight: 0, width: '100%', overflow: 'hidden', marginTop: isFocusMode ? '0' : '48px' }} className={isFocusMode ? 'focus-mode' : ''}>
+        <div style={{ display: 'flex', flex: '1 1 auto', minHeight: 0, minWidth: 0, width: '100%', maxWidth: '100%', overflow: 'hidden', marginTop: isFocusMode ? '0' : '48px', border: '5px solid purple', position: 'relative' }} className={isFocusMode ? 'focus-mode' : ''}> {/* DEBUG: Flex container */}
           {!isFocusMode && (
             <div className={`sidebar-container ${isMobileMenuOpen ? 'sidebar-open' : ''}`} style={{ marginTop: '-48px' }}>
               <Sidebar 
@@ -421,15 +433,18 @@ const App: React.FC = () => {
             </div>
           )}
           <main style={{ 
-            flex: 1, 
+            flex: '1 1 auto', 
             display: 'flex', 
             flexDirection: 'column', 
             minWidth: 0,
+            maxWidth: '100%',
+            width: '100%',
             minHeight: 0,
             overflow: 'auto',
             filter: selectedNote && blurredNoteIds.has(selectedNote.id) ? 'blur(4px)' : 'none',
             transition: 'filter 0.3s ease',
-          }}>
+            border: '3px solid yellow', // DEBUG: Main container
+          } as React.CSSProperties}>
               {activeView === 'editor' ? (
                 activeTab === 'editor' ? (
                   <DiaryEditor 
@@ -437,10 +452,10 @@ const App: React.FC = () => {
                     onSave={handleSave}
                     detectedPatterns={detectedPatterns}
                     highlightingEnabled={highlightingEnabled}
-                    onToggleHighlighting={() => setHighlightingEnabled(!highlightingEnabled)}
-                    onNavigateToAnalysis={() => setActiveTab('analysis')}
+                    onToggleHighlighting={handleToggleHighlighting}
+                    onNavigateToAnalysis={handleNavigateToAnalysis}
                     isFocusMode={isFocusMode}
-                    onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
+                    onToggleFocusMode={handleToggleFocusMode}
                   />
                 ) : (
                   <AIAnalysis 

@@ -6,6 +6,7 @@ import './styles/base.css';
 import App from './App.tsx'
 import { AuthProvider } from './contexts/AuthContext'
 import AuthGate from './components/auth/AuthGate'
+import EncryptionGate from './components/encryption/EncryptionGate'
 import { GOOGLE_CLIENT_ID } from './config/google'
 
 createRoot(document.getElementById('root')!).render(
@@ -13,7 +14,9 @@ createRoot(document.getElementById('root')!).render(
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <AuthProvider>
         <AuthGate>
-          <App />
+          <EncryptionGate>
+            <App />
+          </EncryptionGate>
         </AuthGate>
       </AuthProvider>
     </GoogleOAuthProvider>

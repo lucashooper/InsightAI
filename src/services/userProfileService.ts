@@ -8,6 +8,9 @@ export interface UserProfile {
   profile_picture_url: string;
   bio?: string;
   has_completed_welcome: boolean;
+  encryption_enabled?: boolean;
+  encryption_salt?: string; // Base64 encoded salt for key derivation
+  encryption_test_payload?: string; // Encrypted test data for password verification
   created_at: string;
   updated_at: string;
 }
