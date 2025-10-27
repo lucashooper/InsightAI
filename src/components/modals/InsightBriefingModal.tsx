@@ -46,7 +46,7 @@ export const InsightBriefingModal: React.FC<InsightBriefingModalProps> = ({
         {/* Modal Container - Premium Glassmorphism */}
         <div 
           style={{
-            maxWidth: '1100px',
+            maxWidth: '600px',
             width: '100%',
             minHeight: '500px',
             height: 'auto',
@@ -118,10 +118,10 @@ export const InsightBriefingModal: React.FC<InsightBriefingModalProps> = ({
             Premium Insight
           </div>
 
-          {/* Two-Panel Layout */}
+          {/* Two-Column Layout */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: window.innerWidth > 768 ? '1fr 1fr' : '1fr',
+            gridTemplateColumns: '1fr 1fr',
             gap: '0',
             height: '100%'
           }}>
@@ -134,7 +134,7 @@ export const InsightBriefingModal: React.FC<InsightBriefingModalProps> = ({
               background: `
                 linear-gradient(135deg, rgba(12, 15, 22, 0.6) 0%, rgba(18, 22, 32, 0.4) 50%, rgba(12, 15, 22, 0.6) 100%)
               `,
-              borderRight: window.innerWidth > 768 ? '1px solid rgba(139, 92, 246, 0.15)' : 'none',
+              borderRight: '1px solid rgba(139, 92, 246, 0.15)',
               position: 'relative',
               overflow: 'hidden',
               backdropFilter: 'blur(20px)',

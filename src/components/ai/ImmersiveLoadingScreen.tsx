@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import TypewriterText from './TypewriterText';
 import Spinner from './Spinner';
 
@@ -47,23 +48,39 @@ const ImmersiveLoadingScreen: React.FC<ImmersiveLoadingScreenProps> = ({ isVisib
 
   if (!isVisible) return null;
 
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 9999,
-        background: '#000000',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        animation: 'fadeIn 0.3s ease-in',
-        overflow: 'hidden'
-      }}
-    >
+  return createPortal(
+    <>
+      {/* Solid Backdrop - Blocks everything behind */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: 9998,
+          background: '#000000',
+          pointerEvents: 'none'
+        }}
+      />
+      
+      {/* Main Loading Screen */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: 9999,
+          background: '#000000',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          animation: 'fadeIn 0.3s ease-in',
+          overflow: 'hidden'
+        }}
+      >
       {/* Animated Starfield Background */}
       {stars.map((star, index) => (
         <div
@@ -293,6 +310,8 @@ const ImmersiveLoadingScreen: React.FC<ImmersiveLoadingScreenProps> = ({ isVisib
         />
       </div>
     </div>
+    </>,
+    document.body
   );
 };
 
