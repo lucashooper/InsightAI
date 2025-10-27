@@ -576,6 +576,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                 if (note) handleDownloadClick(note);
               }
             },
+            {
+              label: blurredNoteIds.has(contextMenu.noteId) ? 'Show Content' : 'Hide Content',
+              icon: blurredNoteIds.has(contextMenu.noteId) ? <PremiumIcons.Eye size={16} /> : <PremiumIcons.Lock size={16} />,
+              onClick: () => {
+                if (onToggleNotePrivacy) {
+                  onToggleNotePrivacy(contextMenu.noteId);
+                }
+                setContextMenu(null);
+              }
+            },
             { label: '', onClick: () => {}, separator: true },
             {
               label: 'Delete',

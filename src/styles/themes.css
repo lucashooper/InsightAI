@@ -308,12 +308,6 @@ main > div > div {
   min-width: 0 !important;
 }
 
-/* DISABLE ALL TRANSITIONS TO DEBUG */
-* {
-  transition: none !important;
-  animation: none !important;
-}
-
 /* Force full width at all levels */
 html, body, #root, .app-container {
   width: 100vw !important;
@@ -328,6 +322,7 @@ html, body, #root, .app-container {
   &::placeholder {
     line-height: 1.7 !important;
     letter-spacing: 0.01em !important;
+    
   }
 }
 

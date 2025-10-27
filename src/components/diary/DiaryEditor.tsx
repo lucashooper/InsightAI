@@ -1,17 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { DiaryEntry } from '../../types/diary';
 import { PremiumIcons } from '../icons/PremiumIcons';
-import type { DetectedPattern } from '../../services/keywordHighlightService';
-import { HighlightedText } from './HighlightedText';
 import CoWriterChat from './CoWriterChat';
 
 interface DiaryEditorProps {
   note: DiaryEntry | null;
   onSave: (note: Partial<DiaryEntry>) => Promise<void>;
   onNavigateToAnalysis?: () => void;
-  detectedPatterns?: DetectedPattern[];
-  highlightingEnabled?: boolean;
-  onToggleHighlighting?: () => void;
   isFocusMode?: boolean;
   onToggleFocusMode?: () => void;
 }
@@ -20,9 +15,6 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
   note, 
   onSave,
   onNavigateToAnalysis,
-  detectedPatterns = [],
-  highlightingEnabled = false,
-  onToggleHighlighting,
   isFocusMode = false,
   onToggleFocusMode
 }) => {
@@ -45,6 +37,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
   const [showProbeButton, setShowProbeButton] = useState(false);
   // const [isTyping, setIsTyping] = useState(false); // Unused for now
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
 
   // Sync state with note prop
   useEffect(() => {
@@ -460,11 +453,21 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
       flexDirection: 'column',
       overflow: 'hidden',
       position: 'relative',
-      padding: '0.5rem 1.5rem 2rem 1.5rem',
-      boxSizing: 'border-box'
+      boxSizing: 'border-box',
+      background: 'var(--bg-primary)',
+      borderRadius: '12px',
+      border: '1px solid var(--border-color)'
     }}>
-      {/* Title Input */}
-      <div style={{ marginBottom: '1rem', marginTop: '2.5rem' }}>
+      {/* ==================== HEADER SECTION ==================== */}
+      {/* Contains: Title input, timestamp, and action buttons */}
+      <div style={{
+        flexShrink: 0,
+        padding: '2.5rem 1.5rem 0 1.5rem',
+        borderBottom: '1px solid var(--border-color)',
+        background: 'var(--bg-primary)'
+      }}>
+        {/* Title Input */}
+        <div style={{ marginBottom: '0.5rem' }}>
         <input
           className="diary-title-input"
           spellCheck={false}
@@ -496,13 +499,13 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
           }}
         />
         {/* Metadata Timestamp */}
-        <p style={{
-          margin: '0.5rem 0 0 0',
-          fontSize: '0.875rem',
+        <div style={{
+          marginTop: '0.25rem',
+          fontSize: '0.8125rem',
           color: 'var(--text-secondary)',
-          opacity: 0.7,
+          opacity: 0.6,
           fontWeight: '400',
-          lineHeight: '1.4',
+          lineHeight: '1',
         }}>
           {note.updated_at ? new Date(note.updated_at).toLocaleString('en-US', {
             year: 'numeric',
@@ -512,18 +515,18 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
             minute: '2-digit',
             hour12: true
           }) : 'Just created'}
-        </p>
-      </div>
+        </div>
+        </div>
 
-      {/* Toolbar with Action Buttons */}
-      <div style={{
-        display: 'flex',
-        gap: '0.75rem',
-        marginBottom: '1.5rem',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        border: '2px solid blue' // DEBUG: Toolbar
-      }}>
+        {/* Action Buttons Toolbar */}
+        <div style={{
+          display: 'flex',
+          gap: '0.5rem',
+          marginTop: '1rem',
+          marginBottom: '-12rem',
+          alignItems: 'center',
+          flexWrap: 'wrap'
+        }}>
         {/* Download Button */}
         <button
           onClick={handleDownload}
@@ -606,7 +609,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
             title={isFocusMode ? 'Exit Focus Mode (F11)' : 'Enter Focus Mode (F11)'}
             aria-label={isFocusMode ? 'Exit focus mode' : 'Enter focus mode'}
             style={{
-              padding: '0.5rem',
+              padding: '0.5rem 1rem',
               background: 'var(--bg-secondary)',
               border: '1px solid var(--border-color)',
               borderRadius: '6px',
@@ -615,7 +618,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '1.1rem',
+              fontSize: '1rem',
               transition: 'all 0.2s ease',
               minWidth: '36px',
               minHeight: '36px'
@@ -755,37 +758,6 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
           </button>
         )}
 
-        {/* Highlighting Toggle Button */}
-        {onToggleHighlighting && detectedPatterns.length > 0 && (
-          <button
-            onClick={onToggleHighlighting}
-            title={highlightingEnabled ? 'Hide pattern highlights' : 'Show pattern highlights'}
-            aria-label="Toggle keyword highlighting"
-            style={{
-              padding: '0.5rem',
-              background: highlightingEnabled ? 'rgba(245, 158, 11, 0.1)' : 'var(--bg-secondary)',
-              border: `1px solid ${highlightingEnabled ? '#F59E0B' : 'var(--border-color)'}`,
-              borderRadius: '6px',
-              color: highlightingEnabled ? '#F59E0B' : 'var(--text-secondary)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              fontSize: '0.875rem',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = highlightingEnabled ? 'rgba(245, 158, 11, 0.15)' : 'var(--bg-tertiary)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = highlightingEnabled ? 'rgba(245, 158, 11, 0.1)' : 'var(--bg-secondary)';
-            }}
-          >
-            <PremiumIcons.Eye size={16} />
-            <span style={{ fontSize: '0.75rem' }}>{detectedPatterns.length}</span>
-          </button>
-        )}
-
         {/* Voice Error Message */}
         {voiceError && (
           <span style={{
@@ -797,59 +769,28 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
             {voiceError}
           </span>
         )}
+        </div>
       </div>
       
-      {/* Main Content Area - Toggle between Edit and Highlight View */}
-      {highlightingEnabled && detectedPatterns.length > 0 && content && content.length > 50 ? (
-        /* Highlighted Read-Only View */
-        <div
-          onClick={() => onToggleHighlighting?.()} // Click to edit
-          style={{
-            flex: 1,
-            width: '100%',
-            minWidth: 0,
-            minHeight: '600px',
-            fontSize: '1.15rem',
-            lineHeight: '1.7',
-            color: 'var(--text)',
-            fontFamily: 'inherit',
-            cursor: 'pointer',
-            position: 'relative'
-          } as React.CSSProperties}
-          title="Click to edit"
-        >
-          <HighlightedText 
-            content={content}
-            patterns={detectedPatterns}
-            isEnabled={true}
-          />
-          {/* Edit Hint Overlay */}
-          <div style={{
-            position: 'absolute',
-            bottom: '1rem',
-            right: '1rem',
-            padding: '0.5rem 0.75rem',
-            background: 'rgba(0, 0, 0, 0.8)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: '6px',
-            fontSize: '0.75rem',
-            color: '#9CA3AF',
-            pointerEvents: 'none'
-          }}>
-            Click anywhere to edit
-          </div>
-        </div>
-      ) : (
-        /* Editable Textarea */
-        <textarea
-          className="diary-textarea"
-          spellCheck={false}
-          value={content}
-          onChange={handleContentChange}
-          onKeyDown={handleContentKeyDown}
-          placeholder="Your thoughts go here..."
-        />
-      )}
+      {/* ==================== CONTENT SECTION ==================== */}
+      {/* Contains: Main text editor or highlighted text view */}
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        padding: '1.25rem 1.5rem 40rem 1.5rem',
+        minHeight: 0
+      }}>
+      {/* Main Content Area - Always Editable */}
+      <textarea
+        className="diary-textarea"
+        spellCheck={false}
+        value={content}
+        onChange={handleContentChange}
+        onKeyDown={handleContentKeyDown}
+        placeholder="Your thoughts go here..."
+      />
       
       {/* Probe Deeper Button - Contextual Mindsera-style */}
       {showProbeButton && !showCoWriter && (
@@ -911,31 +852,36 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
           onClose={() => setShowCoWriter(false)}
         />
       )}
+      </div>
         
-        {/* Footer with Save Info and Button */}
-        <div style={{ 
-          marginTop: '1rem', 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          paddingTop: '0.75rem',
-          borderTop: '1px solid #374151',
-          width: '100%',
-          boxSizing: 'border-box',
-          maxWidth: '100%'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: 0, overflow: 'hidden' }}>
-            {isSaving ? (
-              <small style={{ color: 'var(--accent-primary)', fontSize: '0.875rem', whiteSpace: 'nowrap', fontWeight: '500' }}>
-                Saving...
-              </small>
-            ) : lastSaved ? (
-              <small style={{ opacity: 0.5, fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
-                Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </small>
-            ) : null}
-          </div>
+      {/* ==================== FOOTER SECTION ==================== */}
+      {/* Contains: Save status, word count, and manual save button */}
+      <div style={{
+        flexShrink: 0,
+        padding: '0.75rem 1.5rem',
+        borderTop: '1px solid var(--border-color)',
+        background: 'var(--bg-primary)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: 0, overflow: 'hidden' }}>
+          {isSaving ? (
+            <small style={{ color: 'var(--accent-primary)', fontSize: '0.875rem', whiteSpace: 'nowrap', fontWeight: '500' }}>
+              Saving...
+            </small>
+          ) : lastSaved ? (
+            <small style={{ opacity: 0.5, fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
+              Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </small>
+          ) : null}
+          
+          {/* Word Count */}
+          <small style={{ opacity: 0.5, fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
+            {content.trim().split(/\s+/).filter(word => word.length > 0).length} words
+          </small>
         </div>
+      </div>
     </div>
   );
 });

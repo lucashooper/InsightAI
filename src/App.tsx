@@ -330,7 +330,7 @@ const App: React.FC = () => {
 
   return (
     <ThemeProvider>
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', border: '5px solid cyan' }} className="app-container"> {/* DEBUG: App root */}
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }} className="app-container">
         <AnimatedBackground />
         
         {/* Left Toolbar - Above Sidebar */}
@@ -399,7 +399,7 @@ const App: React.FC = () => {
           onClick={() => setIsMobileMenuOpen(false)}
         />
         
-        <div style={{ display: 'flex', flex: '1 1 auto', minHeight: 0, minWidth: 0, width: '100%', maxWidth: '100%', overflow: 'hidden', marginTop: isFocusMode ? '0' : '48px', border: '5px solid purple', position: 'relative' }} className={isFocusMode ? 'focus-mode' : ''}> {/* DEBUG: Flex container */}
+        <div style={{ display: 'flex', flex: '1 1 auto', minHeight: 0, minWidth: 0, width: '100%', maxWidth: '100%', overflow: 'hidden', marginTop: isFocusMode ? '0' : '48px', position: 'relative' }} className={isFocusMode ? 'focus-mode' : ''}>
           {!isFocusMode && (
             <div className={`sidebar-container ${isMobileMenuOpen ? 'sidebar-open' : ''}`} style={{ marginTop: '-48px' }}>
               <Sidebar 
@@ -442,8 +442,7 @@ const App: React.FC = () => {
             minHeight: 0,
             overflow: 'auto',
             filter: selectedNote && blurredNoteIds.has(selectedNote.id) ? 'blur(4px)' : 'none',
-            transition: 'filter 0.3s ease',
-            border: '3px solid yellow', // DEBUG: Main container
+            transition: 'filter 0.3s ease'
           } as React.CSSProperties}>
               {activeView === 'editor' ? (
                 activeTab === 'editor' ? (
