@@ -5,10 +5,11 @@ import { PatternAlertsService } from './patternAlertsService';
 import type { DiaryEntry, PatternAlert, AlertType } from '../types/diary';
 
 // Configuration to switch between storage backends
-// This is now dynamic based on user's privacy mode preference
+// PRIVACY MODE DISABLED - Always use Supabase for proper user isolation
+// localStorage is NOT user-specific and causes security issues
 const getStorageMode = (): boolean => {
-  const privacyMode = localStorage.getItem('insightai-privacy-mode');
-  return privacyMode === 'true';
+  // Always return false to force Supabase usage
+  return false;
 };
 
 // Unified interface for both storage backends

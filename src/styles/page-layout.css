@@ -19,8 +19,9 @@
   background: rgba(255, 255, 255, 0.045); /* Brighter for better visibility */
   border: 1px solid rgba(255, 255, 255, 0.08); /* More visible border */
   border-radius: 12px; /* Subtle rounded corners */
-  margin: var(--page-margin-y) var(--page-margin-x); /* Small margins */
+  margin: var(--page-margin-y) auto; /* Center with auto margins */
   width: calc(100% - (var(--page-margin-x) * 2)); /* Account for margins */
+  max-width: 1400px; /* Limit width to show rounded corners */
   min-height: calc(100vh - 100px); /* Tall, leaving small gaps */
   display: flex;
   flex-direction: column;
@@ -29,7 +30,7 @@
 
 /* Page Header */
 .page-header {
-  padding: 32px 24px 20px; /* Increased top padding for better spacing */
+  padding: 20px 24px 20px; /* Reduced top padding */
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
@@ -76,6 +77,15 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Hide scrollbar but keep functionality */
+.page-content::-webkit-scrollbar {
+  display: none;
 }
 
 /* Centered content wrapper for grids */

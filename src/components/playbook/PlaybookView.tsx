@@ -710,41 +710,61 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
         }
       `}</style>
       
-    <PageContainer>
-      <PageHeader
-        icon={<Target size={24} />}
-        title="Personal Playbook"
-        subtitle="Track strategies that work for you"
-        actions={
-          <button
-            className="add-protocol-button"
-            onClick={() => activeSection === 'protocols' ? setShowProtocolForm(true) : setShowCreateForm(true)}
-            style={{
-              padding: '0.6rem 1.25rem',
-              background: '#8b5cf6',
-              border: 'none',
-              borderRadius: '8px',
-              color: '#ffffff',
-              fontSize: '0.9rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#7c3aed';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#8b5cf6';
-            }}
-          >
-            <Plus size={20} />
-            {activeSection === 'protocols' ? 'Add Protocol' : 'Add Strategy'}
-          </button>
-        }
-      />
+    <PageContainer style={{ paddingTop: '0.5rem' }}> {/* reduced from maybe 2rem */}
+      {/* Custom Header - Title and Button on Same Line */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1rem',
+        marginBottom: '1rem',
+        position: 'relative',
+        
+        
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          color: '#8b5cf6'
+        }}>
+          <Target size={24} />
+        </div>
+        <h1 style={{
+          margin: 0,
+          fontSize: '2rem',
+          fontWeight: '700',
+          color: '#e5e7ff',
+          letterSpacing: '-0.02em'
+        }}>
+          Personal Playbook
+        </h1>
+        <button
+          className="add-protocol-button"
+          onClick={() => activeSection === 'protocols' ? setShowProtocolForm(true) : setShowCreateForm(true)}
+          style={{
+            padding: '0.6rem 1.25rem',
+            background: '#8b5cf6',
+            border: 'none',
+            borderRadius: '8px',
+            color: '#ffffff',
+            fontSize: '0.9rem',
+            fontWeight: '600',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#7c3aed';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#8b5cf6';
+          }}
+        >
+          <Plus size={20} />
+          {activeSection === 'protocols' ? 'Add Protocol' : 'Add Strategy'}
+        </button>
+      </div>
 
       <div style={{ padding: '20px 0 20px 0' }}>
 
