@@ -710,7 +710,7 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
         }
       `}</style>
       
-    <PageContainer style={{ paddingTop: '0.5rem' }}> {/* reduced from maybe 2rem */}
+    <PageContainer style={{ paddingTop: '0.5rem' }}>
       {/* Custom Header - Title and Button on Same Line */}
       <div style={{
         display: 'flex',

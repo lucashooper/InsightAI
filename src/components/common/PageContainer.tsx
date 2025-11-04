@@ -17,8 +17,8 @@ const PageContainer: React.FC<PageContainerProps> = ({ children, className = '' 
       className={`page-container ${className}`}
       style={{
         width: '100%',
-        height: '100%',
-        padding: '0.5rem 1.5rem 2rem 1.5rem',
+        height: 'auto',
+        padding: '1rem 1.5rem 2rem 1.5rem',
         boxSizing: 'border-box'
       }}
     >

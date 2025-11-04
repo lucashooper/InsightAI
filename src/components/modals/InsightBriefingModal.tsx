@@ -46,7 +46,7 @@ export const InsightBriefingModal: React.FC<InsightBriefingModalProps> = ({
         {/* Modal Container - Premium Glassmorphism */}
         <div 
           style={{
-            maxWidth: '600px',
+            maxWidth: '480px',
             width: '100%',
             minHeight: '500px',
             height: 'auto',

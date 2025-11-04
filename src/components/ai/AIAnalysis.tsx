@@ -4,6 +4,7 @@ import type { EnhancedAIAnalysis } from '../../services/aiService';
 import { aiService } from '../../services/aiService';
 import { storageAdapter } from '../../services/storageAdapter';
 import { actionableInsightsService } from '../../services/actionableInsightsService';
+import { usageTrackingService } from '../../services/usageTrackingService';
 import InsightsReport from './InsightsReport';
 import ChatBubble from './ChatBubble';
 // import TriggerTimeline from './TriggerTimeline'; // Unused
@@ -71,9 +72,9 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
   const clearSavedErrors = async () => {
     if (note?.id && savedAIResponse?.ai_response_text) {
       const response = savedAIResponse.ai_response_text;
-      if (response.includes("Sorry, Prism's response could not be understood") ||
-          response.includes('Failed to parse Prism response') ||
-          response.includes('Prism service error')) {
+      if (response.includes("Sorry, the AI response could not be understood") ||
+          response.includes('Failed to parse AI response') ||
+          response.includes('AI service error')) {
         console.log('🧹 Clearing saved error message and triggering fresh analysis...');
         setSavedAIResponse(null);
         // Clear the error message from database
@@ -106,7 +107,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
         console.log('📊 Key takeaways count:', aiResponse?.ai_insights?.insights_report?.keyTakeaways?.length || 0);
         
         // Initialize conversation history from saved response if available
-        if (aiResponse?.ai_response_text && !aiResponse.ai_response_text.includes("Sorry, Prism's response could not be understood")) {
+        if (aiResponse?.ai_response_text && !aiResponse.ai_response_text.includes("Sorry, the AI response could not be understood")) {
           setConversationHistory([{
             role: 'assistant',
             content: aiResponse.ai_response_text
@@ -172,8 +173,20 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
     setError(null); // Clear any previous errors
 
     try {
+      // Check usage limit
+      const usageLimit = await usageTrackingService.checkDailyLimit('ai_analysis');
+      
+      if (!usageLimit.canUse) {
+        setError(`You've reached your daily limit of ${usageLimit.limit} AI analyses. Upgrade to Pro for unlimited access!`);
+        setIsAnalyzing(false);
+        return;
+      }
+      
       console.log('🚀 Starting AI analysis for note:', note.id);
       const result = await aiService.analyzeEntry(note.content);
+      
+      // Track usage
+      await usageTrackingService.trackAction('ai_analysis');
       console.log('✅ AI analysis completed successfully:', result);
       
       setAnalysis(result);
@@ -277,7 +290,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
             errorMessage = `AI service error: ${err.message}`;
           }
         } else if (err.message.includes('Failed to parse AI response')) {
-          errorMessage = "Prism's response could not be understood. Here's the raw response:";
+          errorMessage = "The AI response could not be understood. Here's the raw response:";
           if (err && typeof err === 'object' && 'analysisText' in err) {
             rawResponse = err.analysisText;
           }
@@ -302,8 +315,20 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
     setError(null); // Clear any previous errors
 
     try {
+      // Check usage limit
+      const usageLimit = await usageTrackingService.checkDailyLimit('ai_analysis');
+      
+      if (!usageLimit.canUse) {
+        setError(`You've reached your daily limit of ${usageLimit.limit} AI analyses. Upgrade to Pro for unlimited access!`);
+        setIsRegenerating(false);
+        return;
+      }
+      
       console.log('🔄 Regenerating AI analysis for note:', note.id);
       const result = await aiService.analyzeEntry(note.content);
+      
+      // Track usage
+      await usageTrackingService.trackAction('ai_analysis');
       console.log('✅ AI analysis regenerated successfully:', result);
       
       setAnalysis(result);
@@ -374,7 +399,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
             errorMessage = `AI service error: ${err.message}`;
           }
         } else if (err.message.includes('Failed to parse AI response')) {
-          errorMessage = "Prism's response could not be understood. Here's the raw response:";
+          errorMessage = "The AI response could not be understood. Here's the raw response:";
           if (err && typeof err === 'object' && 'analysisText' in err) {
             rawResponse = err.analysisText;
           }
@@ -604,7 +629,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
               fontSize: '2.5rem',
               letterSpacing: '-0.02em'
             }}>
-              Prism's Analysis
+              Analysis
             </h1>
             {note && (
               <p style={{ 
@@ -674,21 +699,21 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
               position: 'absolute',
               top: '1rem',
               right: '1rem',
-              padding: '0.4rem 0.75rem',
-              background: 'rgba(245, 158, 11, 0.08)',
-              border: '1px solid rgba(245, 158, 11, 0.25)',
-              borderRadius: '20px',
+              padding: '0.25rem 0.5rem',
+              background: 'rgba(245, 158, 11, 0.05)',
+              border: '1px solid rgba(245, 158, 11, 0.15)',
+              borderRadius: '12px',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
-              fontSize: '0.75rem',
+              gap: '0.35rem',
+              fontSize: '0.7rem',
               color: '#D97706',
-              opacity: 0.85,
+              opacity: 0.6,
               zIndex: 10,
-              backdropFilter: 'blur(10px)'
+              backdropFilter: 'blur(5px)'
             }}>
-              <span style={{ fontSize: '0.7rem' }}>⚠️</span>
-              <span>Content updated</span>
+              <span style={{ fontSize: '0.65rem' }}>⚠️</span>
+              <span style={{ fontSize: '0.7rem' }}>Updated</span>
               <button
                 onClick={() => setIsContentChangedDismissed(true)}
                 style={{
@@ -699,13 +724,13 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                   padding: '0',
                   display: 'flex',
                   alignItems: 'center',
-                  fontSize: '1rem',
-                  marginLeft: '0.25rem',
-                  opacity: 0.7,
+                  fontSize: '0.9rem',
+                  marginLeft: '0.15rem',
+                  opacity: 0.6,
                   transition: 'opacity 0.2s ease'
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}
                 title="Dismiss"
               >
                 ×
@@ -796,7 +821,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                       }}
                     >
                       <PremiumIcons.Brain size={18} color="currentColor" />
-                      <span>Prism's Response</span>
+                      <span>Key Insights</span>
                     </button>
                   )}
                   
@@ -861,16 +886,6 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                     
                     {/* Chat Log Area */}
                     <div className="chat-log-area" style={{ marginBottom: '0.5rem' }}>
-                      {/* Show actionable suggestion as first message */}
-                      {(insightsToShow?.insights_report?.actionableSuggestion || analysis?.insights_report?.actionableSuggestion) && conversationHistory.length === 0 && (
-                        <ChatBubble 
-                          message={{
-                            role: 'assistant',
-                            content: `**One thing to try next:**\n\n${(insightsToShow?.insights_report?.actionableSuggestion || analysis?.insights_report?.actionableSuggestion)?.suggestion}`
-                          }}
-                        />
-                      )}
-                      
                       {conversationHistory.length > 0 && (
                         conversationHistory.map((message, index) => (
                           <ChatBubble key={index} message={message} />
@@ -879,13 +894,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                       {/* Loading indicator for AI response */}
                       {isSendingMessage && (
                         <div className="chat-message-line assistant-line">
-                          <div className="avatar-container">
-                            <div className="prism-avatar">
-                              <span className="prism-icon">🔮</span>
-                            </div>
-                          </div>
                           <div className="bubble-content">
-                            <span className="sender-name">Prism</span>
                             <div className="chat-bubble assistant">
                               <div className="message-content">
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

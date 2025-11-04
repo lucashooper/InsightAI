@@ -7,6 +7,7 @@ import { userProfileService } from '../../services/userProfileService';
 import type { UserProfile } from '../../services/userProfileService';
 import { importDiaryEntries } from '../../utils/importDiaryEntries';
 import { storageAdapter, switchToLocalStorage, switchToSupabase } from '../../services/storageAdapter';
+import { usageTrackingService } from '../../services/usageTrackingService';
 import './settings.css';
 import '../../styles/page-layout.css';
 import '../../styles/settings-layout.css';
@@ -28,6 +29,7 @@ const SettingsView: React.FC = () => {
   const [privacyMode, setPrivacyMode] = useState(false);
   const [showPrivacyWarning, setShowPrivacyWarning] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [usageStats, setUsageStats] = useState<{ count: number; limit: number; tier: string } | null>(null);
 
   useEffect(() => {
     // Load saved settings
@@ -67,6 +69,13 @@ const SettingsView: React.FC = () => {
     };
 
     loadUserProfile();
+
+    // Load usage statistics
+    const loadUsageStats = async () => {
+      const stats = await usageTrackingService.getTodayUsage('ai_analysis');
+      setUsageStats(stats);
+    };
+    loadUsageStats();
   }, [user]);
 
   const handleThemeChange = (newTheme: 'midnight' | 'dusk' | 'light') => {
@@ -478,12 +487,125 @@ const SettingsView: React.FC = () => {
         </div>
       </motion.div>
 
+      {/* Subscription & Usage */}
+      <motion.div
+        className="settings-section"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        style={{
+          background: 'rgba(255, 255, 255, 0.03)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '16px',
+          padding: '32px'
+        }}
+      >
+        <h2 style={{ 
+          margin: '0 0 1rem 0', 
+          color: 'var(--text-primary)', 
+          fontSize: '1.5rem',
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem'
+        }}>
+          <span style={{ fontSize: '1.5rem' }}>💎</span>
+          Subscription & Usage
+        </h2>
+        
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{
+            padding: '1.25rem',
+            background: usageStats?.tier === 'unlimited' 
+              ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%)'
+              : 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '12px',
+            border: usageStats?.tier === 'unlimited'
+              ? '1px solid rgba(139, 92, 246, 0.3)'
+              : '1px solid rgba(255, 255, 255, 0.1)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Current Plan</span>
+              <span style={{ 
+                fontSize: '1.1rem', 
+                fontWeight: '600', 
+                color: usageStats?.tier === 'unlimited' ? '#a78bfa' : 'var(--text-primary)',
+                textTransform: 'capitalize'
+              }}>
+                {usageStats?.tier === 'unlimited' ? '✨ Unlimited' : usageStats?.tier === 'pro' ? 'Pro' : 'Free'}
+              </span>
+            </div>
+            
+            {usageStats && usageStats.tier === 'free' && (
+              <>
+                <div style={{ marginTop: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>AI Analyses Today</span>
+                    <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+                      {usageStats.count} / {usageStats.limit}
+                    </span>
+                  </div>
+                  <div style={{
+                    width: '100%',
+                    height: '8px',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: '4px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${(usageStats.count / usageStats.limit) * 100}%`,
+                      height: '100%',
+                      background: usageStats.count >= usageStats.limit 
+                        ? 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)'
+                        : 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
+                      transition: 'width 0.3s ease'
+                    }} />
+                  </div>
+                </div>
+                
+                <div style={{
+                  marginTop: '1rem',
+                  padding: '0.75rem',
+                  background: 'rgba(139, 92, 246, 0.1)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(139, 92, 246, 0.2)'
+                }}>
+                  <p style={{ margin: 0, fontSize: '0.85rem', color: '#a78bfa', lineHeight: '1.5' }}>
+                    💡 <strong>Free Plan Includes:</strong><br />
+                    • 2 AI analyses per day<br />
+                    • Unlimited journal entries<br />
+                    • Basic insights
+                  </p>
+                </div>
+              </>
+            )}
+            
+            {usageStats && usageStats.tier === 'unlimited' && (
+              <div style={{
+                marginTop: '1rem',
+                padding: '0.75rem',
+                background: 'rgba(139, 92, 246, 0.15)',
+                borderRadius: '8px',
+                border: '1px solid rgba(139, 92, 246, 0.3)'
+              }}>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#c4b5fd', lineHeight: '1.5' }}>
+                  ✨ <strong>Unlimited Access:</strong><br />
+                  • Unlimited AI analyses<br />
+                  • Unlimited Probe Deeper conversations<br />
+                  • All premium features
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </motion.div>
+
       {/* Theme Selection */}
       <motion.div
         className="settings-section theme-section"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+        transition={{ delay: 0.2 }}
         style={{
           background: 'rgba(255, 255, 255, 0.03)',
           border: '1px solid rgba(255, 255, 255, 0.08)',

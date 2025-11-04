@@ -227,7 +227,7 @@ const ImmersiveLoadingScreen: React.FC<ImmersiveLoadingScreenProps> = ({ isVisib
           }}
         >
           <TypewriterText
-            text="Prism is analyzing your thoughts..."
+            text="Analyzing your thoughts..."
             speed={60}
             onComplete={() => setShowSubtitle(true)}
           />

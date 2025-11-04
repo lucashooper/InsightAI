@@ -10,9 +10,10 @@ interface Message {
 interface CoWriterChatProps {
   entryContent: string;
   onClose?: () => void;
+  autoStart?: boolean; // If true, automatically probe the entry content on mount
 }
 
-export const CoWriterChat: React.FC<CoWriterChatProps> = ({ entryContent, onClose }) => {
+export const CoWriterChat: React.FC<CoWriterChatProps> = ({ entryContent, onClose, autoStart = false }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [userInput, setUserInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -28,6 +29,45 @@ export const CoWriterChat: React.FC<CoWriterChatProps> = ({ entryContent, onClos
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  // Auto-start conversation if autoStart is true
+  useEffect(() => {
+    if (autoStart && entryContent.trim()) {
+      // Automatically send the entry content to AI
+      handleAutoStart();
+    }
+  }, [autoStart]); // Only run once on mount
+
+  const handleAutoStart = async () => {
+    if (isLoading || !entryContent.trim()) return;
+
+    setIsLoading(true);
+
+    try {
+      // Call AI service with a probing question based on the entry
+      const response = await aiService.probeDeeper(
+        entryContent,
+        'Help me explore what I\'ve written. What stands out to you?',
+        ''
+      );
+
+      const assistantMessage: Message = {
+        role: 'assistant',
+        content: response
+      };
+
+      setMessages([assistantMessage]);
+    } catch (error) {
+      console.error('Error in auto-start:', error);
+      const errorMessage: Message = {
+        role: 'assistant',
+        content: 'I apologize, but I encountered an error starting our conversation. Please try asking me a question.'
+      };
+      setMessages([errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!userInput.trim() || isLoading) return;

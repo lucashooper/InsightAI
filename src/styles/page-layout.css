@@ -3,7 +3,7 @@
 /* CSS Variables for consistent spacing */
 :root {
   --page-margin-x: 16px; /* Balanced margin for visual structure */
-  --page-margin-y: 12px; /* Small top/bottom margin - safe for all screens */
+  --page-margin-y: 1rem; /* Minimal top/bottom margin */
 }
 
 /* Main content wrapper */
@@ -22,16 +22,17 @@
   margin: var(--page-margin-y) auto; /* Center with auto margins */
   width: calc(100% - (var(--page-margin-x) * 2)); /* Account for margins */
   max-width: 1400px; /* Limit width to show rounded corners */
-  min-height: calc(100vh - 100px); /* Tall, leaving small gaps */
-  display: flex;
-  flex-direction: column;
+  height: auto; /* Only as tall as content needs */
+  display: block;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4); /* Slightly stronger depth */
+  padding: 1rem 1.5rem 2rem 1.5rem;
 }
 
 /* Page Header */
 .page-header {
-  padding: 20px 24px 20px; /* Reduced top padding */
+  padding: 0 0 1rem 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  margin-bottom: 1.5rem;
 }
 
 .page-header h1 {
@@ -72,15 +73,8 @@
 
 /* Page Content */
 .page-content {
-  flex: 1;
-  padding: 20px 24px; /* Reduced padding for wider content */
-  display: flex;
-  flex-direction: column;
+  padding: 0;
   width: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
 }
 
 /* Hide scrollbar but keep functionality */

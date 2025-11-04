@@ -14,21 +14,17 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message }) => {
 
   return (
     <div className={`chat-message-line ${isAssistant ? 'assistant-line' : 'user-line'}`}>
-      <div className="avatar-container">
-        {isAssistant ? (
-          <div className="prism-avatar">
-            <span className="prism-icon">🔮</span>
-          </div>
-        ) : (
+      {!isAssistant && (
+        <div className="avatar-container">
           <div className="user-avatar">
             <span className="user-icon">👤</span>
           </div>
-        )}
-      </div>
+        </div>
+      )}
       <div className="bubble-content">
-        <span className="sender-name">
-          {isAssistant ? 'Prism' : 'You'}
-        </span>
+        {!isAssistant && (
+          <span className="sender-name">You</span>
+        )}
         <div className={`chat-bubble ${isAssistant ? 'assistant' : 'user'}`}>
           <div className="message-content">
             {message.content}

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { DiaryEntry } from '../../types/diary';
 import { PremiumIcons } from '../icons/PremiumIcons';
-import CoWriterChat from './CoWriterChat';
+import { aiService } from '../../services/aiService';
+import { usageTrackingService } from '../../services/usageTrackingService';
 
 interface DiaryEditorProps {
   note: DiaryEntry | null;
@@ -32,10 +33,10 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const recognitionRef = useRef<any>(null);
   
-  // Co-Writer state
-  const [showCoWriter, setShowCoWriter] = useState(false);
+  // Co-Writer state (inline response)
   const [showProbeButton, setShowProbeButton] = useState(false);
-  // const [isTyping, setIsTyping] = useState(false); // Unused for now
+  const [aiResponse, setAiResponse] = useState<string>('');
+  const [isLoadingAiResponse, setIsLoadingAiResponse] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
 
@@ -68,6 +69,10 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
       lastNoteId.current = note.id;
       
       // Reset initialization flag after state updates
+      // Reset AI response when switching notes
+      setAiResponse('');
+      setShowProbeButton(false);
+      
       setTimeout(() => {
         isInitializing.current = false;
         console.log('✅ State initialization complete');
@@ -79,6 +84,8 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
       setContent('');
       lastSavedContent.current = '';
       lastNoteId.current = null;
+      setAiResponse('');
+      setShowProbeButton(false);
       setTimeout(() => {
         isInitializing.current = false;
       }, 0);
@@ -228,13 +235,13 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
     }
     
     // Show button 2 seconds after user stops typing (if content is sufficient)
-    if (e.target.value.length > 100 && !showCoWriter) {
+    if (e.target.value.length > 100 && !aiResponse) {
       typingTimeoutRef.current = setTimeout(() => {
         // setIsTyping(false); // Commented out for now
         setShowProbeButton(true);
       }, 2000);
     }
-  }, [content, showCoWriter]);
+  }, [content, aiResponse]);
 
   const handleContentKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.ctrlKey && e.key === 's') {
@@ -446,23 +453,20 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
   // Showing editable view
   return (
     <div data-editor-container style={{
-      height: '100%',
       width: '100%',
       minWidth: 0,
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden',
       position: 'relative',
       boxSizing: 'border-box',
       background: 'var(--bg-primary)',
       borderRadius: '12px',
-      border: '1px solid var(--border-color)'
+      border: '1px solid var(--border-color)',
+      overflow: 'visible'
     }}>
       {/* ==================== HEADER SECTION ==================== */}
       {/* Contains: Title input, timestamp, and action buttons */}
       <div style={{
         flexShrink: 0,
-        padding: '2.5rem 1.5rem 0 1.5rem',
+        padding: '1rem 1.5rem 1rem 1.5rem',
         borderBottom: '1px solid var(--border-color)',
         background: 'var(--bg-primary)'
       }}>
@@ -523,7 +527,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
           display: 'flex',
           gap: '0.5rem',
           marginTop: '1rem',
-          marginBottom: '-12rem',
+          marginBottom: '0rem',
           alignItems: 'center',
           flexWrap: 'wrap'
         }}>
@@ -775,34 +779,81 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
       {/* ==================== CONTENT SECTION ==================== */}
       {/* Contains: Main text editor or highlighted text view */}
       <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        padding: '1.25rem 1.5rem 40rem 1.5rem',
-        minHeight: 0
+        padding: '0rem 1.5rem 2rem 1.5rem'
       }}>
       {/* Main Content Area - Always Editable */}
-      <textarea
-        className="diary-textarea"
-        spellCheck={false}
-        value={content}
-        onChange={handleContentChange}
-        onKeyDown={handleContentKeyDown}
-        placeholder="Your thoughts go here..."
-      />
+      <div style={{
+        width: '100%',
+        minHeight: 'auto',
+        margin: 0,
+        padding: 0
+      }}>
+        <textarea
+          className="diary-textarea"
+          spellCheck={false}
+          value={content}
+          onChange={handleContentChange}
+          onKeyDown={handleContentKeyDown}
+          placeholder="Your thoughts go here..."
+          style={{
+            width: '100%',
+            minHeight: '200px',
+            height: 'auto',
+            border: 'none',
+            background: 'transparent',
+            color: 'var(--text)',
+            fontSize: '1.15rem',
+            lineHeight: '1.7',
+            fontFamily: 'inherit',
+            resize: 'none',
+            overflow: 'hidden',
+            padding: '0 !important',
+            margin: '0 !important',
+            flex: '0 0 auto !important'
+          }}
+          rows={Math.max(10, content.split('\n').length + 1)}
+        />
+      </div>
       
       {/* Probe Deeper Button - Contextual Mindsera-style */}
-      {showProbeButton && !showCoWriter && (
+      {showProbeButton && !aiResponse && (
         <div style={{
           position: 'relative',
           width: '100%',
-          pointerEvents: 'none'
+          pointerEvents: 'none',
+          marginTop: '1rem'
         }}>
           <button
-            onClick={() => {
-              setShowCoWriter(true);
+            onClick={async () => {
               setShowProbeButton(false);
+              setIsLoadingAiResponse(true);
+              try {
+                // Check usage limit
+                const usageLimit = await usageTrackingService.checkDailyLimit('probe_deeper');
+                
+                if (!usageLimit.canUse) {
+                  setAiResponse(`You've reached your daily limit of ${usageLimit.limit} AI insights. Upgrade to Pro for unlimited access!`);
+                  setIsLoadingAiResponse(false);
+                  return;
+                }
+                
+                // Get AI response
+                const response = await aiService.probeDeeper(
+                  content,
+                  'Help me explore what I\'ve written. What stands out to you?',
+                  ''
+                );
+                
+                // Track usage
+                await usageTrackingService.trackAction('probe_deeper');
+                
+                setAiResponse(response);
+              } catch (error) {
+                console.error('Error getting AI response:', error);
+                setAiResponse('I apologize, but I encountered an error. Please try again.');
+              } finally {
+                setIsLoadingAiResponse(false);
+              }
             }}
             style={{
               position: 'absolute',
@@ -845,47 +896,128 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
         </div>
       )}
       
-      {/* Co-Writer Chat Component */}
-      {showCoWriter && (
-        <CoWriterChat 
-          entryContent={content}
-          onClose={() => setShowCoWriter(false)}
-        />
+      {/* Inline AI Response - Mindsera Style */}
+      {(isLoadingAiResponse || aiResponse) && (
+        <div style={{
+          marginTop: '0.75rem',
+          padding: '1rem',
+          background: 'rgba(139, 92, 246, 0.08)',
+          borderLeft: '3px solid rgba(139, 92, 246, 0.5)',
+          borderRadius: '8px',
+          animation: 'fadeIn 0.3s ease-out'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            marginBottom: '0.5rem'
+          }}>
+            <button
+              onClick={() => {
+                setAiResponse('');
+                setShowProbeButton(true);
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#9CA3AF',
+                cursor: 'pointer',
+                fontSize: '1.25rem',
+                padding: '0.25rem',
+                display: 'flex',
+                alignItems: 'center',
+                transition: 'color 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.color = '#E5E7EB'}
+              onMouseLeave={(e) => e.currentTarget.style.color = '#9CA3AF'}
+            >
+              ×
+            </button>
+          </div>
+          {isLoadingAiResponse ? (
+            <div style={{
+              display: 'flex',
+              gap: '0.5rem',
+              alignItems: 'center',
+              color: '#9CA3AF',
+              fontSize: '0.9rem'
+            }}>
+              <div className="typing-dots">
+                <div className="typing-dot"></div>
+                <div className="typing-dot"></div>
+                <div className="typing-dot"></div>
+              </div>
+              <span>Thinking...</span>
+            </div>
+          ) : (
+            <div style={{
+              fontSize: '0.95rem',
+              lineHeight: '1.7',
+              color: '#E5E7EB'
+            }}>
+              {aiResponse}
+            </div>
+          )}
+        </div>
       )}
       </div>
-        
-      {/* ==================== FOOTER SECTION ==================== */}
-      {/* Contains: Save status, word count, and manual save button */}
-      <div style={{
-        flexShrink: 0,
-        padding: '0.75rem 1.5rem',
-        borderTop: '1px solid var(--border-color)',
-        background: 'var(--bg-primary)',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: 0, overflow: 'hidden' }}>
-          {isSaving ? (
-            <small style={{ color: 'var(--accent-primary)', fontSize: '0.875rem', whiteSpace: 'nowrap', fontWeight: '500' }}>
-              Saving...
-            </small>
-          ) : lastSaved ? (
-            <small style={{ opacity: 0.5, fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
-              Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </small>
-          ) : null}
-          
-          {/* Word Count */}
-          <small style={{ opacity: 0.5, fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
-            {content.trim().split(/\s+/).filter(word => word.length > 0).length} words
-          </small>
-        </div>
-      </div>
+      {/* End of CONTENT SECTION */}
+      
     </div>
   );
 });
 
 DiaryEditor.displayName = 'DiaryEditor';
+
+// Add CSS for animations
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .typing-dots {
+    display: flex;
+    gap: 0.3rem;
+  }
+  
+  .typing-dot {
+    width: 6px;
+    height: 6px;
+    background: #8b5cf6;
+    borderRadius: 50%;
+    animation: typingDot 1.4s infinite;
+  }
+  
+  .typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+  
+  .typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+  
+  @keyframes typingDot {
+    0%, 60%, 100% {
+      opacity: 0.3;
+      transform: scale(0.8);
+    }
+    30% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+`;
+if (!document.head.querySelector('#diary-editor-styles')) {
+  style.id = 'diary-editor-styles';
+  document.head.appendChild(style);
+}
 
 export default DiaryEditor;

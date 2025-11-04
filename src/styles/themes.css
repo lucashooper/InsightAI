@@ -181,7 +181,7 @@ textarea.diary-textarea:focus-visible {
   width: 100% !important;
   max-width: 100% !important;
   min-width: 100% !important;
-  min-height: 600px !important;
+  min-height: auto !important;
   
   /* Spacing */
   padding: 0 !important;

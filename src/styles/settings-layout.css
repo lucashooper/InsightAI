@@ -1,5 +1,10 @@
 /* Settings Page Layout */
 
+/* Override page-content padding for settings */
+.page-container .page-content {
+  padding-top: 1rem;
+}
+
 .settings-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
