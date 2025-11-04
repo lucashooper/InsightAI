@@ -779,7 +779,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
       {/* ==================== CONTENT SECTION ==================== */}
       {/* Contains: Main text editor or highlighted text view */}
       <div style={{
-        padding: '0rem 1.5rem 2rem 1.5rem'
+        padding: '2rem 1.5rem 2rem 1.5rem'
       }}>
       {/* Main Content Area - Always Editable */}
       <div style={{
