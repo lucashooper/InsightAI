@@ -245,7 +245,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
           // Update the note with analysis flag and summary
           if (onUpdateNote) {
             onUpdateNote(note.id, {
-              isAnalyzed: true,
+              ai_last_analyzed: new Date().toISOString(),
               analysisSummary: {
                 positiveCount,
                 opportunityCount,
@@ -254,7 +254,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
             });
           }
           
-          // Reload the saved response
+          // Reload the saved response to ensure UI updates
           await loadSavedAIResponse(note.id);
           
           // Show briefing modal after analysis completes
@@ -653,13 +653,13 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
             <button
               onClick={handleRegenerate}
               disabled={isRegenerating || isAnalyzing}
-              title="Regenerate analysis with fresh AI insights"
+              title={isRegenerating ? 'Regenerating...' : 'Regenerate analysis with fresh AI insights'}
               aria-label="Regenerate analysis"
               style={{
                 position: 'absolute',
                 top: 0,
                 right: 0,
-                padding: '0.5rem 1rem',
+                padding: '0.5rem',
                 background: isRegenerating ? 'var(--bg-secondary)' : 'var(--bg-tertiary)',
                 border: '1px solid var(--border-color)',
                 borderRadius: '6px',
@@ -667,11 +667,13 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                 cursor: isRegenerating || isAnalyzing ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.5rem',
+                justifyContent: 'center',
                 fontSize: '0.875rem',
                 fontWeight: '500',
                 transition: 'all 0.2s ease',
-                opacity: isRegenerating || isAnalyzing ? 0.5 : 1
+                opacity: isRegenerating || isAnalyzing ? 0.5 : 1,
+                minWidth: '36px',
+                minHeight: '36px'
               }}
               onMouseEnter={(e) => {
                 if (!isRegenerating && !isAnalyzing) {
@@ -688,53 +690,34 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                 }
               }}
             >
-              <PremiumIcons.RefreshCw size={16} color="currentColor" />
-              <span>{isRegenerating ? 'Regenerating...' : 'Regenerate'}</span>
+              <div style={{ animation: isRegenerating ? 'spin 1s linear infinite' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <PremiumIcons.RefreshCw size={16} color="currentColor" />
+              </div>
             </button>
           </div>
 
-          {/* Content changed indicator - subtle badge in top right */}
+          {/* Content changed indicator - very subtle, auto-dismiss after 5 seconds */}
           {contentHasChanged && !isContentChangedDismissed && (
             <div style={{
               position: 'absolute',
               top: '1rem',
               right: '1rem',
-              padding: '0.25rem 0.5rem',
-              background: 'rgba(245, 158, 11, 0.05)',
-              border: '1px solid rgba(245, 158, 11, 0.15)',
-              borderRadius: '12px',
+              padding: '0.2rem 0.4rem',
+              background: 'rgba(245, 158, 11, 0.03)',
+              border: '1px solid rgba(245, 158, 11, 0.1)',
+              borderRadius: '8px',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.35rem',
-              fontSize: '0.7rem',
+              gap: '0.25rem',
+              fontSize: '0.65rem',
               color: '#D97706',
-              opacity: 0.6,
+              opacity: 0.4,
               zIndex: 10,
-              backdropFilter: 'blur(5px)'
+              backdropFilter: 'blur(3px)',
+              animation: 'fadeOut 5s forwards'
             }}>
-              <span style={{ fontSize: '0.65rem' }}>⚠️</span>
-              <span style={{ fontSize: '0.7rem' }}>Updated</span>
-              <button
-                onClick={() => setIsContentChangedDismissed(true)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#D97706',
-                  cursor: 'pointer',
-                  padding: '0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  fontSize: '0.9rem',
-                  marginLeft: '0.15rem',
-                  opacity: 0.6,
-                  transition: 'opacity 0.2s ease'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}
-                title="Dismiss"
-              >
-                ×
-              </button>
+              <span style={{ fontSize: '0.6rem' }}>⚠️</span>
+              <span style={{ fontSize: '0.65rem' }}>Updated</span>
             </div>
           )}
 

@@ -46,11 +46,11 @@ export const InsightBriefingModal: React.FC<InsightBriefingModalProps> = ({
         {/* Modal Container - Premium Glassmorphism */}
         <div 
           style={{
-            maxWidth: '480px',
+            maxWidth: window.innerWidth <= 768 ? '95%' : '900px',
             width: '100%',
-            minHeight: '500px',
+            minHeight: window.innerWidth <= 768 ? '400px' : '500px',
             height: 'auto',
-            maxHeight: '85vh',
+            maxHeight: window.innerWidth <= 768 ? '90vh' : '85vh',
             position: 'relative',
             background: `
               linear-gradient(135deg, rgba(15, 18, 25, 0.98) 0%, rgba(20, 25, 35, 0.95) 50%, rgba(15, 18, 25, 0.98) 100%)
@@ -118,27 +118,32 @@ export const InsightBriefingModal: React.FC<InsightBriefingModalProps> = ({
             Premium Insight
           </div>
 
-          {/* Two-Column Layout */}
+          {/* Two-Column Layout (Single column on mobile, 60/40 on desktop) */}
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '0',
-            height: '100%'
+            display: window.innerWidth <= 768 ? 'flex' : 'grid',
+            flexDirection: window.innerWidth <= 768 ? 'column' : undefined,
+            gridTemplateColumns: window.innerWidth <= 768 ? undefined : '1.5fr 1fr',
+            gap: window.innerWidth <= 768 ? '1.5rem' : '0',
+            height: '100%',
+            overflowY: window.innerWidth <= 768 ? 'auto' : 'visible',
+            paddingBottom: window.innerWidth <= 768 ? '2rem' : '0'
           }}>
             {/* Left Panel - Narrative Summary */}
             <div style={{
-              padding: '3.5rem 3rem',
+              padding: window.innerWidth <= 768 ? '2rem 1.5rem' : '3.5rem 3rem',
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'space-between',
-              background: `
+              justifyContent: window.innerWidth <= 768 ? 'flex-start' : 'space-between',
+              gap: window.innerWidth <= 768 ? '1.5rem' : '0',
+              background: window.innerWidth <= 768 ? 'transparent' : `
                 linear-gradient(135deg, rgba(12, 15, 22, 0.6) 0%, rgba(18, 22, 32, 0.4) 50%, rgba(12, 15, 22, 0.6) 100%)
               `,
-              borderRight: '1px solid rgba(139, 92, 246, 0.15)',
+              borderRight: window.innerWidth <= 768 ? 'none' : '1px solid rgba(139, 92, 246, 0.15)',
+              borderBottom: 'none',
               position: 'relative',
               overflow: 'hidden',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
+              backdropFilter: window.innerWidth <= 768 ? 'none' : 'blur(20px)',
+              WebkitBackdropFilter: window.innerWidth <= 768 ? 'none' : 'blur(20px)',
               zIndex: 2
             }}>
               {/* Subtle inner glow */}
@@ -155,7 +160,7 @@ export const InsightBriefingModal: React.FC<InsightBriefingModalProps> = ({
                 {/* Headline */}
                 <h2 style={{
                   margin: '0 0 1rem 0',
-                  fontSize: '2.5rem',
+                  fontSize: window.innerWidth <= 768 ? '1.75rem' : '2.5rem',
                   fontWeight: '700',
                   background: 'linear-gradient(135deg, #ffffff 0%, #e0e7ff 30%, #c7d2fe 60%, #a78bfa 100%)',
                   WebkitBackgroundClip: 'text',
@@ -257,12 +262,13 @@ export const InsightBriefingModal: React.FC<InsightBriefingModalProps> = ({
 
             {/* Right Panel - Data Visualization with Universe Theme */}
             <div style={{
-              padding: '3.5rem 3rem',
+              padding: window.innerWidth <= 768 ? '2rem 1.5rem 2.5rem' : '3.5rem 3rem',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
-              background: 'radial-gradient(circle at center, rgba(15, 15, 20, 1) 0%, rgba(8, 8, 12, 1) 100%)',
+              gap: window.innerWidth <= 768 ? '1.5rem' : '2rem',
+              background: window.innerWidth <= 768 ? 'transparent' : 'radial-gradient(circle at center, rgba(15, 15, 20, 1) 0%, rgba(8, 8, 12, 1) 100%)',
               position: 'relative',
               overflow: 'hidden',
               zIndex: 2

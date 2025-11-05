@@ -38,7 +38,6 @@ const NoteTabBar: React.FC<NoteTabBarProps> = ({
       right: 0,
       height: '48px',
       background: 'rgba(10, 10, 15, 0.95)',
-      borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
       zIndex: 101
     }}>
       <div

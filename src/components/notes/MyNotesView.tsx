@@ -165,10 +165,19 @@ const MyNotesView: React.FC<MyNotesViewProps> = ({ setActiveView, setActiveNoteI
           gap: '1rem',
           marginBottom: '24px',
           paddingBottom: '24px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
           flexWrap: 'wrap',
-          alignItems: 'center'
+          alignItems: 'center',
+          position: 'relative'
         }}>
+          {/* Full-width border that extends to edges */}
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            left: '-2rem',
+            right: '-2rem',
+            height: '1px',
+            background: 'rgba(255, 255, 255, 0.06)'
+          }} />
           {/* Search Bar */}
           <div style={{
             flex: '1 1 300px',
@@ -215,10 +224,11 @@ const MyNotesView: React.FC<MyNotesViewProps> = ({ setActiveView, setActiveNoteI
           <div style={{
             display: 'flex',
             gap: '0.5rem',
-            background: 'rgba(30, 35, 45, 0.6)',
+            background: 'rgba(17, 24, 39, 0.6)',
             padding: '0.25rem',
             borderRadius: '10px',
-            border: '1px solid rgba(255, 255, 255, 0.05)'
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(10px)'
           }}>
             {(['all', 'analyzed', 'unanalyzed'] as const).map((filterOption) => (
               <button
@@ -226,7 +236,7 @@ const MyNotesView: React.FC<MyNotesViewProps> = ({ setActiveView, setActiveNoteI
                 onClick={() => setFilter(filterOption)}
                 style={{
                   padding: '0.5rem 1rem',
-                  background: filter === filterOption ? 'rgba(139, 92, 246, 0.2)' : 'transparent',
+                  background: filter === filterOption ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
                   border: filter === filterOption ? '1px solid rgba(139, 92, 246, 0.3)' : '1px solid transparent',
                   borderRadius: '8px',
                   color: filter === filterOption ? '#a78bfa' : '#9CA3AF',

@@ -458,8 +458,6 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
       position: 'relative',
       boxSizing: 'border-box',
       background: 'var(--bg-primary)',
-      borderRadius: '12px',
-      border: '1px solid var(--border-color)',
       overflow: 'visible'
     }}>
       {/* ==================== HEADER SECTION ==================== */}
@@ -467,7 +465,6 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
       <div style={{
         flexShrink: 0,
         padding: '1rem 1.5rem 1rem 1.5rem',
-        borderBottom: '1px solid var(--border-color)',
         background: 'var(--bg-primary)'
       }}>
         {/* Title Input */}
@@ -537,7 +534,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
           title="Download as text file"
           aria-label="Download entry as text file"
           style={{
-            padding: '0.5rem 1rem',
+            padding: '0.5rem',
             background: 'var(--bg-secondary)',
             border: '1px solid var(--border-color)',
             borderRadius: '6px',
@@ -545,7 +542,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            justifyContent: 'center',
             fontSize: '0.875rem',
             fontWeight: '500',
             transition: 'all 0.2s ease',
@@ -564,7 +561,6 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
           }}
         >
           <PremiumIcons.Download size={16} />
-          <span>Download</span>
         </button>
 
         {/* Voice Input Button */}
@@ -573,7 +569,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
           title={isRecording ? 'Stop recording' : 'Start voice input'}
           aria-label={isRecording ? 'Stop voice recording' : 'Start voice recording'}
           style={{
-            padding: '0.5rem 1rem',
+            padding: '0.5rem',
             background: isRecording ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'var(--bg-secondary)',
             border: '1px solid var(--border-color)',
             borderRadius: '6px',
@@ -581,11 +577,13 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
+            justifyContent: 'center',
             fontSize: '0.875rem',
             fontWeight: '500',
             transition: 'all 0.2s ease',
-            animation: isRecording ? 'pulse 2s infinite' : 'none'
+            animation: isRecording ? 'pulse 2s infinite' : 'none',
+            minWidth: '36px',
+            minHeight: '36px'
           }}
           onMouseEnter={(e) => {
             if (!isRecording) {
@@ -603,7 +601,6 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
           }}
         >
           <PremiumIcons.Mic size={16} color={isRecording ? 'white' : 'currentColor'} />
-          <span>{isRecording ? 'Recording...' : 'Voice Input'}</span>
         </button>
 
         {/* Fullscreen Toggle Button - Icon Only */}
@@ -613,7 +610,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
             title={isFocusMode ? 'Exit Focus Mode (F11)' : 'Enter Focus Mode (F11)'}
             aria-label={isFocusMode ? 'Exit focus mode' : 'Enter focus mode'}
             style={{
-              padding: '0.5rem 1rem',
+              padding: '0.5rem',
               background: 'var(--bg-secondary)',
               border: '1px solid var(--border-color)',
               borderRadius: '6px',

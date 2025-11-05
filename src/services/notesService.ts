@@ -128,39 +128,38 @@ export const notesService = {
     insightsReport?: any;
   }): Promise<void> {
     try {
-      console.log('💾 Attempting to save AI response with new schema:', {
+      console.log('💾 Saving AI analysis to ai_insights field:', {
         id,
         conversationalResponseLength: responseData.conversationalResponse?.length || 0,
         hasStructuredInsights: !!responseData.structuredInsights
       });
 
+      // Save everything to ai_insights field which exists in the database
+      const aiInsightsData = {
+        conversational_response: responseData.conversationalResponse,
+        insights_report: responseData.insightsReport,
+        ...responseData.structuredInsights,
+        analyzed_at: new Date().toISOString()
+      };
+
       const { error } = await supabase
         .from('notes')
         .update({
-          ai_response_text: responseData.conversationalResponse,
-          ai_structured_insights: responseData.structuredInsights,
-          insights_report: responseData.insightsReport,
+          ai_insights: aiInsightsData,
           ai_last_analyzed: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq('id', id);
 
       if (error) {
-        console.error('❌ Error saving AI response with new schema:', error);
-        
-        // Fallback to legacy method if new columns don't exist
-        console.log('🔄 Falling back to legacy AI analysis save method...');
-        await this.updateAIAnalysis(id, {
-          conversational_response: responseData.conversationalResponse,
-          ...responseData.structuredInsights
-        });
-        console.log('✅ Successfully saved using legacy method');
-      } else {
-        console.log('✅ Successfully saved AI response with new schema');
+        console.error('❌ Error saving AI analysis:', error);
+        throw error;
       }
-    } catch (fallbackError) {
-      console.error('❌ Both new and legacy save methods failed:', fallbackError);
-      const errorMessage = fallbackError instanceof Error ? fallbackError.message : 'Unknown error';
+      
+      console.log('✅ Successfully saved AI analysis');
+    } catch (saveError) {
+      console.error('❌ Failed to save AI analysis:', saveError);
+      const errorMessage = saveError instanceof Error ? saveError.message : 'Unknown error';
       throw new Error(`Failed to save AI response: ${errorMessage}`);
     }
   },

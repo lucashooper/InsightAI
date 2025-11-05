@@ -86,7 +86,7 @@ const ImmersiveLoadingScreen: React.FC<ImmersiveLoadingScreenProps> = ({ isVisib
         <div
           key={index}
           style={{
-            position: 'absolute',
+            position: 'fixed',
             left: `${star.x}%`,
             top: `${star.y}%`,
             width: `${star.size}px`,
@@ -96,7 +96,9 @@ const ImmersiveLoadingScreen: React.FC<ImmersiveLoadingScreenProps> = ({ isVisib
             opacity: star.opacity,
             animation: `twinkle ${2 + star.twinkleDelay}s ease-in-out infinite`,
             animationDelay: `${star.twinkleDelay}s`,
-            boxShadow: star.size > 1.5 ? '0 0 4px #58a6ff' : 'none'
+            boxShadow: star.size > 1.5 ? '0 0 4px #58a6ff' : 'none',
+            willChange: 'opacity',
+            transform: 'translateZ(0)'
           }}
         />
       ))}
@@ -141,9 +143,9 @@ const ImmersiveLoadingScreen: React.FC<ImmersiveLoadingScreenProps> = ({ isVisib
         style={{
           background: 'linear-gradient(135deg, #0a0a0a 0%, #000000 100%)',
           borderRadius: '24px',
-          padding: '4rem 5rem',
+          padding: window.innerWidth <= 768 ? '2.5rem 1.5rem' : '4rem 5rem',
           maxWidth: '700px',
-          width: '70%',
+          width: window.innerWidth <= 768 ? '90%' : '70%',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 60px rgba(56, 189, 248, 0.3)',
           border: '1px solid rgba(56, 189, 248, 0.3)',
           textAlign: 'center',
@@ -218,12 +220,12 @@ const ImmersiveLoadingScreen: React.FC<ImmersiveLoadingScreenProps> = ({ isVisib
         {/* Main Title with Typewriter */}
         <h2
           style={{
-            fontSize: '2rem',
+            fontSize: window.innerWidth <= 768 ? '1.5rem' : '2rem',
             fontWeight: '600',
             color: '#E5E7EB',
             marginBottom: '1.5rem',
             lineHeight: '1.4',
-            minHeight: '2.8rem'
+            minHeight: window.innerWidth <= 768 ? '2rem' : '2.8rem'
           }}
         >
           <TypewriterText

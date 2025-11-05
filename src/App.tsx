@@ -99,7 +99,13 @@ const App: React.FC = () => {
       const fetchedNotes = await storageAdapter.getNotes();
       console.log('📋 Fetched notes:', fetchedNotes.map(n => ({ id: n.id, title: n.title, updated_at: n.updated_at })));
       
-      setNotes(fetchedNotes);
+      // Add computed isAnalyzed property to each note
+      const notesWithAnalysisStatus = fetchedNotes.map(note => ({
+        ...note,
+        isAnalyzed: !!(note.ai_insights || note.ai_structured_insights || note.ai_last_analyzed)
+      }));
+      
+      setNotes(notesWithAnalysisStatus);
       
       // Detect patterns across all notes
       if (fetchedNotes.length > 0) {
@@ -219,9 +225,12 @@ const App: React.FC = () => {
         // Update the notes list immutably without re-sorting
         setNotes(prevNotes => {
           const updatedNotes = prevNotes.map(note => 
-            note.id === selectedNote.id ? updatedNote : note
+            note.id === selectedNote.id ? {
+              ...updatedNote,
+              isAnalyzed: !!(updatedNote.ai_insights || updatedNote.ai_structured_insights || updatedNote.ai_last_analyzed)
+            } : note
           );
-          console.log('📋 Notes array after update:', updatedNotes.map(n => ({ id: n.id, title: n.title, updated_at: n.updated_at })));
+          console.log('📋 Notes array after update:', updatedNotes.map(n => ({ id: n.id, title: n.title, updated_at: n.updated_at, isAnalyzed: n.isAnalyzed })));
           return updatedNotes;
         });
       } else {
@@ -241,9 +250,13 @@ const App: React.FC = () => {
         });
       }
       
-      // Update the selected note
-      console.log('🎯 Updating selectedNote to:', { id: updatedNote.id, title: updatedNote.title });
-      setSelectedNote(updatedNote);
+      // Update the selected note with isAnalyzed property
+      const noteWithAnalysisStatus = {
+        ...updatedNote,
+        isAnalyzed: !!(updatedNote.ai_insights || updatedNote.ai_structured_insights || updatedNote.ai_last_analyzed)
+      };
+      console.log('🎯 Updating selectedNote to:', { id: noteWithAnalysisStatus.id, title: noteWithAnalysisStatus.title, isAnalyzed: noteWithAnalysisStatus.isAnalyzed });
+      setSelectedNote(noteWithAnalysisStatus);
       console.log('✅ Save operation completed successfully');
     } catch (error) {
       console.error('❌ Error saving note:', error);
@@ -339,6 +352,8 @@ const App: React.FC = () => {
             onSearchClick={() => setIsSearchOpen(true)} 
             onBookmarkClick={() => setIsBookmarkDropdownOpen(!isBookmarkDropdownOpen)}
             bookmarkButtonRef={bookmarkButtonRef}
+            onMobileMenuClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            isMobileMenuOpen={isMobileMenuOpen}
           />
         )}
         
@@ -382,26 +397,15 @@ const App: React.FC = () => {
           />
         )}
         
-        {/* Mobile Menu Button */}
-        {!isFocusMode && (
-          <button
-            className="mobile-menu-button"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            <PremiumIcons.Menu size={24} />
-          </button>
-        )}
-        
         {/* Mobile Sidebar Backdrop */}
         <div 
           className={`sidebar-backdrop ${isMobileMenuOpen ? 'active' : ''}`}
           onClick={() => setIsMobileMenuOpen(false)}
         />
         
-        <div style={{ display: 'flex', flex: '1 1 auto', minHeight: 0, minWidth: 0, width: '100%', maxWidth: '100%', overflow: 'hidden', marginTop: isFocusMode ? '0' : '48px', position: 'relative' }} className={isFocusMode ? 'focus-mode' : ''}>
+        <div style={{ display: 'flex', flex: '1 1 auto', minHeight: 0, minWidth: 0, width: '100%', maxWidth: '100%', overflow: 'hidden', marginTop: isFocusMode ? '0' : '60px', position: 'relative' }} className={isFocusMode ? 'focus-mode' : ''}>
           {!isFocusMode && (
-            <div className={`sidebar-container ${isMobileMenuOpen ? 'sidebar-open' : ''}`} style={{ marginTop: '-48px' }}>
+            <div className={`sidebar-container ${isMobileMenuOpen ? 'sidebar-open' : ''}`} style={{ marginTop: '-60px' }}>
               <Sidebar 
               onSelect={handleSelect} 
               onAdd={handleAdd} 
@@ -461,12 +465,22 @@ const App: React.FC = () => {
                     note={selectedNote} 
                     setActiveView={setActiveView}
                     onUpdateNote={(id, updates) => {
-                      const updatedNotes = notes.map(n => 
-                        n.id === id ? { ...n, ...updates } : n
-                      );
+                      const updatedNotes = notes.map(n => {
+                        if (n.id === id) {
+                          const updated = { ...n, ...updates };
+                          // Recompute isAnalyzed after update
+                          updated.isAnalyzed = !!(updated.ai_insights || updated.ai_structured_insights || updated.ai_last_analyzed);
+                          return updated;
+                        }
+                        return n;
+                      });
                       setNotes(updatedNotes);
                       if (selectedNote?.id === id) {
-                        setSelectedNote({ ...selectedNote, ...updates });
+                        const updated = { ...selectedNote, ...updates };
+                        // Recompute isAnalyzed for selected note
+                        updated.isAnalyzed = !!(updated.ai_insights || updated.ai_structured_insights || updated.ai_last_analyzed);
+                        console.log('🎯 Updated selectedNote with isAnalyzed:', updated.isAnalyzed);
+                        setSelectedNote(updated);
                       }
                     }}
                   />

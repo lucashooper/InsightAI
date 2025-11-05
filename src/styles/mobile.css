@@ -80,37 +80,97 @@
     opacity: 1;
   }
 
-  /* Mobile menu button */
+  /* Mobile menu button - Proper navbar positioning */
   .mobile-menu-button {
     display: flex !important;
     position: fixed;
-    top: 1rem;
-    left: 1rem;
-    z-index: 998;
-    width: 48px;
-    height: 48px;
-    border-radius: 10px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+    top: 8px;
+    left: 16px;
+    z-index: 103;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 6px;
+    background: transparent;
+    border: none;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 8px var(--shadow-color, rgba(0, 0, 0, 0.1));
-    color: var(--text-primary);
+    transition: all 0.15s ease;
+    color: #6b7280;
+    padding: 0;
   }
 
   .mobile-menu-button:hover {
-    background: var(--bg-tertiary);
-    border-color: var(--accent-primary);
+    background: rgba(255, 255, 255, 0.05);
+    color: #9ca3af;
   }
 
   .mobile-menu-button:active {
     transform: scale(0.95);
   }
+
+  /* Mobile Navbar - Horizontal Layout */
+  /* Transform desktop toolbar into mobile horizontal navbar */
+  .left-toolbar {
+    width: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 60px !important;
+    padding: 0 16px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px !important;
+    border-right: none !important;
+    z-index: 102 !important;
+  }
+
+  /* Mobile navbar background - no bottom border for unified header */
+  .left-toolbar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(10, 10, 15, 0.95);
+    z-index: -1;
+  }
+
+  /* Hamburger menu button - first in row, visible on mobile */
+  .mobile-menu-button {
+    display: flex !important;
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    order: -1;
+    margin-right: 4px;
+  }
+
+  /* Search and bookmark buttons - proper touch targets */
+  .toolbar-search-btn,
+  .toolbar-bookmark-btn {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+  }
+
+  /* Icon sizing for mobile */
+  .toolbar-search-btn svg,
+  .toolbar-bookmark-btn svg,
+  .mobile-menu-button svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
 }
 
-/* Hide mobile menu button on desktop */
+/* Desktop styles - keep original layout */
 @media (min-width: 769px) {
   .mobile-menu-button {
     display: none !important;
@@ -118,6 +178,18 @@
 
   .sidebar-backdrop {
     display: none !important;
+  }
+
+  /* Reset toolbar to desktop size */
+  .left-toolbar {
+    width: 240px !important;
+    height: 48px !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+
+  /* Reset main content margin for desktop */
+  div[style*="marginTop"][style*="60px"] {
+    margin-top: 48px !important;
   }
 }
 
@@ -149,10 +221,12 @@
     padding: 0.5rem !important;
   }
 
-  /* Title input */
-  .diary-editor-container input[type="text"] {
-    font-size: 1.5rem !important;
+  /* Title input - Make date heading bigger on mobile */
+  .diary-editor-container input[type="text"],
+  .diary-title-input {
+    font-size: 1.75rem !important;
     padding: 0.75rem !important;
+    padding-top: 3.5rem !important; /* Extra space for hamburger menu */
   }
 
   /* Textarea */
@@ -197,11 +271,13 @@
    ============================================ */
 
 @media (max-width: 768px) {
-  /* ===== AI ANALYSIS CONTAINER ===== */
+  /* ===== AI ANALYSIS CONTAINER - BIGGER ===== */
   .ai-analysis-container {
-    padding: 1rem 1.25rem !important;
+    padding: 1.5rem 1rem !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
     max-width: 100% !important;
-    overflow-x: hidden;
+    overflow-x: hidden !important;
   }
 
   /* ===== HEADER SECTION - PRISM'S ANALYSIS ===== */
@@ -219,16 +295,10 @@
     margin-top: 0.25rem !important;
   }
 
-  /* Regenerate button - mobile positioning */
-  .ai-analysis-container button[title*="Regenerate"] {
-    position: relative !important;
-    top: auto !important;
-    right: auto !important;
-    margin-top: 1rem !important;
-    width: 100% !important;
-    padding: 0.75rem 1rem !important;
-    font-size: 0.875rem !important;
-    min-height: 48px !important;
+  /* Regenerate button - HIDDEN ON MOBILE */
+  .ai-analysis-container button[title*="Regenerate"],
+  .ai-analysis-container button[title*="regenerate"] {
+    display: none !important;
   }
 
   /* ===== SECTION HEADINGS ===== */
@@ -264,15 +334,33 @@
     display: none; /* Chrome/Safari */
   }
 
-  /* Tab buttons */
+  /* Tab buttons - ALWAYS VISIBLE */
   .tab-button,
   .ai-analysis-container button[style*="flex: 1"] {
-    padding: 0.875rem 1.25rem !important;
-    font-size: 0.875rem !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.8125rem !important;
     white-space: nowrap !important;
+    min-width: 0 !important;
     flex-shrink: 0 !important;
-    min-height: 48px !important;
-    border-radius: 10px !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  /* Tab container - prevent overflow */
+  .ai-analysis-container > div[style*="borderTopLeftRadius"] {
+    padding: 0.5rem !important;
+  }
+
+  .ai-analysis-container > div[style*="borderTopLeftRadius"] > div[style*="display: flex"] {
+    gap: 0.375rem !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+
+  .ai-analysis-container > div[style*="borderTopLeftRadius"] > div[style*="display: flex"]::-webkit-scrollbar {
+    display: none !important;
   }
 
   /* Active tab indicator */
@@ -280,20 +368,46 @@
     font-weight: 600 !important;
   }
 
-  /* ===== PRISM'S RESPONSE TEXT BOX ===== */
-  .ai-analysis-container .card,
-  .ai-analysis-container div[style*="background"][style*="padding"] {
-    padding: 1.25rem !important;
-    margin-bottom: 1.5rem !important;
-    border-radius: 12px !important;
+  /* ===== UPDATED WARNING - FIX WIDTH ===== */
+  .ai-analysis-container > div[style*="position: absolute"][style*="top: 1rem"] {
+    max-width: calc(100% - 2rem) !important;
+    right: 1rem !important;
+    left: auto !important;
+    font-size: 0.65rem !important;
+    padding: 0.25rem 0.4rem !important;
   }
 
-  /* Response text content */
+  .ai-analysis-container > div[style*="position: absolute"] span {
+    font-size: 0.65rem !important;
+  }
+
+  /* ===== TAB CONTAINER - ROUND BOTTOM ===== */
+  .ai-analysis-container > div[style*="padding: 2rem"],
+  .ai-analysis-container > div.card > div[style*="padding: 2rem"] {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-top: none !important;
+    border-bottom-left-radius: 16px !important;
+    border-bottom-right-radius: 16px !important;
+  }
+
+  /* ===== PRISM'S RESPONSE TEXT BOX - BIGGER ===== */
+  .ai-analysis-container .card,
+  .ai-analysis-container div[style*="background"][style*="padding"] {
+    padding: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
+    border-radius: 12px !important;
+    max-width: 100% !important;
+    overflow-wrap: break-word !important;
+    min-height: 200px !important;
+  }
+
+  /* Response text content - BIGGER */
   .ai-analysis-container .card p,
   .ai-analysis-container div[style*="background"] p {
-    font-size: 0.9375rem !important; /* 15px */
-    line-height: 1.7 !important;
-    margin-bottom: 1rem !important;
+    font-size: 1rem !important; /* 16px */
+    line-height: 1.75 !important;
+    margin-bottom: 1.25rem !important;
   }
 
   /* Copy button in corner */
@@ -307,18 +421,24 @@
     right: 0.5rem !important;
   }
 
-  /* ===== KEY INSIGHTS SECTION ===== */
-  .ai-analysis-container h2 + div,
+  /* ===== KEY INSIGHTS SECTION - VERTICAL STACK (WIDE CARDS) ===== */
+  .takeaways-section .takeaways-grid,
   .insights-grid {
     display: flex !important;
     flex-direction: column !important;
     gap: 1rem !important;
+    width: 100% !important;
   }
 
-  /* Individual insight cards */
+  /* Individual insight cards - Full width, stacked vertically */
+  .takeaways-section .insight-card,
+  .insights-grid > div,
   .ai-analysis-container div[style*="border"][style*="padding"] {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
     padding: 1.25rem !important;
-    margin-bottom: 1rem !important;
+    margin-bottom: 0 !important;
     border-radius: 12px !important;
   }
 
@@ -364,16 +484,28 @@
     margin-right: 0.5rem !important;
   }
 
-  /* ===== "ONE THING TO TRY NEXT" SECTION ===== */
+  /* ===== "ONE THING TO TRY NEXT" SECTION - WIDER ===== */
   .ai-analysis-container div[style*="background: rgba"][style*="purple"] {
     padding: 1.5rem !important;
     margin-bottom: 1.5rem !important;
     border-radius: 14px !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   .ai-analysis-container div[style*="background: rgba"] p {
     font-size: 0.875rem !important;
     line-height: 1.65 !important;
+  }
+  
+  /* ===== SPIN ANIMATION FOR REGENERATE BUTTON ===== */
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   /* ===== CHAT INPUT SECTION ===== */
@@ -933,6 +1065,21 @@
     max-width: 100%;
     height: auto;
   }
+
+  /* Fix ImmersiveLoadingScreen animation glitching on mobile */
+  div[style*="position: fixed"][style*="zIndex: 9999"] {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  /* Stabilize star animations on mobile */
+  div[style*="position: fixed"][style*="borderRadius: 50%"] {
+    will-change: opacity;
+    transform: translate3d(0, 0, 0);
+    -webkit-transform: translate3d(0, 0, 0);
+  }
 }
 
 /* ============================================
@@ -962,5 +1109,114 @@
   .mobile-menu-button:active {
     background: var(--bg-quaternary) !important;
     transform: scale(0.95) !important;
+  }
+}
+
+/* ============================================
+   NOTE TAB BAR - MOBILE FIX
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Fix tab bar positioning on mobile */
+  div[style*="position: fixed"][style*="left: 240px"] {
+    left: 0 !important;
+    padding-left: 48px !important; /* Space for hamburger menu */
+    padding-right: 48px !important; /* Space for search icon */
+  }
+
+  /* Fix tab text wrapping */
+  div[data-note-id] span {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: block !important;
+  }
+
+  /* Ensure tabs don't get cut off */
+  div[data-note-id] {
+    min-width: 100px !important;
+    max-width: 150px !important;
+  }
+}
+
+/* ============================================
+   CHAT INPUT - FIX CUTOFF TEXT
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Fix chat input placeholder cutoff */
+  .ai-analysis-container textarea,
+  .ai-analysis-container input[type="text"],
+  .ai-analysis-container input[placeholder*="follow-up"] {
+    padding: 0.875rem 1rem !important;
+    font-size: 0.9375rem !important;
+    line-height: 1.5 !important;
+    min-height: 48px !important;
+  }
+
+  /* Ensure placeholder text is visible */
+  .ai-analysis-container textarea::placeholder,
+  .ai-analysis-container input::placeholder {
+    font-size: 0.875rem !important;
+    line-height: 1.5 !important;
+    opacity: 0.6 !important;
+  }
+}
+
+/* ============================================
+   PLAYBOOK - ADD PROTOCOL BUTTON
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Make Add Protocol button smaller and more subtle */
+  .add-protocol-button {
+    width: auto !important;
+    max-width: 180px !important;
+    padding: 0.65rem 1.25rem !important;
+    font-size: 0.875rem !important;
+    margin: 0 auto !important;
+    display: flex !important;
+  }
+  
+  /* Ensure button doesn't stretch full width */
+  button[style*="#8b5cf6"] {
+    max-width: 180px !important;
+  }
+}
+
+/* ============================================
+   MY NOTES - FILTER BUTTONS STYLING
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Match dark theme for filter container */
+  div[style*="All"][style*="Analyzed"] {
+    background: rgba(17, 24, 39, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(10px) !important;
+  }
+
+  /* Remove purple background, use subtle activation */
+  button[style*="All"],
+  button[style*="Analyzed"],
+  button[style*="Unanalyzed"] {
+    background: transparent !important;
+    transition: all 0.2s ease !important;
+  }
+
+  /* Active state - subtle like elsewhere */
+  button[style*="All"]:active,
+  button[style*="Analyzed"]:active,
+  button[style*="Unanalyzed"]:active,
+  button[style*="background: rgba(139, 92, 246"] {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #e5e7eb !important;
+  }
+
+  /* Hover state */
+  button[style*="All"]:hover,
+  button[style*="Analyzed"]:hover,
+  button[style*="Unanalyzed"]:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
   }
 }
