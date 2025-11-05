@@ -6,7 +6,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { userProfileService } from '../../services/userProfileService';
 import type { UserProfile } from '../../services/userProfileService';
 import { importDiaryEntries } from '../../utils/importDiaryEntries';
-import { storageAdapter, switchToLocalStorage, switchToSupabase } from '../../services/storageAdapter';
 import { usageTrackingService } from '../../services/usageTrackingService';
 import './settings.css';
 import '../../styles/page-layout.css';
@@ -26,9 +25,7 @@ const SettingsView: React.FC = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [privacyMode, setPrivacyMode] = useState(false);
-  const [showPrivacyWarning, setShowPrivacyWarning] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
+  const [, setPrivacyMode] = useState(false);
   const [usageStats, setUsageStats] = useState<{ count: number; limit: number; tier: string } | null>(null);
 
   useEffect(() => {

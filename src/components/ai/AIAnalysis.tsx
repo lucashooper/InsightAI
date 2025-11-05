@@ -26,7 +26,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
   const [analysis, setAnalysis] = useState<EnhancedAIAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastAnalyzedContent, setLastAnalyzedContent] = useState<string>('');
-  const [isContentChangedDismissed, setIsContentChangedDismissed] = useState(false);
+  const [isContentChangedDismissed] = useState(false);
   const [activeTab, setActiveTab] = useState<AnalysisTab>('chat');
   // Removed unused preview state to satisfy strict TS
   // const [isResponseExpanded, setIsResponseExpanded] = useState(false);

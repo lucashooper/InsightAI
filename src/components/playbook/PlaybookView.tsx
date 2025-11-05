@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Target, Plus } from 'lucide-react';
 import { PremiumIcons } from '../icons/PremiumIcons';
 import PageContainer from '../common/PageContainer';
-import PageHeader from '../common/PageHeader';
 import { actionableInsightsService } from '../../services/actionableInsightsService';
 import { dailyProtocolService } from '../../services/dailyProtocolService';
 import Emoji from '../common/Emoji';
@@ -710,7 +709,7 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
         }
       `}</style>
       
-    <PageContainer style={{ paddingTop: '0.5rem' }}>
+    <PageContainer>
       {/* Custom Header - Title and Button on Same Line */}
       <div style={{
         display: 'flex',

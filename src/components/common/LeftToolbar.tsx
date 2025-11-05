@@ -14,7 +14,7 @@ const LeftToolbar: React.FC<LeftToolbarProps> = ({
   onBookmarkClick, 
   bookmarkButtonRef,
   onMobileMenuClick,
-  isMobileMenuOpen 
+  isMobileMenuOpen: _isMobileMenuOpen 
 }) => {
   return (
     <div 

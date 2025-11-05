@@ -14,9 +14,6 @@ import PlaybookView from './components/playbook/PlaybookView';
 import MyNotesView from './components/notes/MyNotesView';
 import AnimatedBackground from './components/common/AnimatedBackground';
 import { storageAdapter } from './services/storageAdapter';
-import { PremiumIcons } from './components/icons/PremiumIcons';
-import { keywordHighlightService } from './services/keywordHighlightService';
-import type { DetectedPattern } from './services/keywordHighlightService';
 import NoteTabBar from './components/common/NoteTabBar';
 import SearchModal from './components/common/SearchModal';
 import LeftToolbar from './components/common/LeftToolbar';
@@ -33,8 +30,6 @@ const App: React.FC = () => {
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [blurredNoteIds, setBlurredNoteIds] = useState<Set<string>>(new Set());
   const [streakData, setStreakData] = useState({ currentStreak: 0, longestStreak: 0, lastEntryDate: null as string | null });
-  const [detectedPatterns, setDetectedPatterns] = useState<DetectedPattern[]>([]);
-  const [highlightingEnabled, setHighlightingEnabled] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openTabs, setOpenTabs] = useState<DiaryEntry[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -109,10 +104,6 @@ const App: React.FC = () => {
       
       // Detect patterns across all notes
       if (fetchedNotes.length > 0) {
-        const patterns = keywordHighlightService.detectPatterns(fetchedNotes);
-        console.log('🔍 Detected patterns:', patterns);
-        setDetectedPatterns(patterns);
-        
         if (!selectedNote) {
           console.log('🎯 Setting initial selected note:', fetchedNotes[0].title);
           setSelectedNote(fetchedNotes[0]);
@@ -321,10 +312,6 @@ const App: React.FC = () => {
     setNotes(reorderedNotes);
   }, []);
 
-  const handleToggleHighlighting = useCallback(() => {
-    setHighlightingEnabled(!highlightingEnabled);
-  }, [highlightingEnabled]);
-
   const handleNavigateToAnalysis = useCallback(() => {
     setActiveTab('analysis');
   }, []);
@@ -453,9 +440,6 @@ const App: React.FC = () => {
                   <DiaryEditor 
                     note={selectedNote} 
                     onSave={handleSave}
-                    detectedPatterns={detectedPatterns}
-                    highlightingEnabled={highlightingEnabled}
-                    onToggleHighlighting={handleToggleHighlighting}
                     onNavigateToAnalysis={handleNavigateToAnalysis}
                     isFocusMode={isFocusMode}
                     onToggleFocusMode={handleToggleFocusMode}

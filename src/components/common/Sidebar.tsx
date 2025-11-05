@@ -66,7 +66,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     return (lastSpace > 60 ? truncated.substring(0, lastSpace) : truncated) + '...';
   };
 
-  const handleNoteClick = (noteId: string, noteTitle: string) => {
+  const handleNoteClick = (noteId: string, _noteTitle: string) => {
     onSelect(noteId);
   };
 
@@ -74,7 +74,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     onAdd();
   };
 
-  const handleDeleteClick = (noteId: string, noteTitle: string) => {
+  const handleDeleteClick = (noteId: string, _noteTitle: string) => {
     onDelete(noteId);
   };
 
