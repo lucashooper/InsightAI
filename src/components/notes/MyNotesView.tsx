@@ -167,17 +167,9 @@ const MyNotesView: React.FC<MyNotesViewProps> = ({ setActiveView, setActiveNoteI
           paddingBottom: '24px',
           flexWrap: 'wrap',
           alignItems: 'center',
-          position: 'relative'
+          position: 'relative',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.06)'
         }}>
-          {/* Full-width border that extends to edges */}
-          <div style={{
-            position: 'absolute',
-            bottom: 0,
-            left: '-2rem',
-            right: '-2rem',
-            height: '1px',
-            background: 'rgba(255, 255, 255, 0.06)'
-          }} />
           {/* Search Bar */}
           <div style={{
             flex: '1 1 300px',

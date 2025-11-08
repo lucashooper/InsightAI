@@ -427,15 +427,24 @@ const SettingsView: React.FC = () => {
                 style={{
                   padding: '0.5rem 1rem',
                   borderRadius: '6px',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  background: 'rgba(239, 68, 68, 0.1)',
-                  color: '#ef4444',
+                  border: '1px solid rgba(156, 163, 175, 0.2)',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  color: '#9ca3af',
                   cursor: 'pointer',
                   fontSize: '0.9rem',
                   fontWeight: '500',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.5rem'
+                  gap: '0.5rem',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                  e.currentTarget.style.color = '#e5e7eb';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                  e.currentTarget.style.color = '#9ca3af';
                 }}
               >
                 <LogOut size={16} />

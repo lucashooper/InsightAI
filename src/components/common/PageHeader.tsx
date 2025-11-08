@@ -17,7 +17,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ icon, title, subtitle, actions 
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginBottom: '1.5rem',
+      marginBottom: '1rem',
       gap: '1rem'
     }}>
       <div style={{

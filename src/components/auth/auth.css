@@ -189,6 +189,8 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin-bottom: 0.5rem;
+  line-height: 1.3;
+  padding-bottom: 0.2rem;
 }
 
 .auth-subtitle {
@@ -394,22 +396,22 @@
   width: 100% !important;
   height: 48px !important;
   border-radius: 10px !important;
-  background: rgba(8, 8, 18, 0.8) !important;
-  border: 1px solid rgba(139, 92, 246, 0.15) !important;
+  background: rgba(30, 30, 35, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
   transition: all 0.2s ease !important;
   font-family: inherit !important;
   font-size: 0.95rem !important;
   font-weight: 500 !important;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
   padding-left: 16px !important;
 }
 
 .google-oauth-wrapper button:hover,
 .google-oauth-wrapper div[role="button"]:hover {
-  background: rgba(15, 15, 30, 0.9) !important;
-  border-color: rgba(139, 92, 246, 0.3) !important;
+  background: rgba(40, 40, 45, 0.9) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
   transform: translateY(-1px) !important;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
 }
 
 .google-oauth-wrapper button:active,
@@ -463,7 +465,7 @@
   background: #1A1A1A !important;
   border: 1px solid #3F3F3F !important;
   border-radius: 10px !important;
-  padding: 0.875rem 1rem 0.875rem 3.5rem !important;
+  padding: 0.875rem 1rem 0.875rem 3.75rem !important;
   color: white !important;
   font-size: 0.95rem !important;
   transition: all 0.3s ease !important;
@@ -481,7 +483,6 @@
 .auth-input-field::placeholder {
   color: rgba(255, 255, 255, 0.35) !important;
   font-weight: 400 !important;
-  padding-left: 2.5rem !important;
 }
 
 

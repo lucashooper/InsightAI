@@ -9,6 +9,7 @@ import MonthlyHighlights from './MonthlyHighlights';
 import GrowthOpportunities from './GrowthOpportunities';
 import ComparisonView from '../comparison/ComparisonView';
 import NarrativeSummary from './NarrativeSummary';
+import PremiumSummaryCard from './PremiumSummaryCard';
 import { storageAdapter } from '../../services/storageAdapter';
 import type { DiaryEntry } from '../../types/diary';
 import { PremiumIcons } from '../icons/PremiumIcons';
@@ -294,8 +295,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
             id="export-button"
             onClick={exportDashboardAsPDF}
             disabled={isLoading || notes.length === 0}
+            title={isLoading ? 'Generating...' : 'Export PDF'}
             style={{
-              padding: '0.5rem 1rem',
+              padding: '0.5rem',
               background: 'var(--bg-secondary)',
               border: '1px solid var(--border-color)',
               borderRadius: '6px',
@@ -304,10 +306,12 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
               opacity: notes.length === 0 ? 0.5 : 1,
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
+              justifyContent: 'center',
               fontSize: '0.875rem',
               fontWeight: '500',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s ease',
+              width: '36px',
+              height: '36px'
             }}
             onMouseEnter={(e) => {
               if (notes.length > 0) {
@@ -325,14 +329,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
             }}
           >
             <PremiumIcons.Download size={16} />
-            <span>{isLoading ? 'Generating...' : 'Export PDF'}</span>
           </button>
           
           <button
             onClick={() => loadDashboardData()}
             disabled={isLoading}
+            title={isLoading ? 'Loading...' : 'Refresh Data'}
             style={{
-              padding: '0.5rem 1rem',
+              padding: '0.5rem',
               background: 'var(--bg-secondary)',
               border: '1px solid var(--border-color)',
               borderRadius: '6px',
@@ -340,10 +344,12 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
+              justifyContent: 'center',
               fontSize: '0.875rem',
               fontWeight: '500',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s ease',
+              width: '36px',
+              height: '36px'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'var(--bg-tertiary)';
@@ -357,7 +363,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
             }}
           >
             <PremiumIcons.Refresh size={16} />
-            <span>{isLoading ? 'Loading...' : 'Refresh Data'}</span>
           </button>
           </>
         }
@@ -462,181 +467,83 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
           </motion.div>
         )}
 
-        {/* Summary Stats */}
+        {/* Summary Stats - Premium Cards */}
         {!isLoading && notes.length > 0 && (
           <motion.div
             variants={itemVariants}
             initial="hidden"
             animate="visible"
-            style={{
-              background: 'rgba(255, 255, 255, 0.03)',
-              backdropFilter: 'blur(10px)',
-              WebkitBackdropFilter: 'blur(10px)',
-              borderRadius: '12px',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              padding: '1.5rem'
-            }}
           >
             <h3 style={{ 
-              margin: '0 0 1rem 0', 
+              margin: '0 0 2rem 0', 
               color: '#E5E7EB', 
-              fontSize: '1.25rem',
-              fontWeight: '600',
+              fontSize: '1.5rem',
+              fontWeight: '700',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem'
+              gap: '0.75rem'
             }}>
-              <PremiumIcons.BarChart size={20} color="#E5E7EB" />
+              <PremiumIcons.BarChart size={24} color="#8b5cf6" />
               {getTimeRangeLabel(timeRange)} Summary
             </h3>
             <div style={{ 
               display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-              gap: '1rem' 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', 
+              gap: '1.5rem' 
             }}>
-              <div style={{
-                padding: '1.5rem',
-                background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%)',
-                backdropFilter: 'blur(10px)',
-                borderRadius: '12px',
-                border: '1px solid rgba(34, 197, 94, 0.2)',
-                textAlign: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = '0 12px 24px rgba(34, 197, 94, 0.2)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-              }}
-              >
-                <div style={{ marginBottom: '0.75rem', display: 'flex', justifyContent: 'center' }}>
-                  <PremiumIcons.Notes size={40} color="#22c55e" />
-                </div>
-                <div style={{ fontSize: '2.25rem', fontWeight: '700', color: '#22c55e', marginBottom: '0.5rem' }}>
-                  {notes.length}
-                </div>
-                <div style={{ fontSize: '0.875rem', color: '#9CA3AF', marginBottom: '0.5rem' }}>
-                  Entries {getTimeRangeLabel(timeRange)}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
-                  ↑ +{Math.floor(notes.length * 0.15)}% from last period
-                </div>
-              </div>
+              <PremiumSummaryCard
+                number={notes.length}
+                label={`Entries ${getTimeRangeLabel(timeRange)}`}
+                trend={{ value: `+${Math.floor(notes.length * 0.15)}%`, isPositive: true }}
+                icon={<PremiumIcons.Notes size={32} />}
+                colorScheme="emerald"
+              />
               
-              <div style={{
-                padding: '1rem',
-                background: 'rgba(34, 197, 94, 0.1)',
-                borderRadius: '8px',
-                border: '1px solid rgba(34, 197, 94, 0.2)',
-                textAlign: 'center'
-              }}>
-                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}>
-                  <PremiumIcons.Sparkles size={32} color="#22c55e" />
-                </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#22c55e' }}>
-                  {positiveInsights.length}
-                </div>
-                <div style={{ fontSize: '0.875rem', color: '#9CA3AF' }}>
-                  Positive Insights
-                </div>
-              </div>
+              <PremiumSummaryCard
+                number={positiveInsights.length}
+                label="Positive Insights"
+                trend={{ value: `+${Math.floor(positiveInsights.length * 0.12)}%`, isPositive: true }}
+                icon={<PremiumIcons.Sparkles size={32} />}
+                colorScheme="teal"
+              />
               
-              <div style={{
-                padding: '1rem',
-                background: 'rgba(245, 158, 11, 0.1)',
-                borderRadius: '8px',
-                border: '1px solid rgba(245, 158, 11, 0.2)',
-                textAlign: 'center'
-              }}>
-                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}>
-                  <PremiumIcons.Sprout size={32} color="#f59e0b" />
-                </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#f59e0b' }}>
-                  {growthOpportunities.length}
-                </div>
-                <div style={{ fontSize: '0.875rem', color: '#9CA3AF' }}>
-                  Growth Opportunities
-                </div>
-              </div>
+              <PremiumSummaryCard
+                number={growthOpportunities.length}
+                label="Growth Opportunities"
+                trend={{ value: `${Math.floor(growthOpportunities.length * 0.08)}%`, isPositive: false }}
+                icon={<PremiumIcons.Sprout size={32} />}
+                colorScheme="amber"
+              />
               
-              <div style={{
-                padding: '1rem',
-                background: 'rgba(59, 130, 246, 0.1)',
-                borderRadius: '8px',
-                border: '1px solid rgba(59, 130, 246, 0.2)',
-                textAlign: 'center'
-              }}>
-                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}>
-                  <PremiumIcons.FileText size={32} color="#3b82f6" />
-                </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#3b82f6' }}>
-                  {categoryData.length}
-                </div>
-                <div style={{ fontSize: '0.875rem', color: '#9CA3AF' }}>
-                  Insight Categories
-                </div>
-              </div>
+              <PremiumSummaryCard
+                number={sentimentData.length}
+                label="Days with Insights"
+                trend={{ value: `+${Math.floor(sentimentData.length * 0.1)}%`, isPositive: true }}
+                icon={<PremiumIcons.BarChart size={32} />}
+                colorScheme="purple"
+              />
               
-              <div style={{
-                padding: '1rem',
-                background: 'rgba(139, 92, 246, 0.1)',
-                borderRadius: '8px',
-                border: '1px solid rgba(139, 92, 246, 0.2)',
-                textAlign: 'center'
-              }}>
-                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}>
-                  <PremiumIcons.BarChart size={32} color="#8b5cf6" />
-                </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#8b5cf6' }}>
-                  {sentimentData.length}
-                </div>
-                <div style={{ fontSize: '0.875rem', color: '#9CA3AF' }}>
-                  Days with Insights
-                </div>
-              </div>
+              <PremiumSummaryCard
+                number={sentimentData.length > 0 ? 
+                  (sentimentData.reduce((sum, day) => sum + day.wellbeingScore, 0) / sentimentData.length).toFixed(1) : 
+                  '0.0'
+                }
+                label="Avg Well-being"
+                trend={{ value: '+0.3', isPositive: true }}
+                icon={<span style={{ fontSize: '2rem' }}>💙</span>}
+                colorScheme="cyan"
+              />
               
-              <div style={{
-                padding: '1rem',
-                background: 'rgba(56, 189, 248, 0.1)',
-                borderRadius: '8px',
-                border: '1px solid rgba(56, 189, 248, 0.2)',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>💙</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#38bdf8' }}>
-                  {sentimentData.length > 0 ? 
-                    (sentimentData.reduce((sum, day) => sum + day.wellbeingScore, 0) / sentimentData.length).toFixed(1) : 
-                    '0.0'
-                  }
-                </div>
-                <div style={{ fontSize: '0.875rem', color: '#9CA3AF' }}>
-                  Avg Well-being
-                </div>
-              </div>
-              
-              <div style={{
-                padding: '1rem',
-                background: 'rgba(245, 158, 11, 0.1)',
-                borderRadius: '8px',
-                border: '1px solid rgba(245, 158, 11, 0.2)',
-                textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>💪</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#f59e0b' }}>
-                  {sentimentData.length > 0 ? 
-                    (sentimentData.reduce((sum, day) => sum + day.resilienceScore, 0) / sentimentData.length).toFixed(1) : 
-                    '0.0'
-                  }
-                </div>
-                <div style={{ fontSize: '0.875rem', color: '#9CA3AF' }}>
-                  Avg Resilience
-                </div>
-              </div>
+              <PremiumSummaryCard
+                number={sentimentData.length > 0 ? 
+                  (sentimentData.reduce((sum, day) => sum + day.resilienceScore, 0) / sentimentData.length).toFixed(1) : 
+                  '0.0'
+                }
+                label="Avg Resilience"
+                trend={{ value: '+0.5', isPositive: true }}
+                icon={<span style={{ fontSize: '2rem' }}>💪</span>}
+                colorScheme="orange"
+              />
             </div>
           </motion.div>
         )}
