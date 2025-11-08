@@ -390,7 +390,7 @@ const App: React.FC = () => {
           onClick={() => setIsMobileMenuOpen(false)}
         />
         
-        <div style={{ display: 'flex', flex: '1 1 auto', minHeight: 0, minWidth: 0, width: '100%', maxWidth: '100%', overflow: 'hidden', marginTop: isFocusMode ? '0' : '60px', position: 'relative' }} className={isFocusMode ? 'focus-mode' : ''}>
+        <div style={{ display: 'flex', flex: '1 1 auto', minHeight: 0, minWidth: 0, width: '100%', maxWidth: '100%', overflow: 'hidden', marginTop: isFocusMode ? '0' : '48px', position: 'relative' }} className={isFocusMode ? 'focus-mode' : ''}>
           {!isFocusMode && (
             <div className={`sidebar-container ${isMobileMenuOpen ? 'sidebar-open' : ''}`} style={{ marginTop: '-60px' }}>
               <Sidebar 
