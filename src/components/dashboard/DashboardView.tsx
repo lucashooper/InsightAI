@@ -26,11 +26,6 @@ interface SentimentDataPoint {
   entrySnippet?: string;
 }
 
-interface CategoryDataPoint {
-  name: string;
-  value: number;
-}
-
 interface PositiveInsight {
   insight: string;
   sentiment: "positive" | "opportunity";
@@ -57,7 +52,6 @@ interface DashboardViewProps {
 const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveNoteId }) => {
   const [notes, setNotes] = useState<DiaryEntry[]>([]);
   const [sentimentData, setSentimentData] = useState<SentimentDataPoint[]>([]);
-  const [categoryData, setCategoryData] = useState<CategoryDataPoint[]>([]);
   const [positiveInsights, setPositiveInsights] = useState<PositiveInsight[]>([]);
   const [growthOpportunities, setGrowthOpportunities] = useState<GrowthOpportunity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -103,7 +97,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
       const growthOpportunitiesData = storageAdapter.getGrowthOpportunities(notesData);
       
       setSentimentData(sentimentFlowData);
-      setCategoryData(categoryBreakdownData);
       setPositiveInsights(positiveInsightsData);
       setGrowthOpportunities(growthOpportunitiesData);
       
@@ -119,7 +112,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
       console.error('❌ Error loading dashboard data:', error);
       setNotes([]);
       setSentimentData([]);
-      setCategoryData([]);
       setPositiveInsights([]);
       setGrowthOpportunities([]);
     } finally {
