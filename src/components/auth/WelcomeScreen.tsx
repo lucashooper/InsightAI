@@ -12,10 +12,10 @@ const WelcomeScreen: React.FC = () => {
     if (!user) return;
     
     setLoading(true);
-    // Mark welcome as seen (not completed yet - membership comes next)
+    // Mark welcome as seen (username setup comes next)
     localStorage.setItem('insightai-welcome-seen', 'true');
     setLoading(false);
-    // Reload to trigger AuthGate to show membership page
+    // Reload to trigger AuthGate to show username setup
     window.location.reload();
   };
 

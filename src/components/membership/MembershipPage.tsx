@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { PremiumIcons } from '../icons/PremiumIcons';
 import { useAuth } from '../../contexts/AuthContext';
 import { userProfileService } from '../../services/userProfileService';
+import { Check, X } from 'lucide-react';
 import './membership.css';
 
 interface MembershipPageProps {
@@ -62,8 +64,29 @@ const MembershipPage: React.FC<MembershipPageProps> = ({ onSkip, showCloseButton
     }
   };
 
+  const freePlanFeatures = [
+    { text: 'Unlimited diary entries', included: true },
+    { text: '1 AI analysis per day', included: true },
+    { text: 'Basic insights & patterns', included: true },
+    { text: 'Limited analysis depth', included: false },
+    { text: 'Advanced growth recommendations', included: false },
+    { text: 'Priority support', included: false },
+    { text: 'Export & backup features', included: false },
+  ];
+
+  const premiumPlanFeatures = [
+    { text: 'Unlimited diary entries', included: true },
+    { text: 'Unlimited AI analyses', included: true },
+    { text: 'Deep insights & patterns', included: true },
+    { text: 'Advanced emotional tracking', included: true },
+    { text: 'Personalized growth recommendations', included: true },
+    { text: 'Priority support', included: true },
+    { text: 'Export & backup features', included: true },
+    { text: 'Early access to new features', included: true },
+  ];
+
   return (
-    <div className="membership-container">
+    <div className="membership-container-v2">
       {/* Close Button */}
       {showCloseButton && (
         <button
@@ -75,70 +98,125 @@ const MembershipPage: React.FC<MembershipPageProps> = ({ onSkip, showCloseButton
         </button>
       )}
       
-      <div className="membership-content">
-        {/* Pricing Card */}
-        <div className="pricing-card">
-          {/* Logo inside card */}
-          <div className="membership-logo">
-            <img 
-              src="/Insight-logo.png" 
-              alt="InsightAI Logo" 
-              className="logo-image"
-            />
-          </div>
-
-          {/* Header */}
-          <h1 className="membership-title">Unlock Your Full Potential</h1>
-          <p className="membership-subtitle">
-            Start your 3-day free trial and experience premium insights
+      <div className="membership-content-v2">
+        {/* Header */}
+        <motion.div 
+          className="membership-header"
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h1 className="membership-title-v2">Choose Your Plan</h1>
+          <p className="membership-subtitle-v2">
+            Select the plan that best fits your needs
           </p>
-          
-          {/* Price */}
-          <div className="pricing-amount">
-            <span className="currency">£</span>
-            <span className="price">5</span>
-            <span className="period">/month</span>
-          </div>
+        </motion.div>
 
-          {/* CTA Button */}
-          <button 
-            className="subscribe-button"
-            onClick={handleSubscribe}
-            disabled={isLoading}
+        {/* Plans Grid */}
+        <div className="plans-grid">
+          {/* Free Plan */}
+          <motion.div 
+            className="plan-card free-plan"
+            initial={{ x: -50, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
           >
-            {isLoading ? (
-              <>
-                <div className="spinner"></div>
-                Processing...
-              </>
-            ) : (
-              <>
-                Start Free Trial
-                <PremiumIcons.ArrowRight size={20} />
-              </>
-            )}
-          </button>
-
-          {error && (
-            <div className="error-message">
-              {error}
+            <div className="plan-header">
+              <h3 className="plan-name">Free Plan</h3>
+              <div className="plan-price">
+                <span className="price-amount">$0</span>
+                <span className="price-period">/month</span>
+              </div>
+              <p className="plan-description">
+                Perfect for getting started with InsightAI
+              </p>
             </div>
-          )}
 
-          <div className="pricing-note">
-            Cancel anytime. No commitment required.
-          </div>
+            <div className="plan-features">
+              {freePlanFeatures.map((feature, index) => (
+                <div key={index} className={`feature-row ${!feature.included ? 'feature-disabled' : ''}`}>
+                  {feature.included ? (
+                    <Check size={18} className="feature-icon-check" />
+                  ) : (
+                    <X size={18} className="feature-icon-x" />
+                  )}
+                  <span className="feature-text">{feature.text}</span>
+                </div>
+              ))}
+            </div>
+
+            <button 
+              className="plan-button free-button"
+              onClick={handleSkip}
+            >
+              Continue with Free
+            </button>
+          </motion.div>
+
+          {/* Premium Plan */}
+          <motion.div 
+            className="plan-card premium-plan"
+            initial={{ x: 50, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <div className="recommended-badge">
+              ⭐ Recommended
+            </div>
+            
+            <div className="plan-header">
+              <h3 className="plan-name">Premium Plan</h3>
+              <div className="plan-price">
+                <span className="price-amount">£5</span>
+                <span className="price-period">/month</span>
+              </div>
+              <p className="plan-description">
+                14-day free trial • No credit card required
+              </p>
+            </div>
+
+            <div className="plan-features">
+              {premiumPlanFeatures.map((feature, index) => (
+                <div key={index} className="feature-row">
+                  <Check size={18} className="feature-icon-check premium-check" />
+                  <span className="feature-text">{feature.text}</span>
+                </div>
+              ))}
+            </div>
+
+            <button 
+              className="plan-button premium-button"
+              onClick={handleSubscribe}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <div className="spinner"></div>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  Start 14-Day Free Trial
+                  <PremiumIcons.ArrowRight size={20} />
+                </>
+              )}
+            </button>
+
+            {error && (
+              <div className="error-message">
+                {error}
+              </div>
+            )}
+          </motion.div>
         </div>
 
-        {/* Skip Option */}
-        {onSkip && (
-          <button className="skip-button" onClick={handleSkip}>
-            Or Continue With Free Plan →
-          </button>
-        )}
-
         {/* Trust Indicators */}
-        <div className="trust-indicators">
+        <motion.div 
+          className="trust-indicators-v2"
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+        >
           <div className="trust-item">
             <PremiumIcons.Lock size={16} />
             <span>Secure Payment</span>
@@ -151,7 +229,7 @@ const MembershipPage: React.FC<MembershipPageProps> = ({ onSkip, showCloseButton
             <PremiumIcons.Check size={16} />
             <span>Cancel Anytime</span>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

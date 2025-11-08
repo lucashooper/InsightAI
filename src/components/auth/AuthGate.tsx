@@ -50,29 +50,29 @@ const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
           }
           
           if (!profile) {
-            // NEW USER - Show username setup screen
-            console.log('New user detected - showing username setup for:', currentUser.id);
-            setShowUsernameSetup(true);
-            setShowWelcome(false);
-            setShowMembership(false);
+            // NEW USER - Show welcome screen FIRST
+            console.log('New user detected - showing welcome screen for:', currentUser.id);
+            const hasSeenWelcome = localStorage.getItem('insightai-welcome-seen');
+            if (!hasSeenWelcome) {
+              setShowWelcome(true);
+              setShowUsernameSetup(false);
+              setShowMembership(false);
+            } else {
+              // Seen welcome, now show username setup
+              setShowWelcome(false);
+              setShowUsernameSetup(true);
+              setShowMembership(false);
+            }
           } else if (!profile.username) {
             // Profile exists but no username - show username setup
             setShowUsernameSetup(true);
             setShowWelcome(false);
             setShowMembership(false);
           } else if (!profile.has_completed_welcome) {
-            // Has username but hasn't completed onboarding - check if they've seen welcome
-            const hasSeenWelcome = localStorage.getItem('insightai-welcome-seen');
-            if (!hasSeenWelcome) {
-              setShowUsernameSetup(false);
-              setShowWelcome(true);
-              setShowMembership(false);
-            } else {
-              // Seen welcome, show membership
-              setShowUsernameSetup(false);
-              setShowWelcome(false);
-              setShowMembership(true);
-            }
+            // Has username but hasn't completed onboarding - show membership
+            setShowUsernameSetup(false);
+            setShowWelcome(false);
+            setShowMembership(true);
           } else {
             // EXISTING user with completed onboarding
             setShowUsernameSetup(false);

@@ -797,11 +797,24 @@
   overflow: hidden;
   width: 100%;
   margin-bottom: 1.5rem;
+  outline: none;
 }
 
-.welcome-button:hover {
+.welcome-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #9d6fff 0%, #8b5cf6 50%, #7c3aed 100%);
   transform: translateY(-1px);
   box-shadow: 0 10px 28px rgba(139, 92, 246, 0.45);
+}
+
+.welcome-button:active:not(:disabled) {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #5b21b6 100%);
+  transform: translateY(0);
+}
+
+.welcome-button:focus:not(:disabled) {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3);
 }
 
 .welcome-button:disabled {
