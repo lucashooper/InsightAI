@@ -457,18 +457,20 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
       minWidth: 0,
       position: 'relative',
       boxSizing: 'border-box',
-      background: 'var(--bg-primary)',
-      overflow: 'visible'
+      background: '#0a0a0a',
+      overflow: 'visible',
+      minHeight: '100vh'
     }}>
-      {/* ==================== HEADER SECTION ==================== */}
-      {/* Contains: Title input, timestamp, and action buttons */}
+      {/* ==================== CENTERED CONTENT CONTAINER ==================== */}
       <div style={{
-        flexShrink: 0,
-        padding: '1rem 1.5rem 1rem 1.5rem',
-        background: 'var(--bg-primary)'
-      }}>
+        maxWidth: '48rem',
+        width: '100%',
+        margin: '0 auto',
+        padding: '3rem 2rem',
+        boxSizing: 'border-box'
+      } as React.CSSProperties}>
         {/* Title Input */}
-        <div style={{ marginBottom: '0.5rem' }}>
+        <div style={{ marginBottom: '0.25rem' }}>
         <input
           className="diary-title-input"
           spellCheck={false}
@@ -480,12 +482,13 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
           style={{
             border: 'none',
             background: 'transparent',
-            color: 'var(--text)',
+            color: '#ffffff',
             outline: 'none',
-            fontSize: '2rem',
-            fontWeight: '600',
+            fontSize: '1.875rem',
+            fontWeight: '700',
             lineHeight: '1.2',
-            letterSpacing: '0.01em'
+            letterSpacing: '-0.01em',
+            width: '100%'
           }}
           onFocus={(e) => {
             e.target.style.borderBottomColor = 'var(--accent)';
@@ -501,13 +504,16 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
         />
         {/* Metadata Timestamp */}
         <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
           marginTop: '0.25rem',
-          fontSize: '0.8125rem',
-          color: 'var(--text-secondary)',
-          opacity: 0.6,
-          fontWeight: '400',
-          lineHeight: '1',
+          marginBottom: '2rem',
+          fontSize: '0.875rem',
+          color: '#6b7280',
+          fontWeight: '400'
         }}>
+          <span>
           {note.updated_at ? new Date(note.updated_at).toLocaleString('en-US', {
             year: 'numeric',
             month: 'long',
@@ -516,6 +522,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
             minute: '2-digit',
             hour12: true
           }) : 'Just created'}
+          </span>
         </div>
         </div>
 
@@ -523,119 +530,110 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
         <div style={{
           display: 'flex',
           gap: '0.5rem',
-          marginTop: '1rem',
-          marginBottom: '0rem',
+          marginBottom: '2rem',
           alignItems: 'center',
           flexWrap: 'wrap'
         }}>
-        {/* Download Button */}
+        {/* Download Button - Circular */}
         <button
           onClick={handleDownload}
           title="Download as text file"
           aria-label="Download entry as text file"
           style={{
-            padding: '0.5rem',
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '6px',
-            color: 'var(--text-secondary)',
+            padding: '0.625rem',
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: 'none',
+            borderRadius: '9999px',
+            color: '#9ca3af',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '0.875rem',
-            fontWeight: '500',
             transition: 'all 0.2s ease',
-            minWidth: '36px',
-            minHeight: '36px'
+            width: '36px',
+            height: '36px'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--bg-tertiary)';
-            e.currentTarget.style.color = 'var(--text-primary)';
-            e.currentTarget.style.borderColor = 'var(--accent-primary)';
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+            e.currentTarget.style.color = '#ffffff';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'var(--bg-secondary)';
-            e.currentTarget.style.color = 'var(--text-secondary)';
-            e.currentTarget.style.borderColor = 'var(--border-color)';
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+            e.currentTarget.style.color = '#9ca3af';
           }}
         >
           <PremiumIcons.Download size={16} />
         </button>
 
-        {/* Voice Input Button */}
+        {/* Voice Input Button - Circular */}
         <button
           onClick={toggleVoiceRecording}
           title={isRecording ? 'Stop recording' : 'Start voice input'}
           aria-label={isRecording ? 'Stop voice recording' : 'Start voice recording'}
           style={{
-            padding: '0.5rem',
-            background: isRecording ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'var(--bg-secondary)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '6px',
-            color: isRecording ? 'white' : 'var(--text-secondary)',
+            padding: '0.625rem',
+            background: isRecording ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'rgba(255, 255, 255, 0.05)',
+            border: 'none',
+            borderRadius: '9999px',
+            color: isRecording ? 'white' : '#9ca3af',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '0.875rem',
-            fontWeight: '500',
             transition: 'all 0.2s ease',
             animation: isRecording ? 'pulse 2s infinite' : 'none',
-            minWidth: '36px',
-            minHeight: '36px'
+            width: '36px',
+            height: '36px'
           }}
           onMouseEnter={(e) => {
             if (!isRecording) {
-              e.currentTarget.style.background = 'var(--bg-tertiary)';
-              e.currentTarget.style.color = 'var(--text-primary)';
-              e.currentTarget.style.borderColor = 'var(--accent-primary)';
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+              e.currentTarget.style.color = '#ffffff';
             }
           }}
           onMouseLeave={(e) => {
             if (!isRecording) {
-              e.currentTarget.style.background = 'var(--bg-secondary)';
-              e.currentTarget.style.color = 'var(--text-secondary)';
-              e.currentTarget.style.borderColor = 'var(--border-color)';
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+              e.currentTarget.style.color = '#9ca3af';
             }
           }}
         >
           <PremiumIcons.Mic size={16} color={isRecording ? 'white' : 'currentColor'} />
         </button>
 
-        {/* Fullscreen Toggle Button - Icon Only */}
+        {/* Fullscreen Toggle Button - Circular */}
         {onToggleFocusMode && (
           <button
             onClick={onToggleFocusMode}
             title={isFocusMode ? 'Exit Focus Mode (F11)' : 'Enter Focus Mode (F11)'}
             aria-label={isFocusMode ? 'Exit focus mode' : 'Enter focus mode'}
             style={{
-              padding: '0.5rem',
-              background: 'var(--bg-secondary)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '6px',
-              color: 'var(--text-secondary)',
+              padding: '0.625rem',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: 'none',
+              borderRadius: '9999px',
+              color: '#9ca3af',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '1rem',
+              fontSize: '0.875rem',
               transition: 'all 0.2s ease',
-              minWidth: '36px',
-              minHeight: '36px'
+              width: '36px',
+              height: '36px'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--bg-tertiary)';
-              e.currentTarget.style.color = 'var(--text-primary)';
-              e.currentTarget.style.borderColor = 'var(--accent-primary)';
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+              e.currentTarget.style.color = '#ffffff';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--bg-secondary)';
-              e.currentTarget.style.color = 'var(--text-secondary)';
-              e.currentTarget.style.borderColor = 'var(--border-color)';
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+              e.currentTarget.style.color = '#9ca3af';
             }}
           >
-            <span>{isFocusMode ? '⏹️' : '⛶'}</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+            </svg>
           </button>
         )}
 
@@ -771,13 +769,8 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
           </span>
         )}
         </div>
-      </div>
       
       {/* ==================== CONTENT SECTION ==================== */}
-      {/* Contains: Main text editor or highlighted text view */}
-      <div style={{
-        padding: '2rem 1.5rem 2rem 1.5rem'
-      }}>
       {/* Main Content Area - Always Editable */}
       <div style={{
         width: '100%',
@@ -794,13 +787,13 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
           placeholder="Your thoughts go here..."
           style={{
             width: '100%',
-            minHeight: '200px',
+            minHeight: '300px',
             height: 'auto',
             border: 'none',
             background: 'transparent',
-            color: 'var(--text)',
-            fontSize: '1.15rem',
-            lineHeight: '1.7',
+            color: '#e5e7eb',
+            fontSize: '1rem',
+            lineHeight: '1.625',
             fontFamily: 'inherit',
             resize: 'none',
             overflow: 'hidden',
@@ -958,7 +951,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
         </div>
       )}
       </div>
-      {/* End of CONTENT SECTION */}
+      {/* End of centered content container */}
       
     </div>
   );

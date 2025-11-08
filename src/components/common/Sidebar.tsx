@@ -155,7 +155,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       width: 240,
       background: 'var(--bg-secondary)',
       borderRight: '1px solid var(--border-color)',
-      height: '100vh',
+      height: '100%',
       display: 'flex',
       flexDirection: 'column',
       padding: '2rem 0 1rem 0',

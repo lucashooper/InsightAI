@@ -16,7 +16,6 @@ const NoteTabBar: React.FC<NoteTabBarProps> = ({
   onCloseNote
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [hoveredNoteId, setHoveredNoteId] = React.useState<string | null>(null);
 
   // Auto-scroll to active tab
   useEffect(() => {
@@ -37,7 +36,8 @@ const NoteTabBar: React.FC<NoteTabBarProps> = ({
       left: '240px', // Start after sidebar
       right: 0,
       height: '48px',
-      background: 'rgba(10, 10, 15, 0.95)',
+      background: '#0a0a0a',
+      borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
       zIndex: 101
     }}>
       <div
@@ -48,8 +48,8 @@ const NoteTabBar: React.FC<NoteTabBarProps> = ({
           height: '100%',
           overflowX: 'auto',
           overflowY: 'hidden',
-          gap: '0',
-          padding: '0 16px',
+          gap: '4px',
+          padding: '8px 16px 0 16px',
           scrollbarWidth: 'none',
           msOverflowStyle: 'none'
         }}
@@ -57,7 +57,6 @@ const NoteTabBar: React.FC<NoteTabBarProps> = ({
       >
         {openNotes.map((note) => {
           const isActive = note.id === activeNoteId;
-          const isHovered = hoveredNoteId === note.id;
           
           return (
             <div
@@ -67,28 +66,26 @@ const NoteTabBar: React.FC<NoteTabBarProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                padding: '0 12px',
-                height: '100%',
+                padding: '8px 16px',
+                height: 'calc(100% - 8px)',
                 minWidth: '120px',
-                maxWidth: '180px',
+                maxWidth: '200px',
                 background: isActive 
-                  ? 'rgba(255, 255, 255, 0.08)'
+                  ? '#1a1a1a'
                   : 'transparent',
-                borderRight: '1px solid rgba(255, 255, 255, 0.06)',
+                borderRadius: '8px 8px 0 0',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease',
+                transition: 'all 0.2s ease',
                 position: 'relative',
                 flexShrink: 0
               }}
               onClick={() => onSelectNote(note)}
               onMouseEnter={(e) => {
-                setHoveredNoteId(note.id);
                 if (!isActive) {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                  e.currentTarget.style.background = '#141414';
                 }
               }}
               onMouseLeave={(e) => {
-                setHoveredNoteId(null);
                 if (!isActive) {
                   e.currentTarget.style.background = 'transparent';
                 }
@@ -98,19 +95,19 @@ const NoteTabBar: React.FC<NoteTabBarProps> = ({
               {/* Note title */}
               <span style={{
                 flex: 1,
-                fontSize: '0.8125rem',
+                fontSize: '0.875rem',
                 fontWeight: isActive ? '500' : '400',
-                color: isActive ? '#e5e7ff' : '#9ca3af',
+                color: isActive ? '#ffffff' : '#6b7280',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
-                transition: 'color 0.15s ease'
+                transition: 'color 0.2s ease'
               }}>
                 {note.title || 'Untitled'}
               </span>
 
-              {/* Close button - only show on active or hovered tabs */}
-              {(isActive || isHovered) && (
+              {/* Close button - only show on active tab */}
+              {isActive && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -120,31 +117,28 @@ const NoteTabBar: React.FC<NoteTabBarProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    width: '18px',
-                    height: '18px',
+                    width: '20px',
+                    height: '20px',
                     padding: 0,
                     background: 'transparent',
                     border: 'none',
                     borderRadius: '4px',
                     color: '#6b7280',
                     cursor: 'pointer',
-                    opacity: 0.6,
-                    transition: 'all 0.15s ease',
+                    transition: 'all 0.2s ease',
                     flexShrink: 0
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.opacity = '1';
-                    e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
-                    e.currentTarget.style.color = '#ef4444';
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                    e.currentTarget.style.color = '#ffffff';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.opacity = '0.6';
                     e.currentTarget.style.background = 'transparent';
                     e.currentTarget.style.color = '#6b7280';
                   }}
                   title="Close tab"
                 >
-                  <X size={14} strokeWidth={2} />
+                  <X size={14} strokeWidth={2.5} />
                 </button>
               )}
             </div>

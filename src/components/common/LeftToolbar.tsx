@@ -29,7 +29,8 @@ const LeftToolbar: React.FC<LeftToolbarProps> = ({
         alignItems: 'center',
         gap: '8px',
         padding: '0 16px',
-        background: 'rgba(10, 10, 15, 0.95)',
+        background: '#0a0a0a',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
         borderRight: '1px solid rgba(255, 255, 255, 0.06)',
         zIndex: 102
       }}>
