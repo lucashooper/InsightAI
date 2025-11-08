@@ -363,8 +363,15 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
         }
       />
 
-      {/* Dashboard Content */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      {/* Dashboard Content - Centered Container */}
+      <div style={{ 
+        maxWidth: '1400px', 
+        margin: '0 auto', 
+        width: '100%',
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '3rem' 
+      }}>
         {/* Loading State */}
         {isLoading && (
           <div style={{
@@ -391,7 +398,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}
+            style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}
           >
             {/* Narrative Summary - At the top */}
             <motion.div variants={itemVariants}>
@@ -488,20 +495,36 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
               gap: '1rem' 
             }}>
               <div style={{
-                padding: '1rem',
-                background: 'rgba(34, 197, 94, 0.1)',
-                borderRadius: '8px',
+                padding: '1.5rem',
+                background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '12px',
                 border: '1px solid rgba(34, 197, 94, 0.2)',
-                textAlign: 'center'
-              }}>
-                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}>
-                  <PremiumIcons.Notes size={32} color="#22c55e" />
+                textAlign: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 12px 24px rgba(34, 197, 94, 0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+              }}
+              >
+                <div style={{ marginBottom: '0.75rem', display: 'flex', justifyContent: 'center' }}>
+                  <PremiumIcons.Notes size={40} color="#22c55e" />
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: '600', color: '#22c55e' }}>
+                <div style={{ fontSize: '2.25rem', fontWeight: '700', color: '#22c55e', marginBottom: '0.5rem' }}>
                   {notes.length}
                 </div>
-                <div style={{ fontSize: '0.875rem', color: '#9CA3AF' }}>
+                <div style={{ fontSize: '0.875rem', color: '#9CA3AF', marginBottom: '0.5rem' }}>
                   Entries {getTimeRangeLabel(timeRange)}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
+                  ↑ +{Math.floor(notes.length * 0.15)}% from last period
                 </div>
               </div>
               

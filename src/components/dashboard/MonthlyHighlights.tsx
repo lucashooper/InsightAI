@@ -19,7 +19,7 @@ interface MonthlyHighlightsProps {
 
 const MonthlyHighlights: React.FC<MonthlyHighlightsProps> = ({ insights, timeRange: _timeRange = 30, setActiveView, setActiveNoteId }) => {
   const [showAll, setShowAll] = React.useState(false);
-  const INITIAL_DISPLAY_COUNT = 10;
+  const INITIAL_DISPLAY_COUNT = 5;
   
   // Handle insight card click
   const handleInsightClick = (noteId: string) => {

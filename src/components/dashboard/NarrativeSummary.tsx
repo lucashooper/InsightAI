@@ -111,15 +111,20 @@ const NarrativeSummary: React.FC<NarrativeSummaryProps> = ({ entries, timeRange 
 
   return (
     <div style={{
-      background: 'rgba(255, 255, 255, 0.03)',
-      backdropFilter: 'blur(10px)',
-      WebkitBackdropFilter: 'blur(10px)',
+      background: 'linear-gradient(135deg, rgba(88, 28, 135, 0.15) 0%, rgba(30, 58, 138, 0.15) 100%)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
       borderRadius: '16px',
-      border: '1px solid rgba(255, 255, 255, 0.08)',
-      padding: '2rem',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      padding: '2.5rem',
       marginBottom: '2rem',
       position: 'relative',
       overflow: 'hidden',
+      boxShadow: `
+        0 4px 6px rgba(139, 92, 246, 0.1),
+        0 8px 16px rgba(0, 0, 0, 0.2),
+        0 0 40px rgba(139, 92, 246, 0.15)
+      `
     }}>
       {/* Decorative gradient background */}
       <div style={{
@@ -180,8 +185,8 @@ const NarrativeSummary: React.FC<NarrativeSummaryProps> = ({ entries, timeRange 
         }}>
           <p style={{
             margin: 0,
-            fontSize: '1.05rem',
-            lineHeight: '1.8',
+            fontSize: '1.125rem',
+            lineHeight: '1.7',
             color: '#E5E7EB',
             fontWeight: '400',
             letterSpacing: '0.01em',

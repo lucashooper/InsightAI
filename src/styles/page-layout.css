@@ -3,7 +3,7 @@
 /* CSS Variables for consistent spacing - Whoop-inspired tight layout */
 :root {
   --page-gap: 16px; /* Side gaps */
-  --page-gap-top: 2px; /* Extremely minimal top gap */
+  --page-gap-top: 0px; /* No top gap */
 }
 
 /* Main content wrapper */

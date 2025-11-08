@@ -708,9 +708,10 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
       `}</style>
       
     <PageContainer>
+      <div style={{ margin: '0', padding: '0' }}>
       {/* Redesigned Header - Compact & Clean */}
       <div style={{
-        marginBottom: '12px',
+        marginBottom: '8px',
         paddingBottom: '0',
         marginTop: '0'
       }}>
@@ -744,13 +745,19 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
       <div style={{
         display: 'flex',
         gap: '0.5rem',
-        marginBottom: '20px',
+        marginBottom: '16px',
         marginTop: '0',
-        padding: '0.25rem',
-        background: 'rgba(255, 255, 255, 0.015)',
-        borderRadius: '10px',
-        border: '1px solid rgba(255, 255, 255, 0.04)'
+        alignItems: 'center'
       }}>
+        <div style={{
+          display: 'flex',
+          gap: '0.5rem',
+          flex: 1,
+          padding: '0.25rem',
+          background: 'rgba(255, 255, 255, 0.015)',
+          borderRadius: '10px',
+          border: '1px solid rgba(255, 255, 255, 0.04)'
+        }}>
         <button
           onClick={() => setActiveSection('protocols')}
           style={{
@@ -818,6 +825,41 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
           }}
         >
           <span>Strategies</span>
+        </button>
+        </div>
+        
+        {/* Add Button - Integrated with tabs */}
+        <button
+          onClick={() => activeSection === 'protocols' ? setShowProtocolForm(true) : setShowCreateForm(true)}
+          style={{
+            padding: '0.5rem 1rem',
+            background: '#8b5cf6',
+            border: 'none',
+            borderRadius: '8px',
+            color: 'white',
+            fontSize: '0.875rem',
+            cursor: 'pointer',
+            fontWeight: '600',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#7c3aed';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#8b5cf6';
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.3)';
+          }}
+          title={activeSection === 'protocols' ? 'Add Protocol' : 'Add Strategy'}
+        >
+          <span style={{ fontSize: '1.25rem', lineHeight: '1' }}>+</span>
+          <span>{activeSection === 'protocols' ? 'Add Protocol' : 'Add Strategy'}</span>
         </button>
       </div>
 
@@ -1968,41 +2010,7 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
         </div>
       )}
 
-      {/* Floating Action Button - Bottom Right */}
-      <button
-        onClick={() => activeSection === 'protocols' ? setShowProtocolForm(true) : setShowCreateForm(true)}
-        style={{
-          position: 'fixed',
-          bottom: '2rem',
-          right: '2rem',
-          width: '56px',
-          height: '56px',
-          borderRadius: '50%',
-          background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-          border: 'none',
-          boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3)',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
-          fontSize: '24px',
-          fontWeight: '300',
-          transition: 'all 0.3s ease',
-          zIndex: 1000
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.1)';
-          e.currentTarget.style.boxShadow = '0 6px 16px rgba(139, 92, 246, 0.5), 0 12px 32px rgba(0, 0, 0, 0.4)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1)';
-          e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3)';
-        }}
-        title={activeSection === 'protocols' ? 'Add Protocol' : 'Add Strategy'}
-      >
-        +
-      </button>
+      </div>
     </PageContainer>
     </>
   );

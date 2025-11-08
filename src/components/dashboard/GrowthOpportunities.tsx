@@ -19,7 +19,18 @@ interface GrowthOpportunitiesProps {
 
 const GrowthOpportunities: React.FC<GrowthOpportunitiesProps> = ({ insights, timeRange: _timeRange = 30, setActiveView, setActiveNoteId }) => {
   const [showAll, setShowAll] = React.useState(false);
-  const INITIAL_DISPLAY_COUNT = 5;
+  const INITIAL_DISPLAY_COUNT = 4;
+  
+  // Get priority level based on category
+  const getPriority = (category: string): { icon: string; label: string; color: string } => {
+    const cat = category.toUpperCase();
+    if (cat.includes('HEALTH') || cat.includes('MENTAL')) {
+      return { icon: '⚠️', label: 'HIGH PRIORITY', color: '#ef4444' };
+    } else if (cat.includes('GROWTH') || cat.includes('AREA')) {
+      return { icon: '🔔', label: 'MEDIUM', color: '#f59e0b' };
+    }
+    return { icon: '💡', label: 'LOW', color: '#3b82f6' };
+  };
   
   // Handle insight card click
   const handleInsightClick = (noteId: string) => {
@@ -149,6 +160,34 @@ const GrowthOpportunities: React.FC<GrowthOpportunitiesProps> = ({ insights, tim
             }}>
               {insight.noteDate}
             </div>
+            
+            {/* Priority Badge */}
+            {(() => {
+              const priority = getPriority(insight.category);
+              return (
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '0.75rem',
+                  padding: '4px 10px',
+                  background: `${priority.color}20`,
+                  border: `1px solid ${priority.color}40`,
+                  borderRadius: '6px'
+                }}>
+                  <span style={{ fontSize: '0.875rem' }}>{priority.icon}</span>
+                  <span style={{
+                    fontSize: '0.7rem',
+                    fontWeight: '700',
+                    color: priority.color,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    {priority.label}
+                  </span>
+                </div>
+              );
+            })()}
             
             {/* Insight content */}
             <div style={{ marginBottom: '1rem' }}>

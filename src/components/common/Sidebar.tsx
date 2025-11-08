@@ -239,6 +239,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           transition: 'all 0.2s ease',
           fontSize: '0.9rem',
           fontWeight: '500',
+          outline: 'none'
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = 'rgba(156, 163, 175, 0.1)';
@@ -275,6 +276,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           transition: 'all 0.2s ease',
           fontSize: '0.9rem',
           fontWeight: '500',
+          outline: 'none'
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = 'rgba(156, 163, 175, 0.1)';
@@ -311,6 +313,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           transition: 'all 0.2s ease',
           fontSize: '0.9rem',
           fontWeight: '500',
+          outline: 'none'
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = 'rgba(156, 163, 175, 0.1)';
@@ -347,6 +350,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           transition: 'all 0.2s ease',
           fontSize: '0.9rem',
           fontWeight: '500',
+          outline: 'none'
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = 'rgba(156, 163, 175, 0.1)';
