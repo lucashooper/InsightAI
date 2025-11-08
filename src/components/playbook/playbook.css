@@ -12,10 +12,8 @@
 
 /* Sidebar */
 .playbook-sidebar {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  padding: 24px;
+  /* Removed background and border - let inner card handle styling */
+  padding: 0;
   height: fit-content;
   position: sticky;
   top: 24px;

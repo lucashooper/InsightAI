@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Target, Plus } from 'lucide-react';
+import { Target } from 'lucide-react';
 import { PremiumIcons } from '../icons/PremiumIcons';
 import PageContainer from '../common/PageContainer';
 import { actionableInsightsService } from '../../services/actionableInsightsService';
@@ -9,6 +9,7 @@ import type { ActionableInsight } from '../../types/actionableInsight';
 import type { DailyProtocol } from '../../types/dailyProtocol';
 import './playbook.css';
 import '../../styles/page-layout.css';
+import '../../styles/premium-cards.css';
 
 interface PlaybookViewProps {
   onNavigateToEntry?: (entryId: string) => void;
@@ -24,7 +25,6 @@ interface ConsolidatedInsight extends ActionableInsight {
 
 const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existingNoteIds }) => {
   const [insights, setInsights] = useState<ConsolidatedInsight[]>([]);
-  const [filter, setFilter] = useState<'all' | 'suggested' | 'active' | 'completed'>('active');
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showProtocolForm, setShowProtocolForm] = useState(false);
@@ -64,22 +64,17 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
   useEffect(() => {
     loadInsights();
     loadProtocols();
-  }, [filter]);
+  }, []); // Load once on mount
 
   const loadProtocols = () => {
     setDailyProtocols(dailyProtocolService.getActiveProtocols());
   };
 
   const loadInsights = async () => {
-    let loadedInsights: ActionableInsight[];
-    if (filter === 'all') {
-      loadedInsights = await actionableInsightsService.getInsights();
-    } else {
-      loadedInsights = await actionableInsightsService.getInsightsByStatus(filter);
-    }
+    // Load all insights - we'll organize them by status in the UI
+    let loadedInsights: ActionableInsight[] = await actionableInsightsService.getInsights();
     
-    console.log('=== LOADED INSIGHTS ===');
-    console.log('Filter:', filter);
+    console.log('=== LOADED ALL INSIGHTS ===');
     console.log('Count:', loadedInsights.length);
     console.log('Insights with sourceEntryId:', 
       loadedInsights.filter(i => i.sourceEntryId).length
@@ -107,11 +102,7 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
         }
         
         // Reload after cleanup
-        if (filter === 'all') {
-          loadedInsights = await actionableInsightsService.getInsights();
-        } else {
-          loadedInsights = await actionableInsightsService.getInsightsByStatus(filter);
-        }
+        loadedInsights = await actionableInsightsService.getInsights();
         console.log('✅ Cleaned up. Remaining insights:', loadedInsights.length);
       }
     }
@@ -136,8 +127,14 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
         }
         acc[key].allIds.push(insight.id);
         acc[key].dates.push(insight.createdAt);
+        
+        // Delete duplicate from database (keep the first one)
+        console.log(`🗑️ Deleting duplicate strategy: "${insight.title}" (ID: ${insight.id})`);
+        actionableInsightsService.deleteInsight(insight.id).catch(err => 
+          console.error('Failed to delete duplicate:', err)
+        );
       } else {
-        // New strategy
+        // New strategy - keep this one
         acc[key] = {
           ...insight,
           count: 1,
@@ -228,17 +225,27 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
       sourceEntryId: insight.sourceEntryId
     });
 
+    const [isHovered, setIsHovered] = React.useState(false);
+
     return (
-      <div style={{
-        padding: '1.25rem',
-        background: 'rgba(255, 255, 255, 0.03)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        borderRadius: '12px',
-        transition: 'all 0.2s ease',
-        width: '100%',
-        boxSizing: 'border-box',
-        position: 'relative'
-      }}>
+      <div 
+        style={{
+          padding: '1.25rem',
+          paddingBottom: '3.5rem', /* Reserve space for action buttons */
+          background: 'rgba(255, 255, 255, 0.03)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '12px',
+          transition: 'all 0.2s ease',
+          width: '100%',
+          minHeight: '280px', /* Fixed minimum height prevents expansion */
+          boxSizing: 'border-box',
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
         {/* Frequency Badge */}
         {insight.count > 1 && (
           <div
@@ -258,7 +265,7 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
               color: priorityColors.text,
               backdropFilter: 'blur(10px)',
               cursor: 'help',
-              animation: insight.count >= 7 ? 'subtle-pulse 2s ease-in-out infinite' : 'none'
+              animation: 'none'
             }}
             title={`Suggested ${insight.count} times\nClick "View Source Entries" to see all`}
           >
@@ -342,46 +349,54 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
           </div>
         )}
 
-        {/* Actions */}
+        {/* Actions - Absolutely positioned at bottom */}
         <div style={{
+          position: 'absolute',
+          bottom: '1.25rem',
+          left: '1.25rem',
+          right: '1.25rem',
           display: 'flex',
           gap: '0.5rem',
-          flexWrap: 'wrap'
+          flexWrap: 'wrap',
+          alignItems: 'center'
         }}>
           {insight.status === 'suggested' && (
             <>
               <button
                 onClick={() => handleStatusChange(insight.id, 'active')}
                 style={{
-                  padding: '0.5rem 0.75rem',
+                  padding: '0.5rem',
                   background: '#3b82f6',
                   border: 'none',
                   borderRadius: '6px',
                   color: 'white',
-                  fontSize: '0.8rem',
                   cursor: 'pointer',
-                  fontWeight: '500',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.25rem'
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease'
                 }}
+                title="Try This"
               >
-                <PremiumIcons.Check size={14} />
-                Try This
+                <PremiumIcons.Check size={16} />
               </button>
               <button
                 onClick={() => handleStatusChange(insight.id, 'skipped')}
                 style={{
-                  padding: '0.5rem 0.75rem',
+                  padding: '0.5rem',
                   background: 'transparent',
                   border: '1px solid rgba(255, 255, 255, 0.2)',
                   borderRadius: '6px',
                   color: '#9CA3AF',
-                  fontSize: '0.8rem',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease'
                 }}
+                title="Skip"
               >
-                Skip
+                <PremiumIcons.ArrowRight size={16} />
               </button>
             </>
           )}
@@ -467,16 +482,18 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
                 }
               }}
               style={{
-                padding: '0.5rem 0.75rem',
+                padding: '0.5rem',
                 background: 'rgba(139, 92, 246, 0.1)',
                 border: '1px solid rgba(139, 92, 246, 0.4)',
                 borderRadius: '6px',
                 color: '#8b5cf6',
-                fontSize: '0.8rem',
                 cursor: 'pointer',
-                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 transition: 'all 0.2s ease'
               }}
+              title={insight.count === 1 ? 'View Source Entry' : `View ${insight.count} Source Entries`}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = 'rgba(139, 92, 246, 0.2)';
                 e.currentTarget.style.borderColor = '#8b5cf6';
@@ -486,27 +503,11 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
                 e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.4)';
               }}
             >
-              {insight.count === 1 ? 'View Source Entry' : `View ${insight.count} Source Entries`}
+              <PremiumIcons.FileText size={16} />
             </button>
           )}
           
-          {/* High Priority Warning */}
-          {insight.count >= 4 && (
-            <div style={{
-              padding: '0.5rem 0.75rem',
-              background: 'rgba(249, 115, 22, 0.1)',
-              border: '1px solid rgba(249, 115, 22, 0.3)',
-              borderRadius: '6px',
-              fontSize: '0.75rem',
-              color: '#FB923C',
-              fontWeight: '500',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}>
-              ⚠️ Recurring pattern - consider addressing this
-            </div>
-          )}
+          {/* Removed redundant recurring warning - count badge is sufficient */}
           
           {!insight.sourceEntryIds.length && !onNavigateToEntry && (
             insight.sourceEntryId && !onNavigateToEntry && (
@@ -522,20 +523,26 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
             )
           )}
 
-          <button
-            onClick={() => handleDelete(insight.id)}
-            style={{
-              marginLeft: 'auto',
-              padding: '0.5rem',
-              background: 'transparent',
-              border: 'none',
-              color: '#ef4444',
-              fontSize: '0.8rem',
-              cursor: 'pointer'
-            }}
-          >
-            <PremiumIcons.Trash size={14} color="#ef4444" />
-          </button>
+          {isHovered && (
+            <button
+              onClick={() => handleDelete(insight.id)}
+              style={{
+                marginLeft: 'auto',
+                padding: '0.5rem',
+                background: 'transparent',
+                border: 'none',
+                color: '#ef4444',
+                cursor: 'pointer',
+                transition: 'opacity 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+              title="Delete"
+            >
+              <PremiumIcons.Trash size={16} color="#ef4444" />
+            </button>
+          )}
         </div>
       </div>
     );
@@ -684,101 +691,86 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
 
   return (
     <>
-      {/* CSS Animation */}
+      {/* CSS Animation + Override global h1 styles */}
       <style>{`
         @keyframes subtle-pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.7; }
         }
+        
+        /* Override global h1 styles for playbook */
+        .page-container h1 {
+          font-size: 1.75rem !important;
+          line-height: 1.2 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
       `}</style>
       
     <PageContainer>
-      {/* Custom Header - Title and Button on Same Line */}
+      {/* Redesigned Header - Compact & Clean */}
       <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '1rem',
-        marginBottom: '1rem',
-        position: 'relative',
-        
-        
+        marginBottom: '12px',
+        paddingBottom: '0',
+        marginTop: '0'
       }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          color: '#8b5cf6'
+          justifyContent: 'space-between',
+          margin: '0',
+          padding: '0'
         }}>
-          <Target size={24} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '0', padding: '0' }}>
+            <Target size={28} color="#8b5cf6" />
+            <h1 style={{
+              margin: '0',
+              marginTop: '0',
+              marginBottom: '0',
+              padding: '0',
+              fontSize: '1.75rem',
+              fontWeight: '700',
+              color: '#e5e7ff',
+              letterSpacing: '-0.02em',
+              lineHeight: '1.2'
+            } as React.CSSProperties}>
+              Personal Playbook
+            </h1>
+          </div>
         </div>
-        <h1 style={{
-          margin: 0,
-          fontSize: '2rem',
-          fontWeight: '700',
-          color: '#e5e7ff',
-          letterSpacing: '-0.02em'
-        }}>
-          Personal Playbook
-        </h1>
-        <button
-          className="add-protocol-button"
-          onClick={() => activeSection === 'protocols' ? setShowProtocolForm(true) : setShowCreateForm(true)}
-          style={{
-            padding: '0.6rem 1.25rem',
-            background: '#8b5cf6',
-            border: 'none',
-            borderRadius: '8px',
-            color: '#ffffff',
-            fontSize: '0.9rem',
-            fontWeight: '600',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#7c3aed';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#8b5cf6';
-          }}
-        >
-          <Plus size={20} />
-          {activeSection === 'protocols' ? 'Add Protocol' : 'Add Strategy'}
-        </button>
       </div>
 
-      <div style={{ padding: '20px 0 20px 0' }}>
-
-      {/* Section Tabs - Daily Protocols vs Strategies */}
+      {/* Section Tabs - Compact & Integrated */}
       <div style={{
         display: 'flex',
         gap: '0.5rem',
-        marginBottom: '2rem',
-        marginLeft: '24px',
-        marginRight: '24px',
-        padding: '0.375rem',
+        marginBottom: '20px',
+        marginTop: '0',
+        padding: '0.25rem',
         background: 'rgba(255, 255, 255, 0.015)',
-        borderRadius: '14px',
+        borderRadius: '10px',
         border: '1px solid rgba(255, 255, 255, 0.04)'
       }}>
         <button
           onClick={() => setActiveSection('protocols')}
           style={{
             flex: 1,
-            padding: '0.75rem 1rem',
+            padding: '0.5rem 1rem',
+            minHeight: '36px',
+            maxHeight: '40px',
             background: activeSection === 'protocols' ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
             border: '1px solid transparent',
-            borderRadius: '10px',
+            borderRadius: '8px',
             color: activeSection === 'protocols' ? '#E5E7EB' : '#6B7280',
-            fontSize: '0.9rem',
+            fontSize: '0.875rem',
             cursor: 'pointer',
             fontWeight: '500',
             transition: 'all 0.2s ease',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '0.5rem'
+            gap: '0.5rem',
+            outline: 'none'
           }}
           onMouseEnter={(e) => {
             if (activeSection !== 'protocols') {
@@ -791,26 +783,28 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
             }
           }}
         >
-          <span style={{ fontSize: '1.1rem' }}>📅</span>
           <span>Daily Protocols</span>
         </button>
         <button
           onClick={() => setActiveSection('strategies')}
           style={{
             flex: 1,
-            padding: '0.75rem 1rem',
+            padding: '0.5rem 1rem',
+            minHeight: '36px',
+            maxHeight: '40px',
             background: activeSection === 'strategies' ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
             border: '1px solid transparent',
-            borderRadius: '10px',
+            borderRadius: '8px',
             color: activeSection === 'strategies' ? '#E5E7EB' : '#6B7280',
-            fontSize: '0.9rem',
+            fontSize: '0.875rem',
             cursor: 'pointer',
             fontWeight: '500',
             transition: 'all 0.2s ease',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '0.5rem'
+            gap: '0.5rem',
+            outline: 'none'
           }}
           onMouseEnter={(e) => {
             if (activeSection !== 'strategies') {
@@ -823,48 +817,16 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
             }
           }}
         >
-          <span style={{ fontSize: '1.1rem' }}>💡</span>
           <span>Strategies</span>
         </button>
       </div>
 
-      {/* Strategies Filter Tabs */}
-      {activeSection === 'strategies' && (
-      <div style={{
-        display: 'flex',
-        gap: '0.5rem',
-        marginBottom: '2rem',
-        marginLeft: '24px',
-        marginRight: '24px',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        paddingBottom: '0.5rem'
-      }}>
-        {(['active', 'suggested', 'completed', 'all'] as const).map(tab => (
-          <button
-            key={tab}
-            onClick={() => setFilter(tab)}
-            style={{
-              padding: '0.5rem 1rem',
-              background: filter === tab ? 'rgba(255, 255, 255, 0.06)' : 'transparent',
-              border: '1px solid transparent',
-              borderRadius: '6px',
-              color: filter === tab ? '#E5E7EB' : '#9CA3AF',
-              fontSize: '0.875rem',
-              cursor: 'pointer',
-              fontWeight: filter === tab ? '600' : '400',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
-      </div>
-      )}
+      {/* Removed confusing filter tabs - strategies now show all relevant items organized by priority */}
 
       {/* Source Entries Modal */}
       <SourceEntriesModal />
       
-      {/* Insights Grid with Priority System */}
+      {/* Redesigned Insights Display - Priority-Based */}
       {activeSection === 'strategies' && (insights.length === 0 ? (
         <div style={{
           textAlign: 'center',
@@ -873,59 +835,121 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
         }}>
           <PremiumIcons.Target size={48} color="#6b7280" />
           <h3 style={{ margin: '1rem 0 0.5rem 0', color: '#E5E7EB' }}>
-            {filter === 'active' ? 'No Active Strategies' : 'No Insights Yet'}
+            No Strategies Yet
           </h3>
           <p style={{ margin: 0, fontSize: '0.9rem' }}>
-            {filter === 'active' 
-              ? 'Start by activating suggested strategies or analyze your entries to get personalized recommendations.'
-              : 'Analyze your diary entries to get personalized strategy suggestions.'}
+            Analyze your diary entries to get personalized strategy suggestions based on your patterns and emotions.
           </p>
         </div>
       ) : (() => {
-        // Priority system: Sort by count (recurring patterns first) and show top 3 prominently
-        const sortedInsights = [...insights].sort((a, b) => b.count - a.count);
-        const topInsights = sortedInsights.slice(0, 3);
-        const remainingInsights = sortedInsights.slice(3);
+        // Separate strategies by status
+        const activeStrategies = insights.filter(i => i.status === 'active');
+        const suggestedStrategies = insights.filter(i => i.status === 'suggested');
         
-        // Group remaining insights by category
-        const categorizedInsights = remainingInsights.reduce((acc, insight) => {
+        // Sort suggested by count (recurring patterns first) - these are top priorities
+        const sortedSuggested = [...suggestedStrategies].sort((a, b) => b.count - a.count);
+        const topPriorities = sortedSuggested.slice(0, 3);
+        const otherSuggested = sortedSuggested.slice(3);
+        
+        // Group other suggested by category
+        const categorizedSuggested = otherSuggested.reduce((acc: Record<string, ConsolidatedInsight[]>, insight) => {
           const category = actionableInsightsService.getCategoryLabel(insight.category);
           if (!acc[category]) acc[category] = [];
           acc[category].push(insight);
           return acc;
-        }, {} as Record<string, ConsolidatedInsight[]>);
+        }, {});
+        
+        // Smart category display: only show dedicated sections for categories with 3+ items
+        const largeCategories: Record<string, ConsolidatedInsight[]> = {};
+        const smallCategoryItems: ConsolidatedInsight[] = [];
+        
+        Object.entries(categorizedSuggested).forEach(([category, items]) => {
+          if (items.length >= 3) {
+            largeCategories[category] = items;
+          } else {
+            smallCategoryItems.push(...items);
+          }
+        });
         
         return (
-          <div style={{ width: '100%', maxWidth: '1600px', margin: '0 auto' }}>
-            {/* Top Priority Insights */}
-            {topInsights.length > 0 && (
-              <>
+          <div style={{ 
+            width: '100%', 
+            maxWidth: '1400px',
+            margin: '0 auto'
+          }}>
+            {/* TODAY'S PRIORITIES - Top 3 most recurring patterns - Premium Design */}
+            {topPriorities.length > 0 && (
+              <div style={{ marginBottom: '3rem' }}>
                 <div style={{
-                  marginBottom: '1rem',
-                  paddingLeft: '0.5rem',
-                  fontSize: '0.85rem',
-                  color: '#8b5cf6',
-                  fontWeight: '600',
-                  letterSpacing: '0.05em',
-                  textTransform: 'uppercase'
+                  marginBottom: '1.5rem',
+                  paddingBottom: '0.75rem',
+                  borderBottom: '2px solid rgba(139, 92, 246, 0.2)'
                 }}>
-                  {filter === 'suggested' ? '✨ Top Recommendations' : '🎯 Priority Focus'}
+                  <h2 style={{
+                    margin: 0,
+                    fontSize: '1.25rem',
+                    fontWeight: '700',
+                    color: '#E5E7EB',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    <Target size={24} color="#8b5cf6" />
+                    TODAY'S PRIORITIES
+                  </h2>
+                  <p style={{
+                    margin: '0.5rem 0 0 0',
+                    fontSize: '0.875rem',
+                    color: '#9CA3AF'
+                  }}>
+                    Focus on these recurring patterns first
+                  </p>
                 </div>
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                  gap: '1.5rem',
-                  marginBottom: remainingInsights.length > 0 ? '3rem' : '0'
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))',
+                  gap: '1.5rem'
                 }}>
-                  {topInsights.map(insight => (
-                    <InsightCard key={insight.id} insight={insight} />
+                  {topPriorities.map(insight => (
+                    <div key={insight.id} className="premium-card-priority premium-card-hover-gradient premium-glow">
+                      <InsightCard insight={insight} />
+                    </div>
                   ))}
                 </div>
-              </>
+              </div>
             )}
             
-            {/* Remaining Insights by Category */}
-            {remainingInsights.length > 0 && (
+            {/* ACTIVE STRATEGIES - Currently practicing - Premium Design */}
+            {activeStrategies.length > 0 && (
+              <div style={{ marginBottom: '3rem' }}>
+                <h3 style={{
+                  margin: '0 0 1.5rem 0',
+                  fontSize: '1.1rem',
+                  fontWeight: '600',
+                  color: '#E5E7EB',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <span>✅</span>
+                  ACTIVE STRATEGIES ({activeStrategies.length})
+                </h3>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))',
+                  gap: '1.5rem'
+                }}>
+                  {activeStrategies.map(insight => (
+                    <div key={insight.id} className="premium-card-active premium-card-hover-gradient">
+                      <InsightCard insight={insight} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* OTHER SUGGESTED - Collapsible by category */}
+            {otherSuggested.length > 0 && (
               <div style={{ marginTop: '2rem' }}>
                 <button
                   onClick={() => setShowAllCategories(!showAllCategories)}
@@ -955,8 +979,8 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
                   }}
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <span style={{ fontSize: '1.1rem' }}>📂</span>
-                    <span>More Strategies ({remainingInsights.length})</span>
+                    <span style={{ fontSize: '1.1rem' }}>💡</span>
+                    <span>More Suggested Strategies ({otherSuggested.length})</span>
                   </span>
                   <span style={{ 
                     transform: showAllCategories ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -969,7 +993,8 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
                 
                 {showAllCategories && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                    {Object.entries(categorizedInsights).map(([category, categoryInsights]) => (
+                    {/* Large categories (3+ items) get dedicated sections */}
+                    {Object.entries(largeCategories).map(([category, categoryInsights]) => (
                       <div key={category}>
                         <div style={{
                           marginBottom: '1rem',
@@ -983,27 +1008,57 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
                           alignItems: 'center',
                           gap: '0.5rem'
                         }}>
-                          <span>{actionableInsightsService.getCategoryEmoji(categoryInsights[0].category)}</span>
+                          <span>{actionableInsightsService.getCategoryEmoji((categoryInsights as ConsolidatedInsight[])[0].category)}</span>
                           <span>{category}</span>
                           <span style={{ 
                             fontSize: '0.75rem',
                             color: '#6B7280',
                             fontWeight: '400'
                           }}>
-                            ({categoryInsights.length})
+                            ({(categoryInsights as ConsolidatedInsight[]).length})
                           </span>
                         </div>
                         <div style={{
                           display: 'grid',
-                          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))',
                           gap: '1.5rem'
                         }}>
-                          {categoryInsights.map(insight => (
-                            <InsightCard key={insight.id} insight={insight} />
+                          {(categoryInsights as ConsolidatedInsight[]).map(insight => (
+                            <div key={insight.id} className="premium-card premium-card-hover-gradient">
+                              <InsightCard insight={insight} />
+                            </div>
                           ))}
                         </div>
                       </div>
                     ))}
+                    
+                    {/* Small categories (<3 items) consolidated into "Other Recommended" */}
+                    {smallCategoryItems.length > 0 && (
+                      <div>
+                        <div style={{
+                          marginBottom: '1rem',
+                          paddingLeft: '0.5rem',
+                          fontSize: '0.85rem',
+                          color: '#9CA3AF',
+                          fontWeight: '600',
+                          letterSpacing: '0.05em',
+                          textTransform: 'uppercase'
+                        }}>
+                          OTHER RECOMMENDED STRATEGIES ({smallCategoryItems.length})
+                        </div>
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))',
+                          gap: '1.5rem'
+                        }}>
+                          {smallCategoryItems.map(insight => (
+                            <div key={insight.id} className="premium-card premium-card-hover-gradient">
+                              <InsightCard insight={insight} />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1015,31 +1070,73 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
       {/* Daily Protocols Section */}
       {activeSection === 'protocols' && (
         <div className="playbook-container">
-          {/* Sidebar - Active Protocols */}
+          {/* Sidebar - Unified Status Card */}
           <div className="playbook-sidebar">
-            <h3>Active Protocols</h3>
-            {dailyProtocols.length > 0 ? (
-              <div className="strategy-list">
-                {dailyProtocols.map(protocol => {
-                  const stats = dailyProtocolService.getStats(protocol.id);
-                  return (
-                    <div key={protocol.id} className="sidebar-strategy-card">
-                      <span className="strategy-icon">
-                        <Emoji emoji={protocol.emoji} size={20} />
-                      </span>
-                      <div className="strategy-info">
-                        <h4>{protocol.title}</h4>
-                        <span className="strategy-streak">
-                          🔥 {stats.currentStreak} day streak
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="empty-state">No active protocols yet</p>
-            )}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(124, 58, 237, 0.05) 100%)',
+              border: '1px solid rgba(139, 92, 246, 0.2)',
+              borderRadius: '12px',
+              padding: '1.25rem',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(139, 92, 246, 0.1) inset'
+            }}>
+              <h3 style={{
+                margin: '0 0 0.75rem 0',
+                fontSize: '0.9rem',
+                fontWeight: '600',
+                color: '#E5E7EB',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Today's Progress
+              </h3>
+              {dailyProtocols.length > 0 ? (
+                <>
+                  <div style={{
+                    fontSize: '2rem',
+                    fontWeight: '700',
+                    color: '#8b5cf6',
+                    marginBottom: '0.5rem'
+                  }}>
+                    {dailyProtocols.filter(p => {
+                      const stats = dailyProtocolService.getStats(p.id);
+                      const today = new Date().toISOString().split('T')[0];
+                      return stats.lastCompletedDate === today;
+                    }).length}/{dailyProtocols.length}
+                  </div>
+                  <div style={{
+                    fontSize: '0.875rem',
+                    color: '#9CA3AF',
+                    marginBottom: '0.75rem'
+                  }}>
+                    protocols completed
+                  </div>
+                  {/* Progress Bar */}
+                  <div style={{
+                    width: '100%',
+                    height: '6px',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: '3px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${(dailyProtocols.filter(p => {
+                        const stats = dailyProtocolService.getStats(p.id);
+                        const today = new Date().toISOString().split('T')[0];
+                        return stats.lastCompletedDate === today;
+                      }).length / dailyProtocols.length) * 100}%`,
+                      height: '100%',
+                      background: 'linear-gradient(90deg, #8b5cf6, #7c3aed)',
+                      borderRadius: '3px',
+                      transition: 'width 0.3s ease'
+                    }} />
+                  </div>
+                </>
+              ) : (
+                <p style={{ margin: 0, fontSize: '0.875rem', color: '#6B7280' }}>
+                  No protocols yet
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Main Content */}
@@ -1047,7 +1144,7 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
             {dailyProtocols.length === 0 ? (
               <div className="empty-state-content">
                 <div className="icon-card">
-                  <Calendar className="calendar-icon" size={48} />
+                  <PremiumIcons.Target size={48} color="#8b5cf6" />
                 </div>
                 <h2>No Daily Protocols Yet</h2>
                 <p>Create recurring daily habits to track your progress and build streaks.</p>
@@ -1870,7 +1967,42 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
           </div>
         </div>
       )}
-      </div>
+
+      {/* Floating Action Button - Bottom Right */}
+      <button
+        onClick={() => activeSection === 'protocols' ? setShowProtocolForm(true) : setShowCreateForm(true)}
+        style={{
+          position: 'fixed',
+          bottom: '2rem',
+          right: '2rem',
+          width: '56px',
+          height: '56px',
+          borderRadius: '50%',
+          background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+          border: 'none',
+          boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+          fontSize: '24px',
+          fontWeight: '300',
+          transition: 'all 0.3s ease',
+          zIndex: 1000
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'scale(1.1)';
+          e.currentTarget.style.boxShadow = '0 6px 16px rgba(139, 92, 246, 0.5), 0 12px 32px rgba(0, 0, 0, 0.4)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3)';
+        }}
+        title={activeSection === 'protocols' ? 'Add Protocol' : 'Add Strategy'}
+      >
+        +
+      </button>
     </PageContainer>
     </>
   );

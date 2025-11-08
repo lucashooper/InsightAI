@@ -136,8 +136,8 @@ export const aiService = {
     "current": ["strategy1", "strategy2"],
     "suggested": [
       {
-        "strategy": "specific suggestion",
-        "why_helpful": "explanation",
+        "strategy": "Specific, actionable strategy title (e.g., 'Try limiting caffeine to one cup per day', 'Take a 10-minute walk when feeling anxious', 'Practice 4-7-8 breathing before bed')",
+        "why_helpful": "Detailed explanation connecting this strategy to the specific patterns, emotions, or triggers identified in this entry. Reference concrete details from the user's experience.",
         "difficulty": "easy/moderate/challenging"
       }
     ]
@@ -184,6 +184,26 @@ IMPORTANT GUIDELINES:
 - The actionableSuggestion should be specific and immediately doable
 - Be encouraging and constructive throughout
 
+CRITICAL: For "coping_strategies.suggested":
+- Strategy titles MUST be specific, actionable recommendations (e.g., "Try limiting caffeine to one cup before noon", NOT "Reflect on this pattern")
+- Connect each strategy directly to patterns, emotions, or triggers identified in THIS specific entry
+- In "why_helpful", reference concrete details from the user's experience (e.g., "You mentioned feeling anxious on days you drink caffeine" or "This addresses your recurring pattern of sleep issues")
+- Make suggestions practical and immediately implementable
+- Avoid generic advice - be specific to what the user is experiencing
+
+Examples of GOOD strategy titles:
+- "Try limiting caffeine to one cup before noon"
+- "Take a 10-minute walk when you notice anxiety building"
+- "Practice 4-7-8 breathing before bed to help with sleep"
+- "Set a timer to check in with yourself every 2 hours"
+- "Journal for 5 minutes when feeling overwhelmed"
+
+Examples of BAD strategy titles (DO NOT USE):
+- "Reflect on this pattern"
+- "Consider your habits"
+- "Think about your feelings"
+- "Work on self-care"
+
 Entry text: ${content}`;
 
     try {
@@ -196,6 +216,10 @@ Entry text: ${content}`;
         body: JSON.stringify({
           model: 'llama-3.3-70b-versatile',
           messages: [
+            {
+              role: 'system',
+              content: 'You are a mental health AI assistant. When suggesting coping strategies, ALWAYS provide specific, actionable titles like "Try limiting caffeine to one cup before noon" or "Take a 10-minute walk when feeling anxious". NEVER use generic phrases like "Reflect on this pattern" or "Consider your habits". Be specific and practical.',
+            },
             {
               role: 'user',
               content: enhancedPrompt,

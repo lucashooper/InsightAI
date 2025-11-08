@@ -48,7 +48,7 @@ export const InsightBriefingModal: React.FC<InsightBriefingModalProps> = ({
           style={{
             maxWidth: window.innerWidth <= 768 ? '95%' : '900px',
             width: '100%',
-            minHeight: window.innerWidth <= 768 ? '400px' : '500px',
+            minHeight: window.innerWidth <= 768 ? '500px' : '600px',
             height: 'auto',
             maxHeight: window.innerWidth <= 768 ? '90vh' : '85vh',
             position: 'relative',
@@ -67,6 +67,9 @@ export const InsightBriefingModal: React.FC<InsightBriefingModalProps> = ({
             animation: 'modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
             display: 'flex',
             flexDirection: 'column',
+            willChange: 'transform, opacity',
+            transform: 'translateZ(0)',
+            backfaceVisibility: 'hidden',
             backdropFilter: 'blur(40px)',
             WebkitBackdropFilter: 'blur(40px)'
           }}

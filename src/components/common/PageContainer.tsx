@@ -13,15 +13,7 @@ interface PageContainerProps {
  */
 const PageContainer: React.FC<PageContainerProps> = ({ children, className = '' }) => {
   return (
-    <div 
-      className={`page-container ${className}`}
-      style={{
-        width: '100%',
-        height: 'auto',
-        padding: '1rem 1.5rem 2rem 1.5rem',
-        boxSizing: 'border-box'
-      }}
-    >
+    <div className={`page-container ${className}`}>
       {children}
     </div>
   );

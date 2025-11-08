@@ -538,7 +538,8 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
       const currentNoteIndex = allNotes.findIndex(n => n.id === note.id);
       
       if (currentNoteIndex === -1) {
-        throw new Error('Current note not found');
+        console.log('Current note not found in notes list - skipping timeline');
+        return;
       }
 
       // Get notes from the previous 5 days
@@ -548,7 +549,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
         .map(n => n.content);
 
       if (previousNotes.length === 0) {
-        console.log('No previous notes found for timeline analysis');
+        console.log('No previous notes found for timeline analysis - skipping');
         // setShouldShowTimeline(false);
         return;
       }
@@ -562,8 +563,8 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
       
       console.log('Trigger timeline generated:', events);
     } catch (error) {
-      console.log('Error generating trigger timeline:', error);
-      setError('Failed to generate trigger timeline');
+      // Don't show error to user - timeline is optional background feature
+      console.log('Error generating trigger timeline (non-critical):', error);
       // setShouldShowTimeline(false);
     } finally {
       // setIsGeneratingTimeline(false);
