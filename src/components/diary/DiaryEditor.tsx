@@ -459,7 +459,8 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
       boxSizing: 'border-box',
       background: '#0a0a0a',
       overflow: 'visible',
-      minHeight: '100vh'
+      minHeight: '100%',
+      flex: '1 1 auto'
     }}>
       {/* ==================== CENTERED CONTENT CONTAINER ==================== */}
       <div style={{
