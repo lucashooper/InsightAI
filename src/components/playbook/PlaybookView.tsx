@@ -25,6 +25,7 @@ interface ConsolidatedInsight extends ActionableInsight {
 const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existingNoteIds }) => {
   const [insights, setInsights] = useState<ConsolidatedInsight[]>([]);
   const [filter, setFilter] = useState<'all' | 'suggested' | 'active' | 'completed'>('active');
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showProtocolForm, setShowProtocolForm] = useState(false);
   const [showSourceEntriesModal, setShowSourceEntriesModal] = useState(false);
@@ -304,37 +305,19 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
           </div>
         </div>
 
-        {/* Meta Info */}
+        {/* Simplified Meta Info - Only time estimate */}
         <div style={{
           display: 'flex',
-          gap: '1rem',
-          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '0.5rem',
           marginBottom: '1rem',
-          fontSize: '0.75rem',
-          color: '#6b7280'
+          fontSize: '0.8rem',
+          color: '#9CA3AF'
         }}>
-          <div style={{
-            padding: '0.25rem 0.5rem',
-            background: 'rgba(59, 130, 246, 0.1)',
-            border: '1px solid rgba(59, 130, 246, 0.2)',
-            borderRadius: '4px',
-            color: '#3b82f6'
-          }}>
-            {actionableInsightsService.getCategoryLabel(insight.category)}
-          </div>
-          <div style={{
-            padding: '0.25rem 0.5rem',
-            background: `${actionableInsightsService.getDifficultyColor(insight.difficulty)}20`,
-            border: `1px solid ${actionableInsightsService.getDifficultyColor(insight.difficulty)}40`,
-            borderRadius: '4px',
-            color: actionableInsightsService.getDifficultyColor(insight.difficulty)
-          }}>
-            {insight.difficulty}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-            <PremiumIcons.Clock size={12} color="#6b7280" />
-            {insight.estimatedTime}
-          </div>
+          <PremiumIcons.Clock size={14} color="#9CA3AF" />
+          <span>{insight.estimatedTime}</span>
+          {insight.difficulty === 'easy' && <span style={{ color: '#22c55e' }}>• Easy</span>}
+          {insight.difficulty === 'challenging' && <span style={{ color: '#ef4444' }}>• Challenging</span>}
         </div>
 
         {/* Progress */}
@@ -881,7 +864,7 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
       {/* Source Entries Modal */}
       <SourceEntriesModal />
       
-      {/* Insights Grid */}
+      {/* Insights Grid with Priority System */}
       {activeSection === 'strategies' && (insights.length === 0 ? (
         <div style={{
           textAlign: 'center',
@@ -898,20 +881,136 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
               : 'Analyze your diary entries to get personalized strategy suggestions.'}
           </p>
         </div>
-      ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-          gap: '1.5rem',
-          width: '100%',
-          maxWidth: '1600px',
-          margin: '0 auto'
-        }}>
-          {insights.map(insight => (
-            <InsightCard key={insight.id} insight={insight} />
-          ))}
-        </div>
-      ))}
+      ) : (() => {
+        // Priority system: Sort by count (recurring patterns first) and show top 3 prominently
+        const sortedInsights = [...insights].sort((a, b) => b.count - a.count);
+        const topInsights = sortedInsights.slice(0, 3);
+        const remainingInsights = sortedInsights.slice(3);
+        
+        // Group remaining insights by category
+        const categorizedInsights = remainingInsights.reduce((acc, insight) => {
+          const category = actionableInsightsService.getCategoryLabel(insight.category);
+          if (!acc[category]) acc[category] = [];
+          acc[category].push(insight);
+          return acc;
+        }, {} as Record<string, ConsolidatedInsight[]>);
+        
+        return (
+          <div style={{ width: '100%', maxWidth: '1600px', margin: '0 auto' }}>
+            {/* Top Priority Insights */}
+            {topInsights.length > 0 && (
+              <>
+                <div style={{
+                  marginBottom: '1rem',
+                  paddingLeft: '0.5rem',
+                  fontSize: '0.85rem',
+                  color: '#8b5cf6',
+                  fontWeight: '600',
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase'
+                }}>
+                  {filter === 'suggested' ? '✨ Top Recommendations' : '🎯 Priority Focus'}
+                </div>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                  gap: '1.5rem',
+                  marginBottom: remainingInsights.length > 0 ? '3rem' : '0'
+                }}>
+                  {topInsights.map(insight => (
+                    <InsightCard key={insight.id} insight={insight} />
+                  ))}
+                </div>
+              </>
+            )}
+            
+            {/* Remaining Insights by Category */}
+            {remainingInsights.length > 0 && (
+              <div style={{ marginTop: '2rem' }}>
+                <button
+                  onClick={() => setShowAllCategories(!showAllCategories)}
+                  style={{
+                    width: '100%',
+                    padding: '1rem',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '12px',
+                    color: '#E5E7EB',
+                    fontSize: '0.95rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    transition: 'all 0.2s ease',
+                    marginBottom: showAllCategories ? '1.5rem' : '0'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                    e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                  }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <span style={{ fontSize: '1.1rem' }}>📂</span>
+                    <span>More Strategies ({remainingInsights.length})</span>
+                  </span>
+                  <span style={{ 
+                    transform: showAllCategories ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s ease',
+                    fontSize: '1.2rem'
+                  }}>
+                    ▼
+                  </span>
+                </button>
+                
+                {showAllCategories && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    {Object.entries(categorizedInsights).map(([category, categoryInsights]) => (
+                      <div key={category}>
+                        <div style={{
+                          marginBottom: '1rem',
+                          paddingLeft: '0.5rem',
+                          fontSize: '0.85rem',
+                          color: '#9CA3AF',
+                          fontWeight: '600',
+                          letterSpacing: '0.05em',
+                          textTransform: 'uppercase',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem'
+                        }}>
+                          <span>{actionableInsightsService.getCategoryEmoji(categoryInsights[0].category)}</span>
+                          <span>{category}</span>
+                          <span style={{ 
+                            fontSize: '0.75rem',
+                            color: '#6B7280',
+                            fontWeight: '400'
+                          }}>
+                            ({categoryInsights.length})
+                          </span>
+                        </div>
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                          gap: '1.5rem'
+                        }}>
+                          {categoryInsights.map(insight => (
+                            <InsightCard key={insight.id} insight={insight} />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })())}
 
       {/* Daily Protocols Section */}
       {activeSection === 'protocols' && (

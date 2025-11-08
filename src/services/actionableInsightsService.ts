@@ -168,15 +168,25 @@ class ActionableInsightsService {
   async generateSuggestionsFromAnalysis(aiInsights: any, entryId: string): Promise<ActionableInsight[]> {
     const suggestions: Omit<ActionableInsight, 'id' | 'createdAt'>[] = [];
     
-    // Parse coping strategies
+    // Extract pattern context for richer descriptions
+    const patternContext = this.extractPatternContext(aiInsights);
+    
+    // Parse coping strategies with enhanced descriptions
     if (aiInsights?.coping_strategies?.suggested) {
       aiInsights.coping_strategies.suggested.forEach((strategy: any) => {
+        const strategyText = strategy.strategy || strategy;
+        const enhancedDescription = this.createEnhancedDescription(
+          strategy.why_it_helps || strategyText,
+          patternContext,
+          strategyText
+        );
+        
         suggestions.push({
-          title: strategy.strategy || strategy,
-          description: strategy.why_it_helps || 'AI-suggested coping strategy based on your entry',
-          category: this.categorizeSuggestion(strategy.strategy || strategy),
-          difficulty: 'moderate',
-          estimatedTime: '10-15 minutes',
+          title: strategyText,
+          description: enhancedDescription,
+          category: this.categorizeSuggestion(strategyText),
+          difficulty: this.estimateDifficulty(strategyText),
+          estimatedTime: this.estimateTime(strategyText),
           source: 'ai_suggested',
           sourceEntryId: entryId,
           status: 'suggested'
@@ -191,6 +201,120 @@ class ActionableInsightsService {
       savedSuggestions.push(saved);
     }
     return savedSuggestions;
+  }
+
+  /**
+   * Extract pattern context from AI insights
+   */
+  private extractPatternContext(aiInsights: any): string {
+    const contexts: string[] = [];
+    
+    // Extract primary emotion
+    if (aiInsights?.mood_analysis?.primary_emotion) {
+      contexts.push(`feeling ${aiInsights.mood_analysis.primary_emotion}`);
+    }
+    
+    // Extract key patterns
+    if (aiInsights?.patterns?.recurring) {
+      const patterns = Array.isArray(aiInsights.patterns.recurring) 
+        ? aiInsights.patterns.recurring 
+        : [aiInsights.patterns.recurring];
+      contexts.push(...patterns.slice(0, 2));
+    }
+    
+    // Extract triggers
+    if (aiInsights?.triggers?.identified) {
+      const triggers = Array.isArray(aiInsights.triggers.identified)
+        ? aiInsights.triggers.identified
+        : [aiInsights.triggers.identified];
+      contexts.push(...triggers.slice(0, 1));
+    }
+    
+    return contexts.join(', ');
+  }
+
+  /**
+   * Create enhanced description with pattern details
+   */
+  private createEnhancedDescription(baseDescription: string, patternContext: string, strategyTitle: string): string {
+    // If we have pattern context, make it actionable
+    if (patternContext) {
+      // Check if base description already contains good detail
+      if (baseDescription.length > 50 && !baseDescription.includes('AI-suggested')) {
+        return `${baseDescription}${patternContext ? ` This addresses patterns around ${patternContext}.` : ''}`;
+      }
+      
+      // Create more specific description based on strategy type
+      const lower = strategyTitle.toLowerCase();
+      
+      if (lower.includes('exercise') || lower.includes('walk') || lower.includes('movement')) {
+        return `Physical activity can help regulate emotions and reduce stress. ${patternContext ? `Particularly helpful when ${patternContext}.` : ''} Start with 10-15 minutes of gentle movement.`;
+      }
+      if (lower.includes('breathe') || lower.includes('breathing')) {
+        return `Breathing exercises activate your parasympathetic nervous system, helping you feel calmer. ${patternContext ? `Especially useful when ${patternContext}.` : ''} Try 4-7-8 breathing: inhale for 4, hold for 7, exhale for 8.`;
+      }
+      if (lower.includes('meditat') || lower.includes('mindful')) {
+        return `Mindfulness helps you observe thoughts without judgment, creating mental space. ${patternContext ? `Can help you process experiences around ${patternContext}.` : ''} Start with just 5 minutes.`;
+      }
+      if (lower.includes('journal') || lower.includes('write')) {
+        return `Writing helps externalize thoughts and gain perspective. ${patternContext ? `Particularly valuable for processing ${patternContext}.` : ''} Try free-writing for 10 minutes without editing.`;
+      }
+      if (lower.includes('friend') || lower.includes('talk') || lower.includes('social')) {
+        return `Social connection provides support and different perspectives. ${patternContext ? `Reaching out can help when ${patternContext}.` : ''} Even a brief conversation can help.`;
+      }
+      if (lower.includes('sleep') || lower.includes('rest')) {
+        return `Quality rest helps emotional regulation and mental clarity. ${patternContext ? `Important for managing ${patternContext}.` : ''} Aim for consistent sleep schedule.`;
+      }
+      
+      // Default enhanced description
+      return `${baseDescription || strategyTitle}${patternContext ? ` This can help with ${patternContext}.` : ' Try this approach when you need support.'}`;
+    }
+    
+    return baseDescription || 'AI-suggested strategy based on your entry';
+  }
+
+  /**
+   * Estimate difficulty based on strategy type
+   */
+  private estimateDifficulty(strategy: string): ActionableInsight['difficulty'] {
+    const lower = strategy.toLowerCase();
+    
+    // Easy strategies
+    if (lower.includes('breathe') || lower.includes('breathing') || 
+        lower.includes('listen to music') || lower.includes('take a break')) {
+      return 'easy';
+    }
+    
+    // Challenging strategies
+    if (lower.includes('therapy') || lower.includes('confront') || 
+        lower.includes('difficult conversation') || lower.includes('intensive')) {
+      return 'challenging';
+    }
+    
+    // Default to moderate
+    return 'moderate';
+  }
+
+  /**
+   * Estimate time based on strategy type
+   */
+  private estimateTime(strategy: string): string {
+    const lower = strategy.toLowerCase();
+    
+    if (lower.includes('quick') || lower.includes('brief') || lower.includes('breathing')) {
+      return '5 minutes';
+    }
+    if (lower.includes('walk') || lower.includes('exercise')) {
+      return '15-20 minutes';
+    }
+    if (lower.includes('journal') || lower.includes('write')) {
+      return '10-15 minutes';
+    }
+    if (lower.includes('meditation') || lower.includes('mindfulness')) {
+      return '10-20 minutes';
+    }
+    
+    return '10-15 minutes';
   }
 
   /**
