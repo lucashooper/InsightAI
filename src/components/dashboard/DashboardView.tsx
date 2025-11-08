@@ -4,7 +4,6 @@ import { BarChart3 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import SentimentFlowChart from './SentimentFlowChart';
-import InsightBreakdownChart from './InsightBreakdownChart';
 import MonthlyHighlights from './MonthlyHighlights';
 import GrowthOpportunities from './GrowthOpportunities';
 import ComparisonView from '../comparison/ComparisonView';
@@ -411,7 +410,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
             </motion.div>
 
             {/* Sentiment Flow Chart - Full Width */}
-            <motion.div variants={itemVariants} style={{ gridColumn: '1 / -1' }}>
+            <motion.div variants={itemVariants}>
               <SentimentFlowChart 
                 data={sentimentData} 
                 timeRange={timeRange}
@@ -422,47 +421,30 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
               />
             </motion.div>
             
-            {/* Grid Layout for Other Components */}
+            {/* Stacked Insights - Clean vertical layout */}
             <motion.div 
               variants={itemVariants}
               style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(3, 1fr)', 
-                gap: '2rem',
-                alignItems: 'start'
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '2rem'
               }}
             >
-              {/* Left Column: Insight Categories + Growth Opportunities */}
-              <motion.div 
-                variants={itemVariants}
-                style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  gap: '2rem',
-                  gridColumn: '1 / 2'
-                }}
-              >
-                {/* Insight Breakdown Chart */}
-                <InsightBreakdownChart data={categoryData} timeRange={timeRange} />
-                
-                {/* Growth Opportunities */}
-                <GrowthOpportunities 
-                  insights={growthOpportunities} 
-                  timeRange={timeRange}
-                  setActiveView={setActiveView as React.Dispatch<React.SetStateAction<'editor' | 'dashboard' | 'settings'>>}
-                  setActiveNoteId={setActiveNoteId}
-                />
-              </motion.div>
+              {/* Patterns to Address */}
+              <GrowthOpportunities 
+                insights={growthOpportunities} 
+                timeRange={timeRange}
+                setActiveView={setActiveView as React.Dispatch<React.SetStateAction<'editor' | 'dashboard' | 'settings'>>}
+                setActiveNoteId={setActiveNoteId}
+              />
               
-              {/* Right Column: Monthly Highlights - Spans 2 columns */}
-              <motion.div variants={itemVariants} style={{ gridColumn: '2 / 4' }}>
-                <MonthlyHighlights 
-                  insights={positiveInsights} 
-                  timeRange={timeRange}
-                  setActiveView={setActiveView as React.Dispatch<React.SetStateAction<'editor' | 'dashboard' | 'settings'>>}
-                  setActiveNoteId={setActiveNoteId}
-                />
-              </motion.div>
+              {/* What's Working */}
+              <MonthlyHighlights 
+                insights={positiveInsights} 
+                timeRange={timeRange}
+                setActiveView={setActiveView as React.Dispatch<React.SetStateAction<'editor' | 'dashboard' | 'settings'>>}
+                setActiveNoteId={setActiveNoteId}
+              />
             </motion.div>
           </motion.div>
         )}

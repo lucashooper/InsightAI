@@ -1,5 +1,5 @@
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceDot } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { PremiumIcons } from '../icons/PremiumIcons';
 
 interface SentimentDataPoint {
@@ -35,6 +35,14 @@ const SentimentFlowChart: React.FC<SentimentFlowChartProps> = ({ data, timeRange
   const maxResilience = Math.max(...resilienceScores);
   const bestWellbeingDay = data.find(d => d.wellbeingScore === maxWellbeing);
   const bestResilienceDay = data.find(d => d.resilienceScore === maxResilience);
+  
+  // Calculate averages
+  const avgWellbeing = data.length > 0 
+    ? (data.reduce((sum, d) => sum + d.wellbeingScore, 0) / data.length).toFixed(1)
+    : '0.0';
+  const avgResilience = data.length > 0
+    ? (data.reduce((sum, d) => sum + d.resilienceScore, 0) / data.length).toFixed(1)
+    : '0.0';
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -124,184 +132,125 @@ const SentimentFlowChart: React.FC<SentimentFlowChartProps> = ({ data, timeRange
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Well-being Chart */}
-      <div style={{
-        background: 'rgba(255, 255, 255, 0.03)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
-        borderRadius: '12px',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        padding: '1.5rem'
+    <div style={{
+      background: 'rgba(255, 255, 255, 0.03)',
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
+      borderRadius: '16px',
+      border: '1px solid rgba(255, 255, 255, 0.08)',
+      padding: '2rem'
+    }}>
+      {/* Header */}
+      <div style={{ 
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '1.5rem'
       }}>
-        <div style={{ 
+        <h2 style={{ 
+          margin: 0, 
+          color: '#E5E7EB',
+          fontSize: '1.5rem',
+          fontWeight: '700',
           display: 'flex',
-          justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '1rem'
+          gap: '0.75rem'
         }}>
-          <h3 style={{ 
-            margin: 0, 
-            color: '#E5E7EB',
-            fontSize: '1.1rem',
-            fontWeight: '600',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}>
-            <PremiumIcons.TrendingUp size={18} color="#38bdf8" />
-            Well-being Over Time
-          </h3>
-          <span style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>
-            {getTimeRangeLabel(timeRange)}
-          </span>
-        </div>
-        
-        <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
-            <XAxis 
-              dataKey="date" 
-              stroke="#9CA3AF"
-              fontSize={11}
-              tickLine={false}
-            />
-            <YAxis 
-              stroke="#9CA3AF"
-              fontSize={11}
-              domain={[0, 10]}
-              ticks={[0, 2, 4, 6, 8, 10]}
-              tickLine={false}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Line 
-              type="monotone"
-              dataKey="wellbeingScore" 
-              stroke="#38bdf8"
-              strokeWidth={3}
-              dot={{ fill: '#38bdf8', strokeWidth: 2, r: 4 }}
-              activeDot={{ r: 7, stroke: '#38bdf8', strokeWidth: 3, fill: '#1e40af' }}
-            />
-            {/* Best day annotation */}
-            {bestWellbeingDay && (
-              <ReferenceDot
-                x={bestWellbeingDay.date}
-                y={bestWellbeingDay.wellbeingScore}
-                r={8}
-                fill="#22c55e"
-                stroke="#fff"
-                strokeWidth={2}
-              />
-            )}
-          </LineChart>
-        </ResponsiveContainer>
-        
-        {bestWellbeingDay && (
-          <div style={{ 
-            marginTop: '0.75rem', 
-            fontSize: '0.75rem', 
-            color: '#22c55e',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}>
-            <PremiumIcons.Sparkles size={14} color="#22c55e" />
-            <span>Best day: {bestWellbeingDay.date} ({bestWellbeingDay.wellbeingScore}/10)</span>
-          </div>
-        )}
-      </div>
-
-      {/* Resilience Chart */}
-      <div style={{
-        background: 'rgba(255, 255, 255, 0.03)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
-        borderRadius: '12px',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        padding: '1.5rem'
-      }}>
-        <div style={{ 
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '1rem'
-        }}>
-          <h3 style={{ 
-            margin: 0, 
-            color: '#E5E7EB',
-            fontSize: '1.1rem',
-            fontWeight: '600',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}>
-            <PremiumIcons.Target size={18} color="#f59e0b" />
-            Resilience & Active Effort
-          </h3>
-          <span style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>
-            {getTimeRangeLabel(timeRange)}
-          </span>
-        </div>
-        
-        <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.3} />
-            <XAxis 
-              dataKey="date" 
-              stroke="#9CA3AF"
-              fontSize={11}
-              tickLine={false}
-            />
-            <YAxis 
-              stroke="#9CA3AF"
-              fontSize={11}
-              domain={[0, 10]}
-              ticks={[0, 2, 4, 6, 8, 10]}
-              tickLine={false}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Line 
-              type="monotone"
-              dataKey="resilienceScore" 
-              stroke="#f59e0b"
-              strokeWidth={3}
-              dot={{ fill: '#f59e0b', strokeWidth: 2, r: 4 }}
-              activeDot={{ r: 7, stroke: '#f59e0b', strokeWidth: 3, fill: '#b45309' }}
-            />
-            {/* Best resilience day annotation */}
-            {bestResilienceDay && (
-              <ReferenceDot
-                x={bestResilienceDay.date}
-                y={bestResilienceDay.resilienceScore}
-                r={8}
-                fill="#22c55e"
-                stroke="#fff"
-                strokeWidth={2}
-              />
-            )}
-          </LineChart>
-        </ResponsiveContainer>
-        
-        {bestResilienceDay && (
-          <div style={{ 
-            marginTop: '0.75rem', 
-            fontSize: '0.75rem', 
-            color: '#22c55e',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}>
-            <PremiumIcons.Target size={14} color="#22c55e" />
-            <span>Highest effort: {bestResilienceDay.date} ({bestResilienceDay.resilienceScore}/10)</span>
-          </div>
-        )}
+          <span style={{ fontSize: '1.75rem' }}>📊</span>
+          Emotional Health Over Time
+        </h2>
+        <span style={{ fontSize: '0.875rem', color: '#9CA3AF' }}>
+          {getTimeRangeLabel(timeRange)}
+        </span>
       </div>
       
+      {/* Combined Chart */}
+      <ResponsiveContainer width="100%" height={350}>
+        <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" opacity={0.5} />
+          <XAxis 
+            dataKey="date" 
+            stroke="#64748b"
+            fontSize={12}
+            tickLine={false}
+          />
+          <YAxis 
+            stroke="#64748b"
+            fontSize={12}
+            domain={[0, 10]}
+            ticks={[0, 2, 4, 6, 8, 10]}
+            tickLine={false}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          
+          {/* Well-being line */}
+          <Line 
+            type="monotone"
+            dataKey="wellbeingScore"
+            name="Well-being"
+            stroke="#06b6d4"
+            strokeWidth={3}
+            dot={{ fill: '#06b6d4', strokeWidth: 2, r: 5 }}
+            activeDot={{ r: 7, stroke: '#06b6d4', strokeWidth: 3 }}
+          />
+          
+          {/* Resilience line */}
+          <Line 
+            type="monotone"
+            dataKey="resilienceScore"
+            name="Resilience"
+            stroke="#f97316"
+            strokeWidth={3}
+            dot={{ fill: '#f97316', strokeWidth: 2, r: 5 }}
+            activeDot={{ r: 7, stroke: '#f97316', strokeWidth: 3 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+
+      {/* Summary stats below chart */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, 1fr)',
+        gap: '1.5rem',
+        marginTop: '1.5rem',
+        paddingTop: '1.5rem',
+        borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+      }}>
+        <div>
+          <div style={{ fontSize: '0.875rem', color: '#06b6d4', marginBottom: '0.5rem', fontWeight: '500' }}>
+            Well-being
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: '700', color: '#E5E7EB', marginBottom: '0.25rem' }}>
+            {avgWellbeing} avg
+          </div>
+          {bestWellbeingDay && (
+            <div style={{ fontSize: '0.75rem', color: '#9CA3AF', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <span style={{ color: '#22c55e' }}>↑</span> Best day: {bestWellbeingDay.date} ({bestWellbeingDay.wellbeingScore}/10)
+            </div>
+          )}
+        </div>
+        <div>
+          <div style={{ fontSize: '0.875rem', color: '#f97316', marginBottom: '0.5rem', fontWeight: '500' }}>
+            Resilience
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: '700', color: '#E5E7EB', marginBottom: '0.25rem' }}>
+            {avgResilience} avg
+          </div>
+          {bestResilienceDay && (
+            <div style={{ fontSize: '0.75rem', color: '#9CA3AF', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <span style={{ color: '#22c55e' }}>↑</span> Highest: {bestResilienceDay.date} ({bestResilienceDay.resilienceScore}/10)
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Hint */}
       <div style={{ 
         fontSize: '0.8rem', 
         color: '#9CA3AF',
         textAlign: 'center',
-        fontStyle: 'italic'
+        fontStyle: 'italic',
+        marginTop: '1rem'
       }}>
         💡 Hover over data points to see details • Click to view entry from that day
       </div>
@@ -309,4 +258,4 @@ const SentimentFlowChart: React.FC<SentimentFlowChartProps> = ({ data, timeRange
   );
 };
 
-export default SentimentFlowChart; 
+export default SentimentFlowChart;
