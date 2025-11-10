@@ -18,6 +18,7 @@ import NoteTabBar from './components/common/NoteTabBar';
 import SearchModal from './components/common/SearchModal';
 import LeftToolbar from './components/common/LeftToolbar';
 import BookmarkDropdown from './components/common/BookmarkDropdown';
+import { InstallPrompt } from './components/pwa/InstallPrompt';
 
 // DarkModeToggle removed - theme control is now in Settings page only
 
@@ -518,6 +519,9 @@ const App: React.FC = () => {
               )}
           </main>
         </div>
+        
+        {/* PWA Install Prompt */}
+        <InstallPrompt />
       </div>
     </ThemeProvider>
   );
