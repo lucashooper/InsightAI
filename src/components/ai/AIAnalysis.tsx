@@ -1181,7 +1181,7 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
                       </p>
                       <button
                         className="primary-button"
-                        onClick={() => setActiveView('dashboard')}
+                        onClick={() => setActiveView?.('dashboard')}
                         style={{
                           fontSize: '0.9rem',
                           padding: '0.5rem 1rem'

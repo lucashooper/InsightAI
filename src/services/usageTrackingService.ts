@@ -13,7 +13,7 @@ export const usageTrackingService = {
   /**
    * Check if user can perform an action based on daily limits
    */
-  async checkDailyLimit(actionType: ActionType): Promise<UsageLimit> {
+  async checkDailyLimit(_actionType: ActionType): Promise<UsageLimit> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -67,7 +67,7 @@ export const usageTrackingService = {
    * Get today's usage statistics
    * NOTE: Disabled - usage_tracking table doesn't exist yet
    */
-  async getTodayUsage(actionType: ActionType): Promise<{ count: number; limit: number; tier: string }> {
+  async getTodayUsage(_actionType: ActionType): Promise<{ count: number; limit: number; tier: string }> {
     // Disabled - no usage tracking table in database
     // Everyone gets unlimited for now
     return Promise.resolve({ count: 0, limit: 999999, tier: 'free' });
