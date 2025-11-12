@@ -554,11 +554,23 @@
   font-weight: 600;
   text-decoration: none;
   transition: color 0.2s ease;
+  outline: none;
+  padding: 0;
 }
 
 .auth-link:hover {
   color: #c7d2fe;
   text-decoration: underline;
+  background: none !important;
+}
+
+.auth-link:focus {
+  outline: none;
+  background: none !important;
+}
+
+.auth-link:active {
+  background: none !important;
 }
 
 /* Welcome Screen - Same dark treatment */
