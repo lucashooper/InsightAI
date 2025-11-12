@@ -238,7 +238,7 @@ Entry text: ${content}`;
     try {
       // Get user's preferred LLM provider
       const provider = getLLMProvider();
-      console.log(`🤖 Using ${provider === 'local' ? 'LOCAL (LM Studio)' : 'CLOUD (OpenAI)'} for AI analysis`);
+      console.log(`🤖 Using ${provider === 'local' ? 'LOCAL (LM Studio)' : 'CLOUD (Groq)'} for AI analysis`);
       
       // Use unified chat interface (non-streaming)
       const response = await chat([
@@ -259,9 +259,9 @@ Entry text: ${content}`;
       // Type assertion since we know it's not a stream
       const analysisText = (response as any).choices?.[0]?.message?.content || '';
       
-      console.log(`✅ ${provider === 'local' ? 'LOCAL LLM' : 'OPENAI'} response received:`, {
+      console.log(`✅ ${provider === 'local' ? 'LOCAL LLM' : 'GROQ'} response received:`, {
         provider,
-        model: provider === 'local' ? 'ChatGPT-OSS-20B' : 'GPT-4o-mini',
+        model: provider === 'local' ? 'ChatGPT-OSS-20B' : 'openai/gpt-oss-120b',
         responseLength: analysisText.length,
         first100: analysisText.substring(0, 100)
       });

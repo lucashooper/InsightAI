@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 
 // Model configuration
 export const LOCAL_MODEL = import.meta.env.VITE_LOCAL_LLM_MODEL || 'openai/gpt-oss-20b';
-export const CLOUD_MODEL = 'gpt-4o-mini';
+export const GROQ_MODEL = 'openai/gpt-oss-120b';
 
 // Lazy-loaded clients (only created when needed)
 let _localAI: OpenAI | null = null;
@@ -19,13 +19,14 @@ function getLocalAI(): OpenAI {
   return _localAI;
 }
 
-function getCloudAI(): OpenAI {
+function getGroqAI(): OpenAI {
   if (!_cloudAI) {
-    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-    if (!apiKey || apiKey === 'your-openai-api-key-here') {
-      throw new Error('OpenAI API key not configured. Please add VITE_OPENAI_API_KEY to your .env.local file or use Local mode.');
+    const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+    if (!apiKey || apiKey === 'your-groq-api-key-here') {
+      throw new Error('Groq API key not configured. Please add VITE_GROQ_API_KEY to your .env.local file or use Local mode.');
     }
     _cloudAI = new OpenAI({
+      baseURL: 'https://api.groq.com/openai/v1',
       apiKey,
       dangerouslyAllowBrowser: true,
     });
@@ -37,15 +38,15 @@ function getCloudAI(): OpenAI {
 export async function chat(
   messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
   options: {
-    provider?: 'local' | 'openai';
+    provider?: 'local' | 'groq';
     temperature?: number;
     stream?: boolean;
   } = {}
 ) {
-  const { provider = 'local', temperature = 0.7, stream = false } = options;
+  const { provider = 'groq', temperature = 0.7, stream = false } = options;
   
-  const client = provider === 'local' ? getLocalAI() : getCloudAI();
-  const model = provider === 'local' ? LOCAL_MODEL : CLOUD_MODEL;
+  const client = provider === 'local' ? getLocalAI() : getGroqAI();
+  const model = provider === 'local' ? LOCAL_MODEL : GROQ_MODEL;
 
   return client.chat.completions.create({
     model,
@@ -58,10 +59,10 @@ export async function chat(
 // Helper for streaming responses
 export async function* chatStream(
   messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
-  provider: 'local' | 'openai' = 'local'
+  provider: 'local' | 'groq' = 'groq'
 ) {
-  const client = provider === 'local' ? getLocalAI() : getCloudAI();
-  const model = provider === 'local' ? LOCAL_MODEL : CLOUD_MODEL;
+  const client = provider === 'local' ? getLocalAI() : getGroqAI();
+  const model = provider === 'local' ? LOCAL_MODEL : GROQ_MODEL;
 
   const stream = await client.chat.completions.create({
     model,

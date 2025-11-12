@@ -27,7 +27,6 @@ const SettingsView: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [, setPrivacyMode] = useState(false);
   const [usageStats, setUsageStats] = useState<{ count: number; limit: number; tier: string } | null>(null);
-  const [llmProvider, setLlmProvider] = useState<'local' | 'openai'>('local');
 
   useEffect(() => {
     // Load saved settings
@@ -49,12 +48,6 @@ const SettingsView: React.FC = () => {
     // Load privacy mode setting
     const savedPrivacyMode = localStorage.getItem('insightai-privacy-mode');
     setPrivacyMode(savedPrivacyMode === 'true');
-
-    // Load LLM provider setting
-    const savedProvider = localStorage.getItem('insightai-llm-provider') as 'local' | 'openai' | null;
-    if (savedProvider) {
-      setLlmProvider(savedProvider);
-    }
 
     // Load user profile using FRESH SESSION
     const loadUserProfile = async () => {
@@ -84,11 +77,6 @@ const SettingsView: React.FC = () => {
 
   const handleThemeChange = (newTheme: 'midnight' | 'dusk' | 'light') => {
     setTheme(newTheme);
-  };
-
-  const handleLLMProviderChange = (provider: 'local' | 'openai') => {
-    setLlmProvider(provider);
-    localStorage.setItem('insightai-llm-provider', provider);
   };
 
   const handleRemindersToggle = async () => {
@@ -735,189 +723,6 @@ const SettingsView: React.FC = () => {
           ))}
         </div>
         </motion.div>
-
-        {/* AI Model Selection */}
-        <motion.div
-        className="settings-section ai-model-section"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.25 }}
-        style={{
-          background: 'rgba(255, 255, 255, 0.03)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: '16px',
-          padding: '32px'
-        }}
-      >
-        <h2 style={{ 
-          margin: '0 0 0.5rem 0', 
-          color: 'var(--text-primary)', 
-          fontSize: '1.5rem',
-          fontWeight: '600',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem'
-        }}>
-          🤖 AI Model
-        </h2>
-        <p style={{ 
-          margin: '0 0 1.5rem 0', 
-          color: 'var(--text-secondary)', 
-          fontSize: '0.9rem' 
-        }}>
-          Choose between local private inference or cloud-based analysis
-        </p>
-        
-        <div style={{ display: 'flex', gap: '16px', marginTop: '16px' }}>
-          {/* Local LLM Option */}
-          <div
-            onClick={() => handleLLMProviderChange('local')}
-            style={{
-              flex: 1,
-              padding: '20px',
-              borderRadius: '12px',
-              border: llmProvider === 'local' 
-                ? '2px solid var(--accent-primary)' 
-                : '1px solid rgba(255, 255, 255, 0.1)',
-              background: llmProvider === 'local'
-                ? 'rgba(139, 92, 246, 0.1)'
-                : 'rgba(255, 255, 255, 0.03)',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              position: 'relative'
-            }}
-          >
-            <div style={{ marginBottom: '12px', fontSize: '2rem' }}>🔒</div>
-            <h3 style={{ 
-              margin: '0 0 0.5rem 0', 
-              color: 'var(--text-primary)', 
-              fontSize: '1.1rem',
-              fontWeight: '600'
-            }}>
-              Local (Private)
-            </h3>
-            <p style={{ 
-              margin: '0 0 0.75rem 0', 
-              color: 'var(--text-secondary)', 
-              fontSize: '0.85rem',
-              lineHeight: '1.5'
-            }}>
-              ChatGPT-OSS via LM Studio
-            </p>
-            <ul style={{
-              margin: 0,
-              padding: '0 0 0 1.2rem',
-              color: 'var(--text-secondary)',
-              fontSize: '0.8rem',
-              lineHeight: '1.6'
-            }}>
-              <li>100% Private - never leaves your device</li>
-              <li>Free - no API costs</li>
-              <li>Works offline</li>
-              <li>Fast local inference</li>
-            </ul>
-            {llmProvider === 'local' && (
-              <div style={{
-                position: 'absolute',
-                top: '16px',
-                right: '16px',
-                color: 'var(--accent-primary)',
-                fontSize: '1.5rem'
-              }}>
-                ✓
-              </div>
-            )}
-          </div>
-
-          {/* OpenAI Cloud Option */}
-          <div
-            onClick={() => handleLLMProviderChange('openai')}
-            style={{
-              flex: 1,
-              padding: '20px',
-              borderRadius: '12px',
-              border: llmProvider === 'openai' 
-                ? '2px solid var(--accent-primary)' 
-                : '1px solid rgba(255, 255, 255, 0.1)',
-              background: llmProvider === 'openai'
-                ? 'rgba(139, 92, 246, 0.1)'
-                : 'rgba(255, 255, 255, 0.03)',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              position: 'relative'
-            }}
-          >
-            <div style={{ marginBottom: '12px', fontSize: '2rem' }}>☁️</div>
-            <h3 style={{ 
-              margin: '0 0 0.5rem 0', 
-              color: 'var(--text-primary)', 
-              fontSize: '1.1rem',
-              fontWeight: '600'
-            }}>
-              Cloud (Best Quality)
-            </h3>
-            <p style={{ 
-              margin: '0 0 0.75rem 0', 
-              color: 'var(--text-secondary)', 
-              fontSize: '0.85rem',
-              lineHeight: '1.5'
-            }}>
-              GPT-4o Mini via OpenAI
-            </p>
-            <ul style={{
-              margin: 0,
-              padding: '0 0 0 1.2rem',
-              color: 'var(--text-secondary)',
-              fontSize: '0.8rem',
-              lineHeight: '1.6'
-            }}>
-              <li>Highest quality analysis</li>
-              <li>Latest GPT-4 model</li>
-              <li>Always available</li>
-              <li>No local setup needed</li>
-            </ul>
-            {llmProvider === 'openai' && (
-              <div style={{
-                position: 'absolute',
-                top: '16px',
-                right: '16px',
-                color: 'var(--accent-primary)',
-                fontSize: '1.5rem'
-              }}>
-                ✓
-              </div>
-            )}
-          </div>
-        </div>
-
-        {llmProvider === 'local' && (
-          <div style={{
-            marginTop: '1rem',
-            padding: '0.75rem',
-            background: 'rgba(59, 130, 246, 0.1)',
-            borderRadius: '8px',
-            border: '1px solid rgba(59, 130, 246, 0.2)'
-          }}>
-            <p style={{ margin: 0, fontSize: '0.85rem', color: '#60a5fa', lineHeight: '1.5' }}>
-              💡 <strong>Note:</strong> Requires LM Studio running on port 1234 with ChatGPT-OSS model loaded.
-            </p>
-          </div>
-        )}
-
-        {llmProvider === 'openai' && !import.meta.env.VITE_OPENAI_API_KEY && (
-          <div style={{
-            marginTop: '1rem',
-            padding: '0.75rem',
-            background: 'rgba(239, 68, 68, 0.1)',
-            borderRadius: '8px',
-            border: '1px solid rgba(239, 68, 68, 0.2)'
-          }}>
-            <p style={{ margin: 0, fontSize: '0.85rem', color: '#f87171', lineHeight: '1.5' }}>
-              ⚠️ <strong>Warning:</strong> OpenAI API key not configured. Add <code>VITE_OPENAI_API_KEY</code> to your <code>.env.local</code> file or switch to Local mode.
-            </p>
-          </div>
-        )}
-      </motion.div>
 
         {/* Daily Reminders */}
         <motion.div

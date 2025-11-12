@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchGroqLimits, parseResetTime, type GroqLimits } from '../../services/groqLimitsService';
 import { useAuth } from '../../contexts/AuthContext';
+import { getLLMProvider, setLLMProvider, type LLMProvider } from '../../lib/llmProvider';
 import './AdminDashboard.css';
 
 const AdminDashboard: React.FC = () => {
@@ -9,6 +10,7 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [currentProvider, setCurrentProvider] = useState<LLMProvider>(getLLMProvider());
 
   const loadGroqLimits = async () => {
     try {
@@ -33,6 +35,12 @@ const AdminDashboard: React.FC = () => {
     loadGroqLimits();
   };
 
+  const handleProviderToggle = (provider: LLMProvider) => {
+    setLLMProvider(provider);
+    setCurrentProvider(provider);
+    console.log(`🔄 Switched to ${provider === 'local' ? 'LOCAL (LM Studio)' : 'GROQ (Cloud)'} provider`);
+  };
+
   if (!user) {
     return (
       <div className="admin-dashboard">
@@ -48,7 +56,40 @@ const AdminDashboard: React.FC = () => {
     <div className="admin-dashboard">
       <div className="admin-header">
         <h1>Admin Dashboard</h1>
-        <p className="admin-subtitle">Groq API Rate Limits</p>
+        <p className="admin-subtitle">AI Provider & API Limits</p>
+      </div>
+
+      {/* AI Provider Toggle */}
+      <div className="provider-toggle-card">
+        <h2>🤖 AI Provider</h2>
+        <p className="provider-description">
+          Switch between local LM Studio (testing) and Groq Cloud (production)
+        </p>
+        <div className="toggle-buttons">
+          <button
+            className={`toggle-btn ${currentProvider === 'groq' ? 'active' : ''}`}
+            onClick={() => handleProviderToggle('groq')}
+          >
+            <span className="toggle-icon">☁️</span>
+            <div className="toggle-content">
+              <strong>Groq Cloud</strong>
+              <small>Production (openai/gpt-oss-120b)</small>
+            </div>
+          </button>
+          <button
+            className={`toggle-btn ${currentProvider === 'local' ? 'active' : ''}`}
+            onClick={() => handleProviderToggle('local')}
+          >
+            <span className="toggle-icon">💻</span>
+            <div className="toggle-content">
+              <strong>LM Studio</strong>
+              <small>Testing (localhost:1234)</small>
+            </div>
+          </button>
+        </div>
+        <div className="current-provider-status">
+          Currently using: <strong>{currentProvider === 'groq' ? 'Groq Cloud ☁️' : 'LM Studio 💻'}</strong>
+        </div>
       </div>
 
       {error && (

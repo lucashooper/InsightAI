@@ -55,66 +55,21 @@ export const usageTrackingService = {
 
   /**
    * Track an action (increment usage counter)
+   * NOTE: Disabled - usage_tracking table doesn't exist yet
    */
   async trackAction(actionType: ActionType): Promise<void> {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-
-      const { error } = await supabase
-        .from('usage_tracking')
-        .insert({
-          user_id: user.id,
-          action_type: actionType
-        });
-
-      if (error) {
-        console.error('Error tracking action:', error);
-        throw error;
-      }
-
-      console.log(`✅ Tracked action: ${actionType}`);
-    } catch (error) {
-      console.error('Error in trackAction:', error);
-      // Don't throw - we don't want to block the user if tracking fails
-    }
+    // Disabled - no usage tracking table in database
+    console.log(`📊 Would track action: ${actionType} (tracking disabled)`);
+    return Promise.resolve();
   },
 
   /**
    * Get today's usage statistics
+   * NOTE: Disabled - usage_tracking table doesn't exist yet
    */
   async getTodayUsage(actionType: ActionType): Promise<{ count: number; limit: number; tier: string }> {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-
-      // Everyone gets unlimited for now (using local LLM)
-      const tier = 'free';
-      const limit = 999999;
-
-      // Count today's usage
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const { data: usageData } = await supabase
-        .from('usage_tracking')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('action_type', actionType)
-        .gte('created_at', today.toISOString());
-
-      const count = usageData?.length || 0;
-
-      return { count, limit, tier };
-    } catch (error) {
-      console.error('Error getting today usage:', error);
-      return { count: 0, limit: 999999, tier: 'free' };
-    }
+    // Disabled - no usage tracking table in database
+    // Everyone gets unlimited for now
+    return Promise.resolve({ count: 0, limit: 999999, tier: 'free' });
   }
 };
