@@ -1,0 +1,157 @@
+import React, { useState, useEffect } from 'react';
+import { fetchGroqLimits, parseResetTime, type GroqLimits } from '../../services/groqLimitsService';
+import { useAuth } from '../../contexts/AuthContext';
+import './AdminDashboard.css';
+
+const AdminDashboard: React.FC = () => {
+  const { user } = useAuth();
+  const [limits, setLimits] = useState<GroqLimits | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  const loadGroqLimits = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchGroqLimits();
+      setLimits(data);
+      setLastUpdated(new Date());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch limits');
+      console.error('Error loading Groq limits:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadGroqLimits();
+  }, []);
+
+  const handleRefresh = () => {
+    loadGroqLimits();
+  };
+
+  if (!user) {
+    return (
+      <div className="admin-dashboard">
+        <div className="admin-error">
+          <h2>Access Denied</h2>
+          <p>You must be logged in to view this page.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="admin-dashboard">
+      <div className="admin-header">
+        <h1>Admin Dashboard</h1>
+        <p className="admin-subtitle">Groq API Rate Limits</p>
+      </div>
+
+      {error && (
+        <div className="admin-error-banner">
+          <strong>Error:</strong> {error}
+          {error.includes('Not authorized') && (
+            <p className="error-hint">
+              Only the designated admin email can access this dashboard.
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="admin-content">
+        <div className="limits-card">
+          <div className="card-header">
+            <h2>Current API Limits</h2>
+            <button 
+              onClick={handleRefresh} 
+              disabled={loading}
+              className="refresh-button"
+            >
+              {loading ? '⟳ Refreshing...' : '↻ Refresh'}
+            </button>
+          </div>
+
+          {loading && !limits ? (
+            <div className="loading-state">
+              <div className="spinner"></div>
+              <p>Loading rate limits...</p>
+            </div>
+          ) : limits ? (
+            <div className="limits-grid">
+              <div className="limit-item">
+                <div className="limit-icon">🔢</div>
+                <div className="limit-details">
+                  <h3>Remaining Requests</h3>
+                  <p className="limit-value">
+                    {limits.remainingRequests || 'Unknown'}
+                  </p>
+                  <span className="limit-label">requests left</span>
+                </div>
+              </div>
+
+              <div className="limit-item">
+                <div className="limit-icon">🎫</div>
+                <div className="limit-details">
+                  <h3>Remaining Tokens</h3>
+                  <p className="limit-value">
+                    {limits.remainingTokens ? 
+                      parseInt(limits.remainingTokens).toLocaleString() : 
+                      'Unknown'
+                    }
+                  </p>
+                  <span className="limit-label">tokens left</span>
+                </div>
+              </div>
+
+              <div className="limit-item">
+                <div className="limit-icon">⏱️</div>
+                <div className="limit-details">
+                  <h3>Resets In</h3>
+                  <p className="limit-value">
+                    {parseResetTime(limits.requestsReset)}
+                  </p>
+                  <span className="limit-label">until reset</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="no-data">
+              <p>No data available. Click refresh to load.</p>
+            </div>
+          )}
+
+          {lastUpdated && (
+            <div className="last-updated">
+              Last updated: {lastUpdated.toLocaleTimeString()}
+            </div>
+          )}
+        </div>
+
+        <div className="info-card">
+          <h3>ℹ️ About Rate Limits</h3>
+          <ul>
+            <li>
+              <strong>Requests:</strong> Number of API calls you can make before hitting the limit
+            </li>
+            <li>
+              <strong>Tokens:</strong> Total tokens (input + output) you can use
+            </li>
+            <li>
+              <strong>Reset:</strong> Time until your limits refresh
+            </li>
+          </ul>
+          <p className="info-note">
+            💡 <strong>Tip:</strong> Groq has generous free tier limits. Monitor these to ensure 
+            your application doesn't hit rate limits during peak usage.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AdminDashboard;

@@ -45,7 +45,7 @@ interface GrowthOpportunity {
 }
 
 interface DashboardViewProps {
-  setActiveView: React.Dispatch<React.SetStateAction<'editor' | 'dashboard' | 'settings' | 'playbook' | 'mynotes'>>;
+  setActiveView: React.Dispatch<React.SetStateAction<'editor' | 'dashboard' | 'settings' | 'playbook' | 'mynotes' | 'admin'>>;
   setActiveNoteId: (id: string) => void;
 }
 

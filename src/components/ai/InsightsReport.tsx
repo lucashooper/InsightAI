@@ -25,7 +25,7 @@ interface InsightsReportProps {
   insights: InsightsReportData;
   isRegenerating?: boolean;
   noteId?: string;
-  setActiveView?: (view: 'editor' | 'dashboard' | 'settings' | 'playbook') => void;
+  setActiveView?: (view: 'editor' | 'dashboard' | 'settings' | 'playbook' | 'admin') => void;
 }
 
 const InsightsReport: React.FC<InsightsReportProps> = ({ insights, isRegenerating = false, noteId, setActiveView }) => {
@@ -108,6 +108,7 @@ const InsightsReport: React.FC<InsightsReportProps> = ({ insights, isRegeneratin
                 {takeaway.sentiment === 'opportunity' && (
                   <InsightActionCard 
                     insight={takeaway}
+                    actionableSuggestion={insights.actionableSuggestion}
                     noteId={noteId}
                     setActiveView={setActiveView}
                   />

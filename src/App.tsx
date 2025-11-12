@@ -12,6 +12,7 @@ import DashboardView from './components/dashboard/DashboardView';
 import SettingsView from './components/settings/SettingsView';
 import PlaybookView from './components/playbook/PlaybookView';
 import MyNotesView from './components/notes/MyNotesView';
+import AdminDashboard from './components/admin/AdminDashboard';
 import AnimatedBackground from './components/common/AnimatedBackground';
 import { storageAdapter } from './services/storageAdapter';
 import NoteTabBar from './components/common/NoteTabBar';
@@ -26,7 +27,7 @@ const App: React.FC = () => {
   const [notes, setNotes] = useState<DiaryEntry[]>([]);
   const [selectedNote, setSelectedNote] = useState<DiaryEntry | null>(null);
   const [activeTab, setActiveTab] = useState<'editor' | 'analysis'>('editor');
-  const [activeView, setActiveView] = useState<'editor' | 'dashboard' | 'settings' | 'playbook' | 'mynotes'>('editor');
+  const [activeView, setActiveView] = useState<'editor' | 'dashboard' | 'settings' | 'playbook' | 'mynotes' | 'admin'>('editor');
   const [isLoading, setIsLoading] = useState(true);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [blurredNoteIds, setBlurredNoteIds] = useState<Set<string>>(new Set());
@@ -514,6 +515,8 @@ const App: React.FC = () => {
                     }
                   }}
                 />
+              ) : activeView === 'admin' ? (
+                <AdminDashboard />
               ) : (
                 <SettingsView />
               )}

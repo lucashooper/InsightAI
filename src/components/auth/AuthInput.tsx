@@ -57,7 +57,7 @@ const AuthInput: React.FC<AuthInputProps> = ({
           required={required}
           disabled={disabled}
           minLength={minLength}
-          className="auth-input-field"
+          className={`auth-input-field ${showPasswordToggle ? 'auth-input-with-toggle' : 'auth-input-no-toggle'}`}
         />
         
         {/* Password Toggle (Right Side) */}

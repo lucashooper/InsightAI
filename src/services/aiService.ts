@@ -1,15 +1,24 @@
 import { PatternDetectionService } from './patternDetectionService';
 import { supabase } from './supabaseClient';
+import { chat } from '../lib/localLLM';
+import { getLLMProvider } from '../lib/llmProvider';
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-// Rate limiting variables
+// Rate limiting variables (only for cloud APIs)
 let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 2000; // 2 seconds between requests
+const MIN_REQUEST_INTERVAL = 2000; // 2 seconds between requests for cloud APIs
 
-// Rate limiting function
+// Rate limiting function - only applies to cloud providers
 const waitForRateLimit = async () => {
+  const provider = getLLMProvider();
+  
+  // Skip rate limiting for local LLM (it's your own server!)
+  if (provider === 'local') {
+    return;
+  }
+  
   const now = Date.now();
   const timeSinceLastRequest = now - lastRequestTime;
   
@@ -98,7 +107,18 @@ export const aiService = {
     
     const startTime = Date.now();
     
-    const enhancedPrompt = `Analyze this diary entry with deep psychological insight. Provide a comprehensive JSON response with the EXACT structure below:
+    const enhancedPrompt = `You are an expert mental health AI assistant with training in CBT, DBT, and positive psychology. Analyze this diary entry with deep psychological insight and empathy.
+
+Your goal is to provide personalized, specific insights that feel like they come from someone who truly understands the user's unique experience. Avoid generic responses.
+
+CRITICAL INSTRUCTIONS:
+1. **Read the entry carefully** - Notice specific details, events, emotions, and patterns mentioned
+2. **Be specific** - Reference actual words, phrases, and situations from the entry
+3. **Avoid generic language** - Don't use phrases like "you've been navigating challenges" or "you showed resilience"
+4. **Connect insights to evidence** - Every insight should point to something concrete in the text
+5. **Personalize suggestions** - Tailor coping strategies to the specific triggers and patterns you identify
+
+Provide a comprehensive JSON response with the EXACT structure below:
 
 {
   "mood_analysis": {
@@ -147,27 +167,27 @@ export const aiService = {
     "areas_for_growth": ["area1", "area2"]
   },
   "insights_report": {
-    "conversationalSummary": "A brief, friendly, and empathetic paragraph summarizing the overall feeling and key observations from the entry. Be warm and supportive, like a caring friend.",
+    "conversationalSummary": "Write 2-3 sentences that show you truly read and understood this specific entry. Reference actual events, feelings, or situations they mentioned. Be warm but specific - avoid phrases like 'you've been navigating challenges' or 'you showed resilience'. Instead, say things like 'I noticed you felt overwhelmed when your boss gave you that last-minute project' or 'It sounds like the conversation with your friend really lifted your spirits.'",
     "keyTakeaways": [
       {
-        "insight": "A specific observation from the user's text. Use *key phrases* to highlight important words. e.g., 'You took time for *self-care* by watching a favorite show.'",
+        "insight": "A specific observation that quotes or closely references the user's actual words. Use *key phrases* to highlight. BAD: 'You practiced self-care.' GOOD: 'You recognized you needed a break and *watched your favorite show* to decompress after the stressful meeting.'",
         "sentiment": "positive",
         "category": "Coping Strategy"
       },
       {
-        "insight": "Another observation. e.g., 'You seem to be frustrated with being *distracted by Instagram*.'",
+        "insight": "Another specific observation. BAD: 'You were distracted.' GOOD: 'You noticed yourself *scrolling Instagram for 2 hours* when you meant to work on your thesis, which left you feeling frustrated.'",
         "sentiment": "opportunity",
         "category": "Area for Growth"
       },
       {
-        "insight": "Another observation. e.g., 'You successfully identified the feeling of *derealization*.'",
+        "insight": "Another specific observation. BAD: 'You showed self-awareness.' GOOD: 'You identified that the *derealization feeling* happens specifically when you're sleep-deprived and anxious.'",
         "sentiment": "positive",
         "category": "Self-Awareness"
       }
     ],
     "actionableSuggestion": {
-      "title": "One thing to try next",
-      "suggestion": "A specific, actionable suggestion"
+      "title": "One specific thing to try based on what they wrote",
+      "suggestion": "A concrete suggestion that addresses something specific from their entry. Reference their actual situation."
     }
   }
 }
@@ -204,63 +224,50 @@ Examples of BAD strategy titles (DO NOT USE):
 - "Think about your feelings"
 - "Work on self-care"
 
+FINAL REMINDER - CRITICAL:
+Before you respond, ask yourself:
+1. Did I reference specific details from the entry?
+2. Would the user feel like I actually read their words?
+3. Are my insights personalized to THEIR experience, not generic advice?
+4. Did I avoid vague phrases like "navigating challenges" or "showed resilience"?
+
+If you answered NO to any of these, revise your response to be more specific.
+
 Entry text: ${content}`;
 
     try {
-      const response = await fetch(GROQ_API_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${GROQ_API_KEY}`,
-          'Content-Type': 'application/json',
+      // Get user's preferred LLM provider
+      const provider = getLLMProvider();
+      console.log(`🤖 Using ${provider === 'local' ? 'LOCAL (LM Studio)' : 'CLOUD (OpenAI)'} for AI analysis`);
+      
+      // Use unified chat interface (non-streaming)
+      const response = await chat([
+        {
+          role: 'system',
+          content: 'You are an expert mental health AI assistant trained in CBT, DBT, and positive psychology. Your responses must be highly personalized and specific. ALWAYS reference actual details from the user\'s entry - specific events, feelings, situations they mentioned. NEVER use generic phrases like "you\'ve been navigating challenges" or "you showed resilience". Instead, reference their actual words and experiences. When suggesting coping strategies, provide specific, actionable titles like "Try limiting caffeine to one cup before noon" or "Take a 10-minute walk when you notice anxiety building". Make every insight feel like it comes from someone who truly read and understood their unique experience.',
         },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a mental health AI assistant. When suggesting coping strategies, ALWAYS provide specific, actionable titles like "Try limiting caffeine to one cup before noon" or "Take a 10-minute walk when feeling anxious". NEVER use generic phrases like "Reflect on this pattern" or "Consider your habits". Be specific and practical.',
-            },
-            {
-              role: 'user',
-              content: enhancedPrompt,
-            },
-          ],
-          temperature: 0.7,
-          max_tokens: 2500,
-        }),
+        {
+          role: 'user',
+          content: enhancedPrompt,
+        },
+      ], {
+        provider,
+        temperature: 0.7,
+        stream: false, // Explicitly disable streaming
       });
 
-      // Debug: Log the full response object
-      console.log('Groq API response:', response);
-      const status = response.status;
-      let data = null;
-      let analysisText = '';
+      // Type assertion since we know it's not a stream
+      const analysisText = (response as any).choices?.[0]?.message?.content || '';
       
-      if (status === 200) {
-        data = await response.json();
-        analysisText = data.choices?.[0]?.message?.content || '';
-        console.log('Groq API response data:', data);
-        console.log('🔍 Analysis text type check:', {
-          type: typeof analysisText,
-          isString: typeof analysisText === 'string',
-          isObject: typeof analysisText === 'object',
-          length: analysisText?.length || 'N/A',
-          first100: typeof analysisText === 'string' ? analysisText.substring(0, 100) : 'Not a string'
-        });
-      } else {
-        // Try to read error body if present
-        let errorText = '';
-        try { 
-          errorText = await response.text(); 
-        } catch (e) {
-          console.error('Failed to read error response text:', e);
-        }
-        console.error('Groq API error:', status, errorText);
-        throw new Error(`Groq API error: ${status} ${errorText}`);
-      }
+      console.log(`✅ ${provider === 'local' ? 'LOCAL LLM' : 'OPENAI'} response received:`, {
+        provider,
+        model: provider === 'local' ? 'ChatGPT-OSS-20B' : 'GPT-4o-mini',
+        responseLength: analysisText.length,
+        first100: analysisText.substring(0, 100)
+      });
       
       if (!analysisText || analysisText.trim() === '') {
-        throw new Error('Groq API returned empty response.');
+        throw new Error(`${provider} API returned empty response.`);
       }
       
       const processingTime = Date.now() - startTime;

@@ -21,67 +21,24 @@ export const usageTrackingService = {
         throw new Error('User not authenticated');
       }
 
-      // Get user profile to check tier
-      const { data: profile, error: profileError } = await supabase
+      // Verify user profile exists (but don't query subscription_tier since it doesn't exist yet)
+      const { error: profileError } = await supabase
         .from('user_profiles')
-        .select('subscription_tier')
+        .select('id')
         .eq('user_id', user.id)
         .single();
 
       if (profileError) {
         console.error('Error fetching user profile:', profileError);
-        throw profileError;
+        // Don't throw - just default to free tier
       }
 
-      const tier = profile?.subscription_tier || 'free';
-
-      // Unlimited tier has no limits
-      if (tier === 'unlimited') {
-        return {
-          canUse: true,
-          remaining: 999999,
-          limit: 999999,
-          tier: 'unlimited'
-        };
-      }
-
-      // Pro tier has high limits
-      if (tier === 'pro') {
-        return {
-          canUse: true,
-          remaining: 999999,
-          limit: 999999,
-          tier: 'pro'
-        };
-      }
-
-      // Free tier: 2 AI analyses per day
-      const limit = 2;
-
-      // Count today's usage
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const { data: usageData, error: usageError } = await supabase
-        .from('usage_tracking')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('action_type', actionType)
-        .gte('created_at', today.toISOString());
-
-      if (usageError) {
-        console.error('Error fetching usage data:', usageError);
-        throw usageError;
-      }
-
-      const count = usageData?.length || 0;
-      const remaining = Math.max(0, limit - count);
-      const canUse = remaining > 0;
-
+      // For now, everyone gets unlimited usage since we're using local LLM (it's free!)
+      // TODO: When implementing paid plans, add subscription_tier column and tier checks
       return {
-        canUse,
-        remaining,
-        limit,
+        canUse: true,
+        remaining: 999999,
+        limit: 999999,
         tier: 'free'
       };
     } catch (error) {
@@ -137,15 +94,9 @@ export const usageTrackingService = {
         throw new Error('User not authenticated');
       }
 
-      // Get user profile to check tier
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('subscription_tier')
-        .eq('user_id', user.id)
-        .single();
-
-      const tier = profile?.subscription_tier || 'free';
-      const limit = tier === 'free' ? 2 : 999999;
+      // Everyone gets unlimited for now (using local LLM)
+      const tier = 'free';
+      const limit = 999999;
 
       // Count today's usage
       const today = new Date();
@@ -163,7 +114,7 @@ export const usageTrackingService = {
       return { count, limit, tier };
     } catch (error) {
       console.error('Error getting today usage:', error);
-      return { count: 0, limit: 2, tier: 'free' };
+      return { count: 0, limit: 999999, tier: 'free' };
     }
   }
 };

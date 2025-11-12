@@ -48,20 +48,20 @@ Supabase already has built-in Google OAuth support, so we don't need external li
 
 5. **Add Authorized Redirect URIs:**
 
-   Add these URLs (replace with your actual domains):
+   Add these EXACT URLs to Google Cloud Console:
 
    ```
    Development:
    http://localhost:5173
-   http://localhost:5173/auth/callback
    
-   Supabase (IMPORTANT):
-   https://YOUR_PROJECT_ID.supabase.co/auth/v1/callback
+   Supabase (CRITICAL - This is the one that matters!):
+   https://ptpqvghlaesyrzlljzkk.supabase.co/auth/v1/callback
    
    Production (when deployed):
    https://yourdomain.com
-   https://yourdomain.com/auth/callback
    ```
+
+   **⚠️ IMPORTANT:** The Supabase callback URL is what Google redirects to, NOT your localhost URL!
 
 6. **Copy Credentials:**
    - Copy your **Client ID**

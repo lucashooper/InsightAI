@@ -9,13 +9,18 @@ interface InsightActionCardProps {
     insight: string;
     category: string;
   };
+  actionableSuggestion?: {
+    title: string;
+    suggestion: string;
+  };
   noteId?: string;
   onAddToPlaybook?: () => void;
-  setActiveView?: (view: 'editor' | 'dashboard' | 'settings' | 'playbook') => void;
+  setActiveView?: (view: 'editor' | 'dashboard' | 'settings' | 'playbook' | 'admin') => void;
 }
 
 export const InsightActionCard: React.FC<InsightActionCardProps> = ({ 
-  insight, 
+  insight,
+  actionableSuggestion,
   noteId,
   onAddToPlaybook,
   setActiveView
@@ -25,11 +30,34 @@ export const InsightActionCard: React.FC<InsightActionCardProps> = ({
   const [isAdding, setIsAdding] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
 
-  // Generate smart suggestion based on the insight
+  // Generate smart suggestion based on AI's actionable suggestion or fallback to pattern matching
   const generateSmartSuggestion = (): Partial<ActionableInsight> | null => {
+    // First, try to use the AI's actionable suggestion
+    if (actionableSuggestion) {
+      // Map category to valid ActionableInsight category
+      const categoryMap: Record<string, 'coping' | 'exercise' | 'social' | 'mindfulness' | 'sleep' | 'nutrition' | 'general'> = {
+        'coping strategy': 'coping',
+        'area for growth': 'general',
+        'self-awareness': 'mindfulness',
+        'achievement': 'general',
+        'anxiety management': 'mindfulness',
+      };
+      
+      const mappedCategory = categoryMap[insight.category.toLowerCase()] || 'general';
+      
+      return {
+        title: actionableSuggestion.title,
+        description: actionableSuggestion.suggestion,
+        category: mappedCategory,
+        difficulty: 'easy',
+        estimatedTime: '5-15 minutes',
+        status: 'active'
+      };
+    }
+
+    // Fallback to pattern matching if no AI suggestion
     const insightText = insight.insight.toLowerCase();
     
-    // Pattern matching for common growth areas
     if (insightText.includes('sleep') || insightText.includes('bedtime') || insightText.includes('tired')) {
       return {
         title: 'Establish a bedtime routine',
@@ -74,7 +102,7 @@ export const InsightActionCard: React.FC<InsightActionCardProps> = ({
       };
     }
     
-    // Default general strategy
+    // Default general strategy (should rarely be used now)
     return {
       title: 'Reflect on this pattern',
       description: 'A suggested strategy based on your recurring theme',

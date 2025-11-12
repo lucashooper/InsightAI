@@ -11,7 +11,7 @@ import PageHeader from '../common/PageHeader';
 import '../../styles/page-layout.css';
 
 interface MyNotesViewProps {
-  setActiveView: (view: 'editor' | 'dashboard' | 'settings' | 'playbook' | 'mynotes') => void;
+  setActiveView: (view: 'editor' | 'dashboard' | 'settings' | 'playbook' | 'mynotes' | 'admin') => void;
   setActiveNoteId: (id: string) => void;
 }
 

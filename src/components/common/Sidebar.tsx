@@ -7,6 +7,7 @@ import { PremiumIcons } from '../icons/PremiumIcons';
 import { entryBadgeService } from '../../services/entryBadgeService';
 import ContextMenu from './ContextMenu';
 import { ThemeIconTooltip } from './ThemeIconTooltip';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface SidebarProps {
   notes: DiaryEntry[];
@@ -16,7 +17,7 @@ interface SidebarProps {
   onDelete: (id: string) => void;
   onRename: (id: string, newTitle: string) => void;
   onReorder?: (notes: DiaryEntry[]) => void;
-  setActiveView: (view: 'editor' | 'dashboard' | 'settings' | 'playbook' | 'mynotes') => void;
+  setActiveView: (view: 'editor' | 'dashboard' | 'settings' | 'playbook' | 'mynotes' | 'admin') => void;
   streakData?: { currentStreak: number; longestStreak: number; lastEntryDate: string | null };
   blurredNoteIds?: Set<string>;
   onToggleNotePrivacy?: (noteId: string) => void;
@@ -39,11 +40,16 @@ const Sidebar: React.FC<SidebarProps> = ({
   onBookmarkNote,
   bookmarkedNoteIds = new Set()
 }) => {
+  const { user } = useAuth();
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; noteId: string } | null>(null);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState<string>('');
   const [draggedNoteId, setDraggedNoteId] = useState<string | null>(null);
   const [dragOverNoteId, setDragOverNoteId] = useState<string | null>(null);
+  
+  // Check if current user is admin
+  const ADMIN_EMAIL = 'edwardsjonny547@gmail.com';
+  const isAdmin = user?.email === ADMIN_EMAIL;
   
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
@@ -331,6 +337,45 @@ const Sidebar: React.FC<SidebarProps> = ({
         <PremiumIcons.Target size={18} color="currentColor" />
         <span>Playbook</span>
       </button>
+      
+      {/* Admin Button - Only visible to admin user */}
+      {isAdmin && (
+        <button 
+          onClick={() => setActiveView('admin')}
+          style={{
+            margin: '0 1rem 0.5rem 1rem',
+            width: 'calc(100% - 2rem)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            padding: '0.75rem 1rem',
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%)',
+            border: '1px solid rgba(139, 92, 246, 0.3)',
+            borderRadius: '8px',
+            color: '#8b5cf6',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            fontSize: '0.9rem',
+            fontWeight: '600',
+            outline: 'none'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%)';
+            e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.5)';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.2)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%)';
+            e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+        >
+          <PremiumIcons.Shield size={18} color="currentColor" />
+          <span>Admin</span>
+        </button>
+      )}
       
       {/* Settings Button */}
       <button 

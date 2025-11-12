@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { GoogleLogin } from '@react-oauth/google';
-import type { CredentialResponse } from '@react-oauth/google';
+import { supabase } from '../../services/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
 import Starfield from '../common/Starfield';
 import AuthInput from './AuthInput';
+import GoogleButton from './GoogleButton';
 import './auth.css';
 
 interface LoginProps {
@@ -16,7 +16,7 @@ const Login: React.FC<LoginProps> = ({ onSwitchToSignup }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,25 +31,28 @@ const Login: React.FC<LoginProps> = ({ onSwitchToSignup }) => {
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
-    if (!credentialResponse.credential) {
-      setError('Google sign-in failed: No credential received');
-      return;
-    }
+  // Google OAuth login handler using Supabase
+  const handleGoogleSignIn = async () => {
+    try {
+      setLoading(true);
+      setError('');
 
-    setLoading(true);
-    setError('');
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}`,
+        },
+      });
 
-    const { error: googleError } = await signInWithGoogle(credentialResponse.credential);
-
-    if (googleError) {
-      setError(googleError.message || 'Google sign-in failed');
+      if (error) {
+        setError(error.message || 'Google sign-in failed');
+        setLoading(false);
+      }
+      // If successful, user will be redirected to Google OAuth
+    } catch (err) {
+      setError('Google sign-in failed');
       setLoading(false);
     }
-  };
-
-  const handleGoogleError = () => {
-    setError('Google sign-in was cancelled or failed');
   };
 
   return (
@@ -127,17 +130,10 @@ const Login: React.FC<LoginProps> = ({ onSwitchToSignup }) => {
           </div>
 
           {/* Google OAuth Button */}
-          <div className="google-oauth-wrapper">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={handleGoogleError}
-              theme="filled_black"
-              size="large"
-              text="continue_with"
-              shape="rectangular"
-              width="100%"
-            />
-          </div>
+          <GoogleButton 
+            onClick={handleGoogleSignIn} 
+            disabled={loading}
+          />
         </form>
 
         <div className="auth-footer">

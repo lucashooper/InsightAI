@@ -14,7 +14,7 @@ import { InsightBriefingModal } from '../modals/InsightBriefingModal';
 
 interface AIAnalysisProps {
   note: DiaryEntry | null;
-  setActiveView: (view: 'editor' | 'dashboard' | 'settings' | 'playbook') => void;
+  setActiveView?: (view: 'editor' | 'dashboard' | 'settings' | 'playbook' | 'admin') => void;
   onUpdateNote: (id: string, updates: Partial<DiaryEntry>) => void;
 }
 

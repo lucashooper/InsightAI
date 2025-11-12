@@ -218,7 +218,7 @@
   font-weight: 500;
 }
 
-.form-group input {
+.form-group input:not(.auth-input-field) {
   background: rgba(8, 8, 18, 0.8);
   border: 1px solid rgba(139, 92, 246, 0.15);
   border-radius: 10px;
@@ -231,18 +231,18 @@
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.form-group input[type="password"],
-.form-group input[type="text"].password-input {
+.form-group input[type="password"]:not(.auth-input-field),
+.form-group input[type="text"].password-input:not(.auth-input-field) {
   padding-right: 3.5rem;
 }
 
-.form-group input:focus {
+.form-group input:not(.auth-input-field):focus {
   outline: none;
   border-color: rgba(139, 92, 246, 0.5);
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
 }
 
-.form-group input::placeholder {
+.form-group input:not(.auth-input-field)::placeholder {
   color: rgba(255, 255, 255, 0.4);
   font-weight: 400;
 }
@@ -448,7 +448,7 @@
 
 .auth-input-icon {
   position: absolute;
-  left: 1.125rem;
+  left: 1rem;
   top: 50%;
   transform: translateY(-50%);
   color: rgba(255, 255, 255, 0.4);
@@ -461,36 +461,44 @@
   height: 18px;
 }
 
-.auth-input-field {
+.form-group .auth-input-wrapper .auth-input-field {
   background: #1A1A1A !important;
   border: 1px solid #3F3F3F !important;
   border-radius: 10px !important;
-  padding: 0.875rem 1rem 0.875rem 3.75rem !important;
+  padding: 0.875rem 1rem 0.875rem 3rem !important;
   color: white !important;
   font-size: 0.95rem !important;
-  transition: all 0.3s ease !important;
+  transition: border-color 0.2s ease !important;
   width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
   box-sizing: border-box !important;
   box-shadow: none !important;
+  height: 48px !important;
 }
 
-.auth-input-field:focus {
+/* Input with password toggle button - needs extra right padding */
+.form-group .auth-input-wrapper .auth-input-with-toggle {
+  padding-right: 3.5rem !important;
+}
+
+/* Input without toggle button - normal right padding */
+.form-group .auth-input-wrapper .auth-input-no-toggle {
+  padding-right: 1rem !important;
+}
+
+.form-group .auth-input-wrapper .auth-input-field:focus {
   outline: none !important;
   border-color: rgba(139, 92, 246, 0.5) !important;
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1) !important;
+  padding: 0.875rem 1rem 0.875rem 3rem !important;
+  height: 48px !important;
+  width: 100% !important;
 }
 
 .auth-input-field::placeholder {
   color: rgba(255, 255, 255, 0.35) !important;
   font-weight: 400 !important;
-}
-
-
-/* Password field with toggle button */
-.auth-input-wrapper .auth-input-field[type="password"],
-.auth-input-wrapper .auth-input-field.has-toggle {
- 
-  padding-right: 3.5rem !important;
 }
 
 /* Password toggle in new input style */
@@ -870,6 +878,16 @@
     padding: 1rem 2rem;
     font-size: 1rem;
   }
+  
+  /* Reduce star animation on tablet */
+  .auth-container::before {
+    animation-duration: 180s !important;
+  }
+  
+  /* Fix input padding on tablet */
+  .auth-input-field {
+    padding: 0.875rem 3.5rem 0.875rem 3.5rem !important;
+  }
 }
 
 @media (max-width: 480px) {
@@ -882,12 +900,28 @@
     font-size: 1.5rem;
   }
 
-  .form-group input {
+  .form-group input:not(.auth-input-field) {
     font-size: 0.9rem;
     padding: 0.75rem 0.875rem;
   }
 
   .password-toggle {
     right: 0.75rem;
+  }
+  
+  /* Disable star animation on mobile - causes performance issues */
+  .auth-container::before {
+    animation: none !important;
+    opacity: 0.4 !important;
+  }
+  
+  /* Fix input padding on mobile */
+  .auth-input-field {
+    padding: 0.875rem 3.5rem 0.875rem 3.5rem !important;
+    font-size: 16px !important; /* Prevent iOS zoom */
+  }
+  
+  .auth-input-icon {
+    left: 1rem !important;
   }
 }
