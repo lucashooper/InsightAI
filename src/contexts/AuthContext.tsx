@@ -106,12 +106,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Check if email confirmation is required
     if (data.user && !data.session) {
-      console.log('Email confirmation required for:', email);
+      console.log('✅ Email confirmation required for:', email);
       // Email confirmation required - user will receive an email
+      // Return success (not error) so the UI can show the confirmation screen
       return { 
-        error: { 
-          message: 'Please check your email to confirm your account before signing in.' 
-        } as any
+        error: null,
+        data: data
       };
     }
 
@@ -135,7 +135,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    return { error: null };
+    return { error: null, data };
   };
 
   const signIn = async (emailOrUsername: string, password: string) => {

@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import Starfield from '../common/Starfield';
 import AuthInput from './AuthInput';
+import EmailConfirmation from './EmailConfirmation';
 import './auth.css';
 
 interface SignupProps {
@@ -16,6 +17,7 @@ const Signup: React.FC<SignupProps> = ({ onSwitchToLogin }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const { signUp } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,13 +31,33 @@ const Signup: React.FC<SignupProps> = ({ onSwitchToLogin }) => {
       return;
     }
 
-    const { error: signUpError } = await signUp(email, password, username);
+    const result = await signUp(email, password, username);
+    console.log('📧 Signup result:', result);
 
-    if (signUpError) {
-      setError(signUpError.message);
+    if (result.error) {
+      console.log('❌ Signup error:', result.error.message);
+      setError(result.error.message);
+      setLoading(false);
+    } else {
+      // Show email confirmation screen on successful signup
+      console.log('✅ Signup successful, showing confirmation screen');
+      setShowEmailConfirmation(true);
       setLoading(false);
     }
   };
+
+  const handleBackToSignup = () => {
+    setShowEmailConfirmation(false);
+    setEmail('');
+    setPassword('');
+    setUsername('');
+    setError('');
+  };
+
+  // Show email confirmation screen if signup was successful
+  if (showEmailConfirmation) {
+    return <EmailConfirmation email={email} onBack={handleBackToSignup} />;
+  }
 
   return (
     <div className="auth-container">

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { fetchGroqLimits, parseResetTime, type GroqLimits } from '../../services/groqLimitsService';
 import { useAuth } from '../../contexts/AuthContext';
 import { getLLMProvider, setLLMProvider, type LLMProvider } from '../../lib/llmProvider';
+import { feedbackService, type Feedback } from '../../services/feedbackService';
 import './AdminDashboard.css';
 
 const AdminDashboard: React.FC = () => {
@@ -11,6 +12,8 @@ const AdminDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [currentProvider, setCurrentProvider] = useState<LLMProvider>(getLLMProvider());
+  const [feedback, setFeedback] = useState<Feedback[]>([]);
+  const [loadingFeedback, setLoadingFeedback] = useState(true);
 
   const loadGroqLimits = async () => {
     try {
@@ -27,8 +30,21 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const loadFeedback = async () => {
+    try {
+      setLoadingFeedback(true);
+      const data = await feedbackService.getAllFeedback();
+      setFeedback(data);
+    } catch (err) {
+      console.error('Error loading feedback:', err);
+    } finally {
+      setLoadingFeedback(false);
+    }
+  };
+
   useEffect(() => {
     loadGroqLimits();
+    loadFeedback();
   }, []);
 
   const handleRefresh = () => {
@@ -39,6 +55,20 @@ const AdminDashboard: React.FC = () => {
     setLLMProvider(provider);
     setCurrentProvider(provider);
     console.log(`🔄 Switched to ${provider === 'local' ? 'LOCAL (LM Studio)' : 'GROQ (Cloud)'} provider`);
+  };
+
+  const handleMarkAsRead = async (feedbackId: string) => {
+    const success = await feedbackService.updateFeedbackStatus(feedbackId, 'read');
+    if (success) {
+      loadFeedback();
+    }
+  };
+
+  const handleMarkAsResolved = async (feedbackId: string) => {
+    const success = await feedbackService.updateFeedbackStatus(feedbackId, 'resolved');
+    if (success) {
+      loadFeedback();
+    }
   };
 
   if (!user) {
@@ -189,6 +219,69 @@ const AdminDashboard: React.FC = () => {
             💡 <strong>Tip:</strong> Groq has generous free tier limits. Monitor these to ensure 
             your application doesn't hit rate limits during peak usage.
           </p>
+        </div>
+
+        {/* User Feedback Section */}
+        <div className="feedback-section">
+          <div className="section-header">
+            <h2>💬 User Feedback</h2>
+            <button onClick={loadFeedback} className="refresh-button">
+              🔄 Refresh
+            </button>
+          </div>
+
+          {loadingFeedback ? (
+            <div className="loading">Loading feedback...</div>
+          ) : feedback.length === 0 ? (
+            <div className="no-data">
+              <p>No feedback yet. Users can submit feedback from Settings.</p>
+            </div>
+          ) : (
+            <div className="feedback-list">
+              {feedback.map((item) => (
+                <div 
+                  key={item.id} 
+                  className={`feedback-item status-${item.status}`}
+                >
+                  <div className="feedback-header">
+                    <div className="feedback-meta">
+                      <span className="feedback-user">👤 {item.user_email}</span>
+                      <span className="feedback-date">
+                        📅 {new Date(item.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <span className={`feedback-status status-${item.status}`}>
+                      {item.status === 'new' && '🆕 New'}
+                      {item.status === 'read' && '👁️ Read'}
+                      {item.status === 'resolved' && '✅ Resolved'}
+                    </span>
+                  </div>
+                  
+                  <h3 className="feedback-title">{item.title}</h3>
+                  <p className="feedback-message">{item.message}</p>
+                  
+                  <div className="feedback-actions">
+                    {item.status === 'new' && (
+                      <button 
+                        onClick={() => handleMarkAsRead(item.id)}
+                        className="action-button read"
+                      >
+                        👁️ Mark as Read
+                      </button>
+                    )}
+                    {item.status !== 'resolved' && (
+                      <button 
+                        onClick={() => handleMarkAsResolved(item.id)}
+                        className="action-button resolve"
+                      >
+                        ✅ Mark as Resolved
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

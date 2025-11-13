@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, User, Edit2, LogOut, Trash2, Palette, Bell, Download, Check, X, Loader } from 'lucide-react';
+import { Settings as SettingsIcon, User, Edit2, LogOut, Trash2, Palette, Bell, Download, Check, X, Loader, MessageSquare, Send } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { userProfileService } from '../../services/userProfileService';
 import type { UserProfile } from '../../services/userProfileService';
 import { importDiaryEntries } from '../../utils/importDiaryEntries';
 import { usageTrackingService } from '../../services/usageTrackingService';
+import { feedbackService } from '../../services/feedbackService';
 import './settings.css';
 import '../../styles/page-layout.css';
 import '../../styles/settings-layout.css';
 
 const SettingsView: React.FC = () => {
+  console.log('🎨 [SettingsView] Component rendering');
+  
   const { theme, setTheme } = useTheme();
   const { user, signOut, deleteAccount } = useAuth();
   const [remindersEnabled, setRemindersEnabled] = useState(false);
@@ -27,8 +30,15 @@ const SettingsView: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [, setPrivacyMode] = useState(false);
   const [usageStats, setUsageStats] = useState<{ count: number; limit: number; tier: string } | null>(null);
+  const [feedbackTitle, setFeedbackTitle] = useState('');
+  const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [feedbackSuccess, setFeedbackSuccess] = useState(false);
 
+  // Load settings only once on mount
   useEffect(() => {
+    console.log('🔄 [SettingsView] Initial mount - loading settings');
+
     // Load saved settings
     const savedReminders = localStorage.getItem('insightai-reminders-enabled');
     const savedTime = localStorage.getItem('insightai-reminder-time');
@@ -48,35 +58,76 @@ const SettingsView: React.FC = () => {
     // Load privacy mode setting
     const savedPrivacyMode = localStorage.getItem('insightai-privacy-mode');
     setPrivacyMode(savedPrivacyMode === 'true');
+  }, []); // Only run once on mount
 
-    // Load user profile using FRESH SESSION
+  // Load user profile when user changes
+  useEffect(() => {
+    if (!user) {
+      console.log('⏭️ [SettingsView] No user, skipping profile load');
+      return;
+    }
+
+    console.log('📥 [SettingsView] Loading user profile for:', user.id);
+    
     const loadUserProfile = async () => {
-      // Import supabase to get fresh session
-      const { supabase } = await import('../../services/supabaseClient');
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        console.log('Settings: Loading profile for user:', session.user.id);
-        const profile = await userProfileService.getUserProfile(session.user.id);
+      try {
+        const profile = await userProfileService.getUserProfile(user.id);
+        console.log('✅ [SettingsView] Profile loaded:', profile);
         if (profile) {
           setUserProfile(profile);
           setNewUsername(profile.username);
         }
+      } catch (error) {
+        console.error('❌ [SettingsView] Error loading profile:', error);
       }
     };
-
+    
     loadUserProfile();
+  }, [user?.id]); // Only re-run when user ID changes
 
-    // Load usage statistics
+  // Load usage statistics once on mount
+  useEffect(() => {
+    console.log('📊 [SettingsView] Loading usage stats');
+    
     const loadUsageStats = async () => {
-      const stats = await usageTrackingService.getTodayUsage('ai_analysis');
-      setUsageStats(stats);
+      try {
+        const stats = await usageTrackingService.getTodayUsage('ai_analysis');
+        console.log('✅ [SettingsView] Stats loaded:', stats);
+        setUsageStats(stats);
+      } catch (error) {
+        console.error('❌ [SettingsView] Error loading stats:', error);
+      }
     };
+    
     loadUsageStats();
-  }, [user]);
+  }, []); // Only run once on mount
 
   const handleThemeChange = (newTheme: 'midnight' | 'dusk' | 'light') => {
     setTheme(newTheme);
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!feedbackTitle.trim() || !feedbackMessage.trim()) {
+      return;
+    }
+
+    setSubmittingFeedback(true);
+    setFeedbackSuccess(false);
+
+    const result = await feedbackService.submitFeedback(feedbackTitle, feedbackMessage);
+
+    setSubmittingFeedback(false);
+
+    if (result.success) {
+      setFeedbackSuccess(true);
+      setFeedbackTitle('');
+      setFeedbackMessage('');
+      
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        setFeedbackSuccess(false);
+      }, 3000);
+    }
   };
 
   const handleRemindersToggle = async () => {
@@ -921,6 +972,165 @@ const SettingsView: React.FC = () => {
               fontSize: '0.875rem' 
             }}>
               💡 Refresh the page to see your imported entries in the notes list
+            </p>
+          </div>
+        )}
+      </motion.div>
+
+      {/* Feedback Section */}
+      <motion.div
+        className="settings-section feedback-section"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        style={{
+          background: 'rgba(255, 255, 255, 0.03)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '16px',
+          padding: '32px'
+        }}
+      >
+        <h2 style={{ 
+          margin: '0 0 0.5rem 0', 
+          color: 'var(--text-primary)', 
+          fontSize: '1.5rem',
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          <MessageSquare size={24} />
+          Send Feedback
+        </h2>
+        <p style={{ 
+          margin: '0 0 1.5rem 0', 
+          color: 'var(--text-secondary)', 
+          fontSize: '0.9rem' 
+        }}>
+          Have a suggestion or found a bug? Let us know!
+        </p>
+
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{
+            display: 'block',
+            marginBottom: '0.5rem',
+            color: 'var(--text-primary)',
+            fontSize: '0.9rem',
+            fontWeight: '500'
+          }}>
+            Title
+          </label>
+          <input
+            type="text"
+            value={feedbackTitle}
+            onChange={(e) => setFeedbackTitle(e.target.value)}
+            placeholder="Brief summary of your feedback"
+            maxLength={100}
+            style={{
+              width: '100%',
+              padding: '0.75rem',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '8px',
+              color: 'var(--text-primary)',
+              fontSize: '0.9rem',
+              outline: 'none',
+              transition: 'border-color 0.2s ease'
+            }}
+            onFocus={(e) => e.target.style.borderColor = 'var(--accent-primary)'}
+            onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+          />
+        </div>
+
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label style={{
+            display: 'block',
+            marginBottom: '0.5rem',
+            color: 'var(--text-primary)',
+            fontSize: '0.9rem',
+            fontWeight: '500'
+          }}>
+            Message
+          </label>
+          <textarea
+            value={feedbackMessage}
+            onChange={(e) => setFeedbackMessage(e.target.value)}
+            placeholder="Tell us more about your feedback, suggestion, or issue..."
+            rows={6}
+            maxLength={1000}
+            style={{
+              width: '100%',
+              padding: '0.75rem',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '8px',
+              color: 'var(--text-primary)',
+              fontSize: '0.9rem',
+              outline: 'none',
+              resize: 'vertical',
+              fontFamily: 'inherit',
+              transition: 'border-color 0.2s ease'
+            }}
+            onFocus={(e) => e.target.style.borderColor = 'var(--accent-primary)'}
+            onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+          />
+          <p style={{
+            margin: '0.5rem 0 0 0',
+            color: 'var(--text-secondary)',
+            fontSize: '0.8rem'
+          }}>
+            {feedbackMessage.length}/1000 characters
+          </p>
+        </div>
+
+        <button
+          onClick={handleSubmitFeedback}
+          disabled={submittingFeedback || !feedbackTitle.trim() || !feedbackMessage.trim()}
+          style={{
+            padding: '0.75rem 1.5rem',
+            background: submittingFeedback || !feedbackTitle.trim() || !feedbackMessage.trim()
+              ? 'rgba(139, 92, 246, 0.3)'
+              : 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+            border: 'none',
+            borderRadius: '8px',
+            color: 'white',
+            fontSize: '0.9rem',
+            fontWeight: '600',
+            cursor: submittingFeedback || !feedbackTitle.trim() || !feedbackMessage.trim() ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            transition: 'all 0.2s ease',
+            opacity: submittingFeedback || !feedbackTitle.trim() || !feedbackMessage.trim() ? 0.5 : 1
+          }}
+        >
+          {submittingFeedback ? (
+            <>
+              <Loader size={18} className="spin" />
+              Sending...
+            </>
+          ) : (
+            <>
+              <Send size={18} />
+              Send Feedback
+            </>
+          )}
+        </button>
+
+        {feedbackSuccess && (
+          <div style={{
+            marginTop: '1rem',
+            padding: '0.75rem',
+            background: 'rgba(34, 197, 94, 0.1)',
+            borderRadius: '8px',
+            border: '1px solid rgba(34, 197, 94, 0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <Check size={18} style={{ color: '#22c55e' }} />
+            <p style={{ margin: 0, fontSize: '0.9rem', color: '#22c55e' }}>
+              Thank you! Your feedback has been sent successfully.
             </p>
           </div>
         )}
