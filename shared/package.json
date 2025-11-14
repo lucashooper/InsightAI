@@ -1,0 +1,16 @@
+{
+  "name": "@insightai/shared",
+  "version": "1.0.0",
+  "description": "Shared code between InsightAI web and mobile apps",
+  "main": "index.ts",
+  "types": "index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
