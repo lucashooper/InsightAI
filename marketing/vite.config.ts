@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   root: '.',
-  base: '/',
+  base: './', // Use relative paths so it works when served from /marketing-dist/
   build: {
     outDir: 'dist',
     emptyOutDir: true,
