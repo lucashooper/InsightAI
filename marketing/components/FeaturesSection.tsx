@@ -38,8 +38,8 @@ const FeaturesSection: React.FC = () => {
   return (
     <section className="features-section">
       <div className="container">
-        <h2 className="section-title">
-          Everything you need to <span className="gradient-text-purple">understand yourself.</span>
+        <h2 className="section-title gradient-text-purple">
+          Everything you need to understand yourself.
         </h2>
         <p className="section-subtitle">
           InsightAI combines powerful AI with beautiful design to help you gain deeper insights into your habits and emotions

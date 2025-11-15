@@ -3,9 +3,12 @@ import Starfield from './components/Starfield';
 import HeroSection from './components/HeroSection';
 import FeaturesSection from './components/FeaturesSection';
 import Footer from './components/Footer';
+import { useScrollReveal } from './hooks/useScrollReveal';
 import './styles-premium.css';
 
 function App() {
+  useScrollReveal();
+  
   return (
     <div className="App">
       <Starfield />
@@ -15,13 +18,22 @@ function App() {
           <img src="/Insight-logo.png" alt="Insight" />
         </div>
         <div className="nav-links">
-          <a href="#home" className="nav-link">Home</a>
-          <a href="#features" className="nav-link">Features</a>
-          <a href="#pricing" className="nav-link">Pricing</a>
+          <a 
+            href="#" 
+            className="nav-link"
+            onClick={(e) => {
+              e.preventDefault();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          >
+            Home
+          </a>
         </div>
       </nav>
       <HeroSection />
-      <FeaturesSection />
+      <div className="fade-up">
+        <FeaturesSection />
+      </div>
       <Footer />
     </div>
   );
