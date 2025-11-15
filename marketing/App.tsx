@@ -1,4 +1,3 @@
-import React from 'react';
 import Starfield from './components/Starfield';
 import HeroSection from './components/HeroSection';
 import FeaturesSection from './components/FeaturesSection';

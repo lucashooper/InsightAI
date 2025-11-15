@@ -1,18 +1,28 @@
 import React from 'react';
-// Import marketing components directly
-import MarketingApp from '../../../marketing/App';
-import '../../../marketing/styles-premium.css';
 
 /**
- * Marketing landing page - renders the marketing site.
+ * Marketing landing page - renders the marketing site via iframe.
  * 
- * Imports the marketing site's React app directly from /marketing folder.
+ * The marketing site is built separately and served from /marketing-dist.
+ * This approach avoids TypeScript conflicts between the two projects.
  */
 const MarketingHome: React.FC = () => {
   return (
-    <div className="marketing-home">
-      <MarketingApp />
-    </div>
+    <iframe
+      src="/marketing-dist/index.html"
+      style={{
+        width: '100%',
+        height: '100vh',
+        border: 'none',
+        display: 'block',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0
+      }}
+      title="InsightAI Marketing"
+    />
   );
 };
 

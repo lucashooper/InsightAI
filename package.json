@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run build:marketing && tsc -b && vite build",
+    "build:marketing": "cd marketing && npm install && npm run build && cd ..",
     "lint": "eslint .",
     "preview": "vite preview"
   },
