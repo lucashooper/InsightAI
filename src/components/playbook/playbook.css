@@ -187,3 +187,152 @@
   display: grid;
   gap: 16px;
 }
+
+/* ===== PREMIUM PLAYBOOK ENHANCEMENTS ===== */
+
+/* Enhanced Header Spacing */
+.playbook-header-enhanced {
+  padding-top: 2.5rem !important;
+  padding-bottom: 1.5rem !important;
+  margin-bottom: 1.5rem;
+}
+
+.playbook-title-enhanced {
+  font-size: 1.875rem !important;
+  font-weight: 700 !important;
+  color: #f3eaff !important;
+  letter-spacing: -0.5px !important;
+  margin-bottom: 0 !important;
+}
+
+.playbook-icon-glow {
+  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.5));
+}
+
+/* Premium Tab Selector - Clean Borderless Design */
+.tab-selector-premium {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  border: none;
+}
+
+.tab-button-premium {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  color: rgba(180, 170, 210, 0.75);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  outline: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.tab-button-premium:focus {
+  outline: none !important;
+}
+
+.tab-button-premium:focus-visible {
+  outline: none !important;
+}
+
+.tab-button-premium.active {
+  background: rgba(139, 92, 246, 0.2);
+  color: #f3eaff;
+  border-color: rgba(139, 92, 246, 0.4);
+  box-shadow: 
+    0 0 16px rgba(139, 92, 246, 0.4),
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    inset 0 0 12px rgba(139, 92, 246, 0.15);
+}
+
+.tab-button-premium:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(220, 210, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Section Spacing */
+.section-spacing-enhanced {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+.section-title-playbook {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #f3eaff;
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.3px;
+}
+
+/* Enhanced Card Depth for Playbook */
+.strategy-card-premium {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(28px) saturate(180%);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 1.5rem;
+  box-shadow: 
+    0 8px 20px rgba(0, 0, 0, 0.45),
+    inset 0 0 18px rgba(160, 70, 255, 0.06);
+  transition: all 0.2s ease;
+}
+
+.strategy-card-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 12px 28px rgba(0, 0, 0, 0.55),
+    inset 0 0 22px rgba(160, 70, 255, 0.08);
+  border-color: rgba(200, 120, 255, 0.25);
+}
+
+/* Priority Cards Enhanced */
+.priority-card-enhanced {
+  background: radial-gradient(circle at top, rgba(120, 40, 200, 0.1), rgba(20, 20, 30, 0.3)),
+              rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(28px) saturate(180%);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 1.75rem;
+  box-shadow: 
+    0 10px 24px rgba(0, 0, 0, 0.5),
+    inset 0 0 20px rgba(160, 70, 255, 0.07);
+  margin-bottom: 1.25rem;
+}
+
+/* Global Text Colors */
+.text-title-premium {
+  color: #f3eaff;
+}
+
+.text-body-premium {
+  color: rgba(220, 210, 255, 0.78);
+}
+
+.text-muted-premium {
+  color: rgba(180, 170, 210, 0.55);
+}
+
+/* Consistent Border Radius */
+.border-radius-premium {
+  border-radius: 20px;
+}
+
+.border-radius-medium {
+  border-radius: 16px;
+}
+
+.border-radius-small {
+  border-radius: 12px;
+}

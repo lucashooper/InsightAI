@@ -710,119 +710,38 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
     <PageContainer>
       <div style={{ margin: '0', padding: '0' }}>
       {/* Redesigned Header - Compact & Clean */}
-      <div style={{
-        marginBottom: '8px',
-        paddingBottom: '0',
-        marginTop: '0'
-      }}>
+      <div className="playbook-header-enhanced">
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          margin: '0',
-          padding: '0'
+          justifyContent: 'space-between'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '0', padding: '0' }}>
-            <Target size={28} color="#8b5cf6" />
-            <h1 style={{
-              margin: '0',
-              marginTop: '0',
-              marginBottom: '0',
-              padding: '0',
-              fontSize: '1.75rem',
-              fontWeight: '700',
-              color: '#e5e7ff',
-              letterSpacing: '-0.02em',
-              lineHeight: '1.2'
-            } as React.CSSProperties}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Target size={28} color="#8b5cf6" className="playbook-icon-glow" />
+            <h1 className="playbook-title-enhanced">
               Personal Playbook
             </h1>
           </div>
         </div>
       </div>
 
-      {/* Section Tabs - Compact & Integrated */}
+      {/* Section Tabs - Premium Segmented Control */}
       <div style={{
         display: 'flex',
         gap: '0.5rem',
-        marginBottom: '16px',
-        marginTop: '0',
+        marginBottom: '24px',
         alignItems: 'center'
       }}>
-        <div style={{
-          display: 'flex',
-          gap: '0.5rem',
-          flex: 1,
-          padding: '0.25rem',
-          background: 'rgba(255, 255, 255, 0.015)',
-          borderRadius: '10px',
-          border: '1px solid rgba(255, 255, 255, 0.04)'
-        }}>
+        <div className="tab-selector-premium" style={{ flex: 1 }}>
         <button
           onClick={() => setActiveSection('protocols')}
-          style={{
-            flex: 1,
-            padding: '0.5rem 1rem',
-            minHeight: '36px',
-            maxHeight: '40px',
-            background: activeSection === 'protocols' ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
-            border: '1px solid transparent',
-            borderRadius: '8px',
-            color: activeSection === 'protocols' ? '#E5E7EB' : '#6B7280',
-            fontSize: '0.875rem',
-            cursor: 'pointer',
-            fontWeight: '500',
-            transition: 'all 0.2s ease',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            outline: 'none'
-          }}
-          onMouseEnter={(e) => {
-            if (activeSection !== 'protocols') {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (activeSection !== 'protocols') {
-              e.currentTarget.style.background = 'transparent';
-            }
-          }}
+          className={`tab-button-premium ${activeSection === 'protocols' ? 'active' : ''}`}
         >
           <span>Daily Protocols</span>
         </button>
         <button
           onClick={() => setActiveSection('strategies')}
-          style={{
-            flex: 1,
-            padding: '0.5rem 1rem',
-            minHeight: '36px',
-            maxHeight: '40px',
-            background: activeSection === 'strategies' ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
-            border: '1px solid transparent',
-            borderRadius: '8px',
-            color: activeSection === 'strategies' ? '#E5E7EB' : '#6B7280',
-            fontSize: '0.875rem',
-            cursor: 'pointer',
-            fontWeight: '500',
-            transition: 'all 0.2s ease',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            outline: 'none'
-          }}
-          onMouseEnter={(e) => {
-            if (activeSection !== 'strategies') {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (activeSection !== 'strategies') {
-              e.currentTarget.style.background = 'transparent';
-            }
-          }}
+          className={`tab-button-premium ${activeSection === 'strategies' ? 'active' : ''}`}
         >
           <span>Strategies</span>
         </button>
@@ -937,7 +856,7 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
                     gap: '0.5rem'
                   }}>
                     <Target size={24} color="#8b5cf6" />
-                    TODAY'S PRIORITIES
+                    Today's Priorities
                   </h2>
                   <p style={{
                     margin: '0.5rem 0 0 0',
@@ -974,7 +893,7 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
                   gap: '0.5rem'
                 }}>
                   <span>✅</span>
-                  ACTIVE STRATEGIES ({activeStrategies.length})
+                  Active Strategies ({activeStrategies.length})
                 </h3>
                 <div style={{
                   display: 'grid',

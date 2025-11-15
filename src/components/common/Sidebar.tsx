@@ -450,9 +450,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                   fontWeight: isSelected ? 600 : 400,
                   position: 'relative',
                   transition: 'all 0.2s ease',
-                  filter: isBlurred ? 'blur(4px)' : 'none',
+                  filter: 'none',
+                  opacity: isDragging ? 0.5 : (isBlurred ? 0.3 : 1),
                   border: isDragOver ? '2px solid #3b82f6' : (editingNoteId === note.id ? '1px solid #3b82f6' : (isSelected ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid transparent')),
-                  opacity: isDragging ? 0.5 : 1,
                 }}
                 onMouseEnter={(e) => {
                   if (!isSelected && editingNoteId !== note.id) {
