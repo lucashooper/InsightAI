@@ -6,6 +6,7 @@
   publish = "dist"
   
 # SPA redirect - ensures React Router works on page refresh
+# All routes fall back to index.html for client-side routing
 [[redirects]]
   from = "/*"
   to = "/index.html"
