@@ -101,7 +101,14 @@
 /* Global Styles */
 body {
   font-family: 'Inter', sans-serif;
-  background: #000000;  /* PURE BLACK - Edit this for darker/lighter background */
+  /* COOLER GRADIENT - Blue-purple-black instead of warm */
+  background: linear-gradient(
+    to bottom,
+    #0a0f1e 0%,      /* Very dark blue-black */
+    #0d0a1a 50%,     /* Dark purple-black */
+    #000000 100%     /* Pure black */
+  );
+  background-attachment: fixed;
   color: var(--text-primary);
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;

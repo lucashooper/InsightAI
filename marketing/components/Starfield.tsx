@@ -28,19 +28,19 @@ const Starfield: React.FC = () => {
     setCanvasSize();
     window.addEventListener('resize', setCanvasSize);
 
-    // Create stars
+    // Create stars - MUCH more subtle
     const stars: Star[] = [];
-    const starCount = 150; // Adjust density here
+    const starCount = 15; // Reduced from 150 to 15 for subtlety
 
     for (let i = 0; i < starCount; i++) {
       stars.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        size: Math.random() * 2 + 1, // 1-3px
-        opacity: Math.random() * 0.7 + 0.3, // 0.3-1
-        twinkleSpeed: Math.random() * 0.02 + 0.01,
-        driftX: (Math.random() - 0.5) * 0.1, // Slow drift
-        driftY: (Math.random() - 0.5) * 0.1,
+        size: Math.random() * 1.5 + 0.5, // 0.5-2px (smaller)
+        opacity: Math.random() * 0.2 + 0.15, // 0.15-0.35 (much dimmer)
+        twinkleSpeed: Math.random() * 0.01 + 0.005, // Slower twinkle
+        driftX: (Math.random() - 0.5) * 0.05, // Slower drift
+        driftY: (Math.random() - 0.5) * 0.05,
       });
     }
 
@@ -53,9 +53,9 @@ const Starfield: React.FC = () => {
       time += 0.016; // ~60fps
 
       stars.forEach((star) => {
-        // Twinkling effect
-        star.opacity += Math.sin(time * star.twinkleSpeed * 100) * 0.01;
-        star.opacity = Math.max(0.2, Math.min(1, star.opacity));
+        // Twinkling effect - more subtle
+        star.opacity += Math.sin(time * star.twinkleSpeed * 100) * 0.005;
+        star.opacity = Math.max(0.1, Math.min(0.4, star.opacity)); // Cap at 40% opacity
 
         // Drift movement
         star.x += star.driftX;
