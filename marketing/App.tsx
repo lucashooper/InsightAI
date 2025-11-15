@@ -14,7 +14,7 @@ function App() {
       {/* Navigation */}
       <nav className="main-nav">
         <div className="nav-logo">
-          <img src="/Insight-logo.png" alt="Insight" />
+          <img src="./Insight-logo.png" alt="Insight" />
         </div>
         <div className="nav-links">
           <a 

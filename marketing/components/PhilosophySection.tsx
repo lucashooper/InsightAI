@@ -33,7 +33,7 @@ const PhilosophySection: React.FC = () => {
           
           <div className="philosophy-visual">
             <div className="logo-container">
-              <img src="/Insight-logo.png" alt="Insight" className="philosophy-logo" />
+              <img src="./Insight-logo.png" alt="Insight" className="philosophy-logo" />
             </div>
             <h2 className="philosophy-brand">
               Insight<span className="gradient-text">AI</span>

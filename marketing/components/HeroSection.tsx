@@ -3,10 +3,10 @@ import ImageSlider from './ImageSlider';
 
 const HeroSection: React.FC = () => {
   const appImages = [
-    '/better-app-images/New-DashboardPage.png',
-    '/better-app-images/NewAnalysisPage.png',
-    '/better-app-images/New-MyNotesPage.png',
-    '/better-app-images/New-PP-PageImage.png',
+    './better-app-images/New-DashboardPage.png',
+    './better-app-images/NewAnalysisPage.png',
+    './better-app-images/New-MyNotesPage.png',
+    './better-app-images/New-PP-PageImage.png',
   ];
   return (
     <section className="hero-section">
