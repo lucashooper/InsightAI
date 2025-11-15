@@ -25,7 +25,10 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images, interval = 4000 }) =>
             disableOnInteraction: false,
             pauseOnMouseEnter: false,
           }}
-          navigation={true}
+          navigation={{
+            enabled: true,
+            hideOnClick: false,
+          }}
           pagination={{
             el: '.slider-dots',
             clickable: true,
@@ -36,6 +39,8 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images, interval = 4000 }) =>
           slidesPerView={1}
           spaceBetween={0}
           watchOverflow={false}
+          allowTouchMove={true}
+          simulateTouch={true}
           className="swiper-slider"
         >
           {images.map((image, index) => (
