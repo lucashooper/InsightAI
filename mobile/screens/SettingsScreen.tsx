@@ -38,25 +38,24 @@ export default function SettingsScreen({ navigation }: any) {
       console.log('Loading profile for user ID:', user.id);
       console.log('User email:', user.email);
       
-      // Try querying by ID first
+      // Query by user_id to match desktop schema
       let { data, error } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('user_id', user.id)
         .maybeSingle();
 
-      console.log('Profile query by ID result:', { data, error });
+      console.log('Profile query by user_id result:', { data, error });
 
-      // If no data, try querying by email as fallback
+      // If no data but also no error, try email-based lookup (desktop may have created by email)
       if (!data && !error && user.email) {
-        console.log('Trying to query by email:', user.email);
         const emailResult = await supabase
           .from('user_profiles')
           .select('*')
           .eq('email', user.email)
           .maybeSingle();
-        
-        console.log('Profile query by email result:', emailResult);
+
+        console.log('Profile query by email fallback result:', emailResult);
         data = emailResult.data;
         error = emailResult.error;
       }
@@ -72,7 +71,12 @@ export default function SettingsScreen({ navigation }: any) {
         });
       } else if (data) {
         console.log('✅ Profile loaded successfully:', data.username, data.profile_picture_url);
-        setUserProfile(data);
+        setUserProfile({
+          id: data.id,
+          email: data.email,
+          username: data.username,
+          profile_picture_url: data.profile_picture_url,
+        });
       } else {
         // No profile found - likely RLS blocking the query
         console.log('⚠️ No profile found (RLS may be blocking SELECT). Using fallback.');
@@ -136,7 +140,8 @@ export default function SettingsScreen({ navigation }: any) {
         const uri = result.assets[0].uri;
         const fileExt = uri.split('.').pop();
         const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-        const filePath = `profile-pictures/${fileName}`;
+        // Store inside a user-specific folder to align with common RLS patterns
+        const filePath = `${user.id}/${fileName}`;
 
         // Create form data for React Native
         const formData = new FormData();
@@ -164,15 +169,17 @@ export default function SettingsScreen({ navigation }: any) {
           .from('profile-pictures')
           .getPublicUrl(filePath);
 
-        // Try to update user profile, if it fails, just update local state
+        // Try to update user profile (match desktop by using user_id)
+        // Only update the picture URL so we don't overwrite existing username/email
         const { error: updateError } = await supabase
           .from('user_profiles')
-          .upsert({ 
-            id: user.id,
-            email: user.email,
-            username: user.email?.split('@')[0] || 'User',
-            profile_picture_url: urlData.publicUrl 
-          });
+          .upsert(
+            {
+              user_id: user.id,
+              profile_picture_url: urlData.publicUrl,
+            },
+            { onConflict: 'user_id' }
+          );
 
         if (updateError) {
           console.log('Could not save to database, updating local state only:', updateError);

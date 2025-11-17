@@ -87,7 +87,7 @@ export default function PlaybookScreen() {
           category: newStrategy.category,
           difficulty: newStrategy.difficulty,
           emoji: newStrategy.emoji,
-          status: 'suggested',
+          status: 'active',
           source: 'user_created',
         })
         .select()
@@ -440,11 +440,17 @@ export default function PlaybookScreen() {
               </View>
 
               <TouchableOpacity
-                style={styles.createButton}
+                style={styles.modalPrimaryButton}
                 onPress={createStrategy}
                 disabled={!newStrategy.title.trim()}
               >
-                <Text style={styles.createButtonText}>Create Strategy</Text>
+                <LinearGradient
+                  colors={['#8b5cf6', '#7c3aed']}
+                  style={styles.modalPrimaryButtonGradient}
+                >
+                  <Ionicons name="checkmark" size={18} color="#ffffff" />
+                  <Text style={styles.modalPrimaryButtonText}>Create Strategy</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -875,6 +881,30 @@ const styles = StyleSheet.create({
   },
   categoryOptionTextActive: {
     color: '#8b5cf6',
+  },
+  modalPrimaryButton: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginTop: 8,
+    marginBottom: 8,
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  modalPrimaryButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    gap: 8,
+  },
+  modalPrimaryButtonText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '600',
   },
   actionButtons: {
     flexDirection: 'row',

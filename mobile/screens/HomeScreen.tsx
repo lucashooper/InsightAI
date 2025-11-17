@@ -32,12 +32,20 @@ interface StreakData {
   longestStreak: number;
 }
 
+interface UserProfile {
+  id: string;
+  email: string;
+  username: string;
+  profile_picture_url: string | null;
+}
+
 export default function HomeScreen({ navigation }: any) {
   const { user } = useAuth();
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [streak, setStreak] = useState<StreakData>({ currentStreak: 0, longestStreak: 0 });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   const calculateStreak = (notes: DiaryEntry[]) => {
     if (!notes || notes.length === 0) return { currentStreak: 0, longestStreak: 0 };
@@ -77,6 +85,29 @@ export default function HomeScreen({ navigation }: any) {
     return { currentStreak, longestStreak };
   };
 
+  const loadUserProfile = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!error && data) {
+        setUserProfile({
+          id: data.id,
+          email: data.email,
+          username: data.username,
+          profile_picture_url: data.profile_picture_url || null,
+        });
+      }
+    } catch (err) {
+      console.error('[Home] Error loading user profile for avatar', err);
+    }
+  };
+
   const loadEntries = async () => {
     if (!user) return;
 
@@ -101,7 +132,14 @@ export default function HomeScreen({ navigation }: any) {
 
   useEffect(() => {
     loadEntries();
+    loadUserProfile();
   }, [user]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadUserProfile();
+    }, [user])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -204,15 +242,15 @@ export default function HomeScreen({ navigation }: any) {
             onPress={() => navigation.navigate('Settings')} 
             style={styles.avatarButton}
           >
-            {user?.user_metadata?.avatar_url ? (
+            {userProfile?.profile_picture_url ? (
               <Image 
-                source={{ uri: user.user_metadata.avatar_url }} 
+                source={{ uri: userProfile.profile_picture_url }} 
                 style={styles.headerAvatar}
               />
             ) : (
               <View style={styles.headerAvatarPlaceholder}>
                 <Text style={styles.headerAvatarText}>
-                  {(user?.user_metadata?.username || user?.email || 'U')[0].toUpperCase()}
+                  {(userProfile?.username || user?.email || 'U')[0].toUpperCase()}
                 </Text>
               </View>
             )}

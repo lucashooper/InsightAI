@@ -15,6 +15,7 @@ import { useAuth } from '../contexts/AuthContext';
 export default function EntryDetailScreen({ route, navigation }: any) {
   const { entry } = route.params;
   const [activeTab, setActiveTab] = useState<'editor' | 'insights'>('editor');
+  const [insightsView, setInsightsView] = useState<'highlights' | 'structured'>('highlights');
   const [analyzing, setAnalyzing] = useState(false);
   const { user } = useAuth();
 
@@ -215,8 +216,8 @@ export default function EntryDetailScreen({ route, navigation }: any) {
                 </View>
               )}
 
-              {/* Context-aware button: only show one */}
-              {!entry.ai_insights ? (
+              {/* Context-aware button: only show one, based on structured insights */}
+              {!entry.ai_structured_insights ? (
                 <TouchableOpacity
                   style={styles.glassButton}
                   onPress={handleAnalyzeEntry}
@@ -244,8 +245,38 @@ export default function EntryDetailScreen({ route, navigation }: any) {
           </View>
         ) : (
           <View style={styles.entryContainer}>
+            {/* Internal Insights view toggle */}
+            <View style={styles.insightsToggleRow}>
+              <TouchableOpacity
+                style={[styles.insightsToggleTab, insightsView === 'highlights' && styles.insightsToggleTabActive]}
+                onPress={() => setInsightsView('highlights')}
+              >
+                <Text
+                  style={[
+                    styles.insightsToggleText,
+                    insightsView === 'highlights' && styles.insightsToggleTextActive,
+                  ]}
+                >
+                  Highlights
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.insightsToggleTab, insightsView === 'structured' && styles.insightsToggleTabActive]}
+                onPress={() => setInsightsView('structured')}
+              >
+                <Text
+                  style={[
+                    styles.insightsToggleText,
+                    insightsView === 'structured' && styles.insightsToggleTextActive,
+                  ]}
+                >
+                  Structured
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             <Text style={styles.date}>Analysis from {formatDate(entry.ai_last_analyzed || entry.created_at)}</Text>
-            
+
             {/* Summary Text */}
             {entry.ai_structured_insights && (
               <View style={styles.summaryContainer}>
@@ -255,85 +286,128 @@ export default function EntryDetailScreen({ route, navigation }: any) {
                 </Text>
               </View>
             )}
-            
+
             <View style={styles.divider} />
 
             {entry.ai_structured_insights ? (
               <View>
                 {console.log('[Mobile Insights] structured_insights', entry.ai_structured_insights)}
-                
-                {/* KEY INSIGHTS FIRST - Most Important */}
-                {entry.ai_structured_insights.insights_report?.keyTakeaways &&
-                  Array.isArray(entry.ai_structured_insights.insights_report.keyTakeaways) &&
-                  entry.ai_structured_insights.insights_report.keyTakeaways.length > 0 && (
-                    <View style={styles.insightSection}>
-                      <Text style={styles.insightLabel}>KEY INSIGHTS</Text>
-                      {entry.ai_structured_insights.insights_report.keyTakeaways.map((takeaway: any, index: number) => {
-                        const isPositive = takeaway.sentiment === 'positive';
-                        const isGrowth = takeaway.sentiment === 'negative' || takeaway.sentiment === 'growth';
-                        const cardStyle = isPositive ? styles.insightCardGreen : isGrowth ? styles.insightCardOrange : styles.insightCardPurple;
-                        const iconName = isPositive ? 'checkmark-circle' : isGrowth ? 'trending-up' : 'bulb';
-                        const iconColor = isPositive ? '#10b981' : isGrowth ? '#f59e0b' : '#8b5cf6';
-                        const categoryLabel = isPositive ? "POSITIVE TAKEAWAY" : isGrowth ? 'AREA FOR GROWTH' : 'SELF-AWARENESS';
-                        
-                        return (
-                          <View key={index} style={cardStyle}>
-                            <View style={styles.insightCardHeader}>
-                              <View style={styles.insightIconBadge}>
-                                <Ionicons name={iconName} size={16} color={iconColor} />
-                              </View>
-                              <Text style={styles.insightCategoryLabel}>{categoryLabel}</Text>
-                            </View>
-                            <Text style={styles.insightCardText}>{String(takeaway.insight || '')}</Text>
-                            <View style={styles.insightCardFooter}>
-                              <Text style={styles.insightCardCategory}>{String(takeaway.category || '')}</Text>
-                              <TouchableOpacity style={styles.addToPlaybookButton}>
-                                <Ionicons name="add-circle-outline" size={16} color="#8b5cf6" />
-                                <Text style={styles.addToPlaybookText}>Add to Playbook</Text>
-                              </TouchableOpacity>
-                            </View>
-                          </View>
-                        );
-                      })}
-                    </View>
-                  )}
 
-                {/* METADATA BELOW - Key Themes */}
-                {Array.isArray(entry.ai_structured_insights.key_themes) && entry.ai_structured_insights.key_themes.length > 0 && (
-                  <View style={styles.insightSection}>
-                    <Text style={styles.insightLabel}>KEY THEMES</Text>
-                    {entry.ai_structured_insights.key_themes.map((theme: any, index: number) => (
-                      <View key={index} style={styles.themeCardPurple}>
-                        <View style={styles.cardHeader}>
-                          <Ionicons name="prism" size={18} color="#a78bfa" />
-                          <Text style={styles.themeTitle}>{String(theme.theme || '')}</Text>
+                {insightsView === 'highlights' && (
+                  <>
+                    {/* KEY INSIGHTS FIRST */}
+                    {entry.ai_structured_insights.insights_report?.keyTakeaways &&
+                      Array.isArray(entry.ai_structured_insights.insights_report.keyTakeaways) &&
+                      entry.ai_structured_insights.insights_report.keyTakeaways.length > 0 && (
+                        <View style={styles.insightSection}>
+                          <Text style={styles.insightLabel}>KEY INSIGHTS</Text>
+                          {entry.ai_structured_insights.insights_report.keyTakeaways.map((takeaway: any, index: number) => {
+                            const isPositive = takeaway.sentiment === 'positive';
+                            const isGrowth = takeaway.sentiment === 'negative' || takeaway.sentiment === 'growth';
+                            const cardStyle = isPositive
+                              ? styles.insightCardGreen
+                              : isGrowth
+                              ? styles.insightCardOrange
+                              : styles.insightCardPurple;
+                            const iconName = isPositive ? 'checkmark-circle' : isGrowth ? 'trending-up' : 'bulb';
+                            const iconColor = isPositive ? '#10b981' : isGrowth ? '#f59e0b' : '#8b5cf6';
+                            const categoryLabel = isPositive
+                              ? 'POSITIVE TAKEAWAY'
+                              : isGrowth
+                              ? 'AREA FOR GROWTH'
+                              : 'SELF-AWARENESS';
+
+                            return (
+                              <View key={index} style={cardStyle}>
+                                <View style={styles.insightCardHeader}>
+                                  <View style={styles.insightIconBadge}>
+                                    <Ionicons name={iconName} size={16} color={iconColor} />
+                                  </View>
+                                  <Text style={styles.insightCategoryLabel}>{categoryLabel}</Text>
+                                </View>
+                                <Text style={styles.insightCardText}>{String(takeaway.insight || '')}</Text>
+                                <View style={styles.insightCardFooter}>
+                                  <Text style={styles.insightCardCategory}>{String(takeaway.category || '')}</Text>
+                                  <TouchableOpacity style={styles.addToPlaybookButton}>
+                                    <Ionicons name="add-circle-outline" size={16} color="#8b5cf6" />
+                                    <Text style={styles.addToPlaybookText}>Add to Playbook</Text>
+                                  </TouchableOpacity>
+                                </View>
+                              </View>
+                            );
+                          })}
                         </View>
-                        <Text style={styles.themeCategory}>{String(theme.category || '')}</Text>
-                      </View>
-                    ))}
-                  </View>
+                      )}
+
+                    {/* Mood Analysis summary near bottom of highlights */}
+                    {entry.ai_structured_insights.mood_analysis &&
+                      typeof entry.ai_structured_insights.mood_analysis === 'object' && (
+                        <View style={styles.insightSection}>
+                          <Text style={styles.insightLabel}>MOOD ANALYSIS</Text>
+                          <View style={styles.moodAnalysisCardNew}>
+                            <View style={styles.cardHeader}>
+                              <Ionicons name="happy" size={18} color="#fbbf24" />
+                              <Text style={styles.moodEmotion}>
+                                {String(entry.ai_structured_insights.mood_analysis.primary_emotion || 'N/A')}
+                              </Text>
+                            </View>
+                            <Text style={styles.moodIntensity}>
+                              Intensity: {String(entry.ai_structured_insights.mood_analysis.intensity || 'N/A')}/10
+                            </Text>
+                          </View>
+                        </View>
+                      )}
+                  </>
                 )}
 
-                {/* Mood Analysis */}
-                {entry.ai_structured_insights.mood_analysis && typeof entry.ai_structured_insights.mood_analysis === 'object' && (
-                  <View style={styles.insightSection}>
-                    <Text style={styles.insightLabel}>MOOD ANALYSIS</Text>
-                    <View style={styles.moodAnalysisCardNew}>
-                      <View style={styles.cardHeader}>
-                        <Ionicons name="happy" size={18} color="#fbbf24" />
-                        <Text style={styles.moodEmotion}>
-                          {String(entry.ai_structured_insights.mood_analysis.primary_emotion || 'N/A')}
-                        </Text>
+                {insightsView === 'structured' && (
+                  <>
+                    {/* Key Themes */}
+                    {Array.isArray(entry.ai_structured_insights.key_themes) &&
+                      entry.ai_structured_insights.key_themes.length > 0 && (
+                        <View style={styles.insightSection}>
+                          <Text style={styles.insightLabel}>KEY THEMES</Text>
+                          {entry.ai_structured_insights.key_themes.map((theme: any, index: number) => (
+                            <View key={index} style={styles.themeCardPurple}>
+                              <View style={styles.cardHeader}>
+                                <Ionicons name="prism" size={18} color="#a78bfa" />
+                                <Text style={styles.themeTitle}>{String(theme.theme || '')}</Text>
+                              </View>
+                              <Text style={styles.themeCategory}>{String(theme.category || '')}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      )}
+
+                    {/* Mood Analysis */}
+                    {entry.ai_structured_insights.mood_analysis &&
+                      typeof entry.ai_structured_insights.mood_analysis === 'object' && (
+                        <View style={styles.insightSection}>
+                          <Text style={styles.insightLabel}>MOOD ANALYSIS</Text>
+                          <View style={styles.moodAnalysisCardNew}>
+                            <View style={styles.cardHeader}>
+                              <Ionicons name="happy" size={18} color="#fbbf24" />
+                              <Text style={styles.moodEmotion}>
+                                {String(entry.ai_structured_insights.mood_analysis.primary_emotion || 'N/A')}
+                              </Text>
+                            </View>
+                            <Text style={styles.moodIntensity}>
+                              Intensity: {String(entry.ai_structured_insights.mood_analysis.intensity || 'N/A')}/10
+                            </Text>
+                          </View>
+                        </View>
+                      )}
+
+                    {/* Confidence */}
+                    {typeof entry.ai_structured_insights.confidence === 'number' && (
+                      <View style={styles.insightSection}>
+                        <Text style={styles.insightLabel}>CONFIDENCE</Text>
+                        <Text style={styles.insightValue}>{entry.ai_structured_insights.confidence}%</Text>
                       </View>
-                      <Text style={styles.moodIntensity}>
-                        Intensity: {String(entry.ai_structured_insights.mood_analysis.intensity || 'N/A')}/10
-                      </Text>
-                    </View>
-                  </View>
+                    )}
+                  </>
                 )}
               </View>
-            ) : entry.ai_insights ? (
-              <Text style={styles.insightsText}>{String(entry.ai_insights)}</Text>
             ) : (
               <Text style={styles.noInsightsText}>
                 No AI insights yet. Tap "Analyze entry" on the Note tab to generate insights.
@@ -371,7 +445,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   tabBar: {
     flexDirection: 'row',
@@ -490,6 +565,32 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     marginTop: 40,
+  },
+  insightsToggleRow: {
+    flexDirection: 'row',
+    backgroundColor: '#0f0f0f',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#1a1a1a',
+  },
+  insightsToggleTab: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  insightsToggleTabActive: {
+    backgroundColor: '#8b5cf6',
+  },
+  insightsToggleText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#888',
+  },
+  insightsToggleTextActive: {
+    color: '#ffffff',
   },
   insightSection: {
     marginBottom: 24,

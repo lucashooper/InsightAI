@@ -103,13 +103,16 @@ export default function DashboardScreen() {
           .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
           .slice(-8);
 
-        // Create abbreviated labels - show every other label
+        // Create labels: first, middle, last only to avoid overlap
         const labels = recent.map((n: any, index: number) => {
-          if (index % 2 === 0 || index === recent.length - 1) {
+          const isFirst = index === 0;
+          const isLast = index === recent.length - 1;
+          const isMiddle = index === Math.floor(recent.length / 2);
+          if (isFirst || isMiddle || isLast) {
             const date = new Date(n.created_at);
             return `${date.toLocaleDateString('en-US', { month: 'short' })} ${date.getDate()}`;
           }
-          return ''; // Empty label for intermediate points
+          return '';
         });
         const wellbeingSeries = recent.map((n: any) => n.ai_insights?.wellbeingScore || 0);
         const resilienceSeries = recent.map((n: any) => n.ai_insights?.resilienceScore || 0);
@@ -183,7 +186,8 @@ export default function DashboardScreen() {
                 <Text style={styles.statEmoji}>💝</Text>
                 <Text style={styles.statLabel}>AVG WELLBEING</Text>
               </View>
-              <Text style={styles.statValue}>{stats.avgWellbeingScore}</Text>
+              <Text style={styles.statValue}>{stats.avgWellbeingScore}/10</Text>
+              <Text style={styles.statSubLabel}>Avg wellbeing (last 7 days)</Text>
             </LinearGradient>
 
             {/* Resilience Score - Primary */}
@@ -195,7 +199,8 @@ export default function DashboardScreen() {
                 <Text style={styles.statEmoji}>🛡️</Text>
                 <Text style={styles.statLabel}>AVG RESILIENCE</Text>
               </View>
-              <Text style={styles.statValue}>{stats.avgResilienceScore}</Text>
+              <Text style={styles.statValue}>{stats.avgResilienceScore}/10</Text>
+              <Text style={styles.statSubLabel}>Avg resilience (last 7 days)</Text>
             </LinearGradient>
 
             {/* Simplified Wellbeing Trend Chart */}
@@ -213,14 +218,14 @@ export default function DashboardScreen() {
                     labels: chartData.labels,
                     datasets: [{ data: chartData.datasets[0].data }]
                   }}
-                  width={screenWidth - 64}
+                  width={screenWidth - 40}
                   height={180}
                   chartConfig={{
                     backgroundColor: 'transparent',
                     backgroundGradientFrom: 'transparent',
                     backgroundGradientTo: 'transparent',
                     decimalPlaces: 0,
-                    color: (opacity = 1) => `rgba(139, 92, 246, ${opacity})`,
+                    color: (opacity = 1) => `rgba(167, 139, 250, ${opacity})`,
                     labelColor: (opacity = 1) => `rgba(120, 120, 140, ${opacity})`,
                     style: { borderRadius: 16 },
                     propsForDots: {
@@ -233,6 +238,8 @@ export default function DashboardScreen() {
                       stroke: 'rgba(255, 255, 255, 0.05)',
                       strokeWidth: 1,
                     },
+                    fillShadowGradient: '#8b5cf6',
+                    fillShadowGradientOpacity: 0.1,
                     propsForLabels: {
                       fontSize: 10,
                     },
@@ -246,7 +253,6 @@ export default function DashboardScreen() {
                   segments={6}
                   style={{
                     marginVertical: 12,
-                    alignSelf: 'center',
                     borderRadius: 16,
                   }}
                 />
@@ -368,6 +374,11 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     letterSpacing: -2,
   },
+  statSubLabel: {
+    marginTop: 6,
+    fontSize: 11,
+    color: '#8b8b8b',
+  },
   statLabel: {
     fontSize: 10,
     color: '#999999',
@@ -400,10 +411,10 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(139, 92, 246, 0.2)',
     width: '100%',
     shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.35,
+    shadowRadius: 20,
+    elevation: 10,
   },
   chartHeader: {
     flexDirection: 'row',
