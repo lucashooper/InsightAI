@@ -8,6 +8,7 @@ import type { UserProfile } from '../../services/userProfileService';
 import { importDiaryEntries } from '../../utils/importDiaryEntries';
 import { usageTrackingService } from '../../services/usageTrackingService';
 import { feedbackService } from '../../services/feedbackService';
+import { MigrationButton } from './MigrationButton';
 import './settings.css';
 import '../../styles/page-layout.css';
 import '../../styles/settings-layout.css';
@@ -311,6 +312,9 @@ const SettingsView: React.FC = () => {
       {/* Page Content */}
       <div className="page-content">
         <div className="settings-grid">
+
+        {/* Migration Button - Shows if local data exists */}
+        <MigrationButton />
 
         {/* Profile Management */}
         <motion.div

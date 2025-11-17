@@ -98,14 +98,19 @@ export default function DashboardScreen() {
       console.log('[Mobile Dashboard] sentimentNotes', sentimentNotes);
 
       if (sentimentNotes.length > 0) {
-        // Use last 12 points, oldest first
+        // Use last 8 points for mobile (cleaner, less crowded)
         const recent = sentimentNotes
           .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-          .slice(-12);
+          .slice(-8);
 
-        const labels = recent.map((n: any) =>
-          new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-        );
+        // Create abbreviated labels - show every other label
+        const labels = recent.map((n: any, index: number) => {
+          if (index % 2 === 0 || index === recent.length - 1) {
+            const date = new Date(n.created_at);
+            return `${date.toLocaleDateString('en-US', { month: 'short' })} ${date.getDate()}`;
+          }
+          return ''; // Empty label for intermediate points
+        });
         const wellbeingSeries = recent.map((n: any) => n.ai_insights?.wellbeingScore || 0);
         const resilienceSeries = recent.map((n: any) => n.ai_insights?.resilienceScore || 0);
 
@@ -138,10 +143,16 @@ export default function DashboardScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Subtle Background Gradient */}
+      <LinearGradient
+        colors={['#0a0a0a', '#050505', '#000000']}
+        style={styles.backgroundGradient}
+      />
+
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Dashboard</Text>
-        <Text style={styles.headerSubtitle}>Your insights at a glance</Text>
+        <Text style={styles.headerSubtitle}>Your emotional wellbeing at a glance</Text>
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
@@ -151,116 +162,96 @@ export default function DashboardScreen() {
           </View>
         ) : stats ? (
           <View style={styles.statsGrid}>
-            {/* Total Entries */}
+            {/* Current Streak - Primary */}
             <LinearGradient
-              colors={['rgba(15, 15, 15, 0.95)', 'rgba(26, 26, 26, 0.95)']}
+              colors={['rgba(15, 15, 15, 0.95)', 'rgba(10, 10, 10, 0.95)']}
               style={styles.statCard}
             >
               <View style={styles.statHeader}>
-                <View style={styles.iconGlow}>
-                  <Ionicons name="document-text" size={20} color="#8b5cf6" />
-                </View>
-                <Text style={styles.statValue}>{stats.totalEntries}</Text>
+                <Text style={styles.statEmoji}>🔥</Text>
+                <Text style={styles.statLabel}>DAY STREAK</Text>
               </View>
-              <Text style={styles.statLabel}>Total Entries</Text>
+              <Text style={styles.statValue}>{stats.currentStreak}</Text>
             </LinearGradient>
 
-            {/* Analyzed Entries */}
+            {/* Wellbeing Score - Primary */}
             <LinearGradient
-              colors={['rgba(15, 15, 15, 0.95)', 'rgba(26, 26, 26, 0.95)']}
+              colors={['rgba(15, 15, 15, 0.95)', 'rgba(10, 10, 10, 0.95)']}
               style={styles.statCard}
             >
               <View style={styles.statHeader}>
-                <View style={styles.iconGlow}>
-                  <Ionicons name="analytics" size={20} color="#10b981" />
-                </View>
-                <Text style={styles.statValue}>{stats.analyzedEntries}</Text>
+                <Text style={styles.statEmoji}>💝</Text>
+                <Text style={styles.statLabel}>AVG WELLBEING</Text>
               </View>
-              <Text style={styles.statLabel}>Analyzed</Text>
+              <Text style={styles.statValue}>{stats.avgWellbeingScore}</Text>
             </LinearGradient>
 
-            {/* Current Streak */}
+            {/* Resilience Score - Primary */}
             <LinearGradient
-              colors={['rgba(15, 15, 15, 0.95)', 'rgba(26, 26, 26, 0.95)']}
+              colors={['rgba(15, 15, 15, 0.95)', 'rgba(10, 10, 10, 0.95)']}
               style={styles.statCard}
             >
               <View style={styles.statHeader}>
-                <View style={styles.iconGlow}>
-                  <Text style={styles.inlineEmoji}>🔥</Text>
-                </View>
-                <Text style={styles.statValue}>{stats.currentStreak}</Text>
+                <Text style={styles.statEmoji}>🛡️</Text>
+                <Text style={styles.statLabel}>AVG RESILIENCE</Text>
               </View>
-              <Text style={styles.statLabel}>Day Streak</Text>
+              <Text style={styles.statValue}>{stats.avgResilienceScore}</Text>
             </LinearGradient>
 
-            {/* Wellbeing Score */}
-            <LinearGradient
-              colors={['rgba(15, 15, 15, 0.95)', 'rgba(26, 26, 26, 0.95)']}
-              style={styles.statCard}
-            >
-              <View style={styles.statHeader}>
-                <View style={styles.iconGlow}>
-                  <Text style={styles.inlineEmoji}>💝</Text>
-                </View>
-                <Text style={styles.statValue}>{stats.avgWellbeingScore}</Text>
-              </View>
-              <Text style={styles.statLabel}>Avg Wellbeing</Text>
-            </LinearGradient>
-
-            {/* Resilience Score */}
-            <LinearGradient
-              colors={['rgba(15, 15, 15, 0.95)', 'rgba(26, 26, 26, 0.95)']}
-              style={styles.statCard}
-            >
-              <View style={styles.statHeader}>
-                <View style={styles.iconGlow}>
-                  <Text style={styles.inlineEmoji}>🛡️</Text>
-                </View>
-                <Text style={styles.statValue}>{stats.avgResilienceScore}</Text>
-              </View>
-              <Text style={styles.statLabel}>Avg Resilience</Text>
-            </LinearGradient>
-
-            {/* Wellbeing Trend Chart */}
+            {/* Simplified Wellbeing Trend Chart */}
             {chartData && chartData.datasets[0].data.length > 0 ? (
               <LinearGradient
-                colors={['rgba(15, 15, 15, 0.95)', 'rgba(26, 26, 26, 0.95)']}
+                colors={['rgba(10, 10, 10, 0.98)', 'rgba(5, 5, 8, 0.98)']}
                 style={styles.chartCard}
               >
                 <View style={styles.chartHeader}>
-                  <View style={styles.iconGlow}>
-                    <Ionicons name="trending-up" size={18} color="#8b5cf6" />
-                  </View>
+                  <Ionicons name="trending-up" size={20} color="#8b5cf6" />
                   <Text style={styles.chartTitle}>Wellbeing Trend</Text>
                 </View>
                 <LineChart
-                  data={chartData}
+                  data={{
+                    labels: chartData.labels,
+                    datasets: [{ data: chartData.datasets[0].data }]
+                  }}
                   width={screenWidth - 64}
-                  height={220}
+                  height={180}
                   chartConfig={{
-                    backgroundColor: '#0f0f0f',
-                    backgroundGradientFrom: '#0f0f0f',
-                    backgroundGradientTo: '#0f0f0f',
+                    backgroundColor: 'transparent',
+                    backgroundGradientFrom: 'transparent',
+                    backgroundGradientTo: 'transparent',
                     decimalPlaces: 0,
                     color: (opacity = 1) => `rgba(139, 92, 246, ${opacity})`,
-                    labelColor: (opacity = 1) => `rgba(153, 153, 153, ${opacity})`,
-                    style: {
-                      borderRadius: 16
-                    },
+                    labelColor: (opacity = 1) => `rgba(120, 120, 140, ${opacity})`,
+                    style: { borderRadius: 16 },
                     propsForDots: {
-                      r: '6',
-                      strokeWidth: '2',
-                      stroke: '#8b5cf6'
-                    }
+                      r: '0',
+                      strokeWidth: '0',
+                    },
+                    strokeWidth: 3,
+                    propsForBackgroundLines: {
+                      strokeDasharray: '',
+                      stroke: 'rgba(255, 255, 255, 0.05)',
+                      strokeWidth: 1,
+                    },
+                    propsForLabels: {
+                      fontSize: 10,
+                    },
                   }}
                   bezier
+                  withInnerLines={true}
+                  withOuterLines={false}
+                  withVerticalLines={false}
+                  withHorizontalLines={true}
+                  fromZero={true}
+                  segments={6}
                   style={{
-                    marginVertical: 8,
-                    borderRadius: 16
+                    marginVertical: 12,
+                    alignSelf: 'center',
+                    borderRadius: 16,
                   }}
                 />
                 <Text style={styles.chartSubtext}>
-                  Last {chartData.labels.length} analyzed entries
+                  Last {chartData.labels.length} entries • Wellbeing score
                 </Text>
               </LinearGradient>
             ) : (
@@ -271,6 +262,13 @@ export default function DashboardScreen() {
                 </Text>
               </View>
             )}
+
+            {/* Secondary Stats - compact footer */}
+            <View style={styles.secondaryStats}>
+              <Text style={styles.secondaryStatsFooterText}>
+                Entries: {stats.totalEntries}   ·   Analyzed: {stats.analyzedEntries}   ·   Best streak: {stats.currentStreak}
+              </Text>
+            </View>
           </View>
         ) : (
           <View style={styles.emptyContainer}>
@@ -287,6 +285,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000000',
+  },
+  backgroundGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
   },
   header: {
     padding: 20,
@@ -322,36 +327,29 @@ const styles = StyleSheet.create({
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 16,
+    gap: 12,
   },
   statCard: {
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.2)',
-    width: '47%',
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 8,
+    borderColor: 'rgba(139, 92, 246, 0.15)',
+    width: '48%',
+    minHeight: 120,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   statHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 8,
+    gap: 8,
+    marginBottom: 12,
   },
-  iconGlow: {
-    width: 28,
-    height: 28,
-    borderRadius: 999,
-    backgroundColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  inlineEmoji: {
-    fontSize: 18,
+  statEmoji: {
+    fontSize: 14,
   },
   wideCard: {
     width: '100%',
@@ -365,16 +363,17 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   statValue: {
-    fontSize: 32,
+    fontSize: 40,
     fontWeight: '700',
     color: '#ffffff',
-    letterSpacing: -1,
+    letterSpacing: -2,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 10,
     color: '#999999',
-    fontWeight: '500',
-    marginTop: 4,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   comingSoonText: {
     fontSize: 14,
@@ -422,5 +421,16 @@ const styles = StyleSheet.create({
     color: '#999',
     textAlign: 'center',
     marginTop: 8,
+  },
+  secondaryStats: {
+    marginTop: 24,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  secondaryStatsFooterText: {
+    fontSize: 12,
+    color: '#777',
+    textAlign: 'center',
   },
 });

@@ -2,18 +2,29 @@
 // Manages recurring daily habits with streak tracking
 
 import type { DailyProtocol, DailyCompletion, ProtocolStats } from '../types/dailyProtocol';
-
-const STORAGE_KEY_PROTOCOLS = 'insightai_daily_protocols';
-const STORAGE_KEY_COMPLETIONS = 'insightai_daily_completions';
+import { supabase } from './supabaseClient';
 
 class DailyProtocolService {
   /**
    * Get all daily protocols
    */
-  getProtocols(): DailyProtocol[] {
+  async getProtocols(): Promise<DailyProtocol[]> {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY_PROTOCOLS);
-      return stored ? JSON.parse(stored) : [];
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from('daily_protocols')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading daily protocols:', error);
+        return [];
+      }
+
+      return data || [];
     } catch (error) {
       console.error('Error loading daily protocols:', error);
       return [];
@@ -23,46 +34,76 @@ class DailyProtocolService {
   /**
    * Get active protocols only
    */
-  getActiveProtocols(): DailyProtocol[] {
-    return this.getProtocols().filter(p => p.isActive);
+  async getActiveProtocols(): Promise<DailyProtocol[]> {
+    const protocols = await this.getProtocols();
+    return protocols.filter(p => p.isActive || p.is_active);
   }
 
   /**
    * Save a new protocol
    */
-  saveProtocol(protocol: Omit<DailyProtocol, 'id' | 'createdAt'>): DailyProtocol {
-    const protocols = this.getProtocols();
-    const newProtocol: DailyProtocol = {
-      ...protocol,
-      id: `protocol_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString()
-    };
-    
-    protocols.push(newProtocol);
-    localStorage.setItem(STORAGE_KEY_PROTOCOLS, JSON.stringify(protocols));
-    return newProtocol;
+  async saveProtocol(protocol: Omit<DailyProtocol, 'id' | 'createdAt'>): Promise<DailyProtocol> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('No authenticated user');
+
+    const { data, error } = await supabase
+      .from('daily_protocols')
+      .insert({
+        user_id: user.id,
+        title: protocol.title,
+        description: protocol.description || '',
+        category: protocol.category,
+        emoji: protocol.emoji || '⏰',
+        is_active: protocol.isActive !== false,
+        reminder_time: protocol.reminderTime || null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error saving protocol:', error);
+      throw error;
+    }
+
+    return data as DailyProtocol;
   }
 
   /**
    * Update protocol
    */
-  updateProtocol(protocolId: string, updates: Partial<DailyProtocol>): void {
-    const protocols = this.getProtocols();
-    const index = protocols.findIndex(p => p.id === protocolId);
-    
-    if (index !== -1) {
-      protocols[index] = { ...protocols[index], ...updates };
-      localStorage.setItem(STORAGE_KEY_PROTOCOLS, JSON.stringify(protocols));
+  async updateProtocol(protocolId: string, updates: Partial<DailyProtocol>): Promise<void> {
+    const dbUpdates: any = {};
+    if (updates.title) dbUpdates.title = updates.title;
+    if (updates.description) dbUpdates.description = updates.description;
+    if (updates.category) dbUpdates.category = updates.category;
+    if (updates.emoji) dbUpdates.emoji = updates.emoji;
+    if (updates.isActive !== undefined) dbUpdates.is_active = updates.isActive;
+    if (updates.reminderTime) dbUpdates.reminder_time = updates.reminderTime;
+
+    const { error } = await supabase
+      .from('daily_protocols')
+      .update(dbUpdates)
+      .eq('id', protocolId);
+
+    if (error) {
+      console.error('Error updating protocol:', error);
+      throw error;
     }
   }
 
   /**
    * Delete protocol (archives it)
    */
-  deleteProtocol(protocolId: string): void {
-    const protocols = this.getProtocols();
-    const filtered = protocols.filter(p => p.id !== protocolId);
-    localStorage.setItem(STORAGE_KEY_PROTOCOLS, JSON.stringify(filtered));
+  async deleteProtocol(protocolId: string): Promise<void> {
+    const { error } = await supabase
+      .from('daily_protocols')
+      .delete()
+      .eq('id', protocolId);
+
+    if (error) {
+      console.error('Error deleting protocol:', error);
+      throw error;
+    }
   }
 
   /**

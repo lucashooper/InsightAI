@@ -6,21 +6,25 @@ import { supabase } from './supabaseClient';
 
 class ActionableInsightsService {
   /**
-   * Get user-specific storage key
-   */
-  private async getStorageKey(key: string): Promise<string> {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('No authenticated user');
-    return `insightai_${user.id}_${key}`;
-  }
-  /**
    * Get all actionable insights for current user
    */
   async getInsights(): Promise<ActionableInsight[]> {
     try {
-      const key = await this.getStorageKey('actionable_insights');
-      const stored = localStorage.getItem(key);
-      return stored ? JSON.parse(stored) : [];
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from('actionable_insights')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading actionable insights:', error);
+        return [];
+      }
+
+      return data || [];
     } catch (error) {
       console.error('Error loading actionable insights:', error);
       return [];
@@ -31,17 +35,35 @@ class ActionableInsightsService {
    * Save an actionable insight
    */
   async saveInsight(insight: Omit<ActionableInsight, 'id' | 'createdAt'>): Promise<ActionableInsight> {
-    const insights = await this.getInsights();
-    const newInsight: ActionableInsight = {
-      ...insight,
-      id: `insight_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString()
-    };
-    
-    insights.push(newInsight);
-    const key = await this.getStorageKey('actionable_insights');
-    localStorage.setItem(key, JSON.stringify(insights));
-    return newInsight;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('No authenticated user');
+
+    const { data, error } = await supabase
+      .from('actionable_insights')
+      .insert({
+        user_id: user.id,
+        title: insight.title,
+        description: insight.description,
+        category: insight.category,
+        difficulty: insight.difficulty,
+        emoji: insight.emoji || '✨',
+        status: insight.status,
+        source: insight.source,
+        source_entry_id: insight.sourceEntryId,
+        estimated_time: insight.estimatedTime,
+        notes: insight.notes,
+        started_at: insight.startedAt,
+        completed_at: insight.completedAt,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error saving insight:', error);
+      throw error;
+    }
+
+    return data as ActionableInsight;
   }
 
   /**
@@ -52,23 +74,25 @@ class ActionableInsightsService {
     status: ActionableInsight['status'],
     notes?: string
   ): Promise<void> {
-    const insights = await this.getInsights();
-    const insight = insights.find(i => i.id === insightId);
+    const updates: any = { status };
+    if (notes) updates.notes = notes;
     
-    if (insight) {
-      insight.status = status;
-      if (notes) insight.notes = notes;
-      
-      if (status === 'active' && !insight.startedAt) {
-        insight.startedAt = new Date().toISOString();
-      }
-      
-      if (status === 'completed') {
-        insight.completedAt = new Date().toISOString();
-      }
-      
-      const key = await this.getStorageKey('actionable_insights');
-      localStorage.setItem(key, JSON.stringify(insights));
+    if (status === 'active') {
+      updates.started_at = new Date().toISOString();
+    }
+    
+    if (status === 'completed') {
+      updates.completed_at = new Date().toISOString();
+    }
+
+    const { error } = await supabase
+      .from('actionable_insights')
+      .update(updates)
+      .eq('id', insightId);
+
+    if (error) {
+      console.error('Error updating insight status:', error);
+      throw error;
     }
   }
 
@@ -76,10 +100,15 @@ class ActionableInsightsService {
    * Delete an insight
    */
   async deleteInsight(insightId: string): Promise<void> {
-    const insights = await this.getInsights();
-    const filtered = insights.filter(i => i.id !== insightId);
-    const key = await this.getStorageKey('actionable_insights');
-    localStorage.setItem(key, JSON.stringify(filtered));
+    const { error } = await supabase
+      .from('actionable_insights')
+      .delete()
+      .eq('id', insightId);
+
+    if (error) {
+      console.error('Error deleting insight:', error);
+      throw error;
+    }
   }
 
   /**

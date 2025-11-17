@@ -10,11 +10,49 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { mobileAiService } from '../services/mobileAiService';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function EntryDetailScreen({ route, navigation }: any) {
   const { entry } = route.params;
   const [activeTab, setActiveTab] = useState<'editor' | 'insights'>('editor');
   const [analyzing, setAnalyzing] = useState(false);
+  const { user } = useAuth();
+
+  const inferStrategyCategory = (text: string): string => {
+    const lower = text.toLowerCase();
+    if (lower.includes('exercise') || lower.includes('walk') || lower.includes('run') || lower.includes('yoga')) {
+      return 'exercise';
+    }
+    if (lower.includes('breathe') || lower.includes('breath') || lower.includes('meditat') || lower.includes('mindful')) {
+      return 'mindfulness';
+    }
+    if (lower.includes('sleep') || lower.includes('rest') || lower.includes('bed')) {
+      return 'sleep';
+    }
+    if (lower.includes('friend') || lower.includes('talk') || lower.includes('call') || lower.includes('social')) {
+      return 'social';
+    }
+    if (lower.includes('eat') || lower.includes('meal') || lower.includes('food') || lower.includes('nutrition')) {
+      return 'nutrition';
+    }
+    if (lower.includes('journal') || lower.includes('write') || lower.includes('note')) {
+      return 'coping';
+    }
+    return 'general';
+  };
+
+  const getCategoryEmoji = (category: string): string => {
+    const map: Record<string, string> = {
+      coping: '💪',
+      exercise: '🏃',
+      social: '👥',
+      mindfulness: '🧘',
+      sleep: '😴',
+      nutrition: '🥗',
+      general: '✨',
+    };
+    return map[category] || '✨';
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -35,6 +73,64 @@ export default function EntryDetailScreen({ route, navigation }: any) {
 
       const analysis = await mobileAiService.analyzeEntry(entry.content);
       console.log('[Mobile Insights] analysis result', analysis);
+
+      // Save AI-suggested strategies to Supabase
+      try {
+        if (user && analysis?.coping_strategies?.suggested) {
+          const suggested = Array.isArray(analysis.coping_strategies.suggested)
+            ? analysis.coping_strategies.suggested
+            : [];
+
+          if (suggested.length > 0) {
+            // Get existing strategies to avoid duplicates
+            const { data: existing } = await supabase
+              .from('actionable_insights')
+              .select('title')
+              .eq('user_id', user.id);
+
+            const existingTitles = new Set(
+              (existing || []).map((s: any) => String(s.title).toLowerCase()),
+            );
+
+            // Prepare new strategies
+            const toInsert = suggested
+              .map((item: any) => {
+                const title = String(item?.strategy || '');
+                if (!title || existingTitles.has(title.toLowerCase())) return null;
+
+                const category = inferStrategyCategory(title);
+                return {
+                  user_id: user.id,
+                  title,
+                  description: String(item?.why_helpful || ''),
+                  category,
+                  difficulty: item?.difficulty || 'moderate',
+                  emoji: getCategoryEmoji(category),
+                  status: 'suggested',
+                  source: 'ai_suggested',
+                  source_entry_id: entry.id,
+                };
+              })
+              .filter(Boolean);
+
+            if (toInsert.length > 0) {
+              const { error: insertError } = await supabase
+                .from('actionable_insights')
+                .insert(toInsert);
+
+              if (insertError) {
+                console.error('[Mobile Playbook] Error saving strategies:', insertError);
+              } else {
+                console.log('[Mobile Playbook] strategies saved to Supabase', {
+                  added: toInsert.length,
+                });
+              }
+            }
+          }
+        }
+      } catch (strategyError) {
+        console.error('[Mobile Playbook] Failed to save suggested strategies', strategyError);
+      }
 
       const { error } = await supabase
         .from('notes')
@@ -110,71 +206,108 @@ export default function EntryDetailScreen({ route, navigation }: any) {
             <Text style={styles.title}>{entry.title || 'Untitled Entry'}</Text>
             <Text style={styles.date}>{formatDate(entry.created_at)}</Text>
             
-            {entry.mood_score && (
-              <View style={styles.moodContainer}>
-                <Text style={styles.moodLabel}>Mood:</Text>
-                <Text style={styles.moodValue}>{entry.mood_score}/10</Text>
-              </View>
-            )}
+            {/* Mood + Button Row */}
+            <View style={styles.moodButtonRow}>
+              {entry.mood_score && (
+                <View style={styles.moodChip}>
+                  <Text style={styles.moodEmoji}>😊</Text>
+                  <Text style={styles.moodChipText}>{entry.mood_score}/10</Text>
+                </View>
+              )}
 
-            {/* Analyze entry CTA */}
-            <TouchableOpacity
-              style={styles.viewInsightsButton}
-              onPress={handleAnalyzeEntry}
-              disabled={analyzing}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Ionicons name="sparkles" size={18} color="#8b5cf6" />
-                <Text style={styles.viewInsightsText}>
-                  {analyzing ? 'Analyzing entry…' : 'Analyze entry'}
-                </Text>
-              </View>
-            </TouchableOpacity>
+              {/* Context-aware button: only show one */}
+              {!entry.ai_insights ? (
+                <TouchableOpacity
+                  style={styles.glassButton}
+                  onPress={handleAnalyzeEntry}
+                  disabled={analyzing}
+                >
+                  <Ionicons name="sparkles" size={16} color="rgba(139, 92, 246, 0.9)" />
+                  <Text style={styles.glassButtonText}>
+                    {analyzing ? 'Analyzing…' : 'Analyze'}
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={styles.glassButton}
+                  onPress={() => setActiveTab('insights')}
+                >
+                  <Ionicons name="bulb" size={16} color="rgba(139, 92, 246, 0.9)" />
+                  <Text style={styles.glassButtonText}>View Insights</Text>
+                </TouchableOpacity>
+              )}
+            </View>
 
             <View style={styles.divider} />
 
             <Text style={styles.content}>{entry.content}</Text>
-
-            {entry.ai_insights && (
-              <TouchableOpacity
-                style={styles.viewInsightsButton}
-                onPress={() => setActiveTab('insights')}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <Ionicons name="bulb" size={18} color="#8b5cf6" />
-                  <Text style={styles.viewInsightsText}>View Insights</Text>
-                </View>
-              </TouchableOpacity>
-            )}
           </View>
         ) : (
           <View style={styles.entryContainer}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-              <Ionicons name="bulb" size={24} color="#8b5cf6" />
-              <Text style={styles.insightsTitle}>AI Insights</Text>
-            </View>
             <Text style={styles.date}>Analysis from {formatDate(entry.ai_last_analyzed || entry.created_at)}</Text>
+            
+            {/* Summary Text */}
+            {entry.ai_structured_insights && (
+              <View style={styles.summaryContainer}>
+                <Text style={styles.summaryText}>
+                  Prism found • {entry.ai_structured_insights.key_themes?.length || 0} themes •{' '}
+                  {entry.ai_structured_insights.insights_report?.keyTakeaways?.length || 0} takeaways
+                </Text>
+              </View>
+            )}
             
             <View style={styles.divider} />
 
             {entry.ai_structured_insights ? (
               <View>
                 {console.log('[Mobile Insights] structured_insights', entry.ai_structured_insights)}
-                {/* Confidence Score */}
-                {typeof entry.ai_structured_insights.confidence === 'number' && (
-                  <View style={styles.insightSection}>
-                    <Text style={styles.insightLabel}>Confidence</Text>
-                    <Text style={styles.insightValue}>{entry.ai_structured_insights.confidence}%</Text>
-                  </View>
-                )}
+                
+                {/* KEY INSIGHTS FIRST - Most Important */}
+                {entry.ai_structured_insights.insights_report?.keyTakeaways &&
+                  Array.isArray(entry.ai_structured_insights.insights_report.keyTakeaways) &&
+                  entry.ai_structured_insights.insights_report.keyTakeaways.length > 0 && (
+                    <View style={styles.insightSection}>
+                      <Text style={styles.insightLabel}>KEY INSIGHTS</Text>
+                      {entry.ai_structured_insights.insights_report.keyTakeaways.map((takeaway: any, index: number) => {
+                        const isPositive = takeaway.sentiment === 'positive';
+                        const isGrowth = takeaway.sentiment === 'negative' || takeaway.sentiment === 'growth';
+                        const cardStyle = isPositive ? styles.insightCardGreen : isGrowth ? styles.insightCardOrange : styles.insightCardPurple;
+                        const iconName = isPositive ? 'checkmark-circle' : isGrowth ? 'trending-up' : 'bulb';
+                        const iconColor = isPositive ? '#10b981' : isGrowth ? '#f59e0b' : '#8b5cf6';
+                        const categoryLabel = isPositive ? "POSITIVE TAKEAWAY" : isGrowth ? 'AREA FOR GROWTH' : 'SELF-AWARENESS';
+                        
+                        return (
+                          <View key={index} style={cardStyle}>
+                            <View style={styles.insightCardHeader}>
+                              <View style={styles.insightIconBadge}>
+                                <Ionicons name={iconName} size={16} color={iconColor} />
+                              </View>
+                              <Text style={styles.insightCategoryLabel}>{categoryLabel}</Text>
+                            </View>
+                            <Text style={styles.insightCardText}>{String(takeaway.insight || '')}</Text>
+                            <View style={styles.insightCardFooter}>
+                              <Text style={styles.insightCardCategory}>{String(takeaway.category || '')}</Text>
+                              <TouchableOpacity style={styles.addToPlaybookButton}>
+                                <Ionicons name="add-circle-outline" size={16} color="#8b5cf6" />
+                                <Text style={styles.addToPlaybookText}>Add to Playbook</Text>
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  )}
 
-                {/* Key Themes */}
+                {/* METADATA BELOW - Key Themes */}
                 {Array.isArray(entry.ai_structured_insights.key_themes) && entry.ai_structured_insights.key_themes.length > 0 && (
                   <View style={styles.insightSection}>
-                    <Text style={styles.insightLabel}>Key Themes</Text>
+                    <Text style={styles.insightLabel}>KEY THEMES</Text>
                     {entry.ai_structured_insights.key_themes.map((theme: any, index: number) => (
-                      <View key={index} style={styles.themeCard}>
-                        <Text style={styles.themeTitle}>{String(theme.theme || '')}</Text>
+                      <View key={index} style={styles.themeCardPurple}>
+                        <View style={styles.cardHeader}>
+                          <Ionicons name="prism" size={18} color="#a78bfa" />
+                          <Text style={styles.themeTitle}>{String(theme.theme || '')}</Text>
+                        </View>
                         <Text style={styles.themeCategory}>{String(theme.category || '')}</Text>
                       </View>
                     ))}
@@ -184,35 +317,20 @@ export default function EntryDetailScreen({ route, navigation }: any) {
                 {/* Mood Analysis */}
                 {entry.ai_structured_insights.mood_analysis && typeof entry.ai_structured_insights.mood_analysis === 'object' && (
                   <View style={styles.insightSection}>
-                    <Text style={styles.insightLabel}>Mood Analysis</Text>
-                    <View style={styles.moodAnalysisCard}>
-                      <Text style={styles.moodEmotion}>
-                        Primary: {String(entry.ai_structured_insights.mood_analysis.primary_emotion || 'N/A')}
-                      </Text>
+                    <Text style={styles.insightLabel}>MOOD ANALYSIS</Text>
+                    <View style={styles.moodAnalysisCardNew}>
+                      <View style={styles.cardHeader}>
+                        <Ionicons name="happy" size={18} color="#fbbf24" />
+                        <Text style={styles.moodEmotion}>
+                          {String(entry.ai_structured_insights.mood_analysis.primary_emotion || 'N/A')}
+                        </Text>
+                      </View>
                       <Text style={styles.moodIntensity}>
                         Intensity: {String(entry.ai_structured_insights.mood_analysis.intensity || 'N/A')}/10
                       </Text>
                     </View>
                   </View>
                 )}
-
-                {/* Insights Report - Key Takeaways */}
-                {entry.ai_structured_insights.insights_report?.keyTakeaways &&
-                  Array.isArray(entry.ai_structured_insights.insights_report.keyTakeaways) &&
-                  entry.ai_structured_insights.insights_report.keyTakeaways.length > 0 && (
-                    <View style={styles.insightSection}>
-                      <Text style={styles.insightLabel}>Key Insights</Text>
-                      {entry.ai_structured_insights.insights_report.keyTakeaways.map((takeaway: any, index: number) => (
-                        <View key={index} style={styles.themeCard}>
-                          <Text style={styles.themeTitle}>{String(takeaway.insight || '')}</Text>
-                          <Text style={styles.themeCategory}>
-                            {takeaway.sentiment === 'positive' ? "What's working" : 'Pattern to address'} •{' '}
-                            {String(takeaway.category || '')}
-                          </Text>
-                        </View>
-                      ))}
-                    </View>
-                  )}
               </View>
             ) : entry.ai_insights ? (
               <Text style={styles.insightsText}>{String(entry.ai_insights)}</Text>
@@ -253,7 +371,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
+    padding: 16,
   },
   tabBar: {
     flexDirection: 'row',
@@ -266,11 +384,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 16,
     alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
+    borderBottomWidth: 0,
   },
   activeTab: {
-    borderBottomColor: '#8b5cf6',
+    borderBottomWidth: 0,
   },
   tabText: {
     fontSize: 15,
@@ -278,14 +395,17 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   activeTabText: {
-    color: '#8b5cf6',
+    color: '#a78bfa',
+    textShadowColor: 'rgba(139, 92, 246, 0.3)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
   },
   entryContainer: {
-    backgroundColor: '#0f0f0f',
-    borderRadius: 12,
+    backgroundColor: 'rgba(15, 15, 15, 0.6)',
+    borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: '#1a1a1a',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   title: {
     fontSize: 24,
@@ -298,18 +418,28 @@ const styles = StyleSheet.create({
     color: '#999',
     marginBottom: 16,
   },
-  moodContainer: {
+  moodButtonRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
     marginBottom: 16,
   },
-  moodLabel: {
-    fontSize: 14,
-    color: '#999',
-    marginRight: 8,
+  moodChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(139, 92, 246, 0.12)',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.25)',
+    gap: 6,
   },
-  moodValue: {
-    fontSize: 16,
+  moodEmoji: {
+    fontSize: 14,
+  },
+  moodChipText: {
+    fontSize: 14,
     fontWeight: '600',
     color: '#8b5cf6',
   },
@@ -323,19 +453,26 @@ const styles = StyleSheet.create({
     color: '#e0e0e0',
     lineHeight: 24,
   },
-  viewInsightsButton: {
-    marginTop: 20,
-    backgroundColor: 'rgba(139, 92, 246, 0.15)',
-    borderRadius: 8,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.3)',
+  glassButton: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.2)',
+    backgroundColor: 'rgba(10, 10, 10, 0.6)',
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  viewInsightsText: {
-    fontSize: 16,
+  glassButtonText: {
+    fontSize: 13,
     fontWeight: '600',
-    color: '#8b5cf6',
+    color: 'rgba(167, 139, 250, 0.95)',
   },
   insightsTitle: {
     fontSize: 24,
@@ -357,26 +494,72 @@ const styles = StyleSheet.create({
   insightSection: {
     marginBottom: 24,
   },
+  summaryContainer: {
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  summaryText: {
+    fontSize: 13,
+    color: '#999',
+    fontWeight: '500',
+  },
   insightLabel: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '700',
     color: '#8b5cf6',
     marginBottom: 12,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 1,
   },
   insightValue: {
     fontSize: 20,
     fontWeight: '700',
     color: '#ffffff',
   },
-  themeCard: {
-    backgroundColor: 'rgba(139, 92, 246, 0.1)',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  themeCardPurple: {
+    backgroundColor: 'rgba(139, 92, 246, 0.08)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: 'rgba(139, 92, 246, 0.2)',
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  themeCardGreen: {
+    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.2)',
+    shadowColor: '#10b981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  themeCardOrange: {
+    backgroundColor: 'rgba(245, 158, 11, 0.08)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.2)',
+    shadowColor: '#f59e0b',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   themeTitle: {
     fontSize: 15,
@@ -388,12 +571,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#8b5cf6',
   },
-  moodAnalysisCard: {
-    backgroundColor: 'rgba(139, 92, 246, 0.1)',
-    borderRadius: 8,
+  moodAnalysisCardNew: {
+    backgroundColor: 'rgba(251, 191, 36, 0.08)',
+    borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.2)',
+    borderColor: 'rgba(251, 191, 36, 0.2)',
+    shadowColor: '#fbbf24',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   moodEmotion: {
     fontSize: 15,
@@ -404,5 +592,99 @@ const styles = StyleSheet.create({
   moodIntensity: {
     fontSize: 14,
     color: '#d0d0d0',
+  },
+  // Premium Insight Cards with Glow
+  insightCardGreen: {
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+    shadowColor: '#10b981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  insightCardOrange: {
+    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.3)',
+    shadowColor: '#f59e0b',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  insightCardPurple: {
+    backgroundColor: 'rgba(139, 92, 246, 0.12)',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  insightCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
+  },
+  insightIconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  insightCategoryLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#999',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  insightCardText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#ffffff',
+    lineHeight: 24,
+    marginBottom: 16,
+  },
+  insightCardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  insightCardCategory: {
+    fontSize: 13,
+    color: '#8b5cf6',
+    fontWeight: '500',
+  },
+  addToPlaybookButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+  },
+  addToPlaybookText: {
+    fontSize: 12,
+    color: '#8b5cf6',
+    fontWeight: '600',
   },
 });

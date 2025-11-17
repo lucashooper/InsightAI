@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
+import { useFocusEffect } from '@react-navigation/native';
+import { supabase } from '../lib/supabase';
 
 type TabType = 'protocols' | 'strategies';
 
@@ -14,6 +15,8 @@ interface Strategy {
   category: string;
   difficulty: string;
   emoji: string;
+  status: 'suggested' | 'active' | 'completed';
+  source?: string;
 }
 
 export default function PlaybookScreen() {
@@ -22,6 +25,7 @@ export default function PlaybookScreen() {
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   const [newStrategy, setNewStrategy] = useState({
     title: '',
     description: '',
@@ -39,17 +43,30 @@ export default function PlaybookScreen() {
     loadStrategies();
   }, [user]);
 
+  useFocusEffect(
+    useCallback(() => {
+      loadStrategies();
+    }, [user])
+  );
+
   const loadStrategies = async () => {
     if (!user) return;
 
     try {
-      // Load from AsyncStorage
-      const stored = await AsyncStorage.getItem(`actionable_insights_${user.id}`);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        console.log('[Mobile Playbook] strategies loaded', parsed);
-        setStrategies(parsed);
+      // Load from Supabase
+      const { data, error } = await supabase
+        .from('actionable_insights')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('[Mobile Playbook] Error loading strategies:', error);
+        return;
       }
+
+      console.log('[Mobile Playbook] strategies loaded from Supabase', data);
+      setStrategies(data || []);
     } catch (error) {
       console.error('Error loading strategies:', error);
     } finally {
@@ -60,17 +77,29 @@ export default function PlaybookScreen() {
   const createStrategy = async () => {
     if (!newStrategy.title.trim() || !user) return;
 
-    const strategy: Strategy = {
-      id: Date.now().toString(),
-      ...newStrategy
-    };
-
-    const updated = [...strategies, strategy];
-    setStrategies(updated);
-    
-    // Save to AsyncStorage
     try {
-      await AsyncStorage.setItem(`actionable_insights_${user.id}`, JSON.stringify(updated));
+      const { data, error } = await supabase
+        .from('actionable_insights')
+        .insert({
+          user_id: user.id,
+          title: newStrategy.title,
+          description: newStrategy.description,
+          category: newStrategy.category,
+          difficulty: newStrategy.difficulty,
+          emoji: newStrategy.emoji,
+          status: 'suggested',
+          source: 'user_created',
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[Mobile Playbook] Error creating strategy:', error);
+        return;
+      }
+
+      // Reload strategies to get the new one
+      await loadStrategies();
     } catch (error) {
       console.error('Error saving strategy:', error);
     }
@@ -88,11 +117,21 @@ export default function PlaybookScreen() {
 
   const deleteStrategy = async (id: string) => {
     if (!user) return;
-    const updated = strategies.filter(s => s.id !== id);
-    setStrategies(updated);
-    
+
     try {
-      await AsyncStorage.setItem(`actionable_insights_${user.id}`, JSON.stringify(updated));
+      const { error } = await supabase
+        .from('actionable_insights')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('[Mobile Playbook] Error deleting strategy:', error);
+        return;
+      }
+
+      // Reload strategies
+      await loadStrategies();
     } catch (error) {
       console.error('Error deleting strategy:', error);
     }
@@ -128,18 +167,23 @@ export default function PlaybookScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Subtle Background Gradient */}
+      <LinearGradient
+        colors={['#0a0a0a', '#050505', '#000000']}
+        style={styles.backgroundGradient}
+      />
+
       {/* Header */}
       <View style={styles.header}>
         <View>
           <Text style={styles.headerTitle}>Playbook</Text>
-          <Text style={styles.headerSubtitle}>Your personal growth guide</Text>
         </View>
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         {/* Today's Progress */}
         <LinearGradient
-          colors={['rgba(15, 15, 15, 0.95)', 'rgba(26, 26, 26, 0.95)']}
+          colors={['rgba(10, 10, 10, 0.95)', 'rgba(5, 5, 5, 0.95)']}
           style={styles.progressCard}
         >
           <Text style={styles.progressTitle}>TODAY'S PROGRESS</Text>
@@ -148,7 +192,12 @@ export default function PlaybookScreen() {
             <Text style={styles.progressLabel}>protocols completed</Text>
           </View>
           <View style={styles.progressBarContainer}>
-            <View style={[styles.progressBar, { width: `${protocolProgress.percentage}%` }]} />
+            <LinearGradient
+              colors={['#8b5cf6', '#7c3aed']}
+              style={[styles.progressBar, { width: `${protocolProgress.percentage}%` }]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            />
           </View>
           <Text style={styles.progressPercentage}>{protocolProgress.percentage}% Completion</Text>
         </LinearGradient>
@@ -190,22 +239,34 @@ export default function PlaybookScreen() {
         {/* Content */}
         {loading ? (
           <ActivityIndicator size="large" color="#8b5cf6" style={styles.loader} />
-        ) : strategies.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>📚</Text>
-            <Text style={styles.emptyText}>
-              {activeTab === 'strategies'
-                ? 'No suggested strategies yet.'
-                : 'No daily protocols yet.'}
-            </Text>
-            <Text style={styles.emptySubtext}>
-              {activeTab === 'strategies'
-                ? 'Analyze a few entries on the Dashboard to get personalized recommendations.'
-                : 'Create your first protocol to build a consistent routine.'}
-            </Text>
-          </View>
-        ) : (
-          strategies.map((strategy) => (
+        ) : (() => {
+          // Filter strategies by status based on active tab
+          const filteredStrategies = activeTab === 'protocols'
+            ? strategies.filter(s => s.status === 'active')
+            : strategies.filter(s => s.status === 'suggested' && s.source === 'ai_suggested');
+          
+          // For suggestions, show only top 3 unless expanded
+          const displayStrategies = activeTab === 'strategies' && !showAllSuggestions
+            ? filteredStrategies.slice(0, 3)
+            : filteredStrategies;
+          
+          return displayStrategies.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyIcon}>📚</Text>
+              <Text style={styles.emptyText}>
+                {activeTab === 'strategies'
+                  ? 'No suggested strategies yet.'
+                  : 'No daily protocols yet.'}
+              </Text>
+              <Text style={styles.emptySubtext}>
+                {activeTab === 'strategies'
+                  ? 'Analyze a few entries to get personalized recommendations.'
+                  : 'Add strategies to your daily protocols to build a routine.'}
+              </Text>
+            </View>
+          ) : (
+            <>
+            {displayStrategies.map((strategy) => (
             <TouchableOpacity
               key={strategy.id}
               style={styles.premiumCard}
@@ -213,7 +274,11 @@ export default function PlaybookScreen() {
               onLongPress={() => handleStrategyLongPress(strategy)}
             >
               <LinearGradient
-                colors={['rgba(15, 15, 15, 0.95)', 'rgba(26, 26, 26, 0.95)']}
+                colors={
+                  strategy.status === 'suggested'
+                    ? ['rgba(18, 18, 26, 0.98)', 'rgba(6, 6, 12, 0.98)']
+                    : ['rgba(10, 10, 10, 0.98)', 'rgba(5, 5, 5, 0.98)']
+                }
                 style={styles.cardGradient}
               >
                 <View style={styles.cardHeader}>
@@ -223,16 +288,19 @@ export default function PlaybookScreen() {
                   <View style={styles.cardInfo}>
                     <View style={styles.titleRow}>
                       <Text style={styles.cardTitle}>{strategy.title}</Text>
-                      <View style={styles.inlineStreaks}>
-                        <View style={styles.inlineStreakBadge}>
-                          <Text style={styles.streakEmoji}>🔥</Text>
-                          <Text style={styles.streakText}>0</Text>
+                      {/* Only show streaks for active protocols */}
+                      {strategy.status === 'active' && (
+                        <View style={styles.inlineStreaks}>
+                          <View style={styles.inlineStreakBadge}>
+                            <Text style={styles.streakEmoji}>🔥</Text>
+                            <Text style={styles.streakText}>0</Text>
+                          </View>
+                          <View style={styles.inlineStreakBadge}>
+                            <Text style={styles.streakEmoji}>🏆</Text>
+                            <Text style={styles.streakText}>0</Text>
+                          </View>
                         </View>
-                        <View style={styles.inlineStreakBadge}>
-                          <Text style={styles.streakEmoji}>🏆</Text>
-                          <Text style={styles.streakText}>0</Text>
-                        </View>
-                      </View>
+                      )}
                     </View>
                     {strategy.description ? (
                       <Text style={styles.cardDescription} numberOfLines={2}>{strategy.description}</Text>
@@ -251,11 +319,50 @@ export default function PlaybookScreen() {
                       <Text style={styles.difficultyText}>{strategy.difficulty}</Text>
                     </View>
                   </View>
+                  
+                  {/* Action buttons for suggested strategies */}
+                  {strategy.status === 'suggested' && (
+                    <View style={styles.actionButtons}>
+                      <TouchableOpacity 
+                        style={styles.actionButton}
+                        onPress={() => console.log('Activate strategy:', strategy.id)}
+                      >
+                        <Ionicons name="checkmark-circle" size={18} color="#34d399" />
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={styles.actionButton}
+                        onPress={() => console.log('Skip strategy:', strategy.id)}
+                      >
+                        <Ionicons name="close-circle" size={18} color="#f97373" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </View>
               </LinearGradient>
             </TouchableOpacity>
-          ))
-        )}
+            ))}
+            
+            {/* Show More Button for Strategies */}
+            {activeTab === 'strategies' && filteredStrategies.length > 3 && (
+              <TouchableOpacity
+                style={styles.showMoreButton}
+                onPress={() => setShowAllSuggestions(!showAllSuggestions)}
+              >
+                <Ionicons 
+                  name={showAllSuggestions ? 'chevron-up' : 'chevron-down'} 
+                  size={20} 
+                  color="#8b5cf6" 
+                />
+                <Text style={styles.showMoreText}>
+                  {showAllSuggestions 
+                    ? 'Show Less' 
+                    : `💡 More Suggested Strategies (${filteredStrategies.length - 3})`}
+                </Text>
+              </TouchableOpacity>
+            )}
+            </>
+          );
+        })()}
       </ScrollView>
 
       {/* Create Strategy Modal */}
@@ -352,6 +459,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000000',
   },
+  backgroundGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
   header: {
     padding: 20,
     paddingTop: 60,
@@ -379,15 +493,15 @@ const styles = StyleSheet.create({
   // Progress Card Styles
   progressCard: {
     borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
+    padding: 24,
+    marginBottom: 28,
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.3)',
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 8,
+    borderColor: 'rgba(139, 92, 246, 0.15)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   progressTitle: {
     fontSize: 14,
@@ -760,6 +874,39 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   categoryOptionTextActive: {
+    color: '#8b5cf6',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 12,
+  },
+  actionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  showMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 16,
+    marginTop: 16,
+    marginBottom: 16,
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+  },
+  showMoreText: {
+    fontSize: 14,
+    fontWeight: '600',
     color: '#8b5cf6',
   },
 });

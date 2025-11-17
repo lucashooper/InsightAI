@@ -67,7 +67,10 @@ const PlaybookView: React.FC<PlaybookViewProps> = ({ onNavigateToEntry, existing
   }, []); // Load once on mount
 
   const loadProtocols = () => {
-    setDailyProtocols(dailyProtocolService.getActiveProtocols());
+    const protocols = dailyProtocolService.getActiveProtocols();
+    console.log('Loaded protocols:', protocols);
+    // Ensure it's always an array
+    setDailyProtocols(Array.isArray(protocols) ? protocols : []);
   };
 
   const loadInsights = async () => {

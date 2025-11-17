@@ -11,8 +11,11 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+
+const insightLogo = require('../assets/192px-Insight-ICON.png');
 
 export default function LoginScreen({ navigation }: any) {
   const [emailOrUsername, setEmailOrUsername] = useState('');
@@ -65,6 +68,12 @@ export default function LoginScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
+      {/* Background Gradient */}
+      <LinearGradient
+        colors={['#0a0a0a', '#050505', '#000000']}
+        style={styles.backgroundGradient}
+      />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -72,8 +81,8 @@ export default function LoginScreen({ navigation }: any) {
         <View style={styles.content}>
           {/* Logo */}
           <View style={styles.logoContainer}>
-            <View style={styles.logoCircle}>
-              <Text style={styles.logoText}>I</Text>
+            <View style={styles.logoWrapper}>
+              <Image source={insightLogo} style={styles.logo} />
             </View>
             <Text style={styles.title}>InsightAI</Text>
             <Text style={styles.subtitle}>Your Personal AI Journal</Text>
@@ -81,7 +90,11 @@ export default function LoginScreen({ navigation }: any) {
 
           {/* Login Form */}
           <View style={styles.formContainer}>
-            <Text style={styles.formTitle}>Welcome Back</Text>
+            <LinearGradient
+              colors={['rgba(10, 10, 10, 0.95)', 'rgba(5, 5, 5, 0.95)']}
+              style={styles.formGradient}
+            >
+              <Text style={styles.formTitle}>Sign In</Text>
 
             <TextInput
               style={styles.input}
@@ -113,14 +126,15 @@ export default function LoginScreen({ navigation }: any) {
               )}
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.linkButton}
-              onPress={() => navigation.navigate('Signup')}
-            >
-              <Text style={styles.linkText}>
-                Don't have an account? <Text style={styles.linkTextBold}>Sign Up</Text>
-              </Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.linkButton}
+                onPress={() => navigation.navigate('Signup')}
+              >
+                <Text style={styles.linkText}>
+                  Don't have an account? <Text style={styles.linkTextBold}>Sign Up</Text>
+                </Text>
+              </TouchableOpacity>
+            </LinearGradient>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -132,6 +146,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000000',
+  },
+  backgroundGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
   },
   keyboardView: {
     flex: 1,
@@ -145,36 +166,50 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 48,
   },
-  logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#8b5cf6',
+  logoWrapper: {
+    width: 96,
+    height: 96,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(139, 92, 246, 0.5)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
+    backgroundColor: 'rgba(139, 92, 246, 0.08)',
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 10,
   },
-  logoText: {
-    fontSize: 40,
-    fontWeight: '700',
-    color: '#ffffff',
+  logo: {
+    width: 64,
+    height: 64,
   },
   title: {
     fontSize: 32,
     fontWeight: '700',
     color: '#fff',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   subtitle: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontWeight: '400',
   },
   formContainer: {
-    backgroundColor: '#0f0f0f',
     borderRadius: 20,
-    padding: 24,
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#1a1a1a',
+    borderColor: 'rgba(139, 92, 246, 0.2)',
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  formGradient: {
+    padding: 24,
   },
   formTitle: {
     fontSize: 24,

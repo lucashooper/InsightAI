@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { useFocusEffect } from '@react-navigation/native';
 
 const insightLogo = require('../assets/192px-Insight-ICON.png');
 
@@ -32,7 +33,7 @@ interface StreakData {
 }
 
 export default function HomeScreen({ navigation }: any) {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [streak, setStreak] = useState<StreakData>({ currentStreak: 0, longestStreak: 0 });
   const [loading, setLoading] = useState(true);
@@ -182,27 +183,69 @@ export default function HomeScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* Subtle Background Gradient */}
       <LinearGradient
-        colors={['#0a0a0a', '#000000']}
-        style={styles.header}
-      >
-        <View style={styles.headerLeft}>
-          <Image source={insightLogo} style={styles.appLogo} />
-          <Text style={styles.headerTitle}>Journal</Text>
-        </View>
+        colors={['#0a0a0a', '#050505', '#000000']}
+        style={styles.backgroundGradient}
+      />
+
+      {/* Clean Header */}
+      <View style={styles.header}>
+        <Image source={insightLogo} style={styles.appLogo} />
+        <Text style={styles.headerTitle}>Journal</Text>
         <View style={styles.headerRight}>
           {streak.currentStreak > 0 && (
-            <View style={styles.headerStreak}>
-              <Text style={styles.headerStreakEmoji}>🔥</Text>
-              <Text style={styles.headerStreakText}>{streak.currentStreak}</Text>
+            <View style={styles.streakPill}>
+              <Text style={styles.streakEmoji}>🔥</Text>
+              <Text style={styles.streakNumber}>{streak.currentStreak}</Text>
             </View>
           )}
-          <TouchableOpacity onPress={signOut} style={styles.logoutIconButton}>
-            <Ionicons name="log-out-outline" size={22} color="#999999" />
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('Settings')} 
+            style={styles.avatarButton}
+          >
+            {user?.user_metadata?.avatar_url ? (
+              <Image 
+                source={{ uri: user.user_metadata.avatar_url }} 
+                style={styles.headerAvatar}
+              />
+            ) : (
+              <View style={styles.headerAvatarPlaceholder}>
+                <Text style={styles.headerAvatarText}>
+                  {(user?.user_metadata?.username || user?.email || 'U')[0].toUpperCase()}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </View>
+
+      {/* Summary Card */}
+      {entries.length > 0 && (
+        <View style={styles.summaryCard}>
+          <LinearGradient
+            colors={['rgba(10, 10, 10, 0.95)', 'rgba(5, 5, 5, 0.95)']}
+            style={styles.summaryGradient}
+          >
+            <View style={styles.summaryRow}>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryValue}>{entries.length}</Text>
+                <Text style={styles.summaryLabel}>Entries</Text>
+              </View>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryValue}>{entries.filter(e => e.ai_structured_insights).length}</Text>
+                <Text style={styles.summaryLabel}>Analyzed</Text>
+              </View>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryValue}>{streak.longestStreak}</Text>
+                <Text style={styles.summaryLabel}>Best Streak</Text>
+              </View>
+            </View>
+          </LinearGradient>
+        </View>
+      )}
 
       {/* Entries List */}
       {entries.length === 0 ? (
@@ -234,22 +277,6 @@ export default function HomeScreen({ navigation }: any) {
           }
         />
       )}
-
-      {/* Floating Action Button */}
-      {entries.length > 0 && (
-        <TouchableOpacity
-          style={styles.fab}
-          onPress={() => navigation.navigate('CreateEntry')}
-          activeOpacity={0.8}
-        >
-          <LinearGradient
-            colors={['#8b5cf6', '#7c3aed']}
-            style={styles.fabGradient}
-          >
-            <Ionicons name="add" size={28} color="#ffffff" />
-          </LinearGradient>
-        </TouchableOpacity>
-      )}
     </View>
   );
 }
@@ -258,6 +285,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000000',
+  },
+  backgroundGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
   },
   centerContainer: {
     flex: 1,
@@ -268,36 +302,73 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
     paddingTop: 60,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(26, 26, 26, 0.5)',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+    paddingBottom: 16,
   },
   appLogo: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
   },
   headerTitle: {
-    fontSize: 24,
+    flex: 1,
+    fontSize: 26,
     fontWeight: '700',
     color: '#ffffff',
     letterSpacing: -0.5,
+    marginLeft: 12,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
-  headerStreak: {
+  streakPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  streakEmoji: {
+    fontSize: 14,
+  },
+  streakNumber: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#ff6432',
+  },
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  avatarButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    overflow: 'hidden',
+  },
+  headerAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  headerAvatarPlaceholder: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerAvatarText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#8b5cf6',
   },
   headerStreakEmoji: {
     fontSize: 16,
@@ -317,9 +388,47 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  // Summary Card Styles
+  summaryCard: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    marginBottom: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  summaryGradient: {
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.15)',
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  summaryItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  summaryValue: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 4,
+  },
+  summaryLabel: {
+    fontSize: 12,
+    color: '#999',
+    fontWeight: '500',
+  },
+  summaryDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+  },
   listContent: {
     padding: 20,
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   // Streak Card Styles
   streakCard: {
@@ -342,7 +451,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  streakEmoji: {
+  streakCardEmoji: {
     fontSize: 32,
   },
   streakInfo: {
@@ -353,7 +462,7 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
     gap: 8,
   },
-  streakNumber: {
+  streakCardNumber: {
     fontSize: 32,
     fontWeight: '700',
     color: '#ffffff',
@@ -503,15 +612,39 @@ const styles = StyleSheet.create({
   },
   createButton: {
     backgroundColor: '#8b5cf6',
-    paddingHorizontal: 32,
+    paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 12,
   },
   createButtonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
   },
+  // Center Bottom FAB (Reflectly-style)
+  fabContainer: {
+    position: 'absolute',
+    bottom: 80,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  centerFab: {
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  centerFabGradient: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Old FAB styles (kept for compatibility)
   fab: {
     position: 'absolute',
     right: 24,
