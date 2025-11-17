@@ -20,6 +20,7 @@ interface ChartData {
   labels: string[];
   datasets: {
     data: number[];
+    color?: (opacity: number) => string;
   }[];
 }
 
@@ -90,23 +91,43 @@ export default function DashboardScreen() {
         currentStreak: streak,
       });
 
-      // Prepare chart data (last 7 entries with wellbeing scores)
-      const recentNotesWithScores = notes
-        ?.filter(n => n.ai_structured_insights?.wellbeingScore)
-        .slice(0, 7)
-        .reverse() || [];
+      // Prepare chart data using ai_insights (wellbeing + resilience)
+      const sentimentNotes =
+        notes?.filter((n: any) => n.ai_insights && (n.ai_insights.wellbeingScore || n.ai_insights.resilienceScore)) || [];
 
-      if (recentNotesWithScores.length > 0) {
-        setChartData({
-          labels: recentNotesWithScores.map(n => 
-            new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-          ),
-          datasets: [{
-            data: recentNotesWithScores.map(n => 
-              n.ai_structured_insights?.wellbeingScore || 0
-            )
-          }]
-        });
+      console.log('[Mobile Dashboard] sentimentNotes', sentimentNotes);
+
+      if (sentimentNotes.length > 0) {
+        // Use last 12 points, oldest first
+        const recent = sentimentNotes
+          .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+          .slice(-12);
+
+        const labels = recent.map((n: any) =>
+          new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        );
+        const wellbeingSeries = recent.map((n: any) => n.ai_insights?.wellbeingScore || 0);
+        const resilienceSeries = recent.map((n: any) => n.ai_insights?.resilienceScore || 0);
+
+        const chartPayload: ChartData = {
+          labels,
+          datasets: [
+            {
+              data: wellbeingSeries,
+              color: (opacity = 1) => `rgba(56, 189, 248, ${opacity})`, // cyan
+            },
+            {
+              data: resilienceSeries,
+              color: (opacity = 1) => `rgba(249, 115, 22, ${opacity})`, // orange
+            },
+          ],
+        };
+
+        console.log('[Mobile Dashboard] chartData', chartPayload);
+        setChartData(chartPayload);
+      } else {
+        console.warn('[Mobile Dashboard] Not enough analyzed entries for trend chart');
+        setChartData(null);
       }
     } catch (error) {
       console.error('Error loading stats:', error);
@@ -150,7 +171,7 @@ export default function DashboardScreen() {
               style={styles.statCard}
             >
               <View style={styles.statHeader}>
-                <View style={[styles.iconGlow, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+                <View style={styles.iconGlow}>
                   <Ionicons name="analytics" size={20} color="#10b981" />
                 </View>
                 <Text style={styles.statValue}>{stats.analyzedEntries}</Text>
@@ -164,7 +185,7 @@ export default function DashboardScreen() {
               style={styles.statCard}
             >
               <View style={styles.statHeader}>
-                <View style={[styles.iconGlow, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
+                <View style={styles.iconGlow}>
                   <Text style={styles.inlineEmoji}>🔥</Text>
                 </View>
                 <Text style={styles.statValue}>{stats.currentStreak}</Text>
@@ -178,7 +199,7 @@ export default function DashboardScreen() {
               style={styles.statCard}
             >
               <View style={styles.statHeader}>
-                <View style={[styles.iconGlow, { backgroundColor: 'rgba(236, 72, 153, 0.15)' }]}>
+                <View style={styles.iconGlow}>
                   <Text style={styles.inlineEmoji}>💝</Text>
                 </View>
                 <Text style={styles.statValue}>{stats.avgWellbeingScore}</Text>
@@ -192,7 +213,7 @@ export default function DashboardScreen() {
               style={styles.statCard}
             >
               <View style={styles.statHeader}>
-                <View style={[styles.iconGlow, { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}>
+                <View style={styles.iconGlow}>
                   <Text style={styles.inlineEmoji}>🛡️</Text>
                 </View>
                 <Text style={styles.statValue}>{stats.avgResilienceScore}</Text>
@@ -322,10 +343,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   iconGlow: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+    width: 28,
+    height: 28,
+    borderRadius: 999,
+    backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -8,11 +8,14 @@ import {
   RefreshControl,
   ActivityIndicator,
   ScrollView,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+
+const insightLogo = require('../assets/192px-Insight-ICON.png');
 
 interface DiaryEntry {
   id: string;
@@ -185,9 +188,7 @@ export default function HomeScreen({ navigation }: any) {
         style={styles.header}
       >
         <View style={styles.headerLeft}>
-          <View style={styles.appIconContainer}>
-            <Text style={styles.appIcon}>✨</Text>
-          </View>
+          <Image source={insightLogo} style={styles.appLogo} />
           <Text style={styles.headerTitle}>Journal</Text>
         </View>
         <View style={styles.headerRight}>
@@ -277,18 +278,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  appIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: 'rgba(139, 92, 246, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.3)',
-  },
-  appIcon: {
-    fontSize: 20,
+  appLogo: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
   },
   headerTitle: {
     fontSize: 24,
@@ -304,21 +297,15 @@ const styles = StyleSheet.create({
   headerStreak: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: 'rgba(245, 158, 11, 0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.3)',
+    gap: 4,
   },
   headerStreakEmoji: {
     fontSize: 16,
   },
   headerStreakText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fbbf24',
   },
   logoutIconButton: {
     padding: 8,
@@ -401,7 +388,7 @@ const styles = StyleSheet.create({
   },
   // Premium Entry Card Styles
   premiumCard: {
-    marginBottom: 16,
+    marginBottom: 20,
     borderRadius: 16,
     overflow: 'hidden',
     shadowColor: '#8b5cf6',
@@ -527,21 +514,21 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    right: 20,
-    bottom: 90,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    right: 24,
+    bottom: 96,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
     elevation: 10,
   },
   fabGradient: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
   },

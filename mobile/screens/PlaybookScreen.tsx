@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -47,6 +47,7 @@ export default function PlaybookScreen() {
       const stored = await AsyncStorage.getItem(`actionable_insights_${user.id}`);
       if (stored) {
         const parsed = JSON.parse(stored);
+        console.log('[Mobile Playbook] strategies loaded', parsed);
         setStrategies(parsed);
       }
     } catch (error) {
@@ -95,6 +96,21 @@ export default function PlaybookScreen() {
     } catch (error) {
       console.error('Error deleting strategy:', error);
     }
+  };
+
+  const handleStrategyLongPress = (strategy: Strategy) => {
+    Alert.alert(
+      'Strategy options',
+      `"${strategy.title}"`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete strategy',
+          style: 'destructive',
+          onPress: () => deleteStrategy(strategy.id),
+        },
+      ],
+    );
   };
 
   const getCategoryColor = (category: string) => {
@@ -177,12 +193,25 @@ export default function PlaybookScreen() {
         ) : strategies.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyIcon}>📚</Text>
-            <Text style={styles.emptyText}>No {activeTab} yet</Text>
-            <Text style={styles.emptySubtext}>Create your first {activeTab === 'protocols' ? 'protocol' : 'strategy'} to get started</Text>
+            <Text style={styles.emptyText}>
+              {activeTab === 'strategies'
+                ? 'No suggested strategies yet.'
+                : 'No daily protocols yet.'}
+            </Text>
+            <Text style={styles.emptySubtext}>
+              {activeTab === 'strategies'
+                ? 'Analyze a few entries on the Dashboard to get personalized recommendations.'
+                : 'Create your first protocol to build a consistent routine.'}
+            </Text>
           </View>
         ) : (
           strategies.map((strategy) => (
-            <TouchableOpacity key={strategy.id} style={styles.premiumCard} activeOpacity={0.7}>
+            <TouchableOpacity
+              key={strategy.id}
+              style={styles.premiumCard}
+              activeOpacity={0.7}
+              onLongPress={() => handleStrategyLongPress(strategy)}
+            >
               <LinearGradient
                 colors={['rgba(15, 15, 15, 0.95)', 'rgba(26, 26, 26, 0.95)']}
                 style={styles.cardGradient}
@@ -209,12 +238,6 @@ export default function PlaybookScreen() {
                       <Text style={styles.cardDescription} numberOfLines={2}>{strategy.description}</Text>
                     ) : null}
                   </View>
-                  <TouchableOpacity 
-                    onPress={() => deleteStrategy(strategy.id)}
-                    style={styles.deleteButton}
-                  >
-                    <Ionicons name="trash-outline" size={18} color="#ef4444" />
-                  </TouchableOpacity>
                 </View>
                 
                 <View style={styles.cardFooter}>
@@ -539,10 +562,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: 'rgba(245, 158, 11, 0.15)',
   },
   cardDescription: {
     fontSize: 14,

@@ -5,12 +5,16 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { supabase } from '../lib/supabase';
+import { mobileAiService } from '../services/mobileAiService';
 
 export default function EntryDetailScreen({ route, navigation }: any) {
   const { entry } = route.params;
   const [activeTab, setActiveTab] = useState<'editor' | 'insights'>('editor');
+  const [analyzing, setAnalyzing] = useState(false);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -20,6 +24,45 @@ export default function EntryDetailScreen({ route, navigation }: any) {
       month: 'long',
       day: 'numeric',
     });
+  };
+
+  const handleAnalyzeEntry = async () => {
+    if (!entry?.content || analyzing) return;
+
+    try {
+      setAnalyzing(true);
+      console.log('[Mobile Insights] analyzeEntry start', { entryId: entry.id });
+
+      const analysis = await mobileAiService.analyzeEntry(entry.content);
+      console.log('[Mobile Insights] analysis result', analysis);
+
+      const { error } = await supabase
+        .from('notes')
+        .update({
+          ai_insights: analysis,
+          ai_structured_insights: analysis,
+          ai_last_analyzed: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', entry.id);
+
+      if (error) {
+        console.error('[Mobile Insights Error] saving analysis', error);
+        Alert.alert('Analysis failed', 'Unable to save AI insights. Please try again later.');
+        return;
+      }
+
+      // Optimistically update local entry
+      entry.ai_structured_insights = analysis;
+      entry.ai_last_analyzed = new Date().toISOString();
+
+      setActiveTab('insights');
+    } catch (err) {
+      console.error('[Mobile Insights Error] analyzeEntry', err);
+      Alert.alert('Analysis failed', 'Something went wrong while analyzing this entry.');
+    } finally {
+      setAnalyzing(false);
+    }
   };
 
   return (
@@ -74,6 +117,20 @@ export default function EntryDetailScreen({ route, navigation }: any) {
               </View>
             )}
 
+            {/* Analyze entry CTA */}
+            <TouchableOpacity
+              style={styles.viewInsightsButton}
+              onPress={handleAnalyzeEntry}
+              disabled={analyzing}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons name="sparkles" size={18} color="#8b5cf6" />
+                <Text style={styles.viewInsightsText}>
+                  {analyzing ? 'Analyzing entry…' : 'Analyze entry'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+
             <View style={styles.divider} />
 
             <Text style={styles.content}>{entry.content}</Text>
@@ -102,6 +159,7 @@ export default function EntryDetailScreen({ route, navigation }: any) {
 
             {entry.ai_structured_insights ? (
               <View>
+                {console.log('[Mobile Insights] structured_insights', entry.ai_structured_insights)}
                 {/* Confidence Score */}
                 {typeof entry.ai_structured_insights.confidence === 'number' && (
                   <View style={styles.insightSection}>
@@ -137,11 +195,31 @@ export default function EntryDetailScreen({ route, navigation }: any) {
                     </View>
                   </View>
                 )}
+
+                {/* Insights Report - Key Takeaways */}
+                {entry.ai_structured_insights.insights_report?.keyTakeaways &&
+                  Array.isArray(entry.ai_structured_insights.insights_report.keyTakeaways) &&
+                  entry.ai_structured_insights.insights_report.keyTakeaways.length > 0 && (
+                    <View style={styles.insightSection}>
+                      <Text style={styles.insightLabel}>Key Insights</Text>
+                      {entry.ai_structured_insights.insights_report.keyTakeaways.map((takeaway: any, index: number) => (
+                        <View key={index} style={styles.themeCard}>
+                          <Text style={styles.themeTitle}>{String(takeaway.insight || '')}</Text>
+                          <Text style={styles.themeCategory}>
+                            {takeaway.sentiment === 'positive' ? "What's working" : 'Pattern to address'} •{' '}
+                            {String(takeaway.category || '')}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
               </View>
             ) : entry.ai_insights ? (
               <Text style={styles.insightsText}>{String(entry.ai_insights)}</Text>
             ) : (
-              <Text style={styles.noInsightsText}>No insights available yet.</Text>
+              <Text style={styles.noInsightsText}>
+                No AI insights yet. Tap "Analyze entry" on the Note tab to generate insights.
+              </Text>
             )}
           </View>
         )}
