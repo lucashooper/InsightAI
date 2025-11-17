@@ -8,16 +8,24 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '../lib/supabase';
 import { mobileAiService } from '../services/mobileAiService';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function EntryDetailScreen({ route, navigation }: any) {
-  const { entry } = route.params;
-  const [activeTab, setActiveTab] = useState<'editor' | 'insights'>('editor');
+  const { entry, openInsights } = route.params || {};
+  const [activeTab, setActiveTab] = useState<'editor' | 'insights'>(openInsights ? 'insights' : 'editor');
   const [insightsView, setInsightsView] = useState<'highlights' | 'structured'>('highlights');
   const [analyzing, setAnalyzing] = useState(false);
   const { user } = useAuth();
+
+  const wordCount = entry?.content
+    ? String(entry.content)
+        .split(/\s+/)
+        .filter((w: string) => w.trim().length > 0).length
+    : 0;
+  const readMinutes = wordCount > 0 ? Math.max(1, Math.round(wordCount / 200)) : 0;
 
   const inferStrategyCategory = (text: string): string => {
     const lower = text.toLowerCase();
@@ -204,39 +212,51 @@ export default function EntryDetailScreen({ route, navigation }: any) {
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {activeTab === 'editor' ? (
           <View style={styles.entryContainer}>
-            <Text style={styles.title}>{entry.title || 'Untitled Entry'}</Text>
-            <Text style={styles.date}>{formatDate(entry.created_at)}</Text>
-            
-            {/* Mood + Button Row */}
-            <View style={styles.moodButtonRow}>
-              {entry.mood_score && (
-                <View style={styles.moodChip}>
-                  <Text style={styles.moodEmoji}>😊</Text>
-                  <Text style={styles.moodChipText}>{entry.mood_score}/10</Text>
-                </View>
-              )}
+            {/* Rich header */}
+            <View style={styles.richHeader}>
+              <Text style={styles.title}>{entry.title || 'Untitled Entry'}</Text>
+              <Text style={styles.metaLine}>
+                {formatDate(entry.created_at)}
+                {wordCount > 0 && ` • ${wordCount} words • ${readMinutes} min read`}
+              </Text>
+              <View style={styles.moodButtonRow}>
+                {entry.mood_score && (
+                  <View style={styles.moodChip}>
+                    <Text style={styles.moodEmoji}>😊</Text>
+                    <Text style={styles.moodChipText}>{entry.mood_score}/10</Text>
+                  </View>
+                )}
 
-              {/* Context-aware button: only show one, based on structured insights */}
-              {!entry.ai_structured_insights ? (
+                {/* Premium AI CTA */}
                 <TouchableOpacity
-                  style={styles.glassButton}
-                  onPress={handleAnalyzeEntry}
+                  style={styles.aiCtaButton}
+                  onPress={entry.ai_structured_insights ? () => setActiveTab('insights') : handleAnalyzeEntry}
                   disabled={analyzing}
+                  activeOpacity={0.85}
                 >
-                  <Ionicons name="sparkles" size={16} color="rgba(139, 92, 246, 0.9)" />
-                  <Text style={styles.glassButtonText}>
-                    {analyzing ? 'Analyzing…' : 'Analyze'}
-                  </Text>
+                  <LinearGradient
+                    colors={entry.ai_structured_insights
+                      ? ['#a855f7', '#6366f1']
+                      : ['#4f46e5', '#a855f7']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.aiCtaGradient}
+                  >
+                    <Ionicons
+                      name={entry.ai_structured_insights ? 'bulb' : 'sparkles'}
+                      size={16}
+                      color="#ffffff"
+                    />
+                    <Text style={styles.aiCtaText}>
+                      {analyzing
+                        ? 'Analyzing...'
+                        : entry.ai_structured_insights
+                        ? 'View AI Insights'
+                        : 'Analyze with AI'}
+                    </Text>
+                  </LinearGradient>
                 </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  style={styles.glassButton}
-                  onPress={() => setActiveTab('insights')}
-                >
-                  <Ionicons name="bulb" size={16} color="rgba(139, 92, 246, 0.9)" />
-                  <Text style={styles.glassButtonText}>View Insights</Text>
-                </TouchableOpacity>
-              )}
+              </View>
             </View>
 
             <View style={styles.divider} />
@@ -281,8 +301,9 @@ export default function EntryDetailScreen({ route, navigation }: any) {
             {entry.ai_structured_insights && (
               <View style={styles.summaryContainer}>
                 <Text style={styles.summaryText}>
-                  Prism found • {entry.ai_structured_insights.key_themes?.length || 0} themes •{' '}
-                  {entry.ai_structured_insights.insights_report?.keyTakeaways?.length || 0} takeaways
+                  AI Analysis: {entry.ai_structured_insights.key_themes?.length || 0} themes •{' '}
+                  {entry.ai_structured_insights.insights_report?.keyTakeaways?.length || 0} key takeaway
+                  {entry.ai_structured_insights.insights_report?.keyTakeaways?.length === 1 ? '' : 's'}
                 </Text>
               </View>
             )}
@@ -351,6 +372,22 @@ export default function EntryDetailScreen({ route, navigation }: any) {
                                 {String(entry.ai_structured_insights.mood_analysis.primary_emotion || 'N/A')}
                               </Text>
                             </View>
+                            <View style={styles.moodBarBackground}>
+                              <View
+                                style={[
+                                  styles.moodBarFill,
+                                  {
+                                    width: `${Math.min(
+                                      100,
+                                      Math.max(
+                                        0,
+                                        Number(entry.ai_structured_insights.mood_analysis.intensity || 0) * 10,
+                                      ),
+                                    )}%`,
+                                  },
+                                ]}
+                              />
+                            </View>
                             <Text style={styles.moodIntensity}>
                               Intensity: {String(entry.ai_structured_insights.mood_analysis.intensity || 'N/A')}/10
                             </Text>
@@ -416,6 +453,20 @@ export default function EntryDetailScreen({ route, navigation }: any) {
           </View>
         )}
       </ScrollView>
+      {analyzing && (
+        <View style={styles.analyzingOverlay}>
+          <View style={styles.analyzingCard}>
+            <Text style={styles.analyzingEmoji}>🧠</Text>
+            <Text style={styles.analyzingTitle}>Analyzing your entry...</Text>
+            <Text style={styles.analyzingSubtitle}>
+              Identifying emotional patterns and key themes
+            </Text>
+            <View style={styles.analyzingBarBackground}>
+              <View style={styles.analyzingBarFill} />
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -488,6 +539,14 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     marginBottom: 8,
   },
+  richHeader: {
+    marginBottom: 12,
+  },
+  metaLine: {
+    fontSize: 13,
+    color: '#9ca3af',
+    marginBottom: 12,
+  },
   date: {
     fontSize: 14,
     color: '#999',
@@ -548,6 +607,29 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: 'rgba(167, 139, 250, 0.95)',
+  },
+  aiCtaButton: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  aiCtaGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    borderRadius: 999,
+    shadowColor: '#a855f7',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  aiCtaText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: -0.2,
   },
   insightsTitle: {
     fontSize: 24,
@@ -694,6 +776,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#d0d0d0',
   },
+  moodBarBackground: {
+    height: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(55, 65, 81, 0.8)',
+    overflow: 'hidden',
+    marginBottom: 6,
+  },
+  moodBarFill: {
+    height: '100%',
+    borderRadius: 999,
+    backgroundColor: '#fbbf24',
+  },
   // Premium Insight Cards with Glow
   insightCardGreen: {
     backgroundColor: 'rgba(16, 185, 129, 0.12)',
@@ -787,5 +881,58 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#8b5cf6',
     fontWeight: '600',
+  },
+  analyzingOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  analyzingCard: {
+    width: '80%',
+    borderRadius: 20,
+    padding: 20,
+    backgroundColor: '#050508',
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.4)',
+    shadowColor: '#a855f7',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 20,
+  },
+  analyzingEmoji: {
+    fontSize: 28,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  analyzingTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#ffffff',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  analyzingSubtitle: {
+    fontSize: 13,
+    color: '#9ca3af',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  analyzingBarBackground: {
+    height: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(55, 65, 81, 0.8)',
+    overflow: 'hidden',
+  },
+  analyzingBarFill: {
+    width: '65%',
+    height: '100%',
+    borderRadius: 999,
+    backgroundColor: '#a855f7',
   },
 });

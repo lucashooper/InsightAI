@@ -27,7 +27,8 @@ export default function CreateEntryScreen({ navigation }: any) {
           user_id: user?.id,
           title: title.trim() || 'Untitled Entry',
           content: content.trim(),
-          mood: mood || null,
+          // Desktop uses mood_score; for now we rely on AI analysis to infer mood,
+          // so we don't send the emoji to a non-existent 'mood' column.
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         });

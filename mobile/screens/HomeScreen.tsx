@@ -9,6 +9,11 @@ import {
   ActivityIndicator,
   ScrollView,
   Image,
+  TextInput,
+  Alert,
+  Share,
+  ActionSheetIOS,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,6 +30,7 @@ interface DiaryEntry {
   created_at: string;
   mood?: string;
   ai_structured_insights?: any;
+  is_favorite?: boolean;
 }
 
 interface StreakData {
@@ -46,6 +52,8 @@ export default function HomeScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState<'all' | 'analyzed' | 'unanalyzed' | 'favorites'>('all');
 
   const calculateStreak = (notes: DiaryEntry[]) => {
     if (!notes || notes.length === 0) return { currentStreak: 0, longestStreak: 0 };
@@ -83,6 +91,121 @@ export default function HomeScreen({ navigation }: any) {
     }
 
     return { currentStreak, longestStreak };
+  };
+
+  const toggleFavorite = async (entry: DiaryEntry) => {
+    if (!user) return;
+    const nextValue = !entry.is_favorite;
+    try {
+      const { error } = await supabase
+        .from('notes')
+        .update({ is_favorite: nextValue })
+        .eq('id', entry.id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setEntries(prev => prev.map(e => e.id === entry.id ? { ...e, is_favorite: nextValue } : e));
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+      Alert.alert('Error', 'Failed to update favorite');
+    }
+  };
+
+  const filteredEntries = entries.filter((entry) => {
+    const matchesSearch =
+      !searchQuery.trim() ||
+      entry.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      entry.content.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    const isAnalyzed = !!entry.ai_structured_insights;
+
+    switch (filter) {
+      case 'analyzed':
+        return isAnalyzed;
+      case 'unanalyzed':
+        return !isAnalyzed;
+      case 'favorites':
+        return !!entry.is_favorite;
+      default:
+        return true;
+    }
+  });
+
+  const handleDeleteEntry = async (entry: DiaryEntry) => {
+    if (!user) return;
+    try {
+      const { error } = await supabase
+        .from('notes')
+        .delete()
+        .eq('id', entry.id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setEntries((prev) => prev.filter((e) => e.id !== entry.id));
+    } catch (err) {
+      console.error('Error deleting entry:', err);
+      Alert.alert('Error', 'Failed to delete entry');
+    }
+  };
+
+  const handleShareEntry = async (entry: DiaryEntry) => {
+    try {
+      await Share.share({
+        title: entry.title || 'Journal entry',
+        message: entry.content,
+      });
+    } catch (err) {
+      console.error('Error sharing entry:', err);
+    }
+  };
+
+  const handleEntryLongPress = (entry: DiaryEntry) => {
+    const isFav = !!entry.is_favorite;
+    const options = [
+      'View Insights',
+      isFav ? 'Remove from Favorites' : 'Add to Favorites',
+      'Share',
+      'Delete',
+      'Cancel',
+    ];
+    const cancelButtonIndex = options.length - 1;
+    const destructiveButtonIndex = 3;
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options,
+          cancelButtonIndex,
+          destructiveButtonIndex,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 0) {
+            navigation.navigate('EntryDetail', { entry, openInsights: true });
+          } else if (buttonIndex === 1) {
+            toggleFavorite(entry);
+          } else if (buttonIndex === 2) {
+            handleShareEntry(entry);
+          } else if (buttonIndex === 3) {
+            Alert.alert('Delete entry', 'This cannot be undone.', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Delete', style: 'destructive', onPress: () => handleDeleteEntry(entry) },
+            ]);
+          }
+        },
+      );
+    } else {
+      Alert.alert('Entry options', undefined, [
+        { text: 'View Insights', onPress: () => navigation.navigate('EntryDetail', { entry, openInsights: true }) },
+        { text: isFav ? 'Remove from Favorites' : 'Add to Favorites', onPress: () => toggleFavorite(entry) },
+        { text: 'Share', onPress: () => handleShareEntry(entry) },
+        { text: 'Delete', style: 'destructive', onPress: () => handleDeleteEntry(entry) },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    }
   };
 
   const loadUserProfile = async () => {
@@ -162,6 +285,7 @@ export default function HomeScreen({ navigation }: any) {
       <TouchableOpacity
         style={styles.premiumCard}
         onPress={() => navigation.navigate('EntryDetail', { entry: item })}
+        onLongPress={() => handleEntryLongPress(item)}
         activeOpacity={0.7}
       >
         <LinearGradient
@@ -233,10 +357,7 @@ export default function HomeScreen({ navigation }: any) {
         <Text style={styles.headerTitle}>Journal</Text>
         <View style={styles.headerRight}>
           {streak.currentStreak > 0 && (
-            <View style={styles.streakPill}>
-              <Text style={styles.streakEmoji}>🔥</Text>
-              <Text style={styles.streakNumber}>{streak.currentStreak}</Text>
-            </View>
+            <Text style={styles.streakInline}>🔥 {streak.currentStreak}</Text>
           )}
           <TouchableOpacity 
             onPress={() => navigation.navigate('Settings')} 
@@ -258,26 +379,101 @@ export default function HomeScreen({ navigation }: any) {
         </View>
       </View>
 
+      {/* Search + Filters */}
+      <View style={styles.searchSection}>
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={16} color="#6b7280" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search entries..."
+            placeholderTextColor="#6b7280"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterChipsRow}
+        >
+          {[
+            { key: 'all', label: 'All' },
+            { key: 'analyzed', label: 'Analyzed' },
+            { key: 'unanalyzed', label: 'Unanalyzed' },
+            { key: 'favorites', label: '⭐ Favorites' },
+          ].map((chip) => (
+            <TouchableOpacity
+              key={chip.key}
+              style={[
+                styles.filterChip,
+                filter === chip.key && styles.filterChipActive,
+              ]}
+              onPress={() => setFilter(chip.key as any)}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
+                  filter === chip.key && styles.filterChipTextActive,
+                ]}
+              >
+                {chip.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
       {/* Summary Card */}
       {entries.length > 0 && (
         <View style={styles.summaryCard}>
           <LinearGradient
-            colors={['rgba(10, 10, 10, 0.95)', 'rgba(5, 5, 5, 0.95)']}
+            colors={['rgba(15, 15, 20, 0.98)', 'rgba(5, 5, 10, 0.96)']}
             style={styles.summaryGradient}
           >
             <View style={styles.summaryRow}>
+              {/* Entries with mini sparkline */}
               <View style={styles.summaryItem}>
                 <Text style={styles.summaryValue}>{entries.length}</Text>
                 <Text style={styles.summaryLabel}>Entries</Text>
+                <View style={styles.sparklineRow}>
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <View
+                      key={i}
+                      style={[
+                        styles.sparklineBar,
+                        i % 2 === 0 && styles.sparklineBarTall,
+                      ]}
+                    />
+                  ))}
+                </View>
               </View>
+
               <View style={styles.summaryDivider} />
+
+              {/* Analyzed with circular progress */}
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>{entries.filter(e => e.ai_structured_insights).length}</Text>
+                <View style={styles.progressCircleWrapper}>
+                  <View style={styles.progressCircleOuter}>
+                    <View style={styles.progressCircleInner}>
+                      <Text style={styles.progressCircleText}>
+                        {entries.length
+                          ? `${entries.filter(e => e.ai_structured_insights).length}/${entries.length}`
+                          : '0/0'}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
                 <Text style={styles.summaryLabel}>Analyzed</Text>
               </View>
+
               <View style={styles.summaryDivider} />
+
+              {/* Best Streak with inline flame */}
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>{streak.longestStreak}</Text>
+                <Text style={styles.summaryValue}>
+                  <Text style={styles.summaryFlame}>🔥 </Text>
+                  {streak.longestStreak}
+                </Text>
                 <Text style={styles.summaryLabel}>Best Streak</Text>
               </View>
             </View>
@@ -286,7 +482,7 @@ export default function HomeScreen({ navigation }: any) {
       )}
 
       {/* Entries List */}
-      {entries.length === 0 ? (
+      {filteredEntries.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyIcon}>📝</Text>
           <Text style={styles.emptyTitle}>No Entries Yet</Text>
@@ -302,7 +498,7 @@ export default function HomeScreen({ navigation }: any) {
         </View>
       ) : (
         <FlatList
-          data={entries}
+          data={filteredEntries}
           renderItem={renderEntry}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
@@ -371,6 +567,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   streakNumber: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#ff6432',
+  },
+  streakInline: {
     fontSize: 14,
     fontWeight: '700',
     color: '#ff6432',
@@ -463,6 +664,108 @@ const styles = StyleSheet.create({
     width: 1,
     height: 40,
     backgroundColor: 'rgba(139, 92, 246, 0.2)',
+  },
+  // Search & Filter styles
+  searchSection: {
+    paddingHorizontal: 20,
+    marginBottom: 8,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: 'rgba(15, 15, 15, 0.95)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    color: '#ffffff',
+    fontSize: 14,
+  },
+  filterChipsRow: {
+    marginTop: 10,
+    paddingRight: 20,
+    gap: 8,
+  },
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.4)',
+    backgroundColor: 'transparent',
+  },
+  filterChipActive: {
+    backgroundColor: 'rgba(139, 92, 246, 0.25)',
+    borderColor: 'rgba(139, 92, 246, 0.9)',
+  },
+  filterChipText: {
+    fontSize: 12,
+    color: '#9ca3af',
+    fontWeight: '500',
+  },
+  filterChipTextActive: {
+    color: '#ffffff',
+  },
+  // Stats sparkline & progress visuals
+  sparklineRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 3,
+    marginTop: 6,
+  },
+  sparklineBar: {
+    width: 4,
+    height: 8,
+    borderRadius: 2,
+    backgroundColor: 'rgba(148, 163, 184, 0.5)',
+  },
+  sparklineBarTall: {
+    height: 14,
+    backgroundColor: 'rgba(139, 92, 246, 0.9)',
+  },
+  progressCircleWrapper: {
+    marginBottom: 4,
+  },
+  progressCircleOuter: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    borderWidth: 2,
+    borderColor: 'rgba(139, 92, 246, 0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(15, 15, 20, 0.9)',
+  },
+  progressCircleInner: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(17, 24, 39, 0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  progressCircleText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#e5e7eb',
+  },
+  summaryFlame: {
+    fontSize: 20,
+    textShadowColor: 'rgba(248, 113, 113, 0.6)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
   },
   listContent: {
     padding: 20,

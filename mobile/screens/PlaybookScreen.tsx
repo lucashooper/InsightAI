@@ -217,7 +217,7 @@ export default function PlaybookScreen() {
             onPress={() => setActiveTab('strategies')}
           >
             <Text style={[styles.tabText, activeTab === 'strategies' && styles.tabTextActive]}>
-              Strategies
+              Suggested
             </Text>
           </TouchableOpacity>
         </View>
@@ -320,23 +320,33 @@ export default function PlaybookScreen() {
                     </View>
                   </View>
                   
-                  {/* Action buttons for suggested strategies */}
-                  {strategy.status === 'suggested' && (
-                    <View style={styles.actionButtons}>
-                      <TouchableOpacity 
-                        style={styles.actionButton}
-                        onPress={() => console.log('Activate strategy:', strategy.id)}
-                      >
-                        <Ionicons name="checkmark-circle" size={18} color="#34d399" />
-                      </TouchableOpacity>
-                      <TouchableOpacity 
-                        style={styles.actionButton}
-                        onPress={() => console.log('Skip strategy:', strategy.id)}
-                      >
-                        <Ionicons name="close-circle" size={18} color="#f97373" />
-                      </TouchableOpacity>
-                    </View>
-                  )}
+                  {/* Status / actions */}
+                  <View style={styles.strategyMetaColumn}>
+                    <Text style={styles.strategyStatusText}>
+                      Status: {strategy.status === 'active' ? 'In routine' : strategy.status === 'completed' ? 'Completed' : 'Suggested by AI'}
+                    </Text>
+                    {strategy.status === 'active' && (
+                      <Text style={styles.strategyMetaText}>
+                        Last completed: Never • Next reminder: Today 9 PM
+                      </Text>
+                    )}
+                    {strategy.status === 'suggested' && (
+                      <View style={styles.actionButtons}>
+                        <TouchableOpacity 
+                          style={styles.actionButton}
+                          onPress={() => console.log('Activate strategy:', strategy.id)}
+                        >
+                          <Ionicons name="checkmark-circle" size={18} color="#34d399" />
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                          style={styles.actionButton}
+                          onPress={() => console.log('Skip strategy:', strategy.id)}
+                        >
+                          <Ionicons name="close-circle" size={18} color="#f97373" />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
                 </View>
               </LinearGradient>
             </TouchableOpacity>
@@ -741,6 +751,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#ffffff',
+  },
+  strategyMetaColumn: {
+    flex: 1,
+    alignItems: 'flex-end',
+    marginLeft: 12,
+  },
+  strategyStatusText: {
+    fontSize: 12,
+    color: '#e5e7eb',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  strategyMetaText: {
+    fontSize: 11,
+    color: '#9ca3af',
   },
   // Old Strategy Card Styles (for modal)
   strategyCard: {

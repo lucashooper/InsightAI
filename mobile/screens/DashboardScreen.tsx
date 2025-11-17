@@ -175,6 +175,7 @@ export default function DashboardScreen() {
                 <Text style={styles.statLabel}>DAY STREAK</Text>
               </View>
               <Text style={styles.statValue}>{stats.currentStreak}</Text>
+              <Text style={styles.statSubLabel}>Keep your reflection streak going</Text>
             </LinearGradient>
 
             {/* Wellbeing Score - Primary */}
@@ -187,7 +188,7 @@ export default function DashboardScreen() {
                 <Text style={styles.statLabel}>AVG WELLBEING</Text>
               </View>
               <Text style={styles.statValue}>{stats.avgWellbeingScore}/10</Text>
-              <Text style={styles.statSubLabel}>Avg wellbeing (last 7 days)</Text>
+              <Text style={styles.statSubLabel}>Last 7 days • emotional balance</Text>
             </LinearGradient>
 
             {/* Resilience Score - Primary */}
@@ -200,7 +201,7 @@ export default function DashboardScreen() {
                 <Text style={styles.statLabel}>AVG RESILIENCE</Text>
               </View>
               <Text style={styles.statValue}>{stats.avgResilienceScore}/10</Text>
-              <Text style={styles.statSubLabel}>Avg resilience (last 7 days)</Text>
+              <Text style={styles.statSubLabel}>Last 7 days • ability to bounce back</Text>
             </LinearGradient>
 
             {/* Simplified Wellbeing Trend Chart */}
