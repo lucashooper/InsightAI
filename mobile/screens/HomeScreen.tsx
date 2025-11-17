@@ -7,7 +7,10 @@ import {
   StyleSheet,
   RefreshControl,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -17,13 +20,58 @@ interface DiaryEntry {
   content: string;
   created_at: string;
   mood?: string;
+  ai_structured_insights?: any;
+}
+
+interface StreakData {
+  currentStreak: number;
+  longestStreak: number;
 }
 
 export default function HomeScreen({ navigation }: any) {
   const { user, signOut } = useAuth();
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
+  const [streak, setStreak] = useState<StreakData>({ currentStreak: 0, longestStreak: 0 });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const calculateStreak = (notes: DiaryEntry[]) => {
+    if (!notes || notes.length === 0) return { currentStreak: 0, longestStreak: 0 };
+
+    const sortedNotes = [...notes].sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    let currentStreak = 0;
+    let longestStreak = 0;
+    let tempStreak = 0;
+    let lastDate: Date | null = null;
+
+    for (const note of sortedNotes) {
+      const noteDate = new Date(note.created_at);
+      noteDate.setHours(0, 0, 0, 0);
+
+      if (!lastDate) {
+        tempStreak = 1;
+        currentStreak = 1;
+      } else {
+        const dayDiff = Math.floor((lastDate.getTime() - noteDate.getTime()) / (1000 * 60 * 60 * 24));
+        if (dayDiff === 1) {
+          tempStreak++;
+          if (currentStreak === lastDate.getTime() / (1000 * 60 * 60 * 24)) {
+            currentStreak++;
+          }
+        } else if (dayDiff > 1) {
+          tempStreak = 1;
+        }
+      }
+
+      longestStreak = Math.max(longestStreak, tempStreak);
+      lastDate = noteDate;
+    }
+
+    return { currentStreak, longestStreak };
+  };
 
   const loadEntries = async () => {
     if (!user) return;
@@ -38,6 +86,7 @@ export default function HomeScreen({ navigation }: any) {
 
       if (error) throw error;
       setEntries(data || []);
+      setStreak(calculateStreak(data || []));
     } catch (error) {
       console.error('Error loading entries:', error);
     } finally {
@@ -64,23 +113,61 @@ export default function HomeScreen({ navigation }: any) {
     });
   };
 
-  const renderEntry = ({ item }: { item: DiaryEntry }) => (
-    <TouchableOpacity
-      style={styles.entryCard}
-      onPress={() => navigation.navigate('EntryDetail', { entry: item })}
-    >
-      <View style={styles.entryHeader}>
-        <Text style={styles.entryTitle} numberOfLines={1}>
-          {item.title || 'Untitled Entry'}
-        </Text>
-        {item.mood && <Text style={styles.mood}>{item.mood}</Text>}
-      </View>
-      <Text style={styles.entryContent} numberOfLines={3}>
-        {item.content}
-      </Text>
-      <Text style={styles.entryDate}>{formatDate(item.created_at)}</Text>
-    </TouchableOpacity>
-  );
+  const renderEntry = ({ item }: { item: DiaryEntry }) => {
+    const hasInsights = item.ai_structured_insights?.wellbeingScore;
+    
+    return (
+      <TouchableOpacity
+        style={styles.premiumCard}
+        onPress={() => navigation.navigate('EntryDetail', { entry: item })}
+        activeOpacity={0.7}
+      >
+        <LinearGradient
+          colors={hasInsights ? ['#0f0f0f', '#1a1a1a'] : ['#0a0a0a', '#0f0f0f']}
+          style={styles.cardGradient}
+        >
+          {/* Header with title and mood */}
+          <View style={styles.entryHeader}>
+            <View style={styles.entryTitleRow}>
+              <Text style={styles.entryTitle} numberOfLines={1}>
+                {item.title || 'Untitled Entry'}
+              </Text>
+              {item.mood && (
+                <View style={styles.moodBadge}>
+                  <Text style={styles.moodEmoji}>{item.mood}</Text>
+                </View>
+              )}
+            </View>
+            {hasInsights && (
+              <View style={styles.insightBadge}>
+                <Ionicons name="sparkles" size={12} color="#8b5cf6" />
+                <Text style={styles.insightBadgeText}>Analyzed</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Content preview */}
+          <Text style={styles.entryContent} numberOfLines={3}>
+            {item.content}
+          </Text>
+
+          {/* Footer with date and action */}
+          <View style={styles.entryFooter}>
+            <Text style={styles.entryDate}>{formatDate(item.created_at)}</Text>
+            {hasInsights && (
+              <TouchableOpacity 
+                style={styles.viewInsightsButton}
+                onPress={() => navigation.navigate('EntryDetail', { entry: item })}
+              >
+                <Text style={styles.viewInsightsText}>View Insights</Text>
+                <Ionicons name="arrow-forward" size={14} color="#8b5cf6" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </LinearGradient>
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return (
@@ -93,15 +180,28 @@ export default function HomeScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>InsightAI</Text>
-          <Text style={styles.headerSubtitle}>Your Journal</Text>
+      <LinearGradient
+        colors={['#0a0a0a', '#000000']}
+        style={styles.header}
+      >
+        <View style={styles.headerLeft}>
+          <View style={styles.appIconContainer}>
+            <Text style={styles.appIcon}>✨</Text>
+          </View>
+          <Text style={styles.headerTitle}>Journal</Text>
         </View>
-        <TouchableOpacity onPress={signOut} style={styles.logoutButton}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.headerRight}>
+          {streak.currentStreak > 0 && (
+            <View style={styles.headerStreak}>
+              <Text style={styles.headerStreakEmoji}>🔥</Text>
+              <Text style={styles.headerStreakText}>{streak.currentStreak}</Text>
+            </View>
+          )}
+          <TouchableOpacity onPress={signOut} style={styles.logoutIconButton}>
+            <Ionicons name="log-out-outline" size={22} color="#999999" />
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
 
       {/* Entries List */}
       {entries.length === 0 ? (
@@ -125,7 +225,11 @@ export default function HomeScreen({ navigation }: any) {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            <RefreshControl 
+              refreshing={refreshing} 
+              onRefresh={onRefresh}
+              tintColor="#8b5cf6"
+            />
           }
         />
       )}
@@ -135,8 +239,14 @@ export default function HomeScreen({ navigation }: any) {
         <TouchableOpacity
           style={styles.fab}
           onPress={() => navigation.navigate('CreateEntry')}
+          activeOpacity={0.8}
         >
-          <Text style={styles.fabIcon}>+</Text>
+          <LinearGradient
+            colors={['#8b5cf6', '#7c3aed']}
+            style={styles.fabGradient}
+          >
+            <Ionicons name="add" size={28} color="#ffffff" />
+          </LinearGradient>
         </TouchableOpacity>
       )}
     </View>
@@ -146,7 +256,7 @@ export default function HomeScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0a',
+    backgroundColor: '#000000',
   },
   centerContainer: {
     flex: 1,
@@ -159,22 +269,61 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     paddingTop: 60,
-    backgroundColor: '#1a1a1a',
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
+    borderBottomColor: 'rgba(26, 26, 26, 0.5)',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  appIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+  },
+  appIcon: {
+    fontSize: 20,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: '700',
     color: '#ffffff',
+    letterSpacing: -0.5,
   },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#999',
-    marginTop: 2,
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
-  logoutButton: {
+  headerStreak: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.3)',
+  },
+  headerStreakEmoji: {
+    fontSize: 16,
+  },
+  headerStreakText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  logoutIconButton: {
     padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(153, 153, 153, 0.1)',
   },
   logoutText: {
     color: '#8b5cf6',
@@ -182,41 +331,166 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   listContent: {
-    padding: 16,
+    padding: 20,
+    paddingBottom: 100,
   },
-  entryCard: {
-    backgroundColor: '#1e1e1e',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+  // Streak Card Styles
+  streakCard: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
     borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderColor: '#8b5cf630',
+  },
+  streakContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  streakIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#ff6b3520',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  streakEmoji: {
+    fontSize: 32,
+  },
+  streakInfo: {
+    flex: 1,
+  },
+  streakRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+  },
+  streakNumber: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: -1,
+  },
+  streakLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#e5e5e5',
+  },
+  streakSubtext: {
+    fontSize: 13,
+    color: '#999999',
+    marginTop: 4,
+  },
+  longestStreakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: '#fbbf2420',
+  },
+  trophyEmoji: {
+    fontSize: 16,
+  },
+  longestStreakText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fbbf24',
+  },
+  // Premium Entry Card Styles
+  premiumCard: {
+    marginBottom: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  cardGradient: {
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.2)',
+    borderRadius: 16,
+    backgroundColor: 'rgba(15, 15, 15, 0.8)',
   },
   entryHeader: {
+    marginBottom: 12,
+  },
+  entryTitleRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 8,
   },
   entryTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
     color: '#ffffff',
     flex: 1,
+    letterSpacing: -0.3,
   },
-  mood: {
+  moodBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#1a1a1a',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 12,
+  },
+  moodEmoji: {
     fontSize: 20,
-    marginLeft: 8,
+  },
+  insightBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: '#8b5cf620',
+    alignSelf: 'flex-start',
+  },
+  insightBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#8b5cf6',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   entryContent: {
-    fontSize: 14,
-    color: '#999',
-    lineHeight: 20,
-    marginBottom: 8,
+    fontSize: 15,
+    color: '#999999',
+    lineHeight: 22,
+    marginBottom: 16,
+  },
+  entryFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   entryDate: {
     fontSize: 12,
-    color: '#666',
+    color: '#666666',
+    fontWeight: '500',
+  },
+  viewInsightsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#8b5cf615',
+  },
+  viewInsightsText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#8b5cf6',
   },
   emptyContainer: {
     flex: 1,
@@ -254,18 +528,22 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 20,
-    bottom: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#8b5cf6',
+    bottom: 90,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  fabGradient: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
   fabIcon: {
     fontSize: 32,

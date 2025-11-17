@@ -27,6 +27,12 @@ function App() {
           >
             Home
           </a>
+          <a 
+            href="/app" 
+            className="nav-link nav-login-btn"
+          >
+            Login
+          </a>
         </div>
       </nav>
       <HeroSection />

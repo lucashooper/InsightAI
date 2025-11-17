@@ -14,7 +14,8 @@ const MarketingLayout: React.FC = () => {
 
   useEffect(() => {
     // If user is authenticated and lands on marketing page, gently redirect to app
-    if (!loading && user) {
+    // Only redirect if we're actually on the root path to avoid loops
+    if (!loading && user && window.location.pathname === '/') {
       const timer = setTimeout(() => {
         navigate('/app', { replace: true });
       }, 500); // 500ms delay to avoid jarring redirect

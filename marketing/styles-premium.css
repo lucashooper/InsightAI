@@ -169,6 +169,23 @@ body {
   color: #BE48D5;
 }
 
+/* Login Button Styling */
+.nav-login-btn {
+  background: linear-gradient(135deg, var(--accent-purple-light), var(--accent-blue));
+  color: white !important;
+  padding: 0.625rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(190, 72, 213, 0.3);
+}
+
+.nav-login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(190, 72, 213, 0.5);
+  color: white !important;
+}
+
 /* Typography - Basic defaults (overridden by specific classes) */
 h1, h2, h3, h4, h5, h6 {
   line-height: 1.2;

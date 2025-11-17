@@ -41,6 +41,9 @@ const Login: React.FC<LoginProps> = ({ onSwitchToSignup }) => {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}`,
+          queryParams: {
+            prompt: 'select_account', // Force account selection
+          },
         },
       });
 

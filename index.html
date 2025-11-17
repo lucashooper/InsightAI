@@ -32,6 +32,27 @@
     <meta property="og:image" content="/pwa-icons/icon-512.png" />
     
     <title>InsightAI - AI Journal & Diary</title>
+    
+    <!-- Prevent white flash on load -->
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        background-color: #0a0a0a;
+        color: #ffffff;
+      }
+      
+      #root {
+        min-height: 100vh;
+        background-color: #0a0a0a;
+      }
+      
+      /* Loading spinner animation */
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '../services/supabaseClient';
 
@@ -22,14 +22,38 @@ export const useAuth = () => {
   return context;
 };
 
+let mountCount = 0;
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  mountCount++;
+  console.log(`🔴 AuthProvider component MOUNTED (mount #${mountCount})`);
+  
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
+    // Prevent multiple initializations using ref (doesn't cause re-render)
+    if (initializedRef.current) {
+      console.log('⚠️ AuthProvider useEffect called again, but already initialized - SKIPPING');
+      return;
+    }
+    console.log('✅ AuthProvider initializing for the FIRST time');
+    initializedRef.current = true;
+
     // Check active sessions and subscribe to auth changes
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('Session error:', error);
+        // Clear invalid session
+        setUser(null);
+      } else {
+        setUser(session?.user ?? null);
+      }
+      setLoading(false);
+    }).catch((err) => {
+      console.error('Failed to get session:', err);
+      setUser(null);
       setLoading(false);
     });
 

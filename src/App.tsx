@@ -330,6 +330,35 @@ const App: React.FC = () => {
     isLoading
   });
 
+  // Show loading screen while initializing
+  if (isLoading) {
+    return (
+      <ThemeProvider>
+        <div style={{ 
+          minHeight: '100vh', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          background: 'var(--bg-primary, #0a0a0a)',
+          color: 'var(--text-primary, #ffffff)'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ 
+              width: '40px', 
+              height: '40px', 
+              border: '3px solid rgba(190, 72, 213, 0.3)',
+              borderTop: '3px solid #be48d5',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 16px'
+            }} />
+            <p style={{ opacity: 0.7 }}>Loading InsightAI...</p>
+          </div>
+        </div>
+      </ThemeProvider>
+    );
+  }
+
   return (
     <ThemeProvider>
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }} className="app-container">
