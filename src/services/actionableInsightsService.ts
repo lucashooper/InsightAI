@@ -6,6 +6,14 @@ import { supabase } from './supabaseClient';
 
 class ActionableInsightsService {
   /**
+   * Get storage key for user-specific data
+   */
+  private async getStorageKey(prefix: string): Promise<string> {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user ? `${prefix}_${user.id}` : prefix;
+  }
+
+  /**
    * Get all actionable insights for current user
    */
   async getInsights(): Promise<ActionableInsight[]> {

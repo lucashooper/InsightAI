@@ -1,5 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -50,21 +60,30 @@ export default function CreateEntryScreen({ navigation }: any) {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>New Entry</Text>
-        <TouchableOpacity onPress={handleSave} disabled={saving}>
-          <Text style={[styles.saveButton, saving && styles.saveButtonDisabled]}>
-            {saving ? 'Saving...' : 'Save'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={90}
+    >
+      <>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>New Entry</Text>
+          <TouchableOpacity onPress={handleSave} disabled={saving}>
+            <Text style={[styles.saveButton, saving && styles.saveButtonDisabled]}>
+              {saving ? 'Saving...' : 'Save'}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={{ paddingBottom: 32 }}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Mood Selector */}
         <Text style={styles.label}>How are you feeling?</Text>
         <View style={styles.moodGrid}>
@@ -104,7 +123,8 @@ export default function CreateEntryScreen({ navigation }: any) {
           textAlignVertical="top"
         />
       </ScrollView>
-    </View>
+      </>
+    </KeyboardAvoidingView>
   );
 }
 

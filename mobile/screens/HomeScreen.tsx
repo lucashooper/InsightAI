@@ -54,6 +54,8 @@ export default function HomeScreen({ navigation }: any) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'analyzed' | 'unanalyzed' | 'favorites'>('all');
+  const [hiddenEntryIds, setHiddenEntryIds] = useState<Set<string>>(new Set());
+  const [dominantEmotions, setDominantEmotions] = useState<{ emotion: string; percentage: number }[]>([]);
 
   const calculateStreak = (notes: DiaryEntry[]) => {
     if (!notes || notes.length === 0) return { currentStreak: 0, longestStreak: 0 };
@@ -165,15 +167,38 @@ export default function HomeScreen({ navigation }: any) {
 
   const handleEntryLongPress = (entry: DiaryEntry) => {
     const isFav = !!entry.is_favorite;
+    const isHidden = hiddenEntryIds.has(entry.id);
     const options = [
       'View Insights',
       isFav ? 'Remove from Favorites' : 'Add to Favorites',
+      isHidden ? 'Unhide entry' : 'Hide entry',
       'Share',
       'Delete',
       'Cancel',
     ];
     const cancelButtonIndex = options.length - 1;
-    const destructiveButtonIndex = 3;
+    const destructiveButtonIndex = 4;
+
+    const handleSelection = (buttonIndex: number) => {
+      if (buttonIndex === 0) {
+        navigation.navigate('EntryDetail', { entry, openInsights: true });
+      } else if (buttonIndex === 1) {
+        toggleFavorite(entry);
+      } else if (buttonIndex === 2) {
+        toggleHidden(entry.id);
+      } else if (buttonIndex === 3) {
+        handleShareEntry(entry);
+      } else if (buttonIndex === 4) {
+        Alert.alert('Delete entry', 'This cannot be undone.', [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => handleDeleteEntry(entry),
+          },
+        ]);
+      }
+    };
 
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
@@ -182,30 +207,30 @@ export default function HomeScreen({ navigation }: any) {
           cancelButtonIndex,
           destructiveButtonIndex,
         },
-        (buttonIndex) => {
-          if (buttonIndex === 0) {
-            navigation.navigate('EntryDetail', { entry, openInsights: true });
-          } else if (buttonIndex === 1) {
-            toggleFavorite(entry);
-          } else if (buttonIndex === 2) {
-            handleShareEntry(entry);
-          } else if (buttonIndex === 3) {
-            Alert.alert('Delete entry', 'This cannot be undone.', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Delete', style: 'destructive', onPress: () => handleDeleteEntry(entry) },
-            ]);
-          }
-        },
+        handleSelection,
       );
     } else {
       Alert.alert('Entry options', undefined, [
-        { text: 'View Insights', onPress: () => navigation.navigate('EntryDetail', { entry, openInsights: true }) },
-        { text: isFav ? 'Remove from Favorites' : 'Add to Favorites', onPress: () => toggleFavorite(entry) },
-        { text: 'Share', onPress: () => handleShareEntry(entry) },
-        { text: 'Delete', style: 'destructive', onPress: () => handleDeleteEntry(entry) },
-        { text: 'Cancel', style: 'cancel' },
+        { text: options[0], onPress: () => handleSelection(0) },
+        { text: options[1], onPress: () => handleSelection(1) },
+        { text: options[2], onPress: () => handleSelection(2) },
+        { text: options[3], onPress: () => handleSelection(3) },
+        { text: options[4], style: 'destructive', onPress: () => handleSelection(4) },
+        { text: options[5], style: 'cancel' },
       ]);
     }
+  };
+
+  const toggleHidden = (id: string) => {
+    setHiddenEntryIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
   };
 
   const loadUserProfile = async () => {
@@ -245,6 +270,24 @@ export default function HomeScreen({ navigation }: any) {
       if (error) throw error;
       setEntries(data || []);
       setStreak(calculateStreak(data || []));
+
+      // Calculate dominant emotions for greeting
+      const emotionCounts: Record<string, number> = {};
+      (data || [])
+        .filter((n: any) => n.ai_structured_insights?.mood_analysis?.primary_emotion)
+        .forEach((n: any) => {
+          const key = String(n.ai_structured_insights.mood_analysis.primary_emotion).trim();
+          if (key) emotionCounts[key] = (emotionCounts[key] || 0) + 1;
+        });
+      const totalEmotionSamples = Object.values(emotionCounts).reduce((sum, c) => sum + c, 0);
+      const dominant = Object.entries(emotionCounts)
+        .map(([emotion, count]) => ({
+          emotion,
+          percentage: totalEmotionSamples ? Math.round((count / totalEmotionSamples) * 100) : 0,
+        }))
+        .sort((a, b) => b.percentage - a.percentage)
+        .slice(0, 2);
+      setDominantEmotions(dominant);
     } catch (error) {
       console.error('Error loading entries:', error);
     } finally {
@@ -278,13 +321,52 @@ export default function HomeScreen({ navigation }: any) {
     });
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    const name = userProfile?.username || 'there';
+    if (hour < 12) return `Good morning, ${name}`;
+    if (hour < 18) return `Good afternoon, ${name}`;
+    return `Good evening, ${name}`;
+  };
+
+  const getMicroMessage = () => {
+    const name = userProfile?.username || 'there';
+    const messages = [
+      `Welcome back, ${name}.`,
+      `Reflection streak: ${streak.currentStreak} days.`,
+      entries.length > 0 && dominantEmotions.length > 0
+        ? `Your last entry was mostly ${dominantEmotions[0].emotion.toLowerCase()}.`
+        : null,
+      'Good to see you again.',
+    ].filter(Boolean);
+    // Simple rotation based on current second (changes every render but feels dynamic)
+    const index = Math.floor(Date.now() / 5000) % messages.length;
+    return messages[index];
+  };
+
   const renderEntry = ({ item }: { item: DiaryEntry }) => {
     const hasInsights = item.ai_structured_insights?.wellbeingScore;
+    const isHidden = hiddenEntryIds.has(item.id);
     
     return (
       <TouchableOpacity
         style={styles.premiumCard}
-        onPress={() => navigation.navigate('EntryDetail', { entry: item })}
+        onPress={() => {
+          if (isHidden) {
+            Alert.alert('Locked entry', 'Unlock this entry to view its contents?', [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Unlock',
+                onPress: () => {
+                  toggleHidden(item.id);
+                  navigation.navigate('EntryDetail', { entry: item });
+                },
+              },
+            ]);
+          } else {
+            navigation.navigate('EntryDetail', { entry: item });
+          }
+        }}
         onLongPress={() => handleEntryLongPress(item)}
         activeOpacity={0.7}
       >
@@ -296,7 +378,7 @@ export default function HomeScreen({ navigation }: any) {
           <View style={styles.entryHeader}>
             <View style={styles.entryTitleRow}>
               <Text style={styles.entryTitle} numberOfLines={1}>
-                {item.title || 'Untitled Entry'}
+                {isHidden ? 'Locked entry' : item.title || 'Untitled Entry'}
               </Text>
               {item.mood && (
                 <View style={styles.moodBadge}>
@@ -314,7 +396,7 @@ export default function HomeScreen({ navigation }: any) {
 
           {/* Content preview */}
           <Text style={styles.entryContent} numberOfLines={3}>
-            {item.content}
+            {isHidden ? 'Tap to unlock and view this entry.' : item.content}
           </Text>
 
           {/* Footer with date and action */}
@@ -379,6 +461,16 @@ export default function HomeScreen({ navigation }: any) {
         </View>
       </View>
 
+      {/* Emotional Home Header */}
+      <View style={styles.emotionalHomeHeader}>
+        <View style={styles.greetingRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.greetingText}>{getGreeting()}</Text>
+            <Text style={styles.emotionalSubline}>{getMicroMessage()}</Text>
+          </View>
+        </View>
+      </View>
+
       {/* Search + Filters */}
       <View style={styles.searchSection}>
         <View style={styles.searchBar}>
@@ -422,64 +514,6 @@ export default function HomeScreen({ navigation }: any) {
           ))}
         </ScrollView>
       </View>
-
-      {/* Summary Card */}
-      {entries.length > 0 && (
-        <View style={styles.summaryCard}>
-          <LinearGradient
-            colors={['rgba(15, 15, 20, 0.98)', 'rgba(5, 5, 10, 0.96)']}
-            style={styles.summaryGradient}
-          >
-            <View style={styles.summaryRow}>
-              {/* Entries with mini sparkline */}
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>{entries.length}</Text>
-                <Text style={styles.summaryLabel}>Entries</Text>
-                <View style={styles.sparklineRow}>
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <View
-                      key={i}
-                      style={[
-                        styles.sparklineBar,
-                        i % 2 === 0 && styles.sparklineBarTall,
-                      ]}
-                    />
-                  ))}
-                </View>
-              </View>
-
-              <View style={styles.summaryDivider} />
-
-              {/* Analyzed with circular progress */}
-              <View style={styles.summaryItem}>
-                <View style={styles.progressCircleWrapper}>
-                  <View style={styles.progressCircleOuter}>
-                    <View style={styles.progressCircleInner}>
-                      <Text style={styles.progressCircleText}>
-                        {entries.length
-                          ? `${entries.filter(e => e.ai_structured_insights).length}/${entries.length}`
-                          : '0/0'}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-                <Text style={styles.summaryLabel}>Analyzed</Text>
-              </View>
-
-              <View style={styles.summaryDivider} />
-
-              {/* Best Streak with inline flame */}
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>
-                  <Text style={styles.summaryFlame}>🔥 </Text>
-                  {streak.longestStreak}
-                </Text>
-                <Text style={styles.summaryLabel}>Best Streak</Text>
-              </View>
-            </View>
-          </LinearGradient>
-        </View>
-      )}
 
       {/* Entries List */}
       {filteredEntries.length === 0 ? (
@@ -627,43 +661,163 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  // Summary Card Styles
+  // Emotional Overview Hero + Dominant Emotions
   summaryCard: {
     marginHorizontal: 20,
     marginTop: 16,
-    marginBottom: 20,
-    borderRadius: 16,
+    marginBottom: 16,
+    borderRadius: 20,
     overflow: 'hidden',
   },
-  summaryGradient: {
+  heroGradient: {
     padding: 20,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.15)',
+    borderColor: 'rgba(129, 140, 248, 0.4)',
   },
-  summaryRow: {
+  heroHeaderRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
     alignItems: 'center',
+    marginBottom: 20,
   },
-  summaryItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  summaryValue: {
-    fontSize: 28,
+  heroTitle: {
+    fontSize: 18,
     fontWeight: '700',
-    color: '#ffffff',
+    color: '#f9fafb',
     marginBottom: 4,
   },
-  summaryLabel: {
-    fontSize: 12,
-    color: '#999',
-    fontWeight: '500',
+  heroSubtitle: {
+    fontSize: 13,
+    color: '#9ca3af',
   },
-  summaryDivider: {
+  moodRingContainer: {
+    alignItems: 'center',
+    marginLeft: 16,
+  },
+  moodRingOuter: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 3,
+    borderColor: 'rgba(129, 140, 248, 0.8)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#6366f1',
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  moodRingInner: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  moodRingScore: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#e5e7eb',
+  },
+  moodRingLabel: {
+    marginTop: 6,
+    fontSize: 11,
+    color: '#9ca3af',
+    textAlign: 'center',
+  },
+  heroStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  heroStatItem: {
+    flex: 1,
+    paddingHorizontal: 4,
+  },
+  heroStatLabel: {
+    fontSize: 11,
+    color: '#9ca3af',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  heroStatValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#f9fafb',
+  },
+  heroStatCaption: {
+    fontSize: 11,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  heroDivider: {
     width: 1,
     height: 40,
-    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+    backgroundColor: 'rgba(148, 163, 184, 0.35)',
+    marginHorizontal: 4,
+  },
+  heroReflectionText: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#9ca3af',
+  },
+  dominantCard: {
+    marginHorizontal: 20,
+    marginBottom: 16,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  dominantGradient: {
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(55, 65, 81, 0.8)',
+  },
+  dominantHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  dominantTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#f9fafb',
+  },
+  dominantSubtitle: {
+    fontSize: 12,
+    color: '#9ca3af',
+  },
+  dominantChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  emotionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+    borderWidth: 1,
+    borderColor: 'rgba(129, 140, 248, 0.6)',
+    minWidth: 120,
+  },
+  emotionChipLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#e5e7eb',
+  },
+  emotionChipValue: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#a78bfa',
   },
   // Search & Filter styles
   searchSection: {
@@ -718,6 +872,48 @@ const styles = StyleSheet.create({
   filterChipTextActive: {
     color: '#ffffff',
   },
+  // Emotional Home Header
+  emotionalHomeHeader: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#0a0a0a',
+    borderBottomWidth: 1,
+    borderBottomColor: '#1a1a1a',
+  },
+  greetingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  greetingText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#f9fafb',
+    letterSpacing: -0.5,
+    marginBottom: 4,
+  },
+  emotionalSubline: {
+    fontSize: 13,
+    color: '#9ca3af',
+    lineHeight: 18,
+  },
+  quickActionTile: {
+    borderRadius: 18,
+    overflow: 'hidden',
+    marginTop: 4,
+  },
+  quickActionGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  quickActionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#e5e7eb',
+  },
   // Stats sparkline & progress visuals
   sparklineRow: {
     flexDirection: 'row',
@@ -766,6 +962,57 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(248, 113, 113, 0.6)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 8,
+  },
+  sheetOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'flex-end',
+  },
+  sheetContainer: {
+    backgroundColor: 'rgba(15, 18, 25, 0.98)',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  sheetHandleWrapper: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: 'rgba(148, 163, 184, 0.5)',
+  },
+  sheetTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#e5e7eb',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  sheetDivider: {
+    height: 1,
+    backgroundColor: 'rgba(31, 41, 55, 0.9)',
+    marginVertical: 8,
+  },
+  sheetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+  },
+  sheetRowText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#e5e7eb',
+  },
+  sheetRowTextDestructive: {
+    color: '#f97373',
   },
   listContent: {
     padding: 20,

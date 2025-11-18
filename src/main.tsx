@@ -6,7 +6,7 @@ import './styles/base.css';
 import { router } from './router'
 import { AuthProvider } from './contexts/AuthContext'
 import { GOOGLE_CLIENT_ID } from './config/google'
-import * as serviceWorkerRegistration from './serviceWorkerRegistration'
+// import * as serviceWorkerRegistration from './serviceWorkerRegistration'
 
 // Disable HMR for this module to prevent infinite reloads
 if (import.meta.hot) {

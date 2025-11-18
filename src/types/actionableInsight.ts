@@ -7,6 +7,7 @@ export interface ActionableInsight {
   description: string;
   category: 'coping' | 'exercise' | 'social' | 'mindfulness' | 'sleep' | 'nutrition' | 'general';
   difficulty: 'easy' | 'moderate' | 'challenging';
+  emoji?: string;
   estimatedTime: string; // e.g., "5 minutes", "30 minutes"
   source: 'ai_suggested' | 'user_created' | 'comparison_insight';
   sourceEntryId?: string; // Reference to diary entry that suggested this

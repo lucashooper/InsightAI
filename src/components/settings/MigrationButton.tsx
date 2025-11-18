@@ -1,5 +1,5 @@
 // Migration button component for Settings page
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { migratePlaybookToSupabase, checkMigrationNeeded } from '../../utils/migrateToSupabase';
 
 export function MigrationButton() {

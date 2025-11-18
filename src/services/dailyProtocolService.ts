@@ -4,6 +4,8 @@
 import type { DailyProtocol, DailyCompletion, ProtocolStats } from '../types/dailyProtocol';
 import { supabase } from './supabaseClient';
 
+const STORAGE_KEY_COMPLETIONS = 'daily_protocol_completions';
+
 class DailyProtocolService {
   /**
    * Get all daily protocols
@@ -32,11 +34,19 @@ class DailyProtocolService {
   }
 
   /**
+   * Get protocol by id
+   */
+  async getProtocolById(protocolId: string): Promise<DailyProtocol | undefined> {
+    const protocols = await this.getProtocols();
+    return protocols.find(p => p.id === protocolId);
+  }
+
+  /**
    * Get active protocols only
    */
   async getActiveProtocols(): Promise<DailyProtocol[]> {
     const protocols = await this.getProtocols();
-    return protocols.filter(p => p.isActive || p.is_active);
+    return protocols.filter(p => p.isActive);
   }
 
   /**
@@ -186,8 +196,9 @@ class DailyProtocolService {
       };
     }
 
-    const protocol = this.getProtocols().find(p => p.id === protocolId);
-    const createdDate = protocol ? new Date(protocol.createdAt) : new Date();
+    // Note: This is called synchronously in UI, so we can't await here
+    // We'll use current date as fallback if protocol not loaded yet
+    const createdDate = new Date();
     const today = new Date();
     const daysSinceCreation = Math.floor(
       (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)

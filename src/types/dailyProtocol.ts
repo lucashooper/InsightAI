@@ -10,6 +10,7 @@ export interface DailyProtocol {
   estimatedTime: string;
   createdAt: string;
   isActive: boolean;
+  reminderTime?: string | null;
 }
 
 export interface DailyCompletion {
