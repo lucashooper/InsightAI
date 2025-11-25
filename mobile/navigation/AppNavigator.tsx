@@ -17,6 +17,13 @@ import CreateEntryScreen from '../screens/CreateEntryScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 import PlaybookScreen from '../screens/PlaybookScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import WelcomeScreen from '../screens/onboarding/WelcomeScreen';
+import OnboardingQuestionScreen from '../screens/onboarding/OnboardingQuestionScreen';
+import OnboardingSummaryScreen from '../screens/onboarding/OnboardingSummaryScreen';
+import AnalyzingScreen from '../screens/onboarding/AnalyzingScreen';
+import AnalysisCompleteScreen from '../screens/onboarding/AnalysisCompleteScreen';
+import PaywallScreen from '../screens/onboarding/PaywallScreen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -24,7 +31,7 @@ const Tab = createBottomTabNavigator();
 // Center FAB Button Component
 function CenterFabButton() {
   const navigation = useNavigation<any>();
-  
+
   return (
     <TouchableOpacity
       style={styles.centerFabButton}
@@ -118,8 +125,21 @@ function MainTabs() {
 
 export default function AppNavigator() {
   const { user, loading } = useAuth();
+  const [isOnboardingCompleted, setIsOnboardingCompleted] = React.useState<boolean | null>(null);
 
-  if (loading) {
+  React.useEffect(() => {
+    const checkOnboarding = async () => {
+      try {
+        const value = await AsyncStorage.getItem('HAS_COMPLETED_ONBOARDING');
+        setIsOnboardingCompleted(value === 'true');
+      } catch (e) {
+        setIsOnboardingCompleted(false);
+      }
+    };
+    checkOnboarding();
+  }, []);
+
+  if (loading || (user && isOnboardingCompleted === null)) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#8b5cf6" />
@@ -130,37 +150,29 @@ export default function AppNavigator() {
   return (
     <NavigationContainer>
       {user ? (
-        // Authenticated screens with bottom tabs
-        <Stack.Navigator>
-          <Stack.Screen 
-            name="MainTabs" 
-            component={MainTabs}
-            options={{ headerShown: false as boolean }}
-          />
-          <Stack.Screen 
-            name="EntryDetail" 
-            component={EntryDetailScreen}
-            options={{ headerShown: false as boolean }}
-          />
-          <Stack.Screen 
-            name="CreateEntry" 
-            component={CreateEntryScreen}
-            options={{ headerShown: false as boolean }}
-          />
+        // Authenticated screens
+        <Stack.Navigator
+          initialRouteName={isOnboardingCompleted ? 'MainTabs' : 'Welcome'}
+          screenOptions={{ headerShown: false }}
+        >
+          {/* Onboarding Flow */}
+          <Stack.Screen name="Welcome" component={WelcomeScreen} />
+          <Stack.Screen name="OnboardingQuestion" component={OnboardingQuestionScreen} />
+          <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
+          <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
+          <Stack.Screen name="Paywall" component={PaywallScreen} />
+          <Stack.Screen name="OnboardingSummary" component={OnboardingSummaryScreen} />
+
+          {/* Main App Flow */}
+          <Stack.Screen name="MainTabs" component={MainTabs} />
+          <Stack.Screen name="EntryDetail" component={EntryDetailScreen} />
+          <Stack.Screen name="CreateEntry" component={CreateEntryScreen} />
         </Stack.Navigator>
       ) : (
         // Auth screens
-        <Stack.Navigator>
-          <Stack.Screen 
-            name="Login" 
-            component={LoginScreen}
-            options={{ headerShown: false as boolean }}
-          />
-          <Stack.Screen 
-            name="Signup" 
-            component={SignupScreen}
-            options={{ headerShown: false as boolean }}
-          />
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Signup" component={SignupScreen} />
         </Stack.Navigator>
       )}
     </NavigationContainer>

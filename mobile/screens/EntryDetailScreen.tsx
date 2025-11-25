@@ -8,12 +8,22 @@ import {
   Alert,
   TextInput,
   Animated,
+  LayoutAnimation,
+  Platform,
+  UIManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '../lib/supabase';
 import { mobileAiService } from '../services/mobileAiService';
 import { useAuth } from '../contexts/AuthContext';
+import { THEME } from '../constants/theme';
+
+if (Platform.OS === 'android') {
+  if (UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
+}
 
 export default function EntryDetailScreen({ route, navigation }: any) {
   const { entry, openInsights } = route.params || {};
@@ -35,10 +45,11 @@ export default function EntryDetailScreen({ route, navigation }: any) {
 
   useEffect(() => {
     if (activeTab === 'insights') {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       insightsOpacity.setValue(0);
       Animated.timing(insightsOpacity, {
         toValue: 1,
-        duration: 350,
+        duration: THEME.animations.durations.normal,
         useNativeDriver: true,
       }).start();
     }
@@ -73,8 +84,8 @@ export default function EntryDetailScreen({ route, navigation }: any) {
 
   const wordCount = entry?.content
     ? String(entry.content)
-        .split(/\s+/)
-        .filter((w: string) => w.trim().length > 0).length
+      .split(/\s+/)
+      .filter((w: string) => w.trim().length > 0).length
     : 0;
   const readMinutes = wordCount > 0 ? Math.max(1, Math.round(wordCount / 200)) : 0;
   const structuredInsights = entry.ai_structured_insights || null;
@@ -282,8 +293,8 @@ export default function EntryDetailScreen({ route, navigation }: any) {
                       {analyzing
                         ? 'Analyzing...'
                         : entry.ai_structured_insights
-                        ? 'View AI Insights'
-                        : 'Analyze with AI'}
+                          ? 'View AI Insights'
+                          : 'Analyze with AI'}
                     </Text>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -319,109 +330,231 @@ export default function EntryDetailScreen({ route, navigation }: any) {
               },
             ]}
           >
-            <View style={styles.briefingContainer}>
-              <Text style={styles.briefingTitle}>Your Entry's Briefing</Text>
-              <Text style={styles.briefingSubtitle}>
-                Reflect deeply to find patterns and connections between your thoughts and emotions.
-              </Text>
-              <View
-                style={[
-                  styles.briefingCard,
-                  !structuredInsights?.summary && styles.briefingCardPlaceholder,
-                ]}
-              >
-                <Text
-                  style={
-                    structuredInsights?.summary
-                      ? styles.briefingText
-                      : styles.briefingPlaceholderText
-                  }
-                >
-                  {structuredInsights?.summary ||
-                    (moodAnalysis
-                      ? 'AI insights are available for this entry. View the full analysis for a deeper breakdown.'
-                      : "Once this entry has been analyzed, you'll see a concise emotional reflection here.")}
+            {insightsView === 'highlights' ? (
+              <View style={styles.briefingContainer}>
+                <Text style={styles.briefingTitle}>Your Entry's Briefing</Text>
+                <Text style={styles.briefingSubtitle}>
+                  Reflect deeply to find patterns and connections between your thoughts and emotions.
                 </Text>
-              </View>
-              <TouchableOpacity
-                style={styles.fullAnalysisButton}
-                activeOpacity={0.9}
-                onPress={() => setInsightsView('structured')}
-              >
+
+                {/* Glassmorphism Briefing Card */}
                 <LinearGradient
-                  colors={["#a855f7", "#6366f1"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.fullAnalysisGradient}
+                  colors={THEME.colors.gradients.briefingCard.colors as any}
+                  start={THEME.colors.gradients.briefingCard.start}
+                  end={THEME.colors.gradients.briefingCard.end}
+                  style={[
+                    styles.briefingCard,
+                    !structuredInsights?.insights_report?.conversationalSummary && styles.briefingCardPlaceholder,
+                    { borderWidth: 1, borderColor: THEME.colors.borders.glass }
+                  ]}
                 >
-                  <Text style={styles.fullAnalysisButtonText}>View Full Analysis</Text>
-                  <Ionicons name="arrow-forward" size={18} color="#fff" />
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
+                  <Text
+                    style={
+                      structuredInsights?.insights_report?.conversationalSummary
+                        ? styles.briefingText
+                        : styles.briefingPlaceholderText
+                    }
+                  >
+                    {structuredInsights?.insights_report?.conversationalSummary ||
+                      (moodAnalysis
+                        ? 'AI insights are available for this entry. View the full analysis for a deeper breakdown.'
+                        : "Once this entry has been analyzed, you'll see a concise emotional reflection here.")}
+                  </Text>
 
-            {moodAnalysis && (
-              <LinearGradient
-                colors={["#020617", "#020617", "#111827"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.primaryEmotionCard}
-              >
-                <Text style={styles.sectionTitle}>Primary Emotion</Text>
-                <Text style={styles.primaryEmotionGlow}>{moodAnalysis.primary_emotion}</Text>
-                <Text style={styles.emotionIntensity}>Intensity: {moodAnalysis.intensity}/10</Text>
-
-                {Array.isArray(moodAnalysis.emotion_breakdown) &&
-                  moodAnalysis.emotion_breakdown.length > 0 && (
-                    <View style={styles.emotionBreakdownSection}>
-                      <Text style={styles.sectionTitle}>Emotion Breakdown</Text>
-                      {moodAnalysis.emotion_breakdown.map((emotion: any, index: number) => {
-                        const percentage = Math.round((emotion.score || 0) * 100);
-                        const isExpanded = expandedEmotion === emotion.emotion;
-                        return (
-                          <TouchableOpacity
-                            key={index}
-                            style={styles.emotionBreakdownCard}
-                            activeOpacity={0.9}
-                            onPress={() =>
-                              setExpandedEmotion(isExpanded ? null : emotion.emotion)
-                            }
-                          >
-                            <View style={styles.emotionBreakdownLeft}>
-                              <Text style={styles.emotionPillLabel}>{emotion.emotion}</Text>
-                              {isExpanded && (
-                                <Text style={styles.expandedEmotionDescription}>
-                                  This emotion reflects a pattern in your entry. Understanding{' '}
-                                  {emotion.emotion.toLowerCase()} can help you identify triggers and
-                                  develop coping strategies.
-                                </Text>
-                              )}
-                            </View>
-                            <View style={styles.emotionBreakdownRight}>
-                              <Text style={styles.emotionBreakdownPercentage}>{percentage}%</Text>
-                              <Ionicons
-                                name={isExpanded ? 'chevron-down' : 'chevron-forward'}
-                                size={16}
-                                color="#a78bfa"
-                              />
-                            </View>
-                          </TouchableOpacity>
-                        );
-                      })}
+                  {/* Primary Emotion Pill in Briefing */}
+                  {moodAnalysis && (
+                    <View style={styles.briefingEmotionPill}>
+                      <Text style={styles.briefingEmotionLabel}>Primary Emotion</Text>
+                      <LinearGradient
+                        colors={THEME.colors.gradients.badges.frustrated.colors as any}
+                        start={THEME.colors.gradients.badges.frustrated.start}
+                        end={THEME.colors.gradients.badges.frustrated.end}
+                        style={{
+                          paddingHorizontal: 16,
+                          paddingVertical: 8,
+                          borderRadius: 20,
+                          borderWidth: 1,
+                          borderColor: THEME.colors.borders.badges.frustrated,
+                          ...THEME.shadows.glows.growth // Using purple glow
+                        }}
+                      >
+                        <Text style={styles.briefingEmotionText}>{moodAnalysis.primary_emotion}</Text>
+                      </LinearGradient>
                     </View>
                   )}
-              </LinearGradient>
-            )}
+                </LinearGradient>
 
-            {structuredInsights?.insights_report?.keyTakeaways && (
-              <View style={styles.insightSection}>
-                <Text style={styles.sectionTitle}>Key Takeaways</Text>
-                {structuredInsights.insights_report.keyTakeaways.map(
-                  (takeaway: any, index: number) => (
-                    <View key={index} style={styles.insightCard}>
-                      <Text style={styles.insightCardText}>{takeaway.insight}</Text>
-                    </View>
-                  ),
+                <TouchableOpacity
+                  style={[styles.fullAnalysisButton, {
+                    shadowColor: '#8b5cf6',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 8,
+                    elevation: 6
+                  }]}
+                  activeOpacity={0.9}
+                  onPress={() => setInsightsView('structured')}
+                >
+                  <LinearGradient
+                    colors={THEME.colors.gradients.viewFullAnalysis.colors as any}
+                    start={THEME.colors.gradients.viewFullAnalysis.start}
+                    end={THEME.colors.gradients.viewFullAnalysis.end}
+                    style={styles.fullAnalysisGradient}
+                  >
+                    <Text style={styles.fullAnalysisButtonText}>View Full Analysis</Text>
+                    <Ionicons name="arrow-forward" size={18} color="#fff" />
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View>
+                <TouchableOpacity
+                  style={[styles.fullAnalysisButton, { marginBottom: 16 }]}
+                  activeOpacity={0.9}
+                  onPress={() => setInsightsView('highlights')}
+                >
+                  <LinearGradient
+                    colors={THEME.colors.gradients.backButton.colors as any}
+                    start={THEME.colors.gradients.backButton.start}
+                    end={THEME.colors.gradients.backButton.end}
+                    style={[styles.fullAnalysisGradient, { borderWidth: 1, borderColor: THEME.colors.borders.glassStrong }]}
+                  >
+                    <Ionicons name="arrow-back" size={18} color="#fff" />
+                    <Text style={styles.fullAnalysisButtonText}>Back to Briefing</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                {structuredInsights?.insights_report && (
+                  <View>
+                    {/* Insights Count Summary */}
+                    {structuredInsights.insights_report.keyTakeaways && (
+                      <LinearGradient
+                        colors={THEME.colors.gradients.summaryCard.colors as any}
+                        start={THEME.colors.gradients.summaryCard.start}
+                        end={THEME.colors.gradients.summaryCard.end}
+                        style={[styles.insightsSummaryCard, { borderWidth: 1, borderColor: THEME.colors.borders.glass }]}
+                      >
+                        <Text style={styles.insightsSummaryText}>
+                          <Ionicons name="sparkles" size={16} color="#22c55e" />{' '}
+                          <Text style={{ fontWeight: '700' }}>
+                            {structuredInsights.insights_report.keyTakeaways.filter((t: any) => t.sentiment === 'positive').length}
+                          </Text>{' '}
+                          positive takeaways and{' '}
+                          <Ionicons name="leaf" size={16} color="#f59e0b" />{' '}
+                          <Text style={{ fontWeight: '700' }}>
+                            {structuredInsights.insights_report.keyTakeaways.filter((t: any) => t.sentiment === 'opportunity').length}
+                          </Text>{' '}
+                          opportunities for growth
+                        </Text>
+                      </LinearGradient>
+                    )}
+
+                    {/* Key Insights with Sentiment Grouping */}
+                    {structuredInsights.insights_report.keyTakeaways && (
+                      <View style={styles.insightSection}>
+                        {/* Positive Highlights */}
+                        {structuredInsights.insights_report.keyTakeaways.some((t: any) => t.sentiment === 'positive') && (
+                          <View style={styles.insightGroup}>
+                            <View style={styles.insightGroupHeader}>
+                              <Ionicons name="sparkles" size={18} color="#4ade80" />
+                              <Text style={[styles.insightGroupTitle, { color: '#4ade80' }]}>Highlights</Text>
+                            </View>
+                            {structuredInsights.insights_report.keyTakeaways
+                              .filter((t: any) => t.sentiment === 'positive')
+                              .map((takeaway: any, index: number) => (
+                                <LinearGradient
+                                  key={`pos-${index}`}
+                                  colors={THEME.colors.gradients.badges.strength.colors as any}
+                                  start={THEME.colors.gradients.badges.strength.start}
+                                  end={THEME.colors.gradients.badges.strength.end}
+                                  style={[styles.insightCardNew, { borderColor: THEME.colors.borders.badges.strength }]}
+                                >
+                                  <View style={styles.insightCardHeaderNew}>
+                                    <View style={[styles.categoryBadge, {
+                                      backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                                      borderColor: THEME.colors.borders.badges.strength,
+                                      borderWidth: 1
+                                    }]}>
+                                      <Text style={[styles.categoryBadgeText, { color: '#4ade80' }]}>{takeaway.category}</Text>
+                                    </View>
+                                  </View>
+                                  <Text style={styles.insightCardTextNew}>{takeaway.insight}</Text>
+                                </LinearGradient>
+                              ))}
+                          </View>
+                        )}
+
+                        {/* Areas for Growth */}
+                        {structuredInsights.insights_report.keyTakeaways.some((t: any) => t.sentiment === 'opportunity') && (
+                          <View style={styles.insightGroup}>
+                            <View style={styles.insightGroupHeader}>
+                              <Ionicons name="trending-up" size={18} color="#fbbf24" />
+                              <Text style={[styles.insightGroupTitle, { color: '#fbbf24' }]}>Areas for Growth</Text>
+                            </View>
+                            {structuredInsights.insights_report.keyTakeaways
+                              .filter((t: any) => t.sentiment === 'opportunity')
+                              .map((takeaway: any, index: number) => (
+                                <LinearGradient
+                                  key={`opp-${index}`}
+                                  colors={THEME.colors.gradients.badges.challenge.colors as any}
+                                  start={THEME.colors.gradients.badges.challenge.start}
+                                  end={THEME.colors.gradients.badges.challenge.end}
+                                  style={[styles.insightCardNew, { borderColor: THEME.colors.borders.badges.challenge }]}
+                                >
+                                  <View style={styles.insightCardHeaderNew}>
+                                    <View style={[styles.categoryBadge, {
+                                      backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                                      borderColor: THEME.colors.borders.badges.challenge,
+                                      borderWidth: 1
+                                    }]}>
+                                      <Text style={[styles.categoryBadgeText, { color: '#fbbf24' }]}>{takeaway.category}</Text>
+                                    </View>
+                                  </View>
+                                  <Text style={styles.insightCardTextNew}>{takeaway.insight}</Text>
+                                </LinearGradient>
+                              ))}
+                          </View>
+                        )}
+                      </View>
+                    )}
+
+                    {/* Premium Actionable Suggestion */}
+                    {structuredInsights.insights_report.actionableSuggestion && (
+                      <LinearGradient
+                        colors={THEME.colors.gradients.actionableCard.colors as any}
+                        start={THEME.colors.gradients.actionableCard.start}
+                        end={THEME.colors.gradients.actionableCard.end}
+                        style={styles.actionableCardNew}
+                      >
+                        <View style={styles.actionableHeaderNew}>
+                          <View style={styles.actionableIconContainer}>
+                            <Ionicons name="compass" size={24} color="#c084fc" />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.actionableLabel}>RECOMMENDED STRATEGY</Text>
+                            <Text style={styles.actionableTitleNew}>
+                              {structuredInsights.insights_report.actionableSuggestion.title}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View style={styles.actionableDivider} />
+
+                        <Text style={styles.actionableSuggestionNew}>
+                          {structuredInsights.insights_report.actionableSuggestion.suggestion}
+                        </Text>
+
+                        <TouchableOpacity
+                          style={styles.addToPlaybookButton}
+                          activeOpacity={0.8}
+                          onPress={() => Alert.alert('Coming Soon', 'This will add the strategy to your Playbook!')}
+                        >
+                          <Text style={styles.addToPlaybookText}>Add to Playbook</Text>
+                          <Ionicons name="add-circle-outline" size={18} color="#fff" />
+                        </TouchableOpacity>
+                      </LinearGradient>
+                    )}
+                  </View>
                 )}
               </View>
             )}
@@ -431,7 +564,7 @@ export default function EntryDetailScreen({ route, navigation }: any) {
 
       {analyzing && (
         <View style={styles.analyzingOverlay}>
-          {/* Analyzing overlay remains the same */}
+          {/* Analyzing overlay content would go here if needed */}
         </View>
       )}
     </View>
@@ -448,8 +581,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingHorizontal: THEME.spacing.xl,
+    paddingBottom: THEME.spacing.lg,
     backgroundColor: '#0a0a0a',
     borderBottomWidth: 1,
     borderBottomColor: '#1a1a1a',
@@ -477,15 +610,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: THEME.spacing.xl,
+    paddingVertical: THEME.spacing.lg,
   },
   tabBar: {
     flexDirection: 'row',
     backgroundColor: '#0a0a0a',
     borderBottomWidth: 1,
     borderBottomColor: '#1a1a1a',
-    paddingHorizontal: 20,
+    paddingHorizontal: THEME.spacing.xl,
   },
   tab: {
     flex: 1,
@@ -579,14 +712,11 @@ const styles = StyleSheet.create({
   analyzingOverlay: {},
   insightsCard: {
     backgroundColor: '#020617',
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: THEME.borderRadius.xl,
+    padding: THEME.spacing.xl,
     borderWidth: 1,
     borderColor: 'rgba(148, 163, 184, 0.25)',
-    shadowColor: '#22c55e',
-    shadowOpacity: 0.18,
-    shadowRadius: 32,
-    shadowOffset: { width: 0, height: 18 },
+    ...THEME.shadows.lg,
     marginBottom: 32,
   },
   analysisMeta: {
@@ -600,27 +730,32 @@ const styles = StyleSheet.create({
   },
   briefingTitle: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: '#e5e7ff',
     textAlign: 'center',
     marginBottom: 8,
+    letterSpacing: THEME.typography.letterSpacing.tight,
   },
   briefingSubtitle: {
     fontSize: 16,
     color: '#9ca3af',
     textAlign: 'center',
     marginBottom: 24,
+    lineHeight: 24,
+    fontWeight: '400',
   },
   briefingCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: THEME.borderRadius.xl,
+    padding: 24,
     marginBottom: 24,
+    ...THEME.shadows.lg,
   },
   briefingText: {
-    fontSize: 16,
+    fontSize: 17,
     color: '#e0e0e0',
-    lineHeight: 24,
+    lineHeight: 28,
+    letterSpacing: 0.2,
+    fontWeight: '400',
   },
   briefingCardPlaceholder: {
     backgroundColor: 'rgba(15, 23, 42, 0.9)',
@@ -633,9 +768,31 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     textAlign: 'center',
   },
+  briefingEmotionPill: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(139, 92, 246, 0.2)',
+    alignItems: 'center',
+  },
+  briefingEmotionLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#8b5cf6',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  briefingEmotionText: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#fff',
+    textTransform: 'capitalize',
+  },
   fullAnalysisButton: {
     marginTop: 8,
-    borderRadius: 999,
+    borderRadius: THEME.borderRadius.md,
+    ...THEME.shadows.md,
   },
   fullAnalysisGradient: {
     flexDirection: 'row',
@@ -643,7 +800,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     paddingVertical: 12,
-    borderRadius: 999,
+    borderRadius: THEME.borderRadius.md,
   },
   fullAnalysisButtonText: {
     fontSize: 16,
@@ -670,73 +827,183 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: 'bold',
     color: '#fff',
-    textAlign: 'center',
   },
   primaryEmotionGlow: {
-    fontSize: 42,
-    fontWeight: '800',
-    color: '#f9fafb',
-    textAlign: 'center',
-    marginBottom: 8,
-    textShadowColor: 'rgba(129, 140, 248, 0.9)',
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#fff',
+    textShadowColor: 'rgba(139, 92, 246, 0.6)',
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 22,
+    textShadowRadius: 20,
+    marginBottom: 8,
   },
   emotionIntensity: {
     fontSize: 16,
-    color: '#9ca3af',
-    textAlign: 'center',
+    color: '#a78bfa',
     marginBottom: 24,
   },
   emotionBreakdownSection: {
-    marginTop: 8,
+    marginTop: 16,
+    width: '100%',
   },
   emotionBreakdownCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    padding: 12,
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   emotionBreakdownLeft: {
     flex: 1,
-    paddingRight: 12,
-  },
-  emotionBreakdownRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
   },
   emotionPillLabel: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#e5e7eb',
-    marginBottom: 4,
+    color: '#e0e0e0',
+    fontWeight: '500',
+    textTransform: 'capitalize',
   },
   expandedEmotionDescription: {
     fontSize: 13,
     color: '#9ca3af',
-    lineHeight: 20,
+    marginTop: 6,
+    lineHeight: 18,
+  },
+  emotionBreakdownRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   emotionBreakdownPercentage: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#8b5cf6',
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#a78bfa',
+  },
+  insightsSummaryCard: {
+    borderRadius: THEME.borderRadius.lg,
+    padding: 16,
+    marginBottom: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  insightsSummaryText: {
+    fontSize: 15,
+    color: '#e0e0e0',
+    textAlign: 'center',
+    lineHeight: 22,
   },
   insightSection: {
-    marginBottom: 32,
+    gap: 24,
   },
-  insightCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+  insightGroup: {
+    gap: 12,
   },
-  insightCardText: {
+  insightGroupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  insightGroupTitle: {
     fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  insightCardNew: {
+    borderRadius: THEME.borderRadius.lg,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    ...THEME.shadows.sm,
+  },
+  insightCardHeaderNew: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  categoryBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  categoryBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  insightCardTextNew: {
+    fontSize: 15,
     color: '#e0e0e0',
     lineHeight: 24,
+    fontWeight: '400',
+  },
+  actionableCardNew: {
+    borderRadius: THEME.borderRadius.lg,
+    padding: 24,
+    marginTop: 32,
+    ...THEME.shadows.md,
+  },
+  actionableHeaderNew: {
+    flexDirection: 'row',
+    gap: 16,
+    marginBottom: 20,
+  },
+  actionableIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(192, 132, 252, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(192, 132, 252, 0.3)',
+  },
+  actionableLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#c084fc',
+    letterSpacing: 1,
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  actionableTitleNew: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#ffffff',
+    lineHeight: 26,
+  },
+  actionableDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginBottom: 20,
+  },
+  actionableSuggestionNew: {
+    fontSize: 16,
+    color: '#e0e0e0',
+    lineHeight: 26,
+    marginBottom: 24,
+    fontWeight: '400',
+  },
+  addToPlaybookButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    paddingVertical: 14,
+    borderRadius: THEME.borderRadius.md,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  addToPlaybookText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#ffffff',
   },
 });

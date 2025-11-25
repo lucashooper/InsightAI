@@ -134,9 +134,14 @@ Provide a comprehensive JSON response with the EXACT structure below:
     "conversationalSummary": "Short natural-language summary of the entry and key themes.",
     "keyTakeaways": [
       {
-        "insight": "A specific observation that quotes or closely references the user's actual words.",
+        "insight": "A specific observation about a strength or positive moment.",
         "sentiment": "positive",
-        "category": "Coping Strategy"
+        "category": "Strength/Win/Gratitude"
+      },
+      {
+        "insight": "A specific observation about a struggle, negative emotion, or area for growth.",
+        "sentiment": "opportunity",
+        "category": "Challenge/Growth/Reflection"
       }
     ],
     "actionableSuggestion": {
@@ -147,6 +152,15 @@ Provide a comprehensive JSON response with the EXACT structure below:
 }
 
 Entry text: ${content}`;
+
+    // Add explicit instruction for multiple insights
+    const systemInstruction = `You are an expert mental health AI assistant trained in CBT, DBT, and positive psychology. 
+    
+    CRITICAL OUTPUT RULES:
+    1. You MUST provide at least 3-5 items in 'keyTakeaways'.
+    2. You MUST include a mix of 'positive' AND 'opportunity' sentiments in 'keyTakeaways'. Do not just list positive things.
+    3. If the user expresses negative emotions (sadness, anxiety, tiredness), you MUST acknowledge these as 'opportunity' insights for growth or self-care.
+    4. Your responses must be highly personalized and specific to the user's text.`;
 
     try {
       const response = await fetch(GROQ_API_URL, {
@@ -160,8 +174,7 @@ Entry text: ${content}`;
           messages: [
             {
               role: 'system',
-              content:
-                'You are an expert mental health AI assistant trained in CBT, DBT, and positive psychology. Your responses must be highly personalized and specific.',
+              content: systemInstruction,
             },
             {
               role: 'user',

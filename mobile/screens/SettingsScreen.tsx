@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface UserProfile {
   id: string;
@@ -37,7 +38,7 @@ export default function SettingsScreen({ navigation }: any) {
     try {
       console.log('Loading profile for user ID:', user.id);
       console.log('User email:', user.email);
-      
+
       // Query by user_id to match desktop schema
       let { data, error } = await supabase
         .from('user_profiles')
@@ -121,7 +122,7 @@ export default function SettingsScreen({ navigation }: any) {
 
   const handleProfilePictureUpload = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
+
     if (permissionResult.granted === false) {
       Alert.alert('Permission Required', 'Please allow access to your photo library.');
       return;
@@ -233,9 +234,9 @@ export default function SettingsScreen({ navigation }: any) {
         .from('actionable_insights')
         .select('*')
         .eq('user_id', user?.id);
-      
+
       if (error) throw error;
-      
+
       Alert.alert('Success', `Synced ${data?.length || 0} strategies from cloud`);
       console.log('📥 Synced strategies:', data);
     } catch (error) {
@@ -252,8 +253,8 @@ export default function SettingsScreen({ navigation }: any) {
       'Are you sure you want to sign out?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Sign Out', 
+        {
+          text: 'Sign Out',
           style: 'destructive',
           onPress: async () => {
             await signOut();
@@ -288,7 +289,7 @@ export default function SettingsScreen({ navigation }: any) {
               style={styles.cardGradient}
             >
               <View style={styles.profileSection}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.avatarContainer}
                   onPress={handleProfilePictureUpload}
                   disabled={uploadingImage}
@@ -298,8 +299,8 @@ export default function SettingsScreen({ navigation }: any) {
                       <ActivityIndicator size="small" color="#8b5cf6" />
                     </View>
                   ) : userProfile?.profile_picture_url ? (
-                    <Image 
-                      source={{ uri: userProfile.profile_picture_url }} 
+                    <Image
+                      source={{ uri: userProfile.profile_picture_url }}
                       style={styles.avatarImage}
                     />
                   ) : (
@@ -323,9 +324,9 @@ export default function SettingsScreen({ navigation }: any) {
         {/* Data Management */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Data</Text>
-          
-          <TouchableOpacity 
-            style={styles.card} 
+
+          <TouchableOpacity
+            style={styles.card}
             onPress={handleSync}
             disabled={syncing}
           >
@@ -366,7 +367,7 @@ export default function SettingsScreen({ navigation }: any) {
                   <Text style={styles.usageProgressValue}>{usageCount} / {usageLimit}</Text>
                 </View>
                 <View style={styles.progressBarContainer}>
-                  <View 
+                  <View
                     style={[
                       styles.progressBarFill,
                       { width: `${(usageCount / usageLimit) * 100}%` }
@@ -432,7 +433,36 @@ export default function SettingsScreen({ navigation }: any) {
         {/* Actions */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Actions</Text>
-          
+
+          <TouchableOpacity
+            style={[styles.card, { marginBottom: 12 }]}
+            onPress={async () => {
+              try {
+                await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
+                // Reset navigation to Welcome
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'Welcome' }],
+                });
+              } catch (e) {
+                Alert.alert('Error', 'Could not reset onboarding');
+              }
+            }}
+          >
+            <LinearGradient
+              colors={['rgba(139, 92, 246, 0.1)', 'rgba(10, 10, 10, 0.95)']}
+              style={styles.cardGradient}
+            >
+              <View style={styles.actionRow}>
+                <Ionicons name="refresh" size={20} color="#8b5cf6" />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.actionText, { color: '#8b5cf6' }]}>Reset Onboarding</Text>
+                  <Text style={styles.actionSubtext}>View the welcome flow again</Text>
+                </View>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.card} onPress={handleSignOut}>
             <LinearGradient
               colors={['rgba(10, 10, 10, 0.95)', 'rgba(5, 5, 5, 0.95)']}
