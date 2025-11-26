@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "InsightAI",
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -16,6 +16,7 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSMicrophoneUsageDescription": "InsightAI uses the microphone for voice notes.",
+        "NSSpeechRecognitionUsageDescription": "InsightAI uses speech recognition to convert your voice into text for taking notes and searching your content.",
         "ITSAppUsesNonExemptEncryption": false
       },
       "bundleIdentifier": "com.crupid.mobile"

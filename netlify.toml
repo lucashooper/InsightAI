@@ -5,11 +5,30 @@
   command = "npm run build"
   publish = "dist"
   
-# SPA redirect - ensures React Router works on page refresh
-# All routes fall back to index.html for client-side routing
-# BUT: Don't redirect if the file actually exists (like CSS, JS, images)
+# Routing
+
+# 1) Marketing site as public homepage
+#    The marketing bundle is copied to dist/marketing-dist by the root Vite config.
 [[redirects]]
-  from = "/*"
+  from = "/"
+  to = "/marketing-dist/index.html"
+  status = 200
+
+# 2) Public legal pages (must be accessible without auth)
+[[redirects]]
+  from = "/privacy"
+  to = "/marketing-dist/privacy.html"
+  status = 200
+
+[[redirects]]
+  from = "/terms"
+  to = "/marketing-dist/terms.html"
+  status = 200
+
+# 3) App shell under /app - SPA redirect so React Router works on refresh
+#    Only /app/* falls back to index.html; static assets are still served directly.
+[[redirects]]
+  from = "/app/*"
   to = "/index.html"
   status = 200
   force = false

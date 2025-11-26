@@ -1,8 +1,10 @@
 {
   "expo": {
-    "extra": {
-      "eas": {
-        "projectId": "120d4cac-b71f-41ed-a5fd-d64835ed1542"
+    "ios": {
+      "bundleIdentifier": "com.crupid.mobile",
+      "deploymentTarget": "15.1",
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "InsightAI uses speech recognition to convert your voice into text for taking notes and searching your content."
       }
     }
   }
