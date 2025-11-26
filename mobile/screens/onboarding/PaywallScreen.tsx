@@ -5,10 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import PlanCard from '../../components/onboarding/PlanCard';
 
-type PlanType = 'weekly' | 'monthly' | 'yearly';
-
 export default function PaywallScreen({ navigation }: any) {
-  const [selectedPlan, setSelectedPlan] = useState<PlanType>('weekly');
 
   const handleStartJourney = () => {
     // TODO: Implement purchase logic
@@ -33,34 +30,15 @@ export default function PaywallScreen({ navigation }: any) {
           </Text>
         </View>
 
-        {/* Pricing Cards */}
+        {/* Pricing Card - single monthly plan matching Stripe (£5/month) */}
         <View style={styles.plansContainer}>
           <PlanCard
-            title="Weekly"
-            price="£2.99"
-            period="week"
-            selected={selectedPlan === 'weekly'}
-            popular={true}
-            onPress={() => setSelectedPlan('weekly')}
-          />
-
-          <PlanCard
-            title="Monthly"
-            price="£8.99"
+            title="Pro Monthly"
+            price="£5.00"
             period="month"
-            weeklyEquivalent="£2.08/week"
-            selected={selectedPlan === 'monthly'}
-            onPress={() => setSelectedPlan('monthly')}
-          />
-
-          <PlanCard
-            title="Yearly"
-            price="£33.99"
-            period="year"
-            weeklyEquivalent="£0.65/week"
-            badge="Save 68%"
-            selected={selectedPlan === 'yearly'}
-            onPress={() => setSelectedPlan('yearly')}
+            selected={true}
+            popular={true}
+            onPress={() => {}}
           />
         </View>
 
