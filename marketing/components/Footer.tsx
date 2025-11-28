@@ -15,7 +15,7 @@ const Footer: React.FC = () => {
           <div className="footer-links-minimal">
             <a href="/privacy.html">Privacy</a>
             <a href="/terms.html">Terms</a>
-            <a href="mailto:support@insightai.app">Contact</a>
+            <a href="/support">Support</a>
           </div>
         </div>
         
