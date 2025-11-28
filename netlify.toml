@@ -13,6 +13,7 @@
   from = "/"
   to = "/marketing-dist/index.html"
   status = 200
+  force = true
 
 # 2) Public legal pages (must be accessible without auth)
 [[redirects]]
