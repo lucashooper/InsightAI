@@ -117,9 +117,13 @@ export default function PaywallScreen({ navigation }: any) {
             end={{ x: 1, y: 1 }}
             style={styles.ctaGradient}
           >
-            <Text style={styles.ctaText}>Start your journey</Text>
+            <Text style={styles.ctaText}>Continue to app</Text>
           </LinearGradient>
         </TouchableOpacity>
+
+        <Text style={styles.noteText}>
+          Mobile subscriptions are coming soon. To upgrade today, use the web app at myinsightai.app.
+        </Text>
 
         {/* Footer Links */}
         <View style={styles.footer}>
@@ -171,6 +175,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: '500',
     lineHeight: 26,
+  },
+  noteText: {
+    fontSize: 13,
+    color: '#9ca3af',
+    textAlign: 'center',
+    marginTop: 12,
   },
   plansContainer: {
     gap: 16,

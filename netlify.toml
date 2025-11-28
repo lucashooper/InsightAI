@@ -25,6 +25,11 @@
   to = "/marketing-dist/terms.html"
   status = 200
 
+[[redirects]]
+  from = "/support"
+  to = "/marketing-dist/support.html"
+  status = 200
+
 # 3) App shell under /app - SPA redirect so React Router works on refresh
 #    Only /app/* falls back to index.html; static assets are still served directly.
 [[redirects]]
