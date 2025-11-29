@@ -20,7 +20,7 @@ Run this command in your terminal:
 cd C:\Users\lucas\Desktop\InsightAI
 npx create-expo-app@latest mobile --template blank-typescript
 ```
-
+ 
 When prompted, press `y` to proceed.
 
 This will create a `mobile/` folder with a basic Expo TypeScript app.

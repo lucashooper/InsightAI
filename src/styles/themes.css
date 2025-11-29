@@ -216,8 +216,10 @@ textarea.diary-textarea:focus-visible {
   word-break: break-word !important;
   white-space: pre-wrap !important;
   
-  /* Overflow */
-  overflow-y: auto !important;
+  /* Overflow
+     Let the textarea grow with its content and rely on the page scroll,
+     instead of forcing an inner scrollbar that cuts off longer entries. */
+  overflow-y: visible !important;
   overflow-x: hidden !important;
   
   /* Misc */

@@ -38,6 +38,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
   const [aiResponse, setAiResponse] = useState<string>('');
   const [isLoadingAiResponse, setIsLoadingAiResponse] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
 
   // Sync state with note prop
@@ -218,15 +219,22 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
   }, []);
 
   const handleContentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setContent(e.target.value);
+    const newValue = e.target.value;
+    setContent(newValue);
     console.log('✏️ Content changed:', { 
       fromLength: content.length, 
-      toLength: e.target.value.length,
-      change: e.target.value.length - content.length
+      toLength: newValue.length,
+      change: newValue.length - content.length
     });
+
+    // Auto-resize textarea to fit content
+    if (textareaRef.current) {
+      const el = textareaRef.current;
+      el.style.height = 'auto';
+      el.style.height = `${el.scrollHeight}px`;
+    }
     
     // Handle Probe Deeper button visibility
-    // setIsTyping(true); // Commented out for now
     setShowProbeButton(false);
     
     // Clear existing timeout
@@ -235,13 +243,21 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
     }
     
     // Show button 2 seconds after user stops typing (if content is sufficient)
-    if (e.target.value.length > 100 && !aiResponse) {
+    if (newValue.length > 100 && !aiResponse) {
       typingTimeoutRef.current = setTimeout(() => {
-        // setIsTyping(false); // Commented out for now
         setShowProbeButton(true);
       }, 2000);
     }
   }, [content, aiResponse]);
+
+  // Ensure textarea height matches content on initial load / when switching notes
+  useEffect(() => {
+    if (textareaRef.current) {
+      const el = textareaRef.current;
+      el.style.height = 'auto';
+      el.style.height = `${el.scrollHeight}px`;
+    }
+  }, [content]);
 
   const handleContentKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.ctrlKey && e.key === 's') {
@@ -780,6 +796,7 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
         padding: 0
       }}>
         <textarea
+          ref={textareaRef}
           className="diary-textarea"
           spellCheck={false}
           value={content}
@@ -797,22 +814,20 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
             lineHeight: '1.625',
             fontFamily: 'inherit',
             resize: 'none',
-            overflow: 'hidden',
             padding: '0 !important',
             margin: '0 !important',
             flex: '0 0 auto !important'
           }}
-          rows={Math.max(10, content.split('\n').length + 1)}
+          rows={10}
         />
       </div>
       
       {/* Probe Deeper Button - Contextual Mindsera-style */}
       {showProbeButton && !aiResponse && (
         <div style={{
-          position: 'relative',
           width: '100%',
           pointerEvents: 'none',
-          marginTop: '1rem'
+          marginTop: '1.5rem'
         }}>
           <button
             onClick={async () => {
@@ -847,9 +862,6 @@ const DiaryEditor: React.FC<DiaryEditorProps> = React.memo(({
               }
             }}
             style={{
-              position: 'absolute',
-              top: '-2.5rem',
-              left: '0',
               padding: '0.5rem 1rem',
               background: 'rgba(139, 92, 246, 0.1)',
               backdropFilter: 'blur(10px)',

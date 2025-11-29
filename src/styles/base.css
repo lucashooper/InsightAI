@@ -336,7 +336,8 @@ textarea:not(.diary-textarea),
   width: 100% !important;
   box-sizing: border-box !important;
   overflow-x: hidden !important;
-  overflow-y: auto !important;
+  /* Let the textarea grow with content and use page scroll instead of an inner scroll */
+  overflow-y: visible !important;
   resize: none !important;
   display: block !important;
   padding: 0 !important;
@@ -360,7 +361,8 @@ textarea:not(.diary-textarea) {
   max-width: none !important;
   width: 100% !important;
   overflow-x: hidden !important;
-  overflow-y: auto !important;
+  /* Allow the content to extend vertically */
+  overflow-y: visible !important;
   box-sizing: border-box !important;
   display: flex !important;
   flex-direction: column !important;
