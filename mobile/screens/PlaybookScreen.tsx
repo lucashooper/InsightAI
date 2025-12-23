@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
+import { protocolCompletionService } from '../services/protocolCompletionService';
 
 type TabType = 'protocols' | 'strategies';
 
@@ -38,6 +39,8 @@ export default function PlaybookScreen() {
     total: 1,
     percentage: 0
   });
+  const [completedToday, setCompletedToday] = useState<string[]>([]);
+  const [protocolStats, setProtocolStats] = useState<Record<string, { currentStreak: number; longestStreak: number }>>({});
 
   useEffect(() => {
     loadStrategies();
@@ -67,11 +70,57 @@ export default function PlaybookScreen() {
 
       console.log('[Mobile Playbook] strategies loaded from Supabase', data);
       setStrategies(data || []);
+      
+      // Load completion data
+      await loadCompletionData(data || []);
     } catch (error) {
       console.error('Error loading strategies:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadCompletionData = async (strategies: Strategy[]) => {
+    // Get today's completions
+    const todayCompletions = await protocolCompletionService.getTodayCompletions();
+    setCompletedToday(todayCompletions);
+    
+    // Get stats for each active protocol
+    const activeProtocols = strategies.filter(s => s.status === 'active');
+    const stats: Record<string, { currentStreak: number; longestStreak: number }> = {};
+    
+    for (const protocol of activeProtocols) {
+      const protocolStats = await protocolCompletionService.getStats(protocol.id);
+      stats[protocol.id] = {
+        currentStreak: protocolStats.currentStreak,
+        longestStreak: protocolStats.longestStreak
+      };
+    }
+    
+    setProtocolStats(stats);
+    
+    // Update progress
+    const total = activeProtocols.length;
+    const completed = todayCompletions.length;
+    setProtocolProgress({
+      completed,
+      total: total || 1,
+      percentage: total > 0 ? Math.round((completed / total) * 100) : 0
+    });
+  };
+
+  const handleToggleCompletion = async (protocolId: string) => {
+    const isNowCompleted = await protocolCompletionService.toggleCompletion(protocolId);
+    
+    // Update local state
+    if (isNowCompleted) {
+      setCompletedToday([...completedToday, protocolId]);
+    } else {
+      setCompletedToday(completedToday.filter(id => id !== protocolId));
+    }
+    
+    // Reload stats
+    await loadCompletionData(strategies);
   };
 
   const createStrategy = async () => {
@@ -289,15 +338,15 @@ export default function PlaybookScreen() {
                     <View style={styles.titleRow}>
                       <Text style={styles.cardTitle}>{strategy.title}</Text>
                       {/* Only show streaks for active protocols */}
-                      {strategy.status === 'active' && (
+                      {strategy.status === 'active' && protocolStats[strategy.id] && (
                         <View style={styles.inlineStreaks}>
                           <View style={styles.inlineStreakBadge}>
                             <Text style={styles.streakEmoji}>🔥</Text>
-                            <Text style={styles.streakText}>0</Text>
+                            <Text style={styles.streakText}>{protocolStats[strategy.id].currentStreak}</Text>
                           </View>
                           <View style={styles.inlineStreakBadge}>
                             <Text style={styles.streakEmoji}>🏆</Text>
-                            <Text style={styles.streakText}>0</Text>
+                            <Text style={styles.streakText}>{protocolStats[strategy.id].longestStreak}</Text>
                           </View>
                         </View>
                       )}
@@ -320,33 +369,41 @@ export default function PlaybookScreen() {
                     </View>
                   </View>
                   
-                  {/* Status / actions */}
-                  <View style={styles.strategyMetaColumn}>
-                    <Text style={styles.strategyStatusText}>
-                      Status: {strategy.status === 'active' ? 'In routine' : strategy.status === 'completed' ? 'Completed' : 'Suggested by AI'}
-                    </Text>
-                    {strategy.status === 'active' && (
-                      <Text style={styles.strategyMetaText}>
-                        Last completed: Never • Next reminder: Today 9 PM
-                      </Text>
-                    )}
-                    {strategy.status === 'suggested' && (
-                      <View style={styles.actionButtons}>
-                        <TouchableOpacity 
-                          style={styles.actionButton}
-                          onPress={() => console.log('Activate strategy:', strategy.id)}
-                        >
-                          <Ionicons name="checkmark-circle" size={18} color="#34d399" />
-                        </TouchableOpacity>
-                        <TouchableOpacity 
-                          style={styles.actionButton}
-                          onPress={() => console.log('Skip strategy:', strategy.id)}
-                        >
-                          <Ionicons name="close-circle" size={18} color="#f97373" />
-                        </TouchableOpacity>
+                  {/* Checkbox for active protocols */}
+                  {strategy.status === 'active' && (
+                    <TouchableOpacity 
+                      style={styles.checkboxContainer}
+                      onPress={() => handleToggleCompletion(strategy.id)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[
+                        styles.checkbox,
+                        completedToday.includes(strategy.id) && styles.checkboxCompleted
+                      ]}>
+                        {completedToday.includes(strategy.id) && (
+                          <Ionicons name="checkmark" size={24} color="#fff" />
+                        )}
                       </View>
-                    )}
-                  </View>
+                    </TouchableOpacity>
+                  )}
+                  
+                  {/* Action buttons for suggested strategies */}
+                  {strategy.status === 'suggested' && (
+                    <View style={styles.actionButtons}>
+                      <TouchableOpacity 
+                        style={styles.actionButton}
+                        onPress={() => console.log('Activate strategy:', strategy.id)}
+                      >
+                        <Ionicons name="checkmark-circle" size={18} color="#34d399" />
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={styles.actionButton}
+                        onPress={() => console.log('Skip strategy:', strategy.id)}
+                      >
+                        <Ionicons name="close-circle" size={18} color="#f97373" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </View>
               </LinearGradient>
             </TouchableOpacity>
@@ -751,6 +808,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#ffffff',
+  },
+  // Checkbox styles for daily protocols
+  checkboxContainer: {
+    marginLeft: 12,
+  },
+  checkbox: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+    borderWidth: 2,
+    borderColor: '#8b5cf6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxCompleted: {
+    backgroundColor: '#8b5cf6',
+    borderColor: '#a78bfa',
   },
   strategyMetaColumn: {
     flex: 1,

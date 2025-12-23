@@ -15,6 +15,15 @@ export default function WelcomeScreen({ navigation }: any) {
 
             <SunoGradient />
 
+            {/* Skip Onboarding Button - For Testing */}
+            <TouchableOpacity
+                style={styles.skipButton}
+                onPress={() => navigation.navigate('MainTabs')}
+                activeOpacity={0.7}
+            >
+                <Text style={styles.skipButtonText}>Skip Onboarding →</Text>
+            </TouchableOpacity>
+
             <View style={styles.content}>
                 <View style={styles.header}>
                     <View style={styles.logoContainer}>
@@ -56,6 +65,23 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#000',
     },
+    skipButton: {
+        position: 'absolute',
+        top: 60,
+        right: 20,
+        zIndex: 10,
+        backgroundColor: 'rgba(139, 92, 246, 0.2)',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(139, 92, 246, 0.4)',
+    },
+    skipButtonText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#a78bfa',
+    },
     content: {
         flex: 1,
         justifyContent: 'space-between',
@@ -80,9 +106,9 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 52,
-        fontWeight: '800',
+        fontWeight: '700',
         color: '#fff',
-        marginBottom: 12,
+        marginBottom: 24,
         letterSpacing: -1.5,
         textAlign: 'center',
     },
@@ -90,7 +116,7 @@ const styles = StyleSheet.create({
         fontSize: 28,
         color: '#e5e7eb',
         textAlign: 'center',
-        fontWeight: '700',
+        fontWeight: '500',
         letterSpacing: -0.5,
         lineHeight: 36,
     },

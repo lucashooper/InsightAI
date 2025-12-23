@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import LottieView from 'lottie-react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import SunoGradient from '../../components/onboarding/SunoGradient';
 
 const { width } = Dimensions.get('window');
 
@@ -47,41 +47,46 @@ export default function AnalyzingScreen({ navigation }: Props) {
     });
 
     return (
-        <LinearGradient
-            colors={['#1e1b4b', '#312e81', '#1e3a8a']}
-            locations={[0, 0.5, 1]}
-            style={styles.container}
-        >
+        <View style={styles.container}>
+            <SunoGradient />
+            
             <View style={styles.content}>
-                {/* Lottie Animation - Flowing Abstract Lines */}
-                <View style={styles.animationContainer}>
-                    <View style={styles.glowCircle} />
-                    <LottieView
-                        source={require('../../public/animations/focus-mindfulness.json')}
-                        autoPlay
-                        loop
-                        style={styles.lottieAnimation}
-                    />
-                </View>
-
                 {/* Status Text */}
+                {/* ⚡ EDIT HERE: Change fontSize, color, fontWeight */}
                 <Animated.View style={{ opacity: fadeAnim }}>
-                    <Text style={styles.statusText}>
+                    <Text style={{
+                        fontSize: 18,           // ⚡ Status text size
+                        fontWeight: '600',      // ⚡ Boldness
+                        color: '#e5e7eb',       // ⚡ Text color
+                        textAlign: 'center',
+                        marginBottom: 48,
+                        letterSpacing: 0.3,
+                    }}>
                         {STATUS_MESSAGES[statusIndex]}
                     </Text>
                 </Animated.View>
 
                 {/* Kinetic Progress Bar */}
-                <View style={styles.progressBarContainer}>
-                    <View style={styles.progressBarBackground}>
+                {/* ⚡ EDIT HERE: Change progress bar colors, size */}
+                <View style={{
+                    width: '100%',
+                    maxWidth: 300,
+                }}>
+                    <View style={{
+                        width: '100%',
+                        height: 6,                              // ⚡ Progress bar height
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        borderRadius: 3,
+                        overflow: 'hidden',
+                    }}>
                         <Animated.View
                             style={[
-                                styles.progressBarFill,
+                                { height: '100%', borderRadius: 3 },
                                 { width: progressWidth }
                             ]}
                         >
                             <LinearGradient
-                                colors={['#a855f7', '#8b5cf6', '#7c3aed']}
+                                colors={['#a855f7', '#8b5cf6', '#7c3aed']}  // ⚡ Progress bar gradient
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 0 }}
                                 style={StyleSheet.absoluteFill}
@@ -90,63 +95,19 @@ export default function AnalyzingScreen({ navigation }: Props) {
                     </View>
                 </View>
             </View>
-        </LinearGradient>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: '#000',
     },
     content: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 32,
-    },
-    animationContainer: {
-        position: 'relative',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 64,
-    },
-    glowCircle: {
-        position: 'absolute',
-        width: 240,
-        height: 240,
-        borderRadius: 120,
-        backgroundColor: 'rgba(139, 92, 246, 0.15)',
-        shadowColor: '#8b5cf6',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 50,
-    },
-    lottieAnimation: {
-        width: 200,
-        height: 200,
-        opacity: 0.85,
-    },
-    statusText: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#e5e7eb',
-        textAlign: 'center',
-        marginBottom: 48,
-        letterSpacing: 0.3,
-    },
-    progressBarContainer: {
-        width: '100%',
-        maxWidth: 300,
-    },
-    progressBarBackground: {
-        width: '100%',
-        height: 6,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: 3,
-        overflow: 'hidden',
-    },
-    progressBarFill: {
-        height: '100%',
-        borderRadius: 3,
     },
 });

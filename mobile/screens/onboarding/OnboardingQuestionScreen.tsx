@@ -7,7 +7,7 @@ import SunoGradient from '../../components/onboarding/SunoGradient';
 import ProgressBarNeon from '../../components/onboarding/ProgressBarNeon';
 import PillOption from '../../components/onboarding/PillOption';
 
-const cambridgeLogo = require('../../assets/Other-Cambridge-Logo.png');
+const cambridgeLogo = require('../../assets/Cambridge-logo.png');
 const stressManagementLottie = require('../../public/animations/Stress Management.json');
 
 const { width } = Dimensions.get('window');
@@ -59,8 +59,8 @@ const STEPS: Step[] = [
     {
         id: 'research_info',
         type: 'info',
-        title: "Journaling improves your emotional & physical health.",
-        subtitle: "Just 15–20 minutes of expressive writing can improve wellbeing.",
+        title: "Research has shown that Journaling improves your emotional & physical health.",
+        subtitle: "",
         badges: ['Cambridge University'],
         animationType: 'journaling',
         learnMoreLink: true,
@@ -93,7 +93,7 @@ const STEPS: Step[] = [
     {
         id: 'patterns_info',
         type: 'info',
-        title: "AI reveals patterns you'd miss.",
+        title: "AI reveals patterns you might miss...",
         subtitle: "InsightAI surfaces emotional patterns and triggers you might overlook.",
         animationType: 'ai',
         features: [
@@ -267,8 +267,18 @@ export default function OnboardingQuestionScreen({ navigation }: any) {
                                 />
                             </View>
 
-                            {/* Main Headline */}
-                            <Text style={styles.premiumTitle}>
+                            {/* Main Headline - "Research has shown..." */}
+                            {/* ⚡ EDIT HERE: Change fontSize, fontWeight, textAlign below */}
+                            <Text style={{
+                                fontSize: 30,           // ⚡ Title size
+                                fontWeight: '400',      // ⚡ Boldness ('300', '400', '500', '600', '700', '800', '900')
+                                color: '#fff',
+                                textAlign: 'center',    // ⚡ 'left', 'center', or 'right'
+                                lineHeight: 36,
+                                letterSpacing: -0.5,
+                                marginBottom: 12,
+                                paddingHorizontal: 16,
+                            }}>
                                 {currentStep.title}
                             </Text>
 
@@ -299,7 +309,17 @@ export default function OnboardingQuestionScreen({ navigation }: any) {
                             {/* Standard Layout for Other Pages */}
                             {renderAnimationPlaceholder()}
 
-                            <Text style={[styles.title, currentStep.type === 'info' && styles.infoTitle]}>
+                            {/* Title - "AI reveals patterns you might miss..." */}
+                            {/* TO EDIT: Change fontSize, fontWeight, textAlign below */}
+                            <Text style={{
+                                fontSize: currentStep.type === 'info' ? 30 : 32,  // Info pages: 30, Questions: 32
+                                fontWeight: currentStep.type === 'info' ? '700' : '800',  // Info pages: bolder
+                                color: '#fff',
+                                textAlign: 'left',      // 'left', 'center', or 'right'
+                                lineHeight: currentStep.type === 'info' ? 38 : 40,
+                                letterSpacing: currentStep.type === 'info' ? -0.8 : 0,
+                                marginBottom: 16,
+                            }}>
                                 {currentStep.title}
                             </Text>
 
@@ -318,20 +338,61 @@ export default function OnboardingQuestionScreen({ navigation }: any) {
                         </>
                     )}
 
-                    {/* Feature List with Premium Spacing */}
+                    {/* Feature List - Premium Pills for AI Insights */}
                     {currentStep.features && (
-                        <View style={styles.premiumFeaturesContainer}>
-                            {currentStep.features.map((feature, index) => (
-                                <View key={index} style={styles.premiumFeatureRow}>
-                                    <Text style={styles.featureEmoji}>
-                                        {feature.icon === 'search' ? '🔍' : feature.icon === 'flash' ? '⚡' : '🧠'}
-                                    </Text>
-                                    <Text style={styles.premiumFeatureText}>
-                                        <Text style={styles.featureBold}>{feature.text.split(' ')[0]} {feature.text.split(' ')[1]}</Text>
-                                        {' '}{feature.text.split(' ').slice(2).join(' ')}
-                                    </Text>
-                                </View>
-                            ))}
+                        <View style={{
+                            alignItems: 'center',
+                            marginTop: 32,
+                            marginBottom: 40,
+                        }}>
+                            {/* Section Heading */}
+                            {/* ⚡ EDIT HERE: Change heading text, fontSize, color */}
+                            <Text style={{
+                                fontSize: 14,              // ⚡ Heading size
+                                fontWeight: '600',         // ⚡ Boldness
+                                color: '#a78bfa',          // ⚡ Purple accent color
+                                textTransform: 'uppercase',
+                                letterSpacing: 1.5,
+                                marginBottom: 20,
+                                textAlign: 'center',
+                            }}>
+                                Get insights with
+                            </Text>
+
+                            {/* Feature Pills */}
+                            <View style={{
+                                gap: 12,
+                                width: '100%',
+                                alignItems: 'center',
+                            }}>
+                                {currentStep.features.map((feature, index) => (
+                                    <View key={index} style={{
+                                        backgroundColor: 'rgba(139, 92, 246, 0.12)',  // ⚡ Pill background
+                                        borderRadius: 24,
+                                        paddingVertical: 14,
+                                        paddingHorizontal: 20,
+                                        borderWidth: 1,
+                                        borderColor: 'rgba(139, 92, 246, 0.25)',
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        gap: 12,
+                                        minWidth: '85%',
+                                        justifyContent: 'center',
+                                    }}>
+                                        <Text style={{ fontSize: 18 }}>
+                                            {feature.icon === 'search' ? '🔍' : feature.icon === 'flash' ? '⚡' : '🧠'}
+                                        </Text>
+                                        <Text style={{
+                                            fontSize: 15,           // ⚡ Feature text size
+                                            color: '#e5e7eb',       // ⚡ Text color
+                                            fontWeight: '600',      // ⚡ Text weight
+                                            textAlign: 'center',
+                                        }}>
+                                            {feature.text}
+                                        </Text>
+                                    </View>
+                                ))}
+                            </View>
                         </View>
                     )}
 
@@ -381,12 +442,7 @@ export default function OnboardingQuestionScreen({ navigation }: any) {
                     {/* Info Footer */}
                     {currentStep.type === 'info' && (
                         <View style={styles.infoFooter}>
-                            {currentStep.showPrivacyBadge && (
-                                <View style={styles.privacyBadge}>
-                                    <Ionicons name="lock-closed" size={12} color="#9ca3af" />
-                                    <Text style={styles.privacyText}>Private & Secure — processed on your device</Text>
-                                </View>
-                            )}
+                            {/* Privacy badge removed as requested */}
                             <TouchableOpacity
                                 style={styles.primaryButton}
                                 activeOpacity={0.9}
@@ -412,6 +468,9 @@ export default function OnboardingQuestionScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
+    // ========================================
+    // MAIN CONTAINER & LAYOUT
+    // ========================================
     container: {
         flex: 1,
         backgroundColor: '#000',
@@ -425,6 +484,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
         paddingTop: 12,
     },
+    
+    // ========================================
+    // HEADER & NAVIGATION
+    // ========================================
     headerRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -442,6 +505,10 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         letterSpacing: 1,
     },
+    
+    // ========================================
+    // STEP CONTAINER & ANIMATIONS
+    // ========================================
     stepContainer: {
         flex: 1,
     },
@@ -454,6 +521,11 @@ const styles = StyleSheet.create({
         width: 160,
         height: 160,
     },
+    
+    // ========================================
+    // TEXT STYLES - TITLES & SUBTITLES
+    // ========================================
+    // Main question/info page title
     title: {
         fontSize: 32,
         fontWeight: '700',
@@ -461,12 +533,14 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         lineHeight: 40,
     },
+    // Info page title variant
     infoTitle: {
         fontSize: 30,
         fontWeight: '800',
         letterSpacing: -0.8,
         lineHeight: 38,
     },
+    // Subtitle text below title
     subtitle: {
         fontSize: 17,
         color: '#d1d5db',
@@ -474,6 +548,10 @@ const styles = StyleSheet.create({
         marginBottom: 24,
         fontWeight: '500',
     },
+    
+    // ========================================
+    // STAT CONTAINER & BADGES
+    // ========================================
     statContainer: {
         flexDirection: 'row',
         alignItems: 'flex-start',
@@ -497,6 +575,10 @@ const styles = StyleSheet.create({
         lineHeight: 22,
         fontWeight: '500',
     },
+    
+    // ========================================
+    // CAMBRIDGE LOGO SECTION (OLD LAYOUT)
+    // ========================================
     cambridgeLogoContainer: {
         alignItems: 'center',
         marginTop: 24,
@@ -513,6 +595,10 @@ const styles = StyleSheet.create({
         marginTop: 8,
         fontWeight: '500',
     },
+    
+    // ========================================
+    // BADGES & FEATURES
+    // ========================================
     badgesContainer: {
         marginTop: 8,
         marginBottom: 32,
@@ -546,6 +632,8 @@ const styles = StyleSheet.create({
         color: '#9ca3af',
         fontWeight: '500',
     },
+    
+    // Feature list (old layout)
     featuresContainer: {
         gap: 16,
         marginBottom: 32,
@@ -568,6 +656,10 @@ const styles = StyleSheet.create({
         color: '#e0e7ff',
         fontWeight: '500',
     },
+    
+    // ========================================
+    // LEARN MORE LINK
+    // ========================================
     learnMoreButton: {
         marginBottom: 20,
     },
@@ -576,6 +668,10 @@ const styles = StyleSheet.create({
         color: '#a78bfa',
         fontWeight: '600',
     },
+    
+    // ========================================
+    // QUESTION OPTIONS & PILLS
+    // ========================================
     questionContent: {
         flex: 1,
         justifyContent: 'space-between',
@@ -614,6 +710,10 @@ const styles = StyleSheet.create({
         color: '#e0e7ff',
         fontWeight: '500',
     },
+    
+    // ========================================
+    // SKIP & CONTINUE BUTTONS
+    // ========================================
     skipButton: {
         alignItems: 'center',
         padding: 16,
@@ -659,6 +759,10 @@ const styles = StyleSheet.create({
     continueTextDisabled: {
         color: '#9ca3af',
     },
+    
+    // ========================================
+    // INFO PAGE FOOTER & PRIMARY BUTTON
+    // ========================================
     infoFooter: {
         marginTop: 'auto',
         marginBottom: 40,
@@ -700,19 +804,24 @@ const styles = StyleSheet.create({
         color: '#fff',
         letterSpacing: 0.3,
     },
-    // Premium Info Page Styles (Calm/Headspace inspired)
+    
+    // ========================================
+    // PREMIUM INFO PAGE STYLES (Journaling Research Page)
+    // ========================================
     premiumInfoContainer: {
         flex: 1,
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start', // Changed from 'center' to move content up
         paddingHorizontal: 24,
-        paddingTop: 40,
+        paddingTop: 20, // Reduced from 40 to move content higher
     },
+    
+    // Lottie animation with glowing background circle
     lottieGlowContainer: {
         position: 'relative',
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 48,
+        marginBottom: 32, // Reduced from 48 to tighten spacing
     },
     circularGlow: {
         position: 'absolute',
@@ -731,25 +840,32 @@ const styles = StyleSheet.create({
         height: 180,
         zIndex: 1,
     },
+    
+    // Main headline text (e.g., "Research has shown..." or "AI reveals patterns...")
+    // TO CHANGE: Font size, weight, alignment
     premiumTitle: {
-        fontSize: 28,
-        fontWeight: '800',
+        fontSize: 30,           // ← Change this to adjust title size
+        fontWeight: '400',      // ← Change this for boldness ('700', '800', '900')
         color: '#fff',
-        textAlign: 'center',
+        textAlign: 'center',      // ← Options: 'left', 'center', 'right'
         lineHeight: 36,
         letterSpacing: -0.5,
-        marginBottom: 16,
+        marginBottom: 12,       // ← Space below title
         paddingHorizontal: 16,
     },
+    
+    // Subtitle text (optional, can be removed)
     premiumSubtitle: {
         fontSize: 16,
         fontWeight: '500',
         color: '#d1d5db',
-        textAlign: 'center',
+        textAlign: 'left',
         lineHeight: 24,
-        marginBottom: 56,
+        marginBottom: 24,
         paddingHorizontal: 24,
     },
+    
+    // Cambridge University section at bottom
     premiumCambridgeSection: {
         alignItems: 'center',
         marginTop: 'auto',
@@ -779,7 +895,10 @@ const styles = StyleSheet.create({
         opacity: 0.85,
         letterSpacing: 0.2,
     },
-    // APA Study Pill Tag (Slim, Subtle)
+    
+    // ========================================
+    // APA STUDY PILL TAG (AI Patterns Page)
+    // ========================================
     apaStudyPill: {
         backgroundColor: 'rgba(139, 92, 246, 0.12)',
         borderRadius: 20,
@@ -798,7 +917,10 @@ const styles = StyleSheet.create({
         lineHeight: 20,
         textAlign: 'center',
     },
-    // Premium Feature List (Generous Spacing)
+    
+    // ========================================
+    // PREMIUM FEATURE LIST (AI Patterns Page)
+    // ========================================
     premiumFeaturesContainer: {
         gap: 24,
         marginTop: 32,
