@@ -2,6 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import Purchases from 'react-native-purchases';
 import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import AppNavigator from './navigation/AppNavigator';
 
 const REVENUECAT_IOS_API_KEY = 'test_wuTAwQKYtsAjXmbyqtuVVRCMWGF';
@@ -14,9 +15,11 @@ export default function App() {
   }, []);
 
   return (
-    <AuthProvider>
-      <AppNavigator />
-      <StatusBar style="auto" />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AppNavigator />
+        <StatusBar style="auto" />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

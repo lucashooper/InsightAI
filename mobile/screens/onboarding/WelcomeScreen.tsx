@@ -32,7 +32,10 @@ export default function WelcomeScreen({ navigation }: any) {
             <View style={styles.content}>
                 <View style={styles.header}>
                     <View style={styles.logoContainer}>
-                        <Image source={insightLogo} style={styles.logo} />
+                        <Image 
+                            source={insightLogo} 
+                            style={styles.logo} 
+                        />
                     </View>
 
                     <Text style={styles.title}>InsightAI</Text>
@@ -108,9 +111,9 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 52,
-        fontWeight: '800',
+        fontWeight: '700',
         color: '#fff',
-        marginBottom: 12,
+        marginBottom: 24,
         letterSpacing: -1.5,
         textAlign: 'center',
     },
@@ -118,7 +121,7 @@ const styles = StyleSheet.create({
         fontSize: 28,
         color: '#e5e7eb',
         textAlign: 'center',
-        fontWeight: '700',
+        fontWeight: '500',
         letterSpacing: -0.5,
         lineHeight: 36,
     },

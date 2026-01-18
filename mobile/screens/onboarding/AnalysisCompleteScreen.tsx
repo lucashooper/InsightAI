@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from '
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import SunoGradient from '../../components/onboarding/SunoGradient';
 
 const { width } = Dimensions.get('window');
 
@@ -64,11 +65,9 @@ export default function AnalysisCompleteScreen({ navigation }: Props) {
     };
 
     return (
-        <LinearGradient
-            colors={['#0a0a0a', '#1a1a1a', '#2a2a2a']}
-            locations={[0, 0.5, 1]}
-            style={styles.container}
-        >
+        <View style={styles.container}>
+            <SunoGradient />
+            
             <View style={styles.content}>
                 {/* Success Checkmark with Title */}
                 <View style={styles.headerSection}>
@@ -150,13 +149,14 @@ export default function AnalysisCompleteScreen({ navigation }: Props) {
                     </TouchableOpacity>
                 </Animated.View>
             </View>
-        </LinearGradient>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: '#000',
     },
     content: {
         flex: 1,
