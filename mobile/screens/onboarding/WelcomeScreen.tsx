@@ -3,17 +3,31 @@ import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar, Image 
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import SunoGradient from '../../components/onboarding/SunoGradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
 const insightLogo = require('../../assets/192px-Insight-ICON.png');
 
 export default function WelcomeScreen({ navigation }: any) {
+    const handleSkip = async () => {
+        await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+        navigation.replace('MainTabs');
+    };
+
     return (
         <View style={styles.container}>
             <StatusBar barStyle="light-content" />
 
             <SunoGradient />
+
+            <TouchableOpacity 
+                style={styles.skipButton}
+                onPress={handleSkip}
+                activeOpacity={0.7}
+            >
+                <Text style={styles.skipText}>Skip</Text>
+            </TouchableOpacity>
 
             <View style={styles.content}>
                 <View style={styles.header}>
@@ -55,6 +69,20 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#000',
+    },
+    skipButton: {
+        position: 'absolute',
+        top: 60,
+        right: 20,
+        zIndex: 10,
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+    },
+    skipText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#a855f7',
+        letterSpacing: 0.3,
     },
     content: {
         flex: 1,

@@ -85,7 +85,6 @@ export default function LoginScreen({ navigation }: any) {
               <Image source={insightLogo} style={styles.logo} />
             </View>
             <Text style={styles.title}>InsightAI</Text>
-            <Text style={styles.subtitle}>Your Personal AI Journal</Text>
           </View>
 
           {/* Login Form */}
@@ -95,6 +94,7 @@ export default function LoginScreen({ navigation }: any) {
               style={styles.formGradient}
             >
               <Text style={styles.formTitle}>Sign In</Text>
+
 
             <TextInput
               style={styles.input}
@@ -169,33 +169,24 @@ const styles = StyleSheet.create({
   logoWrapper: {
     width: 96,
     height: 96,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(139, 92, 246, 0.5)',
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
-    backgroundColor: 'rgba(139, 92, 246, 0.08)',
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   logo: {
-    width: 64,
-    height: 64,
+    width: 96,
+    height: 96,
+    borderRadius: 24,
   },
   title: {
     fontSize: 32,
     fontWeight: '700',
     color: '#fff',
     marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontWeight: '400',
   },
   formContainer: {
     borderRadius: 20,
@@ -216,7 +207,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
     marginBottom: 24,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   input: {
     backgroundColor: '#1a1a1a',

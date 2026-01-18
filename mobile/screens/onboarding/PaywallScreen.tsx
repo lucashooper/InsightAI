@@ -1,15 +1,83 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, ActivityIndicator, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import PlanCard from '../../components/onboarding/PlanCard';
+import Purchases, { PurchasesOffering, PurchasesPackage, CustomerInfo } from 'react-native-purchases';
+
+const ENTITLEMENT_ID = 'pro';
 
 export default function PaywallScreen({ navigation }: any) {
+  const [offering, setOffering] = useState<PurchasesOffering | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPurchasing, setIsPurchasing] = useState(false);
 
-  const handleStartJourney = () => {
-    // TODO: Implement purchase logic
-    navigation.navigate('MainTabs');
+  useEffect(() => {
+    const loadOfferings = async () => {
+      try {
+        const offerings = await Purchases.getOfferings();
+        setOffering(offerings.current ?? null);
+      } catch (error) {
+        Alert.alert('Error', 'Unable to load subscription options. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadOfferings();
+  }, []);
+
+  const getMonthlyPackage = (): PurchasesPackage | null => {
+    if (!offering) return null;
+    const pkg = offering.availablePackages.find((p) => p.identifier === 'monthly');
+    return pkg ?? offering.availablePackages[0] ?? null;
+  };
+
+  const handleCustomerInfo = (customerInfo: CustomerInfo) => {
+    const isProActive = !!customerInfo.entitlements.active[ENTITLEMENT_ID];
+    if (isProActive) {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'MainTabs' }],
+      });
+    } else {
+      Alert.alert('Subscription not active', 'Your purchase could not be confirmed. Please contact support if this persists.');
+    }
+  };
+
+  const handleStartJourney = async () => {
+    const monthly = getMonthlyPackage();
+    if (!monthly) {
+      Alert.alert('Unavailable', 'No subscription options are currently available. Please try again later.');
+      return;
+    }
+
+    try {
+      setIsPurchasing(true);
+      const { customerInfo } = await Purchases.purchasePackage(monthly);
+      handleCustomerInfo(customerInfo);
+    } catch (error: any) {
+      if (error?.userCancelled) {
+        // User cancelled, no need to show an error
+        return;
+      }
+      Alert.alert('Purchase failed', 'Something went wrong while processing your purchase. Please try again.');
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
+
+  const handleRestorePurchases = async () => {
+    try {
+      setIsPurchasing(true);
+      const { customerInfo } = await Purchases.restorePurchases();
+      handleCustomerInfo(customerInfo);
+    } catch (error) {
+      Alert.alert('Restore failed', 'Could not restore purchases. Please try again later.');
+    } finally {
+      setIsPurchasing(false);
+    }
   };
 
   return (
@@ -30,11 +98,11 @@ export default function PaywallScreen({ navigation }: any) {
           </Text>
         </View>
 
-        {/* Pricing Card - single monthly plan matching Stripe (£5/month) */}
+        {/* Pricing Card - single monthly plan backed by App Store subscription */}
         <View style={styles.plansContainer}>
           <PlanCard
             title="Pro Monthly"
-            price="£5.00"
+            price={getMonthlyPackage()?.product.priceString ?? '£8.99'}
             period="month"
             selected={true}
             popular={true}
@@ -107,9 +175,10 @@ export default function PaywallScreen({ navigation }: any) {
 
         {/* CTA Button */}
         <TouchableOpacity
-          style={styles.ctaButton}
+          style={[styles.ctaButton, isPurchasing && { opacity: 0.7 }]}
           activeOpacity={0.9}
           onPress={handleStartJourney}
+          disabled={isPurchasing || isLoading}
         >
           <LinearGradient
             colors={['#a855f7', '#8b5cf6', '#7c3aed']}
@@ -117,17 +186,21 @@ export default function PaywallScreen({ navigation }: any) {
             end={{ x: 1, y: 1 }}
             style={styles.ctaGradient}
           >
-            <Text style={styles.ctaText}>Continue to app</Text>
+            {isPurchasing ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.ctaText}>Continue to app</Text>
+            )}
           </LinearGradient>
         </TouchableOpacity>
 
         <Text style={styles.noteText}>
-          Mobile subscriptions are coming soon. To upgrade today, use the web app at myinsightai.app.
+          Your subscription is managed securely through the App Store. You can change or cancel it anytime in your Apple account settings.
         </Text>
 
         {/* Footer Links */}
         <View style={styles.footer}>
-          <TouchableOpacity onPress={() => {}}>
+          <TouchableOpacity onPress={handleRestorePurchases}>
             <Text style={styles.footerLink}>Restore Purchases</Text>
           </TouchableOpacity>
           <Text style={styles.footerDivider}>•</Text>
