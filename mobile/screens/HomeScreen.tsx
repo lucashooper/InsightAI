@@ -435,7 +435,6 @@ export default function HomeScreen({ navigation }: any) {
 
       {/* Clean Header */}
       <View style={styles.header}>
-        <Image source={insightLogo} style={styles.appLogo} />
         <Text style={styles.headerTitle}>Journal</Text>
         <View style={styles.headerRight}>
           {streak.currentStreak > 0 && (
@@ -461,15 +460,6 @@ export default function HomeScreen({ navigation }: any) {
         </View>
       </View>
 
-      {/* Emotional Home Header */}
-      <View style={styles.emotionalHomeHeader}>
-        <View style={styles.greetingRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.greetingText}>{getGreeting()}</Text>
-            <Text style={styles.emotionalSubline}>{getMicroMessage()}</Text>
-          </View>
-        </View>
-      </View>
 
       {/* Search + Filters */}
       <View style={styles.searchSection}>

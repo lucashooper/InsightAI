@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme, ThemeName } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -16,6 +17,7 @@ interface UserProfile {
 
 export default function SettingsScreen({ navigation }: any) {
   const { user, signOut } = useAuth();
+  const { theme, themeName, setTheme } = useTheme();
   const [syncing, setSyncing] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -25,6 +27,14 @@ export default function SettingsScreen({ navigation }: any) {
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [feedbackSuccess, setFeedbackSuccess] = useState(false);
+
+  const themes: { name: ThemeName; label: string; emoji: string }[] = [
+    { name: 'dark', label: 'Dark', emoji: '🌑' },
+    { name: 'vibrant', label: 'Vibrant', emoji: '✨' },
+    { name: 'ocean', label: 'Ocean', emoji: '🌊' },
+    { name: 'forest', label: 'Forest', emoji: '🌲' },
+    { name: 'sunset', label: 'Sunset', emoji: '🌅' },
+  ];
 
   useEffect(() => {
     if (user) {
@@ -266,17 +276,16 @@ export default function SettingsScreen({ navigation }: any) {
 
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Background Gradient */}
       <LinearGradient
-        colors={['#0a0a0a', '#050505', '#000000']}
+        colors={theme.colors.backgroundGradient}
         style={styles.backgroundGradient}
       />
 
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Settings</Text>
-        <Text style={styles.headerSubtitle}>Manage your account</Text>
+      <View style={[styles.header, { backgroundColor: theme.colors.background, borderBottomColor: theme.colors.border }]}>
+        <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>Settings</Text>
       </View>
 
       <ScrollView style={styles.content}>
@@ -347,6 +356,36 @@ export default function SettingsScreen({ navigation }: any) {
               </View>
             </LinearGradient>
           </TouchableOpacity>
+        </View>
+
+        {/* Theme Selection */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🎨 Theme</Text>
+          <View style={styles.themeGrid}>
+            {themes.map((t) => (
+              <TouchableOpacity
+                key={t.name}
+                style={[
+                  styles.themeOption,
+                  themeName === t.name && styles.themeOptionActive
+                ]}
+                onPress={() => setTheme(t.name)}
+              >
+                <Text style={styles.themeEmoji}>{t.emoji}</Text>
+                <Text style={[
+                  styles.themeLabel,
+                  themeName === t.name && styles.themeLabelActive
+                ]}>
+                  {t.label}
+                </Text>
+                {themeName === t.name && (
+                  <View style={styles.themeCheckmark}>
+                    <Ionicons name="checkmark-circle" size={20} color="#8b5cf6" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         {/* Subscription & Usage */}
@@ -726,7 +765,45 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(16, 185, 129, 0.2)',
   },
   feedbackSuccessText: {
-    color: '#10b981',
     fontSize: 14,
+    color: '#10b981',
+    fontWeight: '600',
+  },
+  themeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  themeOption: {
+    width: '30%',
+    aspectRatio: 1,
+    backgroundColor: 'rgba(10, 10, 10, 0.95)',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#1a1a1a',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    position: 'relative',
+  },
+  themeOptionActive: {
+    borderColor: '#8b5cf6',
+    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+  },
+  themeEmoji: {
+    fontSize: 32,
+  },
+  themeLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#999',
+  },
+  themeLabelActive: {
+    color: '#8b5cf6',
+  },
+  themeCheckmark: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
   },
 });

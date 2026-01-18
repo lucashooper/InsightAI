@@ -14,6 +14,7 @@ import SignupScreen from '../screens/SignupScreen';
 import HomeScreen from '../screens/HomeScreen';
 import EntryDetailScreen from '../screens/EntryDetailScreen';
 import CreateEntryScreen from '../screens/CreateEntryScreen';
+import DashboardScreenNew from '../screens/DashboardScreenNew';
 import DashboardScreen from '../screens/DashboardScreen';
 import PlaybookScreen from '../screens/PlaybookScreen';
 import SettingsScreen from '../screens/SettingsScreen';
@@ -54,6 +55,7 @@ function CenterFabButton() {
 function MainTabs() {
   return (
     <Tab.Navigator
+      initialRouteName="Dashboard"
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false, // Hide all labels
@@ -70,20 +72,20 @@ function MainTabs() {
       }}
     >
       <Tab.Screen
+        name="Dashboard"
+        component={DashboardScreenNew}
+        options={{
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="home" size={24} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
         name="Notes"
         component={HomeScreen}
         options={{
           tabBarIcon: ({ color }) => (
             <Ionicons name="journal" size={24} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Dashboard"
-        component={DashboardScreen}
-        options={{
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="stats-chart" size={24} color={color} />
           ),
         }}
       />
@@ -167,6 +169,7 @@ export default function AppNavigator() {
           <Stack.Screen name="MainTabs" component={MainTabs} />
           <Stack.Screen name="EntryDetail" component={EntryDetailScreen} />
           <Stack.Screen name="CreateEntry" component={CreateEntryScreen} />
+          <Stack.Screen name="Analytics" component={DashboardScreen} />
         </Stack.Navigator>
       ) : (
         // Auth screens
