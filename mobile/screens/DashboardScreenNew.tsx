@@ -15,7 +15,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { useNavigation } from '@react-navigation/native';
-import MindseraOrb from '../components/MindseraOrb';
+const orbImage = require('../public/InsightAI-Orb.png');
 
 const { width } = Dimensions.get('window');
 
@@ -160,34 +160,42 @@ export default function DashboardScreenNew() {
         {/* Header - Profile Picture */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.profilePictureContainer}>
-            {profilePicture ? (
-              <Image source={{ uri: profilePicture }} style={styles.profilePicture} />
-            ) : (
-              <View style={styles.profilePlaceholder}>
-                <Ionicons name="person" size={24} color="rgba(255, 255, 255, 0.6)" />
-              </View>
-            )}
+            <LinearGradient
+              colors={['rgba(139, 92, 246, 0.6)', 'rgba(99, 102, 241, 0.4)']}
+              style={styles.profileGradientBorder}
+            >
+              {profilePicture ? (
+                <Image source={{ uri: profilePicture }} style={styles.profilePicture} />
+              ) : (
+                <View style={styles.profilePlaceholder}>
+                  <Ionicons name="person" size={24} color="rgba(255, 255, 255, 0.6)" />
+                </View>
+              )}
+            </LinearGradient>
           </TouchableOpacity>
           <View style={styles.headerIcons}>
-            <TouchableOpacity style={styles.streakButton}>
+            <View style={styles.streakInline}>
               <Text style={styles.streakEmoji}>🔥</Text>
               <Text style={styles.streakCount}>{streak}</Text>
-            </TouchableOpacity>
+            </View>
           </View>
         </View>
 
-        {/* Orb Section with Centered Greeting (SVG fallback active) */}
+        {/* Orb Section with Centered Greeting */}
         <View style={styles.orbSection}>
-          <MindseraOrb size={285} palette="calm" useWarmAccent>
-            <View style={styles.greetingInOrb}>
-              <Text style={[styles.greeting, { color: 'rgba(255, 255, 255, 0.85)' }]}>
-                Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}
-              </Text>
-              <Text style={[styles.userName, { color: 'rgba(255, 255, 255, 0.95)' }]}>
-                {userName}
-              </Text>
-            </View>
-          </MindseraOrb>
+          <Image 
+            source={orbImage} 
+            style={styles.orbImage}
+            resizeMode="contain"
+          />
+          <View style={styles.greetingInOrb}>
+            <Text style={[styles.greeting, { color: 'rgba(255, 255, 255, 0.85)' }]}>
+              Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}
+            </Text>
+            <Text style={[styles.userName, { color: 'rgba(255, 255, 255, 0.95)' }]}>
+              {userName}
+            </Text>
+          </View>
 
           {/* Streak Badge */}
           {streak > 0 && (
@@ -209,13 +217,15 @@ export default function DashboardScreenNew() {
               onPress={() => navigation.navigate('CreateEntry')}
               activeOpacity={0.8}
             >
-              <View style={styles.glassmorphicButton}>
-                <View style={styles.blurFallback} />
+              <LinearGradient
+                colors={['rgba(139, 92, 246, 0.35)', 'rgba(99, 102, 241, 0.25)']}
+                style={styles.glassmorphicButton}
+              >
                 <LinearGradient colors={["rgba(255,255,255,0.18)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.8,y:1}} style={styles.innerHighlight} pointerEvents="none" />
                 <View style={styles.iconWrap}>
                   <Ionicons name="create-outline" size={22} color="rgba(255, 255, 255, 0.95)" />
                 </View>
-              </View>
+              </LinearGradient>
             </TouchableOpacity>
             <Text style={[styles.actionLabel, { color: 'rgba(255, 255, 255, 0.7)' }]}>Write</Text>
           </View>
@@ -226,13 +236,15 @@ export default function DashboardScreenNew() {
               onPress={() => navigation.navigate('Notes')}
               activeOpacity={0.8}
             >
-              <View style={styles.glassmorphicButton}>
-                <View style={styles.blurFallback} />
+              <LinearGradient
+                colors={['rgba(139, 92, 246, 0.35)', 'rgba(99, 102, 241, 0.25)']}
+                style={styles.glassmorphicButton}
+              >
                 <LinearGradient colors={["rgba(255,255,255,0.18)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.8,y:1}} style={styles.innerHighlight} pointerEvents="none" />
                 <View style={styles.iconWrap}>
                   <Ionicons name="book-outline" size={22} color="rgba(255, 255, 255, 0.95)" />
                 </View>
-              </View>
+              </LinearGradient>
             </TouchableOpacity>
             <Text style={[styles.actionLabel, { color: 'rgba(255, 255, 255, 0.7)' }]}>Journal</Text>
           </View>
@@ -243,13 +255,15 @@ export default function DashboardScreenNew() {
               onPress={() => navigation.navigate('Analytics')}
               activeOpacity={0.8}
             >
-              <View style={styles.glassmorphicButton}>
-                <View style={styles.blurFallback} />
+              <LinearGradient
+                colors={['rgba(139, 92, 246, 0.35)', 'rgba(99, 102, 241, 0.25)']}
+                style={styles.glassmorphicButton}
+              >
                 <LinearGradient colors={["rgba(255,255,255,0.18)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.8,y:1}} style={styles.innerHighlight} pointerEvents="none" />
                 <View style={styles.iconWrap}>
                   <Ionicons name="analytics-outline" size={22} color="rgba(255, 255, 255, 0.95)" />
                 </View>
-              </View>
+              </LinearGradient>
             </TouchableOpacity>
             <Text style={[styles.actionLabel, { color: 'rgba(255, 255, 255, 0.7)' }]}>Insights</Text>
           </View>
@@ -260,13 +274,15 @@ export default function DashboardScreenNew() {
               onPress={() => navigation.navigate('Playbook')}
               activeOpacity={0.8}
             >
-              <View style={styles.glassmorphicButton}>
-                <View style={styles.blurFallback} />
+              <LinearGradient
+                colors={['rgba(139, 92, 246, 0.35)', 'rgba(99, 102, 241, 0.25)']}
+                style={styles.glassmorphicButton}
+              >
                 <LinearGradient colors={["rgba(255,255,255,0.18)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.8,y:1}} style={styles.innerHighlight} pointerEvents="none" />
                 <View style={styles.iconWrap}>
                   <Ionicons name="flash-outline" size={22} color="rgba(255, 255, 255, 0.95)" />
                 </View>
-              </View>
+              </LinearGradient>
             </TouchableOpacity>
             <Text style={[styles.actionLabel, { color: 'rgba(255, 255, 255, 0.7)' }]}>Playbook</Text>
           </View>
@@ -396,12 +412,18 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   profilePictureContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  profileGradientBorder: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    padding: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   profilePicture: {
     width: 40,
@@ -447,8 +469,16 @@ const styles = StyleSheet.create({
   },
   orbSection: {
     alignItems: 'center',
-    paddingVertical: 40,
+    justifyContent: 'center',
+    height: 360,
     position: 'relative',
+    marginBottom: 20,
+  },
+  orbImage: {
+    width: 320,
+    height: 320,
+    position: 'absolute',
+    top: 20,
   },
   orbContent: {
     alignItems: 'center',
@@ -580,6 +610,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  streakInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   streakCount: {
     fontSize: 16,
