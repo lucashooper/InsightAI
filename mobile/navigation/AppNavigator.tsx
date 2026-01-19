@@ -149,8 +149,38 @@ export default function AppNavigator() {
     );
   }
 
+  const darkTheme = {
+    dark: true,
+    colors: {
+      primary: '#8b5cf6',
+      background: '#000000',
+      card: '#0a0a0a',
+      text: '#ffffff',
+      border: '#1a1a1a',
+      notification: '#8b5cf6',
+    },
+    fonts: {
+      regular: {
+        fontFamily: 'System',
+        fontWeight: '400' as const,
+      },
+      medium: {
+        fontFamily: 'System',
+        fontWeight: '500' as const,
+      },
+      bold: {
+        fontFamily: 'System',
+        fontWeight: '700' as const,
+      },
+      heavy: {
+        fontFamily: 'System',
+        fontWeight: '900' as const,
+      },
+    },
+  };
+
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={darkTheme}>
       {user ? (
         // Authenticated screens
         <Stack.Navigator

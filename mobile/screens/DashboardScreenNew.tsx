@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Dimensions,
   Image,
+  Animated,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -28,6 +30,7 @@ interface EmotionalState {
 export default function DashboardScreenNew() {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const rotateAnim = useRef(new Animated.Value(0)).current;
   const navigation = useNavigation<any>();
   const [loading, setLoading] = useState(true);
   const [emotionalState, setEmotionalState] = useState<EmotionalState>({
@@ -44,6 +47,17 @@ export default function DashboardScreenNew() {
     loadDashboardData();
     loadUserProfile();
   }, [user]);
+
+  useEffect(() => {
+    // Subtle slow rotation animation (45s cycle)
+    Animated.loop(
+      Animated.timing(rotateAnim, {
+        toValue: 1,
+        duration: 45000,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, []);
 
   const loadUserProfile = async () => {
     if (!user) return;
@@ -183,9 +197,19 @@ export default function DashboardScreenNew() {
 
         {/* Orb Section with Centered Greeting */}
         <View style={styles.orbSection}>
-          <Image 
+          <Animated.Image 
             source={orbImage} 
-            style={styles.orbImage}
+            style={[
+              styles.orbImage,
+              {
+                transform: [{
+                  rotate: rotateAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['0deg', '360deg']
+                  })
+                }]
+              }
+            ]}
             resizeMode="contain"
           />
           <View style={styles.greetingInOrb}>
@@ -209,7 +233,7 @@ export default function DashboardScreenNew() {
         </View>
 
 
-        {/* Quick Actions */}
+        {/* Primary Actions */}
         <View style={styles.actionsSection}>
           <View style={styles.actionItem}>
             <TouchableOpacity 
@@ -218,73 +242,54 @@ export default function DashboardScreenNew() {
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={['rgba(139, 92, 246, 0.35)', 'rgba(99, 102, 241, 0.25)']}
+                colors={['rgba(139, 92, 246, 0.5)', 'rgba(124, 58, 237, 0.4)']}
                 style={styles.glassmorphicButton}
               >
-                <LinearGradient colors={["rgba(255,255,255,0.18)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.8,y:1}} style={styles.innerHighlight} pointerEvents="none" />
+                <LinearGradient colors={["rgba(255,255,255,0.22)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.8,y:1}} style={styles.innerHighlight} pointerEvents="none" />
                 <View style={styles.iconWrap}>
-                  <Ionicons name="create-outline" size={22} color="rgba(255, 255, 255, 0.95)" />
+                  <Ionicons name="create-outline" size={24} color="rgba(255, 255, 255, 0.98)" />
                 </View>
               </LinearGradient>
             </TouchableOpacity>
-            <Text style={[styles.actionLabel, { color: 'rgba(255, 255, 255, 0.7)' }]}>Write</Text>
+            <Text style={[styles.actionLabel, { color: 'rgba(255, 255, 255, 0.8)' }]}>Write</Text>
           </View>
 
           <View style={styles.actionItem}>
             <TouchableOpacity 
               style={styles.actionCircle}
-              onPress={() => navigation.navigate('Notes')}
+              onPress={() => Alert.alert('Coming Soon', 'Voice journaling will be available soon!')}
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={['rgba(139, 92, 246, 0.35)', 'rgba(99, 102, 241, 0.25)']}
+                colors={['rgba(139, 92, 246, 0.5)', 'rgba(124, 58, 237, 0.4)']}
                 style={styles.glassmorphicButton}
               >
-                <LinearGradient colors={["rgba(255,255,255,0.18)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.8,y:1}} style={styles.innerHighlight} pointerEvents="none" />
+                <LinearGradient colors={["rgba(255,255,255,0.22)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.8,y:1}} style={styles.innerHighlight} pointerEvents="none" />
                 <View style={styles.iconWrap}>
-                  <Ionicons name="book-outline" size={22} color="rgba(255, 255, 255, 0.95)" />
+                  <Ionicons name="mic-outline" size={24} color="rgba(255, 255, 255, 0.98)" />
                 </View>
               </LinearGradient>
             </TouchableOpacity>
-            <Text style={[styles.actionLabel, { color: 'rgba(255, 255, 255, 0.7)' }]}>Journal</Text>
+            <Text style={[styles.actionLabel, { color: 'rgba(255, 255, 255, 0.8)' }]}>Speak</Text>
           </View>
 
           <View style={styles.actionItem}>
             <TouchableOpacity 
               style={styles.actionCircle}
-              onPress={() => navigation.navigate('Analytics')}
+              onPress={() => Alert.alert('Coming Soon', 'Document scanning will be available soon!')}
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={['rgba(139, 92, 246, 0.35)', 'rgba(99, 102, 241, 0.25)']}
+                colors={['rgba(139, 92, 246, 0.5)', 'rgba(124, 58, 237, 0.4)']}
                 style={styles.glassmorphicButton}
               >
-                <LinearGradient colors={["rgba(255,255,255,0.18)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.8,y:1}} style={styles.innerHighlight} pointerEvents="none" />
+                <LinearGradient colors={["rgba(255,255,255,0.22)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.8,y:1}} style={styles.innerHighlight} pointerEvents="none" />
                 <View style={styles.iconWrap}>
-                  <Ionicons name="analytics-outline" size={22} color="rgba(255, 255, 255, 0.95)" />
+                  <Ionicons name="scan-outline" size={24} color="rgba(255, 255, 255, 0.98)" />
                 </View>
               </LinearGradient>
             </TouchableOpacity>
-            <Text style={[styles.actionLabel, { color: 'rgba(255, 255, 255, 0.7)' }]}>Insights</Text>
-          </View>
-
-          <View style={styles.actionItem}>
-            <TouchableOpacity 
-              style={styles.actionCircle}
-              onPress={() => navigation.navigate('Playbook')}
-              activeOpacity={0.8}
-            >
-              <LinearGradient
-                colors={['rgba(139, 92, 246, 0.35)', 'rgba(99, 102, 241, 0.25)']}
-                style={styles.glassmorphicButton}
-              >
-                <LinearGradient colors={["rgba(255,255,255,0.18)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.8,y:1}} style={styles.innerHighlight} pointerEvents="none" />
-                <View style={styles.iconWrap}>
-                  <Ionicons name="flash-outline" size={22} color="rgba(255, 255, 255, 0.95)" />
-                </View>
-              </LinearGradient>
-            </TouchableOpacity>
-            <Text style={[styles.actionLabel, { color: 'rgba(255, 255, 255, 0.7)' }]}>Playbook</Text>
+            <Text style={[styles.actionLabel, { color: 'rgba(255, 255, 255, 0.8)' }]}>Scan</Text>
           </View>
         </View>
 
@@ -543,25 +548,24 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   actionCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     overflow: 'hidden',
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
   glassmorphicButton: {
     width: '100%',
     height: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 28,
+    borderRadius: 32,
     overflow: 'hidden',
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 14,
-    elevation: 6,
   },
   blurFallback: {
     ...StyleSheet.absoluteFillObject,

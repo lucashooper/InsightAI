@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -16,113 +14,119 @@ import { supabase } from '../lib/supabase';
 
 export default function CreateEntryScreen({ navigation }: any) {
   const { user } = useAuth();
-  const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [showMoodPicker, setShowMoodPicker] = useState(false);
   const [mood, setMood] = useState('');
-  const [saving, setSaving] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasUnsavedChanges = useRef(false);
 
   const moods = ['😊', '😔', '😰', '😡', '😌', '🤔', '😴', '🎉'];
 
-  const handleSave = async () => {
-    if (!content.trim()) {
-      Alert.alert('Error', 'Please write something in your entry');
-      return;
+  // Auto-save functionality
+  useEffect(() => {
+    if (!content.trim() || !hasUnsavedChanges.current) return;
+
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
     }
 
-    setSaving(true);
+    // Set new timeout for auto-save (2 seconds after user stops typing)
+    saveTimeoutRef.current = setTimeout(() => {
+      handleAutoSave();
+    }, 2000);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [content]);
+
+  const handleAutoSave = async () => {
+    if (!content.trim()) return;
+
     try {
       const { error } = await supabase
         .from('notes')
         .insert({
           user_id: user?.id,
-          title: title.trim() || 'Untitled Entry',
+          title: 'Journal Entry',
           content: content.trim(),
-          // Desktop uses mood_score; for now we rely on AI analysis to infer mood,
-          // so we don't send the emoji to a non-existent 'mood' column.
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         });
 
-      if (error) throw error;
-
-      Alert.alert('Success', 'Entry saved!', [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack(),
-        },
-      ]);
+      if (!error) {
+        hasUnsavedChanges.current = false;
+        navigation.goBack();
+      }
     } catch (error) {
-      console.error('Error saving entry:', error);
-      Alert.alert('Error', 'Failed to save entry');
-    } finally {
-      setSaving(false);
+      console.error('Auto-save error:', error);
     }
   };
 
+  const handleContentChange = (text: string) => {
+    setContent(text);
+    hasUnsavedChanges.current = true;
+  };
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={0}
-    >
-      {/* Header */}
+    <View style={styles.container}>
+      {/* Minimal Header */}
       <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>New Entry</Text>
-          <TouchableOpacity onPress={handleSave} disabled={saving}>
-            <Text style={[styles.saveButton, saving && styles.saveButtonDisabled]}>
-              {saving ? 'Saving...' : 'Save'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
+          <Ionicons name="arrow-back" size={24} color="rgba(255, 255, 255, 0.7)" />
+        </TouchableOpacity>
+        <TouchableOpacity 
+          onPress={() => setShowMoodPicker(!showMoodPicker)} 
+          style={styles.headerButton}
+        >
+          <Ionicons name="happy-outline" size={24} color="rgba(255, 255, 255, 0.7)" />
+        </TouchableOpacity>
+      </View>
 
-      <ScrollView 
-        style={styles.content}
-        contentContainerStyle={{ paddingBottom: 32 }}
-        keyboardShouldPersistTaps="handled"
+      {/* Mood Picker Overlay */}
+      {showMoodPicker && (
+        <View style={styles.moodPickerOverlay}>
+          <View style={styles.moodGrid}>
+            {moods.map((emoji) => (
+              <TouchableOpacity
+                key={emoji}
+                style={[
+                  styles.moodOption,
+                  mood === emoji && styles.moodOptionActive,
+                ]}
+                onPress={() => {
+                  setMood(emoji);
+                  setShowMoodPicker(false);
+                }}
+              >
+                <Text style={styles.moodEmoji}>{emoji}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Full-Screen Writing Canvas */}
+      <KeyboardAvoidingView
+        style={styles.writingArea}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
       >
-        {/* Mood Selector */}
-        <Text style={styles.label}>How are you feeling?</Text>
-        <View style={styles.moodGrid}>
-          {moods.map((emoji) => (
-            <TouchableOpacity
-              key={emoji}
-              style={[
-                styles.moodOption,
-                mood === emoji && styles.moodOptionActive,
-              ]}
-              onPress={() => setMood(emoji)}
-            >
-              <Text style={styles.moodEmoji}>{emoji}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Title Input */}
-        <Text style={styles.label}>Title (optional)</Text>
-        <TextInput
-          style={styles.titleInput}
-          value={title}
-          onChangeText={setTitle}
-          placeholder="Give your entry a title..."
-          placeholderTextColor="#666"
-        />
-
-        {/* Content Input */}
-        <Text style={styles.label}>What's on your mind?</Text>
         <TextInput
           style={styles.contentInput}
           value={content}
-          onChangeText={setContent}
-          placeholder="Write your thoughts here..."
-          placeholderTextColor="#666"
+          onChangeText={handleContentChange}
+          placeholder="Write here..."
+          placeholderTextColor="rgba(255, 255, 255, 0.3)"
           multiline
+          autoFocus
           textAlignVertical="top"
         />
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -135,41 +139,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    paddingHorizontal: 20,
     paddingTop: 60,
-    backgroundColor: '#0a0a0a',
-    borderBottomWidth: 1,
-    borderBottomColor: '#1a1a1a',
+    paddingBottom: 16,
+    backgroundColor: '#000',
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
+  headerButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  saveButton: {
-    color: '#8b5cf6',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  saveButtonDisabled: {
-    color: '#666',
-  },
-  content: {
-    flex: 1,
-    padding: 16,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#fff',
-    marginBottom: 12,
-    marginTop: 16,
+  moodPickerOverlay: {
+    position: 'absolute',
+    top: 120,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(15, 15, 15, 0.98)',
+    borderRadius: 16,
+    padding: 20,
+    zIndex: 100,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
   },
   moodGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
-    marginBottom: 8,
   },
   moodOption: {
     width: 56,
@@ -182,30 +178,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   moodOptionActive: {
-    backgroundColor: '#8b5cf620',
+    backgroundColor: 'rgba(139, 92, 246, 0.2)',
     borderColor: '#8b5cf6',
     borderWidth: 2,
   },
   moodEmoji: {
     fontSize: 28,
   },
-  titleInput: {
-    backgroundColor: '#0f0f0f',
-    borderRadius: 8,
-    padding: 16,
-    color: '#fff',
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#1a1a1a',
+  writingArea: {
+    flex: 1,
   },
   contentInput: {
-    backgroundColor: '#0f0f0f',
-    borderRadius: 8,
-    padding: 16,
-    color: '#fff',
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#1a1a1a',
-    minHeight: 300,
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 20,
+    color: 'rgba(255, 255, 255, 0.95)',
+    fontSize: 17,
+    lineHeight: 26,
+    fontWeight: '400',
   },
 });
