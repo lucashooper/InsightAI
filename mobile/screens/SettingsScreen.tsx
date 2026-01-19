@@ -438,6 +438,21 @@ export default function SettingsScreen({ navigation }: any) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Actions</Text>
 
+          <TouchableOpacity 
+            style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, marginBottom: 12 }]} 
+            onPress={() => {
+              console.log('[NAV] Preview onboarding tapped');
+              navigation.navigate('Welcome');
+            }}
+          >
+            <View style={styles.cardGradient}>
+              <View style={styles.actionRow}>
+                <Ionicons name="eye" size={20} color="#8b5cf6" />
+                <Text style={[styles.actionText, { color: '#8b5cf6' }]}>Preview Onboarding</Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+
           <TouchableOpacity style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]} onPress={handleSignOut}>
             <View style={styles.cardGradient}>
               <View style={styles.actionRow}>

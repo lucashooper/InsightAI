@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { LineChart } from 'react-native-chart-kit';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { useNavigation } from '@react-navigation/native';
 
@@ -36,7 +37,13 @@ interface ChartData {
 
 export default function DashboardScreen() {
   const { user } = useAuth();
+  const { theme, themeName } = useTheme();
   const navigation = useNavigation<any>();
+  
+  // Log dashboard load with theme
+  useEffect(() => {
+    console.log('[DashboardTheme]:', { themeName });
+  }, [themeName]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [chartData, setChartData] = useState<ChartData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,7 +74,9 @@ export default function DashboardScreen() {
   const chartOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    loadStats();
+    if (user) {
+      loadStats();
+    }
   }, [user]);
 
   useEffect(() => {
@@ -241,16 +250,16 @@ export default function DashboardScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Subtle Background Gradient */}
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {/* Active Theme Background */}
       <LinearGradient
-        colors={['#0a0a0a', '#050505', '#000000']}
+        colors={theme.colors.backgroundGradient}
         style={styles.backgroundGradient}
       />
 
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Dashboard</Text>
+      <View style={[styles.header, { backgroundColor: 'transparent', borderBottomColor: theme.colors.border }]}>
+        <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>Dashboard</Text>
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
@@ -260,150 +269,133 @@ export default function DashboardScreen() {
           </View>
         ) : stats ? (
           <>
-            {/* Emotional overview hero */}
-            <View style={styles.heroCard}>
-              <LinearGradient
-                colors={['#111827', '#020617']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.heroGradient}
-              >
-                <View style={styles.heroHeaderRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.heroTitle}>This week at a glance</Text>
+            {/* Refined This Week Card - Horizontal Layout */}
+            <View style={[styles.heroCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, borderWidth: 1 }]}>
+              <Text style={[styles.heroTitle, { color: theme.colors.primaryText }]}>This week at a glance</Text>
+              
+              <View style={styles.metricsRow}>
+                <View style={styles.metricItem}>
+                  <View style={styles.metricIconValue}>
+                    <Text style={styles.metricEmoji}>🔥</Text>
+                    <Text style={[styles.metricValue, { color: theme.colors.primaryText }]}>{stats.currentStreak}</Text>
                   </View>
-                  <View style={styles.moodRingContainer}>
-                    <View style={styles.moodRingOuter}>
-                      <View style={styles.moodRingInner}>
-                        <Text style={styles.moodRingScore}>
-                          {stats.avgWellbeingScore
-                            ? `${stats.avgWellbeingScore}/10`
-                            : '–'}
-                        </Text>
-                      </View>
-                    </View>
-                    <Text style={styles.moodRingLabel}>
-                      {stats.analyzedEntries < 3
-                        ? 'InsightAI is still getting to know you.'
-                        : formatScoreLabel(stats.avgWellbeingScore)}
-                    </Text>
-                  </View>
+                  <Text style={[styles.metricLabel, { color: theme.colors.secondaryText }]}>DAY STREAK</Text>
                 </View>
-
-                <View style={styles.heroStatsRow}>
-                  <View style={styles.heroStatItem}>
-                    <Text style={styles.heroStatLabel}>🔥 Streak</Text>
-                    <Text style={styles.heroStatValue}>{stats.currentStreak}</Text>
-                    <Text style={styles.heroStatCaption}>Days in a row reflecting</Text>
+                
+                <View style={styles.metricItem}>
+                  <View style={styles.metricIconValue}>
+                    <Text style={styles.metricEmoji}>💭</Text>
+                    <Text style={[styles.metricValue, { color: theme.colors.primaryText }]}>{stats.avgWellbeingScore}/10</Text>
                   </View>
-                  <View style={styles.heroDivider} />
-                  <View style={styles.heroStatItem}>
-                    <Text style={styles.heroStatLabel}>Avg wellbeing</Text>
-                    <Text style={styles.heroStatValue}>
-                      {stats.avgWellbeingScore}/10
-                    </Text>
-                    <Text style={styles.heroStatCaption}>Emotional balance</Text>
-                  </View>
-                  <View style={styles.heroDivider} />
-                  <View style={styles.heroStatItem}>
-                    <Text style={styles.heroStatLabel}>Avg resilience</Text>
-                    <Text style={styles.heroStatValue}>
-                      {stats.avgResilienceScore}/10
-                    </Text>
-                    <Text style={styles.heroStatCaption}>Bounce-back capacity</Text>
-                  </View>
+                  <Text style={[styles.metricLabel, { color: theme.colors.secondaryText }]}>AVG MOOD</Text>
                 </View>
-              </LinearGradient>
+                
+                <View style={styles.metricItem}>
+                  <View style={styles.metricIconValue}>
+                    <Text style={styles.metricEmoji}>⚡</Text>
+                    <Text style={[styles.metricValue, { color: theme.colors.primaryText }]}>{stats.avgResilienceScore}/10</Text>
+                  </View>
+                  <Text style={[styles.metricLabel, { color: theme.colors.secondaryText }]}>ENERGY</Text>
+                </View>
+              </View>
+              
+              {/* Interpretive sentence */}
+              <Text style={[styles.interpretiveSentence, { color: theme.colors.secondaryText }]}>
+                {stats.avgWellbeingScore >= 7 
+                  ? 'A steady week with consistent emotional balance.'
+                  : stats.avgWellbeingScore >= 5
+                  ? 'A steady week, with lower energy mid-week.'
+                  : 'You\'ve been navigating some challenges this week.'}
+              </Text>
             </View>
 
-            {/* Dominant emotions chips */}
+            {/* Emotion Bubble Map - Mindsera Style */}
             {dominantEmotions.length > 0 && (
-              <View style={styles.dominantCard}>
-                <LinearGradient
-                  colors={['#020617', '#020617']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.dominantGradient}
-                >
-                  <View style={styles.dominantHeaderRow}>
-                    <Text style={styles.dominantTitle}>Dominant emotions</Text>
-                    <Text style={styles.dominantSubtitle}>
-                      Tap an emotion to reflect on it
-                    </Text>
-                  </View>
-                  <View style={styles.dominantChipsRow}>
-                    {dominantEmotions.map((item) => (
+              <View style={[styles.bubbleMapCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, borderWidth: 1 }]}>
+                <View style={styles.bubbleMapHeader}>
+                  <Text style={[styles.bubbleMapTitle, { color: theme.colors.primaryText }]}>Emotional landscape</Text>
+                  <Text style={[styles.bubbleMapSubtitle, { color: theme.colors.secondaryText }]}>Tap to explore</Text>
+                </View>
+                
+                <View style={styles.bubbleMapContainer}>
+                  {dominantEmotions.map((item, index) => {
+                    // Calculate bubble size based on percentage
+                    const baseSize = 60;
+                    const size = baseSize + (item.percentage * 0.8);
+                    
+                    // Position bubbles in a scattered pattern
+                    const positions = [
+                      { top: 20, left: 30 },
+                      { top: 60, right: 40 },
+                      { top: 120, left: 60 },
+                      { top: 100, right: 80 },
+                      { top: 160, left: 120 },
+                    ];
+                    
+                    const position = positions[index] || { top: 80, left: 80 };
+                    
+                    return (
                       <TouchableOpacity
                         key={item.emotion}
-                        style={styles.emotionChip}
-                        activeOpacity={0.9}
-                        onPress={() =>
-                          setEmotionDetail({
+                        style={[
+                          styles.emotionBubble,
+                          {
+                            width: size,
+                            height: size,
+                            borderRadius: size / 2,
+                            ...position,
+                          },
+                        ]}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                          console.log('[DashboardBubblePressed]:', { emotion: item.emotion, percentage: item.percentage });
+                          navigation.navigate('EmotionDetail', {
                             emotion: item.emotion,
                             percentage: item.percentage,
-                            entries:
-                              (emotionEntriesByEmotion[item.emotion] || []).slice(0, 5),
-                          })
-                        }
+                            entries: emotionEntriesByEmotion[item.emotion] || [],
+                          });
+                        }}
                       >
                         <LinearGradient
-                          colors={['#4c1d95', '#1d4ed8']}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 1 }}
-                          style={styles.emotionChipGradient}
+                          colors={[
+                            `rgba(139, 92, 246, ${0.3 + item.percentage / 200})`,
+                            `rgba(99, 102, 241, ${0.2 + item.percentage / 200})`,
+                          ]}
+                          style={styles.bubbleGradient}
                         >
-                          <Text style={styles.emotionChipLabel}>{item.emotion}</Text>
-                          <Text style={styles.emotionChipValue}>{item.percentage}%</Text>
+                          <Text style={styles.bubbleEmotionText}>{item.emotion}</Text>
+                          <Text style={styles.bubblePercentageText}>{item.percentage}%</Text>
                         </LinearGradient>
                       </TouchableOpacity>
-                    ))}
-                  </View>
-                </LinearGradient>
+                    );
+                  })}
+                  
+                  {/* Add + bubble for new emotions */}
+                  <TouchableOpacity
+                    style={[
+                      styles.emotionBubble,
+                      styles.addBubble,
+                      {
+                        width: 50,
+                        height: 50,
+                        borderRadius: 25,
+                        top: 140,
+                        right: 30,
+                      },
+                    ]}
+                    activeOpacity={0.8}
+                    onPress={() => console.log('[Dashboard] Add emotion tapped')}
+                  >
+                    <View style={[styles.addBubbleInner, { borderColor: theme.colors.border }]}>
+                      <Text style={[styles.addBubbleText, { color: theme.colors.secondaryText }]}>+</Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
               </View>
             )}
 
-            <View style={styles.statsGrid}>
-            {/* Current Streak - Primary */}
-            <LinearGradient
-              colors={['rgba(15, 15, 15, 0.95)', 'rgba(10, 10, 10, 0.95)']}
-              style={styles.statCard}
-            >
-              <View style={styles.statHeader}>
-                <Text style={styles.statEmoji}>🔥</Text>
-                <Text style={styles.statLabel}>DAY STREAK</Text>
-              </View>
-              <Text style={styles.statValue}>{stats.currentStreak}</Text>
-              <Text style={styles.statSubLabel}>Keep your reflection streak going</Text>
-            </LinearGradient>
-
-            {/* Wellbeing Score - Primary */}
-            <LinearGradient
-              colors={['rgba(15, 15, 15, 0.95)', 'rgba(10, 10, 10, 0.95)']}
-              style={styles.statCard}
-            >
-              <View style={styles.statHeader}>
-                <Text style={styles.statEmoji}>💝</Text>
-                <Text style={styles.statLabel}>AVG WELLBEING</Text>
-              </View>
-              <Text style={styles.statValue}>{stats.avgWellbeingScore}/10</Text>
-              <Text style={styles.statSubLabel}>Last 7 days • emotional balance</Text>
-            </LinearGradient>
-
-            {/* Resilience Score - Primary */}
-            <LinearGradient
-              colors={['rgba(15, 15, 15, 0.95)', 'rgba(10, 10, 10, 0.95)']}
-              style={styles.statCard}
-            >
-              <View style={styles.statHeader}>
-                <Text style={styles.statEmoji}>🛡️</Text>
-                <Text style={styles.statLabel}>AVG RESILIENCE</Text>
-              </View>
-              <Text style={styles.statValue}>{stats.avgResilienceScore}/10</Text>
-              <Text style={styles.statSubLabel}>Last 7 days • ability to bounce back</Text>
-            </LinearGradient>
-
-            {/* Simplified Wellbeing Trend Chart */}
-            {chartData && chartData.datasets[0].data.length > 0 ? (
+            {/* Wellbeing Trend Chart */}
+            {chartData && chartData.datasets[0].data.length > 0 && (
             <LinearGradient
               colors={['rgba(5, 5, 15, 0.98)', 'rgba(2, 2, 8, 0.98)', 'rgba(0, 0, 0, 0.98)']}
               style={styles.chartCard}
@@ -516,22 +508,7 @@ export default function DashboardScreen() {
                   Last {chartData.labels.length} entries • Wellbeing score
                 </Text>
               </LinearGradient>
-            ) : (
-              <View style={[styles.statCard, styles.wideCard]}>
-                <Ionicons name="trending-up" size={32} color="#666" />
-                <Text style={styles.comingSoonText}>
-                  Chart will appear after analyzing more entries
-                </Text>
-              </View>
             )}
-
-            {/* Secondary Stats - compact footer */}
-            <View style={styles.secondaryStats}>
-              <Text style={styles.secondaryStatsFooterText}>
-                Entries: {stats.totalEntries}   ·   Analyzed: {stats.analyzedEntries}   ·   Best streak: {stats.currentStreak}
-              </Text>
-            </View>
-          </View>
           </>
         ) : (
           <View style={styles.emptyContainer}>
@@ -647,9 +624,7 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 60,
     paddingBottom: 16,
-    backgroundColor: '#0a0a0a',
     borderBottomWidth: 1,
-    borderBottomColor: '#1a1a1a',
   },
   headerTitle: {
     fontSize: 28,
@@ -684,6 +659,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderRadius: 24,
     overflow: 'hidden',
+    paddingVertical: 24,
+    paddingHorizontal: 20,
   },
   heroGradient: {
     paddingVertical: 22,
@@ -705,7 +682,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#f9fafb',
-    marginBottom: 4,
+    marginBottom: 8,
+    paddingTop: 2,
   },
   heroSubtitle: {
     fontSize: 13,
@@ -1113,5 +1091,140 @@ const styles = StyleSheet.create({
   sheetCloseText: {
     fontSize: 13,
     color: '#9ca3af',
+  },
+  // Simplified Hero Card Styles
+  heroStatsRowSimplified: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 24,
+    paddingHorizontal: 8,
+  },
+  heroStatItemSimplified: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  heroStatEmoji: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  heroStatValueLarge: {
+    fontSize: 28,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  heroStatLabelSimplified: {
+    fontSize: 13,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  // Bubble Map Styles
+  bubbleMapCard: {
+    marginBottom: 16,
+    borderRadius: 20,
+    padding: 20,
+  },
+  bubbleMapHeader: {
+    marginBottom: 16,
+  },
+  bubbleMapTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  bubbleMapSubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  bubbleMapContainer: {
+    height: 240,
+    position: 'relative',
+  },
+  emotionBubble: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  bubbleGradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+  },
+  bubbleEmotionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#ffffff',
+    textAlign: 'center',
+  },
+  bubblePercentageText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginTop: 2,
+  },
+  addBubble: {
+    shadowColor: '#666',
+    shadowOpacity: 0.2,
+  },
+  addBubbleInner: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 999,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  addBubbleText: {
+    fontSize: 24,
+    fontWeight: '300',
+  },
+  // Refined This Week Card Styles
+  metricsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 20,
+    marginBottom: 16,
+  },
+  metricItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  metricIconValue: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  metricEmoji: {
+    fontSize: 24,
+  },
+  metricValue: {
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  metricLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  interpretiveSentence: {
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    paddingHorizontal: 16,
+    marginTop: 8,
+    paddingBottom: 4,
   },
 });

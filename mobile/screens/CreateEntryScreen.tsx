@@ -9,6 +9,8 @@ import {
   Platform,
   Animated,
   Pressable,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,10 +19,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 
-export default function CreateEntryScreen({ navigation }: any) {
+export default function CreateEntryScreen({ navigation, route }: any) {
   const { user } = useAuth();
   const { theme } = useTheme();
-  const [content, setContent] = useState('');
+  const { initialContent } = route?.params || {};
+  const [content, setContent] = useState(initialContent || '');
   const [showMoodPicker, setShowMoodPicker] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [mood, setMood] = useState('');
@@ -29,6 +32,7 @@ export default function CreateEntryScreen({ navigation }: any) {
   const hasUnsavedChanges = useRef(false);
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const quickActionsAnim = useRef(new Animated.Value(0)).current;
+  const controlsBottomAnim = useRef(new Animated.Value(20)).current; // Bottom position for controls
 
   const moods = ['😊', '😔', '😰', '😡', '😌', '🤔', '😴', '🎉'];
   
@@ -162,8 +166,41 @@ export default function CreateEntryScreen({ navigation }: any) {
     }).start();
   }, [showMoodPicker]);
 
+  // Keyboard event listeners
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        Animated.spring(controlsBottomAnim, {
+          toValue: e.endCoordinates.height + 10,
+          useNativeDriver: false,
+          tension: 100,
+          friction: 10,
+        }).start();
+      }
+    );
+
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        Animated.spring(controlsBottomAnim, {
+          toValue: 20,
+          useNativeDriver: false,
+          tension: 100,
+          friction: 10,
+        }).start();
+      }
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
+  }, []);
+
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
@@ -265,11 +302,12 @@ export default function CreateEntryScreen({ navigation }: any) {
       </KeyboardAvoidingView>
 
       {/* Bottom-Left Quick Actions Button */}
-      <TouchableOpacity 
-        style={styles.quickActionsButton}
-        onPress={toggleQuickActions}
-        activeOpacity={0.8}
-      >
+      <Animated.View style={[styles.quickActionsButton, { bottom: controlsBottomAnim }]}>
+        <TouchableOpacity 
+          onPress={toggleQuickActions}
+          activeOpacity={0.8}
+          style={{ flex: 1 }}
+        >
         <LinearGradient
           colors={['rgba(139, 92, 246, 0.3)', 'rgba(99, 102, 241, 0.2)']}
           style={styles.fabGradient}
@@ -280,7 +318,8 @@ export default function CreateEntryScreen({ navigation }: any) {
             color="rgba(255, 255, 255, 0.9)" 
           />
         </LinearGradient>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </Animated.View>
 
       {/* Quick Actions Overlay */}
       {showQuickActions && (
@@ -329,19 +368,22 @@ export default function CreateEntryScreen({ navigation }: any) {
       )}
 
       {/* Bottom-Right Sparkle AI Button */}
-      <TouchableOpacity 
-        style={styles.sparkleButton}
-        onPress={insertAiPrompt}
-        activeOpacity={0.8}
-      >
-        <LinearGradient
-          colors={['#8b5cf6', '#7c3aed']}
-          style={styles.sparkleFabGradient}
+      <Animated.View style={[styles.sparkleButton, { bottom: controlsBottomAnim }]}>
+        <TouchableOpacity 
+          onPress={insertAiPrompt}
+          activeOpacity={0.8}
+          style={{ flex: 1 }}
         >
-          <Ionicons name="sparkles" size={24} color="#ffffff" />
-        </LinearGradient>
-      </TouchableOpacity>
-    </View>
+          <LinearGradient
+            colors={['#8b5cf6', '#7c3aed']}
+            style={styles.sparkleFabGradient}
+          >
+            <Ionicons name="sparkles" size={24} color="#ffffff" />
+          </LinearGradient>
+        </TouchableOpacity>
+      </Animated.View>
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 

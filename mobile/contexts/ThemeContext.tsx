@@ -238,6 +238,9 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       const stored = await AsyncStorage.getItem(THEME_STORAGE_KEY);
       if (stored && themes[stored as ThemeName]) {
         setThemeName(stored as ThemeName);
+        console.log('[THEME] Active theme:', stored);
+      } else {
+        console.log('[THEME] Active theme:', 'vibrant (default)');
       }
     } catch (error) {
       console.error('Error loading theme:', error);

@@ -17,6 +17,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { useNavigation } from '@react-navigation/native';
+// TODO: Uncomment when using development build (not Expo Go)
+// import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 const orbImage = require('../public/InsightAI-Orb.png');
 
 const { width } = Dimensions.get('window');
@@ -40,14 +42,35 @@ export default function DashboardScreenNew() {
   });
   const [streak, setStreak] = useState(0);
   const [recentPatterns, setRecentPatterns] = useState<string[]>([]);
-  const [recentTopics, setRecentTopics] = useState<Array<{emoji: string, text: string, keyword: string}>>([]);
+  const [recentTopics, setRecentTopics] = useState<Array<{emoji: string, text: string, keyword: string, searchTerm: string}>>([]);
+  const [todayInsights, setTodayInsights] = useState<Array<{icon: string, iconColor: string, title: string, description: string}>>([]);
+  const [hasEntryToday, setHasEntryToday] = useState(false);
   const [userName, setUserName] = useState<string>('there');
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recognizedText, setRecognizedText] = useState('');
 
   useEffect(() => {
     loadDashboardData();
     loadUserProfile();
     loadRecentTopics();
+    loadTodayInsights();
+
+    // TODO: Uncomment when using development build (not Expo Go)
+    // Check speech recognition availability
+    // const checkPermissions = async () => {
+    //   try {
+    //     const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    //     console.log('Speech recognition permissions:', result);
+    //   } catch (error) {
+    //     console.log('Speech recognition not available:', error);
+    //   }
+    // };
+    // checkPermissions();
+
+    return () => {
+      // Cleanup if needed
+    };
   }, [user]);
 
   useEffect(() => {
@@ -159,47 +182,235 @@ export default function DashboardScreenNew() {
     }
   };
 
+  // TODO: Uncomment when using development build (not Expo Go)
+  // Speech-to-text implementation ready for development build
+  const startRecording = async () => {
+    // Placeholder for Expo Go - shows coming soon message
+    Alert.alert(
+      'Coming Soon',
+      'Voice journaling will be available when you create a development build. This feature requires native modules that are not available in Expo Go.',
+      [
+        { text: 'OK' },
+        { text: 'Learn More', onPress: () => console.log('See: https://docs.expo.dev/develop/development-builds/introduction/') }
+      ]
+    );
+    
+    /* DEVELOPMENT BUILD CODE - Uncomment when ready:
+    try {
+      setRecognizedText('');
+      setIsRecording(true);
+      
+      const result = await ExpoSpeechRecognitionModule.start({
+        lang: 'en-US',
+        interimResults: true,
+        maxAlternatives: 1,
+        continuous: false,
+      });
+      
+      console.log('Speech recognition started:', result);
+      
+      // Listen for results
+      const timeout = setTimeout(() => {
+        stopRecording();
+      }, 10000); // 10 second timeout
+      
+    } catch (error) {
+      console.error('Error with voice recognition:', error);
+      setIsRecording(false);
+      Alert.alert('Error', 'Could not start voice recognition. Please check microphone permissions.');
+    }
+    */
+  };
+
+  const stopRecording = async () => {
+    /* DEVELOPMENT BUILD CODE - Uncomment when ready:
+    try {
+      await ExpoSpeechRecognitionModule.stop();
+      setIsRecording(false);
+      
+      if (recognizedText) {
+        navigation.navigate('CreateEntry', { initialContent: recognizedText });
+      }
+    } catch (error) {
+      console.error('Error stopping voice recognition:', error);
+      setIsRecording(false);
+    }
+    */
+  };
+
+  const loadTodayInsights = async () => {
+    if (!user) return;
+    
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const { data: todayNotes, error } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('created_at', today.toISOString())
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('[HomeInsights] Error loading today entries:', error);
+        setHasEntryToday(false);
+        setTodayInsights([]);
+        return;
+      }
+
+      console.log('[HomeInsights] Today entries count:', todayNotes?.length || 0);
+      
+      if (!todayNotes || todayNotes.length === 0) {
+        setHasEntryToday(false);
+        setTodayInsights([]);
+        return;
+      }
+
+      setHasEntryToday(true);
+
+      // Pull insights from ACTUAL AI analysis (ai_structured_insights)
+      const insights: Array<{icon: string, iconColor: string, title: string, description: string}> = [];
+
+      // Get most recent analyzed entry from today
+      const analyzedToday = todayNotes.find(n => n.ai_structured_insights);
+      
+      if (analyzedToday && analyzedToday.ai_structured_insights) {
+        const analysis = analyzedToday.ai_structured_insights;
+        console.log('[HomeInsights] Found analyzed entry:', analyzedToday.id);
+        
+        // Extract emotional trend from mood_analysis
+        const primaryEmotion = analysis.mood_analysis?.primary_emotion;
+        const secondaryEmotions = analysis.mood_analysis?.secondary_emotions || [];
+        const wellbeingScore = analysis.wellbeingScore;
+        const energyLevel = analysis.mood_analysis?.energy_level;
+        
+        // Build insight from actual analysis data
+        let insightText = '';
+        
+        if (primaryEmotion) {
+          insightText = `You're feeling ${primaryEmotion.toLowerCase()}`;
+          
+          // Add context from secondary emotions or energy
+          if (secondaryEmotions.length > 0) {
+            insightText += `, with notes of ${secondaryEmotions[0].toLowerCase()}`;
+          }
+          
+          // Add energy context if available
+          if (energyLevel) {
+            if (energyLevel === 'low' || energyLevel === 'very_low') {
+              insightText += ', but low energy is holding you back';
+            } else if (energyLevel === 'high' || energyLevel === 'very_high') {
+              insightText += ', with strong energy driving you forward';
+            }
+          }
+          
+          insightText += '.';
+          
+          // Determine icon based on emotion
+          let icon = 'pulse';
+          let iconColor = '#8b5cf6';
+          
+          if (primaryEmotion.toLowerCase().includes('hop') || primaryEmotion.toLowerCase().includes('excit')) {
+            icon = 'trending-up';
+            iconColor = '#22c55e';
+          } else if (primaryEmotion.toLowerCase().includes('anx') || primaryEmotion.toLowerCase().includes('stress')) {
+            icon = 'alert-circle';
+            iconColor = '#f59e0b';
+          } else if (primaryEmotion.toLowerCase().includes('sad') || primaryEmotion.toLowerCase().includes('down')) {
+            icon = 'trending-down';
+            iconColor = '#ef4444';
+          }
+          
+          insights.push({
+            icon,
+            iconColor,
+            title: 'Emotional snapshot',
+            description: insightText
+          });
+        }
+        
+        console.log('[HomeInsights] Generated from AI analysis:', insights.length);
+      } else {
+        console.log('[HomeInsights] No analyzed entry today yet');
+      }
+      
+      setTodayInsights(insights);
+    } catch (error) {
+      console.error('[HomeInsights] Error:', error);
+      setHasEntryToday(false);
+      setTodayInsights([]);
+    }
+  };
+
   const loadRecentTopics = async () => {
     if (!user) return;
     
     try {
       const { data: notes, error } = await supabase
         .from('notes')
-        .select('content, title')
+        .select('content, title, id')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(50); // Increased to get better sample
 
-      if (error || !notes) return;
+      if (error) {
+        console.error('[HomeTopics] Error loading notes:', error);
+        setRecentTopics([]);
+        return;
+      }
 
-      // Extract topics from content using keyword matching
+      if (!notes || notes.length === 0) {
+        console.log('[HomeTopics] No notes found');
+        setRecentTopics([]);
+        return;
+      }
+
+      console.log('[HomeTopics] Analyzing', notes.length, 'notes for topics');
+
+      // Extract topics ONLY if keywords actually exist in entries
       const topicKeywords = [
-        { keyword: 'exercise|workout|gym|run|fitness', emoji: '🏃‍♂️', text: 'Exercise' },
-        { keyword: 'relationship|friend|family|love|partner', emoji: '💬', text: 'Relationships' },
-        { keyword: 'work|job|career|project|meeting', emoji: '💼', text: 'Work' },
-        { keyword: 'meditation|mindful|calm|peace|breathe', emoji: '🧘‍♀️', text: 'Mindfulness' },
-        { keyword: 'sleep|tired|rest|dream', emoji: '😴', text: 'Sleep' },
-        { keyword: 'stress|anxiety|worry|nervous', emoji: '😰', text: 'Stress' },
+        { keyword: 'exercise|workout|gym|run|running|fitness|training', emoji: '🏃‍♂️', text: 'Exercise', searchTerm: 'exercise' },
+        { keyword: 'relationship|friend|family|love|partner|dating', emoji: '💬', text: 'Relationships', searchTerm: 'relationship' },
+        { keyword: 'work|job|career|project|meeting|office|boss', emoji: '💼', text: 'Work', searchTerm: 'work' },
+        { keyword: 'meditation|mindful|calm|peace|breathe|zen', emoji: '🧘‍♀️', text: 'Mindfulness', searchTerm: 'meditation' },
+        { keyword: 'sleep|tired|rest|dream|insomnia|exhausted', emoji: '😴', text: 'Sleep', searchTerm: 'sleep' },
+        { keyword: 'stress|anxiety|worry|nervous|anxious|overwhelm', emoji: '😰', text: 'Stress', searchTerm: 'stress' },
+        { keyword: 'happy|joy|excited|great|amazing|wonderful', emoji: '😊', text: 'Happiness', searchTerm: 'happy' },
+        { keyword: 'sad|depressed|down|upset|crying|lonely', emoji: '😔', text: 'Sadness', searchTerm: 'sad' },
       ];
 
-      const foundTopics: Array<{emoji: string, text: string, keyword: string}> = [];
-      const allContent = notes.map(n => (n.content + ' ' + n.title).toLowerCase()).join(' ');
-
+      const foundTopics: Array<{emoji: string, text: string, keyword: string, searchTerm: string}> = [];
+      
+      // Check each note individually to verify keywords exist
       topicKeywords.forEach(topic => {
         const regex = new RegExp(topic.keyword, 'i');
-        if (regex.test(allContent) && foundTopics.length < 4) {
-          foundTopics.push(topic);
+        let matchCount = 0;
+        
+        notes.forEach(note => {
+          const content = ((note.content || '') + ' ' + (note.title || '')).toLowerCase();
+          if (regex.test(content)) {
+            matchCount++;
+          }
+        });
+        
+        // Only add topic if it appears in at least 1 note
+        if (matchCount > 0 && foundTopics.length < 4) {
+          console.log(`[HomeTopics] Found "${topic.text}" in ${matchCount} notes`);
+          foundTopics.push({
+            emoji: topic.emoji,
+            text: topic.text,
+            keyword: topic.keyword,
+            searchTerm: topic.searchTerm
+          });
         }
       });
 
-      setRecentTopics(foundTopics.length > 0 ? foundTopics : [
-        { keyword: 'exercise', emoji: '🏃‍♂️', text: 'Exercise' },
-        { keyword: 'relationship', emoji: '💬', text: 'Relationships' },
-        { keyword: 'work', emoji: '💼', text: 'Work' },
-        { keyword: 'meditation', emoji: '🧘‍♀️', text: 'Mindfulness' },
-      ]);
+      console.log('[HomeTopics] Final topics:', foundTopics.map(t => t.text).join(', ') || 'none');
+      setRecentTopics(foundTopics);
     } catch (error) {
-      console.error('Error loading topics:', error);
+      console.error('[HomeTopics] Error:', error);
+      setRecentTopics([]);
     }
   };
 
@@ -219,7 +430,13 @@ export default function DashboardScreenNew() {
       >
         {/* Header - Profile Picture */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.profilePictureContainer}>
+          <TouchableOpacity 
+            style={styles.profilePictureContainer}
+            onPress={() => {
+              console.log('[NAV] PFP tapped -> Settings');
+              navigation.navigate('Settings');
+            }}
+          >
             <LinearGradient
               colors={['rgba(139, 92, 246, 0.6)', 'rgba(99, 102, 241, 0.4)']}
               style={styles.profileGradientBorder}
@@ -262,9 +479,6 @@ export default function DashboardScreenNew() {
             <Text style={styles.greetingText}>
               Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}
             </Text>
-            <Text style={styles.greetingText}>
-              {userName}
-            </Text>
           </View>
         </View>
 
@@ -293,20 +507,21 @@ export default function DashboardScreenNew() {
           <View style={styles.actionItem}>
             <TouchableOpacity 
               style={styles.actionCircle}
-              onPress={() => Alert.alert('Coming Soon', 'Voice journaling will be available soon!')}
+              onPress={startRecording}
+              disabled={isRecording}
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={['rgba(139, 92, 246, 0.5)', 'rgba(124, 58, 237, 0.4)']}
+                colors={isRecording ? ['rgba(239, 68, 68, 0.5)', 'rgba(220, 38, 38, 0.4)'] : ['rgba(139, 92, 246, 0.5)', 'rgba(124, 58, 237, 0.4)']}
                 style={styles.glassmorphicButton}
               >
                 <LinearGradient colors={["rgba(255,255,255,0.22)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.8,y:1}} style={styles.innerHighlight} pointerEvents="none" />
                 <View style={styles.iconWrap}>
-                  <Ionicons name="mic-outline" size={24} color="rgba(255, 255, 255, 0.98)" />
+                  <Ionicons name={isRecording ? "mic" : "mic-outline"} size={24} color="rgba(255, 255, 255, 0.98)" />
                 </View>
               </LinearGradient>
             </TouchableOpacity>
-            <Text style={[styles.actionLabel, { color: 'rgba(255, 255, 255, 0.8)' }]}>Speak</Text>
+            <Text style={[styles.actionLabel, { color: 'rgba(255, 255, 255, 0.8)' }]}>{isRecording ? 'Listening...' : 'Speak'}</Text>
           </View>
 
           <View style={styles.actionItem}>
@@ -329,45 +544,50 @@ export default function DashboardScreenNew() {
           </View>
         </View>
 
-        {/* Recent Topics Section */}
-        <View style={styles.recentTopicsSection}>
-          <Text style={[styles.sectionTitle, { color: 'rgba(255, 255, 255, 0.9)' }]}>
-            Recent topics
-          </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.topicsScroll}>
-            {recentTopics.map((topic, index) => (
-              <TouchableOpacity 
-                key={index}
-                style={styles.topicChipGlass}
-                onPress={() => navigation.navigate('Notes', { screen: 'Notes', params: { searchQuery: topic.keyword } })}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.topicEmoji}>{topic.emoji}</Text>
-                <Text style={[styles.topicText, { color: 'rgba(255,255,255,0.9)' }]}>{topic.text}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+        {/* Recent Topics - REMOVED: Not working correctly, will be reimplemented properly */}
 
-        {/* Quick Insights */}
+        {/* Today's Insights - Data-driven */}
         <View style={styles.insightsSection}>
           <Text style={[styles.sectionTitle, { color: 'rgba(255, 255, 255, 0.9)' }]}>
             Today's insights
           </Text>
-          <View style={[styles.insightCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-            <View style={styles.insightHeader}>
-              <Ionicons name="trending-up" size={20} color="#22c55e" />
-              <Text style={[styles.insightTitle, { color: 'rgba(255, 255, 255, 0.9)' }]}>Positive momentum</Text>
+          {!hasEntryToday ? (
+            <TouchableOpacity
+              style={[styles.insightCard, styles.noEntryCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+              onPress={() => {
+                console.log('[HomeInsights] No entry CTA tapped -> CreateEntry');
+                navigation.navigate('CreateEntry');
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={styles.insightHeader}>
+                <Ionicons name="create-outline" size={24} color="#8b5cf6" />
+                <Text style={[styles.insightTitle, { color: 'rgba(255, 255, 255, 0.95)', fontSize: 18 }]}>No check-in yet</Text>
+              </View>
+              <Text style={[styles.insightText, { color: 'rgba(255, 255, 255, 0.6)' }]}>Write now to unlock insights</Text>
+              <View style={styles.ctaArrow}>
+                <Ionicons name="arrow-forward" size={20} color="#8b5cf6" />
+              </View>
+            </TouchableOpacity>
+          ) : todayInsights.length > 0 ? (
+            todayInsights.map((insight, index) => (
+              <View key={index} style={[styles.insightCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                <View style={styles.insightHeader}>
+                  <Ionicons name={insight.icon as any} size={20} color={insight.iconColor} />
+                  <Text style={[styles.insightTitle, { color: 'rgba(255, 255, 255, 0.9)' }]}>{insight.title}</Text>
+                </View>
+                <Text style={[styles.insightText, { color: 'rgba(255, 255, 255, 0.5)' }]}>{insight.description}</Text>
+              </View>
+            ))
+          ) : (
+            <View style={[styles.insightCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+              <View style={styles.insightHeader}>
+                <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
+                <Text style={[styles.insightTitle, { color: 'rgba(255, 255, 255, 0.9)' }]}>Great start!</Text>
+              </View>
+              <Text style={[styles.insightText, { color: 'rgba(255, 255, 255, 0.5)' }]}>You've checked in today. Keep journaling to unlock more insights.</Text>
             </View>
-            <Text style={[styles.insightText, { color: 'rgba(255, 255, 255, 0.5)' }]}>You've journaled 3 days in a row. Keep it up!</Text>
-          </View>
-          <View style={[styles.insightCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-            <View style={styles.insightHeader}>
-              <Ionicons name="moon-outline" size={20} color="#8b5cf6" />
-              <Text style={[styles.insightTitle, { color: 'rgba(255, 255, 255, 0.9)' }]}>Sleep pattern</Text>
-            </View>
-            <Text style={[styles.insightText, { color: 'rgba(255, 255, 255, 0.5)' }]}>Better mood after 7+ hours of sleep</Text>
-          </View>
+          )}
         </View>
 
         {/* Suggested Challenges */}
@@ -499,12 +719,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   greetingText: {
-    fontSize: 26,
-    fontWeight: '300',
-    color: 'rgba(255, 255, 255, 0.95)',
-    letterSpacing: 0.8,
+    fontSize: 32,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.98)',
+    letterSpacing: 1.2,
     textAlign: 'center',
-    lineHeight: 36,
+    lineHeight: 42,
   },
   headerIcons: {
     flexDirection: 'row',
@@ -779,5 +999,14 @@ const styles = StyleSheet.create({
   challengeSubtext: {
     fontSize: 12,
     lineHeight: 16,
+  },
+  noEntryCard: {
+    position: 'relative',
+  },
+  ctaArrow: {
+    position: 'absolute',
+    right: 16,
+    top: '50%',
+    marginTop: -10,
   },
 });

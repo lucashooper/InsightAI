@@ -168,6 +168,7 @@ export default function HomeScreen({ navigation, route }: any) {
   };
 
   const handleEntryLongPress = (entry: DiaryEntry) => {
+    console.log('[Journal] Long press on entry:', entry.id);
     const isFav = !!entry.is_favorite;
     const isHidden = hiddenEntryIds.has(entry.id);
     const options = [
@@ -181,7 +182,8 @@ export default function HomeScreen({ navigation, route }: any) {
     const cancelButtonIndex = options.length - 1;
     const destructiveButtonIndex = 4;
 
-    const handleSelection = (buttonIndex: number) => {
+    const handleSelection = async (buttonIndex: number) => {
+      console.log('[Journal] Action sheet selection:', buttonIndex, options[buttonIndex]);
       if (buttonIndex === 0) {
         navigation.navigate('EntryDetail', { entry, openInsights: true });
       } else if (buttonIndex === 1) {
@@ -191,14 +193,9 @@ export default function HomeScreen({ navigation, route }: any) {
       } else if (buttonIndex === 3) {
         handleShareEntry(entry);
       } else if (buttonIndex === 4) {
-        Alert.alert('Delete entry', 'This cannot be undone.', [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Delete',
-            style: 'destructive',
-            onPress: () => handleDeleteEntry(entry),
-          },
-        ]);
+        console.log('[Journal] Deleted entry:', entry.id);
+        handleDeleteEntry(entry);
+        Alert.alert('Deleted', 'Entry removed', [{ text: 'OK' }]);
       }
     };
 
@@ -379,48 +376,48 @@ export default function HomeScreen({ navigation, route }: any) {
         onLongPress={() => handleEntryLongPress(item)}
         activeOpacity={0.7}
       >
-        <View style={styles.cardGradient}>
-          {/* Header with title and mood */}
+        <View style={[styles.cardGradient, { 
+          backgroundColor: 'rgba(20, 20, 30, 0.6)',
+          borderColor: `${theme.colors.primary}15`,
+        }]}>
           <View style={styles.entryHeader}>
-            <View style={styles.entryTitleRow}>
-              <Text style={styles.entryTitle} numberOfLines={1}>
-                {isHidden ? 'Locked entry' : item.title || 'Untitled Entry'}
-              </Text>
-              {item.mood && (
-                <View style={styles.moodBadge}>
-                  <Text style={styles.moodEmoji}>{item.mood}</Text>
-                </View>
-              )}
-            </View>
-            {hasInsights && (
-              <View style={styles.insightBadge}>
-                <Ionicons name="sparkles" size={12} color="#8b5cf6" />
-                <Text style={styles.insightBadgeText}>Analyzed</Text>
+          <View style={styles.entryTitleRow}>
+            <Text style={styles.entryTitle} numberOfLines={1}>
+              {isHidden ? 'Locked entry' : item.title || 'Untitled Entry'}
+            </Text>
+            {item.mood && (
+              <View style={styles.moodBadge}>
+                <Text style={styles.moodEmoji}>{item.mood}</Text>
               </View>
             )}
           </View>
+          {hasInsights && (
+            <View style={styles.insightBadge}>
+              <Ionicons name="sparkles" size={12} color="#8b5cf6" />
+              <Text style={styles.insightBadgeText}>Analyzed</Text>
+            </View>
+          )}
+        </View>
 
-          {/* Content preview */}
-          <Text style={styles.entryContent} numberOfLines={3}>
-            {isHidden ? 'Tap to unlock and view this entry.' : item.content}
-          </Text>
+        <Text style={styles.entryContent} numberOfLines={3}>
+          {isHidden ? 'Tap to unlock and view this entry.' : item.content}
+        </Text>
 
-          {/* Footer with date and action */}
-          <View style={styles.entryFooter}>
-            <Text style={styles.entryDate}>{formatDate(item.created_at)}</Text>
-            {hasInsights && (
-              <TouchableOpacity 
-                style={styles.viewInsightsButton}
-                onPress={() => navigation.navigate('EntryDetail', { entry: item })}
-              >
-                <Text style={styles.viewInsightsText}>View Insights</Text>
-                <Ionicons name="arrow-forward" size={14} color="#8b5cf6" />
-              </TouchableOpacity>
-            )}
-          </View>
+        <View style={styles.entryFooter}>
+          <Text style={styles.entryDate}>{formatDate(item.created_at)}</Text>
+          {hasInsights && (
+            <TouchableOpacity
+              style={styles.viewInsightsButton}
+              onPress={() => navigation.navigate('EntryDetail', { entry: item })}
+            >
+              <Text style={styles.viewInsightsText}>View Insights</Text>
+              <Ionicons name="arrow-forward" size={14} color="#8b5cf6" />
+            </TouchableOpacity>
+          )}
+        </View>
         </View>
       </TouchableOpacity>
-    );
+  );
   };
 
   if (loading) {
@@ -432,85 +429,68 @@ export default function HomeScreen({ navigation, route }: any) {
   }
 
   return (
-    <View style={styles.container}>
-      {/* Subtle Background Gradient */}
-      <LinearGradient
-        colors={theme.colors.backgroundGradient as any}
-        style={styles.backgroundGradient}
-      />
+  <View style={styles.container}>
+    <LinearGradient
+      colors={theme.colors.backgroundGradient as any}
+      style={styles.backgroundGradient}
+    />
 
-      {/* Clean Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Journal</Text>
-        <View style={styles.headerRight}>
-          {streak.currentStreak > 0 && (
-            <Text style={styles.streakInline}>🔥 {streak.currentStreak}</Text>
-          )}
-          <TouchableOpacity 
-            onPress={() => navigation.navigate('Settings')} 
-            style={styles.avatarButton}
+    <View style={styles.header}>
+      <Text style={styles.headerTitle}>Journal</Text>
+      <View style={styles.headerRight}>
+        {streak.currentStreak > 0 && (
+          <View style={styles.streakContainerClean}>
+            <Text style={styles.flameEmoji}>🔥</Text>
+            <Text style={styles.streakNumber}>{streak.currentStreak}</Text>
+          </View>
+        )}
+      </View>
+    </View>
+
+    <View style={styles.searchSection}>
+      <View style={styles.searchBar}>
+        <Ionicons name="search" size={16} color="#6b7280" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search entries..."
+          placeholderTextColor="#6b7280"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          textAlignVertical="center"
+        />
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filterChipsRow}
+        style={{ marginTop: 12 }}
+      >
+        {[
+          { key: 'all', label: 'All' },
+          { key: 'analyzed', label: 'Analyzed' },
+          { key: 'unanalyzed', label: 'Unanalyzed' },
+          { key: 'favorites', label: ' Favorites' },
+        ].map((chip) => (
+          <TouchableOpacity
+            key={chip.key}
+            style={[
+              styles.filterChip,
+              filter === chip.key && styles.filterChipActive,
+            ]}
+            onPress={() => setFilter(chip.key as any)}
           >
-            {userProfile?.profile_picture_url ? (
-              <Image 
-                source={{ uri: userProfile.profile_picture_url }} 
-                style={styles.headerAvatar}
-              />
-            ) : (
-              <View style={styles.headerAvatarPlaceholder}>
-                <Text style={styles.headerAvatarText}>
-                  {(userProfile?.username || user?.email || 'U')[0].toUpperCase()}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
-
-
-      {/* Search + Filters */}
-      <View style={styles.searchSection}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={16} color="#6b7280" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search entries..."
-            placeholderTextColor="#6b7280"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            textAlignVertical="center"
-          />
-        </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterChipsRow}
-        >
-          {[
-            { key: 'all', label: 'All' },
-            { key: 'analyzed', label: 'Analyzed' },
-            { key: 'unanalyzed', label: 'Unanalyzed' },
-            { key: 'favorites', label: '⭐ Favorites' },
-          ].map((chip) => (
-            <TouchableOpacity
-              key={chip.key}
+            <Text
               style={[
-                styles.filterChip,
-                filter === chip.key && styles.filterChipActive,
+                styles.filterChipText,
+                filter === chip.key && styles.filterChipTextActive,
               ]}
-              onPress={() => setFilter(chip.key as any)}
             >
-              <Text
-                style={[
-                  styles.filterChipText,
-                  filter === chip.key && styles.filterChipTextActive,
-                ]}
-              >
-                {chip.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+              {chip.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
 
       {/* Entries List */}
       {filteredEntries.length === 0 ? (
@@ -875,6 +855,46 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#1a1a1a',
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  streakContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 107, 53, 0.15)',
+  },
+  streakContainerClean: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  flameEmoji: {
+    fontSize: 18,
+  },
+  streakNumber: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  streakInline: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  avatarButton: {
+    marginLeft: 8,
+  },
+  emotionalSubline: {
+    fontSize: 13,
+    color: '#9ca3af',
+    lineHeight: 18,
+  },
   greetingRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -886,11 +906,6 @@ const styles = StyleSheet.create({
     color: '#f9fafb',
     letterSpacing: -0.5,
     marginBottom: 4,
-  },
-  emotionalSubline: {
-    fontSize: 13,
-    color: '#9ca3af',
-    lineHeight: 18,
   },
   quickActionTile: {
     borderRadius: 18,

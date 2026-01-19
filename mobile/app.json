@@ -41,6 +41,9 @@
         "projectId": "ea3c5792-eb79-42fd-ae02-f5d8a1ec53dd"
       }
     },
-    "owner": "crupid"
+    "owner": "crupid",
+    "plugins": [
+      "expo-speech-recognition"
+    ]
   }
 }

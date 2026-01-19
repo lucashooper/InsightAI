@@ -14,6 +14,16 @@ import { useTheme } from '../contexts/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
+// Breathing phase configuration (Headspace-inspired)
+const BREATH_PHASES = {
+  INHALE: { duration: 4000, label: 'Breathe in', type: 'inhale' as const },
+  HOLD_IN: { duration: 2000, label: 'Hold', type: 'hold' as const },
+  EXHALE: { duration: 6000, label: 'Breathe out', type: 'exhale' as const },
+  HOLD_OUT: { duration: 2000, label: 'Hold', type: 'hold' as const },
+};
+
+const TOTAL_CYCLE_DURATION = Object.values(BREATH_PHASES).reduce((sum, phase) => sum + phase.duration, 0);
+
 const CALMING_PHRASES = [
   'Let your thoughts drift like clouds',
   'You are exactly where you need to be',
@@ -23,86 +33,121 @@ const CALMING_PHRASES = [
   'Be gentle with yourself',
 ];
 
+type BreathPhase = 'inhale' | 'hold_in' | 'exhale' | 'hold_out';
+
 export default function MeditationScreen({ navigation }: any) {
   const { theme } = useTheme();
-  const [breathState, setBreathState] = useState<'in' | 'out' | 'hold'>('in');
+  const [breathPhase, setBreathPhase] = useState<BreathPhase>('inhale');
+  const [phaseLabel, setPhaseLabel] = useState('Breathe in');
+  const [breathCount, setBreathCount] = useState(0);
   const [currentPhrase, setCurrentPhrase] = useState(0);
   const [showPhrase, setShowPhrase] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(300);
   const [isActive, setIsActive] = useState(false);
+  const [meditationTheme, setMeditationTheme] = useState<'sky' | 'sunset'>('sky');
+  const phaseStartTime = useRef(Date.now());
   
   const breathProgress = useRef(new Animated.Value(0)).current;
   const phraseOpacity = useRef(new Animated.Value(0)).current;
   const cloud1Y = useRef(new Animated.Value(0)).current;
   const cloud2Y = useRef(new Animated.Value(0)).current;
 
-  // Breathing animation cycle
+  // 4-phase breathing animation cycle with logging
   useEffect(() => {
+    const logPhaseTransition = (phase: BreathPhase, label: string, duration: number) => {
+      console.log('[MeditationPhase]:', phase);
+      console.log('[PhaseStartTimestamp]:', Date.now());
+      console.log('[DurationMs]:', duration);
+      phaseStartTime.current = Date.now();
+      setBreathPhase(phase);
+      setPhaseLabel(label);
+    };
+
     const breathCycle = Animated.loop(
       Animated.sequence([
-        // Breathe in
+        // Phase 1: Inhale (0 -> 1)
         Animated.timing(breathProgress, {
           toValue: 1,
-          duration: 4000,
+          duration: BREATH_PHASES.INHALE.duration,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: false,
         }),
-        // Hold
-        Animated.delay(1000),
-        // Breathe out
+        // Phase 2: Hold at max (stays at 1)
+        Animated.timing(breathProgress, {
+          toValue: 1,
+          duration: BREATH_PHASES.HOLD_IN.duration,
+          easing: Easing.linear,
+          useNativeDriver: false,
+        }),
+        // Phase 3: Exhale (1 -> 0)
         Animated.timing(breathProgress, {
           toValue: 0,
-          duration: 4000,
+          duration: BREATH_PHASES.EXHALE.duration,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: false,
         }),
-        // Hold
-        Animated.delay(1000),
+        // Phase 4: Hold at min (stays at 0)
+        Animated.timing(breathProgress, {
+          toValue: 0,
+          duration: BREATH_PHASES.HOLD_OUT.duration,
+          easing: Easing.linear,
+          useNativeDriver: false,
+        }),
       ])
     );
     breathCycle.start();
-    return () => breathCycle.stop();
-  }, []);
 
-  // Track breath state for text prompts
-  useEffect(() => {
-    let cycleCount = 0;
-    const interval = setInterval(() => {
-      const position = cycleCount % 10;
-      if (position < 4) {
-        setBreathState('in');
-      } else if (position === 4) {
-        setBreathState('hold');
-      } else if (position < 9) {
-        setBreathState('out');
+    // Track phase changes for UI updates
+    const phaseInterval = setInterval(() => {
+      const elapsed = (Date.now() - phaseStartTime.current) % TOTAL_CYCLE_DURATION;
+      
+      if (elapsed < BREATH_PHASES.INHALE.duration) {
+        if (breathPhase !== 'inhale') {
+          logPhaseTransition('inhale', BREATH_PHASES.INHALE.label, BREATH_PHASES.INHALE.duration);
+        }
+      } else if (elapsed < BREATH_PHASES.INHALE.duration + BREATH_PHASES.HOLD_IN.duration) {
+        if (breathPhase !== 'hold_in') {
+          logPhaseTransition('hold_in', BREATH_PHASES.HOLD_IN.label, BREATH_PHASES.HOLD_IN.duration);
+        }
+      } else if (elapsed < BREATH_PHASES.INHALE.duration + BREATH_PHASES.HOLD_IN.duration + BREATH_PHASES.EXHALE.duration) {
+        if (breathPhase !== 'exhale') {
+          logPhaseTransition('exhale', BREATH_PHASES.EXHALE.label, BREATH_PHASES.EXHALE.duration);
+        }
       } else {
-        setBreathState('hold');
+        if (breathPhase !== 'hold_out') {
+          logPhaseTransition('hold_out', BREATH_PHASES.HOLD_OUT.label, BREATH_PHASES.HOLD_OUT.duration);
+          setBreathCount(prev => prev + 1);
+        }
       }
-      cycleCount++;
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+    }, 100);
 
-  // Slow cloud drift animation
-  useEffect(() => {
-    Animated.loop(
-      Animated.timing(cloud1Y, {
-        toValue: 30,
-        duration: 20000,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: true,
-      })
-    ).start();
-    
-    Animated.loop(
-      Animated.timing(cloud2Y, {
-        toValue: -20,
-        duration: 15000,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: true,
-      })
-    ).start();
-  }, []);
+    return () => {
+      breathCycle.stop();
+      clearInterval(phaseInterval);
+    };
+  }, [breathPhase]);
+
+
+  // Clouds are static (no animation)
+  // useEffect(() => {
+  //   Animated.loop(
+  //     Animated.timing(cloud1Y, {
+  //       toValue: 30,
+  //       duration: 20000,
+  //       easing: Easing.inOut(Easing.ease),
+  //       useNativeDriver: true,
+  //     })
+  //   ).start();
+  //   
+  //   Animated.loop(
+  //     Animated.timing(cloud2Y, {
+  //       toValue: -20,
+  //       duration: 15000,
+  //       easing: Easing.inOut(Easing.ease),
+  //       useNativeDriver: true,
+  //     })
+  //   ).start();
+  // }, []);
 
   // Show calming phrase every 30 seconds
   useEffect(() => {
@@ -156,50 +201,66 @@ export default function MeditationScreen({ navigation }: any) {
     setTimeRemaining(300);
   };
 
-  // Center-out expansion: left and right bars grow from center
-  const leftBarWidth = breathProgress.interpolate({
+  // Single smooth progress bar (left to right, full width)
+  const progressBarWidth = breathProgress.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0%', '40%'],
+    outputRange: ['0%', '100%'],
   });
-  
-  const rightBarWidth = breathProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0%', '40%'],
-  });
+
+  // Richer, calmer colors (less washed out)
+  const skyColors = ['#3d5a80', '#5b7a9f', '#7a9abf']; // Deeper, richer sky blue
+  const sunsetColors = ['#d4633c', '#e8885d', '#f4a261']; // Warmer, richer sunset
 
   return (
     <View style={styles.container}>
-      {/* Sky gradient background */}
+      {/* Sky/Sunset gradient background */}
       <LinearGradient
-        colors={['#5B9BD5', '#7FB3D5', '#A4C8E1']}
+        colors={meditationTheme === 'sky' ? skyColors : sunsetColors}
         style={styles.backgroundGradient}
       />
 
-      {/* Animated clouds */}
-      <Animated.View style={[styles.cloud, styles.cloud1, { transform: [{ translateY: cloud1Y }] }]} />
-      <Animated.View style={[styles.cloud, styles.cloud2, { transform: [{ translateY: cloud2Y }] }]} />
-      <Animated.View style={[styles.cloud, styles.cloud3]} />
+      {/* Static clouds */}
+      <View style={[styles.cloud, styles.cloud1]} />
+      <View style={[styles.cloud, styles.cloud2]} />
+      <View style={[styles.cloud, styles.cloud3]} />
 
       {/* Back button */}
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
         <Ionicons name="arrow-back" size={28} color="rgba(255, 255, 255, 0.9)" />
       </TouchableOpacity>
 
+      {/* Theme toggle button */}
+      <TouchableOpacity 
+        onPress={() => setMeditationTheme(prev => prev === 'sky' ? 'sunset' : 'sky')} 
+        style={styles.themeToggle}
+      >
+        <Ionicons 
+          name={meditationTheme === 'sky' ? 'sunny' : 'moon'} 
+          size={24} 
+          color="rgba(255, 255, 255, 0.9)" 
+        />
+      </TouchableOpacity>
+
       {/* Center content */}
       <View style={styles.centerContent}>
-        {/* Breath instruction */}
-        <Text style={styles.breathText}>
-          {breathState === 'in' ? 'Breathe in' : breathState === 'out' ? 'Breathe out' : ''}
-        </Text>
+        {/* Breath instruction - Premium typography */}
+        <Text style={styles.breathText}>{phaseLabel}</Text>
 
-        {/* Horizontal progress bar - center-out expansion */}
+        {/* Single smooth progress bar - full width */}
         <View style={styles.progressBarContainer}>
-          <Animated.View style={[styles.progressBarLeft, { width: leftBarWidth }]} />
-          <Animated.View style={[styles.progressBarRight, { width: rightBarWidth }]} />
+          <Animated.View style={[styles.progressBarFill, { width: progressBarWidth }]} />
         </View>
 
-        {/* Last breath indicator */}
-        <Text style={styles.lastBreathText}>Last breath</Text>
+        {/* Breath counter */}
+        <Text style={styles.breathCountText}>{breathCount} {breathCount === 1 ? 'breath' : 'breaths'}</Text>
+        
+        {/* Debug info (temporary) */}
+        {__DEV__ && (
+          <View style={styles.debugOverlay}>
+            <Text style={styles.debugText}>Phase: {breathPhase}</Text>
+            <Text style={styles.debugText}>Progress: {Math.round(breathProgress._value * 100)}%</Text>
+          </View>
+        )}
       </View>
 
       {/* Calming phrase (appears occasionally) */}
@@ -226,8 +287,12 @@ const styles = StyleSheet.create({
   },
   cloud: {
     position: 'absolute',
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    backgroundColor: 'rgba(255, 250, 245, 0.65)', // Warmer off-white with subtle shading
     borderRadius: 100,
+    shadowColor: 'rgba(255, 255, 255, 0.3)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   cloud1: {
     width: 180,
@@ -257,47 +322,66 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 10,
   },
+  themeToggle: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 22,
+  },
   centerContent: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   breathText: {
-    fontSize: 28,
-    fontWeight: '300',
-    color: 'rgba(255, 255, 255, 0.95)',
-    marginBottom: 40,
-    letterSpacing: 1,
+    fontSize: 32,
+    fontWeight: '600',
+    color: 'rgba(255, 252, 248, 0.98)', // Warm off-white for better readability
+    marginBottom: 48,
+    letterSpacing: 0.5,
+    textAlign: 'center',
   },
   progressBarContainer: {
     width: width * 0.8,
     height: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     borderRadius: 2,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    overflow: 'hidden',
+    position: 'relative',
   },
-  progressBarLeft: {
+  progressBarFill: {
     height: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 252, 248, 0.95)',
     borderRadius: 2,
     position: 'absolute',
-    right: '50%',
+    left: 0,
+    top: 0,
   },
-  progressBarRight: {
-    height: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 2,
-    position: 'absolute',
-    left: '50%',
-  },
-  lastBreathText: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: 'rgba(255, 255, 255, 0.7)',
-    marginTop: 16,
+  breathCountText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: 'rgba(255, 252, 248, 0.75)',
+    marginTop: 20,
     letterSpacing: 0.5,
+  },
+  debugOverlay: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 8,
+    borderRadius: 8,
+  },
+  debugText: {
+    fontSize: 12,
+    color: '#fff',
+    fontFamily: 'monospace',
   },
   phraseContainer: {
     position: 'absolute',

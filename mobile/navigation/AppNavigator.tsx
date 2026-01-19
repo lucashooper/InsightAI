@@ -26,6 +26,8 @@ import AnalysisCompleteScreen from '../screens/onboarding/AnalysisCompleteScreen
 import PaywallScreen from '../screens/onboarding/PaywallScreen';
 import MeditationScreen from '../screens/MeditationScreen';
 import GratitudeScreen from '../screens/GratitudeScreen';
+import GratitudeHistoryScreen from '../screens/GratitudeHistoryScreen';
+import EmotionDetailScreen from '../screens/EmotionDetailScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Stack = createNativeStackNavigator();
@@ -38,8 +40,13 @@ function CenterFabButton() {
   return (
     <TouchableOpacity
       style={styles.centerFabButton}
-      onPress={() => navigation.navigate('CreateEntry')}
+      onPress={() => {
+        console.log('[TabBar] + (FAB) pressed -> navigate to CreateEntry');
+        navigation.navigate('CreateEntry');
+      }}
       activeOpacity={0.85}
+      accessibilityLabel="Create new journal entry"
+      accessibilityRole="button"
     >
       <LinearGradient
         colors={['#8b5cf6', '#7c3aed', '#6d28d9']}
@@ -57,7 +64,7 @@ function CenterFabButton() {
 function MainTabs() {
   return (
     <Tab.Navigator
-      initialRouteName="Dashboard"
+      initialRouteName="Home"
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: false, // Hide all labels
@@ -73,25 +80,39 @@ function MainTabs() {
         tabBarInactiveTintColor: '#666',
       }}
     >
+      {/* Tab 1: Home (Dashboard) */}
       <Tab.Screen
-        name="Dashboard"
+        name="Home"
         component={DashboardScreenNew}
         options={{
           tabBarIcon: ({ color }) => (
             <Ionicons name="home" size={24} color={color} />
           ),
+          tabBarAccessibilityLabel: "Home",
+        }}
+        listeners={{
+          tabPress: () => {
+            console.log('[TabBar] Home tab pressed');
+          },
         }}
       />
+      {/* Tab 2: Journal (Notes) */}
       <Tab.Screen
-        name="Notes"
+        name="Journal"
         component={HomeScreen}
         options={{
           tabBarIcon: ({ color }) => (
             <Ionicons name="journal" size={24} color={color} />
           ),
+          tabBarAccessibilityLabel: "Journal",
+        }}
+        listeners={{
+          tabPress: () => {
+            console.log('[TabBar] Journal tab pressed');
+          },
         }}
       />
-      {/* Center FAB Placeholder */}
+      {/* Tab 3: Center FAB (+) */}
       <Tab.Screen
         name="CreateEntryPlaceholder"
         component={View}
@@ -101,26 +122,41 @@ function MainTabs() {
         listeners={({ navigation }) => ({
           tabPress: (e) => {
             e.preventDefault();
+            console.log('[TabBar] + (FAB) tab pressed -> navigate to CreateEntry');
             navigation.navigate('CreateEntry');
           },
         })}
       />
+      {/* Tab 4: Dashboard (Playbook) */}
       <Tab.Screen
-        name="Playbook"
+        name="Dashboard"
         component={PlaybookScreen}
         options={{
           tabBarIcon: ({ color }) => (
             <Ionicons name="book" size={24} color={color} />
           ),
+          tabBarAccessibilityLabel: "Dashboard",
+        }}
+        listeners={{
+          tabPress: () => {
+            console.log('[TabBar] Dashboard tab pressed');
+          },
         }}
       />
+      {/* Tab 5: Dashboard (Analytics/Insights) */}
       <Tab.Screen
-        name="Settings"
-        component={SettingsScreen}
+        name="DashboardTab"
+        component={DashboardScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Ionicons name="settings" size={24} color={color} />
+            <Ionicons name="bar-chart" size={24} color={color} />
           ),
+          tabBarAccessibilityLabel: "Dashboard",
+        }}
+        listeners={{
+          tabPress: () => {
+            console.log('[NAV] Tab -> Dashboard');
+          },
         }}
       />
     </Tab.Navigator>
@@ -204,6 +240,9 @@ export default function AppNavigator() {
           <Stack.Screen name="Analytics" component={DashboardScreen} />
           <Stack.Screen name="Meditation" component={MeditationScreen} />
           <Stack.Screen name="Gratitude" component={GratitudeScreen} />
+          <Stack.Screen name="GratitudeHistory" component={GratitudeHistoryScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="EmotionDetail" component={EmotionDetailScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
         </Stack.Navigator>
       ) : (
         // Auth screens

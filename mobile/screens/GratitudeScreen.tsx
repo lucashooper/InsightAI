@@ -100,7 +100,12 @@ export default function GratitudeScreen({ navigation }: any) {
           <Ionicons name="arrow-back" size={24} color="rgba(255, 255, 255, 0.7)" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Gratitude Practice</Text>
-        <View style={{ width: 44 }} />
+        <TouchableOpacity 
+          onPress={() => navigation.navigate('GratitudeHistory')} 
+          style={styles.historyButton}
+        >
+          <Ionicons name="time-outline" size={24} color="rgba(255, 255, 255, 0.9)" />
+        </TouchableOpacity>
       </View>
 
       <KeyboardAvoidingView 
@@ -217,6 +222,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: 'rgba(255, 255, 255, 0.95)',
+  },
+  historyButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     flex: 1,
