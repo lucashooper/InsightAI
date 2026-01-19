@@ -18,6 +18,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -47,6 +48,7 @@ interface UserProfile {
 
 export default function HomeScreen({ navigation }: any) {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [streak, setStreak] = useState<StreakData>({ currentStreak: 0, longestStreak: 0 });
   const [loading, setLoading] = useState(true);
@@ -370,10 +372,7 @@ export default function HomeScreen({ navigation }: any) {
         onLongPress={() => handleEntryLongPress(item)}
         activeOpacity={0.7}
       >
-        <LinearGradient
-          colors={hasInsights ? ['#0f0f0f', '#1a1a1a'] : ['#0a0a0a', '#0f0f0f']}
-          style={styles.cardGradient}
-        >
+        <View style={styles.cardGradient}>
           {/* Header with title and mood */}
           <View style={styles.entryHeader}>
             <View style={styles.entryTitleRow}>
@@ -412,7 +411,7 @@ export default function HomeScreen({ navigation }: any) {
               </TouchableOpacity>
             )}
           </View>
-        </LinearGradient>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -429,7 +428,7 @@ export default function HomeScreen({ navigation }: any) {
     <View style={styles.container}>
       {/* Subtle Background Gradient */}
       <LinearGradient
-        colors={['#0a0a0a', '#050505', '#000000']}
+        colors={theme.colors.backgroundGradient as any}
         style={styles.backgroundGradient}
       />
 
@@ -542,7 +541,6 @@ export default function HomeScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
   },
   backgroundGradient: {
     position: 'absolute',
@@ -817,17 +815,12 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     borderRadius: 999,
-    backgroundColor: 'rgba(15, 15, 15, 0.95)',
+    backgroundColor: 'rgba(139, 92, 246, 0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
+    borderColor: 'rgba(139, 92, 246, 0.2)',
   },
   searchIcon: {
     marginRight: 8,
@@ -836,6 +829,10 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#ffffff',
     fontSize: 14,
+    paddingVertical: 4,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+    lineHeight: 20,
   },
   filterChipsRow: {
     marginTop: 10,
@@ -1075,24 +1072,24 @@ const styles = StyleSheet.create({
   },
   // Premium Entry Card Styles
   premiumCard: {
-    marginBottom: 20,
-    borderRadius: 16,
+    marginBottom: 12,
+    borderRadius: 14,
     overflow: 'hidden',
     shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
   },
   cardGradient: {
-    padding: 20,
+    padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.2)',
-    borderRadius: 16,
-    backgroundColor: 'rgba(15, 15, 15, 0.8)',
+    borderColor: 'rgba(139, 92, 246, 0.25)',
+    borderRadius: 14,
+    backgroundColor: 'rgba(139, 92, 246, 0.08)',
   },
   entryHeader: {
-    marginBottom: 12,
+    marginBottom: 8,
   },
   entryTitleRow: {
     flexDirection: 'row',
@@ -1111,7 +1108,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 12,

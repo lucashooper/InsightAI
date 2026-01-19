@@ -202,7 +202,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const THEME_STORAGE_KEY = '@insightai_theme';
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [themeName, setThemeName] = useState<ThemeName>('dark');
+  const [themeName, setThemeName] = useState<ThemeName>('vibrant');
 
   useEffect(() => {
     loadTheme();

@@ -29,11 +29,11 @@ export default function SettingsScreen({ navigation }: any) {
   const [feedbackSuccess, setFeedbackSuccess] = useState(false);
 
   const themes: { name: ThemeName; label: string; emoji: string }[] = [
-    { name: 'dark', label: 'Dark', emoji: '🌑' },
     { name: 'vibrant', label: 'Vibrant', emoji: '✨' },
+    { name: 'dark', label: 'Dark', emoji: '🌑' },
     { name: 'ocean', label: 'Ocean', emoji: '🌊' },
-    { name: 'forest', label: 'Forest', emoji: '🌲' },
     { name: 'sunset', label: 'Sunset', emoji: '🌅' },
+    { name: 'forest', label: 'Forest', emoji: '🌲' },
   ];
 
   useEffect(() => {
@@ -330,33 +330,6 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* Data Management */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Data</Text>
-
-          <TouchableOpacity
-            style={styles.card}
-            onPress={handleSync}
-            disabled={syncing}
-          >
-            <LinearGradient
-              colors={['rgba(139, 92, 246, 0.1)', 'rgba(10, 10, 10, 0.95)']}
-              style={styles.cardGradient}
-            >
-              <View style={styles.actionRow}>
-                {syncing ? (
-                  <ActivityIndicator size="small" color="#8b5cf6" />
-                ) : (
-                  <Ionicons name="cloud-download" size={20} color="#8b5cf6" />
-                )}
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.actionText}>Sync Strategies</Text>
-                  <Text style={styles.actionSubtext}>Import strategies from cloud</Text>
-                </View>
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
 
         {/* Theme Selection */}
         <View style={styles.section}>
@@ -473,35 +446,6 @@ export default function SettingsScreen({ navigation }: any) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Actions</Text>
 
-          <TouchableOpacity
-            style={[styles.card, { marginBottom: 12 }]}
-            onPress={async () => {
-              try {
-                await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
-                // Reset navigation to Welcome
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'Welcome' }],
-                });
-              } catch (e) {
-                Alert.alert('Error', 'Could not reset onboarding');
-              }
-            }}
-          >
-            <LinearGradient
-              colors={['rgba(139, 92, 246, 0.1)', 'rgba(10, 10, 10, 0.95)']}
-              style={styles.cardGradient}
-            >
-              <View style={styles.actionRow}>
-                <Ionicons name="refresh" size={20} color="#8b5cf6" />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.actionText, { color: '#8b5cf6' }]}>Reset Onboarding</Text>
-                  <Text style={styles.actionSubtext}>View the welcome flow again</Text>
-                </View>
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
-
           <TouchableOpacity style={styles.card} onPress={handleSignOut}>
             <LinearGradient
               colors={['rgba(10, 10, 10, 0.95)', 'rgba(5, 5, 5, 0.95)']}
@@ -536,7 +480,6 @@ export default function SettingsScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
   },
   backgroundGradient: {
     position: 'absolute',

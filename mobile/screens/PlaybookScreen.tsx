@@ -233,9 +233,8 @@ export default function PlaybookScreen() {
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         {/* Today's Progress */}
-        <LinearGradient
-          colors={['rgba(10, 10, 10, 0.95)', 'rgba(5, 5, 5, 0.95)']}
-          style={styles.progressCard}
+        <View
+          style={[styles.progressCard, { backgroundColor: 'rgba(139, 92, 246, 0.1)', borderColor: 'rgba(139, 92, 246, 0.25)', borderWidth: 1 }]}
         >
           <Text style={styles.progressTitle}>TODAY'S PROGRESS</Text>
           <View style={styles.progressStats}>
@@ -251,7 +250,7 @@ export default function PlaybookScreen() {
             />
           </View>
           <Text style={styles.progressPercentage}>{protocolProgress.percentage}% Completion</Text>
-        </LinearGradient>
+        </View>
 
         {/* Tabs */}
         <View style={styles.tabContainer}>
@@ -324,13 +323,12 @@ export default function PlaybookScreen() {
               activeOpacity={0.7}
               onLongPress={() => handleStrategyLongPress(strategy)}
             >
-              <LinearGradient
-                colors={
-                  strategy.status === 'suggested'
-                    ? ['rgba(18, 18, 26, 0.98)', 'rgba(6, 6, 12, 0.98)']
-                    : ['rgba(10, 10, 10, 0.98)', 'rgba(5, 5, 5, 0.98)']
-                }
-                style={styles.cardGradient}
+              <View
+                style={[styles.cardGradient, {
+                  backgroundColor: strategy.status === 'suggested'
+                    ? 'rgba(139, 92, 246, 0.08)'
+                    : 'rgba(99, 102, 241, 0.08)'
+                }]}
               >
                 <View style={styles.cardHeader}>
                   <View style={styles.emojiContainer}>
@@ -407,7 +405,7 @@ export default function PlaybookScreen() {
                     </View>
                   )}
                 </View>
-              </LinearGradient>
+              </View>
             </TouchableOpacity>
             ))}
             
@@ -532,7 +530,6 @@ export default function PlaybookScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
   },
   backgroundGradient: {
     position: 'absolute',

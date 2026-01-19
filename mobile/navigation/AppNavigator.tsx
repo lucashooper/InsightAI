@@ -24,6 +24,8 @@ import OnboardingSummaryScreen from '../screens/onboarding/OnboardingSummaryScre
 import AnalyzingScreen from '../screens/onboarding/AnalyzingScreen';
 import AnalysisCompleteScreen from '../screens/onboarding/AnalysisCompleteScreen';
 import PaywallScreen from '../screens/onboarding/PaywallScreen';
+import MeditationScreen from '../screens/MeditationScreen';
+import GratitudeScreen from '../screens/GratitudeScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Stack = createNativeStackNavigator();
@@ -200,6 +202,8 @@ export default function AppNavigator() {
           <Stack.Screen name="EntryDetail" component={EntryDetailScreen} />
           <Stack.Screen name="CreateEntry" component={CreateEntryScreen} />
           <Stack.Screen name="Analytics" component={DashboardScreen} />
+          <Stack.Screen name="Meditation" component={MeditationScreen} />
+          <Stack.Screen name="Gratitude" component={GratitudeScreen} />
         </Stack.Navigator>
       ) : (
         // Auth screens

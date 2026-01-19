@@ -53,7 +53,7 @@ export interface EnhancedAIAnalysis {
 // Groq Chat Completions endpoint (OpenAI-compatible)
 const GROQ_API_URL = (process.env.EXPO_PUBLIC_GROQ_API_URL as string) ||
   'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_API_KEY = process.env.EXPO_PUBLIC_GROQ_API_KEY as string;
+const GROQ_API_KEY = process.env.EXPO_PUBLIC_GROQ_API_KEY as string || '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';
 
 if (!GROQ_API_URL || !GROQ_API_KEY) {
   console.warn('[mobileAiService] Missing EXPO_PUBLIC_GROQ_API_URL or EXPO_PUBLIC_GROQ_API_KEY. Analysis will fail.');

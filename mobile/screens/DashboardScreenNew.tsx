@@ -40,12 +40,14 @@ export default function DashboardScreenNew() {
   });
   const [streak, setStreak] = useState(0);
   const [recentPatterns, setRecentPatterns] = useState<string[]>([]);
+  const [recentTopics, setRecentTopics] = useState<Array<{emoji: string, text: string, keyword: string}>>([]);
   const [userName, setUserName] = useState<string>('there');
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
 
   useEffect(() => {
     loadDashboardData();
     loadUserProfile();
+    loadRecentTopics();
   }, [user]);
 
   useEffect(() => {
@@ -157,6 +159,50 @@ export default function DashboardScreenNew() {
     }
   };
 
+  const loadRecentTopics = async () => {
+    if (!user) return;
+    
+    try {
+      const { data: notes, error } = await supabase
+        .from('notes')
+        .select('content, title')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error || !notes) return;
+
+      // Extract topics from content using keyword matching
+      const topicKeywords = [
+        { keyword: 'exercise|workout|gym|run|fitness', emoji: '🏃‍♂️', text: 'Exercise' },
+        { keyword: 'relationship|friend|family|love|partner', emoji: '💬', text: 'Relationships' },
+        { keyword: 'work|job|career|project|meeting', emoji: '💼', text: 'Work' },
+        { keyword: 'meditation|mindful|calm|peace|breathe', emoji: '🧘‍♀️', text: 'Mindfulness' },
+        { keyword: 'sleep|tired|rest|dream', emoji: '😴', text: 'Sleep' },
+        { keyword: 'stress|anxiety|worry|nervous', emoji: '😰', text: 'Stress' },
+      ];
+
+      const foundTopics: Array<{emoji: string, text: string, keyword: string}> = [];
+      const allContent = notes.map(n => (n.content + ' ' + n.title).toLowerCase()).join(' ');
+
+      topicKeywords.forEach(topic => {
+        const regex = new RegExp(topic.keyword, 'i');
+        if (regex.test(allContent) && foundTopics.length < 4) {
+          foundTopics.push(topic);
+        }
+      });
+
+      setRecentTopics(foundTopics.length > 0 ? foundTopics : [
+        { keyword: 'exercise', emoji: '🏃‍♂️', text: 'Exercise' },
+        { keyword: 'relationship', emoji: '💬', text: 'Relationships' },
+        { keyword: 'work', emoji: '💼', text: 'Work' },
+        { keyword: 'meditation', emoji: '🧘‍♀️', text: 'Mindfulness' },
+      ]);
+    } catch (error) {
+      console.error('Error loading topics:', error);
+    }
+  };
+
   // Using MindseraOrb with built-in palette and blur; no explicit colors required
 
   return (
@@ -213,23 +259,13 @@ export default function DashboardScreenNew() {
             resizeMode="contain"
           />
           <View style={styles.greetingInOrb}>
-            <Text style={[styles.greeting, { color: 'rgba(255, 255, 255, 0.85)' }]}>
+            <Text style={styles.greetingText}>
               Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}
             </Text>
-            <Text style={[styles.userName, { color: 'rgba(255, 255, 255, 0.95)' }]}>
+            <Text style={styles.greetingText}>
               {userName}
             </Text>
           </View>
-
-          {/* Streak Badge */}
-          {streak > 0 && (
-            <View style={[styles.streakBadge, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-              <Text style={styles.streakEmoji}>🔥</Text>
-              <Text style={[styles.streakText, { color: theme.colors.primaryText }]}>
-                {streak} day streak
-              </Text>
-            </View>
-          )}
         </View>
 
 
@@ -299,22 +335,17 @@ export default function DashboardScreenNew() {
             Recent topics
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.topicsScroll}>
-            <TouchableOpacity style={styles.topicChipGlass}>
-              <Text style={styles.topicEmoji}>🏃‍♂️</Text>
-              <Text style={[styles.topicText, { color: 'rgba(255,255,255,0.9)' }]}>Exercise</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.topicChipGlass}>
-              <Text style={styles.topicEmoji}>💬</Text>
-              <Text style={[styles.topicText, { color: 'rgba(255,255,255,0.9)' }]}>Relationships</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.topicChipGlass}>
-              <Text style={styles.topicEmoji}>💼</Text>
-              <Text style={[styles.topicText, { color: 'rgba(255,255,255,0.9)' }]}>Work</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.topicChipGlass}>
-              <Text style={styles.topicEmoji}>🧘‍♀️</Text>
-              <Text style={[styles.topicText, { color: 'rgba(255,255,255,0.9)' }]}>Mindfulness</Text>
-            </TouchableOpacity>
+            {recentTopics.map((topic, index) => (
+              <TouchableOpacity 
+                key={index}
+                style={styles.topicChipGlass}
+                onPress={() => navigation.navigate('Home', { searchQuery: topic.keyword })}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.topicEmoji}>{topic.emoji}</Text>
+                <Text style={[styles.topicText, { color: 'rgba(255,255,255,0.9)' }]}>{topic.text}</Text>
+              </TouchableOpacity>
+            ))}
           </ScrollView>
         </View>
 
@@ -323,14 +354,14 @@ export default function DashboardScreenNew() {
           <Text style={[styles.sectionTitle, { color: 'rgba(255, 255, 255, 0.9)' }]}>
             Today's insights
           </Text>
-          <View style={[styles.insightCard, { backgroundColor: 'rgba(255, 255, 255, 0.03)', borderColor: 'rgba(255, 255, 255, 0.08)' }]}>
+          <View style={[styles.insightCard, { backgroundColor: 'rgba(139, 92, 246, 0.08)', borderColor: 'rgba(139, 92, 246, 0.2)' }]}>
             <View style={styles.insightHeader}>
               <Ionicons name="trending-up" size={20} color="#22c55e" />
               <Text style={[styles.insightTitle, { color: 'rgba(255, 255, 255, 0.9)' }]}>Positive momentum</Text>
             </View>
             <Text style={[styles.insightText, { color: 'rgba(255, 255, 255, 0.5)' }]}>You've journaled 3 days in a row. Keep it up!</Text>
           </View>
-          <View style={[styles.insightCard, { backgroundColor: 'rgba(255, 255, 255, 0.03)', borderColor: 'rgba(255, 255, 255, 0.08)' }]}>
+          <View style={[styles.insightCard, { backgroundColor: 'rgba(99, 102, 241, 0.08)', borderColor: 'rgba(99, 102, 241, 0.2)' }]}>
             <View style={styles.insightHeader}>
               <Ionicons name="moon-outline" size={20} color="#8b5cf6" />
               <Text style={[styles.insightTitle, { color: 'rgba(255, 255, 255, 0.9)' }]}>Sleep pattern</Text>
@@ -344,7 +375,11 @@ export default function DashboardScreenNew() {
           <Text style={[styles.sectionTitle, { color: 'rgba(255, 255, 255, 0.9)' }]}>
             Suggested for you
           </Text>
-          <TouchableOpacity style={[styles.challengeCard, { backgroundColor: 'rgba(59, 130, 246, 0.08)', borderColor: 'rgba(59, 130, 246, 0.2)' }]}>
+          <TouchableOpacity 
+            style={[styles.challengeCard, { backgroundColor: 'rgba(59, 130, 246, 0.08)', borderColor: 'rgba(59, 130, 246, 0.2)' }]}
+            onPress={() => navigation.navigate('Meditation')}
+            activeOpacity={0.7}
+          >
             <View style={styles.challengeContent}>
               <Text style={styles.challengeEmoji}>🧘</Text>
               <View style={styles.challengeInfo}>
@@ -354,7 +389,11 @@ export default function DashboardScreenNew() {
             </View>
             <Ionicons name="chevron-forward" size={20} color="rgba(255, 255, 255, 0.3)" />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.challengeCard, { backgroundColor: 'rgba(139, 92, 246, 0.08)', borderColor: 'rgba(139, 92, 246, 0.2)' }]}>
+          <TouchableOpacity 
+            style={[styles.challengeCard, { backgroundColor: 'rgba(139, 92, 246, 0.08)', borderColor: 'rgba(139, 92, 246, 0.2)' }]}
+            onPress={() => navigation.navigate('Gratitude')}
+            activeOpacity={0.7}
+          >
             <View style={styles.challengeContent}>
               <Text style={styles.challengeEmoji}>📝</Text>
               <View style={styles.challengeInfo}>
@@ -393,7 +432,6 @@ export default function DashboardScreenNew() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
   },
   backgroundGradient: {
     position: 'absolute',
@@ -459,6 +497,14 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
     letterSpacing: -0.8,
     textAlign: 'center',
+  },
+  greetingText: {
+    fontSize: 26,
+    fontWeight: '300',
+    color: 'rgba(255, 255, 255, 0.95)',
+    letterSpacing: 0.8,
+    textAlign: 'center',
+    lineHeight: 36,
   },
   headerIcons: {
     flexDirection: 'row',
@@ -664,12 +710,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 9,
     borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(139, 92, 246, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.25)',
     marginRight: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
   },
   topicEmoji: {
     fontSize: 14,
