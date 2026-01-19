@@ -46,7 +46,7 @@ interface UserProfile {
   profile_picture_url: string | null;
 }
 
-export default function HomeScreen({ navigation }: any) {
+export default function HomeScreen({ navigation, route }: any) {
   const { user } = useAuth();
   const { theme } = useTheme();
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
@@ -54,7 +54,7 @@ export default function HomeScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(route?.params?.searchQuery || '');
   const [filter, setFilter] = useState<'all' | 'analyzed' | 'unanalyzed' | 'favorites'>('all');
   const [hiddenEntryIds, setHiddenEntryIds] = useState<Set<string>>(new Set());
   const [dominantEmotions, setDominantEmotions] = useState<{ emotion: string; percentage: number }[]>([]);
@@ -309,6 +309,13 @@ export default function HomeScreen({ navigation }: any) {
     }, [user])
   );
 
+  // Handle search query from navigation params (e.g., from Recent Topics)
+  useEffect(() => {
+    if (route?.params?.searchQuery) {
+      setSearchQuery(route.params.searchQuery);
+    }
+  }, [route?.params?.searchQuery]);
+
   const onRefresh = () => {
     setRefreshing(true);
     loadEntries();
@@ -470,6 +477,7 @@ export default function HomeScreen({ navigation }: any) {
             placeholderTextColor="#6b7280"
             value={searchQuery}
             onChangeText={setSearchQuery}
+            textAlignVertical="center"
           />
         </View>
         <ScrollView
@@ -1084,9 +1092,7 @@ const styles = StyleSheet.create({
   cardGradient: {
     padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.25)',
     borderRadius: 14,
-    backgroundColor: 'rgba(139, 92, 246, 0.08)',
   },
   entryHeader: {
     marginBottom: 8,

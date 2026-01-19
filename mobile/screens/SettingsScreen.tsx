@@ -292,11 +292,8 @@ export default function SettingsScreen({ navigation }: any) {
         {/* Profile Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Profile</Text>
-          <View style={styles.card}>
-            <LinearGradient
-              colors={['rgba(10, 10, 10, 0.95)', 'rgba(5, 5, 5, 0.95)']}
-              style={styles.cardGradient}
-            >
+          <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+            <View style={styles.cardGradient}>
               <View style={styles.profileSection}>
                 <TouchableOpacity
                   style={styles.avatarContainer}
@@ -326,7 +323,7 @@ export default function SettingsScreen({ navigation }: any) {
                   <Text style={styles.profileEmail}>{user?.email}</Text>
                 </View>
               </View>
-            </LinearGradient>
+            </View>
           </View>
         </View>
 
@@ -340,6 +337,7 @@ export default function SettingsScreen({ navigation }: any) {
                 key={t.name}
                 style={[
                   styles.themeOption,
+                  { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
                   themeName === t.name && styles.themeOptionActive
                 ]}
                 onPress={() => setTheme(t.name)}
@@ -364,11 +362,8 @@ export default function SettingsScreen({ navigation }: any) {
         {/* Subscription & Usage */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>💎 Subscription & Usage</Text>
-          <View style={styles.card}>
-            <LinearGradient
-              colors={['rgba(10, 10, 10, 0.95)', 'rgba(5, 5, 5, 0.95)']}
-              style={styles.cardGradient}
-            >
+          <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+            <View style={styles.cardGradient}>
               <View style={styles.usageRow}>
                 <Text style={styles.usageLabel}>Current Plan</Text>
                 <Text style={styles.usageTier}>Free</Text>
@@ -387,18 +382,15 @@ export default function SettingsScreen({ navigation }: any) {
                   />
                 </View>
               </View>
-            </LinearGradient>
+            </View>
           </View>
         </View>
 
         {/* Send Feedback */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>💬 Send Feedback</Text>
-          <View style={styles.card}>
-            <LinearGradient
-              colors={['rgba(10, 10, 10, 0.95)', 'rgba(5, 5, 5, 0.95)']}
-              style={styles.cardGradient}
-            >
+          <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+            <View style={styles.cardGradient}>
               <TextInput
                 style={styles.feedbackInput}
                 value={feedbackTitle}
@@ -438,7 +430,7 @@ export default function SettingsScreen({ navigation }: any) {
                   <Text style={styles.feedbackSuccessText}>Thank you! Feedback sent.</Text>
                 </View>
               )}
-            </LinearGradient>
+            </View>
           </View>
         </View>
 
@@ -446,30 +438,24 @@ export default function SettingsScreen({ navigation }: any) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Actions</Text>
 
-          <TouchableOpacity style={styles.card} onPress={handleSignOut}>
-            <LinearGradient
-              colors={['rgba(10, 10, 10, 0.95)', 'rgba(5, 5, 5, 0.95)']}
-              style={styles.cardGradient}
-            >
+          <TouchableOpacity style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]} onPress={handleSignOut}>
+            <View style={styles.cardGradient}>
               <View style={styles.actionRow}>
                 <Ionicons name="log-out" size={20} color="#ef4444" />
                 <Text style={[styles.actionText, { color: '#ef4444' }]}>Sign Out</Text>
               </View>
-            </LinearGradient>
+            </View>
           </TouchableOpacity>
         </View>
 
         {/* App Info */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>About</Text>
-          <View style={styles.card}>
-            <LinearGradient
-              colors={['rgba(10, 10, 10, 0.95)', 'rgba(5, 5, 5, 0.95)']}
-              style={styles.cardGradient}
-            >
+          <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+            <View style={styles.cardGradient}>
               <Text style={styles.infoText}>InsightAI Mobile v1.0.0</Text>
               <Text style={styles.infoSubtext}>Your Personal AI Journal</Text>
-            </LinearGradient>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -491,9 +477,7 @@ const styles = StyleSheet.create({
   header: {
     padding: 20,
     paddingTop: 60,
-    backgroundColor: '#0a0a0a',
     borderBottomWidth: 1,
-    borderBottomColor: '#1a1a1a',
   },
   headerTitle: {
     fontSize: 24,
@@ -522,7 +506,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   card: {
-    backgroundColor: '#0f0f0f',
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
@@ -720,10 +703,8 @@ const styles = StyleSheet.create({
   themeOption: {
     width: '30%',
     aspectRatio: 1,
-    backgroundColor: 'rgba(10, 10, 10, 0.95)',
     borderRadius: 16,
     borderWidth: 2,
-    borderColor: '#1a1a1a',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,

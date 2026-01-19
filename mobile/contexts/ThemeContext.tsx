@@ -36,6 +36,11 @@ export interface Theme {
     border: string;
     divider: string;
     shadow: string;
+    
+    // Surface tokens for cards/containers
+    surface: string;
+    surfaceElevated: string;
+    surfaceHover: string;
   };
 }
 
@@ -67,6 +72,10 @@ const themes: Record<ThemeName, Theme> = {
       border: '#1a1a1a',
       divider: 'rgba(255, 255, 255, 0.1)',
       shadow: '#000000',
+      
+      surface: 'rgba(139, 92, 246, 0.08)',
+      surfaceElevated: 'rgba(139, 92, 246, 0.12)',
+      surfaceHover: 'rgba(139, 92, 246, 0.15)',
     },
   },
   
@@ -97,6 +106,10 @@ const themes: Record<ThemeName, Theme> = {
       border: 'rgba(168, 85, 247, 0.2)',
       divider: 'rgba(168, 85, 247, 0.15)',
       shadow: '#8b5cf6',
+      
+      surface: 'rgba(168, 85, 247, 0.08)',
+      surfaceElevated: 'rgba(168, 85, 247, 0.12)',
+      surfaceHover: 'rgba(168, 85, 247, 0.15)',
     },
   },
   
@@ -127,6 +140,10 @@ const themes: Record<ThemeName, Theme> = {
       border: 'rgba(59, 130, 246, 0.2)',
       divider: 'rgba(59, 130, 246, 0.15)',
       shadow: '#1e40af',
+      
+      surface: 'rgba(59, 130, 246, 0.08)',
+      surfaceElevated: 'rgba(59, 130, 246, 0.12)',
+      surfaceHover: 'rgba(59, 130, 246, 0.15)',
     },
   },
   
@@ -157,6 +174,10 @@ const themes: Record<ThemeName, Theme> = {
       border: 'rgba(16, 185, 129, 0.2)',
       divider: 'rgba(16, 185, 129, 0.15)',
       shadow: '#065f46',
+      
+      surface: 'rgba(16, 185, 129, 0.08)',
+      surfaceElevated: 'rgba(16, 185, 129, 0.12)',
+      surfaceHover: 'rgba(16, 185, 129, 0.15)',
     },
   },
   
@@ -187,6 +208,10 @@ const themes: Record<ThemeName, Theme> = {
       border: 'rgba(249, 115, 22, 0.2)',
       divider: 'rgba(249, 115, 22, 0.15)',
       shadow: '#9a3412',
+      
+      surface: 'rgba(249, 115, 22, 0.08)',
+      surfaceElevated: 'rgba(249, 115, 22, 0.12)',
+      surfaceHover: 'rgba(249, 115, 22, 0.15)',
     },
   },
 };

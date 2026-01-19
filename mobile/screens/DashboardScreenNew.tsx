@@ -339,7 +339,7 @@ export default function DashboardScreenNew() {
               <TouchableOpacity 
                 key={index}
                 style={styles.topicChipGlass}
-                onPress={() => navigation.navigate('Home', { searchQuery: topic.keyword })}
+                onPress={() => navigation.navigate('Notes', { screen: 'Notes', params: { searchQuery: topic.keyword } })}
                 activeOpacity={0.7}
               >
                 <Text style={styles.topicEmoji}>{topic.emoji}</Text>
@@ -354,14 +354,14 @@ export default function DashboardScreenNew() {
           <Text style={[styles.sectionTitle, { color: 'rgba(255, 255, 255, 0.9)' }]}>
             Today's insights
           </Text>
-          <View style={[styles.insightCard, { backgroundColor: 'rgba(139, 92, 246, 0.08)', borderColor: 'rgba(139, 92, 246, 0.2)' }]}>
+          <View style={[styles.insightCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
             <View style={styles.insightHeader}>
               <Ionicons name="trending-up" size={20} color="#22c55e" />
               <Text style={[styles.insightTitle, { color: 'rgba(255, 255, 255, 0.9)' }]}>Positive momentum</Text>
             </View>
             <Text style={[styles.insightText, { color: 'rgba(255, 255, 255, 0.5)' }]}>You've journaled 3 days in a row. Keep it up!</Text>
           </View>
-          <View style={[styles.insightCard, { backgroundColor: 'rgba(99, 102, 241, 0.08)', borderColor: 'rgba(99, 102, 241, 0.2)' }]}>
+          <View style={[styles.insightCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
             <View style={styles.insightHeader}>
               <Ionicons name="moon-outline" size={20} color="#8b5cf6" />
               <Text style={[styles.insightTitle, { color: 'rgba(255, 255, 255, 0.9)' }]}>Sleep pattern</Text>
@@ -376,7 +376,7 @@ export default function DashboardScreenNew() {
             Suggested for you
           </Text>
           <TouchableOpacity 
-            style={[styles.challengeCard, { backgroundColor: 'rgba(59, 130, 246, 0.08)', borderColor: 'rgba(59, 130, 246, 0.2)' }]}
+            style={[styles.challengeCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
             onPress={() => navigation.navigate('Meditation')}
             activeOpacity={0.7}
           >
@@ -390,7 +390,7 @@ export default function DashboardScreenNew() {
             <Ionicons name="chevron-forward" size={20} color="rgba(255, 255, 255, 0.3)" />
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.challengeCard, { backgroundColor: 'rgba(139, 92, 246, 0.08)', borderColor: 'rgba(139, 92, 246, 0.2)' }]}
+            style={[styles.challengeCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
             onPress={() => navigation.navigate('Gratitude')}
             activeOpacity={0.7}
           >

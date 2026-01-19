@@ -156,16 +156,22 @@ export default function MeditationScreen({ navigation }: any) {
     setTimeRemaining(300);
   };
 
-  const progressWidth = breathProgress.interpolate({
+  // Center-out expansion: left and right bars grow from center
+  const leftBarWidth = breathProgress.interpolate({
     inputRange: [0, 1],
-    outputRange: ['10%', '90%'],
+    outputRange: ['0%', '40%'],
+  });
+  
+  const rightBarWidth = breathProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '40%'],
   });
 
   return (
     <View style={styles.container}>
       {/* Sky gradient background */}
       <LinearGradient
-        colors={['#87CEEB', '#B0E0E6', '#E0F6FF']}
+        colors={['#5B9BD5', '#7FB3D5', '#A4C8E1']}
         style={styles.backgroundGradient}
       />
 
@@ -186,9 +192,10 @@ export default function MeditationScreen({ navigation }: any) {
           {breathState === 'in' ? 'Breathe in' : breathState === 'out' ? 'Breathe out' : ''}
         </Text>
 
-        {/* Horizontal progress bar */}
+        {/* Horizontal progress bar - center-out expansion */}
         <View style={styles.progressBarContainer}>
-          <Animated.View style={[styles.progressBar, { width: progressWidth }]} />
+          <Animated.View style={[styles.progressBarLeft, { width: leftBarWidth }]} />
+          <Animated.View style={[styles.progressBarRight, { width: rightBarWidth }]} />
         </View>
 
         {/* Last breath indicator */}
@@ -267,12 +274,23 @@ const styles = StyleSheet.create({
     height: 4,
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
     borderRadius: 2,
-    overflow: 'hidden',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  progressBar: {
+  progressBarLeft: {
     height: '100%',
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 2,
+    position: 'absolute',
+    right: '50%',
+  },
+  progressBarRight: {
+    height: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 2,
+    position: 'absolute',
+    left: '50%',
   },
   lastBreathText: {
     fontSize: 14,

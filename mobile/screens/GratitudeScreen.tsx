@@ -77,9 +77,11 @@ export default function GratitudeScreen({ navigation }: any) {
       Alert.alert('Saved', 'Your gratitude practice has been saved to your journal.', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
-    } catch (error) {
-      console.error('Error saving gratitude:', error);
-      Alert.alert('Error', 'Failed to save your gratitude practice.');
+    } catch (error: any) {
+      console.error('[Gratitude] Error saving gratitude:', error);
+      console.error('[Gratitude] Error details:', JSON.stringify(error, null, 2));
+      const errorMessage = error?.message || error?.code || 'Unknown error';
+      Alert.alert('Error', `Failed to save your gratitude practice. ${errorMessage}`);
     } finally {
       setSaving(false);
     }

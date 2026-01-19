@@ -84,7 +84,9 @@ export default function CreateEntryScreen({ navigation }: any) {
   };
 
   const handleContentChange = (text: string) => {
+    console.log('[CreateEntry] Content changed, length:', text.trim().length);
     setContent(text);
+    console.log('[CreateEntry] Can analyze:', text.trim().length >= 5);
     hasUnsavedChanges.current = true;
   };
 
@@ -103,7 +105,12 @@ export default function CreateEntryScreen({ navigation }: any) {
   };
 
   const handleAnalyze = async () => {
-    if (content.trim().length < 10) return;
+    console.log('[CreateEntry] Analyze button pressed');
+    console.log('[CreateEntry] Content length:', content.trim().length);
+    if (content.trim().length < 5) {
+      console.log('[CreateEntry] Content too short, aborting');
+      return;
+    }
     
     // Save entry first, then navigate to analyze
     try {
@@ -121,10 +128,13 @@ export default function CreateEntryScreen({ navigation }: any) {
         .single();
 
       if (!error && data) {
+        console.log('[CreateEntry] Entry saved successfully, navigating to analyze');
         navigation.navigate('EntryDetail', { entry: data, shouldAnalyze: true });
+      } else {
+        console.error('[CreateEntry] Error saving entry:', error);
       }
     } catch (error) {
-      console.error('Error saving entry:', error);
+      console.error('[CreateEntry] Exception saving entry:', error);
     }
   };
 
@@ -176,14 +186,14 @@ export default function CreateEntryScreen({ navigation }: any) {
             onPress={handleAnalyze}
             style={[
               styles.analyzeButton,
-              content.trim().length < 10 && styles.analyzeButtonDisabled
+              content.trim().length < 5 && styles.analyzeButtonDisabled
             ]}
-            disabled={content.trim().length < 10}
+            disabled={content.trim().length < 5}
             activeOpacity={0.7}
           >
             <Text style={[
               styles.analyzeText,
-              content.trim().length < 10 && styles.analyzeTextDisabled
+              content.trim().length < 5 && styles.analyzeTextDisabled
             ]}>
               Analyze
             </Text>
