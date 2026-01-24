@@ -68,9 +68,9 @@ export default function LoginScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      {/* Background Gradient */}
+      {/* Background Gradient - Vibrant Theme */}
       <LinearGradient
-        colors={['#0a0a0a', '#050505', '#000000']}
+        colors={['#1a0b2e', '#2d1b4e', '#16213e', '#0f3460']}
         style={styles.backgroundGradient}
       />
 

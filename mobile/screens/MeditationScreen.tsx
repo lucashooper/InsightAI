@@ -17,9 +17,9 @@ const { width, height } = Dimensions.get('window');
 // Breathing phase configuration (Headspace-inspired)
 const BREATH_PHASES = {
   INHALE: { duration: 4000, label: 'Breathe in', type: 'inhale' as const },
-  HOLD_IN: { duration: 2000, label: 'Hold', type: 'hold' as const },
+  HOLD_IN: { duration: 3000, label: 'Hold', type: 'hold' as const },
   EXHALE: { duration: 6000, label: 'Breathe out', type: 'exhale' as const },
-  HOLD_OUT: { duration: 2000, label: 'Hold', type: 'hold' as const },
+  HOLD_OUT: { duration: 3000, label: 'Hold', type: 'hold' as const },
 };
 
 const TOTAL_CYCLE_DURATION = Object.values(BREATH_PHASES).reduce((sum, phase) => sum + phase.duration, 0);
@@ -45,87 +45,104 @@ export default function MeditationScreen({ navigation }: any) {
   const [timeRemaining, setTimeRemaining] = useState(300);
   const [isActive, setIsActive] = useState(false);
   const [meditationTheme, setMeditationTheme] = useState<'sky' | 'sunset'>('sky');
-  const phaseStartTime = useRef(Date.now());
+  const [hasStartedBreathing, setHasStartedBreathing] = useState(false);
+  const cycleStartTimeRef = useRef(Date.now());
+  const breathPhaseRef = useRef<BreathPhase>('inhale');
+  const cycleIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const breathCycleRef = useRef<Animated.CompositeAnimation | null>(null);
   
   const breathProgress = useRef(new Animated.Value(0)).current;
   const phraseOpacity = useRef(new Animated.Value(0)).current;
-  const cloud1Y = useRef(new Animated.Value(0)).current;
-  const cloud2Y = useRef(new Animated.Value(0)).current;
 
-  // 4-phase breathing animation cycle with logging
   useEffect(() => {
-    const logPhaseTransition = (phase: BreathPhase, label: string, duration: number) => {
-      console.log('[MeditationPhase]:', phase);
-      console.log('[PhaseStartTimestamp]:', Date.now());
-      console.log('[DurationMs]:', duration);
-      phaseStartTime.current = Date.now();
-      setBreathPhase(phase);
-      setPhaseLabel(label);
-    };
+    breathPhaseRef.current = breathPhase;
+  }, [breathPhase]);
 
-    const breathCycle = Animated.loop(
+  // 4-phase breathing animation cycle
+  useEffect(() => {
+    if (!hasStartedBreathing) return;
+
+    cycleStartTimeRef.current = Date.now();
+    breathPhaseRef.current = 'inhale';
+    setBreathPhase('inhale');
+    setPhaseLabel(BREATH_PHASES.INHALE.label);
+    setBreathCount(0);
+    breathProgress.setValue(0);
+
+    if (cycleIntervalRef.current) {
+      clearInterval(cycleIntervalRef.current);
+      cycleIntervalRef.current = null;
+    }
+
+    if (breathCycleRef.current) {
+      breathCycleRef.current.stop();
+      breathCycleRef.current = null;
+    }
+
+    const cycle = Animated.loop(
       Animated.sequence([
-        // Phase 1: Inhale (0 -> 1)
         Animated.timing(breathProgress, {
           toValue: 1,
           duration: BREATH_PHASES.INHALE.duration,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: false,
         }),
-        // Phase 2: Hold at max (stays at 1)
-        Animated.timing(breathProgress, {
-          toValue: 1,
-          duration: BREATH_PHASES.HOLD_IN.duration,
-          easing: Easing.linear,
-          useNativeDriver: false,
-        }),
-        // Phase 3: Exhale (1 -> 0)
+        Animated.delay(BREATH_PHASES.HOLD_IN.duration),
         Animated.timing(breathProgress, {
           toValue: 0,
           duration: BREATH_PHASES.EXHALE.duration,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: false,
         }),
-        // Phase 4: Hold at min (stays at 0)
-        Animated.timing(breathProgress, {
-          toValue: 0,
-          duration: BREATH_PHASES.HOLD_OUT.duration,
-          easing: Easing.linear,
-          useNativeDriver: false,
-        }),
+        Animated.delay(BREATH_PHASES.HOLD_OUT.duration),
       ])
     );
-    breathCycle.start();
+    breathCycleRef.current = cycle;
+    cycle.start();
 
-    // Track phase changes for UI updates
-    const phaseInterval = setInterval(() => {
-      const elapsed = (Date.now() - phaseStartTime.current) % TOTAL_CYCLE_DURATION;
-      
+    cycleIntervalRef.current = setInterval(() => {
+      const elapsed = (Date.now() - cycleStartTimeRef.current) % TOTAL_CYCLE_DURATION;
+      const currentPhase = breathPhaseRef.current;
+
       if (elapsed < BREATH_PHASES.INHALE.duration) {
-        if (breathPhase !== 'inhale') {
-          logPhaseTransition('inhale', BREATH_PHASES.INHALE.label, BREATH_PHASES.INHALE.duration);
+        if (currentPhase !== 'inhale') {
+          breathPhaseRef.current = 'inhale';
+          setBreathPhase('inhale');
+          setPhaseLabel(BREATH_PHASES.INHALE.label);
         }
       } else if (elapsed < BREATH_PHASES.INHALE.duration + BREATH_PHASES.HOLD_IN.duration) {
-        if (breathPhase !== 'hold_in') {
-          logPhaseTransition('hold_in', BREATH_PHASES.HOLD_IN.label, BREATH_PHASES.HOLD_IN.duration);
+        if (currentPhase !== 'hold_in') {
+          breathPhaseRef.current = 'hold_in';
+          setBreathPhase('hold_in');
+          setPhaseLabel(BREATH_PHASES.HOLD_IN.label);
         }
       } else if (elapsed < BREATH_PHASES.INHALE.duration + BREATH_PHASES.HOLD_IN.duration + BREATH_PHASES.EXHALE.duration) {
-        if (breathPhase !== 'exhale') {
-          logPhaseTransition('exhale', BREATH_PHASES.EXHALE.label, BREATH_PHASES.EXHALE.duration);
+        if (currentPhase !== 'exhale') {
+          breathPhaseRef.current = 'exhale';
+          setBreathPhase('exhale');
+          setPhaseLabel(BREATH_PHASES.EXHALE.label);
         }
       } else {
-        if (breathPhase !== 'hold_out') {
-          logPhaseTransition('hold_out', BREATH_PHASES.HOLD_OUT.label, BREATH_PHASES.HOLD_OUT.duration);
+        if (currentPhase !== 'hold_out') {
+          breathPhaseRef.current = 'hold_out';
+          setBreathPhase('hold_out');
+          setPhaseLabel(BREATH_PHASES.HOLD_OUT.label);
           setBreathCount(prev => prev + 1);
         }
       }
     }, 100);
 
     return () => {
-      breathCycle.stop();
-      clearInterval(phaseInterval);
+      if (cycleIntervalRef.current) {
+        clearInterval(cycleIntervalRef.current);
+        cycleIntervalRef.current = null;
+      }
+      if (breathCycleRef.current) {
+        breathCycleRef.current.stop();
+        breathCycleRef.current = null;
+      }
     };
-  }, [breathPhase]);
+  }, [hasStartedBreathing, breathProgress]);
 
 
   // Clouds are static (no animation)
@@ -149,29 +166,35 @@ export default function MeditationScreen({ navigation }: any) {
   //   ).start();
   // }, []);
 
-  // Show calming phrase every 30 seconds
+  // Show calming phrase loop during intro
   useEffect(() => {
-    const phraseInterval = setInterval(() => {
-      setShowPhrase(true);
+    if (hasStartedBreathing) return;
+
+    setShowPhrase(true);
+    phraseOpacity.setValue(0);
+    const interval = setInterval(() => {
       Animated.sequence([
         Animated.timing(phraseOpacity, {
           toValue: 1,
-          duration: 1000,
+          duration: 900,
           useNativeDriver: true,
         }),
-        Animated.delay(5000),
+        Animated.delay(3200),
         Animated.timing(phraseOpacity, {
           toValue: 0,
-          duration: 1000,
+          duration: 900,
           useNativeDriver: true,
         }),
       ]).start(() => {
-        setShowPhrase(false);
         setCurrentPhrase((prev) => (prev + 1) % CALMING_PHRASES.length);
       });
-    }, 30000);
-    return () => clearInterval(phraseInterval);
-  }, []);
+    }, 5200);
+
+    return () => {
+      clearInterval(interval);
+      setShowPhrase(false);
+    };
+  }, [hasStartedBreathing, phraseOpacity]);
 
   // Timer countdown
   useEffect(() => {
@@ -201,15 +224,20 @@ export default function MeditationScreen({ navigation }: any) {
     setTimeRemaining(300);
   };
 
-  // Single smooth progress bar (left to right, full width)
-  const progressBarWidth = breathProgress.interpolate({
+  // Bidirectional progress bar (center outward like Headspace)
+  const progressBarLeftWidth = breathProgress.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0%', '100%'],
+    outputRange: ['0%', '50%'],
+  });
+  
+  const progressBarRightWidth = breathProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '50%'],
   });
 
-  // Richer, calmer colors (less washed out)
-  const skyColors = ['#3d5a80', '#5b7a9f', '#7a9abf']; // Deeper, richer sky blue
-  const sunsetColors = ['#d4633c', '#e8885d', '#f4a261']; // Warmer, richer sunset
+  // Headspace-inspired gradient colors
+  const skyColors = ['#2F8FFF', '#4CB6FF', '#73D2FF'];
+  const sunsetColors = ['#FF6B6B', '#FFA07A', '#FFB88C']; // Warm sunset
 
   return (
     <View style={styles.container}>
@@ -219,10 +247,11 @@ export default function MeditationScreen({ navigation }: any) {
         style={styles.backgroundGradient}
       />
 
-      {/* Static clouds */}
+      {/* Realistic clouds with depth */}
       <View style={[styles.cloud, styles.cloud1]} />
       <View style={[styles.cloud, styles.cloud2]} />
       <View style={[styles.cloud, styles.cloud3]} />
+      <View style={[styles.cloud, styles.cloud4]} />
 
       {/* Back button */}
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -243,23 +272,33 @@ export default function MeditationScreen({ navigation }: any) {
 
       {/* Center content */}
       <View style={styles.centerContent}>
-        {/* Breath instruction - Premium typography */}
-        <Text style={styles.breathText}>{phaseLabel}</Text>
+        {!hasStartedBreathing ? (
+          <>
+            <Text style={styles.breathText}>Take a slow breath</Text>
+            <Text style={styles.breathCountText}>When you're ready, start a breathing exercise.</Text>
 
-        {/* Single smooth progress bar - full width */}
-        <View style={styles.progressBarContainer}>
-          <Animated.View style={[styles.progressBarFill, { width: progressBarWidth }]} />
-        </View>
+            <TouchableOpacity
+              style={styles.startButton}
+              onPress={() => setHasStartedBreathing(true)}
+              activeOpacity={0.9}
+            >
+              <Text style={styles.startButtonText}>Start breathing exercise</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            {/* Breath instruction - Premium typography */}
+            <Text style={styles.exercisePhaseText}>{phaseLabel}</Text>
 
-        {/* Breath counter */}
-        <Text style={styles.breathCountText}>{breathCount} {breathCount === 1 ? 'breath' : 'breaths'}</Text>
-        
-        {/* Debug info (temporary) */}
-        {__DEV__ && (
-          <View style={styles.debugOverlay}>
-            <Text style={styles.debugText}>Phase: {breathPhase}</Text>
-            <Text style={styles.debugText}>Progress: {Math.round(breathProgress._value * 100)}%</Text>
-          </View>
+            {/* Bidirectional progress bar - center outward */}
+            <View style={styles.progressBarContainer}>
+              <Animated.View style={[styles.progressBarFillLeft, { width: progressBarLeftWidth }]} />
+              <Animated.View style={[styles.progressBarFillRight, { width: progressBarRightWidth }]} />
+            </View>
+
+            {/* Breath counter */}
+            <Text style={styles.exerciseBreathCountText}>{breathCount} {breathCount === 1 ? 'breath' : 'breaths'}</Text>
+          </>
         )}
       </View>
 
@@ -287,30 +326,41 @@ const styles = StyleSheet.create({
   },
   cloud: {
     position: 'absolute',
-    backgroundColor: 'rgba(255, 250, 245, 0.65)', // Warmer off-white with subtle shading
+    backgroundColor: '#FFFFFF', // Pure white for realistic clouds
     borderRadius: 100,
-    shadowColor: 'rgba(255, 255, 255, 0.3)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowColor: 'rgba(0, 0, 0, 0.15)', // Darker shadow for depth
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 5, // Android shadow
   },
   cloud1: {
-    width: 180,
-    height: 80,
-    top: 100,
-    left: -40,
+    width: 200,
+    height: 90,
+    top: 120,
+    left: -50,
+    opacity: 0.95,
   },
   cloud2: {
-    width: 220,
-    height: 90,
-    top: 200,
-    right: -50,
+    width: 240,
+    height: 100,
+    top: 220,
+    right: -60,
+    opacity: 0.9,
   },
   cloud3: {
+    width: 180,
+    height: 80,
+    bottom: 180,
+    left: 30,
+    opacity: 0.85,
+  },
+  cloud4: {
     width: 160,
     height: 70,
-    bottom: 150,
-    left: 20,
+    bottom: 350,
+    right: 40,
+    opacity: 0.8,
   },
   backButton: {
     position: 'absolute',
@@ -338,36 +388,76 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 24,
   },
   breathText: {
-    fontSize: 32,
-    fontWeight: '600',
+    fontSize: 34,
+    fontWeight: '700',
     color: 'rgba(255, 252, 248, 0.98)', // Warm off-white for better readability
-    marginBottom: 48,
+    marginBottom: 14,
     letterSpacing: 0.5,
     textAlign: 'center',
   },
   progressBarContainer: {
     width: width * 0.8,
-    height: 4,
+    height: 6,
     backgroundColor: 'rgba(255, 255, 255, 0.25)',
     borderRadius: 2,
     overflow: 'hidden',
     position: 'relative',
   },
-  progressBarFill: {
+  progressBarFillLeft: {
     height: '100%',
-    backgroundColor: 'rgba(255, 252, 248, 0.95)',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 2,
     position: 'absolute',
-    left: 0,
+    right: '50%',
+    top: 0,
+  },
+  progressBarFillRight: {
+    height: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 2,
+    position: 'absolute',
+    left: '50%',
     top: 0,
   },
   breathCountText: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 17,
+    fontWeight: '600',
     color: 'rgba(255, 252, 248, 0.75)',
-    marginTop: 20,
+    marginTop: 8,
+    letterSpacing: 0.5,
+    textAlign: 'center',
+  },
+  startButton: {
+    marginTop: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.22)',
+    paddingVertical: 12,
+    paddingHorizontal: 22,
+    borderRadius: 999,
+  },
+  startButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: 'rgba(255, 255, 255, 0.95)',
+    letterSpacing: 0.2,
+  },
+  exercisePhaseText: {
+    fontSize: 40,
+    fontWeight: '700',
+    color: 'rgba(255, 252, 248, 0.98)',
+    marginBottom: 48,
+    letterSpacing: 0.3,
+    textAlign: 'center',
+  },
+  exerciseBreathCountText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: 'rgba(255, 252, 248, 0.75)',
+    marginTop: 22,
     letterSpacing: 0.5,
   },
   debugOverlay: {

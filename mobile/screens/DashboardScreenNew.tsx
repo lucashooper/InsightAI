@@ -419,7 +419,7 @@ export default function DashboardScreenNew() {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <LinearGradient
-        colors={theme.colors.backgroundGradient}
+        colors={theme.colors.backgroundGradient as any}
         style={styles.backgroundGradient}
       />
 
@@ -553,7 +553,7 @@ export default function DashboardScreenNew() {
           </Text>
           {!hasEntryToday ? (
             <TouchableOpacity
-              style={[styles.insightCard, styles.noEntryCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+              style={[styles.insightCard, styles.noEntryCard, { backgroundColor: 'rgba(20, 20, 20, 0.8)', borderColor: 'rgba(255, 255, 255, 0.1)' }]}
               onPress={() => {
                 console.log('[HomeInsights] No entry CTA tapped -> CreateEntry');
                 navigation.navigate('CreateEntry');
@@ -571,7 +571,7 @@ export default function DashboardScreenNew() {
             </TouchableOpacity>
           ) : todayInsights.length > 0 ? (
             todayInsights.map((insight, index) => (
-              <View key={index} style={[styles.insightCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+              <View key={index} style={[styles.insightCard, { backgroundColor: 'rgba(20, 20, 20, 0.8)', borderColor: 'rgba(255, 255, 255, 0.1)' }]}>
                 <View style={styles.insightHeader}>
                   <Ionicons name={insight.icon as any} size={20} color={insight.iconColor} />
                   <Text style={[styles.insightTitle, { color: 'rgba(255, 255, 255, 0.9)' }]}>{insight.title}</Text>
@@ -580,12 +580,12 @@ export default function DashboardScreenNew() {
               </View>
             ))
           ) : (
-            <View style={[styles.insightCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+            <View style={[styles.insightCard, { backgroundColor: 'rgba(20, 20, 20, 0.8)', borderColor: 'rgba(255, 255, 255, 0.1)' }]}>
               <View style={styles.insightHeader}>
                 <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
                 <Text style={[styles.insightTitle, { color: 'rgba(255, 255, 255, 0.9)' }]}>Great start!</Text>
               </View>
-              <Text style={[styles.insightText, { color: 'rgba(255, 255, 255, 0.5)' }]}>You've checked in today. Keep journaling to unlock more insights.</Text>
+              <Text style={[styles.insightText, { color: 'rgba(255, 255, 255, 0.5)' }]}>You've journaled today. Keep it up!</Text>
             </View>
           )}
         </View>
@@ -596,7 +596,7 @@ export default function DashboardScreenNew() {
             Suggested for you
           </Text>
           <TouchableOpacity 
-            style={[styles.challengeCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+            style={[styles.challengeCard, { backgroundColor: 'rgba(20, 20, 20, 0.8)', borderColor: 'rgba(255, 255, 255, 0.1)' }]}
             onPress={() => navigation.navigate('Meditation')}
             activeOpacity={0.7}
           >
@@ -610,7 +610,7 @@ export default function DashboardScreenNew() {
             <Ionicons name="chevron-forward" size={20} color="rgba(255, 255, 255, 0.3)" />
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.challengeCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+            style={[styles.challengeCard, { backgroundColor: 'rgba(20, 20, 20, 0.8)', borderColor: 'rgba(255, 255, 255, 0.1)' }]}
             onPress={() => navigation.navigate('Gratitude')}
             activeOpacity={0.7}
           >

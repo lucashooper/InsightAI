@@ -37,7 +37,7 @@ export default function ProgressBarNeon({ currentStep, totalSteps }: ProgressBar
       <View style={styles.track}>
         <Animated.View style={[styles.fillContainer, { width: progressWidth }]}>
           <LinearGradient
-            colors={['#ec4899', '#a855f7', '#8b5cf6']}
+            colors={['#38bdf8', '#6366f1']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.fill}
@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
   },
   track: {
     height: 4,
-    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.14)',
     borderRadius: 999,
     overflow: 'hidden',
     position: 'relative',
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     bottom: -2,
     borderRadius: 999,
     backgroundColor: 'transparent',
-    shadowColor: '#a855f7',
+    shadowColor: '#38bdf8',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
     shadowRadius: 8,

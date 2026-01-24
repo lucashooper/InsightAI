@@ -1,70 +1,65 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar, Image } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import SunoGradient from '../../components/onboarding/SunoGradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, StatusBar, Image, TouchableWithoutFeedback } from 'react-native';
+import { Asset } from 'expo-asset';
 
-const { width } = Dimensions.get('window');
-
-const insightLogo = require('../../assets/192px-Insight-ICON.png');
+const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 export default function WelcomeScreen({ navigation }: any) {
-    const handleSkip = async () => {
-        await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
-        navigation.replace('MainTabs');
+    useEffect(() => {
+        let isMounted = true;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+
+        (async () => {
+            try {
+                await Asset.fromModule(insightLogo).downloadAsync();
+            } catch {
+                // no-op
+            }
+
+            if (!isMounted) return;
+
+            timer = setTimeout(() => {
+                navigation.replace('ProductReveal');
+            }, 1700);
+        })();
+
+        return () => {
+            isMounted = false;
+            if (timer) clearTimeout(timer);
+        };
+    }, [navigation]);
+
+    const handleContinue = () => {
+        navigation.replace('ProductReveal');
     };
 
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle="light-content" />
+        <TouchableWithoutFeedback onPress={handleContinue}>
+            <View style={styles.container}>
+                <StatusBar barStyle="light-content" />
 
-            <SunoGradient />
-
-            <TouchableOpacity 
-                style={styles.skipButton}
-                onPress={handleSkip}
-                activeOpacity={0.7}
-            >
-                <Text style={styles.skipText}>Skip</Text>
-            </TouchableOpacity>
-
-            <View style={styles.content}>
-                <View style={styles.header}>
-                    <View style={styles.logoContainer}>
-                        <Image 
-                            source={insightLogo} 
-                            style={styles.logo} 
+                <View style={styles.content}>
+                    {/* Logo + Heading - Text Centered, Logo Hanging Left */}
+                    <View style={styles.headerContainer}>
+                        <Image
+                            source={insightLogo}
+                            style={styles.splashLogo}
+                            resizeMode="cover"
                         />
+                        <Text style={styles.brandNameTop}>Insight</Text>
                     </View>
 
-                    <Text style={styles.title}>InsightAI</Text>
-                    <Text style={styles.subtitle}>Your mind.
-Made clearer.</Text>
-                </View>
+                    {/* Big Phone Mockup */}
+                    {null}
 
-                <View style={styles.footer}>
-                    <TouchableOpacity
-                        style={styles.button}
-                        activeOpacity={0.9}
-                        onPress={() => navigation.navigate('OnboardingQuestion')}
-                    >
-                        <LinearGradient
-                            colors={['#a855f7', '#8b5cf6']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.buttonGradient}
-                        >
-                            <Text style={styles.buttonText}>Begin Journey</Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
+                    {/* Tagline Below */}
+                    {null}
 
-                    <Text style={styles.disclaimer}>
-                        PRIVATE • SECURE • AI-POWERED
-                    </Text>
+                    {/* CTA Button */}
+                    {null}
                 </View>
             </View>
-        </View>
+        </TouchableWithoutFeedback>
     );
 }
 
@@ -73,62 +68,76 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#000',
     },
-    skipButton: {
-        position: 'absolute',
-        top: 60,
-        right: 20,
-        zIndex: 10,
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-    },
-    skipText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#a855f7',
-        letterSpacing: 0.3,
-    },
     content: {
         flex: 1,
-        justifyContent: 'space-between',
-        paddingHorizontal: 32,
-        paddingTop: 120,
-        paddingBottom: 50,
-    },
-    header: {
-        alignItems: 'center',
-        flex: 1,
         justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 24,
+        paddingBottom: 0,
     },
-    logoContainer: {
-        marginBottom: 40,
+    headerContainer: {
         alignItems: 'center',
         justifyContent: 'center',
+        flexDirection: 'row',
+        marginBottom: 28,
+        position: 'relative',
     },
-    logo: {
-        width: 110,
-        height: 110,
-        borderRadius: 28,
+    splashLogo: {
+        width: 64,
+        height: 64,
+        borderRadius: 16,
+        marginRight: 14,
+        overflow: 'hidden',
     },
-    title: {
-        fontSize: 52,
+    logoHanging: {
+        position: 'absolute',
+        left: '50%',
+        marginLeft: -100,
+        top: 0,
+        width: 44,
+        height: 44,
+        borderRadius: 10,
+    },
+    brandNameTop: {
+        fontSize: 44,
         fontWeight: '700',
         color: '#fff',
-        marginBottom: 24,
-        letterSpacing: -1.5,
-        textAlign: 'center',
+        letterSpacing: -1.2,
+        marginBottom: 0,
     },
-    subtitle: {
-        fontSize: 28,
-        color: '#e5e7eb',
+    phoneContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 40,
+    },
+    phoneMockup: {
+        width: 0,
+        height: 0,
+    },
+    taglineContainer: {
+        alignItems: 'center',
+        marginBottom: 0,
+    },
+    taglineMain: {
+        fontSize: 44,
+        fontWeight: '700',
+        color: '#fff',
         textAlign: 'center',
-        fontWeight: '500',
-        letterSpacing: -0.5,
-        lineHeight: 36,
+        marginBottom: 4,
+    },
+    taglineGradient: {
+        fontSize: 34,
+        fontWeight: '700',
+        textAlign: 'center',
+        textShadowColor: 'rgba(6, 182, 212, 0.6)',
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 20,
     },
     footer: {
         width: '100%',
         alignItems: 'center',
         gap: 20,
+        marginTop: 'auto',
     },
     button: {
         width: '100%',
@@ -154,12 +163,5 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: '#fff',
         letterSpacing: 0.3,
-    },
-    disclaimer: {
-        fontSize: 11,
-        color: '#71717a',
-        textTransform: 'uppercase',
-        letterSpacing: 2,
-        fontWeight: '600',
     },
 });

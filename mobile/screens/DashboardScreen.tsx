@@ -16,6 +16,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { useNavigation } from '@react-navigation/native';
+import StandardContainer from '../components/shared/StandardContainer';
+import PageHeader from '../components/shared/PageHeader';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -253,14 +255,12 @@ export default function DashboardScreen() {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Active Theme Background */}
       <LinearGradient
-        colors={theme.colors.backgroundGradient}
+        colors={theme.colors.backgroundGradient as any}
         style={styles.backgroundGradient}
       />
 
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: 'transparent', borderBottomColor: theme.colors.border }]}>
-        <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>Dashboard</Text>
-      </View>
+      <PageHeader title="Dashboard" />
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         {loading ? (
@@ -270,7 +270,7 @@ export default function DashboardScreen() {
         ) : stats ? (
           <>
             {/* Refined This Week Card - Horizontal Layout */}
-            <View style={[styles.heroCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, borderWidth: 1 }]}>
+            <StandardContainer style={styles.heroCard}>
               <Text style={[styles.heroTitle, { color: theme.colors.primaryText }]}>This week at a glance</Text>
               
               <View style={styles.metricsRow}>
@@ -300,18 +300,18 @@ export default function DashboardScreen() {
               </View>
               
               {/* Interpretive sentence */}
-              <Text style={[styles.interpretiveSentence, { color: theme.colors.secondaryText }]}>
+              <Text style={[styles.interpretiveSentence, { color: theme.colors.secondaryText }]}> 
                 {stats.avgWellbeingScore >= 7 
                   ? 'A steady week with consistent emotional balance.'
                   : stats.avgWellbeingScore >= 5
                   ? 'A steady week, with lower energy mid-week.'
                   : 'You\'ve been navigating some challenges this week.'}
               </Text>
-            </View>
+            </StandardContainer>
 
             {/* Emotion Bubble Map - Mindsera Style */}
             {dominantEmotions.length > 0 && (
-              <View style={[styles.bubbleMapCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, borderWidth: 1 }]}>
+              <StandardContainer style={styles.bubbleMapCard}>
                 <View style={styles.bubbleMapHeader}>
                   <Text style={[styles.bubbleMapTitle, { color: theme.colors.primaryText }]}>Emotional landscape</Text>
                   <Text style={[styles.bubbleMapSubtitle, { color: theme.colors.secondaryText }]}>Tap to explore</Text>
@@ -391,123 +391,7 @@ export default function DashboardScreen() {
                     </View>
                   </TouchableOpacity>
                 </View>
-              </View>
-            )}
-
-            {/* Wellbeing Trend Chart */}
-            {chartData && chartData.datasets[0].data.length > 0 && (
-            <LinearGradient
-              colors={['rgba(5, 5, 15, 0.98)', 'rgba(2, 2, 8, 0.98)', 'rgba(0, 0, 0, 0.98)']}
-              style={styles.chartCard}
-            >
-              <View style={styles.chartHeader}>
-                <Ionicons name="trending-up" size={20} color="#8b5cf6" />
-                <Text style={styles.chartTitle}>Wellbeing Trend</Text>
-              </View>
-              <Animated.View
-                style={{
-                  opacity: chartOpacity,
-                  transform: [
-                    {
-                      translateY: chartOpacity.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [10, 0],
-                      }),
-                    },
-                  ],
-                }}
-              >
-                <LineChart
-                  data={{
-                    labels: chartData.labels,
-                    datasets: [{ data: chartData.datasets[0].data }],
-                  }}
-                  width={screenWidth - 40}
-                  height={180}
-                  chartConfig={{
-                    backgroundColor: 'transparent',
-                    backgroundGradientFrom: 'transparent',
-                    backgroundGradientTo: 'transparent',
-                    decimalPlaces: 0,
-                    color: (opacity = 1) => `rgba(167, 139, 250, ${Math.min(opacity * 1.5, 1)})`,
-                    labelColor: (opacity = 1) => `rgba(148, 163, 184, ${opacity * 0.7})`,
-                    style: { borderRadius: 18 },
-                    propsForDots: {
-                      r: '5',
-                      strokeWidth: '2',
-                      stroke: 'rgba(196, 181, 253, 0.8)',
-                      fill: '#a78bfa',
-                    },
-                    strokeWidth: 3,
-                    propsForBackgroundLines: {
-                      strokeDasharray: '',
-                      stroke: 'rgba(148, 163, 184, 0.03)',
-                      strokeWidth: 0.5,
-                    },
-                    fillShadowGradient: '#a855f7',
-                    fillShadowGradientOpacity: 0.35,
-                    propsForLabels: {
-                      fontSize: 10,
-                    },
-                  }}
-                  bezier
-                  withInnerLines={true}
-                  withOuterLines={false}
-                  withVerticalLines={false}
-                  withHorizontalLines={true}
-                  fromZero={true}
-                  segments={6}
-                  onDataPointClick={({ index, x, y }) => {
-                    const point = trendPoints[index];
-                    if (!point) return;
-                    setTrendTooltip({
-                      index,
-                      date: point.date,
-                      wellbeing: point.wellbeing,
-                      primaryEmotion: point.primaryEmotion,
-                      x,
-                      y,
-                    });
-                  }}
-                  style={{
-                    marginVertical: 12,
-                    borderRadius: 18,
-                  }}
-                />
-              </Animated.View>
-                {trendTooltip && (
-                  <>
-                    <View
-                      style={[
-                        styles.trendTooltipGlow,
-                        {
-                          left: 18 + trendTooltip.x - 10,
-                          top: 12 + trendTooltip.y - 10,
-                        },
-                      ]}
-                    />
-                    <View style={styles.trendTooltip}>
-                      <Text style={styles.trendTooltipDate}>
-                        {new Date(trendTooltip.date).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </Text>
-                      <Text style={styles.trendTooltipScore}>
-                        Wellbeing: {trendTooltip.wellbeing}/10
-                      </Text>
-                      {trendTooltip.primaryEmotion && (
-                        <Text style={styles.trendTooltipEmotion}>
-                          Primary emotion: {trendTooltip.primaryEmotion}
-                        </Text>
-                      )}
-                    </View>
-                  </>
-                )}
-                <Text style={styles.chartSubtext}>
-                  Last {chartData.labels.length} entries • Wellbeing score
-                </Text>
-              </LinearGradient>
+              </StandardContainer>
             )}
           </>
         ) : (

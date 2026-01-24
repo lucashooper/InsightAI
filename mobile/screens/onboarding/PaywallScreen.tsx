@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, ActivityIndicator, Alert, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import PlanCard from '../../components/onboarding/PlanCard';
 import Purchases, { PurchasesOffering, PurchasesPackage, CustomerInfo } from 'react-native-purchases';
+
+const insightLogo = require('../../public/InsightAI-New-Logo.png');
 
 const ENTITLEMENT_ID = 'pro';
 
@@ -12,6 +15,7 @@ export default function PaywallScreen({ navigation }: any) {
   const [offering, setOffering] = useState<PurchasesOffering | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<'weekly' | '12week' | 'yearly'>('12week');
 
   useEffect(() => {
     const loadOfferings = async () => {
@@ -47,6 +51,8 @@ export default function PaywallScreen({ navigation }: any) {
   };
 
   const handleStartJourney = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
     const monthly = getMonthlyPackage();
     if (!monthly) {
       Alert.alert('Unavailable', 'No subscription options are currently available. Please try again later.');
@@ -71,7 +77,7 @@ export default function PaywallScreen({ navigation }: any) {
   const handleRestorePurchases = async () => {
     try {
       setIsPurchasing(true);
-      const { customerInfo } = await Purchases.restorePurchases();
+      const customerInfo = await Purchases.restorePurchases();
       handleCustomerInfo(customerInfo);
     } catch (error) {
       Alert.alert('Restore failed', 'Could not restore purchases. Please try again later.');
@@ -90,24 +96,106 @@ export default function PaywallScreen({ navigation }: any) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Logo */}
+        <View style={styles.logoContainer}>
+          <Image source={insightLogo} style={styles.logo} resizeMode="cover" />
+        </View>
+
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Join InsightAI</Text>
+          <Text style={styles.title}>Choose your plan</Text>
           <Text style={styles.subtitle}>
             Unlock clarity, growth, and daily insights.
           </Text>
         </View>
 
-        {/* Pricing Card - single monthly plan backed by App Store subscription */}
+        {/* Pricing Plans */}
         <View style={styles.plansContainer}>
-          <PlanCard
-            title="Pro Monthly"
-            price={getMonthlyPackage()?.product.priceString ?? '£8.99'}
-            period="month"
-            selected={true}
-            popular={true}
-            onPress={() => {}}
-          />
+          {/* 1-Week Plan */}
+          <TouchableOpacity
+            style={[styles.planCard, selectedPlan === 'weekly' && styles.planCardSelected]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setSelectedPlan('weekly');
+            }}
+            activeOpacity={0.8}
+          >
+            <View style={styles.planHeader}>
+              <View style={styles.planTitleRow}>
+                <View style={[styles.radioButton, selectedPlan === 'weekly' && styles.radioButtonSelected]}>
+                  {selectedPlan === 'weekly' && <View style={styles.radioButtonInner} />}
+                </View>
+                <Text style={styles.planTitle}>1-Week Plan</Text>
+              </View>
+              <View style={styles.planPricing}>
+                <Text style={styles.planPrice}>$4.00</Text>
+                <Text style={styles.planPeriod}>per week</Text>
+              </View>
+            </View>
+            <Text style={styles.planDaily}>$0.57 per day</Text>
+          </TouchableOpacity>
+
+          {/* 12-Week Plan - MOST POPULAR */}
+          <TouchableOpacity
+            style={[styles.planCard, selectedPlan === '12week' && styles.planCardSelected]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setSelectedPlan('12week');
+            }}
+            activeOpacity={0.8}
+          >
+            <View style={styles.popularBadge}>
+              <Text style={styles.popularBadgeText}>MOST POPULAR</Text>
+            </View>
+            <View style={styles.planHeader}>
+              <View style={styles.planTitleRow}>
+                <View style={[styles.radioButton, selectedPlan === '12week' && styles.radioButtonSelected]}>
+                  {selectedPlan === '12week' && <View style={styles.radioButtonInner} />}
+                </View>
+                <Text style={styles.planTitle}>12-Week Plan</Text>
+              </View>
+              <View style={styles.planPricing}>
+                <Text style={styles.planPrice}>$44.99</Text>
+              </View>
+            </View>
+            <Text style={styles.planDaily}>$0.53 per day</Text>
+          </TouchableOpacity>
+
+          {/* Yearly Plan */}
+          <TouchableOpacity
+            style={[styles.planCard, selectedPlan === 'yearly' && styles.planCardSelected]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setSelectedPlan('yearly');
+            }}
+            activeOpacity={0.8}
+          >
+            <View style={styles.planHeader}>
+              <View style={styles.planTitleRow}>
+                <View style={[styles.radioButton, selectedPlan === 'yearly' && styles.radioButtonSelected]}>
+                  {selectedPlan === 'yearly' && <View style={styles.radioButtonInner} />}
+                </View>
+                <Text style={styles.planTitle}>52-Week Plan</Text>
+              </View>
+              <View style={styles.planPricing}>
+                <Text style={styles.planPrice}>$88.99</Text>
+              </View>
+            </View>
+            <Text style={styles.planDaily}>$0.24 per day</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Testimonial */}
+        <View style={styles.testimonialContainer}>
+          <View style={styles.starsRow}>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Ionicons key={i} name="star" size={16} color="#fbbf24" />
+            ))}
+          </View>
+          <Text style={styles.testimonialText}>
+            Insight has completely transformed how I process my thoughts. The AI insights help me understand patterns I never noticed before.
+          </Text>
+          <Text style={styles.testimonialAuthor}>— Jessica</Text>
         </View>
 
         {/* Free vs Pro Comparison */}
@@ -189,14 +277,10 @@ export default function PaywallScreen({ navigation }: any) {
             {isPurchasing ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.ctaText}>Continue to app</Text>
+              <Text style={styles.ctaText}>Start free trial</Text>
             )}
           </LinearGradient>
         </TouchableOpacity>
-
-        <Text style={styles.noteText}>
-          Your subscription is managed securely through the App Store. You can change or cancel it anytime in your Apple account settings.
-        </Text>
 
         {/* Footer Links */}
         <View style={styles.footer}>
@@ -227,19 +311,29 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 80,
+    paddingTop: 72,
     paddingBottom: 40,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  logo: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    overflow: 'hidden',
   },
   header: {
     alignItems: 'center',
     marginBottom: 40,
   },
   title: {
-    fontSize: 42,
-    fontWeight: '800',
+    fontSize: 36,
+    fontWeight: '700',
     color: '#fff',
     marginBottom: 12,
-    letterSpacing: -1,
+    letterSpacing: -0.8,
     textAlign: 'center',
   },
   subtitle: {
@@ -249,20 +343,138 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     lineHeight: 26,
   },
+  subscriptionInfo: {
+    marginTop: 20,
+    marginBottom: 24,
+    paddingHorizontal: 16,
+    gap: 8,
+  },
   noteText: {
     fontSize: 13,
     color: '#9ca3af',
     textAlign: 'center',
-    marginTop: 12,
+    lineHeight: 20,
+    fontWeight: '500',
   },
   plansContainer: {
-    gap: 16,
+    gap: 12,
     marginBottom: 32,
+  },
+  planCard: {
+    backgroundColor: 'rgba(30, 41, 59, 0.5)',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: 'rgba(71, 85, 105, 0.4)',
+    padding: 20,
+    position: 'relative',
+  },
+  planCardSelected: {
+    borderColor: '#a855f7',
+    backgroundColor: 'rgba(168, 85, 247, 0.08)',
+  },
+  planCardPopular: {
+    borderColor: '#3b82f6',
+  },
+  popularBadge: {
+    position: 'absolute',
+    top: -10,
+    left: '50%',
+    transform: [{ translateX: -60 }],
+    backgroundColor: '#3b82f6',
+    borderRadius: 999,
+    paddingVertical: 4,
+    paddingHorizontal: 16,
+  },
+  popularBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.5,
+  },
+  planHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  planTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  radioButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#6b7280',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioButtonSelected: {
+    borderColor: '#a855f7',
+  },
+  radioButtonInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#a855f7',
+  },
+  planTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  planPricing: {
+    alignItems: 'flex-end',
+  },
+  planPrice: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  planPeriod: {
+    fontSize: 13,
+    color: '#9ca3af',
+    fontWeight: '500',
+  },
+  planDaily: {
+    fontSize: 14,
+    color: '#9ca3af',
+    fontWeight: '500',
+    marginLeft: 36,
+  },
+  testimonialContainer: {
+    backgroundColor: 'rgba(30, 41, 59, 0.4)',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 32,
+    borderWidth: 1,
+    borderColor: 'rgba(71, 85, 105, 0.3)',
+  },
+  starsRow: {
+    flexDirection: 'row',
+    gap: 4,
+    marginBottom: 12,
+    justifyContent: 'center',
+  },
+  testimonialText: {
+    fontSize: 15,
+    color: '#e5e7eb',
+    lineHeight: 22,
+    marginBottom: 12,
+    fontWeight: '400',
+  },
+  testimonialAuthor: {
+    fontSize: 13,
+    color: '#9ca3af',
+    fontWeight: '500',
+    textAlign: 'center',
   },
   comparisonContainer: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 32,
+    marginBottom: 40,
     paddingHorizontal: 8,
   },
   comparisonColumn: {

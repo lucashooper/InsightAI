@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import StandardContainer from '../components/shared/StandardContainer';
 
 interface EmotionDetailRouteParams {
   emotion: string;
@@ -141,7 +142,7 @@ export default function EmotionDetailScreen() {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Theme Background Gradient */}
       <LinearGradient
-        colors={theme.colors.backgroundGradient}
+        colors={theme.colors.backgroundGradient as any}
         style={styles.backgroundGradient}
       />
 
@@ -176,7 +177,7 @@ export default function EmotionDetailScreen() {
         </View>
 
         {/* Empathetic Summary */}
-        <View style={[styles.section, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+        <StandardContainer style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="heart-outline" size={20} color="#8b5cf6" />
             <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>Understanding this emotion</Text>
@@ -184,10 +185,10 @@ export default function EmotionDetailScreen() {
           <Text style={[styles.sectionBody, { color: theme.colors.secondaryText }]}>
             {empatheticSummary}
           </Text>
-        </View>
+        </StandardContainer>
 
         {/* Contextual Interpretation */}
-        <View style={[styles.section, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+        <StandardContainer style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="analytics-outline" size={20} color="#8b5cf6" />
             <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>Context & patterns</Text>
@@ -195,10 +196,10 @@ export default function EmotionDetailScreen() {
           <Text style={[styles.sectionBody, { color: theme.colors.secondaryText }]}>
             {contextualInterpretation}
           </Text>
-        </View>
+        </StandardContainer>
 
         {/* Actionable Suggestions */}
-        <View style={[styles.section, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+        <StandardContainer style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="bulb-outline" size={20} color="#8b5cf6" />
             <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>What might help</Text>
@@ -213,11 +214,11 @@ export default function EmotionDetailScreen() {
               </Text>
             </View>
           ))}
-        </View>
+        </StandardContainer>
 
         {/* Related Entries */}
         {entries && entries.length > 0 && (
-          <View style={[styles.section, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+          <StandardContainer style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="journal-outline" size={20} color="#8b5cf6" />
               <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>
@@ -262,7 +263,7 @@ export default function EmotionDetailScreen() {
                 <Ionicons name="arrow-forward" size={16} color={theme.colors.accent} />
               </TouchableOpacity>
             )}
-          </View>
+          </StandardContainer>
         )}
 
         {/* Bottom Spacing */}
@@ -330,7 +331,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     padding: 20,
     borderRadius: 16,
-    borderWidth: 1,
   },
   sectionHeader: {
     flexDirection: 'row',

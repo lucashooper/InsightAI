@@ -19,7 +19,9 @@ import DashboardScreen from '../screens/DashboardScreen';
 import PlaybookScreen from '../screens/PlaybookScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import WelcomeScreen from '../screens/onboarding/WelcomeScreen';
+import ProductRevealScreen from '../screens/onboarding/ProductRevealScreen';
 import OnboardingQuestionScreen from '../screens/onboarding/OnboardingQuestionScreen';
+import NotificationPermissionScreen from '../screens/onboarding/NotificationPermissionScreen';
 import OnboardingSummaryScreen from '../screens/onboarding/OnboardingSummaryScreen';
 import AnalyzingScreen from '../screens/onboarding/AnalyzingScreen';
 import AnalysisCompleteScreen from '../screens/onboarding/AnalysisCompleteScreen';
@@ -223,11 +225,18 @@ export default function AppNavigator() {
         // Authenticated screens
         <Stack.Navigator
           initialRouteName={isOnboardingCompleted ? 'MainTabs' : 'Welcome'}
-          screenOptions={{ headerShown: false }}
+          screenOptions={{
+            headerShown: false,
+            animation: 'fade',
+            gestureEnabled: true,
+            animationDuration: 650,
+          }}
         >
           {/* Onboarding Flow */}
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
+          <Stack.Screen name="ProductReveal" component={ProductRevealScreen} />
           <Stack.Screen name="OnboardingQuestion" component={OnboardingQuestionScreen} />
+          <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
           <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
           <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
           <Stack.Screen name="Paywall" component={PaywallScreen} />

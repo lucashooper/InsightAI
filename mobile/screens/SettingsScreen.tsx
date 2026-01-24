@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Image, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Image, TextInput, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
@@ -7,6 +7,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme, ThemeName } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import StandardContainer from '../components/shared/StandardContainer';
+import PageHeader from '../components/shared/PageHeader';
 
 interface UserProfile {
   id: string;
@@ -34,6 +36,7 @@ export default function SettingsScreen({ navigation }: any) {
     { name: 'ocean', label: 'Ocean', emoji: '🌊' },
     { name: 'sunset', label: 'Sunset', emoji: '🌅' },
     { name: 'forest', label: 'Forest', emoji: '🌲' },
+    { name: 'midnight', label: 'Midnight', emoji: '🌙' },
   ];
 
   useEffect(() => {
@@ -276,23 +279,20 @@ export default function SettingsScreen({ navigation }: any) {
 
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Background Gradient */}
       <LinearGradient
-        colors={theme.colors.backgroundGradient}
+        colors={theme.colors.backgroundGradient as any}
         style={styles.backgroundGradient}
       />
 
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.colors.background, borderBottomColor: theme.colors.border }]}>
-        <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>Settings</Text>
-      </View>
+      <PageHeader title="Settings" />
 
       <ScrollView style={styles.content}>
         {/* Profile Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Profile</Text>
-          <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+          <View style={[styles.card, { backgroundColor: 'rgba(20, 20, 20, 0.8)', borderColor: 'rgba(255, 255, 255, 0.1)' }]}>
             <View style={styles.cardGradient}>
               <View style={styles.profileSection}>
                 <TouchableOpacity
@@ -337,7 +337,7 @@ export default function SettingsScreen({ navigation }: any) {
                 key={t.name}
                 style={[
                   styles.themeOption,
-                  { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+                  { backgroundColor: 'rgba(20, 20, 20, 0.6)', borderColor: 'rgba(255, 255, 255, 0.1)' },
                   themeName === t.name && styles.themeOptionActive
                 ]}
                 onPress={() => setTheme(t.name)}
@@ -362,7 +362,7 @@ export default function SettingsScreen({ navigation }: any) {
         {/* Subscription & Usage */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>💎 Subscription & Usage</Text>
-          <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+          <View style={[styles.card, { backgroundColor: 'rgba(20, 20, 20, 0.8)', borderColor: 'rgba(255, 255, 255, 0.1)' }]}>
             <View style={styles.cardGradient}>
               <View style={styles.usageRow}>
                 <Text style={styles.usageLabel}>Current Plan</Text>
@@ -389,7 +389,7 @@ export default function SettingsScreen({ navigation }: any) {
         {/* Send Feedback */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>💬 Send Feedback</Text>
-          <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+          <View style={[styles.card, { backgroundColor: 'rgba(20, 20, 20, 0.8)', borderColor: 'rgba(255, 255, 255, 0.1)' }]}>
             <View style={styles.cardGradient}>
               <TextInput
                 style={styles.feedbackInput}
@@ -439,34 +439,39 @@ export default function SettingsScreen({ navigation }: any) {
           <Text style={styles.sectionTitle}>Actions</Text>
 
           <TouchableOpacity 
-            style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, marginBottom: 12 }]} 
+            style={{ marginBottom: 12 }}
             onPress={() => {
               console.log('[NAV] Preview onboarding tapped');
               navigation.navigate('Welcome');
             }}
+            activeOpacity={0.85}
           >
-            <View style={styles.cardGradient}>
-              <View style={styles.actionRow}>
-                <Ionicons name="eye" size={20} color="#8b5cf6" />
-                <Text style={[styles.actionText, { color: '#8b5cf6' }]}>Preview Onboarding</Text>
+            <StandardContainer style={styles.card}>
+              <View style={styles.cardGradient}>
+                <View style={styles.actionRow}>
+                  <Ionicons name="eye" size={20} color="#8b5cf6" />
+                  <Text style={[styles.actionText, { color: '#8b5cf6' }]}>Preview Onboarding</Text>
+                </View>
               </View>
-            </View>
+            </StandardContainer>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]} onPress={handleSignOut}>
-            <View style={styles.cardGradient}>
-              <View style={styles.actionRow}>
-                <Ionicons name="log-out" size={20} color="#ef4444" />
-                <Text style={[styles.actionText, { color: '#ef4444' }]}>Sign Out</Text>
+          <TouchableOpacity style={{}} onPress={handleSignOut} activeOpacity={0.85}>
+            <StandardContainer style={styles.card}>
+              <View style={styles.cardGradient}>
+                <View style={styles.actionRow}>
+                  <Ionicons name="log-out" size={20} color="#ef4444" />
+                  <Text style={[styles.actionText, { color: '#ef4444' }]}>Sign Out</Text>
+                </View>
               </View>
-            </View>
+            </StandardContainer>
           </TouchableOpacity>
         </View>
 
         {/* App Info */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>About</Text>
-          <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+          <View style={[styles.card, { backgroundColor: 'rgba(20, 20, 20, 0.8)', borderColor: 'rgba(255, 255, 255, 0.1)' }]}>
             <View style={styles.cardGradient}>
               <Text style={styles.infoText}>InsightAI Mobile v1.0.0</Text>
               <Text style={styles.infoSubtext}>Your Personal AI Journal</Text>
@@ -474,7 +479,7 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -490,8 +495,9 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   header: {
-    padding: 20,
+    paddingHorizontal: 20,
     paddingTop: 60,
+    paddingBottom: 20,
     borderBottomWidth: 1,
   },
   headerTitle: {
@@ -506,7 +512,9 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 0,
+    paddingBottom: 100,
   },
   section: {
     marginBottom: 24,

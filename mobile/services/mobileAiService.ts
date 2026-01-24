@@ -65,7 +65,7 @@ async function waitForRateLimit() {
 }
 
 export const mobileAiService = {
-  async analyzeEntry(content: string): Promise<EnhancedAIAnalysis> {
+  async analyzeEntry(content: string, options?: { signal?: AbortSignal }): Promise<EnhancedAIAnalysis> {
     await waitForRateLimit();
 
     const startTime = Date.now();
@@ -81,6 +81,9 @@ CRITICAL INSTRUCTIONS:
 3. **Avoid generic language** - Don't use phrases like "you've been navigating challenges" or "you showed resilience"
 4. **Connect insights to evidence** - Every insight should point to something concrete in the text
 5. **Personalize suggestions** - Tailor coping strategies to the specific triggers and patterns you identify
+6. **ALWAYS use second person "You"** - NEVER use "their", "the user", "he", "she", or any third person references. Always address the person directly as "You" or "Your"
+7. **Grammar check** - Ensure possessives are correct (e.g., "Your contentment" not "You's contentment")
+8. **Warm, empathetic tone** - Write like a supportive therapist or coach, not a cold data analyst
 
 Provide a comprehensive JSON response with the EXACT structure below:
 
@@ -132,6 +135,13 @@ Provide a comprehensive JSON response with the EXACT structure below:
   },
   "insights_report": {
     "conversationalSummary": "Short natural-language summary of the entry and key themes.",
+    "insightCards": [
+      {
+        "type": "strength" | "win" | "growth" | "reflection",
+        "text": "A specific, personalized insight addressing the user directly with 'You'. For strengths/wins, highlight what they did well. For growth/reflection, point out patterns or opportunities.",
+        "short_label": "STRENGTH" | "WIN" | "GROWTH" | "REFLECTION"
+      }
+    ],
     "keyTakeaways": [
       {
         "insight": "A specific observation about a strength or positive moment.",
@@ -157,10 +167,17 @@ Entry text: ${content}`;
     const systemInstruction = `You are an expert mental health AI assistant trained in CBT, DBT, and positive psychology. 
     
     CRITICAL OUTPUT RULES:
-    1. You MUST provide at least 3-5 items in 'keyTakeaways'.
-    2. You MUST include a mix of 'positive' AND 'opportunity' sentiments in 'keyTakeaways'. Do not just list positive things.
-    3. If the user expresses negative emotions (sadness, anxiety, tiredness), you MUST acknowledge these as 'opportunity' insights for growth or self-care.
-    4. Your responses must be highly personalized and specific to the user's text.`;
+    1. You MUST provide at least 3-5 items in 'insightCards' array.
+    2. You MUST include a balanced mix of types: at least 1-2 'strength' or 'win' cards AND 1-2 'growth' or 'reflection' cards.
+    3. Card types:
+       - 'strength': Highlight capabilities, resilience, or positive traits they demonstrated
+       - 'win': Celebrate specific achievements or positive moments
+       - 'growth': Point out patterns or behaviors that could be improved
+       - 'reflection': Invite deeper thinking about emotions, triggers, or recurring themes
+    4. Each card's 'text' should be 1-3 sentences, specific to their entry, and address them as 'You'.
+    5. You MUST also provide 3-5 items in 'keyTakeaways' for backward compatibility.
+    6. **STRICT GRAMMAR RULE**: ALWAYS use second person ("You", "Your"). NEVER use "their", "the user", "he", "she", or third person. Example: "Your contentment suggests..." NOT "You's contentment" or "their contentment".
+    7. **Tone**: Write with warmth and empathy, like a supportive therapist speaking directly to the person.`;
 
     try {
       const response = await fetch(GROQ_API_URL, {
@@ -169,6 +186,7 @@ Entry text: ${content}`;
           'Authorization': `Bearer ${GROQ_API_KEY}`,
           'Content-Type': 'application/json',
         },
+        signal: options?.signal,
         body: JSON.stringify({
           model: 'llama-3.3-70b-versatile',
           messages: [
@@ -256,7 +274,11 @@ Entry text: ${content}`;
       }
 
       return enhancedAnalysis;
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.name === 'AbortError') {
+        console.warn('[mobileAiService] analyzeEntry aborted');
+        throw error;
+      }
       console.error('[mobileAiService] analyzeEntry error', error);
       throw error;
     }

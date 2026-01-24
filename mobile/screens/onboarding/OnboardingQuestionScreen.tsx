@@ -1,18 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar, Animated, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar, Animated, ScrollView, Image, Easing, Linking, TextInput, Keyboard } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
+import { Asset } from 'expo-asset';
+import * as Haptics from 'expo-haptics';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import ProgressBarNeon from '../../components/onboarding/ProgressBarNeon';
 import PillOption from '../../components/onboarding/PillOption';
+import AnimatedSlider from '../../components/onboarding/AnimatedSlider';
+import { useOnboarding } from '../../contexts/OnboardingContext';
 
 const cambridgeLogo = require('../../assets/Cambridge-logo.png');
 const stressManagementLottie = require('../../public/animations/Stress Management.json');
 
+// Preload Cambridge logo to prevent loading delay
+Asset.fromModule(cambridgeLogo).downloadAsync();
+
 const { width } = Dimensions.get('window');
 
-type StepType = 'question' | 'info';
+type StepType = 'question' | 'info' | 'slider' | 'text_input';
 
 interface Option {
     label: string;
@@ -33,6 +40,9 @@ interface Step {
     options?: Option[]; // For questions
     buttonText?: string; // For info slides
     skippable?: boolean; // For optional questions
+    min?: number;
+    max?: number;
+    defaultValue?: number;
     // New fields for premium info pages
     badges?: string[]; // Array of badge names (placeholders)
     animationType?: 'journaling' | 'ai'; // Type of animation to show
@@ -43,7 +53,29 @@ interface Step {
 }
 
 const STEPS: Step[] = [
-    // 1. Goal
+    // 0. What is your name
+    {
+        id: 'name',
+        type: 'text_input',
+        title: "What is your name?",
+        subtitle: "We'll use this to personalize your experience.",
+    },
+    // 1. Where did you hear about us
+    {
+        id: 'referral',
+        type: 'question',
+        title: "Where did you hear about us?",
+        options: [
+            { label: 'Instagram', value: 'instagram', icon: 'logo-instagram' },
+            { label: 'Facebook', value: 'facebook', icon: 'logo-facebook' },
+            { label: 'TikTok', value: 'tiktok', icon: 'logo-tiktok' },
+            { label: 'YouTube', value: 'youtube', icon: 'logo-youtube' },
+            { label: 'Google', value: 'google', icon: 'logo-google' },
+            { label: 'Friend', value: 'friend', icon: 'people' },
+            { label: 'Other', value: 'other', icon: 'ellipsis-horizontal' },
+        ]
+    },
+    // 2. Goal
     {
         id: 'goal',
         type: 'question',
@@ -89,29 +121,22 @@ const STEPS: Step[] = [
             { label: "2+ years", value: '2+y', icon: 'ribbon-outline' },
         ]
     },
-    // 5. Info Slide B (Patterns)
+    // 6. Wellbeing Slider
     {
-        id: 'patterns_info',
-        type: 'info',
-        title: "AI reveals patterns you might miss...",
-        subtitle: "InsightAI surfaces emotional patterns and triggers you might overlook.",
-        animationType: 'ai',
-        features: [
-            { icon: 'search', text: 'Emotional pattern detection' },
-            { icon: 'flash', text: 'Trigger recognition' },
-            { icon: 'bulb', text: 'Smart long-entry summaries' },
-        ],
-        showPrivacyBadge: true,
-        showAPAStudy: true,
-        buttonText: "Continue"
+        id: 'wellbeing',
+        type: 'slider',
+        title: "How would you rate your daily wellbeing?",
+        subtitle: "On a scale of 1-10, where do you typically feel?",
+        min: 1,
+        max: 10,
+        defaultValue: 7,
     },
-    // 6. Identity (Optional)
+    // 7. Identity
     {
         id: 'genderIdentity',
         type: 'question',
         title: "How do you identify?",
         subtitle: "We only use this to personalize insights.",
-        skippable: true,
         options: [
             { label: 'Woman', value: 'woman', icon: 'female' },
             { label: 'Man', value: 'man', icon: 'male' },
@@ -122,14 +147,25 @@ const STEPS: Step[] = [
 ];
 
 export default function OnboardingQuestionScreen({ navigation }: any) {
+    const { setUserName, setOnboardingAnswers } = useOnboarding();
     const [currentIndex, setCurrentIndex] = useState(0);
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
+    const [textInputValue, setTextInputValue] = useState('');
+    const [wellbeingValue, setWellbeingValue] = useState(7);
     const [fadeAnim] = useState(new Animated.Value(1));
+    const [featureFadeAnims] = useState([
+        new Animated.Value(0),
+        new Animated.Value(0),
+        new Animated.Value(0),
+    ]);
 
     // Animation values for placeholders
     const floatAnim = useRef(new Animated.Value(0)).current;
     const pulseAnim = useRef(new Animated.Value(1)).current;
+
+    const currentStep = STEPS[currentIndex];
+    const totalQuestionSteps = STEPS.length;
 
     useEffect(() => {
         // Floating animation for icons
@@ -163,37 +199,42 @@ export default function OnboardingQuestionScreen({ navigation }: any) {
                 }),
             ])
         ).start();
-    }, []);
+    }, [floatAnim, pulseAnim]);
 
-    const currentStep = STEPS[currentIndex];
-    const totalQuestionSteps = 6; // Total steps for progress bar
+    useEffect(() => {
+        // Reset wellbeing default when entering slider step
+        if (currentStep.type === 'slider') {
+            setWellbeingValue(currentStep.defaultValue ?? 7);
+        }
+
+        // Reset and staggered fade-in for AI features
+        if (currentStep.features) {
+            featureFadeAnims.forEach((anim) => anim.setValue(0));
+            featureFadeAnims.forEach((anim, index) => {
+                Animated.timing(anim, {
+                    toValue: 1,
+                    duration: 520,
+                    delay: 140 + index * 160,
+                    easing: Easing.out(Easing.cubic),
+                    useNativeDriver: true,
+                }).start();
+            });
+        }
+    }, [currentIndex, currentStep.type, currentStep.defaultValue, currentStep.features, featureFadeAnims]);
 
     const handleNext = (value?: string) => {
-        if (value && currentStep.type === 'question') {
+        if (value && (currentStep.type === 'question' || currentStep.type === 'slider')) {
             setAnswers(prev => ({ ...prev, [currentStep.id]: value }));
         }
 
-        // Animate out
-        Animated.timing(fadeAnim, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-        }).start(() => {
-            if (currentIndex < STEPS.length - 1) {
-                setCurrentIndex(currentIndex + 1);
-                setSelectedOption(null); // Reset selection for next question
-                // Animate in
-                Animated.timing(fadeAnim, {
-                    toValue: 1,
-                    duration: 300,
-                    useNativeDriver: true,
-                }).start();
-            } else {
-                // Finished - go to analyzing screen
-                const finalAnswers = value ? { ...answers, [currentStep.id]: value } : answers;
-                navigation.navigate('Analyzing', { answers: finalAnswers });
-            }
-        });
+        if (currentIndex < STEPS.length - 1) {
+            setCurrentIndex(currentIndex + 1);
+            setSelectedOption(null); // Reset selection for next question
+        } else {
+            // Finished - go to analyzing screen
+            const finalAnswers = value ? { ...answers, [currentStep.id]: value } : answers;
+            navigation.navigate('Analyzing', { answers: finalAnswers });
+        }
     };
 
     const handleSkip = () => {
@@ -223,35 +264,34 @@ export default function OnboardingQuestionScreen({ navigation }: any) {
 
             <SunoGradient />
 
-            {/* Neon Progress Bar */}
-            <View style={styles.progressWrapper}>
-                <ProgressBarNeon currentStep={currentIndex + 1} totalSteps={totalQuestionSteps} />
+            {/* Back Arrow + Centered Progress Bar Row */}
+            <View style={styles.topRow}>
+                <TouchableOpacity
+                    onPress={() => {
+                        if (currentIndex === 0) {
+                            navigation.goBack();
+                        } else {
+                            setCurrentIndex(currentIndex - 1);
+                            setSelectedOption(null);
+                        }
+                    }}
+                    style={styles.backArrow}
+                >
+                    <Ionicons
+                        name="arrow-back"
+                        size={24}
+                        color="#9ca3af"
+                    />
+                </TouchableOpacity>
+                <View style={styles.progressBarContainer}>
+                    <ProgressBarNeon currentStep={currentIndex + 1} totalSteps={totalQuestionSteps} />
+                </View>
+                <View style={styles.backArrowSpacer} />
             </View>
 
             <View style={styles.content}>
-                <View style={styles.headerRow}>
-                    <TouchableOpacity
-                        onPress={() => {
-                            if (currentIndex === 0) {
-                                navigation.goBack();
-                            } else {
-                                setCurrentIndex(currentIndex - 1);
-                                setSelectedOption(null);
-                            }
-                        }}
-                        style={styles.backButton}
-                    >
-                        <Ionicons
-                            name="arrow-back"
-                            size={24}
-                            color="#9ca3af"
-                        />
-                    </TouchableOpacity>
 
-                    <View style={{ width: 40 }} />
-                </View>
-
-                <Animated.View style={[styles.stepContainer, { opacity: fadeAnim }]}>
+                <View style={styles.stepContainer}>
 
                     {/* Premium Info Page Layout for Journaling */}
                     {currentStep.type === 'info' && currentStep.id === 'research_info' ? (
@@ -268,14 +308,13 @@ export default function OnboardingQuestionScreen({ navigation }: any) {
                             </View>
 
                             {/* Main Headline - "Research has shown..." */}
-                            {/* ⚡ EDIT HERE: Change fontSize, fontWeight, textAlign below */}
                             <Text style={{
-                                fontSize: 30,           // ⚡ Title size
-                                fontWeight: '400',      // ⚡ Boldness ('300', '400', '500', '600', '700', '800', '900')
+                                fontSize: 26,
+                                fontWeight: '500',
                                 color: '#fff',
-                                textAlign: 'center',    // ⚡ 'left', 'center', or 'right'
-                                lineHeight: 36,
-                                letterSpacing: -0.5,
+                                textAlign: 'center',
+                                lineHeight: 34,
+                                letterSpacing: -0.3,
                                 marginBottom: 12,
                                 paddingHorizontal: 16,
                             }}>
@@ -289,15 +328,23 @@ export default function OnboardingQuestionScreen({ navigation }: any) {
 
                             {/* Cambridge Section */}
                             <View style={styles.premiumCambridgeSection}>
-                                <Image
-                                    source={cambridgeLogo}
-                                    style={styles.premiumCambridgeLogo}
-                                    resizeMode="contain"
-                                />
+                                <View style={styles.cambridgeLogoWrapper}>
+                                    <Image
+                                        source={cambridgeLogo}
+                                        style={styles.premiumCambridgeLogo}
+                                        resizeMode="contain"
+                                    />
+                                </View>
                                 <Text style={styles.premiumCambridgeReference}>
                                     Advances in Psychiatric Treatment, 2005
                                 </Text>
-                                <TouchableOpacity style={styles.premiumLearnMoreButton}>
+                                <TouchableOpacity 
+                                    style={styles.premiumLearnMoreButton}
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        Linking.openURL('https://www.cambridge.org/core/journals/advances-in-psychiatric-treatment/article/emotional-and-physical-health-benefits-of-expressive-writing/ED2976A61F5DE56B46F07A1CE9EA9F9F');
+                                    }}
+                                >
                                     <Text style={styles.premiumLearnMoreText}>
                                         Learn more about the science →
                                     </Text>
@@ -309,15 +356,14 @@ export default function OnboardingQuestionScreen({ navigation }: any) {
                             {/* Standard Layout for Other Pages */}
                             {renderAnimationPlaceholder()}
 
-                            {/* Title - "AI reveals patterns you might miss..." */}
-                            {/* TO EDIT: Change fontSize, fontWeight, textAlign below */}
+                            {/* Title - softer typography */}
                             <Text style={{
-                                fontSize: currentStep.type === 'info' ? 30 : 32,  // Info pages: 30, Questions: 32
-                                fontWeight: currentStep.type === 'info' ? '700' : '800',  // Info pages: bolder
+                                fontSize: currentStep.type === 'info' ? 26 : 28,
+                                fontWeight: currentStep.type === 'info' ? '500' : '600',
                                 color: '#fff',
-                                textAlign: 'left',      // 'left', 'center', or 'right'
-                                lineHeight: currentStep.type === 'info' ? 38 : 40,
-                                letterSpacing: currentStep.type === 'info' ? -0.8 : 0,
+                                textAlign: 'left',
+                                lineHeight: currentStep.type === 'info' ? 34 : 36,
+                                letterSpacing: -0.3,
                                 marginBottom: 16,
                             }}>
                                 {currentStep.title}
@@ -350,52 +396,125 @@ export default function OnboardingQuestionScreen({ navigation }: any) {
                             <Text style={{
                                 fontSize: 14,              // ⚡ Heading size
                                 fontWeight: '600',         // ⚡ Boldness
-                                color: '#a78bfa',          // ⚡ Purple accent color
+                                color: 'rgba(226, 232, 240, 0.55)',
                                 textTransform: 'uppercase',
                                 letterSpacing: 1.5,
                                 marginBottom: 20,
                                 textAlign: 'center',
                             }}>
-                                Get insights with
+                                GET INSIGHTS WITH
                             </Text>
 
-                            {/* Feature Pills */}
+                            {/* Feature Pills with Staggered Animation */}
                             <View style={{
                                 gap: 12,
                                 width: '100%',
                                 alignItems: 'center',
                             }}>
                                 {currentStep.features.map((feature, index) => (
-                                    <View key={index} style={{
-                                        backgroundColor: 'rgba(139, 92, 246, 0.12)',  // ⚡ Pill background
-                                        borderRadius: 24,
-                                        paddingVertical: 14,
-                                        paddingHorizontal: 20,
-                                        borderWidth: 1,
-                                        borderColor: 'rgba(139, 92, 246, 0.25)',
-                                        flexDirection: 'row',
-                                        alignItems: 'center',
-                                        gap: 12,
-                                        minWidth: '85%',
-                                        justifyContent: 'center',
-                                    }}>
-                                        <Text style={{ fontSize: 18 }}>
-                                            {feature.icon === 'search' ? '🔍' : feature.icon === 'flash' ? '⚡' : '🧠'}
-                                        </Text>
+                                    <Animated.View 
+                                        key={index} 
+                                        style={{
+                                            opacity: featureFadeAnims[index],
+                                            transform: [{
+                                                translateY: featureFadeAnims[index].interpolate({
+                                                    inputRange: [0, 1],
+                                                    outputRange: [20, 0],
+                                                })
+                                            }],
+                                            backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                                            borderRadius: 24,
+                                            paddingVertical: 16,
+                                            paddingHorizontal: 20,
+                                            borderWidth: 1.5,
+                                            borderColor: 'rgba(99, 102, 241, 0.28)',
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            gap: 14,
+                                            minWidth: '85%',
+                                            justifyContent: 'center',
+                                            shadowColor: '#38bdf8',
+                                            shadowOffset: { width: 0, height: 4 },
+                                            shadowOpacity: 0.2,
+                                            shadowRadius: 12,
+                                        }}
+                                    >
+                                        <View style={{
+                                            width: 34,
+                                            height: 34,
+                                            borderRadius: 17,
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            backgroundColor: 'rgba(255,255,255,0.10)',
+                                            borderWidth: 1,
+                                            borderColor: 'rgba(255,255,255,0.10)',
+                                        }}>
+                                            <Ionicons
+                                                name={
+                                                    feature.icon === 'search'
+                                                        ? 'analytics-outline'
+                                                        : feature.icon === 'flash'
+                                                            ? 'flash-outline'
+                                                            : 'sparkles-outline'
+                                                }
+                                                size={18}
+                                                color="#e0f2fe"
+                                            />
+                                        </View>
                                         <Text style={{
-                                            fontSize: 15,           // ⚡ Feature text size
-                                            color: '#e5e7eb',       // ⚡ Text color
-                                            fontWeight: '600',      // ⚡ Text weight
+                                            fontSize: 15,
+                                            color: '#f8fafc',
+                                            fontWeight: '600',
                                             textAlign: 'center',
                                         }}>
                                             {feature.text}
                                         </Text>
-                                    </View>
+                                    </Animated.View>
                                 ))}
                             </View>
                         </View>
                     )}
 
+                    {/* Text Input for Name Question */}
+                    {currentStep.type === 'text_input' && (
+                        <View style={styles.textInputContent}>
+                            <TextInput
+                                style={styles.nameInput}
+                                placeholder="Enter your name"
+                                placeholderTextColor="#6b7280"
+                                value={textInputValue}
+                                onChangeText={setTextInputValue}
+                                autoFocus
+                                autoCapitalize="words"
+                                returnKeyType="done"
+                                onSubmitEditing={() => {
+                                    // Just dismiss keyboard, don't auto-advance
+                                    Keyboard.dismiss();
+                                }}
+                            />
+                            
+                            <TouchableOpacity
+                                style={[styles.continueButton, !textInputValue.trim() && styles.continueButtonDisabled]}
+                                activeOpacity={0.9}
+                                onPress={() => {
+                                    if (textInputValue.trim()) {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        handleNext(textInputValue.trim());
+                                    }
+                                }}
+                                disabled={!textInputValue.trim()}
+                            >
+                                <LinearGradient
+                                    colors={textInputValue.trim() ? ['#a855f7', '#8b5cf6'] : ['#4b5563', '#374151']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={styles.continueGradient}
+                                >
+                                    <Text style={[styles.continueText, !textInputValue.trim() && styles.continueTextDisabled]}>Continue</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        </View>
+                    )}
 
                     {/* Question Options with PillOption component */}
                     {currentStep.type === 'question' && currentStep.options && (
@@ -424,16 +543,80 @@ export default function OnboardingQuestionScreen({ navigation }: any) {
                             <TouchableOpacity
                                 style={[styles.continueButton, !selectedOption && styles.continueButtonDisabled]}
                                 activeOpacity={0.9}
-                                onPress={() => selectedOption && handleNext(selectedOption)}
+                                onPress={() => {
+                                    if (selectedOption) {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        handleNext(selectedOption);
+                                    }
+                                }}
                                 disabled={!selectedOption}
                             >
                                 <LinearGradient
-                                    colors={selectedOption ? ['#a855f7', '#8b5cf6'] : ['#4b5563', '#374151']}
+                                    colors={selectedOption ? ['#38bdf8', '#6366f1'] : ['#4b5563', '#374151']}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 1 }}
                                     style={styles.continueGradient}
                                 >
                                     <Text style={[styles.continueText, !selectedOption && styles.continueTextDisabled]}>Continue</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+
+                    {/* Wellbeing Slider - distinct from normal questions */}
+                    {currentStep.type === 'slider' && (
+                        <View style={styles.sliderContent}>
+                            <View style={styles.sliderValueRow}>
+                                <Text style={styles.sliderValueText}>{Math.round(wellbeingValue)}/10</Text>
+                                <Text style={styles.sliderHintText}>TYPICAL DAY</Text>
+                            </View>
+
+                            <View style={styles.sliderTrackContainer}>
+                                <View style={styles.sliderTrackBase} />
+                                <View
+                                    style={[
+                                        styles.sliderTrackFillWrap,
+                                        {
+                                            width: `${((wellbeingValue - (currentStep.min ?? 1)) / ((currentStep.max ?? 10) - (currentStep.min ?? 1))) * 100}%`,
+                                        },
+                                    ]}
+                                >
+                                    <LinearGradient
+                                        colors={['#06b6d4', '#3b82f6', '#8b5cf6']}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 0 }}
+                                        style={styles.sliderTrackFill}
+                                    />
+                                </View>
+
+                                <AnimatedSlider
+                                    style={styles.slider}
+                                    minimumValue={currentStep.min ?? 1}
+                                    maximumValue={currentStep.max ?? 10}
+                                    step={1}
+                                    value={wellbeingValue}
+                                    minimumTrackTintColor="transparent"
+                                    maximumTrackTintColor="transparent"
+                                    thumbTintColor="#ffffff"
+                                    onValueChange={setWellbeingValue}
+                                />
+                            </View>
+
+                            <TouchableOpacity
+                                style={styles.sliderContinueButton}
+                                activeOpacity={0.9}
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    handleNext(String(Math.round(wellbeingValue)));
+                                }}
+                            >
+                                <LinearGradient
+                                    colors={['#38bdf8', '#6366f1']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                    style={styles.sliderContinueGradient}
+                                >
+                                    <Text style={styles.sliderContinueText}>Continue</Text>
                                 </LinearGradient>
                             </TouchableOpacity>
                         </View>
@@ -449,7 +632,7 @@ export default function OnboardingQuestionScreen({ navigation }: any) {
                                 onPress={() => handleNext()}
                             >
                                 <LinearGradient
-                                    colors={['#8b5cf6', '#6d28d9']}
+                                    colors={['#a855f7', '#8b5cf6']}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 1 }}
                                     style={styles.primaryButtonGradient}
@@ -461,7 +644,7 @@ export default function OnboardingQuestionScreen({ navigation }: any) {
                             </TouchableOpacity>
                         </View>
                     )}
-                </Animated.View>
+                </View>
             </View>
         </View>
     );
@@ -475,33 +658,38 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#000',
     },
+    topRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingTop: 60,
+        paddingBottom: 20,
+        gap: 16,
+    },
+    backArrow: {
+        width: 40,
+        height: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    progressBarContainer: {
+        flex: 1,
+    },
+    backArrowSpacer: {
+        width: 40,
+    },
     progressWrapper: {
-        marginTop: 60,
-        marginBottom: 8,
+        marginTop: 24,
+        marginBottom: 24,
     },
     content: {
         flex: 1,
         paddingHorizontal: 24,
-        paddingTop: 12,
-    },
-    
-    // ========================================
-    // HEADER & NAVIGATION
-    // ========================================
-    headerRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 20,
-    },
-    backButton: {
-        width: 40,
-        height: 40,
-        justifyContent: 'center',
+        paddingTop: 20,
     },
     stepIndicator: {
         fontSize: 12,
-        color: '#a78bfa',
+        color: 'rgba(226, 232, 240, 0.6)',
         fontWeight: '700',
         letterSpacing: 1,
     },
@@ -729,7 +917,7 @@ const styles = StyleSheet.create({
         borderRadius: 999,
         marginTop: 16,
         marginBottom: 24,
-        shadowColor: '#a855f7',
+        shadowColor: '#38bdf8',
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.6,
         shadowRadius: 24,
@@ -782,7 +970,7 @@ const styles = StyleSheet.create({
     primaryButton: {
         width: '100%',
         borderRadius: 999,
-        shadowColor: '#8b5cf6',
+        shadowColor: '#38bdf8',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 12,
@@ -799,6 +987,100 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.1)',
     },
     primaryButtonText: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#fff',
+        letterSpacing: 0.3,
+    },
+
+    // ========================================
+    // WELLBEING SLIDER
+    // ========================================
+    sliderContent: {
+        flex: 1,
+        justifyContent: 'center',
+        paddingTop: 10,
+    },
+    sliderValueRow: {
+        alignItems: 'center',
+        marginBottom: 32,
+    },
+    sliderValueText: {
+        fontSize: 56,
+        fontWeight: '700',
+        color: '#ffffff',
+        letterSpacing: -1.2,
+        textShadowColor: 'rgba(56, 189, 248, 0.4)',
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 20,
+    },
+    sliderHintText: {
+        marginTop: 8,
+        fontSize: 12,
+        fontWeight: '700',
+        color: 'rgba(226, 232, 240, 0.5)',
+        letterSpacing: 1.2,
+        textTransform: 'uppercase',
+    },
+    sliderTrackContainer: {
+        marginTop: 0,
+        marginBottom: 60,
+        justifyContent: 'center',
+        paddingHorizontal: 4,
+    },
+    sliderTrackBase: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        height: 14,
+        borderRadius: 999,
+        backgroundColor: 'rgba(255,255,255,0.12)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.08)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+    },
+    sliderTrackFillWrap: {
+        position: 'absolute',
+        left: 0,
+        height: 14,
+        borderRadius: 999,
+        overflow: 'hidden',
+        shadowColor: '#06b6d4',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.6,
+        shadowRadius: 16,
+    },
+    sliderTrackFill: {
+        flex: 1,
+        borderRadius: 999,
+    },
+    slider: {
+        width: '100%',
+        height: 48,
+    },
+    sliderContinueButton: {
+        width: '100%',
+        borderRadius: 999,
+        marginTop: 18,
+        marginBottom: 24,
+        shadowColor: '#38bdf8',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.35,
+        shadowRadius: 24,
+        elevation: 12,
+    },
+    sliderContinueGradient: {
+        paddingVertical: 18,
+        borderRadius: 999,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.14)',
+    },
+    sliderContinueText: {
         fontSize: 18,
         fontWeight: '700',
         color: '#fff',
@@ -871,11 +1153,19 @@ const styles = StyleSheet.create({
         marginTop: 'auto',
         marginBottom: 32,
     },
+    cambridgeLogoWrapper: {
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        borderRadius: 16,
+        borderWidth: 1.5,
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+        paddingVertical: 20,
+        paddingHorizontal: 24,
+        marginBottom: 16,
+    },
     premiumCambridgeLogo: {
-        width: 160,
-        height: 45,
-        opacity: 0.9,
-        marginBottom: 12,
+        width: 180,
+        height: 50,
+        opacity: 0.95,
     },
     premiumCambridgeReference: {
         fontSize: 11,
@@ -945,5 +1235,26 @@ const styles = StyleSheet.create({
     featureBold: {
         fontWeight: '700',
         color: '#fff',
+    },
+    
+    // ========================================
+    // TEXT INPUT (NAME QUESTION)
+    // ========================================
+    textInputContent: {
+        flex: 1,
+        justifyContent: 'space-between',
+        paddingTop: 40,
+    },
+    nameInput: {
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        borderRadius: 16,
+        borderWidth: 1.5,
+        borderColor: 'rgba(168, 85, 247, 0.3)',
+        paddingVertical: 18,
+        paddingHorizontal: 20,
+        fontSize: 18,
+        color: '#fff',
+        fontWeight: '500',
+        marginBottom: 24,
     },
 });

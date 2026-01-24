@@ -7,6 +7,8 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { protocolCompletionService } from '../services/protocolCompletionService';
+import PageHeader from '../components/shared/PageHeader';
+import StandardContainer from '../components/shared/StandardContainer';
 
 type TabType = 'protocols' | 'strategies';
 
@@ -203,6 +205,54 @@ export default function PlaybookScreen() {
     );
   };
 
+  const handleActivateSuggestion = async (strategyId: string) => {
+    if (!user) return;
+
+    try {
+      // Update strategy status from 'suggested' to 'active'
+      const { error } = await supabase
+        .from('actionable_insights')
+        .update({ status: 'active' })
+        .eq('id', strategyId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('[Playbook] Error activating suggestion:', error);
+        return;
+      }
+
+      console.log('[Playbook] Strategy activated:', strategyId);
+      // Reload strategies to reflect the change
+      await loadStrategies();
+    } catch (error) {
+      console.error('Error activating suggestion:', error);
+    }
+  };
+
+  const handleDismissSuggestion = async (strategyId: string) => {
+    if (!user) return;
+
+    try {
+      // Delete the suggestion completely
+      const { error } = await supabase
+        .from('actionable_insights')
+        .delete()
+        .eq('id', strategyId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('[Playbook] Error dismissing suggestion:', error);
+        return;
+      }
+
+      console.log('[Playbook] Strategy dismissed:', strategyId);
+      // Reload strategies to reflect the change
+      await loadStrategies();
+    } catch (error) {
+      console.error('Error dismissing suggestion:', error);
+    }
+  };
+
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
       coping: '#10b981',
@@ -220,37 +270,33 @@ export default function PlaybookScreen() {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Subtle Background Gradient */}
       <LinearGradient
-        colors={theme.colors.backgroundGradient}
+        colors={theme.colors.backgroundGradient as any}
         style={styles.backgroundGradient}
       />
 
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.colors.background, borderBottomColor: theme.colors.border }]}>
-        <View>
-          <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>Playbook</Text>
-        </View>
-      </View>
+      <PageHeader title="Playbook" />
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         {/* Today's Progress */}
-        <View
-          style={[styles.progressCard, { backgroundColor: 'rgba(139, 92, 246, 0.1)', borderColor: 'rgba(139, 92, 246, 0.25)', borderWidth: 1 }]}
-        >
-          <Text style={styles.progressTitle}>TODAY'S PROGRESS</Text>
-          <View style={styles.progressStats}>
-            <Text style={styles.progressFraction}>{protocolProgress.completed}/{protocolProgress.total}</Text>
-            <Text style={styles.progressLabel}>protocols completed</Text>
+        <StandardContainer style={styles.progressCard}>
+          <View style={styles.progressCardInner}>
+            <Text style={styles.progressTitle}>TODAY'S PROGRESS</Text>
+            <View style={styles.progressStats}>
+              <Text style={styles.progressFraction}>{protocolProgress.completed}/{protocolProgress.total}</Text>
+              <Text style={styles.progressLabel}>protocols completed</Text>
+            </View>
+            <View style={styles.progressBarContainer}>
+              <LinearGradient
+                colors={['#8b5cf6', '#7c3aed']}
+                style={[styles.progressBar, { width: `${protocolProgress.percentage}%` }]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              />
+            </View>
+            <Text style={styles.progressPercentage}>{protocolProgress.percentage}% Completion</Text>
           </View>
-          <View style={styles.progressBarContainer}>
-            <LinearGradient
-              colors={['#8b5cf6', '#7c3aed']}
-              style={[styles.progressBar, { width: `${protocolProgress.percentage}%` }]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-            />
-          </View>
-          <Text style={styles.progressPercentage}>{protocolProgress.percentage}% Completion</Text>
-        </View>
+        </StandardContainer>
 
         {/* Tabs */}
         <View style={styles.tabContainer}>
@@ -319,17 +365,12 @@ export default function PlaybookScreen() {
             {displayStrategies.map((strategy) => (
             <TouchableOpacity
               key={strategy.id}
-              style={styles.premiumCard}
+              style={styles.premiumCardPressable}
               activeOpacity={0.7}
               onLongPress={() => handleStrategyLongPress(strategy)}
             >
-              <View
-                style={[styles.cardGradient, {
-                  backgroundColor: strategy.status === 'suggested'
-                    ? 'rgba(139, 92, 246, 0.08)'
-                    : 'rgba(99, 102, 241, 0.08)'
-                }]}
-              >
+              <StandardContainer style={styles.premiumCard}>
+              <View style={styles.cardGradient}>
                 <View style={styles.cardHeader}>
                   <View style={styles.emojiContainer}>
                     <Text style={styles.cardEmoji}>{strategy.emoji}</Text>
@@ -392,13 +433,13 @@ export default function PlaybookScreen() {
                     <View style={styles.actionButtons}>
                       <TouchableOpacity 
                         style={styles.actionButton}
-                        onPress={() => console.log('Activate strategy:', strategy.id)}
+                        onPress={() => handleActivateSuggestion(strategy.id)}
                       >
                         <Ionicons name="checkmark-circle" size={18} color="#34d399" />
                       </TouchableOpacity>
                       <TouchableOpacity 
                         style={styles.actionButton}
-                        onPress={() => console.log('Skip strategy:', strategy.id)}
+                        onPress={() => handleDismissSuggestion(strategy.id)}
                       >
                         <Ionicons name="close-circle" size={18} color="#f97373" />
                       </TouchableOpacity>
@@ -406,6 +447,7 @@ export default function PlaybookScreen() {
                   )}
                 </View>
               </View>
+              </StandardContainer>
             </TouchableOpacity>
             ))}
             
@@ -562,16 +604,10 @@ const styles = StyleSheet.create({
   },
   // Progress Card Styles
   progressCard: {
-    borderRadius: 16,
-    padding: 24,
     marginBottom: 28,
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.15)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+  },
+  progressCardInner: {
+    padding: 24,
   },
   progressTitle: {
     fontSize: 14,
@@ -689,21 +725,13 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   // Premium Card Styles
-  premiumCard: {
+  premiumCardPressable: {
     marginBottom: 16,
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 8,
+  },
+  premiumCard: {
   },
   cardGradient: {
     padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.2)',
-    borderRadius: 16,
   },
   cardHeader: {
     flexDirection: 'row',

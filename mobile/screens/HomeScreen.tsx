@@ -21,6 +21,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { useFocusEffect } from '@react-navigation/native';
+import PageHeader from '../components/shared/PageHeader';
+import StandardContainer from '../components/shared/StandardContainer';
 
 const insightLogo = require('../assets/192px-Insight-ICON.png');
 
@@ -350,13 +352,33 @@ export default function HomeScreen({ navigation, route }: any) {
     return messages[index];
   };
 
+  // Helper to highlight search query matches in text
+  const highlightText = (text: string, query: string) => {
+    if (!query.trim()) return <Text>{text}</Text>;
+    
+    const parts = text.split(new RegExp(`(${query})`, 'gi'));
+    return (
+      <Text>
+        {parts.map((part, index) => 
+          part.toLowerCase() === query.toLowerCase() ? (
+            <Text key={index} style={{ backgroundColor: '#8b5cf6', color: '#ffffff', fontWeight: '600' }}>
+              {part}
+            </Text>
+          ) : (
+            <Text key={index}>{part}</Text>
+          )
+        )}
+      </Text>
+    );
+  };
+
   const renderEntry = ({ item }: { item: DiaryEntry }) => {
     const hasInsights = item.ai_structured_insights?.wellbeingScore;
     const isHidden = hiddenEntryIds.has(item.id);
     
     return (
       <TouchableOpacity
-        style={styles.premiumCard}
+        style={styles.premiumCardPressable}
         onPress={() => {
           if (isHidden) {
             Alert.alert('Locked entry', 'Unlock this entry to view its contents?', [
@@ -376,46 +398,45 @@ export default function HomeScreen({ navigation, route }: any) {
         onLongPress={() => handleEntryLongPress(item)}
         activeOpacity={0.7}
       >
-        <View style={[styles.cardGradient, { 
-          backgroundColor: 'rgba(20, 20, 30, 0.6)',
-          borderColor: `${theme.colors.primary}15`,
-        }]}>
-          <View style={styles.entryHeader}>
-          <View style={styles.entryTitleRow}>
-            <Text style={styles.entryTitle} numberOfLines={1}>
-              {isHidden ? 'Locked entry' : item.title || 'Untitled Entry'}
-            </Text>
-            {item.mood && (
-              <View style={styles.moodBadge}>
-                <Text style={styles.moodEmoji}>{item.mood}</Text>
+        <StandardContainer style={styles.premiumCard}>
+          <View style={styles.cardGradient}>
+            <View style={styles.entryHeader}>
+              <View style={styles.entryTitleRow}>
+                <Text style={styles.entryTitle} numberOfLines={1}>
+                  {isHidden ? 'Locked entry' : searchQuery.trim() ? highlightText(item.title || 'Untitled Entry', searchQuery) : item.title || 'Untitled Entry'}
+                </Text>
+                {item.mood && (
+                  <View style={styles.moodBadge}>
+                    <Text style={styles.moodEmoji}>{item.mood}</Text>
+                  </View>
+                )}
               </View>
-            )}
-          </View>
-          {hasInsights && (
-            <View style={styles.insightBadge}>
-              <Ionicons name="sparkles" size={12} color="#8b5cf6" />
-              <Text style={styles.insightBadgeText}>Analyzed</Text>
+              {hasInsights && (
+                <View style={styles.insightBadge}>
+                  <Ionicons name="sparkles" size={12} color="#8b5cf6" />
+                  <Text style={styles.insightBadgeText}>Analyzed</Text>
+                </View>
+              )}
             </View>
-          )}
-        </View>
 
-        <Text style={styles.entryContent} numberOfLines={3}>
-          {isHidden ? 'Tap to unlock and view this entry.' : item.content}
-        </Text>
+            <Text style={styles.entryContent} numberOfLines={3}>
+              {isHidden ? 'Tap to unlock and view this entry.' : searchQuery.trim() ? highlightText(item.content, searchQuery) : item.content}
+            </Text>
 
-        <View style={styles.entryFooter}>
-          <Text style={styles.entryDate}>{formatDate(item.created_at)}</Text>
-          {hasInsights && (
-            <TouchableOpacity
-              style={styles.viewInsightsButton}
-              onPress={() => navigation.navigate('EntryDetail', { entry: item })}
-            >
-              <Text style={styles.viewInsightsText}>View Insights</Text>
-              <Ionicons name="arrow-forward" size={14} color="#8b5cf6" />
-            </TouchableOpacity>
-          )}
-        </View>
-        </View>
+            <View style={styles.entryFooter}>
+              <Text style={styles.entryDate}>{formatDate(item.created_at)}</Text>
+              {hasInsights && (
+                <TouchableOpacity
+                  style={styles.viewInsightsButton}
+                  onPress={() => navigation.navigate('EntryDetail', { entry: item })}
+                >
+                  <Text style={styles.viewInsightsText}>View Insights</Text>
+                  <Ionicons name="arrow-forward" size={14} color="#8b5cf6" />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </StandardContainer>
       </TouchableOpacity>
   );
   };
@@ -435,17 +456,19 @@ export default function HomeScreen({ navigation, route }: any) {
       style={styles.backgroundGradient}
     />
 
-    <View style={styles.header}>
-      <Text style={styles.headerTitle}>Journal</Text>
-      <View style={styles.headerRight}>
-        {streak.currentStreak > 0 && (
-          <View style={styles.streakContainerClean}>
-            <Text style={styles.flameEmoji}>🔥</Text>
-            <Text style={styles.streakNumber}>{streak.currentStreak}</Text>
-          </View>
-        )}
-      </View>
-    </View>
+    <PageHeader
+      title="Journal"
+      right={
+        <View style={styles.headerRight}>
+          {streak.currentStreak > 0 && (
+            <View style={styles.streakContainerClean}>
+              <Text style={styles.flameEmoji}>🔥</Text>
+              <Text style={styles.streakNumber}>{streak.currentStreak}</Text>
+            </View>
+          )}
+        </View>
+      }
+    />
 
     <View style={styles.searchSection}>
       <View style={styles.searchBar}>
@@ -566,7 +589,7 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
   },
   streakPill: {
     flexDirection: 'row',
@@ -600,6 +623,7 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     overflow: 'hidden',
+    marginLeft: 8,
   },
   headerAvatar: {
     width: 36,
@@ -855,11 +879,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#1a1a1a',
   },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
   streakContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -876,19 +895,6 @@ const styles = StyleSheet.create({
   },
   flameEmoji: {
     fontSize: 18,
-  },
-  streakNumber: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#ffffff',
-  },
-  streakInline: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#ffffff',
-  },
-  avatarButton: {
-    marginLeft: 8,
   },
   emotionalSubline: {
     fontSize: 13,
@@ -1094,20 +1100,13 @@ const styles = StyleSheet.create({
     color: '#fbbf24',
   },
   // Premium Entry Card Styles
-  premiumCard: {
+  premiumCardPressable: {
     marginBottom: 12,
-    borderRadius: 14,
-    overflow: 'hidden',
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
+  },
+  premiumCard: {
   },
   cardGradient: {
     padding: 14,
-    borderWidth: 1,
-    borderRadius: 14,
   },
   entryHeader: {
     marginBottom: 8,
