@@ -11,6 +11,12 @@ import { useNavigation } from '@react-navigation/native';
 // Screens
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
+import SignupUsernameScreen from '../screens/signup/SignupUsernameScreen';
+import SignupEmailScreen from '../screens/signup/SignupEmailScreen';
+import SignupPasswordScreen from '../screens/signup/SignupPasswordScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import VerifyEmailScreen from '../screens/VerifyEmailScreen';
+import EmailVerifiedScreen from '../screens/EmailVerifiedScreen';
 import HomeScreen from '../screens/HomeScreen';
 import EntryDetailScreen from '../screens/EntryDetailScreen';
 import CreateEntryScreen from '../screens/CreateEntryScreen';
@@ -145,19 +151,19 @@ function MainTabs() {
           },
         }}
       />
-      {/* Tab 5: Dashboard (Analytics/Insights) */}
+      {/* Tab 5: Settings */}
       <Tab.Screen
-        name="DashboardTab"
-        component={DashboardScreen}
+        name="SettingsTab"
+        component={SettingsScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Ionicons name="bar-chart" size={24} color={color} />
+            <Ionicons name="settings" size={24} color={color} />
           ),
-          tabBarAccessibilityLabel: "Dashboard",
+          tabBarAccessibilityLabel: "Settings",
         }}
         listeners={{
           tabPress: () => {
-            console.log('[NAV] Tab -> Dashboard');
+            console.log('[NAV] Tab -> Settings');
           },
         }}
       />
@@ -180,6 +186,11 @@ export default function AppNavigator() {
     };
     checkOnboarding();
   }, []);
+
+  // Check if user has completed onboarding when they log in
+  React.useEffect(() => {
+    console.log('[NAV] Auth state - user:', !!user, 'onboarding completed:', isOnboardingCompleted);
+  }, [user, isOnboardingCompleted]);
 
   if (loading || (user && isOnboardingCompleted === null)) {
     return (
@@ -235,6 +246,7 @@ export default function AppNavigator() {
           {/* Onboarding Flow */}
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="ProductReveal" component={ProductRevealScreen} />
+          <Stack.Screen name="EmailVerified" component={EmailVerifiedScreen} />
           <Stack.Screen name="OnboardingQuestion" component={OnboardingQuestionScreen} />
           <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
           <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
@@ -254,10 +266,29 @@ export default function AppNavigator() {
           <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
         </Stack.Navigator>
       ) : (
-        // Auth screens
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
+        // Unauthenticated - show Welcome first, then Login/Signup
+        <Stack.Navigator 
+          initialRouteName={isOnboardingCompleted ? 'Login' : 'Welcome'}
+          screenOptions={{ headerShown: false }}
+        >
+          {/* Onboarding Flow for new users */}
+          <Stack.Screen name="Welcome" component={WelcomeScreen} />
+          <Stack.Screen name="ProductReveal" component={ProductRevealScreen} />
+          <Stack.Screen name="EmailVerified" component={EmailVerifiedScreen} />
+          <Stack.Screen name="OnboardingQuestion" component={OnboardingQuestionScreen} />
+          <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
+          <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
+          <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
+          <Stack.Screen name="Paywall" component={PaywallScreen} />
+          
+          {/* Auth screens */}
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Signup" component={SignupScreen} />
+          <Stack.Screen name="SignupUsername" component={SignupUsernameScreen} />
+          <Stack.Screen name="SignupEmail" component={SignupEmailScreen} />
+          <Stack.Screen name="SignupPassword" component={SignupPasswordScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen as any} />
         </Stack.Navigator>
       )}
     </NavigationContainer>

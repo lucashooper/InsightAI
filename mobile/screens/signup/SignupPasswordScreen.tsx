@@ -1,0 +1,245 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../../contexts/AuthContext';
+
+export default function SignupPasswordScreen({ navigation, route }: any) {
+  const { name, email } = route.params;
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { signUp } = useAuth();
+
+  const handleContinue = async () => {
+    if (!password || !confirmPassword) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+
+    setLoading(true);
+    console.log('[SIGNUP] Creating account for:', email);
+
+    const { error } = await signUp(email, password, name);
+    setLoading(false);
+
+    if (error) {
+      console.error('[SIGNUP] Error:', error);
+      Alert.alert('Signup Failed', error.message);
+    } else {
+      console.log('[SIGNUP] Success! Navigating to verification...');
+      // Navigate to OTP verification screen with username
+      navigation.navigate('VerifyEmail', {
+        email,
+        type: 'signup',
+        username: name,
+      });
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
+      >
+        {/* Back Button */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+
+        <View style={styles.content}>
+          {/* Progress Indicator - Hidden on last step */}
+
+          {/* Title */}
+          <Text style={styles.title}>Create a password</Text>
+          <Text style={styles.subtitle}>Must be at least 6 characters</Text>
+
+          {/* Password Input */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor="rgba(255, 255, 255, 0.5)"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoFocus
+              returnKeyType="next"
+            />
+            <TouchableOpacity
+              style={styles.eyeIcon}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <Ionicons
+                name={showPassword ? 'eye-off' : 'eye'}
+                size={20}
+                color="rgba(255, 255, 255, 0.5)"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Confirm Password Input */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Confirm password"
+              placeholderTextColor="rgba(255, 255, 255, 0.5)"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={!showConfirmPassword}
+              autoCapitalize="none"
+              onSubmitEditing={handleContinue}
+              returnKeyType="done"
+            />
+            <TouchableOpacity
+              style={styles.eyeIcon}
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              <Ionicons
+                name={showConfirmPassword ? 'eye-off' : 'eye'}
+                size={20}
+                color="rgba(255, 255, 255, 0.5)"
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Continue Button at Bottom */}
+        <View style={styles.bottomContainer}>
+          <TouchableOpacity
+            style={[
+              styles.continueButton,
+              (!password || !confirmPassword || password.length < 6) && styles.continueButtonDisabled,
+            ]}
+            onPress={handleContinue}
+            disabled={!password || !confirmPassword || password.length < 6 || loading}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.continueButtonText}>Create Account</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+    paddingTop: 60,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 16,
+    left: 20,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 80,
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 40,
+  },
+  progressDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  progressDotActive: {
+    backgroundColor: '#8b5cf6',
+  },
+  progressDotComplete: {
+    backgroundColor: '#10b981',
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 12,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginBottom: 32,
+  },
+  inputContainer: {
+    position: 'relative',
+    marginBottom: 16,
+  },
+  input: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    padding: 16,
+    paddingRight: 48,
+    fontSize: 16,
+    color: '#fff',
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 16,
+    top: 18,
+  },
+  bottomContainer: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  continueButton: {
+    backgroundColor: '#8b5cf6',
+    borderRadius: 12,
+    padding: 18,
+    alignItems: 'center',
+  },
+  continueButtonDisabled: {
+    opacity: 0.5,
+  },
+  continueButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

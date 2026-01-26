@@ -81,7 +81,7 @@ const MembershipPage: React.FC<MembershipPageProps> = ({ onSkip, showCloseButton
           {/* Logo inside card */}
           <div className="membership-logo">
             <img 
-              src="/Insight-logo.png" 
+              src="/InsightAI-New-Logo.png" 
               alt="InsightAI Logo" 
               className="logo-image"
             />

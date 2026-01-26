@@ -9,7 +9,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { OnboardingProvider } from './contexts/OnboardingContext';
 import AppNavigator from './navigation/AppNavigator';
 
-const REVENUECAT_IOS_API_KEY = 'test_wuTAwQKYtsAjXmbyqtuVVRCMWGF';
+const REVENUECAT_IOS_API_KEY = 'appl_kqCbylJegHaNzqoGMLhkrprqibn';
 
 export default function App() {
   const [assetsLoaded, setAssetsLoaded] = useState(false);

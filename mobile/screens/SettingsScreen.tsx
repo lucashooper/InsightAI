@@ -31,10 +31,10 @@ export default function SettingsScreen({ navigation }: any) {
   const [feedbackSuccess, setFeedbackSuccess] = useState(false);
 
   const themes: { name: ThemeName; label: string; emoji: string }[] = [
+    { name: 'sunset', label: 'Sunset', emoji: '🌅' },
     { name: 'vibrant', label: 'Vibrant', emoji: '✨' },
     { name: 'dark', label: 'Dark', emoji: '🌑' },
     { name: 'ocean', label: 'Ocean', emoji: '🌊' },
-    { name: 'sunset', label: 'Sunset', emoji: '🌅' },
     { name: 'forest', label: 'Forest', emoji: '🌲' },
     { name: 'midnight', label: 'Midnight', emoji: '🌙' },
   ];
@@ -288,7 +288,11 @@ export default function SettingsScreen({ navigation }: any) {
 
       <PageHeader title="Settings" />
 
-      <ScrollView style={styles.content}>
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Profile Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Profile</Text>
@@ -319,7 +323,7 @@ export default function SettingsScreen({ navigation }: any) {
                   </View>
                 </TouchableOpacity>
                 <View style={styles.profileInfo}>
-                  <Text style={styles.profileName}>{userProfile?.username || user?.user_metadata?.full_name || 'User'}</Text>
+                  <Text style={styles.profileName}>{user?.user_metadata?.username || userProfile?.username || 'User'}</Text>
                   <Text style={styles.profileEmail}>{user?.email}</Text>
                 </View>
               </View>
@@ -438,30 +442,58 @@ export default function SettingsScreen({ navigation }: any) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Actions</Text>
 
-          <TouchableOpacity 
-            style={{ marginBottom: 12 }}
-            onPress={() => {
-              console.log('[NAV] Preview onboarding tapped');
-              navigation.navigate('Welcome');
-            }}
-            activeOpacity={0.85}
-          >
-            <StandardContainer style={styles.card}>
-              <View style={styles.cardGradient}>
-                <View style={styles.actionRow}>
-                  <Ionicons name="eye" size={20} color="#8b5cf6" />
-                  <Text style={[styles.actionText, { color: '#8b5cf6' }]}>Preview Onboarding</Text>
-                </View>
-              </View>
-            </StandardContainer>
-          </TouchableOpacity>
-
           <TouchableOpacity style={{}} onPress={handleSignOut} activeOpacity={0.85}>
             <StandardContainer style={styles.card}>
               <View style={styles.cardGradient}>
                 <View style={styles.actionRow}>
                   <Ionicons name="log-out" size={20} color="#ef4444" />
                   <Text style={[styles.actionText, { color: '#ef4444' }]}>Sign Out</Text>
+                </View>
+              </View>
+            </StandardContainer>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={{ marginTop: 12 }} 
+            onPress={() => {
+              Alert.alert(
+                'Delete Account',
+                'Are you sure you want to permanently delete your account? This action cannot be undone and will delete all your journal entries, insights, and personal data.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Delete Account',
+                    style: 'destructive',
+                    onPress: async () => {
+                      try {
+                        // Delete user data from Supabase
+                        if (user) {
+                          // Delete user's journal entries
+                          await supabase.from('journal_entries').delete().eq('user_id', user.id);
+                          // Delete user's profile
+                          await supabase.from('user_profiles').delete().eq('user_id', user.id);
+                          // Delete the auth user
+                          const { error } = await supabase.rpc('delete_user');
+                          if (error) throw error;
+                        }
+                        Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
+                        await signOut();
+                      } catch (error) {
+                        console.error('Error deleting account:', error);
+                        Alert.alert('Error', 'Failed to delete account. Please contact support at support@myinsightai.app');
+                      }
+                    }
+                  }
+                ]
+              );
+            }} 
+            activeOpacity={0.85}
+          >
+            <StandardContainer style={styles.card}>
+              <View style={styles.cardGradient}>
+                <View style={styles.actionRow}>
+                  <Ionicons name="trash" size={20} color="#ef4444" />
+                  <Text style={[styles.actionText, { color: '#ef4444' }]}>Delete Account</Text>
                 </View>
               </View>
             </StandardContainer>
@@ -473,7 +505,7 @@ export default function SettingsScreen({ navigation }: any) {
           <Text style={styles.sectionTitle}>About</Text>
           <View style={[styles.card, { backgroundColor: 'rgba(20, 20, 20, 0.8)', borderColor: 'rgba(255, 255, 255, 0.1)' }]}>
             <View style={styles.cardGradient}>
-              <Text style={styles.infoText}>InsightAI Mobile v1.0.0</Text>
+              <Text style={styles.infoText}>Insight Mobile v1.0.0</Text>
               <Text style={styles.infoSubtext}>Your Personal AI Journal</Text>
             </View>
           </View>
@@ -513,7 +545,8 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 0,
+  },
+  scrollContent: {
     paddingBottom: 100,
   },
   section: {

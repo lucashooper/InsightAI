@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "InsightAI",
+    "name": "Insight",
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/512px-Insight-ICON.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/512px-Insight-ICON.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -17,13 +17,14 @@
       "infoPlist": {
         "NSMicrophoneUsageDescription": "InsightAI uses the microphone for voice notes.",
         "NSSpeechRecognitionUsageDescription": "InsightAI uses speech recognition to convert your voice into text for taking notes and searching your content.",
+        "NSPhotoLibraryUsageDescription": "InsightAI needs access to your photo library to let you select and upload a profile picture for your account.",
         "ITSAppUsesNonExemptEncryption": false
       },
       "bundleIdentifier": "com.crupid.mobile"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/512px-Insight-ICON.png",
         "backgroundColor": "#ffffff"
       },
       "permissions": [
@@ -43,7 +44,14 @@
     },
     "owner": "crupid",
     "plugins": [
-      "expo-speech-recognition"
+      "expo-speech-recognition",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.878031859491-tub0qt8omp6enuiaqr7liivotmkq7gef"
+        }
+      ],
+      "expo-apple-authentication"
     ]
   }
 }

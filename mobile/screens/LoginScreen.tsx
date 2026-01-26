@@ -9,19 +9,20 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
-  Image,
+  SafeAreaView,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-
-const insightLogo = require('../assets/192px-Insight-ICON.png');
 
 export default function LoginScreen({ navigation }: any) {
   const [emailOrUsername, setEmailOrUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+  const [socialLoading, setSocialLoading] = useState(false);
+  const { signIn, signInWithGoogle, signInWithApple } = useAuth();
 
   const handleLogin = async () => {
     if (!emailOrUsername || !password) {
@@ -66,181 +67,273 @@ export default function LoginScreen({ navigation }: any) {
     }
   };
 
-  return (
-    <View style={styles.container}>
-      {/* Background Gradient - Vibrant Theme */}
-      <LinearGradient
-        colors={['#1a0b2e', '#2d1b4e', '#16213e', '#0f3460']}
-        style={styles.backgroundGradient}
-      />
+  const handleForgotPassword = () => {
+    navigation.navigate('ForgotPassword');
+  };
 
+  const handleGoogleSignIn = async () => {
+    setSocialLoading(true);
+    const { error } = await signInWithGoogle();
+    setSocialLoading(false);
+    if (error) {
+      Alert.alert('Google Sign-In Failed', error.message || 'An error occurred');
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    setSocialLoading(true);
+    const { error } = await signInWithApple();
+    setSocialLoading(false);
+    if (error) {
+      Alert.alert('Apple Sign-In Failed', error.message || 'An error occurred');
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
+        {/* Back Button */}
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => {
+            if (navigation.canGoBack()) {
+              navigation.goBack();
+            } else {
+              navigation.navigate('Welcome');
+            }
+          }}
+        >
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+
         <View style={styles.content}>
-          {/* Logo */}
-          <View style={styles.logoContainer}>
-            <View style={styles.logoWrapper}>
-              <Image source={insightLogo} style={styles.logo} />
-            </View>
-            <Text style={styles.title}>InsightAI</Text>
-          </View>
+          {/* Title */}
+          <Text style={styles.title}>Sign In</Text>
 
-          {/* Login Form */}
-          <View style={styles.formContainer}>
-            <LinearGradient
-              colors={['rgba(10, 10, 10, 0.95)', 'rgba(5, 5, 5, 0.95)']}
-              style={styles.formGradient}
-            >
-              <Text style={styles.formTitle}>Sign In</Text>
+          {/* Email Input */}
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="rgba(255, 255, 255, 0.5)"
+            value={emailOrUsername}
+            onChangeText={setEmailOrUsername}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
 
-
+          {/* Password Input */}
+          <View style={styles.passwordContainer}>
             <TextInput
-              style={styles.input}
-              placeholder="Email or Username"
-              placeholderTextColor="rgba(255, 255, 255, 0.6)"
-              value={emailOrUsername}
-              onChangeText={setEmailOrUsername}
-              autoCapitalize="none"
-            />
-
-            <TextInput
-              style={styles.input}
+              style={styles.passwordInput}
               placeholder="Password"
-              placeholderTextColor="rgba(255, 255, 255, 0.6)"
+              placeholderTextColor="rgba(255, 255, 255, 0.5)"
               value={password}
               onChangeText={setPassword}
-              secureTextEntry={true}
+              secureTextEntry={!showPassword}
             />
-
             <TouchableOpacity
-              style={styles.button}
-              onPress={handleLogin}
-              disabled={loading}
+              style={styles.eyeButton}
+              onPress={() => setShowPassword(!showPassword)}
             >
-              {loading ? (
-                <ActivityIndicator color="#8b5cf6" />
-              ) : (
-                <Text style={styles.buttonText}>Sign In</Text>
-              )}
+              <Ionicons
+                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                size={20}
+                color="rgba(255, 255, 255, 0.6)"
+              />
             </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.linkButton}
-                onPress={() => navigation.navigate('Signup')}
-              >
-                <Text style={styles.linkText}>
-                  Don't have an account? <Text style={styles.linkTextBold}>Sign Up</Text>
-                </Text>
-              </TouchableOpacity>
-            </LinearGradient>
           </View>
+
+          {/* Forgot Password */}
+          <TouchableOpacity
+            style={styles.forgotPasswordButton}
+            onPress={handleForgotPassword}
+          >
+            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+          </TouchableOpacity>
+
+          {/* Divider */}
+          <View style={styles.dividerContainer}>
+            <View style={styles.divider} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.divider} />
+          </View>
+
+          {/* Social Sign-In Buttons */}
+          <AppleAuthentication.AppleAuthenticationButton
+            buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+            cornerRadius={12}
+            style={styles.appleButton}
+            onPress={handleAppleSignIn}
+          />
+
+          <TouchableOpacity
+            style={styles.googleButton}
+            onPress={handleGoogleSignIn}
+            disabled={socialLoading}
+          >
+            <Ionicons name="logo-google" size={20} color="#000" />
+            <Text style={styles.googleButtonText}>Continue with Google</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Continue Button at Bottom */}
+        <View style={styles.bottomContainer}>
+          <TouchableOpacity
+            style={styles.continueButton}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.continueButtonText}>Continue</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.signupButton}
+            onPress={() => navigation.navigate('Signup')}
+          >
+            <Text style={styles.signupText}>
+              Don't have an account? <Text style={styles.signupTextBold}>Sign Up</Text>
+            </Text>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
-  },
-  backgroundGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
+    backgroundColor: '#000',
   },
   keyboardView: {
     flex: 1,
   },
+  backButton: {
+    position: 'absolute',
+    top: 16,
+    left: 20,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   content: {
     flex: 1,
-    justifyContent: 'center',
-    padding: 24,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 48,
-  },
-  logoWrapper: {
-    width: 96,
-    height: 96,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  logo: {
-    width: 96,
-    height: 96,
-    borderRadius: 24,
+    paddingHorizontal: 24,
+    paddingTop: 80,
   },
   title: {
     fontSize: 32,
     fontWeight: '700',
     color: '#fff',
-    marginBottom: 4,
-  },
-  formContainer: {
-    borderRadius: 20,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.2)',
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  formGradient: {
-    padding: 24,
-  },
-  formTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#fff',
-    marginBottom: 24,
-    textAlign: 'left',
+    marginBottom: 32,
   },
   input: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
-    color: '#fff',
     fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
+    color: '#fff',
   },
-  button: {
-    backgroundColor: '#8b5cf6',
+  passwordContainer: {
+    position: 'relative',
+    marginBottom: 16,
+  },
+  passwordInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     padding: 16,
-    alignItems: 'center',
-    marginTop: 8,
+    paddingRight: 50,
+    fontSize: 16,
+    color: '#fff',
   },
-  buttonText: {
-    color: '#ffffff',
+  eyeButton: {
+    position: 'absolute',
+    right: 16,
+    top: 16,
+    padding: 4,
+  },
+  forgotPasswordButton: {
+    alignSelf: 'flex-end',
+    marginTop: 4,
+  },
+  forgotPasswordText: {
+    color: '#8b5cf6',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  bottomContainer: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  continueButton: {
+    backgroundColor: '#8b5cf6',
+    borderRadius: 12,
+    padding: 18,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  continueButtonText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
-  linkButton: {
-    marginTop: 16,
+  signupButton: {
     alignItems: 'center',
   },
-  linkText: {
-    color: '#999',
+  signupText: {
+    color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 14,
   },
-  linkTextBold: {
+  signupTextBold: {
+    color: '#fff',
     fontWeight: '600',
-    color: '#8b5cf6',
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 24,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  dividerText: {
+    color: 'rgba(255, 255, 255, 0.5)',
+    paddingHorizontal: 16,
+    fontSize: 14,
+  },
+  appleButton: {
+    height: 50,
+    marginBottom: 12,
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    gap: 12,
+  },
+  googleButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

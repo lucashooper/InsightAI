@@ -15,15 +15,27 @@ export default function PaywallScreen({ navigation }: any) {
   const [offering, setOffering] = useState<PurchasesOffering | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<'weekly' | '12week' | 'yearly'>('12week');
+  const [selectedPlan, setSelectedPlan] = useState<'weekly' | 'monthly' | 'yearly'>('monthly');
 
   useEffect(() => {
     const loadOfferings = async () => {
       try {
         const offerings = await Purchases.getOfferings();
+        console.log('[RevenueCat] Offerings loaded:', offerings);
+        console.log('[RevenueCat] Current offering:', offerings.current);
+        if (offerings.current) {
+          console.log('[RevenueCat] Available packages:', offerings.current.availablePackages.map(p => ({
+            identifier: p.identifier,
+            product: p.product.identifier,
+          })));
+        }
         setOffering(offerings.current ?? null);
+        if (!offerings.current) {
+          console.log('[RevenueCat] No offerings available');
+        }
       } catch (error) {
-        Alert.alert('Error', 'Unable to load subscription options. Please try again later.');
+        console.error('[RevenueCat] Error loading offerings:', error);
+        // Don't show alert, just log the error
       } finally {
         setIsLoading(false);
       }
@@ -32,9 +44,18 @@ export default function PaywallScreen({ navigation }: any) {
     loadOfferings();
   }, []);
 
-  const getMonthlyPackage = (): PurchasesPackage | null => {
+  const getSelectedPackage = (): PurchasesPackage | null => {
     if (!offering) return null;
-    const pkg = offering.availablePackages.find((p) => p.identifier === 'monthly');
+    
+    // Map our plan selection to RevenueCat package types
+    const packageTypeMap = {
+      weekly: '$rc_weekly',
+      monthly: '$rc_monthly',
+      yearly: '$rc_annual',
+    };
+    
+    const targetIdentifier = packageTypeMap[selectedPlan];
+    const pkg = offering.availablePackages.find((p) => p.identifier === targetIdentifier);
     return pkg ?? offering.availablePackages[0] ?? null;
   };
 
@@ -53,19 +74,33 @@ export default function PaywallScreen({ navigation }: any) {
   const handleStartJourney = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
-    const monthly = getMonthlyPackage();
-    if (!monthly) {
-      Alert.alert('Unavailable', 'No subscription options are currently available. Please try again later.');
+    const selectedPackage = getSelectedPackage();
+    if (!selectedPackage) {
+      // No offerings available - let user continue to app anyway
+      Alert.alert(
+        'Subscriptions Coming Soon',
+        'Mobile subscriptions are being set up. You can continue using the app and subscribe later on the web at myinsightai.app',
+        [
+          {
+            text: 'Continue to App',
+            onPress: () => {
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'MainTabs' }],
+              });
+            }
+          }
+        ]
+      );
       return;
     }
 
     try {
       setIsPurchasing(true);
-      const { customerInfo } = await Purchases.purchasePackage(monthly);
+      const { customerInfo } = await Purchases.purchasePackage(selectedPackage);
       handleCustomerInfo(customerInfo);
     } catch (error: any) {
       if (error?.userCancelled) {
-        // User cancelled, no need to show an error
         return;
       }
       Alert.alert('Purchase failed', 'Something went wrong while processing your purchase. Please try again.');
@@ -128,19 +163,22 @@ export default function PaywallScreen({ navigation }: any) {
                 <Text style={styles.planTitle}>1-Week Plan</Text>
               </View>
               <View style={styles.planPricing}>
-                <Text style={styles.planPrice}>$4.00</Text>
+                <Text style={styles.planPrice}>$4.99</Text>
                 <Text style={styles.planPeriod}>per week</Text>
               </View>
             </View>
-            <Text style={styles.planDaily}>$0.57 per day</Text>
+            <Text style={styles.planDaily}>$0.71 per day</Text>
+            <View style={styles.trialBadge}>
+              <Text style={styles.trialBadgeText}>3-DAY FREE TRIAL</Text>
+            </View>
           </TouchableOpacity>
 
-          {/* 12-Week Plan - MOST POPULAR */}
+          {/* Monthly Plan - MOST POPULAR */}
           <TouchableOpacity
-            style={[styles.planCard, selectedPlan === '12week' && styles.planCardSelected]}
+            style={[styles.planCard, selectedPlan === 'monthly' && styles.planCardSelected]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setSelectedPlan('12week');
+              setSelectedPlan('monthly');
             }}
             activeOpacity={0.8}
           >
@@ -149,16 +187,17 @@ export default function PaywallScreen({ navigation }: any) {
             </View>
             <View style={styles.planHeader}>
               <View style={styles.planTitleRow}>
-                <View style={[styles.radioButton, selectedPlan === '12week' && styles.radioButtonSelected]}>
-                  {selectedPlan === '12week' && <View style={styles.radioButtonInner} />}
+                <View style={[styles.radioButton, selectedPlan === 'monthly' && styles.radioButtonSelected]}>
+                  {selectedPlan === 'monthly' && <View style={styles.radioButtonInner} />}
                 </View>
-                <Text style={styles.planTitle}>12-Week Plan</Text>
+                <Text style={styles.planTitle}>Monthly Plan</Text>
               </View>
               <View style={styles.planPricing}>
-                <Text style={styles.planPrice}>$44.99</Text>
+                <Text style={styles.planPrice}>$17.99</Text>
+                <Text style={styles.planPeriod}>per month</Text>
               </View>
             </View>
-            <Text style={styles.planDaily}>$0.53 per day</Text>
+            <Text style={styles.planDaily}>$0.60 per day</Text>
           </TouchableOpacity>
 
           {/* Yearly Plan */}
@@ -175,13 +214,14 @@ export default function PaywallScreen({ navigation }: any) {
                 <View style={[styles.radioButton, selectedPlan === 'yearly' && styles.radioButtonSelected]}>
                   {selectedPlan === 'yearly' && <View style={styles.radioButtonInner} />}
                 </View>
-                <Text style={styles.planTitle}>52-Week Plan</Text>
+                <Text style={styles.planTitle}>1-Year Plan</Text>
               </View>
               <View style={styles.planPricing}>
-                <Text style={styles.planPrice}>$88.99</Text>
+                <Text style={styles.planPrice}>$69.99</Text>
+                <Text style={styles.planPeriod}>per year</Text>
               </View>
             </View>
-            <Text style={styles.planDaily}>$0.24 per day</Text>
+            <Text style={styles.planDaily}>$0.19 per day</Text>
           </TouchableOpacity>
         </View>
 
@@ -277,7 +317,9 @@ export default function PaywallScreen({ navigation }: any) {
             {isPurchasing ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.ctaText}>Start free trial</Text>
+              <Text style={styles.ctaText}>
+                {selectedPlan === 'weekly' ? 'Start free trial' : 'Subscribe now'}
+              </Text>
             )}
           </LinearGradient>
         </TouchableOpacity>
@@ -556,5 +598,36 @@ const styles = StyleSheet.create({
   footerDivider: {
     fontSize: 13,
     color: '#52525b',
+  },
+  trialBadge: {
+    marginTop: 8,
+    backgroundColor: '#10b981',
+    borderRadius: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    alignSelf: 'flex-start',
+    marginLeft: 36,
+  },
+  trialBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.5,
+  },
+  devSkipButton: {
+    marginBottom: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    backgroundColor: '#10b981',
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#ffffff',
+  },
+  devSkipText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#ffffff',
+    letterSpacing: 1,
   },
 });

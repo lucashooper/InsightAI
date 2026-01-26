@@ -277,7 +277,9 @@ export default function DashboardScreen() {
                 <View style={styles.metricItem}>
                   <View style={styles.metricIconValue}>
                     <Text style={styles.metricEmoji}>🔥</Text>
-                    <Text style={[styles.metricValue, { color: theme.colors.primaryText }]}>{stats.currentStreak}</Text>
+                    <Text style={[styles.metricValue, { color: theme.colors.primaryText }]}>
+                      {stats.currentStreak > 0 ? stats.currentStreak : '-'}
+                    </Text>
                   </View>
                   <Text style={[styles.metricLabel, { color: theme.colors.secondaryText }]}>DAY STREAK</Text>
                 </View>
@@ -285,7 +287,9 @@ export default function DashboardScreen() {
                 <View style={styles.metricItem}>
                   <View style={styles.metricIconValue}>
                     <Text style={styles.metricEmoji}>💭</Text>
-                    <Text style={[styles.metricValue, { color: theme.colors.primaryText }]}>{stats.avgWellbeingScore}/10</Text>
+                    <Text style={[styles.metricValue, { color: theme.colors.primaryText }]}>
+                      {stats.avgWellbeingScore > 0 ? `${stats.avgWellbeingScore}/10` : '-'}
+                    </Text>
                   </View>
                   <Text style={[styles.metricLabel, { color: theme.colors.secondaryText }]}>AVG MOOD</Text>
                 </View>
@@ -293,7 +297,9 @@ export default function DashboardScreen() {
                 <View style={styles.metricItem}>
                   <View style={styles.metricIconValue}>
                     <Text style={styles.metricEmoji}>⚡</Text>
-                    <Text style={[styles.metricValue, { color: theme.colors.primaryText }]}>{stats.avgResilienceScore}/10</Text>
+                    <Text style={[styles.metricValue, { color: theme.colors.primaryText }]}>
+                      {stats.avgResilienceScore > 0 ? `${stats.avgResilienceScore}/10` : '-'}
+                    </Text>
                   </View>
                   <Text style={[styles.metricLabel, { color: theme.colors.secondaryText }]}>ENERGY</Text>
                 </View>
@@ -301,22 +307,28 @@ export default function DashboardScreen() {
               
               {/* Interpretive sentence */}
               <Text style={[styles.interpretiveSentence, { color: theme.colors.secondaryText }]}> 
-                {stats.avgWellbeingScore >= 7 
+                {stats.totalEntries === 0
+                  ? 'Start your journey by creating your first entry.'
+                  : stats.avgWellbeingScore >= 7 
                   ? 'A steady week with consistent emotional balance.'
                   : stats.avgWellbeingScore >= 5
                   ? 'A steady week, with lower energy mid-week.'
-                  : 'You\'ve been navigating some challenges this week.'}
+                  : stats.avgWellbeingScore > 0
+                  ? 'You\'ve been navigating some challenges this week.'
+                  : 'Begin tracking your mood to see insights here.'}
               </Text>
             </StandardContainer>
 
             {/* Emotion Bubble Map - Mindsera Style */}
-            {dominantEmotions.length > 0 && (
-              <StandardContainer style={styles.bubbleMapCard}>
-                <View style={styles.bubbleMapHeader}>
-                  <Text style={[styles.bubbleMapTitle, { color: theme.colors.primaryText }]}>Emotional landscape</Text>
-                  <Text style={[styles.bubbleMapSubtitle, { color: theme.colors.secondaryText }]}>Tap to explore</Text>
-                </View>
-                
+            <StandardContainer style={styles.bubbleMapCard}>
+              <View style={styles.bubbleMapHeader}>
+                <Text style={[styles.bubbleMapTitle, { color: theme.colors.primaryText }]}>Emotional landscape</Text>
+                <Text style={[styles.bubbleMapSubtitle, { color: theme.colors.secondaryText }]}>
+                  {dominantEmotions.length > 0 ? 'Tap to explore' : 'Track your emotions'}
+                </Text>
+              </View>
+              
+              {dominantEmotions.length > 0 ? (
                 <View style={styles.bubbleMapContainer}>
                   {dominantEmotions.map((item, index) => {
                     // Calculate bubble size based on percentage
@@ -391,8 +403,15 @@ export default function DashboardScreen() {
                     </View>
                   </TouchableOpacity>
                 </View>
-              </StandardContainer>
-            )}
+              ) : (
+                <View style={styles.emptyBubbleContainer}>
+                  <Ionicons name="happy-outline" size={48} color={theme.colors.secondaryText} />
+                  <Text style={[styles.emptyBubbleText, { color: theme.colors.secondaryText }]}>
+                    Your emotions will appear here as you journal
+                  </Text>
+                </View>
+              )}
+            </StandardContainer>
           </>
         ) : (
           <View style={styles.emptyContainer}>
@@ -1103,6 +1122,18 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   interpretiveSentence: {
+    fontSize: 14,
+    fontStyle: 'italic',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  emptyBubbleContainer: {
+    height: 240,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 40,
+  },
+  emptyBubbleText: {
     fontSize: 14,
     lineHeight: 20,
     textAlign: 'center',

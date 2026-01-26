@@ -84,7 +84,7 @@ const WelcomeScreen: React.FC = () => {
             style={{ marginBottom: '1.5rem' }}
           >
             <img 
-              src="/Insight-logo.png" 
+              src="/InsightAI-New-Logo.png" 
               alt="InsightAI Logo" 
               className="auth-logo"
             />

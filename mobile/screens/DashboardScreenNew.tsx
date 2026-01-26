@@ -17,7 +17,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { useNavigation } from '@react-navigation/native';
-// TODO: Uncomment when using development build (not Expo Go)
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import StandardContainer from '../components/shared/StandardContainer';
+import FirstTimeIntroOverlay from '../components/FirstTimeIntroOverlay';
+// Temporarily disabled for Expo Go testing
 // import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 const orbImage = require('../public/InsightAI-Orb.png');
 
@@ -49,15 +52,16 @@ export default function DashboardScreenNew() {
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recognizedText, setRecognizedText] = useState('');
+  const [showIntroOverlay, setShowIntroOverlay] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
     loadUserProfile();
     loadRecentTopics();
     loadTodayInsights();
+    checkFirstTimeUser();
 
-    // TODO: Uncomment when using development build (not Expo Go)
-    // Check speech recognition availability
+    // Check speech recognition availability (disabled for Expo Go)
     // const checkPermissions = async () => {
     //   try {
     //     const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
@@ -72,6 +76,29 @@ export default function DashboardScreenNew() {
       // Cleanup if needed
     };
   }, [user]);
+
+  const checkFirstTimeUser = async () => {
+    try {
+      const hasSeenIntro = await AsyncStorage.getItem('HAS_SEEN_DASHBOARD_INTRO');
+      if (!hasSeenIntro) {
+        // Show intro after a short delay to let dashboard load
+        setTimeout(() => {
+          setShowIntroOverlay(true);
+        }, 1000);
+      }
+    } catch (error) {
+      console.log('Error checking first-time user:', error);
+    }
+  };
+
+  const handleCloseIntro = async () => {
+    try {
+      await AsyncStorage.setItem('HAS_SEEN_DASHBOARD_INTRO', 'true');
+      setShowIntroOverlay(false);
+    } catch (error) {
+      console.log('Error saving intro state:', error);
+    }
+  };
 
   useEffect(() => {
     // Subtle slow rotation animation (45s cycle)
@@ -182,60 +209,14 @@ export default function DashboardScreenNew() {
     }
   };
 
-  // TODO: Uncomment when using development build (not Expo Go)
-  // Speech-to-text implementation ready for development build
   const startRecording = async () => {
-    // Placeholder for Expo Go - shows coming soon message
-    Alert.alert(
-      'Coming Soon',
-      'Voice journaling will be available when you create a development build. This feature requires native modules that are not available in Expo Go.',
-      [
-        { text: 'OK' },
-        { text: 'Learn More', onPress: () => console.log('See: https://docs.expo.dev/develop/development-builds/introduction/') }
-      ]
-    );
-    
-    /* DEVELOPMENT BUILD CODE - Uncomment when ready:
-    try {
-      setRecognizedText('');
-      setIsRecording(true);
-      
-      const result = await ExpoSpeechRecognitionModule.start({
-        lang: 'en-US',
-        interimResults: true,
-        maxAlternatives: 1,
-        continuous: false,
-      });
-      
-      console.log('Speech recognition started:', result);
-      
-      // Listen for results
-      const timeout = setTimeout(() => {
-        stopRecording();
-      }, 10000); // 10 second timeout
-      
-    } catch (error) {
-      console.error('Error with voice recognition:', error);
-      setIsRecording(false);
-      Alert.alert('Error', 'Could not start voice recognition. Please check microphone permissions.');
-    }
-    */
+    // Disabled for Expo Go testing
+    Alert.alert('Voice Recording', 'Voice recording requires a development build and is not available in Expo Go.');
   };
 
   const stopRecording = async () => {
-    /* DEVELOPMENT BUILD CODE - Uncomment when ready:
-    try {
-      await ExpoSpeechRecognitionModule.stop();
-      setIsRecording(false);
-      
-      if (recognizedText) {
-        navigation.navigate('CreateEntry', { initialContent: recognizedText });
-      }
-    } catch (error) {
-      console.error('Error stopping voice recognition:', error);
-      setIsRecording(false);
-    }
-    */
+    // Disabled for Expo Go testing
+    setIsRecording(false);
   };
 
   const loadTodayInsights = async () => {
@@ -434,26 +415,21 @@ export default function DashboardScreenNew() {
             style={styles.profilePictureContainer}
             onPress={() => {
               console.log('[NAV] PFP tapped -> Settings');
-              navigation.navigate('Settings');
+              navigation.navigate('SettingsTab');
             }}
           >
-            <LinearGradient
-              colors={['rgba(139, 92, 246, 0.6)', 'rgba(99, 102, 241, 0.4)']}
-              style={styles.profileGradientBorder}
-            >
-              {profilePicture ? (
-                <Image source={{ uri: profilePicture }} style={styles.profilePicture} />
-              ) : (
-                <View style={styles.profilePlaceholder}>
-                  <Ionicons name="person" size={24} color="rgba(255, 255, 255, 0.6)" />
-                </View>
-              )}
-            </LinearGradient>
+            {profilePicture ? (
+              <Image source={{ uri: profilePicture }} style={styles.profilePicture} />
+            ) : (
+              <View style={styles.profilePlaceholder}>
+                <Ionicons name="person" size={24} color="rgba(255, 255, 255, 0.6)" />
+              </View>
+            )}
           </TouchableOpacity>
           <View style={styles.headerIcons}>
             <View style={styles.streakInline}>
               <Text style={styles.streakEmoji}>🔥</Text>
-              <Text style={styles.streakCount}>{streak}</Text>
+              <Text style={styles.streakCount}>{streak > 0 ? streak : '-'}</Text>
             </View>
           </View>
         </View>
@@ -645,6 +621,12 @@ export default function DashboardScreenNew() {
           </View>
         )}
       </ScrollView>
+
+      {/* First-time user introduction overlay */}
+      <FirstTimeIntroOverlay 
+        visible={showIntroOverlay}
+        onClose={handleCloseIntro}
+      />
     </View>
   );
 }

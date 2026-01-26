@@ -146,12 +146,13 @@ const STEPS: Step[] = [
     }
 ];
 
-export default function OnboardingQuestionScreen({ navigation }: any) {
-    const { setUserName, setOnboardingAnswers } = useOnboarding();
-    const [currentIndex, setCurrentIndex] = useState(0);
+export default function OnboardingQuestionScreen({ navigation, route }: any) {
+    const { userName, setUserName, setOnboardingAnswers } = useOnboarding();
+    const startIndex = route?.params?.startIndex ?? 0;
+    const [currentIndex, setCurrentIndex] = useState(startIndex);
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
-    const [textInputValue, setTextInputValue] = useState('');
+    const [textInputValue, setTextInputValue] = useState(userName || '');
     const [wellbeingValue, setWellbeingValue] = useState(7);
     const [fadeAnim] = useState(new Animated.Value(1));
     const [featureFadeAnims] = useState([
@@ -269,7 +270,10 @@ export default function OnboardingQuestionScreen({ navigation }: any) {
                 <TouchableOpacity
                     onPress={() => {
                         if (currentIndex === 0) {
-                            navigation.goBack();
+                            // Check if we can go back before attempting
+                            if (navigation.canGoBack()) {
+                                navigation.goBack();
+                            }
                         } else {
                             setCurrentIndex(currentIndex - 1);
                             setSelectedOption(null);
@@ -309,14 +313,14 @@ export default function OnboardingQuestionScreen({ navigation }: any) {
 
                             {/* Main Headline - "Research has shown..." */}
                             <Text style={{
-                                fontSize: 26,
-                                fontWeight: '500',
+                                fontSize: 28,
+                                fontWeight: '600',
                                 color: '#fff',
                                 textAlign: 'center',
-                                lineHeight: 34,
-                                letterSpacing: -0.3,
+                                lineHeight: 36,
+                                letterSpacing: -0.5,
                                 marginBottom: 12,
-                                paddingHorizontal: 16,
+                                paddingHorizontal: 20,
                             }}>
                                 {currentStep.title}
                             </Text>
@@ -1093,28 +1097,38 @@ const styles = StyleSheet.create({
     premiumInfoContainer: {
         flex: 1,
         alignItems: 'center',
-        justifyContent: 'flex-start', // Changed from 'center' to move content up
+        justifyContent: 'flex-start',
         paddingHorizontal: 24,
-        paddingTop: 20, // Reduced from 40 to move content higher
+        paddingTop: 20,
     },
-    
-    // Lottie animation with glowing background circle
     lottieGlowContainer: {
         position: 'relative',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 32, // Reduced from 48 to tighten spacing
     },
     circularGlow: {
         position: 'absolute',
+        width: 240,
+        height: 240,
+        borderRadius: 120,
+        backgroundColor: 'rgba(139, 92, 246, 0.15)',
+        alignSelf: 'center',
+        top: -20,
+        zIndex: 0,
+    },
+    premiumLottieContainer: {
         width: 200,
         height: 200,
-        borderRadius: 100,
-        backgroundColor: 'rgba(139, 92, 246, 0.15)',
-        shadowColor: '#8b5cf6',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.4,
-        shadowRadius: 40,
+        borderRadius: 24,
+        backgroundColor: 'rgba(59, 130, 246, 0.08)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 32,
+        alignSelf: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(59, 130, 246, 0.15)',
+        shadowColor: '#3b82f6',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.2,
+        shadowRadius: 24,
         elevation: 0,
     },
     premiumLottie: {
@@ -1154,12 +1168,8 @@ const styles = StyleSheet.create({
         marginBottom: 32,
     },
     cambridgeLogoWrapper: {
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
-        borderRadius: 16,
-        borderWidth: 1.5,
-        borderColor: 'rgba(255, 255, 255, 0.15)',
-        paddingVertical: 20,
-        paddingHorizontal: 24,
+        borderRadius: 12,
+        overflow: 'hidden',
         marginBottom: 16,
     },
     premiumCambridgeLogo: {

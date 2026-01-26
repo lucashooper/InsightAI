@@ -40,12 +40,15 @@ export default function MeditationScreen({ navigation }: any) {
   const [breathPhase, setBreathPhase] = useState<BreathPhase>('inhale');
   const [phaseLabel, setPhaseLabel] = useState('Breathe in');
   const [breathCount, setBreathCount] = useState(0);
+  const [cycleCount, setCycleCount] = useState(0);
   const [currentPhrase, setCurrentPhrase] = useState(0);
   const [showPhrase, setShowPhrase] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(300);
   const [isActive, setIsActive] = useState(false);
   const [meditationTheme, setMeditationTheme] = useState<'sky' | 'sunset'>('sky');
   const [hasStartedBreathing, setHasStartedBreathing] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const MAX_CYCLES = 3;
   const cycleStartTimeRef = useRef(Date.now());
   const breathPhaseRef = useRef<BreathPhase>('inhale');
   const cycleIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -127,7 +130,21 @@ export default function MeditationScreen({ navigation }: any) {
           breathPhaseRef.current = 'hold_out';
           setBreathPhase('hold_out');
           setPhaseLabel(BREATH_PHASES.HOLD_OUT.label);
-          setBreathCount(prev => prev + 1);
+          setBreathCount(prev => {
+            const newCount = prev + 1;
+            // Complete cycle every 1 breath (simplified for demo)
+            if (newCount % 1 === 0) {
+              setCycleCount(c => {
+                const newCycleCount = c + 1;
+                if (newCycleCount >= MAX_CYCLES) {
+                  setIsCompleted(true);
+                  setHasStartedBreathing(false);
+                }
+                return newCycleCount;
+              });
+            }
+            return newCount;
+          });
         }
       }
     }, 100);
@@ -224,6 +241,14 @@ export default function MeditationScreen({ navigation }: any) {
     setTimeRemaining(300);
   };
 
+  const stopExercise = () => {
+    setHasStartedBreathing(false);
+    setBreathCount(0);
+    setCycleCount(0);
+    setIsCompleted(false);
+    breathProgress.setValue(0);
+  };
+
   // Bidirectional progress bar (center outward like Headspace)
   const progressBarLeftWidth = breathProgress.interpolate({
     inputRange: [0, 1],
@@ -274,15 +299,24 @@ export default function MeditationScreen({ navigation }: any) {
       <View style={styles.centerContent}>
         {!hasStartedBreathing ? (
           <>
-            <Text style={styles.breathText}>Take a slow breath</Text>
-            <Text style={styles.breathCountText}>When you're ready, start a breathing exercise.</Text>
+            <Text style={styles.breathText}>{isCompleted ? 'Exercise complete' : 'Take a slow breath'}</Text>
+            <Text style={styles.breathCountText}>
+              {isCompleted 
+                ? `Great work! You completed ${MAX_CYCLES} breathing cycles.` 
+                : 'When you\'re ready, start a breathing exercise.'}
+            </Text>
 
             <TouchableOpacity
               style={styles.startButton}
-              onPress={() => setHasStartedBreathing(true)}
+              onPress={() => {
+                setHasStartedBreathing(true);
+                setBreathCount(0);
+                setCycleCount(0);
+                setIsCompleted(false);
+              }}
               activeOpacity={0.9}
             >
-              <Text style={styles.startButtonText}>Start breathing exercise</Text>
+              <Text style={styles.startButtonText}>{isCompleted ? 'Start again' : 'Start breathing exercise'}</Text>
             </TouchableOpacity>
           </>
         ) : (
@@ -296,8 +330,18 @@ export default function MeditationScreen({ navigation }: any) {
               <Animated.View style={[styles.progressBarFillRight, { width: progressBarRightWidth }]} />
             </View>
 
-            {/* Breath counter */}
+            {/* Breath counter and cycle progress */}
             <Text style={styles.exerciseBreathCountText}>{breathCount} {breathCount === 1 ? 'breath' : 'breaths'}</Text>
+            <Text style={styles.cycleProgressText}>Cycle {cycleCount + 1} of {MAX_CYCLES}</Text>
+            
+            {/* Stop button */}
+            <TouchableOpacity
+              style={styles.stopButton}
+              onPress={stopExercise}
+              activeOpacity={0.9}
+            >
+              <Text style={styles.stopButtonText}>Stop exercise</Text>
+            </TouchableOpacity>
           </>
         )}
       </View>
@@ -459,6 +503,28 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 252, 248, 0.75)',
     marginTop: 22,
     letterSpacing: 0.5,
+  },
+  cycleProgressText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: 'rgba(255, 252, 248, 0.6)',
+    marginTop: 8,
+    letterSpacing: 0.3,
+  },
+  stopButton: {
+    marginTop: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 999,
+  },
+  stopButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.9)',
+    letterSpacing: 0.2,
   },
   debugOverlay: {
     position: 'absolute',
