@@ -3,15 +3,21 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Activi
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import PlanCard from '../../components/onboarding/PlanCard';
 import Purchases, { PurchasesOffering, PurchasesPackage, CustomerInfo } from 'react-native-purchases';
+import { useAuth } from '../../contexts/AuthContext';
+import { useOnboarding } from '../../contexts/OnboardingContext';
+import { supabase } from '../../lib/supabase';
 
 const insightLogo = require('../../public/InsightAI-New-Logo.png');
 
 const ENTITLEMENT_ID = 'pro';
 
 export default function PaywallScreen({ navigation }: any) {
+  const { user } = useAuth();
+  const { userName } = useOnboarding();
   const [offering, setOffering] = useState<PurchasesOffering | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
@@ -43,6 +49,73 @@ export default function PaywallScreen({ navigation }: any) {
 
     loadOfferings();
   }, []);
+
+  const saveUsernameToProfile = async () => {
+    if (!user) {
+      console.log('[Paywall] No user found, skipping profile save');
+      return;
+    }
+    
+    if (!userName) {
+      console.log('[Paywall] No username found in context, skipping profile save');
+      return;
+    }
+    
+    try {
+      console.log('[Paywall] Saving username to profile...');
+      console.log('[Paywall] User ID:', user.id);
+      console.log('[Paywall] Username:', userName);
+      console.log('[Paywall] User email:', user.email);
+      
+      // First, try to check if profile exists
+      const { data: existingProfile, error: checkError } = await supabase
+        .from('profiles')
+        .select('id, username')
+        .eq('user_id', user.id)
+        .single();
+      
+      console.log('[Paywall] Existing profile check:', existingProfile);
+      console.log('[Paywall] Check error:', checkError);
+      
+      if (existingProfile) {
+        // Profile exists, update it
+        console.log('[Paywall] Profile exists, updating username...');
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ username: userName })
+          .eq('user_id', user.id);
+        
+        if (updateError) {
+          console.error('[Paywall] ❌ Error updating profile:', updateError);
+        } else {
+          console.log('[Paywall] ✅ Username updated successfully');
+        }
+      } else {
+        // Profile doesn't exist, create it
+        console.log('[Paywall] Profile does not exist, creating new profile...');
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: user.id,
+            username: userName,
+            email: user.email,
+          });
+        
+        if (insertError) {
+          console.error('[Paywall] ❌ Error creating profile:', insertError);
+        } else {
+          console.log('[Paywall] ✅ Profile created successfully');
+        }
+      }
+      
+      // Mark onboarding as complete
+      await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+      console.log('[Paywall] ✅ Onboarding marked as complete');
+      
+    } catch (err) {
+      console.error('[Paywall] ❌ Exception in saveUsernameToProfile:', err);
+    }
+  };
 
   const getSelectedPackage = (): PurchasesPackage | null => {
     if (!offering) return null;

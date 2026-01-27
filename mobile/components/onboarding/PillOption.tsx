@@ -31,15 +31,14 @@ export default function PillOption({ label, icon, selected, onPress }: PillOptio
 
   // Brand colors for social media icons - using official brand colors
   const getIconColor = () => {
-    if (selected) return '#0b1220';
-    
+    // Always use brand colors for social media icons
     switch (label) {
       case 'Instagram': return '#E4405F';
       case 'Facebook': return '#1877F2';
       case 'TikTok': return '#ffffff';
       case 'YouTube': return '#FF0000';
       case 'Google': return '#4285F4';
-      default: return '#cbd5e1';
+      default: return selected ? '#0b1220' : '#cbd5e1';
     }
   };
 

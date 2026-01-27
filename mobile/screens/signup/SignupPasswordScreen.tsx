@@ -14,17 +14,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function SignupPasswordScreen({ navigation, route }: any) {
-  const { name, email } = route.params;
+  const { email } = route.params;
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
 
   const handleContinue = async () => {
-    if (!password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+    if (!password) {
+      Alert.alert('Error', 'Please enter a password');
       return;
     }
 
@@ -33,15 +31,11 @@ export default function SignupPasswordScreen({ navigation, route }: any) {
       return;
     }
 
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
-
     setLoading(true);
     console.log('[SIGNUP] Creating account for:', email);
 
-    const { error } = await signUp(email, password, name);
+    // Create account without name - name will be collected after email verification
+    const { error } = await signUp(email, password, '');
     setLoading(false);
 
     if (error) {
@@ -49,11 +43,10 @@ export default function SignupPasswordScreen({ navigation, route }: any) {
       Alert.alert('Signup Failed', error.message);
     } else {
       console.log('[SIGNUP] Success! Navigating to verification...');
-      // Navigate to OTP verification screen with username
+      // Navigate to email verification
       navigation.navigate('VerifyEmail', {
         email,
         type: 'signup',
-        username: name,
       });
     }
   };
@@ -90,7 +83,8 @@ export default function SignupPasswordScreen({ navigation, route }: any) {
               secureTextEntry={!showPassword}
               autoCapitalize="none"
               autoFocus
-              returnKeyType="next"
+              returnKeyType="done"
+              onSubmitEditing={handleContinue}
             />
             <TouchableOpacity
               style={styles.eyeIcon}
@@ -103,31 +97,6 @@ export default function SignupPasswordScreen({ navigation, route }: any) {
               />
             </TouchableOpacity>
           </View>
-
-          {/* Confirm Password Input */}
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Confirm password"
-              placeholderTextColor="rgba(255, 255, 255, 0.5)"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry={!showConfirmPassword}
-              autoCapitalize="none"
-              onSubmitEditing={handleContinue}
-              returnKeyType="done"
-            />
-            <TouchableOpacity
-              style={styles.eyeIcon}
-              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
-              <Ionicons
-                name={showConfirmPassword ? 'eye-off' : 'eye'}
-                size={20}
-                color="rgba(255, 255, 255, 0.5)"
-              />
-            </TouchableOpacity>
-          </View>
         </View>
 
         {/* Continue Button at Bottom */}
@@ -135,10 +104,10 @@ export default function SignupPasswordScreen({ navigation, route }: any) {
           <TouchableOpacity
             style={[
               styles.continueButton,
-              (!password || !confirmPassword || password.length < 6) && styles.continueButtonDisabled,
+              (!password || password.length < 6) && styles.continueButtonDisabled,
             ]}
             onPress={handleContinue}
-            disabled={!password || !confirmPassword || password.length < 6 || loading}
+            disabled={!password || password.length < 6 || loading}
           >
             {loading ? (
               <ActivityIndicator size="small" color="#fff" />

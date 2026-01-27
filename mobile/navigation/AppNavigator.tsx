@@ -26,6 +26,7 @@ import PlaybookScreen from '../screens/PlaybookScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import WelcomeScreen from '../screens/onboarding/WelcomeScreen';
 import ProductRevealScreen from '../screens/onboarding/ProductRevealScreen';
+import AuthSelectionScreen from '../screens/onboarding/AuthSelectionScreen';
 import OnboardingQuestionScreen from '../screens/onboarding/OnboardingQuestionScreen';
 import NotificationPermissionScreen from '../screens/onboarding/NotificationPermissionScreen';
 import OnboardingSummaryScreen from '../screens/onboarding/OnboardingSummaryScreen';
@@ -178,14 +179,51 @@ export default function AppNavigator() {
   React.useEffect(() => {
     const checkOnboarding = async () => {
       try {
+        // First check AsyncStorage
         const value = await AsyncStorage.getItem('HAS_COMPLETED_ONBOARDING');
-        setIsOnboardingCompleted(value === 'true');
+        console.log('[NAV] HAS_COMPLETED_ONBOARDING from storage:', value);
+        
+        if (value === 'true') {
+          setIsOnboardingCompleted(true);
+          return;
+        }
+
+        // If user is logged in but no AsyncStorage flag, check if they have profile data
+        // This handles existing users logging in on a new device or after reinstall
+        if (user) {
+          const { supabase } = await import('../lib/supabase');
+          const { data: profile, error: profileError } = await supabase
+            .from('user_profiles')
+            .select('username, created_at')
+            .eq('user_id', user.id)
+            .single();
+
+          console.log('[NAV] Profile check result:', profile);
+          console.log('[NAV] Profile error:', profileError);
+
+          // If profile exists and has a username, they're an existing user
+          if (profile && profile.username) {
+            console.log('[NAV] Existing user detected, skipping onboarding');
+            await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+            setIsOnboardingCompleted(true);
+          } else {
+            console.log('[NAV] New user detected, will show onboarding');
+            // Clear intro overlay flag for new users
+            console.log('[NAV] Clearing HAS_SEEN_DASHBOARD_INTRO flag');
+            await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
+            await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
+            setIsOnboardingCompleted(false);
+          }
+        } else {
+          setIsOnboardingCompleted(false);
+        }
       } catch (e) {
+        console.error('[NAV] Error checking onboarding:', e);
         setIsOnboardingCompleted(false);
       }
     };
     checkOnboarding();
-  }, []);
+  }, [user]);
 
   // Check if user has completed onboarding when they log in
   React.useEffect(() => {
@@ -235,6 +273,7 @@ export default function AppNavigator() {
       {user ? (
         // Authenticated screens
         <Stack.Navigator
+          key={`auth-${isOnboardingCompleted}`}
           initialRouteName={isOnboardingCompleted ? 'MainTabs' : 'Welcome'}
           screenOptions={{
             headerShown: false,
@@ -246,6 +285,7 @@ export default function AppNavigator() {
           {/* Onboarding Flow */}
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="ProductReveal" component={ProductRevealScreen} />
+          <Stack.Screen name="AuthSelection" component={AuthSelectionScreen} />
           <Stack.Screen name="EmailVerified" component={EmailVerifiedScreen} />
           <Stack.Screen name="OnboardingQuestion" component={OnboardingQuestionScreen} />
           <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
@@ -274,6 +314,7 @@ export default function AppNavigator() {
           {/* Onboarding Flow for new users */}
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="ProductReveal" component={ProductRevealScreen} />
+          <Stack.Screen name="AuthSelection" component={AuthSelectionScreen} />
           <Stack.Screen name="EmailVerified" component={EmailVerifiedScreen} />
           <Stack.Screen name="OnboardingQuestion" component={OnboardingQuestionScreen} />
           <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />

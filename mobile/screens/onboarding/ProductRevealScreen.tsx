@@ -1,15 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import AuthMethodSelector from '../../components/AuthMethodSelector';
 
 const { width, height } = Dimensions.get('window');
 
 const phoneMockup = require('../../public/InsightAI-Onboarding-MAIN.png');
 
 export default function ProductRevealScreen({ navigation }: any) {
-    const [showAuthModal, setShowAuthModal] = useState(false);
 
     return (
         <View style={styles.container}>
@@ -34,7 +32,7 @@ export default function ProductRevealScreen({ navigation }: any) {
                     activeOpacity={0.9}
                     onPress={() => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        navigation.navigate('OnboardingQuestion');
+                        navigation.navigate('AuthSelection');
                     }}
                 >
                     <LinearGradient
@@ -46,39 +44,7 @@ export default function ProductRevealScreen({ navigation }: any) {
                         <Text style={styles.buttonText}>Begin Journey</Text>
                     </LinearGradient>
                 </TouchableOpacity>
-                
-                <TouchableOpacity
-                    style={styles.loginLink}
-                    activeOpacity={0.7}
-                    onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setShowAuthModal(true);
-                    }}
-                >
-                    <Text style={styles.loginLinkText}>
-                        Already have an account? <Text style={styles.loginLinkBold}>Sign In</Text>
-                    </Text>
-                </TouchableOpacity>
             </View>
-
-            <AuthMethodSelector
-                visible={showAuthModal}
-                onClose={() => setShowAuthModal(false)}
-                onSelectEmail={() => {
-                    setShowAuthModal(false);
-                    navigation.navigate('Login');
-                }}
-                onSelectApple={() => {
-                    setShowAuthModal(false);
-                    // TODO: Implement Apple Sign In
-                    console.log('Apple Sign In - Coming Soon');
-                }}
-                onSelectGoogle={() => {
-                    setShowAuthModal(false);
-                    // TODO: Implement Google Sign In
-                    console.log('Google Sign In - Coming Soon');
-                }}
-            />
         </View>
     );
 }

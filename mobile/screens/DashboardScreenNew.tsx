@@ -79,15 +79,22 @@ export default function DashboardScreenNew() {
 
   const checkFirstTimeUser = async () => {
     try {
+      console.log('[Dashboard] Checking if first-time user...');
       const hasSeenIntro = await AsyncStorage.getItem('HAS_SEEN_DASHBOARD_INTRO');
+      console.log('[Dashboard] HAS_SEEN_DASHBOARD_INTRO:', hasSeenIntro);
+      
       if (!hasSeenIntro) {
+        console.log('[Dashboard] First-time user detected, will show intro overlay');
         // Show intro after a short delay to let dashboard load
         setTimeout(() => {
+          console.log('[Dashboard] Showing intro overlay now');
           setShowIntroOverlay(true);
         }, 1000);
+      } else {
+        console.log('[Dashboard] User has already seen intro, skipping');
       }
     } catch (error) {
-      console.log('Error checking first-time user:', error);
+      console.log('[Dashboard] Error checking first-time user:', error);
     }
   };
 

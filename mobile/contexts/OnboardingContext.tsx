@@ -13,11 +13,17 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
   const [userName, setUserName] = useState<string>('');
   const [onboardingAnswers, setOnboardingAnswers] = useState<Record<string, string>>({});
 
+  const setUserNameWithLogging = (name: string) => {
+    console.log('[OnboardingContext] setUserName called with:', name);
+    setUserName(name);
+    console.log('[OnboardingContext] userName state updated to:', name);
+  };
+
   return (
     <OnboardingContext.Provider
       value={{
         userName,
-        setUserName,
+        setUserName: setUserNameWithLogging,
         onboardingAnswers,
         setOnboardingAnswers,
       }}

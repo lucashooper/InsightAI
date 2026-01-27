@@ -6,6 +6,8 @@ import * as Haptics from 'expo-haptics';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import { useOnboarding } from '../../contexts/OnboardingContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
 
 const { width } = Dimensions.get('window');
 
@@ -15,10 +17,18 @@ type Props = {
 
 export default function AnalysisCompleteScreen({ navigation }: Props) {
     const { userName } = useOnboarding();
+    const { user } = useAuth();
     const checkmarkScale = useRef(new Animated.Value(0)).current;
     const contentFade = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
+        console.log('[AnalysisComplete] Screen loaded');
+        console.log('[AnalysisComplete] userName from context:', userName);
+        console.log('[AnalysisComplete] user from auth:', user?.id);
+        
+        // Save username to profile when screen loads
+        saveUsernameToProfile();
+        
         // Simple fade and scale animation
         Animated.sequence([
             Animated.spring(checkmarkScale, {
@@ -35,6 +45,69 @@ export default function AnalysisCompleteScreen({ navigation }: Props) {
             }),
         ]).start();
     }, []);
+
+    const saveUsernameToProfile = async () => {
+        if (!user) {
+            console.log('[AnalysisComplete] No user found, skipping profile save');
+            return;
+        }
+        
+        if (!userName) {
+            console.log('[AnalysisComplete] No username found in context, skipping profile save');
+            return;
+        }
+        
+        try {
+            console.log('[AnalysisComplete] Saving username to profile...');
+            console.log('[AnalysisComplete] User ID:', user.id);
+            console.log('[AnalysisComplete] Username:', userName);
+            console.log('[AnalysisComplete] User email:', user.email);
+            
+            // First, try to check if profile exists
+            const { data: existingProfile, error: checkError } = await supabase
+                .from('user_profiles')
+                .select('id, username')
+                .eq('user_id', user.id)
+                .single();
+            
+            console.log('[AnalysisComplete] Existing profile check:', existingProfile);
+            console.log('[AnalysisComplete] Check error:', checkError);
+            
+            if (existingProfile) {
+                // Profile exists, update it
+                console.log('[AnalysisComplete] Profile exists, updating username...');
+                const { error: updateError } = await supabase
+                    .from('user_profiles')
+                    .update({ username: userName })
+                    .eq('user_id', user.id);
+                
+                if (updateError) {
+                    console.error('[AnalysisComplete] ❌ Error updating profile:', updateError);
+                } else {
+                    console.log('[AnalysisComplete] ✅ Username updated successfully');
+                }
+            } else {
+                // Profile doesn't exist, create it
+                console.log('[AnalysisComplete] Profile does not exist, creating new profile...');
+                const { error: insertError } = await supabase
+                    .from('user_profiles')
+                    .insert({
+                        user_id: user.id,
+                        username: userName,
+                        email: user.email,
+                    });
+                
+                if (insertError) {
+                    console.error('[AnalysisComplete] ❌ Error creating profile:', insertError);
+                } else {
+                    console.log('[AnalysisComplete] ✅ Profile created successfully');
+                }
+            }
+            
+        } catch (err) {
+            console.error('[AnalysisComplete] ❌ Exception in saveUsernameToProfile:', err);
+        }
+    };
 
     const handleContinue = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

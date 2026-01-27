@@ -7,10 +7,10 @@ import * as Haptics from 'expo-haptics';
 export default function EmailVerifiedScreen({ navigation }: any) {
   const handleContinue = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Navigate to onboarding questions, starting at index 1 (skip name question)
+    // Navigate to onboarding questions, starting at index 0 (name question)
     navigation.reset({
       index: 0,
-      routes: [{ name: 'OnboardingQuestion', params: { startIndex: 1 } }],
+      routes: [{ name: 'OnboardingQuestion', params: { startIndex: 0 } }],
     });
   };
 

@@ -224,8 +224,19 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
     }, [currentIndex, currentStep.type, currentStep.defaultValue, currentStep.features, featureFadeAnims]);
 
     const handleNext = (value?: string) => {
+        console.log('[OnboardingQuestion] handleNext called with value:', value);
+        console.log('[OnboardingQuestion] Current step:', currentStep.type, currentStep.id);
+        
         if (value && (currentStep.type === 'question' || currentStep.type === 'slider')) {
             setAnswers(prev => ({ ...prev, [currentStep.id]: value }));
+        }
+        
+        // Save name to context when user enters it in text_input step
+        if (value && currentStep.type === 'text_input' && currentStep.id === 'name') {
+            console.log('[OnboardingQuestion] ✅ Saving username to context:', value);
+            setUserName(value);
+            setAnswers(prev => ({ ...prev, [currentStep.id]: value }));
+            console.log('[OnboardingQuestion] Username saved to context');
         }
 
         if (currentIndex < STEPS.length - 1) {
@@ -234,6 +245,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
         } else {
             // Finished - go to analyzing screen
             const finalAnswers = value ? { ...answers, [currentStep.id]: value } : answers;
+            console.log('[OnboardingQuestion] Navigating to Analyzing with answers:', finalAnswers);
             navigation.navigate('Analyzing', { answers: finalAnswers });
         }
     };
@@ -300,16 +312,13 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                     {/* Premium Info Page Layout for Journaling */}
                     {currentStep.type === 'info' && currentStep.id === 'research_info' ? (
                         <View style={styles.premiumInfoContainer}>
-                            {/* Lottie with Circular Glow */}
-                            <View style={styles.lottieGlowContainer}>
-                                <View style={styles.circularGlow} />
-                                <LottieView
-                                    source={stressManagementLottie}
-                                    autoPlay
-                                    loop
-                                    style={styles.premiumLottie}
-                                />
-                            </View>
+                            {/* Lottie Animation */}
+                            <LottieView
+                                source={stressManagementLottie}
+                                autoPlay
+                                loop
+                                style={styles.premiumLottie}
+                            />
 
                             {/* Main Headline - "Research has shown..." */}
                             <Text style={{
@@ -1132,9 +1141,9 @@ const styles = StyleSheet.create({
         elevation: 0,
     },
     premiumLottie: {
-        width: 180,
-        height: 180,
-        zIndex: 1,
+        width: 220,
+        height: 220,
+        marginBottom: 24,
     },
     
     // Main headline text (e.g., "Research has shown..." or "AI reveals patterns...")
@@ -1168,9 +1177,10 @@ const styles = StyleSheet.create({
         marginBottom: 32,
     },
     cambridgeLogoWrapper: {
-        borderRadius: 12,
+        borderRadius: 16,
         overflow: 'hidden',
         marginBottom: 16,
+        backgroundColor: '#ffffff',
     },
     premiumCambridgeLogo: {
         width: 180,

@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
 const { width, height } = Dimensions.get('window');
-const insightLogo = require('../public/InsightAI-New-Logo.png');
+const insightLogo = require('../public/Insight-Logo-nobg.webp');
 
 interface FirstTimeIntroOverlayProps {
   visible: boolean;
@@ -42,13 +42,11 @@ export default function FirstTimeIntroOverlay({ visible, onClose }: FirstTimeInt
         <View style={styles.content}>
           {/* Welcome Header */}
           <View style={styles.header}>
-            <View style={styles.iconCircle}>
-              <Image 
-                source={insightLogo}
-                style={styles.logoImage}
-                resizeMode="contain"
-              />
-            </View>
+            <Image 
+              source={insightLogo}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
             <Text style={styles.title}>Welcome to Insight!</Text>
             <Text style={styles.subtitle}>
               Here's a quick overview of your new space for reflection and growth
@@ -142,18 +140,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
   },
-  iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(168, 85, 247, 0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
   logoImage: {
-    width: 48,
-    height: 48,
+    width: 72,
+    height: 72,
+    marginBottom: 16,
   },
   title: {
     fontSize: 28,

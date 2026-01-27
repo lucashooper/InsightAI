@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import OTPInput from '../components/OTPInput';
 import { useOnboarding } from '../contexts/OnboardingContext';
@@ -49,6 +50,15 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
     console.log('[OTP VERIFY] Type:', type);
 
     try {
+      // For new signups, clear AsyncStorage flags BEFORE verifying
+      // This prevents race condition where auth state changes before flags are cleared
+      if (type === 'signup') {
+        console.log('[OTP VERIFY] New signup - clearing AsyncStorage flags BEFORE verification');
+        await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
+        await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
+        console.log('[OTP VERIFY] AsyncStorage flags cleared');
+      }
+
       const { data, error: verifyError } = await supabase.auth.verifyOtp({
         email,
         token: code,

@@ -11,14 +11,13 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 export default function SignupEmailScreen({ navigation, route }: any) {
-  const { name } = route.params;
   const [email, setEmail] = useState('');
 
   const handleContinue = () => {
     if (!email.trim() || !email.includes('@')) {
       return;
     }
-    navigation.navigate('SignupPassword', { name, email: email.trim() });
+    navigation.navigate('SignupPassword', { email: email.trim() });
   };
 
   return (
@@ -36,12 +35,6 @@ export default function SignupEmailScreen({ navigation, route }: any) {
         </TouchableOpacity>
 
         <View style={styles.content}>
-          {/* Progress Indicator */}
-          <View style={styles.progressContainer}>
-            <View style={[styles.progressDot, styles.progressDotComplete]} />
-            <View style={[styles.progressDot, styles.progressDotActive]} />
-          </View>
-
           {/* Title */}
           <Text style={styles.title}>What's your email?</Text>
           <Text style={styles.subtitle}>We'll send you a verification code</Text>
@@ -98,7 +91,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 80,
+    paddingTop: 60,
   },
   progressContainer: {
     flexDirection: 'row',

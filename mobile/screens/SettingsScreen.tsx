@@ -46,6 +46,48 @@ export default function SettingsScreen({ navigation }: any) {
     }
   }, [user]);
 
+  const handleEditUsername = () => {
+    Alert.prompt(
+      'Edit Name',
+      'Enter your new name',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Save',
+          onPress: async (newName?: string) => {
+            if (!newName || !newName.trim()) return;
+            
+            try {
+              console.log('[Settings] Updating username to:', newName);
+              const { error } = await supabase
+                .from('user_profiles')
+                .update({ username: newName.trim() })
+                .eq('user_id', user?.id);
+              
+              if (error) {
+                console.error('[Settings] Error updating username:', error);
+                Alert.alert('Error', 'Failed to update name. Please try again.');
+              } else {
+                console.log('[Settings] ✅ Username updated successfully');
+                // Reload profile to show new name
+                loadUserProfile();
+                Alert.alert('Success', 'Your name has been updated!');
+              }
+            } catch (err) {
+              console.error('[Settings] Exception updating username:', err);
+              Alert.alert('Error', 'Failed to update name. Please try again.');
+            }
+          }
+        }
+      ],
+      'plain-text',
+      userProfile?.username || ''
+    );
+  };
+
   const loadUserProfile = async () => {
     if (!user) return;
     try {
@@ -323,7 +365,9 @@ export default function SettingsScreen({ navigation }: any) {
                   </View>
                 </TouchableOpacity>
                 <View style={styles.profileInfo}>
-                  <Text style={styles.profileName}>{user?.user_metadata?.username || userProfile?.username || 'User'}</Text>
+                  <TouchableOpacity onPress={handleEditUsername}>
+                    <Text style={styles.profileName}>{user?.user_metadata?.username || userProfile?.username || 'User'}</Text>
+                  </TouchableOpacity>
                   <Text style={styles.profileEmail}>{user?.email}</Text>
                 </View>
               </View>
