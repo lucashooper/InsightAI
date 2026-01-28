@@ -441,6 +441,23 @@ export default function SettingsScreen({ navigation }: any) {
                   />
                 </View>
               </View>
+              
+              {/* Upgrade Button */}
+              <TouchableOpacity
+                style={styles.upgradeButton}
+                onPress={() => navigation.navigate('Paywall')}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={['#a855f7', '#8b5cf6']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.upgradeGradient}
+                >
+                  <Ionicons name="sparkles" size={18} color="#fff" />
+                  <Text style={styles.upgradeButtonText}>Upgrade to Pro</Text>
+                </LinearGradient>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -744,6 +761,30 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: '#8b5cf6',
     borderRadius: 4,
+  },
+  upgradeButton: {
+    marginTop: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#a855f7',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  upgradeGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+  },
+  upgradeButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.3,
   },
   feedbackInput: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
