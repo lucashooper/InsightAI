@@ -133,11 +133,15 @@ export default function DashboardScreenNew() {
         setUserName(user.email?.split('@')[0] || 'there');
       }
       
-      if (data?.profile_picture_url) {
+      // Only use profile picture if it's a valid URL (starts with http/https)
+      if (data?.profile_picture_url && (data.profile_picture_url.startsWith('http://') || data.profile_picture_url.startsWith('https://'))) {
         setProfilePicture(data.profile_picture_url);
+      } else {
+        setProfilePicture(null);
       }
     } catch (error) {
       setUserName(user.email?.split('@')[0] || 'there');
+      setProfilePicture(null);
     }
   };
 
@@ -678,15 +682,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   profilePicture: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
   },
   profilePlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },

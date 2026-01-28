@@ -273,8 +273,6 @@ export default function AppNavigator() {
       {user ? (
         // Authenticated screens
         <Stack.Navigator
-          key={`auth-${isOnboardingCompleted}`}
-          initialRouteName={isOnboardingCompleted ? 'MainTabs' : 'Welcome'}
           screenOptions={{
             headerShown: false,
             animation: 'fade',
@@ -282,28 +280,45 @@ export default function AppNavigator() {
             animationDuration: 650,
           }}
         >
-          {/* Onboarding Flow */}
-          <Stack.Screen name="Welcome" component={WelcomeScreen} />
-          <Stack.Screen name="ProductReveal" component={ProductRevealScreen} />
-          <Stack.Screen name="AuthSelection" component={AuthSelectionScreen} />
-          <Stack.Screen name="EmailVerified" component={EmailVerifiedScreen} />
-          <Stack.Screen name="OnboardingQuestion" component={OnboardingQuestionScreen} />
-          <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
-          <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
-          <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
-          <Stack.Screen name="Paywall" component={PaywallScreen} />
-          <Stack.Screen name="OnboardingSummary" component={OnboardingSummaryScreen} />
+          {isOnboardingCompleted ? (
+            <>
+              {/* Main App Flow - Show first for existing users */}
+              <Stack.Screen name="MainTabs" component={MainTabs} />
+              <Stack.Screen name="EntryDetail" component={EntryDetailScreen} />
+              <Stack.Screen name="CreateEntry" component={CreateEntryScreen} />
+              <Stack.Screen name="Analytics" component={DashboardScreen} />
+              <Stack.Screen name="Meditation" component={MeditationScreen} />
+              <Stack.Screen name="Gratitude" component={GratitudeScreen} />
+              <Stack.Screen name="GratitudeHistory" component={GratitudeHistoryScreen} options={{ headerShown: false }} />
+              <Stack.Screen name="EmotionDetail" component={EmotionDetailScreen} options={{ headerShown: false }} />
+              <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
+            </>
+          ) : (
+            <>
+              {/* Onboarding Flow - Show first for new users */}
+              <Stack.Screen name="Welcome" component={WelcomeScreen} />
+              <Stack.Screen name="ProductReveal" component={ProductRevealScreen} />
+              <Stack.Screen name="AuthSelection" component={AuthSelectionScreen} />
+              <Stack.Screen name="EmailVerified" component={EmailVerifiedScreen} />
+              <Stack.Screen name="OnboardingQuestion" component={OnboardingQuestionScreen} />
+              <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
+              <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
+              <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
+              <Stack.Screen name="Paywall" component={PaywallScreen} />
+              <Stack.Screen name="OnboardingSummary" component={OnboardingSummaryScreen} />
 
-          {/* Main App Flow */}
-          <Stack.Screen name="MainTabs" component={MainTabs} />
-          <Stack.Screen name="EntryDetail" component={EntryDetailScreen} />
-          <Stack.Screen name="CreateEntry" component={CreateEntryScreen} />
-          <Stack.Screen name="Analytics" component={DashboardScreen} />
-          <Stack.Screen name="Meditation" component={MeditationScreen} />
-          <Stack.Screen name="Gratitude" component={GratitudeScreen} />
-          <Stack.Screen name="GratitudeHistory" component={GratitudeHistoryScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="EmotionDetail" component={EmotionDetailScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
+              {/* Main App Flow - Available after onboarding */}
+              <Stack.Screen name="MainTabs" component={MainTabs} />
+              <Stack.Screen name="EntryDetail" component={EntryDetailScreen} />
+              <Stack.Screen name="CreateEntry" component={CreateEntryScreen} />
+              <Stack.Screen name="Analytics" component={DashboardScreen} />
+              <Stack.Screen name="Meditation" component={MeditationScreen} />
+              <Stack.Screen name="Gratitude" component={GratitudeScreen} />
+              <Stack.Screen name="GratitudeHistory" component={GratitudeHistoryScreen} options={{ headerShown: false }} />
+              <Stack.Screen name="EmotionDetail" component={EmotionDetailScreen} options={{ headerShown: false }} />
+              <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
+            </>
+          )}
         </Stack.Navigator>
       ) : (
         // Unauthenticated - show Welcome first, then Login/Signup

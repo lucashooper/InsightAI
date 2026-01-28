@@ -12,6 +12,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -21,9 +22,7 @@ export default function LoginScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [socialLoading, setSocialLoading] = useState(false);
-  const { signIn } = useAuth();
-  // Temporarily commented for Expo Go testing - uncomment before EAS build
-  // const { signIn, signInWithGoogle, signInWithApple } = useAuth();
+  const { signIn, signInWithGoogle, signInWithApple } = useAuth();
 
   const handleLogin = async () => {
     if (!emailOrUsername || !password) {
@@ -39,9 +38,9 @@ export default function LoginScreen({ navigation }: any) {
     // If it doesn't contain @, assume it's a username
     if (!emailOrUsername.includes('@')) {
       try {
-        // Query profiles table to get email from username
+        // Query user_profiles table to get email from username
         const { data, error } = await supabase
-          .from('profiles')
+          .from('user_profiles')
           .select('email')
           .eq('username', emailOrUsername)
           .single();
@@ -72,24 +71,23 @@ export default function LoginScreen({ navigation }: any) {
     navigation.navigate('ForgotPassword');
   };
 
-  // Social auth temporarily disabled
-  // const handleGoogleSignIn = async () => {
-  //   setSocialLoading(true);
-  //   const { error } = await signInWithGoogle();
-  //   setSocialLoading(false);
-  //   if (error) {
-  //     Alert.alert('Google Sign-In Failed', error.message || 'An error occurred');
-  //   }
-  // };
+  const handleGoogleSignIn = async () => {
+    setSocialLoading(true);
+    const { error } = await signInWithGoogle();
+    setSocialLoading(false);
+    if (error) {
+      Alert.alert('Google Sign-In Failed', error.message || 'An error occurred');
+    }
+  };
 
-  // const handleAppleSignIn = async () => {
-  //   setSocialLoading(true);
-  //   const { error } = await signInWithApple();
-  //   setSocialLoading(false);
-  //   if (error) {
-  //     Alert.alert('Apple Sign-In Failed', error.message || 'An error occurred');
-  //   }
-  // };
+  const handleAppleSignIn = async () => {
+    setSocialLoading(true);
+    const { error } = await signInWithApple();
+    setSocialLoading(false);
+    if (error) {
+      Alert.alert('Apple Sign-In Failed', error.message || 'An error occurred');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -156,7 +154,6 @@ export default function LoginScreen({ navigation }: any) {
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
-          {/* Social Sign-In temporarily disabled for Expo Go testing - uncomment before EAS build
           <View style={styles.dividerContainer}>
             <View style={styles.divider} />
             <Text style={styles.dividerText}>or</Text>
@@ -179,7 +176,6 @@ export default function LoginScreen({ navigation }: any) {
             <Ionicons name="logo-google" size={20} color="#000" />
             <Text style={styles.googleButtonText}>Continue with Google</Text>
           </TouchableOpacity>
-          */}
         </View>
 
         {/* Continue Button at Bottom */}

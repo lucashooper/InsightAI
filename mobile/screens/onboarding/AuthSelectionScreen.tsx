@@ -1,13 +1,13 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '../../contexts/AuthContext';
-// Temporarily commented for Expo Go testing - uncomment before EAS build
-// import * as AppleAuthentication from 'expo-apple-authentication';
+import * as AppleAuthentication from 'expo-apple-authentication';
 
 export default function AuthSelectionScreen({ navigation }: any) {
-  const { user } = useAuth();
+  const { user, signInWithGoogle, signInWithApple } = useAuth();
+  const [socialLoading, setSocialLoading] = useState(false);
 
   // If user is already authenticated, redirect to MainTabs
   React.useEffect(() => {
@@ -28,16 +28,24 @@ export default function AuthSelectionScreen({ navigation }: any) {
     navigation.navigate('Signup' as never);
   };
 
-  const handleAppleAuth = () => {
+  const handleAppleAuth = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // TODO: Implement Apple Sign In
-    console.log('Apple Sign In - Coming Soon');
+    setSocialLoading(true);
+    const { error } = await signInWithApple();
+    setSocialLoading(false);
+    if (error) {
+      Alert.alert('Apple Sign-In Failed', error.message || 'An error occurred');
+    }
   };
 
-  const handleGoogleAuth = () => {
+  const handleGoogleAuth = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // TODO: Implement Google Sign In
-    console.log('Google Sign In - Coming Soon');
+    setSocialLoading(true);
+    const { error } = await signInWithGoogle();
+    setSocialLoading(false);
+    if (error) {
+      Alert.alert('Google Sign-In Failed', error.message || 'An error occurred');
+    }
   };
 
   const handleSignIn = () => {

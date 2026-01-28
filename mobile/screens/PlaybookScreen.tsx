@@ -723,6 +723,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginTop: 8,
+    textAlign: 'center',
+    paddingHorizontal: 32,
   },
   // Premium Card Styles
   premiumCardPressable: {

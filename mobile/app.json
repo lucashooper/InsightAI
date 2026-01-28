@@ -45,7 +45,6 @@
     "owner": "crupid",
     "plugins": [
       "expo-speech-recognition",
-      "@react-native-google-signin/google-signin",
       "expo-apple-authentication"
     ]
   }

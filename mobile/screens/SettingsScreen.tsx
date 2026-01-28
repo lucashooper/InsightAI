@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Image, TextInput, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Image, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
@@ -127,11 +127,16 @@ export default function SettingsScreen({ navigation }: any) {
         });
       } else if (data) {
         console.log('✅ Profile loaded successfully:', data.username, data.profile_picture_url);
+        // Only use profile picture if it's a valid URL (starts with http/https)
+        const validProfilePicture = data.profile_picture_url && 
+          (data.profile_picture_url.startsWith('http://') || data.profile_picture_url.startsWith('https://'))
+          ? data.profile_picture_url
+          : null;
         setUserProfile({
           id: data.id,
           email: data.email,
           username: data.username,
-          profile_picture_url: data.profile_picture_url,
+          profile_picture_url: validProfilePicture,
         });
       } else {
         // No profile found - likely RLS blocking the query
@@ -254,28 +259,37 @@ export default function SettingsScreen({ navigation }: any) {
   };
 
   const handleSubmitFeedback = async () => {
-    if (!feedbackTitle.trim() || !feedbackMessage.trim()) return;
+    if (!feedbackTitle.trim() || !feedbackMessage.trim()) {
+      Alert.alert('Missing Information', 'Please enter both a title and message');
+      return;
+    }
 
     setSubmittingFeedback(true);
     try {
-      const { error } = await supabase
+      console.log('[Settings] Submitting feedback...');
+      const { data, error } = await supabase
         .from('feedback')
         .insert({
           user_id: user?.id,
-          title: feedbackTitle,
-          message: feedbackMessage,
+          title: feedbackTitle.trim(),
+          message: feedbackMessage.trim(),
           status: 'new'
-        });
+        })
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[Settings] Feedback submission error:', error);
+        throw error;
+      }
 
+      console.log('[Settings] ✅ Feedback submitted successfully:', data);
       setFeedbackSuccess(true);
       setFeedbackTitle('');
       setFeedbackMessage('');
       setTimeout(() => setFeedbackSuccess(false), 3000);
-    } catch (error) {
-      console.error('Error submitting feedback:', error);
-      Alert.alert('Error', 'Failed to submit feedback');
+    } catch (error: any) {
+      console.error('[Settings] Error submitting feedback:', error);
+      Alert.alert('Error', error?.message || 'Failed to submit feedback. Please try again.');
     } finally {
       setSubmittingFeedback(false);
     }
@@ -321,7 +335,7 @@ export default function SettingsScreen({ navigation }: any) {
 
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Background Gradient */}
       <LinearGradient
         colors={theme.colors.backgroundGradient as any}
@@ -357,12 +371,9 @@ export default function SettingsScreen({ navigation }: any) {
                     />
                   ) : (
                     <View style={styles.avatarPlaceholder}>
-                      <Text style={styles.avatarText}>{user?.email?.[0].toUpperCase()}</Text>
+                      <Ionicons name="person" size={32} color="rgba(255, 255, 255, 0.6)" />
                     </View>
                   )}
-                  <View style={styles.avatarEditBadge}>
-                    <Ionicons name="camera" size={14} color="#fff" />
-                  </View>
                 </TouchableOpacity>
                 <View style={styles.profileInfo}>
                   <TouchableOpacity onPress={handleEditUsername}>
@@ -555,7 +566,7 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -663,7 +674,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -689,19 +700,6 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-  },
-  avatarEditBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#8b5cf6',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#0a0a0a',
   },
   usageRow: {
     flexDirection: 'row',

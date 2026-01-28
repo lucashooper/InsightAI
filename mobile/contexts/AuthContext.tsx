@@ -2,10 +2,17 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import Purchases from 'react-native-purchases';
-// Temporarily disabled for Expo Go testing
-// import { GoogleSignin } from '@react-native-google-signin/google-signin';
-// import * as AppleAuthentication from 'expo-apple-authentication';
-// import * as Crypto from 'expo-crypto';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import * as Crypto from 'expo-crypto';
+import { Platform } from 'react-native';
+
+// Conditionally import Google Sign-In to avoid Expo Go errors
+let GoogleSignin: any = null;
+try {
+  GoogleSignin = require('@react-native-google-signin/google-signin').GoogleSignin;
+} catch (e) {
+  console.log('[AUTH] Google Sign-In module not available (Expo Go)');
+}
 
 interface AuthContextType {
   user: User | null;
@@ -25,13 +32,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Configure Google Sign-In (disabled for Expo Go testing)
-  // useEffect(() => {
-  //   GoogleSignin.configure({
-  //     iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-  //     webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-  //   });
-  // }, []);
+  // Configure Google Sign-In
+  useEffect(() => {
+    if (GoogleSignin) {
+      try {
+        GoogleSignin.configure({
+          iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+          webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+        });
+        console.log('[AUTH] Google Sign-In configured successfully');
+      } catch (error) {
+        console.log('[AUTH] Google Sign-In configuration error:', error);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     // Get initial session
@@ -120,15 +134,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signInWithGoogle = async () => {
-    // Disabled for Expo Go testing
-    console.log('[AUTH] Google Sign-In not available in Expo Go');
-    return { error: new Error('Google Sign-In requires a development build') };
+    if (!GoogleSignin) {
+      return { error: new Error('Google Sign-In not available in Expo Go. Please use a development build.') };
+    }
+    
+    try {
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      
+      if (userInfo.idToken) {
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: userInfo.idToken,
+        });
+        
+        return { error };
+      } else {
+        return { error: new Error('No ID token present') };
+      }
+    } catch (error: any) {
+      console.error('[AUTH] Google Sign-In error:', error);
+      return { error };
+    }
   };
 
   const signInWithApple = async () => {
-    // Disabled for Expo Go testing
-    console.log('[AUTH] Apple Sign-In not available in Expo Go');
-    return { error: new Error('Apple Sign-In requires a development build') };
+    try {
+      const nonce = Math.random().toString(36).substring(2, 10);
+      const hashedNonce = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        nonce
+      );
+
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+        nonce: hashedNonce,
+      });
+
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'apple',
+        token: credential.identityToken!,
+        nonce,
+      });
+
+      return { error };
+    } catch (error: any) {
+      if (error.code === 'ERR_REQUEST_CANCELED') {
+        return { error: null };
+      }
+      console.error('[AUTH] Apple Sign-In error:', error);
+      return { error };
+    }
   };
 
   const signOut = async () => {
