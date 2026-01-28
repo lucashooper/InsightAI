@@ -5,6 +5,7 @@ import Purchases from 'react-native-purchases';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 // Conditionally import Google Sign-In to avoid Expo Go errors
 let GoogleSignin: any = null;
@@ -36,9 +37,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (GoogleSignin) {
       try {
+        const iosClientId = Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+        const webClientId = Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+        
+        console.log('[AUTH] Configuring Google Sign-In with:', { iosClientId: iosClientId ? 'present' : 'missing', webClientId: webClientId ? 'present' : 'missing' });
+        
         GoogleSignin.configure({
-          iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-          webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+          iosClientId,
+          webClientId,
           scopes: ['openid', 'profile', 'email'],
         });
         console.log('[AUTH] Google Sign-In configured successfully');
