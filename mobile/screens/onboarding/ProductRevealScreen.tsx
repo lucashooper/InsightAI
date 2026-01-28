@@ -44,6 +44,15 @@ export default function ProductRevealScreen({ navigation }: any) {
                         <Text style={styles.buttonText}>Begin Journey</Text>
                     </LinearGradient>
                 </TouchableOpacity>
+                
+                <TouchableOpacity
+                    onPress={() => navigation.navigate('Login')}
+                    style={styles.signInLink}
+                >
+                    <Text style={styles.signInText}>
+                        Already have an account? <Text style={styles.signInTextBold}>Sign In</Text>
+                    </Text>
+                </TouchableOpacity>
             </View>
         </View>
     );
@@ -106,6 +115,19 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: '#fff',
         letterSpacing: 0.3,
+    },
+    signInLink: {
+        marginTop: 20,
+        paddingVertical: 8,
+    },
+    signInText: {
+        fontSize: 15,
+        color: 'rgba(255, 255, 255, 0.6)',
+        textAlign: 'center',
+    },
+    signInTextBold: {
+        color: '#fff',
+        fontWeight: '600',
     },
     loginLink: {
         marginTop: 20,

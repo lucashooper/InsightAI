@@ -41,9 +41,9 @@ export default {
       eas: {
         projectId: "ea3c5792-eb79-42fd-ae02-f5d8a1ec53dd"
       },
-      // Make these available at runtime via expo-constants
-      EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-      EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+      // Hardcoded for EAS builds - process.env doesn't work at build time
+      EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: "878031859491-tub0qt8omp6enuiaqr7liivotmkq7gef.apps.googleusercontent.com",
+      EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: "878031859491-dmj3m0e95nl2hmbt08c4oo7qm3a4j49l.apps.googleusercontent.com",
     },
     owner: "crupid",
     plugins: [
