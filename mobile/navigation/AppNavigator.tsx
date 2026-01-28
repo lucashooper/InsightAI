@@ -292,6 +292,7 @@ export default function AppNavigator() {
               <Stack.Screen name="GratitudeHistory" component={GratitudeHistoryScreen} options={{ headerShown: false }} />
               <Stack.Screen name="EmotionDetail" component={EmotionDetailScreen} options={{ headerShown: false }} />
               <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
+              <Stack.Screen name="Paywall" component={PaywallScreen} />
             </>
           ) : (
             <>
