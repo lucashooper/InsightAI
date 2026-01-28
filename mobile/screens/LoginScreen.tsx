@@ -10,6 +10,7 @@ import {
   Alert,
   ActivityIndicator,
   SafeAreaView,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
@@ -109,98 +110,103 @@ export default function LoginScreen({ navigation }: any) {
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
 
-        <View style={styles.content}>
-          {/* Title */}
-          <Text style={styles.title}>Sign In</Text>
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.content}>
+            {/* Title */}
+            <Text style={styles.title}>Sign In</Text>
 
-          {/* Email Input */}
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="rgba(255, 255, 255, 0.5)"
-            value={emailOrUsername}
-            onChangeText={setEmailOrUsername}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-
-          {/* Password Input */}
-          <View style={styles.passwordContainer}>
+            {/* Email Input */}
             <TextInput
-              style={styles.passwordInput}
-              placeholder="Password"
+              style={styles.input}
+              placeholder="Email"
               placeholderTextColor="rgba(255, 255, 255, 0.5)"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
+              value={emailOrUsername}
+              onChangeText={setEmailOrUsername}
+              autoCapitalize="none"
+              keyboardType="email-address"
             />
-            <TouchableOpacity
-              style={styles.eyeButton}
-              onPress={() => setShowPassword(!showPassword)}
-            >
-              <Ionicons
-                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                size={20}
-                color="rgba(255, 255, 255, 0.6)"
+
+            {/* Password Input */}
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Password"
+                placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
               />
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color="rgba(255, 255, 255, 0.6)"
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Forgot Password */}
+            <TouchableOpacity
+              style={styles.forgotPasswordButton}
+              onPress={handleForgotPassword}
+            >
+              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            </TouchableOpacity>
+
+            {/* Continue Button */}
+            <TouchableOpacity
+              style={styles.continueButton}
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.continueButtonText}>Continue</Text>
+              )}
+            </TouchableOpacity>
+
+            <View style={styles.dividerContainer}>
+              <View style={styles.divider} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.divider} />
+            </View>
+
+            <AppleAuthentication.AppleAuthenticationButton
+              buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+              cornerRadius={12}
+              style={styles.appleButton}
+              onPress={handleAppleSignIn}
+            />
+
+            <TouchableOpacity
+              style={styles.googleButton}
+              onPress={handleGoogleSignIn}
+              disabled={socialLoading}
+            >
+              <Ionicons name="logo-google" size={20} color="#000" />
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.signupButton}
+              onPress={() => navigation.navigate('Signup')}
+            >
+              <Text style={styles.signupText}>
+                Don't have an account? <Text style={styles.signupTextBold}>Sign Up</Text>
+              </Text>
             </TouchableOpacity>
           </View>
-
-          {/* Forgot Password */}
-          <TouchableOpacity
-            style={styles.forgotPasswordButton}
-            onPress={handleForgotPassword}
-          >
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-          </TouchableOpacity>
-
-          <View style={styles.dividerContainer}>
-            <View style={styles.divider} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.divider} />
-          </View>
-
-          <AppleAuthentication.AppleAuthenticationButton
-            buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
-            cornerRadius={12}
-            style={styles.appleButton}
-            onPress={handleAppleSignIn}
-          />
-
-          <TouchableOpacity
-            style={styles.googleButton}
-            onPress={handleGoogleSignIn}
-            disabled={socialLoading}
-          >
-            <Ionicons name="logo-google" size={20} color="#000" />
-            <Text style={styles.googleButtonText}>Continue with Google</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Continue Button at Bottom */}
-        <View style={styles.bottomContainer}>
-          <TouchableOpacity
-            style={styles.continueButton}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.continueButtonText}>Continue</Text>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.signupButton}
-            onPress={() => navigation.navigate('Signup')}
-          >
-            <Text style={styles.signupText}>
-              Don't have an account? <Text style={styles.signupTextBold}>Sign Up</Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -214,6 +220,13 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
   backButton: {
     position: 'absolute',
     top: 16,
@@ -225,7 +238,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
-    flex: 1,
     paddingHorizontal: 24,
     paddingTop: 80,
   },
@@ -274,16 +286,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  bottomContainer: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-  },
   continueButton: {
     backgroundColor: '#8b5cf6',
     borderRadius: 12,
     padding: 18,
     alignItems: 'center',
-    marginBottom: 16,
+    marginTop: 24,
   },
   continueButtonText: {
     color: '#fff',
@@ -292,6 +300,7 @@ const styles = StyleSheet.create({
   },
   signupButton: {
     alignItems: 'center',
+    marginTop: 24,
   },
   signupText: {
     color: 'rgba(255, 255, 255, 0.7)',
