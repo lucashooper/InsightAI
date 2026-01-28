@@ -45,6 +45,12 @@
     "owner": "crupid",
     "plugins": [
       "expo-speech-recognition",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.878031859491-tub0qt8omp6enuiaqr7liivotmkq7gef"
+        }
+      ],
       "expo-apple-authentication"
     ]
   }
