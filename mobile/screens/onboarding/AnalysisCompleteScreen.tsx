@@ -176,12 +176,13 @@ const styles = StyleSheet.create({
         shadowRadius: 16,
     },
     headline: {
-        fontSize: 44,
+        fontSize: 36,
         fontWeight: '700',
         color: '#fff',
         textAlign: 'center',
         marginBottom: 20,
-        letterSpacing: -1.2,
+        letterSpacing: -0.5,
+        lineHeight: 44,
     },
     reassurance: {
         fontSize: 19,
