@@ -30,12 +30,15 @@ export default function SettingsScreen({ navigation }: any) {
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [feedbackSuccess, setFeedbackSuccess] = useState(false);
 
-  const themes: { name: ThemeName; label: string; emoji: string }[] = [
+  const defaultThemes: { name: ThemeName; label: string; emoji: string }[] = [
+    { name: 'dark', label: 'Dark', emoji: '🌑' },
+    { name: 'light', label: 'Light', emoji: '☀️' },
+  ];
+
+  const otherThemes: { name: ThemeName; label: string; emoji: string }[] = [
     { name: 'sunset', label: 'Sunset', emoji: '🌅' },
     { name: 'vibrant', label: 'Vibrant', emoji: '✨' },
-    { name: 'dark', label: 'Dark', emoji: '🌑' },
-    { name: 'ocean', label: 'Ocean', emoji: '🌊' },
-    { name: 'forest', label: 'Forest', emoji: '🌲' },
+    { name: 'ocean', label: 'Ocean', emoji: '�' },
     { name: 'midnight', label: 'Midnight', emoji: '🌙' },
   ];
 
@@ -351,8 +354,8 @@ export default function SettingsScreen({ navigation }: any) {
       >
         {/* Profile Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Profile</Text>
-          <View style={[styles.card, { backgroundColor: 'rgba(20, 20, 20, 0.8)', borderColor: 'rgba(255, 255, 255, 0.1)' }]}>
+          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>Profile</Text>
+          <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <View style={styles.cardGradient}>
               <View style={styles.profileSection}>
                 <TouchableOpacity
@@ -377,9 +380,9 @@ export default function SettingsScreen({ navigation }: any) {
                 </TouchableOpacity>
                 <View style={styles.profileInfo}>
                   <TouchableOpacity onPress={handleEditUsername}>
-                    <Text style={styles.profileName}>{user?.user_metadata?.username || userProfile?.username || 'User'}</Text>
+                    <Text style={[styles.profileName, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>{user?.user_metadata?.username || userProfile?.username || 'User'}</Text>
                   </TouchableOpacity>
-                  <Text style={styles.profileEmail}>{user?.email}</Text>
+                  <Text style={[styles.profileEmail, { color: theme.name === 'light' ? '#6B6B6B' : 'rgba(255, 255, 255, 0.6)' }]}>{user?.email}</Text>
                 </View>
               </View>
             </View>
@@ -387,16 +390,47 @@ export default function SettingsScreen({ navigation }: any) {
         </View>
 
 
-        {/* Theme Selection */}
+        {/* Default Themes */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🎨 Theme</Text>
+          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>🎨 Default Themes</Text>
           <View style={styles.themeGrid}>
-            {themes.map((t) => (
+            {defaultThemes.map((t) => (
               <TouchableOpacity
                 key={t.name}
                 style={[
                   styles.themeOption,
-                  { backgroundColor: 'rgba(20, 20, 20, 0.6)', borderColor: 'rgba(255, 255, 255, 0.1)' },
+                  { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+                  themeName === t.name && styles.themeOptionActive
+                ]}
+                onPress={() => setTheme(t.name)}
+              >
+                <Text style={styles.themeEmoji}>{t.emoji}</Text>
+                <Text style={[
+                  styles.themeLabel,
+                  themeName === t.name && styles.themeLabelActive
+                ]}>
+                  {t.label}
+                </Text>
+                {themeName === t.name && (
+                  <View style={styles.themeCheckmark}>
+                    <Ionicons name="checkmark-circle" size={20} color="#8b5cf6" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Other Themes */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>✨ Other Themes</Text>
+          <View style={styles.themeGrid}>
+            {otherThemes.map((t) => (
+              <TouchableOpacity
+                key={t.name}
+                style={[
+                  styles.themeOption,
+                  { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
                   themeName === t.name && styles.themeOptionActive
                 ]}
                 onPress={() => setTheme(t.name)}
@@ -420,8 +454,8 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Subscription & Usage */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>💎 Subscription & Usage</Text>
-          <View style={[styles.card, { backgroundColor: 'rgba(20, 20, 20, 0.8)', borderColor: 'rgba(255, 255, 255, 0.1)' }]}>
+          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>💎 Subscription & Usage</Text>
+          <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <View style={styles.cardGradient}>
               <View style={styles.usageRow}>
                 <Text style={styles.usageLabel}>Current Plan</Text>
@@ -464,8 +498,8 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Send Feedback */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>💬 Send Feedback</Text>
-          <View style={[styles.card, { backgroundColor: 'rgba(20, 20, 20, 0.8)', borderColor: 'rgba(255, 255, 255, 0.1)' }]}>
+          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>💬 Send Feedback</Text>
+          <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <View style={styles.cardGradient}>
               <TextInput
                 style={styles.feedbackInput}
@@ -512,7 +546,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Actions</Text>
+          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>Actions</Text>
 
           <TouchableOpacity style={{}} onPress={handleSignOut} activeOpacity={0.85}>
             <StandardContainer style={styles.card}>
@@ -575,7 +609,7 @@ export default function SettingsScreen({ navigation }: any) {
         {/* App Info */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>About</Text>
-          <View style={[styles.card, { backgroundColor: 'rgba(20, 20, 20, 0.8)', borderColor: 'rgba(255, 255, 255, 0.1)' }]}>
+          <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <View style={styles.cardGradient}>
               <Text style={styles.infoText}>Insight Mobile v1.0.0</Text>
               <Text style={styles.infoSubtext}>Your Personal AI Journal</Text>

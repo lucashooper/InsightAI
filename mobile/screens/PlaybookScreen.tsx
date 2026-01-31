@@ -279,12 +279,12 @@ export default function PlaybookScreen() {
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         {/* Today's Progress */}
-        <StandardContainer style={styles.progressCard}>
+        <StandardContainer style={[styles.progressCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
           <View style={styles.progressCardInner}>
-            <Text style={styles.progressTitle}>TODAY'S PROGRESS</Text>
+            <Text style={[styles.progressTitle, { color: theme.colors.tertiaryText }]}>TODAY'S PROGRESS</Text>
             <View style={styles.progressStats}>
-              <Text style={styles.progressFraction}>{protocolProgress.completed}/{protocolProgress.total}</Text>
-              <Text style={styles.progressLabel}>protocols completed</Text>
+              <Text style={[styles.progressFraction, { color: theme.colors.primaryText }]}>{protocolProgress.completed}/{protocolProgress.total}</Text>
+              <Text style={[styles.progressLabel, { color: theme.colors.secondaryText }]}>protocols completed</Text>
             </View>
             <View style={styles.progressBarContainer}>
               <LinearGradient
@@ -294,7 +294,7 @@ export default function PlaybookScreen() {
                 end={{ x: 1, y: 0 }}
               />
             </View>
-            <Text style={styles.progressPercentage}>{protocolProgress.percentage}% Completion</Text>
+            <Text style={[styles.progressPercentage, { color: theme.colors.primaryText }]}>{protocolProgress.percentage}% Completion</Text>
           </View>
         </StandardContainer>
 
@@ -304,7 +304,7 @@ export default function PlaybookScreen() {
             style={[styles.tab, activeTab === 'protocols' && styles.tabActive]}
             onPress={() => setActiveTab('protocols')}
           >
-            <Text style={[styles.tabText, activeTab === 'protocols' && styles.tabTextActive]}>
+            <Text style={[styles.tabText, { color: theme.colors.secondaryText }, activeTab === 'protocols' && { color: theme.colors.primaryText, fontWeight: '600' }]}>
               Daily Protocols
             </Text>
           </TouchableOpacity>
@@ -312,7 +312,7 @@ export default function PlaybookScreen() {
             style={[styles.tab, activeTab === 'strategies' && styles.tabActive]}
             onPress={() => setActiveTab('strategies')}
           >
-            <Text style={[styles.tabText, activeTab === 'strategies' && styles.tabTextActive]}>
+            <Text style={[styles.tabText, { color: theme.colors.secondaryText }, activeTab === 'strategies' && { color: theme.colors.primaryText, fontWeight: '600' }]}>
               Suggested
             </Text>
           </TouchableOpacity>
@@ -349,12 +349,12 @@ export default function PlaybookScreen() {
           return displayStrategies.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyIcon}>📚</Text>
-              <Text style={styles.emptyText}>
+              <Text style={[styles.emptyText, { color: theme.colors.primaryText }]}>
                 {activeTab === 'strategies'
                   ? 'No suggested strategies yet.'
                   : 'No daily protocols yet.'}
               </Text>
-              <Text style={styles.emptySubtext}>
+              <Text style={[styles.emptySubtext, { color: theme.colors.secondaryText }]}>
                 {activeTab === 'strategies'
                   ? 'Analyze a few entries to get personalized recommendations.'
                   : 'Add strategies to your daily protocols to build a routine.'}
@@ -369,7 +369,7 @@ export default function PlaybookScreen() {
               activeOpacity={0.7}
               onLongPress={() => handleStrategyLongPress(strategy)}
             >
-              <StandardContainer style={styles.premiumCard}>
+              <StandardContainer style={[styles.premiumCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
               <View style={styles.cardGradient}>
                 <View style={styles.cardHeader}>
                   <View style={styles.emojiContainer}>
@@ -377,7 +377,7 @@ export default function PlaybookScreen() {
                   </View>
                   <View style={styles.cardInfo}>
                     <View style={styles.titleRow}>
-                      <Text style={styles.cardTitle}>{strategy.title}</Text>
+                      <Text style={[styles.cardTitle, { color: theme.colors.primaryText }]}>{strategy.title}</Text>
                       {/* Only show streaks for active protocols */}
                       {strategy.status === 'active' && protocolStats[strategy.id] && (
                         <View style={styles.inlineStreaks}>
@@ -393,7 +393,7 @@ export default function PlaybookScreen() {
                       )}
                     </View>
                     {strategy.description ? (
-                      <Text style={styles.cardDescription} numberOfLines={2}>{strategy.description}</Text>
+                      <Text style={[styles.cardDescription, { color: theme.colors.secondaryText }]} numberOfLines={2}>{strategy.description}</Text>
                     ) : null}
                   </View>
                 </View>
@@ -405,8 +405,8 @@ export default function PlaybookScreen() {
                         {strategy.category}
                       </Text>
                     </View>
-                    <View style={styles.difficultyBadge}>
-                      <Text style={styles.difficultyText}>{strategy.difficulty}</Text>
+                    <View style={[styles.difficultyBadge, { backgroundColor: 'rgba(139, 92, 246, 0.15)', borderColor: 'rgba(139, 92, 246, 0.3)', borderWidth: 1 }]}>
+                      <Text style={[styles.difficultyText, { color: '#8b5cf6' }]}>{strategy.difficulty}</Text>
                     </View>
                   </View>
                   

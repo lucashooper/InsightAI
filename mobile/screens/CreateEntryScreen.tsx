@@ -11,6 +11,7 @@ import {
   Pressable,
   Keyboard,
   TouchableWithoutFeedback,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,6 +19,7 @@ import { BlurView } from 'expo-blur';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
+import { mobileAiService } from '../services/mobileAiService';
 
 export default function CreateEntryScreen({ navigation, route }: any) {
   const { user } = useAuth();
@@ -26,22 +28,33 @@ export default function CreateEntryScreen({ navigation, route }: any) {
   const [content, setContent] = useState(initialContent || '');
   const [showMoodPicker, setShowMoodPicker] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
+  const [showMoodCheckIn, setShowMoodCheckIn] = useState(!initialContent);
+  const [showBreathingPrompt, setShowBreathingPrompt] = useState(false);
   const [mood, setMood] = useState('');
-  const [aiPrompt, setAiPrompt] = useState('');
+  const [initialMood, setInitialMood] = useState('');
+  const [aiResponse, setAiResponse] = useState<{ reflection: string; questions: string[] } | null>(null);
+  const [displayedText, setDisplayedText] = useState('');
+  const [isLoadingAi, setIsLoadingAi] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasUnsavedChanges = useRef(false);
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const quickActionsAnim = useRef(new Animated.Value(0)).current;
-  const controlsBottomAnim = useRef(new Animated.Value(20)).current; // Bottom position for controls
+  const controlsBottomAnim = useRef(new Animated.Value(20)).current;
+  const scrollViewRef = useRef<any>(null);
 
   const moods = ['😊', '😔', '😰', '😡', '😌', '🤔', '😴', '🎉'];
-  
-  const aiPrompts = [
-    'What prompted you to start writing just now?',
-    'How does this make you feel?',
-    'What would you like to explore further?',
-    'What patterns do you notice?',
-  ];
+  const moodLabels: Record<string, string> = {
+    '😊': 'Happy',
+    '😔': 'Sad',
+    '😰': 'Anxious',
+    '😡': 'Angry',
+    '😌': 'Calm',
+    '🤔': 'Thoughtful',
+    '😴': 'Tired',
+    '🎉': 'Excited',
+  };
 
   // Auto-save functionality
   useEffect(() => {
@@ -153,9 +166,60 @@ export default function CreateEntryScreen({ navigation, route }: any) {
     }).start();
   };
 
-  const insertAiPrompt = () => {
-    const randomPrompt = aiPrompts[Math.floor(Math.random() * aiPrompts.length)];
-    setAiPrompt(randomPrompt);
+  const handleGoDeeper = async () => {
+    if (!content.trim() || isLoadingAi) return;
+    
+    setIsLoadingAi(true);
+    setDisplayedText('');
+    
+    try {
+      const response = await mobileAiService.generateFollowUpQuestions(content);
+      setAiResponse(response);
+      setIsTyping(true);
+      
+      // Start pulse animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.2,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+      
+      // Typewriter effect
+      const fullText = response.reflection + '\n\n' + response.questions.join('\n\n');
+      let currentIndex = 0;
+      
+      const typeInterval = setInterval(() => {
+        if (currentIndex < fullText.length) {
+          setDisplayedText(fullText.substring(0, currentIndex + 1));
+          currentIndex++;
+          
+          // Scroll as text appears
+          if (currentIndex % 20 === 0) {
+            scrollViewRef.current?.scrollToEnd({ animated: true });
+          }
+        } else {
+          clearInterval(typeInterval);
+          setIsTyping(false);
+          pulseAnim.stopAnimation();
+          pulseAnim.setValue(1);
+        }
+      }, 25); // 25ms per character for natural typing speed
+      
+    } catch (error) {
+      console.error('[CreateEntry] Go Deeper error:', error);
+      setIsTyping(false);
+    } finally {
+      setIsLoadingAi(false);
+    }
   };
 
   useEffect(() => {
@@ -205,7 +269,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
-            <Ionicons name="arrow-back" size={24} color="rgba(255, 255, 255, 0.7)" />
+            <Ionicons name="arrow-back" size={24} color={theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.7)'} />
           </TouchableOpacity>
         </View>
         <View style={styles.headerRight}>
@@ -216,7 +280,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
             {mood ? (
               <Text style={styles.selectedMoodEmoji}>{mood}</Text>
             ) : (
-              <Ionicons name="happy-outline" size={24} color="rgba(255, 255, 255, 0.7)" />
+              <Ionicons name="happy-outline" size={24} color={theme.name === 'light' ? theme.colors.primaryText : 'rgba(255, 255, 255, 0.7)'} />
             )}
           </TouchableOpacity>
           <TouchableOpacity 
@@ -237,6 +301,117 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Initial Mood Check-In Modal */}
+      {showMoodCheckIn && (
+        <>
+          <Pressable 
+            style={styles.overlayBackdrop} 
+            onPress={() => setShowMoodCheckIn(false)}
+          />
+          <Animated.View style={[styles.moodCheckInOverlay, { opacity: overlayOpacity }]}>
+            <BlurView intensity={80} style={styles.blurContainer}>
+              <LinearGradient
+                colors={theme.name === 'light' ? ['rgba(255, 255, 255, 0.98)', 'rgba(250, 250, 250, 0.98)'] : ['rgba(20, 20, 30, 0.95)', 'rgba(10, 10, 20, 0.98)']}
+                style={styles.moodCheckInContainer}
+              >
+                <Text style={[styles.moodCheckInTitle, { color: theme.colors.primaryText }]}>How are you feeling right now?</Text>
+                <Text style={[styles.moodCheckInSubtitle, { color: theme.name === 'light' ? '#6B6B6B' : 'rgba(255, 255, 255, 0.6)' }]}>Take a moment to check in with yourself</Text>
+                
+                <View style={styles.moodGrid}>
+                  {moods.map((emoji) => (
+                    <TouchableOpacity
+                      key={emoji}
+                      style={[
+                        styles.moodOption,
+                        initialMood === emoji && styles.moodOptionActive,
+                      ]}
+                      onPress={() => {
+                        setInitialMood(emoji);
+                        setMood(emoji);
+                      }}
+                    >
+                      <Text style={styles.moodEmoji}>{emoji}</Text>
+                      <Text style={[styles.moodLabel, { color: theme.name === 'light' ? '#6B6B6B' : 'rgba(255, 255, 255, 0.7)' }]}>{moodLabels[emoji]}</Text>
+                      {initialMood === emoji && (
+                        <View style={styles.checkmarkContainer}>
+                          <Ionicons name="checkmark-circle" size={20} color="#8b5cf6" />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <TouchableOpacity 
+                  style={[styles.breathingPromptButton, { backgroundColor: theme.name === 'light' ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.15)' }]}
+                  onPress={() => {
+                    setShowMoodCheckIn(false);
+                    setShowBreathingPrompt(true);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="leaf-outline" size={20} color="#8b5cf6" />
+                  <Text style={[styles.breathingPromptText, { color: '#8b5cf6' }]}>Take 3 deep breaths first</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={styles.continueButton}
+                  onPress={() => setShowMoodCheckIn(false)}
+                  activeOpacity={0.7}
+                >
+                  <LinearGradient
+                    colors={['#8b5cf6', '#7c3aed']}
+                    style={styles.continueButtonGradient}
+                  >
+                    <Text style={styles.continueButtonText}>Continue to journal</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </LinearGradient>
+            </BlurView>
+          </Animated.View>
+        </>
+      )}
+
+      {/* Breathing Prompt Modal */}
+      {showBreathingPrompt && (
+        <>
+          <Pressable 
+            style={styles.overlayBackdrop} 
+            onPress={() => setShowBreathingPrompt(false)}
+          />
+          <Animated.View style={[styles.breathingOverlay, { opacity: overlayOpacity }]}>
+            <BlurView intensity={80} style={styles.blurContainer}>
+              <LinearGradient
+                colors={theme.name === 'light' ? ['rgba(255, 255, 255, 0.98)', 'rgba(250, 250, 250, 0.98)'] : ['rgba(20, 20, 30, 0.95)', 'rgba(10, 10, 20, 0.98)']}
+                style={styles.breathingContainer}
+              >
+                <Ionicons name="leaf" size={48} color="#8b5cf6" style={{ marginBottom: 20 }} />
+                <Text style={[styles.breathingTitle, { color: theme.colors.primaryText }]}>Let's take a moment</Text>
+                <Text style={[styles.breathingInstructions, { color: theme.name === 'light' ? '#6B6B6B' : 'rgba(255, 255, 255, 0.7)' }]}>Take 3 deep breaths before we explore this together</Text>
+                
+                <View style={styles.breathingSteps}>
+                  <Text style={[styles.breathingStep, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.9)' }]}>1. Breathe in slowly through your nose</Text>
+                  <Text style={[styles.breathingStep, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.9)' }]}>2. Hold for a moment</Text>
+                  <Text style={[styles.breathingStep, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.9)' }]}>3. Exhale gently through your mouth</Text>
+                </View>
+
+                <TouchableOpacity 
+                  style={styles.continueButton}
+                  onPress={() => setShowBreathingPrompt(false)}
+                  activeOpacity={0.7}
+                >
+                  <LinearGradient
+                    colors={['#8b5cf6', '#7c3aed']}
+                    style={styles.continueButtonGradient}
+                  >
+                    <Text style={styles.continueButtonText}>I'm ready</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </LinearGradient>
+            </BlurView>
+          </Animated.View>
+        </>
+      )}
 
       {/* Glassmorphic Mood Picker Overlay */}
       {showMoodPicker && (
@@ -283,41 +458,57 @@ export default function CreateEntryScreen({ navigation, route }: any) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
       >
-        {aiPrompt ? (
-          <View style={styles.aiPromptContainer}>
-            <Ionicons name="sparkles" size={16} color="#a78bfa" style={styles.aiPromptIcon} />
-            <Text style={styles.aiPromptText}>{aiPrompt}</Text>
-          </View>
-        ) : null}
-        <TextInput
-          style={styles.contentInput}
-          value={content}
-          onChangeText={handleContentChange}
-          placeholder="Write here..."
-          placeholderTextColor="rgba(255, 255, 255, 0.3)"
-          multiline
-          textAlignVertical="top"
-          autoFocus={false}
-        />
+        <ScrollView
+          ref={scrollViewRef}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <TextInput
+            style={[styles.contentInput, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}
+            value={content}
+            onChangeText={handleContentChange}
+            placeholder="Write here..."
+            placeholderTextColor={theme.name === 'light' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.3)'}
+            multiline
+            textAlignVertical="top"
+            autoFocus={false}
+          />
+          
+          {/* AI Response - Conversational style with typewriter effect */}
+          {aiResponse && displayedText && (
+            <View style={styles.aiResponseContainer}>
+              <View style={styles.aiResponseRow}>
+                <Animated.View style={[styles.aiIconContainer, { transform: [{ scale: isTyping ? pulseAnim : 1 }] }]}>
+                  <Ionicons name="book-outline" size={20} color="#8b5cf6" />
+                </Animated.View>
+                <Text style={[styles.aiResponseText, { color: theme.name === 'light' ? '#6B6B6B' : 'rgba(255, 255, 255, 0.75)' }]}>
+                  {displayedText}
+                  {isTyping && <Text style={styles.cursor}>|</Text>}
+                </Text>
+              </View>
+            </View>
+          )}
+        </ScrollView>
       </KeyboardAvoidingView>
 
       {/* Bottom-Left Quick Actions Button */}
-      <Animated.View style={[styles.quickActionsButton, { bottom: controlsBottomAnim }]}>
+      <Animated.View style={[styles.quickActionsButton, { bottom: controlsBottomAnim }]} pointerEvents="box-none">
         <TouchableOpacity 
           onPress={toggleQuickActions}
           activeOpacity={0.8}
-          style={{ flex: 1 }}
         >
-        <LinearGradient
-          colors={['rgba(139, 92, 246, 0.3)', 'rgba(99, 102, 241, 0.2)']}
-          style={styles.fabGradient}
-        >
-          <Ionicons 
-            name={showQuickActions ? "close" : "add"} 
-            size={24} 
-            color="rgba(255, 255, 255, 0.9)" 
-          />
-        </LinearGradient>
+          <LinearGradient
+            colors={theme.name === 'light' ? ['#8b5cf6', '#7c3aed'] : ['rgba(139, 92, 246, 0.3)', 'rgba(99, 102, 241, 0.2)']}
+            style={styles.fabGradient}
+          >
+            <Ionicons 
+              name={showQuickActions ? "close" : "add"} 
+              size={24} 
+              color="#ffffff" 
+            />
+          </LinearGradient>
         </TouchableOpacity>
       </Animated.View>
 
@@ -367,18 +558,22 @@ export default function CreateEntryScreen({ navigation, route }: any) {
         </Animated.View>
       )}
 
-      {/* Bottom-Right Sparkle AI Button */}
-      <Animated.View style={[styles.sparkleButton, { bottom: controlsBottomAnim }]}>
+      {/* Bottom-Right Go Deeper Button */}
+      <Animated.View style={[styles.sparkleButton, { bottom: controlsBottomAnim }]} pointerEvents="box-none">
         <TouchableOpacity 
-          onPress={insertAiPrompt}
+          onPress={handleGoDeeper}
           activeOpacity={0.8}
-          style={{ flex: 1 }}
+          disabled={isLoadingAi || !content.trim()}
         >
           <LinearGradient
-            colors={['#8b5cf6', '#7c3aed']}
+            colors={isLoadingAi ? ['#6b46c1', '#553c9a'] : ['#8b5cf6', '#7c3aed']}
             style={styles.sparkleFabGradient}
           >
-            <Ionicons name="sparkles" size={24} color="#ffffff" />
+            {isLoadingAi ? (
+              <Ionicons name="hourglass" size={24} color="#ffffff" />
+            ) : (
+              <Ionicons name="sparkles" size={24} color="#ffffff" />
+            )}
           </LinearGradient>
         </TouchableOpacity>
       </Animated.View>
@@ -435,6 +630,105 @@ const styles = StyleSheet.create({
   },
   analyzeTextDisabled: {
     color: 'rgba(139, 92, 246, 0.3)',
+  },
+  moodCheckInOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  moodCheckInContainer: {
+    width: '85%',
+    maxWidth: 400,
+    borderRadius: 24,
+    padding: 32,
+    alignItems: 'center',
+  },
+  moodCheckInTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  moodCheckInSubtitle: {
+    fontSize: 15,
+    marginBottom: 32,
+    textAlign: 'center',
+  },
+  moodLabel: {
+    fontSize: 12,
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  breathingPromptButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginTop: 24,
+    marginBottom: 16,
+  },
+  breathingPromptText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  continueButton: {
+    width: '100%',
+    marginTop: 8,
+  },
+  continueButtonGradient: {
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  continueButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  breathingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  breathingContainer: {
+    width: '85%',
+    maxWidth: 400,
+    borderRadius: 24,
+    padding: 40,
+    alignItems: 'center',
+  },
+  breathingTitle: {
+    fontSize: 26,
+    fontWeight: '600',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  breathingInstructions: {
+    fontSize: 16,
+    marginBottom: 32,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  breathingSteps: {
+    width: '100%',
+    marginBottom: 32,
+  },
+  breathingStep: {
+    fontSize: 16,
+    marginBottom: 16,
+    lineHeight: 24,
   },
   overlayBackdrop: {
     position: 'absolute',
@@ -533,11 +827,40 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     paddingTop: 8,
-    paddingBottom: 100,
-    color: 'rgba(255, 255, 255, 0.95)',
+    paddingBottom: 24,
     fontSize: 17,
     lineHeight: 26,
     fontWeight: '400',
+  },
+  aiResponseContainer: {
+    marginHorizontal: 24,
+    marginTop: 24,
+    marginBottom: 100,
+  },
+  aiResponseRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  aiIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  aiResponseText: {
+    flex: 1,
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: '400',
+    fontStyle: 'italic',
+  },
+  cursor: {
+    color: '#8b5cf6',
+    fontWeight: '600',
   },
   quickActionsButton: {
     position: 'absolute',

@@ -28,6 +28,14 @@ type ResultsProps = {
     strengths?: Array<{ strength: string; explanation: string }>;
     growth_areas?: Array<{ area: string; suggestion: string }>;
     key_themes?: Array<{ theme: string; description: string }>;
+    insights_report?: {
+      conversationalSummary?: string;
+      insightCards?: Array<{
+        type: string;
+        text: string;
+        short_label: string;
+      }>;
+    };
   };
   onDone: () => void;
 };
@@ -42,7 +50,7 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
   const { theme } = useTheme();
   const opacity = useRef(new Animated.Value(0)).current;
   const [strengthsExpanded, setStrengthsExpanded] = useState(true);
-  const [growthExpanded, setGrowthExpanded] = useState(false);
+  const [growthExpanded, setGrowthExpanded] = useState(true);
 
   useEffect(() => {
     if (!props.visible) {
@@ -97,6 +105,19 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
             contentContainerStyle={styles.resultsScrollContent}
             showsVerticalScrollIndicator={false}
           >
+            {/* Summary */}
+            {props.insights?.insights_report?.conversationalSummary && (
+              <View style={styles.resultsCard}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.cardHeaderIcon}>📝</Text>
+                  <Text style={styles.cardHeaderTitle}>Summary</Text>
+                </View>
+                <Text style={styles.summaryText}>
+                  {props.insights.insights_report.conversationalSummary}
+                </Text>
+              </View>
+            )}
+
             {/* Primary Emotion & Wellbeing Score */}
             <View style={styles.resultsCard}>
               <View style={styles.emotionWellbeingRow}>
@@ -119,66 +140,82 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
             </View>
 
             {/* Strengths & Wins Accordion */}
-            {props.insights?.strengths && props.insights.strengths.length > 0 && (
-              <View style={styles.accordionSection}>
-                <TouchableOpacity 
-                  style={[styles.accordionHeader, styles.strengthsAccordion]}
-                  onPress={() => setStrengthsExpanded(!strengthsExpanded)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.accordionHeaderLeft}>
-                    <Text style={styles.accordionIcon}>✨</Text>
-                    <Text style={styles.accordionTitle}>Strengths & Wins</Text>
-                    <View style={styles.accordionBadge}>
-                      <Text style={styles.accordionBadgeText}>{props.insights.strengths.length}</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.accordionChevron}>{strengthsExpanded ? '▼' : '▶'}</Text>
-                </TouchableOpacity>
-                
-                {strengthsExpanded && (
-                  <View style={[styles.accordionContent, styles.strengthsContent]}>
-                    {props.insights.strengths.map((s, idx) => (
-                      <View key={idx} style={styles.insightItem}>
-                        <Text style={styles.insightTitle}>{s.strength}</Text>
-                        <Text style={styles.insightDescription}>{s.explanation}</Text>
+            {(() => {
+              const strengthCards = props.insights?.insights_report?.insightCards?.filter(
+                (card: any) => card.type === 'strength' || card.type === 'win'
+              ) || [];
+              
+              if (strengthCards.length === 0) return null;
+              
+              return (
+                <View style={styles.accordionSection}>
+                  <TouchableOpacity 
+                    style={[styles.accordionHeader, styles.strengthsAccordion]}
+                    onPress={() => setStrengthsExpanded(!strengthsExpanded)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.accordionHeaderLeft}>
+                      <Text style={styles.accordionIcon}>✨</Text>
+                      <Text style={styles.accordionTitle}>Strengths & Wins</Text>
+                      <View style={styles.accordionBadge}>
+                        <Text style={styles.accordionBadgeText}>{strengthCards.length}</Text>
                       </View>
-                    ))}
-                  </View>
-                )}
-              </View>
-            )}
+                    </View>
+                    <Text style={styles.accordionChevron}>{strengthsExpanded ? '▼' : '▶'}</Text>
+                  </TouchableOpacity>
+                  
+                  {strengthsExpanded && (
+                    <View style={[styles.accordionContent, styles.strengthsContent]}>
+                      {strengthCards.map((card: any, idx: number) => (
+                        <View key={idx} style={styles.insightItem}>
+                          <Text style={styles.insightTitle}>{card.short_label || card.type.toUpperCase()}</Text>
+                          <Text style={styles.insightDescription}>{card.text}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              );
+            })()}
 
             {/* Growth & Reflections Accordion */}
-            {props.insights?.growth_areas && props.insights.growth_areas.length > 0 && (
-              <View style={styles.accordionSection}>
-                <TouchableOpacity 
-                  style={[styles.accordionHeader, styles.growthAccordion]}
-                  onPress={() => setGrowthExpanded(!growthExpanded)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.accordionHeaderLeft}>
-                    <Text style={styles.accordionIcon}>📈</Text>
-                    <Text style={styles.accordionTitle}>Growth & Reflections</Text>
-                    <View style={styles.accordionBadge}>
-                      <Text style={styles.accordionBadgeText}>{props.insights.growth_areas.length}</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.accordionChevron}>{growthExpanded ? '▼' : '▶'}</Text>
-                </TouchableOpacity>
-                
-                {growthExpanded && (
-                  <View style={[styles.accordionContent, styles.growthContent]}>
-                    {props.insights.growth_areas.map((g, idx) => (
-                      <View key={idx} style={styles.insightItem}>
-                        <Text style={styles.insightTitle}>{g.area}</Text>
-                        <Text style={styles.insightDescription}>{g.suggestion}</Text>
+            {(() => {
+              const growthCards = props.insights?.insights_report?.insightCards?.filter(
+                (card: any) => card.type === 'growth' || card.type === 'reflection'
+              ) || [];
+              
+              if (growthCards.length === 0) return null;
+              
+              return (
+                <View style={styles.accordionSection}>
+                  <TouchableOpacity 
+                    style={[styles.accordionHeader, styles.growthAccordion]}
+                    onPress={() => setGrowthExpanded(!growthExpanded)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.accordionHeaderLeft}>
+                      <Text style={styles.accordionIcon}>📈</Text>
+                      <Text style={styles.accordionTitle}>Growth & Reflections</Text>
+                      <View style={styles.accordionBadge}>
+                        <Text style={styles.accordionBadgeText}>{growthCards.length}</Text>
                       </View>
-                    ))}
-                  </View>
-                )}
-              </View>
-            )}
+                    </View>
+                    <Text style={styles.accordionChevron}>{growthExpanded ? '▼' : '▶'}</Text>
+                  </TouchableOpacity>
+                  
+                  {growthExpanded && (
+                    <View style={[styles.accordionContent, styles.growthContent]}>
+                      {growthCards.map((card: any, idx: number) => (
+                        <View key={idx} style={styles.insightItem}>
+                          <Text style={styles.insightTitle}>{card.short_label || card.type.toUpperCase()}</Text>
+                          <Text style={styles.insightDescription}>{card.text}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              );
+            })()}
 
             {/* Key Themes */}
             {props.insights?.key_themes && props.insights.key_themes.length > 0 && (
@@ -429,6 +466,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: 'rgba(139, 92, 246, 0.95)',
+  },
+  summaryText: {
+    fontSize: 15,
+    fontWeight: '400',
+    color: 'rgba(255, 255, 255, 0.85)',
+    lineHeight: 22,
   },
   resultsLabel: {
     fontSize: 12,

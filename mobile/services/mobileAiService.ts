@@ -283,4 +283,262 @@ Entry text: ${content}`;
       throw error;
     }
   },
+
+  async generateProtocol(growthRecommendation: string): Promise<{
+    name: string;
+    practice: string;
+    why: string;
+  }> {
+    await waitForRateLimit();
+
+    const prompt = `Based on this growth recommendation:
+"${growthRecommendation}"
+
+Create a single, actionable daily protocol that the user can practice. Format:
+
+**Protocol Name:** [Short, memorable title - max 4 words]
+**Daily Practice:** [One specific action they can take daily - 1-2 sentences max]
+**Why it works:** [One sentence explaining the benefit]
+
+Make it:
+- Concrete and specific (not vague advice)
+- Takes 5-15 minutes daily
+- Easy to remember and implement
+- Directly addresses the growth area identified
+
+Example:
+**Protocol Name:** Creative Task Chunking
+**Daily Practice:** Each morning, break your main creative goal into 3 small tasks you can complete today. Focus on finishing one before starting the next.
+**Why it works:** Small wins build momentum and prevent perfectionism from blocking progress.
+
+Provide ONLY the protocol in the exact format above, nothing else.`;
+
+    try {
+      const response = await fetch(GROQ_API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${GROQ_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a practical mental health coach who creates simple, actionable daily protocols. Always format your response exactly as requested.',
+            },
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+          temperature: 0.8,
+          max_tokens: 300,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Protocol generation failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      const protocolText: string = data.choices?.[0]?.message?.content || '';
+
+      // Parse the protocol text
+      const nameMatch = protocolText.match(/\*\*Protocol Name:\*\*\s*(.+?)(?:\n|$)/i);
+      const practiceMatch = protocolText.match(/\*\*Daily Practice:\*\*\s*(.+?)(?=\n\*\*|$)/is);
+      const whyMatch = protocolText.match(/\*\*Why it works:\*\*\s*(.+?)$/is);
+
+      return {
+        name: nameMatch?.[1]?.trim() || 'Daily Practice',
+        practice: practiceMatch?.[1]?.trim() || growthRecommendation,
+        why: whyMatch?.[1]?.trim() || 'This practice supports your growth.',
+      };
+    } catch (error: any) {
+      console.error('[mobileAiService] generateProtocol error', error);
+      // Fallback to a simple protocol
+      return {
+        name: 'Daily Reflection',
+        practice: 'Take 5 minutes each day to reflect on this growth area and identify one small action you can take.',
+        why: 'Regular reflection builds awareness and creates opportunities for change.',
+      };
+    }
+  },
+
+  async generateFollowUpQuestions(content: string, analysis?: EnhancedAIAnalysis): Promise<{
+    reflection: string;
+    questions: string[];
+  }> {
+    await waitForRateLimit();
+
+    const contextInfo = analysis ? `
+
+Previous analysis context:
+- Primary emotion: ${analysis.mood_analysis.primary_emotion}
+- Key themes: ${analysis.key_themes.map(t => t.theme).join(', ')}
+- Thought patterns: ${analysis.thought_patterns.map(p => p.pattern).join(', ')}` : '';
+
+    const prompt = `You are a wise, empathetic therapist having a conversation with someone who just shared this journal entry:
+
+"${content}"${contextInfo}
+
+Your task is to help them go deeper into their reflection. Provide:
+
+1. A thoughtful, validating response (2-3 sentences) that:
+   - Acknowledges what they shared with empathy
+   - Reflects back a key insight or pattern you notice
+   - Shows you truly understand their experience
+   - Uses warm, conversational language (like Mindsera's style)
+
+2. Then ask 2-3 follow-up questions that:
+   - Are specific to what they wrote (reference actual details)
+   - Help them explore deeper emotions, triggers, or patterns
+   - Feel curious and supportive, not interrogative
+   - Build on each other naturally
+   - Avoid generic questions like "How does this make you feel?"
+
+Format your response as JSON:
+{
+  "reflection": "Your empathetic response here",
+  "questions": [
+    "First specific question?",
+    "Second specific question?",
+    "Optional third question?"
+  ]
+}
+
+Example for an entry about procrastination:
+{
+  "reflection": "It sounds like you've been building something solid with that framework, and then this urge just showed up out of nowhere and kind of bypassed all of it. That must feel frustrating, especially when you'd been doing well.",
+  "questions": [
+    "That paradox you mentioned is interesting. Like the harder you push against something, the more it pushes back. It's almost like the resistance itself creates tension that eventually needs release. What do you think was different this time compared to when the framework was working for you?",
+    "You said it felt 'random' - but was there anything happening in your day or week before that urge came up? Sometimes these things aren't as random as they feel in the moment."
+  ]
+}
+
+Provide ONLY the JSON, nothing else.`;
+
+    try {
+      const response = await fetch(GROQ_API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${GROQ_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a compassionate therapist who asks thoughtful, specific questions that help people understand themselves better. You write in a warm, conversational style like Mindsera.',
+            },
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+          temperature: 0.8,
+          max_tokens: 500,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Follow-up generation failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      const responseText: string = data.choices?.[0]?.message?.content || '';
+
+      let parsed: any;
+      try {
+        parsed = JSON.parse(responseText);
+      } catch (err) {
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          throw err;
+        }
+        parsed = JSON.parse(jsonMatch[0]);
+      }
+
+      return {
+        reflection: parsed.reflection || "I hear what you're sharing. Let's explore this together.",
+        questions: parsed.questions || ["What else comes up for you when you think about this?"],
+      };
+    } catch (error: any) {
+      console.error('[mobileAiService] generateFollowUpQuestions error', error);
+      return {
+        reflection: "Thank you for sharing this. Let's explore it further.",
+        questions: [
+          "What do you think might be behind this feeling?",
+          "How does this connect to other things happening in your life right now?",
+        ],
+      };
+    }
+  },
+
+  async generateMonthlyStory(entries: any[]): Promise<string> {
+    await waitForRateLimit();
+
+    if (entries.length === 0) {
+      return "You're just beginning your journey. Each entry you write adds to your story.";
+    }
+
+    // Extract key themes and emotions from entries
+    const entrySummaries = entries.slice(0, 10).map(e => {
+      const emotion = e.ai_structured_insights?.mood_analysis?.primary_emotion || 'reflective';
+      const themes = e.ai_structured_insights?.key_themes?.slice(0, 2).map((t: any) => t.theme).join(', ') || '';
+      return `${emotion}${themes ? ` (${themes})` : ''}`;
+    }).join('; ');
+
+    const prompt = `Based on these emotional patterns from the user's journal entries over the past month:
+${entrySummaries}
+
+Create a warm, personalized 2-3 sentence summary of their emotional journey this month. Focus on:
+- Resilience and growth they've shown
+- Specific themes that emerged
+- A gentle, encouraging tone (like a wise friend checking in)
+- NO corporate language or productivity talk
+- Emphasize self-compassion
+
+Write in second person ("you"). Keep it under 60 words.`;
+
+    try {
+      const response = await fetch(GROQ_API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${GROQ_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a compassionate journal companion who helps users reflect on their emotional journey with warmth and wisdom.',
+            },
+            {
+              role: 'user',
+              content: prompt,
+            },
+          ],
+          temperature: 0.8,
+          max_tokens: 150,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Story generation failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      const story: string = data.choices?.[0]?.message?.content || '';
+
+      return story.trim() || "You've been navigating your emotions with care this month. That takes real courage.";
+    } catch (error: any) {
+      console.error('[mobileAiService] generateMonthlyStory error', error);
+      return "You've been showing up for yourself this month. That's what matters.";
+    }
+  },
 };
+
+

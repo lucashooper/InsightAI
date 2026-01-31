@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export type ThemeName = 'dark' | 'vibrant' | 'ocean' | 'forest' | 'sunset' | 'midnight';
+export type ThemeName = 'dark' | 'light' | 'vibrant' | 'ocean' | 'forest' | 'sunset' | 'midnight';
 
 export interface Theme {
   name: ThemeName;
@@ -246,6 +246,40 @@ const themes: Record<ThemeName, Theme> = {
       surface: 'rgba(99, 102, 241, 0.08)',
       surfaceElevated: 'rgba(99, 102, 241, 0.12)',
       surfaceHover: 'rgba(99, 102, 241, 0.15)',
+    },
+  },
+  
+  light: {
+    name: 'light',
+    colors: {
+      background: '#FAF8F3',
+      backgroundGradient: ['#FDFCFA', '#FAF8F3', '#F7F5F0'],
+      cardBackground: '#FFFFFF',
+      
+      primaryText: '#2C2C2C',
+      secondaryText: '#4A4A4A',
+      tertiaryText: '#6B6B6B',
+      
+      primary: '#FFA726',
+      primaryGradient: ['#FFA726', '#FF9800'],
+      secondary: '#4DD0E1',
+      accent: '#FFD700',
+      
+      orbPrimary: ['rgba(255, 167, 38, 0.9)', 'rgba(255, 152, 0, 0.8)'],
+      orbSecondary: ['rgba(77, 208, 225, 0.85)', 'rgba(38, 198, 218, 0.75)'],
+      orbAccent: ['rgba(255, 215, 0, 0.8)', 'rgba(255, 193, 7, 0.7)'],
+      
+      success: '#66BB6A',
+      warning: '#FFA726',
+      error: '#EF5350',
+      
+      border: '#E8E5DC',
+      divider: 'rgba(74, 74, 74, 0.1)',
+      shadow: 'rgba(139, 92, 70, 0.15)',
+      
+      surface: 'rgba(255, 167, 38, 0.05)',
+      surfaceElevated: 'rgba(255, 167, 38, 0.08)',
+      surfaceHover: 'rgba(255, 167, 38, 0.12)',
     },
   },
 };

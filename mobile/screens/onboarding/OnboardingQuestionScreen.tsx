@@ -91,8 +91,8 @@ const STEPS: Step[] = [
     {
         id: 'research_info',
         type: 'info',
-        title: "Research has shown that Journaling improves your emotional & physical health.",
-        subtitle: "",
+        title: "Grounded in psychology",
+        subtitle: "Research shows that reflective journaling improves emotional awareness and long-term wellbeing.",
         badges: ['Cambridge University'],
         animationType: 'journaling',
         learnMoreLink: true,
@@ -320,48 +320,40 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                 style={styles.premiumLottie}
                             />
 
-                            {/* Main Headline - "Research has shown..." */}
-                            <Text style={{
-                                fontSize: 28,
-                                fontWeight: '600',
-                                color: '#fff',
-                                textAlign: 'center',
-                                lineHeight: 36,
-                                letterSpacing: -0.5,
-                                marginBottom: 12,
-                                paddingHorizontal: 20,
-                            }}>
-                                {currentStep.title}
-                            </Text>
-
-                            {/* Subtext */}
-                            <Text style={styles.premiumSubtitle}>
-                                {currentStep.subtitle}
-                            </Text>
-
-                            {/* Cambridge Section */}
-                            <View style={styles.premiumCambridgeSection}>
-                                <View style={styles.cambridgeLogoWrapper}>
-                                    <Image
-                                        source={cambridgeLogo}
-                                        style={styles.premiumCambridgeLogo}
-                                        resizeMode="contain"
-                                    />
-                                </View>
-                                <Text style={styles.premiumCambridgeReference}>
-                                    Advances in Psychiatric Treatment, 2005
-                                </Text>
-                                <TouchableOpacity 
-                                    style={styles.premiumLearnMoreButton}
-                                    onPress={() => {
-                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                        Linking.openURL('https://www.cambridge.org/core/journals/advances-in-psychiatric-treatment/article/emotional-and-physical-health-benefits-of-expressive-writing/ED2976A61F5DE56B46F07A1CE9EA9F9F');
-                                    }}
+                            {/* Glassmorphic Card */}
+                            <View style={styles.glassCard}>
+                                <LinearGradient
+                                    colors={['rgba(255, 255, 255, 0.08)', 'rgba(255, 255, 255, 0.03)']}
+                                    style={styles.glassCardGradient}
                                 >
-                                    <Text style={styles.premiumLearnMoreText}>
-                                        Learn more about the science →
+                                    {/* Title */}
+                                    <Text style={styles.glassCardTitle}>
+                                        {currentStep.title}
                                     </Text>
-                                </TouchableOpacity>
+
+                                    {/* Body text */}
+                                    <Text style={styles.glassCardBody}>
+                                        {currentStep.subtitle}
+                                    </Text>
+
+                                    {/* Citation */}
+                                    <Text style={styles.glassCardCitation}>
+                                        Advances in Psychiatric Treatment, 2005
+                                    </Text>
+
+                                    {/* Learn more link */}
+                                    <TouchableOpacity 
+                                        style={styles.glassCardLearnMore}
+                                        onPress={() => {
+                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                            Linking.openURL('https://www.cambridge.org/core/journals/advances-in-psychiatric-treatment/article/emotional-and-physical-health-benefits-of-expressive-writing/ED2976A61F5DE56B46F07A1CE9EA9F9F');
+                                        }}
+                                    >
+                                        <Text style={styles.glassCardLearnMoreText}>
+                                            Learn more →
+                                        </Text>
+                                    </TouchableOpacity>
+                                </LinearGradient>
                             </View>
                         </View>
                     ) : (
@@ -1106,9 +1098,8 @@ const styles = StyleSheet.create({
     premiumInfoContainer: {
         flex: 1,
         alignItems: 'center',
-        justifyContent: 'flex-start',
+        justifyContent: 'center',
         paddingHorizontal: 24,
-        paddingTop: 20,
     },
     lottieGlowContainer: {
         position: 'relative',
@@ -1143,66 +1134,55 @@ const styles = StyleSheet.create({
     premiumLottie: {
         width: 220,
         height: 220,
-        marginBottom: 24,
+        marginBottom: 48,
     },
     
-    // Main headline text (e.g., "Research has shown..." or "AI reveals patterns...")
-    // TO CHANGE: Font size, weight, alignment
-    premiumTitle: {
-        fontSize: 30,           // ← Change this to adjust title size
-        fontWeight: '400',      // ← Change this for boldness ('700', '800', '900')
-        color: '#fff',
-        textAlign: 'center',      // ← Options: 'left', 'center', 'right'
-        lineHeight: 36,
-        letterSpacing: -0.5,
-        marginBottom: 12,       // ← Space below title
-        paddingHorizontal: 16,
-    },
-    
-    // Subtitle text (optional, can be removed)
-    premiumSubtitle: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: '#d1d5db',
-        textAlign: 'left',
-        lineHeight: 24,
-        marginBottom: 24,
-        paddingHorizontal: 24,
-    },
-    
-    // Cambridge University section at bottom
-    premiumCambridgeSection: {
-        alignItems: 'center',
-        marginTop: 'auto',
-        marginBottom: 32,
-    },
-    cambridgeLogoWrapper: {
-        borderRadius: 16,
+    // Glassmorphic card styles
+    glassCard: {
+        width: '100%',
+        borderRadius: 24,
         overflow: 'hidden',
-        marginBottom: 16,
-        backgroundColor: '#ffffff',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.12)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 20 },
+        shadowOpacity: 0.4,
+        shadowRadius: 30,
+        elevation: 10,
     },
-    premiumCambridgeLogo: {
-        width: 180,
-        height: 50,
-        opacity: 0.95,
+    glassCardGradient: {
+        padding: 28,
+        gap: 16,
     },
-    premiumCambridgeReference: {
-        fontSize: 11,
-        color: '#9ca3af',
-        fontWeight: '500',
-        marginBottom: 16,
-        textAlign: 'center',
-    },
-    premiumLearnMoreButton: {
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-    },
-    premiumLearnMoreText: {
-        fontSize: 13,
-        color: '#a78bfa',
+    glassCardTitle: {
+        fontSize: 26,
         fontWeight: '600',
-        opacity: 0.85,
+        color: '#fff',
+        letterSpacing: -0.5,
+        lineHeight: 32,
+    },
+    glassCardBody: {
+        fontSize: 15,
+        color: 'rgba(255, 255, 255, 0.85)',
+        lineHeight: 23,
+        fontWeight: '400',
+        letterSpacing: 0.1,
+    },
+    glassCardCitation: {
+        fontSize: 11,
+        color: 'rgba(255, 255, 255, 0.4)',
+        fontWeight: '500',
+        letterSpacing: 0.5,
+        marginTop: 8,
+    },
+    glassCardLearnMore: {
+        alignSelf: 'flex-start',
+        marginTop: 4,
+    },
+    glassCardLearnMoreText: {
+        fontSize: 13,
+        color: '#a855f7',
+        fontWeight: '600',
         letterSpacing: 0.2,
     },
     

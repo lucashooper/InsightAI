@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '../../contexts/ThemeContext';
 
 type Props = {
   children: React.ReactNode;
@@ -8,10 +9,21 @@ type Props = {
 };
 
 export default function StandardContainer({ children, style }: Props) {
+  const { theme } = useTheme();
+  
+  // Use theme-aware gradient colors
+  const gradientColors = theme.name === 'light' 
+    ? [theme.colors.cardBackground, theme.colors.cardBackground] as const
+    : ['rgba(20, 20, 20, 0.82)', 'rgba(12, 12, 12, 0.78)'] as const;
+  
+  const borderColor = theme.name === 'light'
+    ? theme.colors.border
+    : 'rgba(255, 255, 255, 0.10)';
+  
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.container, style, { borderColor }]}>
       <LinearGradient
-        colors={['rgba(20, 20, 20, 0.82)', 'rgba(12, 12, 12, 0.78)']}
+        colors={gradientColors as any}
         style={styles.gradient}
       />
       <View style={styles.content}>{children}</View>

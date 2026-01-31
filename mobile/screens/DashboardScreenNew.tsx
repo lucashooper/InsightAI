@@ -52,6 +52,8 @@ export default function DashboardScreenNew() {
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recognizedText, setRecognizedText] = useState('');
+  const [showQuickActions, setShowQuickActions] = useState(false);
+  const [showStreakModal, setShowStreakModal] = useState(false);
   const [showIntroOverlay, setShowIntroOverlay] = useState(false);
 
   useEffect(() => {
@@ -420,28 +422,25 @@ export default function DashboardScreenNew() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header - Profile Picture */}
+        {/* Header - Logo & Branding */}
         <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.profilePictureContainer}
-            onPress={() => {
-              console.log('[NAV] PFP tapped -> Settings');
-              navigation.navigate('SettingsTab');
-            }}
-          >
-            {profilePicture ? (
-              <Image source={{ uri: profilePicture }} style={styles.profilePicture} />
-            ) : (
-              <View style={styles.profilePlaceholder}>
-                <Ionicons name="person" size={24} color="rgba(255, 255, 255, 0.6)" />
-              </View>
-            )}
-          </TouchableOpacity>
+          <View style={styles.headerLeft}>
+            <Image 
+              source={require('../public/Insight-Logo-nobg.webp')} 
+              style={styles.logoIcon}
+            />
+            <Text style={[styles.brandText, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>Insight</Text>
+          </View>
           <View style={styles.headerIcons}>
-            <View style={styles.streakInline}>
-              <Text style={styles.streakEmoji}>🔥</Text>
-              <Text style={styles.streakCount}>{streak > 0 ? streak : '-'}</Text>
-            </View>
+            <TouchableOpacity 
+              onPress={() => setShowStreakModal(true)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.streakInline, theme.name === 'light' && { backgroundColor: '#FFFFFF', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16, borderWidth: 1, borderColor: '#E8E5DC', shadowColor: 'rgba(139, 92, 70, 0.08)', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 8 }]}>
+                <Text style={[styles.streakEmoji, { fontSize: theme.name === 'light' ? 16 : 18 }]}>🔥</Text>
+                <Text style={[styles.streakCount, { color: theme.colors.primaryText, fontSize: theme.name === 'light' ? 14 : 14, fontWeight: theme.name === 'light' ? '700' : '600' }]}>{streak > 0 ? streak : '-'}</Text>
+              </View>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -463,7 +462,15 @@ export default function DashboardScreenNew() {
             resizeMode="contain"
           />
           <View style={styles.greetingInOrb}>
-            <Text style={styles.greetingText}>
+            <Text style={[styles.greetingText, { 
+              color: '#FFFFFF',
+              textShadowColor: theme.name === 'light' ? 'rgba(0, 0, 0, 0.15)' : 'transparent',
+              textShadowOffset: { width: 0, height: 1 },
+              textShadowRadius: 3,
+              fontWeight: '400',
+              fontSize: 28,
+              letterSpacing: 0.5
+            }]}>
               Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}
             </Text>
           </View>
@@ -488,7 +495,7 @@ export default function DashboardScreenNew() {
                 </View>
               </LinearGradient>
             </TouchableOpacity>
-            <Text style={[styles.actionLabel, { color: 'rgba(255, 255, 255, 0.8)' }]}>Write</Text>
+            <Text style={[styles.actionLabel, { color: theme.colors.primaryText }]}>Write</Text>
           </View>
 
           <View style={styles.actionItem}>
@@ -508,7 +515,7 @@ export default function DashboardScreenNew() {
                 </View>
               </LinearGradient>
             </TouchableOpacity>
-            <Text style={[styles.actionLabel, { color: 'rgba(255, 255, 255, 0.8)' }]}>{isRecording ? 'Listening...' : 'Speak'}</Text>
+            <Text style={[styles.actionLabel, { color: theme.colors.primaryText }]}>{isRecording ? 'Listening...' : 'Speak'}</Text>
           </View>
 
           <View style={styles.actionItem}>
@@ -527,7 +534,7 @@ export default function DashboardScreenNew() {
                 </View>
               </LinearGradient>
             </TouchableOpacity>
-            <Text style={[styles.actionLabel, { color: 'rgba(255, 255, 255, 0.8)' }]}>Scan</Text>
+            <Text style={[styles.actionLabel, { color: theme.colors.primaryText }]}>Scan</Text>
           </View>
         </View>
 
@@ -535,80 +542,89 @@ export default function DashboardScreenNew() {
 
         {/* Today's Insights - Data-driven */}
         <View style={styles.insightsSection}>
-          <Text style={[styles.sectionTitle, { color: 'rgba(255, 255, 255, 0.9)' }]}>
-            Today's insights
-          </Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>Today's insights</Text>
           {!hasEntryToday ? (
-            <TouchableOpacity
-              style={[styles.insightCard, styles.noEntryCard, { backgroundColor: 'rgba(20, 20, 20, 0.8)', borderColor: 'rgba(255, 255, 255, 0.1)' }]}
-              onPress={() => {
-                console.log('[HomeInsights] No entry CTA tapped -> CreateEntry');
-                navigation.navigate('CreateEntry');
-              }}
+            <TouchableOpacity 
+              style={[styles.insightCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
+              onPress={() => navigation.navigate('CreateEntry')}
               activeOpacity={0.7}
             >
               <View style={styles.insightHeader}>
-                <Ionicons name="create-outline" size={24} color="#8b5cf6" />
-                <Text style={[styles.insightTitle, { color: 'rgba(255, 255, 255, 0.95)', fontSize: 18 }]}>No check-in yet</Text>
+                <Ionicons name="create-outline" size={24} color={theme.colors.primary} />
+                <Text style={[styles.insightTitle, { color: theme.colors.primaryText, fontSize: 18 }]}>No check-in yet</Text>
               </View>
-              <Text style={[styles.insightText, { color: 'rgba(255, 255, 255, 0.6)' }]}>Write now to unlock insights</Text>
+              <Text style={[styles.insightText, { color: theme.colors.secondaryText }]}>Write now to unlock insights</Text>
               <View style={styles.ctaArrow}>
-                <Ionicons name="arrow-forward" size={20} color="#8b5cf6" />
+                <Ionicons name="arrow-forward" size={20} color={theme.colors.tertiaryText} />
               </View>
             </TouchableOpacity>
           ) : todayInsights.length > 0 ? (
             todayInsights.map((insight, index) => (
-              <View key={index} style={[styles.insightCard, { backgroundColor: 'rgba(20, 20, 20, 0.8)', borderColor: 'rgba(255, 255, 255, 0.1)' }]}>
+              <View key={index} style={[styles.insightCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
                 <View style={styles.insightHeader}>
                   <Ionicons name={insight.icon as any} size={20} color={insight.iconColor} />
-                  <Text style={[styles.insightTitle, { color: 'rgba(255, 255, 255, 0.9)' }]}>{insight.title}</Text>
+                  <Text style={[styles.insightTitle, { color: theme.colors.primaryText }]}>{insight.title}</Text>
                 </View>
-                <Text style={[styles.insightText, { color: 'rgba(255, 255, 255, 0.5)' }]}>{insight.description}</Text>
+                <Text style={[styles.insightText, { color: theme.colors.secondaryText }]}>{insight.description}</Text>
               </View>
             ))
           ) : (
-            <View style={[styles.insightCard, { backgroundColor: 'rgba(20, 20, 20, 0.8)', borderColor: 'rgba(255, 255, 255, 0.1)' }]}>
+            <View style={[styles.insightCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
               <View style={styles.insightHeader}>
-                <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
-                <Text style={[styles.insightTitle, { color: 'rgba(255, 255, 255, 0.9)' }]}>Great start!</Text>
+                <Ionicons name="checkmark-circle" size={20} color={theme.colors.success} />
+                <Text style={[styles.insightTitle, { color: theme.colors.primaryText }]}>Great start!</Text>
               </View>
-              <Text style={[styles.insightText, { color: 'rgba(255, 255, 255, 0.5)' }]}>You've journaled today. Keep it up!</Text>
+              <Text style={[styles.insightText, { color: theme.colors.secondaryText }]}>You've journaled today. Keep it up!</Text>
             </View>
           )}
         </View>
 
         {/* Suggested Challenges */}
         <View style={styles.challengesSection}>
-          <Text style={[styles.sectionTitle, { color: 'rgba(255, 255, 255, 0.9)' }]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>
             Suggested for you
           </Text>
           <TouchableOpacity 
-            style={[styles.challengeCard, { backgroundColor: 'rgba(20, 20, 20, 0.8)', borderColor: 'rgba(255, 255, 255, 0.1)' }]}
+            style={[styles.challengeCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
             onPress={() => navigation.navigate('Meditation')}
             activeOpacity={0.7}
           >
             <View style={styles.challengeContent}>
               <Text style={styles.challengeEmoji}>🧘</Text>
               <View style={styles.challengeInfo}>
-                <Text style={[styles.challengeTitle, { color: 'rgba(255, 255, 255, 0.95)' }]}>5-minute meditation</Text>
-                <Text style={[styles.challengeSubtext, { color: 'rgba(255, 255, 255, 0.4)' }]}>Start your day mindfully</Text>
+                <Text style={[styles.challengeTitle, { color: theme.colors.primaryText }]}>5-minute meditation</Text>
+                <Text style={[styles.challengeSubtext, { color: theme.colors.tertiaryText }]}>Start your day mindfully</Text>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="rgba(255, 255, 255, 0.3)" />
+            <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.challengeCard, { backgroundColor: 'rgba(20, 20, 20, 0.8)', borderColor: 'rgba(255, 255, 255, 0.1)' }]}
+            style={[styles.challengeCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
             onPress={() => navigation.navigate('Gratitude')}
             activeOpacity={0.7}
           >
             <View style={styles.challengeContent}>
               <Text style={styles.challengeEmoji}>📝</Text>
               <View style={styles.challengeInfo}>
-                <Text style={[styles.challengeTitle, { color: 'rgba(255, 255, 255, 0.95)' }]}>Gratitude practice</Text>
-                <Text style={[styles.challengeSubtext, { color: 'rgba(255, 255, 255, 0.4)' }]}>List 3 things you're grateful for</Text>
+                <Text style={[styles.challengeTitle, { color: theme.colors.primaryText }]}>Gratitude practice</Text>
+                <Text style={[styles.challengeSubtext, { color: theme.colors.tertiaryText }]}>List 3 things you're grateful for</Text>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="rgba(255, 255, 255, 0.3)" />
+            <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.challengeCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
+            onPress={() => navigation.navigate('AmbientSounds')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.challengeContent}>
+              <Text style={styles.challengeEmoji}>🌧️</Text>
+              <View style={styles.challengeInfo}>
+                <Text style={[styles.challengeTitle, { color: theme.colors.primaryText }]}>Ambient sounds</Text>
+                <Text style={[styles.challengeSubtext, { color: theme.colors.tertiaryText }]}>Relax with calming nature sounds</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
           </TouchableOpacity>
         </View>
 
@@ -638,6 +654,73 @@ export default function DashboardScreenNew() {
         visible={showIntroOverlay}
         onClose={handleCloseIntro}
       />
+
+      {/* Streak Modal */}
+      {showStreakModal && (
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity 
+            style={styles.modalBackdrop}
+            activeOpacity={1}
+            onPress={() => setShowStreakModal(false)}
+          />
+          <View style={styles.streakModalContainer}>
+            <View style={styles.streakModalHeader}>
+              <View style={styles.streakModalBrand}>
+                <Image 
+                  source={require('../public/Insight-Logo-nobg.webp')} 
+                  style={styles.streakModalLogo}
+                />
+                <Text style={[styles.streakModalBrandText, { color: theme.colors.primaryText }]}>Insight</Text>
+              </View>
+              <View style={styles.streakModalStreakBadge}>
+                <Text style={styles.streakModalStreakEmoji}>🔥</Text>
+                <Text style={[styles.streakModalStreakNumber, { color: '#1a1a1a' }]}>{streak}</Text>
+              </View>
+            </View>
+
+            <View style={styles.streakModalContent}>
+              <View style={styles.streakModalIconContainer}>
+                <LinearGradient
+                  colors={['#FFE5CC', '#FFD9B3', '#FFCC99']}
+                  style={styles.streakModalIconGradient}
+                >
+                  <Text style={styles.streakModalFireIcon}>🔥</Text>
+                  <Text style={styles.streakModalSparkle}>✨</Text>
+                  <Text style={styles.streakModalSparkle2}>✨</Text>
+                </LinearGradient>
+              </View>
+
+              <Text style={[styles.streakModalTitle, { color: '#E89B6C' }]}>
+                {streak} Day streak
+              </Text>
+
+              <View style={styles.streakModalCalendar}>
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                  <View key={index} style={styles.streakModalDayContainer}>
+                    <Text style={[styles.streakModalDayLabel, { color: theme.colors.tertiaryText }]}>{day}</Text>
+                    <View style={[
+                      styles.streakModalDayCircle,
+                      index < streak && { backgroundColor: theme.colors.primary }
+                    ]} />
+                  </View>
+                ))}
+              </View>
+
+              <Text style={[styles.streakModalMessage, { color: theme.colors.secondaryText }]}>
+                You're building momentum! The more you journal, the deeper your self-understanding grows.
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.streakModalButton, { backgroundColor: theme.colors.primaryText }]}
+              onPress={() => setShowStreakModal(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.streakModalButtonText}>Continue</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -666,6 +749,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 20,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  logoIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 12,
+  },
+  brandText: {
+    fontSize: 24,
+    fontWeight: '600',
+    letterSpacing: 0.8,
+  },
+  headerIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   profilePictureContainer: {
     width: 44,
@@ -713,14 +816,9 @@ const styles = StyleSheet.create({
   greetingText: {
     fontSize: 32,
     fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.98)',
     letterSpacing: 1.2,
     textAlign: 'center',
     lineHeight: 42,
-  },
-  headerIcons: {
-    flexDirection: 'row',
-    gap: 12,
   },
   iconButton: {
     width: 44,
@@ -1000,5 +1098,141 @@ const styles = StyleSheet.create({
     right: 16,
     top: '50%',
     marginTop: -10,
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  modalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  streakModalContainer: {
+    width: width * 0.85,
+    maxWidth: 400,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  streakModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  streakModalBrand: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  streakModalLogo: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+  },
+  streakModalBrandText: {
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  streakModalStreakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  streakModalStreakEmoji: {
+    fontSize: 20,
+  },
+  streakModalStreakNumber: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  streakModalContent: {
+    alignItems: 'center',
+  },
+  streakModalIconContainer: {
+    marginBottom: 20,
+  },
+  streakModalIconGradient: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  streakModalFireIcon: {
+    fontSize: 60,
+  },
+  streakModalSparkle: {
+    position: 'absolute',
+    top: 10,
+    right: 15,
+    fontSize: 24,
+  },
+  streakModalSparkle2: {
+    position: 'absolute',
+    bottom: 15,
+    left: 10,
+    fontSize: 20,
+  },
+  streakModalTitle: {
+    fontSize: 32,
+    fontWeight: '700',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  streakModalCalendar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 24,
+    paddingHorizontal: 8,
+  },
+  streakModalDayContainer: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  streakModalDayLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  streakModalDayCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#E8E5DC',
+  },
+  streakModalMessage: {
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  streakModalButton: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  streakModalButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

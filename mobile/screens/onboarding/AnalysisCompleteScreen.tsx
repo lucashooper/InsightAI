@@ -111,7 +111,7 @@ export default function AnalysisCompleteScreen({ navigation }: Props) {
 
     const handleContinue = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        navigation.navigate('Paywall');
+        navigation.navigate('ValueProp');
     };
 
     return (

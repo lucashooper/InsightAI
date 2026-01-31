@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { mobileAiService } from '../services/mobileAiService';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 import ImmersiveAnalysisOverlay from '../components/shared/ImmersiveAnalysisOverlay';
 
 // Helper function to get color styling based on emotion sentiment
@@ -92,6 +93,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 export default function EntryDetailScreenNew({ route, navigation }: any) {
   const { entry: initialEntry, entryId, shouldAnalyze } = route.params || {};
   const { theme } = useTheme();
+  const { user } = useAuth();
   const [analyzing, setAnalyzing] = useState(false);
   const [entry, setEntry] = useState<any>(initialEntry || null);
   const [editableContent, setEditableContent] = useState(initialEntry?.content || '');
@@ -99,7 +101,8 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
   const [isModified, setIsModified] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [strengthsExpanded, setStrengthsExpanded] = useState(true);
-  const [growthExpanded, setGrowthExpanded] = useState(false);
+  const [growthExpanded, setGrowthExpanded] = useState(true);
+  const [addingToPlaybook, setAddingToPlaybook] = useState<string | null>(null);
 
   const [analysisOverlayVisible, setAnalysisOverlayVisible] = useState(false);
   const [analysisOverlayMode, setAnalysisOverlayMode] = useState<'loading' | 'results'>('loading');
@@ -329,6 +332,53 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
     }
   };
 
+  const handleAddToPlaybook = async (growthText: string, cardIndex: number) => {
+    if (!user || addingToPlaybook) return;
+
+    try {
+      setAddingToPlaybook(`growth-${cardIndex}`);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      // Generate actionable protocol using AI
+      const protocol = await mobileAiService.generateProtocol(growthText);
+
+      // Save to actionable_insights table (Daily Protocols)
+      const { error } = await supabase
+        .from('actionable_insights')
+        .insert({
+          user_id: user.id,
+          title: protocol.name,
+          description: `${protocol.practice}\n\n**Why it works:** ${protocol.why}`,
+          category: 'general',
+          difficulty: 'moderate',
+          emoji: '📈',
+          status: 'active',
+          source: 'ai_generated',
+        });
+
+      if (error) {
+        console.error('[EntryDetail] Error saving protocol:', error);
+        Alert.alert('Error', 'Failed to add protocol to Playbook. Please try again.');
+        return;
+      }
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert(
+        'Added to Playbook! 🎯',
+        `"${protocol.name}" has been added to your Daily Protocols.`,
+        [
+          { text: 'View Playbook', onPress: () => navigation.navigate('Playbook') },
+          { text: 'OK', style: 'cancel' },
+        ]
+      );
+    } catch (error) {
+      console.error('[EntryDetail] Error adding to playbook:', error);
+      Alert.alert('Error', 'Failed to create protocol. Please try again.');
+    } finally {
+      setAddingToPlaybook(null);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -554,11 +604,21 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                                         .replace(/Their/g, 'Your')}
                                     </Text>
                                     {isGrowthOrReflection && (
-                                      <TouchableOpacity style={[styles.playbookButton, cardStyle.button]}>
-                                        <Ionicons name="add-circle-outline" size={16} color={cardStyle.buttonColor} />
-                                        <Text style={[styles.playbookButtonText, { color: cardStyle.buttonColor }]}>
-                                          Add to Playbook
-                                        </Text>
+                                      <TouchableOpacity 
+                                        style={[styles.playbookButton, cardStyle.button]}
+                                        onPress={() => handleAddToPlaybook(card.text, index)}
+                                        disabled={addingToPlaybook === `growth-${index}`}
+                                      >
+                                        {addingToPlaybook === `growth-${index}` ? (
+                                          <ActivityIndicator size="small" color={cardStyle.buttonColor} />
+                                        ) : (
+                                          <>
+                                            <Ionicons name="add-circle-outline" size={16} color={cardStyle.buttonColor} />
+                                            <Text style={[styles.playbookButtonText, { color: cardStyle.buttonColor }]}>
+                                              Add to Playbook
+                                            </Text>
+                                          </>
+                                        )}
                                       </TouchableOpacity>
                                     )}
                                   </View>

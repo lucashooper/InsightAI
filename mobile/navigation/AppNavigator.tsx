@@ -3,7 +3,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../contexts/AuthContext';
-import { ActivityIndicator, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { useTheme } from '../contexts/ThemeContext';
+import { ActivityIndicator, View, StyleSheet, TouchableOpacity, Pressable, Text, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
@@ -26,6 +27,7 @@ import PlaybookScreen from '../screens/PlaybookScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import WelcomeScreen from '../screens/onboarding/WelcomeScreen';
 import ProductRevealScreen from '../screens/onboarding/ProductRevealScreen';
+import ValuePropScreen from '../screens/onboarding/ValuePropScreen';
 import AuthSelectionScreen from '../screens/onboarding/AuthSelectionScreen';
 import OnboardingQuestionScreen from '../screens/onboarding/OnboardingQuestionScreen';
 import NotificationPermissionScreen from '../screens/onboarding/NotificationPermissionScreen';
@@ -37,56 +39,106 @@ import MeditationScreen from '../screens/MeditationScreen';
 import GratitudeScreen from '../screens/GratitudeScreen';
 import GratitudeHistoryScreen from '../screens/GratitudeHistoryScreen';
 import EmotionDetailScreen from '../screens/EmotionDetailScreen';
+import AmbientSoundsScreen from '../screens/AmbientSoundsScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Center FAB Button Component
+// Center FAB Button Component with Overlay Menu
 function CenterFabButton() {
   const navigation = useNavigation<any>();
+  const { theme } = useTheme();
+  const [showMenu, setShowMenu] = React.useState(false);
+
+  const menuOptions = [
+    { icon: 'create-outline', label: 'Journal Entry', screen: 'CreateEntry' },
+    { icon: 'book-outline', label: 'Playbook', screen: 'Playbook' },
+    { icon: 'heart-outline', label: 'Gratitude', screen: 'Gratitude' },
+    { icon: 'musical-notes-outline', label: 'Meditation', screen: 'Meditation' },
+  ];
 
   return (
-    <TouchableOpacity
-      style={styles.centerFabButton}
-      onPress={() => {
-        console.log('[TabBar] + (FAB) pressed -> navigate to CreateEntry');
-        navigation.navigate('CreateEntry');
-      }}
-      activeOpacity={0.85}
-      accessibilityLabel="Create new journal entry"
-      accessibilityRole="button"
-    >
-      <LinearGradient
-        colors={['#8b5cf6', '#7c3aed', '#6d28d9']}
-        style={styles.centerFabGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+    <>
+      <TouchableOpacity
+        style={styles.centerFabButton}
+        onPress={() => setShowMenu(!showMenu)}
+        activeOpacity={0.85}
+        accessibilityLabel="Open quick actions menu"
+        accessibilityRole="button"
       >
-        <Ionicons name="add" size={28} color="#ffffff" />
-      </LinearGradient>
-    </TouchableOpacity>
+        <LinearGradient
+          colors={['#8b5cf6', '#7c3aed', '#6d28d9']}
+          style={styles.centerFabGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <Ionicons name={showMenu ? "close" : "add"} size={28} color="#ffffff" />
+        </LinearGradient>
+      </TouchableOpacity>
+
+      {/* Overlay Menu - Cal AI Style */}
+      <Modal
+        visible={showMenu}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowMenu(false)}
+      >
+        <Pressable 
+          style={styles.menuOverlay}
+          onPress={() => setShowMenu(false)}
+        >
+          <View style={styles.menuContainer}>
+            <View style={styles.menuGrid}>
+              {menuOptions.map((option) => (
+                <TouchableOpacity
+                  key={option.screen}
+                  style={[styles.menuCard, { backgroundColor: theme.name === 'light' ? '#FFFFFF' : '#1a1a1a' }]}
+                  onPress={() => {
+                    setShowMenu(false);
+                    navigation.navigate(option.screen);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.menuCardIconContainer}>
+                    <Ionicons name={option.icon as any} size={28} color="#8b5cf6" />
+                  </View>
+                  <Text style={[styles.menuCardLabel, { color: theme.colors.primaryText }]}>{option.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
+    </>
   );
 }
 
 // Bottom Tab Navigator for main app screens
 function MainTabs() {
+  const { theme } = useTheme();
+  
   return (
     <Tab.Navigator
       initialRouteName="Home"
       screenOptions={{
         headerShown: false,
-        tabBarShowLabel: false, // Hide all labels
+        tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: '#0a0a0a',
-          borderTopColor: '#1a1a1a',
+          backgroundColor: theme.name === 'light' ? '#FFFFFF' : '#0a0a0a',
+          borderTopColor: theme.name === 'light' ? '#E8E5DC' : '#1a1a1a',
           borderTopWidth: 1,
           height: 70,
           paddingBottom: 10,
           paddingTop: 10,
         },
+        tabBarItemStyle: {
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+        },
         tabBarActiveTintColor: '#8b5cf6',
-        tabBarInactiveTintColor: '#666',
+        tabBarInactiveTintColor: theme.name === 'light' ? '#6B6B6B' : '#666',
       }}
     >
       {/* Tab 1: Home (Dashboard) */}
@@ -136,13 +188,13 @@ function MainTabs() {
           },
         })}
       />
-      {/* Tab 4: Dashboard (Playbook) */}
+      {/* Tab 5: Dashboard (Analytics) */}
       <Tab.Screen
         name="Dashboard"
-        component={PlaybookScreen}
+        component={DashboardScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Ionicons name="book" size={24} color={color} />
+            <Ionicons name="analytics" size={24} color={color} />
           ),
           tabBarAccessibilityLabel: "Dashboard",
         }}
@@ -152,19 +204,19 @@ function MainTabs() {
           },
         }}
       />
-      {/* Tab 5: Settings */}
+      {/* Tab 6: Settings */}
       <Tab.Screen
-        name="SettingsTab"
+        name="Settings"
         component={SettingsScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Ionicons name="settings" size={24} color={color} />
+            <Ionicons name="settings-outline" size={24} color={color} />
           ),
           tabBarAccessibilityLabel: "Settings",
         }}
         listeners={{
           tabPress: () => {
-            console.log('[NAV] Tab -> Settings');
+            console.log('[TabBar] Settings tab pressed');
           },
         }}
       />
@@ -291,6 +343,7 @@ export default function AppNavigator() {
               <Stack.Screen name="Gratitude" component={GratitudeScreen} />
               <Stack.Screen name="GratitudeHistory" component={GratitudeHistoryScreen} options={{ headerShown: false }} />
               <Stack.Screen name="EmotionDetail" component={EmotionDetailScreen} options={{ headerShown: false }} />
+              <Stack.Screen name="AmbientSounds" component={AmbientSoundsScreen} options={{ headerShown: false }} />
               <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
               <Stack.Screen name="Paywall" component={PaywallScreen} />
             </>
@@ -305,6 +358,7 @@ export default function AppNavigator() {
               <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
               <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
               <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
+              <Stack.Screen name="ValueProp" component={ValuePropScreen} />
               <Stack.Screen name="Paywall" component={PaywallScreen} />
               <Stack.Screen name="OnboardingSummary" component={OnboardingSummaryScreen} />
 
@@ -317,6 +371,7 @@ export default function AppNavigator() {
               <Stack.Screen name="Gratitude" component={GratitudeScreen} />
               <Stack.Screen name="GratitudeHistory" component={GratitudeHistoryScreen} options={{ headerShown: false }} />
               <Stack.Screen name="EmotionDetail" component={EmotionDetailScreen} options={{ headerShown: false }} />
+              <Stack.Screen name="AmbientSounds" component={AmbientSoundsScreen} options={{ headerShown: false }} />
               <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
             </>
           )}
@@ -336,6 +391,7 @@ export default function AppNavigator() {
           <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
           <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
           <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
+          <Stack.Screen name="ValueProp" component={ValuePropScreen} />
           <Stack.Screen name="Paywall" component={PaywallScreen} />
           
           {/* Auth screens */}
@@ -363,6 +419,8 @@ const styles = StyleSheet.create({
     top: -20,
     justifyContent: 'center',
     alignItems: 'center',
+    width: 56,
+    marginLeft: 0,
   },
   centerFabGradient: {
     width: 56,
@@ -375,5 +433,54 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 16,
     elevation: 12,
+  },
+  menuOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    zIndex: 9999,
+  },
+  menuContainer: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    right: 20,
+    zIndex: 10000,
+  },
+  menuGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  menuCard: {
+    width: '48%',
+    height: 140,
+    borderRadius: 20,
+    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  menuCardIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  menuCardLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

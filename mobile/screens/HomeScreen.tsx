@@ -398,11 +398,11 @@ export default function HomeScreen({ navigation, route }: any) {
         onLongPress={() => handleEntryLongPress(item)}
         activeOpacity={0.7}
       >
-        <StandardContainer style={styles.premiumCard}>
+        <StandardContainer style={[styles.premiumCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
           <View style={styles.cardGradient}>
             <View style={styles.entryHeader}>
               <View style={styles.entryTitleRow}>
-                <Text style={styles.entryTitle} numberOfLines={1}>
+                <Text style={[styles.entryTitle, { color: theme.colors.primaryText }]} numberOfLines={1}>
                   {isHidden ? 'Locked entry' : searchQuery.trim() ? highlightText(item.title || 'Untitled Entry', searchQuery) : item.title || 'Untitled Entry'}
                 </Text>
                 {item.mood && (
@@ -419,12 +419,12 @@ export default function HomeScreen({ navigation, route }: any) {
               )}
             </View>
 
-            <Text style={styles.entryContent} numberOfLines={3}>
+            <Text style={[styles.entryContent, { color: theme.colors.secondaryText }]} numberOfLines={3}>
               {isHidden ? 'Tap to unlock and view this entry.' : searchQuery.trim() ? highlightText(item.content, searchQuery) : item.content}
             </Text>
 
             <View style={styles.entryFooter}>
-              <Text style={styles.entryDate}>{formatDate(item.created_at)}</Text>
+              <Text style={[styles.entryDate, { color: theme.colors.tertiaryText }]}>{formatDate(item.created_at)}</Text>
               {hasInsights && (
                 <TouchableOpacity
                   style={styles.viewInsightsButton}
@@ -463,7 +463,7 @@ export default function HomeScreen({ navigation, route }: any) {
           {streak.currentStreak > 0 && (
             <View style={styles.streakContainerClean}>
               <Text style={styles.flameEmoji}>🔥</Text>
-              <Text style={styles.streakNumber}>{streak.currentStreak}</Text>
+              <Text style={[styles.streakNumber, { color: theme.colors.primaryText }]}>{streak.currentStreak}</Text>
             </View>
           )}
         </View>

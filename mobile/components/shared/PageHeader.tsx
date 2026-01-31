@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../contexts/ThemeContext';
 
 type Props = {
   title: string;
@@ -10,17 +11,19 @@ type Props = {
 };
 
 export default function PageHeader({ title, onBack, right, style }: Props) {
+  const { theme } = useTheme();
+  
   return (
     <View style={[styles.container, style]}>
       <View style={styles.left}>
         {onBack ? (
           <TouchableOpacity onPress={onBack} style={styles.backButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Ionicons name="arrow-back" size={22} color="rgba(255, 255, 255, 0.85)" />
+            <Ionicons name="arrow-back" size={22} color={theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.85)'} />
           </TouchableOpacity>
         ) : (
           <View style={styles.backPlaceholder} />
         )}
-        <Text style={styles.title}>{title}</Text>
+        <Text style={[styles.title, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>{title}</Text>
       </View>
       <View style={styles.right}>{right}</View>
     </View>

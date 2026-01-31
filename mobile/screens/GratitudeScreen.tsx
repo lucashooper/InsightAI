@@ -97,14 +97,14 @@ export default function GratitudeScreen({ navigation }: any) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="rgba(255, 255, 255, 0.7)" />
+          <Ionicons name="arrow-back" size={24} color={theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.7)'} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Gratitude Practice</Text>
+        <Text style={[styles.headerTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>Gratitude Practice</Text>
         <TouchableOpacity 
           onPress={() => navigation.navigate('GratitudeHistory')} 
           style={styles.historyButton}
         >
-          <Ionicons name="time-outline" size={24} color="rgba(255, 255, 255, 0.9)" />
+          <Ionicons name="time-outline" size={24} color={theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.9)'} />
         </TouchableOpacity>
       </View>
 
@@ -132,18 +132,18 @@ export default function GratitudeScreen({ navigation }: any) {
 
           {/* Prompt */}
           <View style={styles.promptContainer}>
-            <Text style={styles.promptNumber}>{currentPrompt + 1} of 3</Text>
-            <Text style={styles.promptText}>{GRATITUDE_PROMPTS[currentPrompt]}</Text>
+            <Text style={[styles.promptNumber, { color: theme.name === 'light' ? '#8b5cf6' : 'rgba(139, 92, 246, 0.8)' }]}>{currentPrompt + 1} of 3</Text>
+            <Text style={[styles.promptText, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>{GRATITUDE_PROMPTS[currentPrompt]}</Text>
           </View>
 
           {/* Input */}
           <View style={styles.inputContainer}>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}
               value={responses[currentPrompt]}
               onChangeText={handleResponseChange}
               placeholder="Write your thoughts..."
-              placeholderTextColor="rgba(255, 255, 255, 0.3)"
+              placeholderTextColor={theme.name === 'light' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.3)'}
               multiline
               textAlignVertical="top"
               autoFocus={false}
@@ -221,7 +221,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.95)',
   },
   historyButton: {
     width: 44,
@@ -262,7 +261,6 @@ const styles = StyleSheet.create({
   promptNumber: {
     fontSize: 14,
     fontWeight: '600',
-    color: 'rgba(139, 92, 246, 0.8)',
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 12,
@@ -270,7 +268,6 @@ const styles = StyleSheet.create({
   promptText: {
     fontSize: 28,
     fontWeight: '300',
-    color: 'rgba(255, 255, 255, 0.95)',
     lineHeight: 38,
   },
   inputContainer: {
@@ -278,7 +275,6 @@ const styles = StyleSheet.create({
   },
   input: {
     fontSize: 17,
-    color: 'rgba(255, 255, 255, 0.95)',
     lineHeight: 26,
     minHeight: 200,
     padding: 20,
