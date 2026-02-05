@@ -20,7 +20,7 @@ export default function AnalyzingScreen({ navigation }: Props) {
     useEffect(() => {
         // Navigate after 9 seconds
         const navigationTimer = setTimeout(() => {
-            navigation.replace('AnalysisComplete');
+            navigation.replace('OnboardingSummary');
         }, 9000);
 
         // Cycle through status messages every 2.25 seconds (9s / 4 messages)

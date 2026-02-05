@@ -40,7 +40,20 @@ export default function SignupPasswordScreen({ navigation, route }: any) {
 
     if (error) {
       console.error('[SIGNUP] Error:', error);
-      Alert.alert('Signup Failed', error.message);
+      
+      // Check if user already exists
+      if (error.message.includes('already registered') || error.message.includes('already exists') || error.message.includes('User already registered')) {
+        Alert.alert(
+          'Account Already Exists',
+          'This email is already registered. Please log in instead or use a different email.',
+          [
+            { text: 'Go to Login', onPress: () => navigation.navigate('Login') },
+            { text: 'Try Different Email', style: 'cancel' }
+          ]
+        );
+      } else {
+        Alert.alert('Signup Failed', error.message);
+      }
     } else {
       console.log('[SIGNUP] Success! Navigating to verification...');
       // Navigate to email verification

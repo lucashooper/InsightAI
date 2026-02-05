@@ -11,10 +11,7 @@ export default function OTPInput({ length = 6, onComplete, error = false }: OTPI
   const [otp, setOtp] = useState<string[]>(Array(length).fill(''));
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
-  useEffect(() => {
-    // Auto-focus first input on mount
-    inputRefs.current[0]?.focus();
-  }, []);
+  // Removed auto-focus on mount - keyboard should only appear when user taps input
 
   const handleChange = (text: string, index: number) => {
     // Only allow numbers

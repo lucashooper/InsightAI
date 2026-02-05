@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, LayoutAnimation, Platform, UIManager, Animated } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
@@ -353,7 +354,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
           difficulty: 'moderate',
           emoji: '📈',
           status: 'active',
-          source: 'ai_generated',
+          source: 'ai_suggested',
         });
 
       if (error) {
@@ -420,16 +421,21 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                 styles.analyzeHeaderButton,
                 (!entry?.content || analyzing) && styles.analyzeHeaderButtonDisabled
               ]}
+              activeOpacity={0.8}
             >
               {analyzing ? (
-                <ActivityIndicator size="small" color="#a78bfa" />
+                <ActivityIndicator size="small" color="#ffffff" />
               ) : (
-                <Text style={[
-                  styles.analyzeHeaderText,
-                  !entry?.content && styles.analyzeHeaderTextDisabled
-                ]}>
-                  Analyze
-                </Text>
+                <LinearGradient
+                  colors={['#8b5cf6', '#7c3aed']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.analyzeHeaderGradient}
+                >
+                  <Text style={styles.analyzeHeaderText}>
+                    Analyze
+                  </Text>
+                </LinearGradient>
               )}
             </TouchableOpacity>
           )}
@@ -682,24 +688,30 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   analyzeHeaderButton: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    minWidth: 80,
+    alignItems: 'center',
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  analyzeHeaderButtonDisabled: {
+    opacity: 0.4,
+  },
+  analyzeHeaderGradient: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+    paddingVertical: 10,
+    borderRadius: 12,
     minWidth: 80,
     alignItems: 'center',
   },
-  analyzeHeaderButtonDisabled: {
-    opacity: 0.3,
-    backgroundColor: 'rgba(139, 92, 246, 0.05)',
-  },
   analyzeHeaderText: {
-    color: '#a78bfa',
-    fontSize: 16,
+    color: '#ffffff',
+    fontSize: 15,
     fontWeight: '600',
-  },
-  analyzeHeaderTextDisabled: {
-    color: 'rgba(139, 92, 246, 0.3)',
   },
   scrollView: {
     flex: 1,

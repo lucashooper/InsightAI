@@ -10,6 +10,7 @@ import {
   Animated,
   Modal,
 } from 'react-native';
+import MaskedView from '@react-native-masked-view/masked-view';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { LineChart } from 'react-native-chart-kit';
@@ -76,6 +77,8 @@ export default function DashboardScreen() {
     | null
   >(null);
   const [monthlyStory, setMonthlyStory] = useState<string>('');
+  const [showPatternsSection, setShowPatternsSection] = useState(false);
+  const patternsScrollRef = useRef<any>(null);
   const [storyLoading, setStoryLoading] = useState(false);
   const [showFullStory, setShowFullStory] = useState(false);
   const [milestoneStreak, setMilestoneStreak] = useState<number | null>(null);
@@ -107,10 +110,14 @@ export default function DashboardScreen() {
   const [aggregateGrowth, setAggregateGrowth] = useState<any[]>([]);
   const [strengthsExpanded, setStrengthsExpanded] = useState(false);
   const [growthExpanded, setGrowthExpanded] = useState(false);
+  const [monthlyStrengths, setMonthlyStrengths] = useState<Array<{summary: string; count: number; entries: string[]}>>([]);
+  const [monthlyGrowthAreas, setMonthlyGrowthAreas] = useState<Array<{summary: string; count: number; entries: string[]}>>([]);
+  const [strengthsSectionExpanded, setStrengthsSectionExpanded] = useState(false);
+  const [growthSectionExpanded, setGrowthSectionExpanded] = useState(false);
   const [userName, setUserName] = useState<string>('');
 
   const chartOpacity = useRef(new Animated.Value(0)).current;
-  const cardAnimations = useRef([...Array(5)].map(() => new Animated.Value(0))).current;
+  const cardAnimations = useRef([...Array(6)].map(() => new Animated.Value(0))).current;
   
   // Modal animation values
   const modalBackgroundOpacity = useRef(new Animated.Value(0)).current;
@@ -494,6 +501,30 @@ export default function DashboardScreen() {
 
       setAggregateStrengths(topStrengths);
       setAggregateGrowth(topGrowth);
+      
+      // Set monthly aggregated insights for new sections
+      const monthlyStrengthsData = Object.values(strengthsMap)
+        .filter(s => s.count >= 3) // Only show patterns with 3+ mentions
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 3)
+        .map(s => ({
+          summary: s.text,
+          count: s.count,
+          entries: s.entries
+        }));
+      
+      const monthlyGrowthData = Object.values(growthMap)
+        .filter(g => g.count >= 3) // Only show patterns with 3+ mentions
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 3)
+        .map(g => ({
+          summary: g.text,
+          count: g.count,
+          entries: g.entries
+        }));
+      
+      setMonthlyStrengths(monthlyStrengthsData);
+      setMonthlyGrowthAreas(monthlyGrowthData);
     } catch (error) {
       console.error('[Dashboard] Error aggregating insights:', error);
     }
@@ -783,22 +814,12 @@ export default function DashboardScreen() {
                 
                 <View style={styles.metricItem}>
                   <View style={styles.metricIconValue}>
-                    <Text style={styles.metricEmoji}>💭</Text>
+                    <Text style={styles.metricEmoji}>😊</Text>
                     <Text style={[styles.metricValue, { color: theme.colors.primaryText }]}>
                       {stats.avgWellbeingScore > 0 ? `${stats.avgWellbeingScore}/10` : '-'}
                     </Text>
                   </View>
                   <Text style={[styles.metricLabel, { color: theme.colors.secondaryText }]}>AVG MOOD</Text>
-                </View>
-                
-                <View style={styles.metricItem}>
-                  <View style={styles.metricIconValue}>
-                    <Text style={styles.metricEmoji}>⚡</Text>
-                    <Text style={[styles.metricValue, { color: theme.colors.primaryText }]}>
-                      {stats.avgResilienceScore > 0 ? `${stats.avgResilienceScore}/10` : '-'}
-                    </Text>
-                  </View>
-                  <Text style={[styles.metricLabel, { color: theme.colors.secondaryText }]}>ENERGY</Text>
                 </View>
               </View>
               
@@ -809,7 +830,7 @@ export default function DashboardScreen() {
                   : stats.avgWellbeingScore >= 7 
                   ? 'A steady week with consistent emotional balance.'
                   : stats.avgWellbeingScore >= 5
-                  ? 'A steady week, with lower energy mid-week.'
+                  ? 'A steady week overall.'
                   : stats.avgWellbeingScore > 0
                   ? 'You\'ve been navigating some challenges this week.'
                   : 'Begin tracking your mood to see insights here.'}
@@ -820,7 +841,7 @@ export default function DashboardScreen() {
             {monthlyStory && (
               <Animated.View style={{ opacity: cardAnimations[0], transform: [{ translateY: cardAnimations[0].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
                 <StandardContainer style={[styles.progressStoryCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-                  <Text style={[styles.progressStoryTitle, { color: theme.name === 'light' ? theme.colors.primaryText : theme.colors.primary }]}>Your {new Date().toLocaleDateString('en-US', { month: 'long' })} Story</Text>
+                  <Text style={[styles.progressStoryTitle, { color: theme.colors.primaryText }]}>Your {new Date().toLocaleDateString('en-US', { month: 'long' })} Story</Text>
                   {storyLoading ? (
                     <ActivityIndicator size="small" color="#D4AF37" style={{ marginVertical: 12 }} />
                   ) : (
@@ -862,9 +883,16 @@ export default function DashboardScreen() {
                       <TouchableOpacity 
                         style={styles.readFullStoryButton}
                         onPress={() => setShowFullStory(true)}
-                        activeOpacity={0.7}
+                        activeOpacity={0.8}
                       >
-                        <Text style={[styles.readFullStoryText, { color: theme.colors.primary }]}>Read Full Story →</Text>
+                        <LinearGradient
+                          colors={['#8b5cf6', '#7c3aed']}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                          style={styles.readFullStoryGradient}
+                        >
+                          <Text style={styles.readFullStoryText}>Read Full Story →</Text>
+                        </LinearGradient>
                       </TouchableOpacity>
                     </>
                   )}
@@ -946,12 +974,22 @@ export default function DashboardScreen() {
                       <TouchableOpacity 
                         style={styles.explorePatternsButton}
                         onPress={() => {
-                          // Scroll to patterns section on this screen
-                          console.log('[Dashboard] Explore Patterns pressed - scrolling to patterns');
+                          console.log('[Dashboard] Explore Patterns pressed - showing patterns section');
+                          setShowPatternsSection(true);
+                          setTimeout(() => {
+                            patternsScrollRef.current?.scrollToEnd({ animated: true });
+                          }, 100);
                         }}
-                        activeOpacity={0.7}
+                        activeOpacity={0.8}
                       >
-                        <Text style={styles.explorePatternsText}>Explore Patterns →</Text>
+                        <LinearGradient
+                          colors={['#8b5cf6', '#7c3aed']}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                          style={styles.explorePatternsGradient}
+                        >
+                          <Text style={styles.explorePatternsText}>Explore Patterns →</Text>
+                        </LinearGradient>
                       </TouchableOpacity>
                     </View>
                   </>
@@ -965,6 +1003,79 @@ export default function DashboardScreen() {
                 )}
               </StandardContainer>
             </Animated.View>
+
+            {/* YOUR STRENGTHS THIS MONTH - New Aggregated Section */}
+            {monthlyStrengths.length > 0 && (
+              <Animated.View style={{ opacity: cardAnimations[2], transform: [{ translateY: cardAnimations[2].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
+                <StandardContainer style={[styles.aggregateCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+                  <TouchableOpacity 
+                    style={styles.aggregateHeader}
+                    onPress={() => setStrengthsSectionExpanded(!strengthsSectionExpanded)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.aggregateHeaderLeft}>
+                      <Text style={[styles.aggregateSectionTitle, { color: '#10b981' }]}>YOUR STRENGTHS THIS MONTH</Text>
+                      <Text style={[styles.aggregateCount, { color: theme.colors.secondaryText }]}>{monthlyStrengths.length} patterns identified</Text>
+                    </View>
+                    <Ionicons 
+                      name={strengthsSectionExpanded ? 'chevron-up' : 'chevron-down'} 
+                      size={20} 
+                      color={theme.colors.secondaryText} 
+                    />
+                  </TouchableOpacity>
+                  
+                  {strengthsSectionExpanded && (
+                    <View style={styles.aggregateContent}>
+                      {monthlyStrengths.map((strength, index) => (
+                        <View key={index} style={[styles.aggregateItem, { borderLeftColor: '#10b981' }]}>
+                          <Text style={[styles.aggregateItemText, { color: theme.colors.primaryText }]}>{strength.summary}</Text>
+                          <Text style={[styles.aggregateItemCount, { color: '#10b981' }]}>From {strength.count} entries</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </StandardContainer>
+              </Animated.View>
+            )}
+
+            {/* AREAS TO EXPLORE - New Aggregated Section */}
+            {monthlyGrowthAreas.length > 0 && (
+              <Animated.View style={{ opacity: cardAnimations[2], transform: [{ translateY: cardAnimations[2].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
+                <StandardContainer style={[styles.aggregateCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+                  <TouchableOpacity 
+                    style={styles.aggregateHeader}
+                    onPress={() => setGrowthSectionExpanded(!growthSectionExpanded)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.aggregateHeaderLeft}>
+                      <Text style={[styles.aggregateSectionTitle, { color: '#D4AF37' }]}>AREAS TO EXPLORE</Text>
+                      <Text style={[styles.aggregateCount, { color: theme.colors.secondaryText }]}>{monthlyGrowthAreas.length} patterns identified</Text>
+                    </View>
+                    <Ionicons 
+                      name={growthSectionExpanded ? 'chevron-up' : 'chevron-down'} 
+                      size={20} 
+                      color={theme.colors.secondaryText} 
+                    />
+                  </TouchableOpacity>
+                  
+                  {growthSectionExpanded && (
+                    <View style={styles.aggregateContent}>
+                      {monthlyGrowthAreas.map((area, index) => (
+                        <View key={index} style={[styles.aggregateItem, { borderLeftColor: '#D4AF37' }]}>
+                          <Text style={[styles.aggregateItemText, { color: theme.colors.primaryText }]}>{area.summary}</Text>
+                          <View style={styles.aggregateItemFooter}>
+                            <Text style={[styles.aggregateItemCount, { color: '#D4AF37' }]}>Appeared in {area.count} entries</Text>
+                            <TouchableOpacity style={styles.addToPlaybookButton}>
+                              <Text style={styles.addToPlaybookText}>Add to Playbook →</Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </StandardContainer>
+              </Animated.View>
+            )}
 
             {/* Quiet Achievement Milestone */}
             {milestoneStreak && (
@@ -1168,6 +1279,86 @@ export default function DashboardScreen() {
               </Animated.View>
             )}
 
+            {/* Recurring Themes & Pattern Recognition Section */}
+            {showPatternsSection && (
+              <Animated.View style={{ opacity: cardAnimations[5], transform: [{ translateY: cardAnimations[5].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
+                <StandardContainer style={[styles.patternsAnalysisCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+                  <View style={styles.patternsAnalysisHeader}>
+                    <Text style={[styles.patternsAnalysisTitle, { color: theme.colors.primaryText }]}>🔍 Pattern Recognition</Text>
+                    <TouchableOpacity onPress={() => setShowPatternsSection(false)} activeOpacity={0.7}>
+                      <Ionicons name="close" size={24} color={theme.colors.secondaryText} />
+                    </TouchableOpacity>
+                  </View>
+                  
+                  <Text style={[styles.patternsAnalysisSubtitle, { color: theme.colors.secondaryText }]}>
+                    I notice recurring themes across your entries. Here's what stands out:
+                  </Text>
+
+                  {/* Recurring Themes */}
+                  {aggregateGrowth.length > 0 && (
+                    <View style={styles.recurringThemesSection}>
+                      <Text style={[styles.sectionLabel, { color: theme.colors.primary }]}>Recurring Themes</Text>
+                      {aggregateGrowth.slice(0, 3).map((growth, idx) => (
+                        <LinearGradient
+                          key={growth.id}
+                          colors={['rgba(139, 92, 246, 0.1)', 'rgba(139, 92, 246, 0.05)']}
+                          style={styles.themeCard}
+                        >
+                          <View style={styles.themeHeader}>
+                            <Text style={[styles.themeText, { color: theme.colors.primaryText }]}>{growth.text}</Text>
+                            <View style={styles.themeBadge}>
+                              <Text style={styles.themeBadgeText}>{growth.count}x</Text>
+                            </View>
+                          </View>
+                          <Text style={[styles.themeFrequency, { color: theme.colors.secondaryText }]}>{growth.frequency}</Text>
+                        </LinearGradient>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Pattern Insights */}
+                  {patternsToAddress.length > 0 && (
+                    <View style={styles.patternInsightsSection}>
+                      <Text style={[styles.sectionLabel, { color: theme.colors.primary }]}>Patterns I Notice</Text>
+                      {patternsToAddress.slice(0, 2).map((pattern, idx) => (
+                        <View key={pattern.id} style={styles.patternInsightCard}>
+                          <Text style={[styles.patternInsightText, { color: theme.colors.primaryText }]}>
+                            "I notice you mention {pattern.category.toLowerCase()} often. {pattern.summary}"
+                          </Text>
+                          <TouchableOpacity
+                            style={styles.explorePatternButton}
+                            onPress={() => {
+                              const entry = allNotes.find(n => n.id === pattern.entryId);
+                              if (entry) {
+                                navigation.navigate('EntryDetail', { entry });
+                              }
+                            }}
+                            activeOpacity={0.7}
+                          >
+                            <Text style={[styles.explorePatternText, { color: theme.colors.primary }]}>Explore this →</Text>
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Emotional Patterns */}
+                  {dominantEmotions.length > 0 && (
+                    <View style={styles.emotionalPatternsSection}>
+                      <Text style={[styles.sectionLabel, { color: theme.colors.primary }]}>Emotional Patterns</Text>
+                      <Text style={[styles.emotionalPatternText, { color: theme.colors.primaryText }]}>
+                        You've been feeling <Text style={{ fontWeight: '600', color: theme.colors.primary }}>{dominantEmotions[0].emotion.toLowerCase()}</Text> in {dominantEmotions[0].percentage}% of your recent entries.
+                        {dominantEmotions.length > 1 && ` You also experience ${dominantEmotions[1].emotion.toLowerCase()} (${dominantEmotions[1].percentage}%) frequently.`}
+                      </Text>
+                      <Text style={[styles.emotionalPatternSuggestion, { color: theme.colors.secondaryText }]}>
+                        This pattern suggests you might benefit from exploring what triggers these feelings and what helps you move through them.
+                      </Text>
+                    </View>
+                  )}
+                </StandardContainer>
+              </Animated.View>
+            )}
+
             {/* What's Working */}
             {whatsWorking.length > 0 && (
               <Animated.View style={{ opacity: cardAnimations[4], transform: [{ translateY: cardAnimations[4].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
@@ -1228,18 +1419,90 @@ export default function DashboardScreen() {
         transparent={true}
       >
         <Animated.View style={[styles.modalContainer, { opacity: modalBackgroundOpacity }]}>
+          <LinearGradient
+            colors={[
+              '#1a0f2e',
+              '#2d1a4a',
+              '#1a1535',
+              '#0f0a1a',
+              '#050208'
+            ]}
+            locations={[0, 0.25, 0.5, 0.75, 1]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={styles.modalBackgroundGradient}
+          >
+            {/* Starscape overlay */}
+            <View style={styles.starscapeContainer}>
+              {[...Array(40)].map((_, i) => {
+                const twinkleAnim = useRef(new Animated.Value(0.2 + Math.random() * 0.3)).current;
+                const size = 0.5 + Math.random() * 2.5;
+                const duration = 2000 + Math.random() * 3000;
+                
+                React.useEffect(() => {
+                  const twinkle = Animated.loop(
+                    Animated.sequence([
+                      Animated.timing(twinkleAnim, {
+                        toValue: 0.8 + Math.random() * 0.2,
+                        duration: duration,
+                        useNativeDriver: true,
+                      }),
+                      Animated.timing(twinkleAnim, {
+                        toValue: 0.2 + Math.random() * 0.3,
+                        duration: duration,
+                        useNativeDriver: true,
+                      }),
+                    ])
+                  );
+                  twinkle.start();
+                  return () => twinkle.stop();
+                }, []);
+                
+                return (
+                  <Animated.View
+                    key={i}
+                    style={[
+                      styles.star,
+                      {
+                        top: `${Math.random() * 100}%`,
+                        left: `${Math.random() * 100}%`,
+                        opacity: twinkleAnim,
+                        width: size,
+                        height: size,
+                      },
+                    ]}
+                  />
+                );
+              })}
+            </View>
           <View style={styles.premiumModalBackground}>
               <Animated.View style={[styles.modalHeader, { transform: [{ translateY: modalTitleTranslateY }] }]}>
-                <Text style={styles.modalTitle}>
-                  {userName ? `${userName}'s ${new Date().toLocaleDateString('en-US', { month: 'long' })} Story` : `Your ${new Date().toLocaleDateString('en-US', { month: 'long' })} Story`}
-                </Text>
                 <TouchableOpacity 
                   onPress={() => setShowFullStory(false)} 
-                  style={styles.modalCloseButton}
-                  activeOpacity={0.7}
+                  style={styles.modalBackButton}
+                  activeOpacity={0.6}
                 >
-                  <Ionicons name="close" size={28} color="#F5F1E8" />
+                  <Ionicons name="arrow-back" size={24} color="rgba(255, 255, 255, 0.8)" />
                 </TouchableOpacity>
+                <MaskedView
+                  maskElement={
+                    <Text style={styles.modalTitle}>
+                      {userName ? `${userName}'s ${new Date().toLocaleDateString('en-US', { month: 'long' })} Story` : `Your ${new Date().toLocaleDateString('en-US', { month: 'long' })} Story`}
+                    </Text>
+                  }
+                >
+                  <LinearGradient
+                    colors={['#FFFFFF', '#D4AF37']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={{ flex: 1 }}
+                  >
+                    <Text style={[styles.modalTitle, { opacity: 0 }]}>
+                      {userName ? `${userName}'s ${new Date().toLocaleDateString('en-US', { month: 'long' })} Story` : `Your ${new Date().toLocaleDateString('en-US', { month: 'long' })} Story`}
+                    </Text>
+                  </LinearGradient>
+                </MaskedView>
+                <View style={styles.modalHeaderSpacer} />
               </Animated.View>
               <Animated.ScrollView 
                 style={styles.modalContent} 
@@ -1254,10 +1517,23 @@ export default function DashboardScreen() {
               {/* Narrative Highlights - Premium Card */}
               {narrativeHighlights && (
                 <Animated.View style={[styles.premiumSection, { transform: [{ translateY: modalCard1TranslateY }] }]}>
-                  <Text style={styles.premiumSectionTitle}>NARRATIVE HIGHLIGHTS</Text>
+                  <MaskedView
+                    maskElement={
+                      <Text style={styles.premiumSectionTitle}>NARRATIVE HIGHLIGHTS</Text>
+                    }
+                  >
+                    <LinearGradient
+                      colors={['#FFFFFF', '#D4AF37']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={{ height: 30 }}
+                    >
+                      <Text style={[styles.premiumSectionTitle, { opacity: 0 }]}>NARRATIVE HIGHLIGHTS</Text>
+                    </LinearGradient>
+                  </MaskedView>
                   
                   <LinearGradient
-                    colors={['#1a0e13', '#2d1a22']}
+                    colors={['rgba(88, 50, 150, 0.4)', 'rgba(60, 30, 100, 0.35)']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.premiumCard}
@@ -1274,23 +1550,41 @@ export default function DashboardScreen() {
                         }}
                         activeOpacity={0.7}
                       >
-                        <Text style={styles.premiumHighlightText}>
-                          <Text style={styles.premiumHighlightIcon}>✨ </Text>
-                          <Text style={styles.premiumHighlightLabel}>Strongest Resilience: </Text>
-                          <Text style={styles.premiumHighlightValue}>{narrativeHighlights.strongestResilience.date}</Text>
-                        </Text>
-                        <Text style={styles.premiumHighlightSubtext}>"{narrativeHighlights.strongestResilience.title}" • Tap to view</Text>
+                        <View style={styles.highlightIconContainer}>
+                          <LinearGradient
+                            colors={['rgba(212, 175, 55, 0.3)', 'rgba(212, 175, 55, 0.1)']}
+                            style={styles.iconGlowCircle}
+                          >
+                            <Text style={styles.premiumHighlightIcon}>✨</Text>
+                          </LinearGradient>
+                        </View>
+                        <View style={styles.highlightTextContainer}>
+                          <Text style={styles.premiumHighlightText}>
+                            <Text style={styles.premiumHighlightLabel}>Strongest Resilience: </Text>
+                            <Text style={styles.premiumHighlightValue}>{narrativeHighlights.strongestResilience.date}</Text>
+                          </Text>
+                          <Text style={styles.premiumHighlightSubtext}>"{narrativeHighlights.strongestResilience.title}" • Tap to view</Text>
+                        </View>
                       </TouchableOpacity>
                     )}
 
                     {narrativeHighlights.keyTheme && (
                       <View style={styles.premiumHighlightRow}>
-                        <Text style={styles.premiumHighlightText}>
-                          <Text style={styles.premiumHighlightIcon}>💭 </Text>
-                          <Text style={styles.premiumHighlightLabel}>Key Theme: </Text>
-                          <Text style={styles.premiumHighlightValue}>{narrativeHighlights.keyTheme.theme}</Text>
-                          <Text style={styles.premiumHighlightMeta}> ({narrativeHighlights.keyTheme.count} entries)</Text>
-                        </Text>
+                        <View style={styles.highlightIconContainer}>
+                          <LinearGradient
+                            colors={['rgba(139, 92, 246, 0.3)', 'rgba(139, 92, 246, 0.1)']}
+                            style={styles.iconGlowCircle}
+                          >
+                            <Text style={styles.premiumHighlightIcon}>💭</Text>
+                          </LinearGradient>
+                        </View>
+                        <View style={styles.highlightTextContainer}>
+                          <Text style={styles.premiumHighlightText}>
+                            <Text style={styles.premiumHighlightLabel}>Key Theme: </Text>
+                            <Text style={styles.premiumHighlightValue}>{narrativeHighlights.keyTheme.theme}</Text>
+                            <Text style={styles.premiumHighlightMeta}> ({narrativeHighlights.keyTheme.count} entries)</Text>
+                          </Text>
+                        </View>
                       </View>
                     )}
 
@@ -1310,56 +1604,81 @@ export default function DashboardScreen() {
               {/* Monthly Stats - Premium Card */}
               {monthlyStats && (
                 <Animated.View style={[styles.premiumSection, { transform: [{ translateY: modalCard2TranslateY }] }]}>
-                  <Text style={styles.premiumSectionTitle}>YOUR DATA THIS MONTH</Text>
+                  <MaskedView
+                    maskElement={
+                      <Text style={styles.premiumSectionTitle}>YOUR DATA THIS MONTH</Text>
+                    }
+                  >
+                    <LinearGradient
+                      colors={['#FFFFFF', '#D4AF37']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={{ height: 30 }}
+                    >
+                      <Text style={[styles.premiumSectionTitle, { opacity: 0 }]}>YOUR DATA THIS MONTH</Text>
+                    </LinearGradient>
+                  </MaskedView>
                   
                   <LinearGradient
-                    colors={['#1a0e13', '#2d1a22']}
+                    colors={['rgba(88, 50, 150, 0.4)', 'rgba(60, 30, 100, 0.35)']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.premiumCard}
                   >
                     <View style={styles.premiumStatsGrid}>
-                      <View style={styles.premiumStatRow}>
-                        <Text style={styles.premiumStatText}>
-                          <Text style={styles.premiumStatIcon}>📊 </Text>
-                          <Text style={styles.premiumStatLabel}>Total reflections: </Text>
-                          <Text style={styles.premiumStatValue}>{monthlyStats.totalReflections}</Text>
-                        </Text>
+                      <View style={styles.statCompactCard}>
+                        <LinearGradient
+                          colors={['rgba(80, 120, 200, 0.3)', 'rgba(80, 120, 200, 0.1)']}
+                          style={styles.statIconGlow}
+                        >
+                          <Text style={styles.statIcon}>📊</Text>
+                        </LinearGradient>
+                        <View style={styles.statTextContainer}>
+                          <Text style={styles.statValue}>{monthlyStats.totalReflections}</Text>
+                          <Text style={styles.statLabel}>Total reflections</Text>
+                        </View>
                       </View>
                       
-                      <View style={styles.premiumStatRow}>
-                        <Text style={styles.premiumStatText}>
-                          <Text style={styles.premiumStatIcon}>🔥 </Text>
-                          <Text style={styles.premiumStatLabel}>Longest streak: </Text>
-                          <Text style={styles.premiumStatValue}>{monthlyStats.longestStreak}</Text>
-                        </Text>
+                      <View style={styles.statCompactCard}>
+                        <LinearGradient
+                          colors={['rgba(255, 100, 50, 0.3)', 'rgba(255, 100, 50, 0.1)']}
+                          style={styles.statIconGlow}
+                        >
+                          <Text style={styles.statIcon}>🔥</Text>
+                        </LinearGradient>
+                        <View style={styles.statTextContainer}>
+                          <Text style={styles.statValue}>{monthlyStats.longestStreak}</Text>
+                          <Text style={styles.statLabel}>Longest streak</Text>
+                        </View>
                       </View>
                       
                       {monthlyStats.bestDay && (
-                        <View style={styles.premiumStatRow}>
-                          <Text style={styles.premiumStatText}>
-                            <Text style={styles.premiumStatIcon}>😊 </Text>
-                            <Text style={styles.premiumStatLabel}>Best day: </Text>
-                            <Text style={styles.premiumStatValue}>{monthlyStats.bestDay.score}/10</Text>
-                            <Text style={styles.premiumStatMeta}> ({monthlyStats.bestDay.date})</Text>
-                          </Text>
+                        <View style={styles.statCompactCard}>
+                          <LinearGradient
+                            colors={['rgba(255, 200, 80, 0.3)', 'rgba(255, 200, 80, 0.1)']}
+                            style={styles.statIconGlow}
+                          >
+                            <Text style={styles.statIcon}>😊</Text>
+                          </LinearGradient>
+                          <View style={styles.statTextContainer}>
+                            <Text style={styles.statValue}>{monthlyStats.bestDay.score}/10</Text>
+                            <Text style={styles.statLabel}>Best day</Text>
+                            <Text style={styles.statMeta}>({monthlyStats.bestDay.date})</Text>
+                          </View>
                         </View>
                       )}
                       
-                      <View style={styles.premiumStatRow}>
-                        <Text style={styles.premiumStatText}>
-                          <Text style={styles.premiumStatIcon}>💪 </Text>
-                          <Text style={styles.premiumStatLabel}>Avg resilience: </Text>
-                          <Text style={styles.premiumStatValue}>{monthlyStats.avgResilience}/10</Text>
-                        </Text>
-                      </View>
-                      
-                      <View style={styles.premiumStatRow}>
-                        <Text style={styles.premiumStatText}>
-                          <Text style={styles.premiumStatIcon}>🧘 </Text>
-                          <Text style={styles.premiumStatLabel}>Avg well-being: </Text>
-                          <Text style={styles.premiumStatValue}>{monthlyStats.avgWellbeing}/10</Text>
-                        </Text>
+                      <View style={styles.statCompactCard}>
+                        <LinearGradient
+                          colors={['rgba(212, 175, 55, 0.3)', 'rgba(212, 175, 55, 0.1)']}
+                          style={styles.statIconGlow}
+                        >
+                          <Text style={styles.statIcon}>💪</Text>
+                        </LinearGradient>
+                        <View style={styles.statTextContainer}>
+                          <Text style={styles.statValue}>{monthlyStats.avgResilience}/10</Text>
+                          <Text style={styles.statLabel}>Avg resilience</Text>
+                        </View>
                       </View>
                     </View>
                   </LinearGradient>
@@ -1372,6 +1691,7 @@ export default function DashboardScreen() {
               </Text>
               </Animated.ScrollView>
           </View>
+          </LinearGradient>
         </Animated.View>
       </Modal>
 
@@ -1794,8 +2114,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: 'rgba(15, 23, 42, 0.96)',
     borderWidth: 1,
-    borderColor: 'rgba(167, 139, 250, 0.7)',
-    shadowColor: '#8b5cf6',
+    borderColor: 'rgba(212, 175, 55, 0.7)',
+    shadowColor: '#D4AF37',
     shadowOpacity: 0.4,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 6 },
@@ -1929,8 +2249,8 @@ const styles = StyleSheet.create({
     color: '#e5e7eb',
   },
   sheetCtaPrimary: {
-    backgroundColor: '#8b5cf6',
-    shadowColor: '#8b5cf6',
+    backgroundColor: '#D4AF37',
+    shadowColor: '#D4AF37',
     shadowOpacity: 0.45,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 6 },
@@ -2002,10 +2322,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 20,
+    elevation: 10,
   },
   bubbleGradient: {
     width: '100%',
@@ -2120,17 +2440,23 @@ const styles = StyleSheet.create({
   },
   readFullStoryButton: {
     alignSelf: 'flex-start',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: 'rgba(212, 175, 55, 0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.3)',
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  readFullStoryGradient: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 16,
   },
   readFullStoryText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#D4AF37',
+    color: '#ffffff',
   },
   inlineHighlights: {
     marginTop: 16,
@@ -2181,17 +2507,23 @@ const styles = StyleSheet.create({
   },
   explorePatternsButton: {
     alignSelf: 'flex-start',
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 12,
-    backgroundColor: 'rgba(139, 92, 246, 0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.4)',
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  explorePatternsGradient: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 16,
   },
   explorePatternsText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#8b5cf6',
+    color: '#ffffff',
   },
   // Quiet Achievement Milestone
   milestoneCard: {
@@ -2255,24 +2587,41 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 18,
     borderRadius: 12,
-    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+    backgroundColor: 'rgba(212, 175, 55, 0.15)',
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.4)',
+    borderColor: 'rgba(212, 175, 55, 0.4)',
   },
   viewEntryText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#8b5cf6',
+    color: '#D4AF37',
   },
-  // Full Story Modal - Premium Design (Pure Black like Slash)
+  // Full Story Modal - Premium Glassmorphic Design
   modalContainer: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.95)',
   },
+  modalBackgroundGradient: {
+    flex: 1,
+  },
+  starscapeContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 0,
+  },
+  star: {
+    position: 'absolute',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 50,
+  },
   premiumModalBackground: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: 'transparent',
     paddingTop: 60,
+    zIndex: 1,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -2281,11 +2630,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 20,
   },
+  modalBackButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  modalHeaderSpacer: {
+    width: 40,
+  },
   modalTitle: {
-    fontSize: 24,
-    fontWeight: '300',
-    color: '#F5F1E8',
-    letterSpacing: 0.5,
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#D4AF37',
+    letterSpacing: -0.5,
   },
   modalCloseButton: {
     width: 40,
@@ -2293,7 +2653,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: 'rgba(212, 175, 55, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.2)',
   },
   modalContent: {
     flex: 1,
@@ -2304,9 +2666,9 @@ const styles = StyleSheet.create({
   },
   modalStoryText: {
     fontSize: 16,
-    lineHeight: 26,
-    color: '#F5F1E8',
-    fontWeight: '300',
+    lineHeight: 25.6,
+    color: 'rgba(245, 241, 232, 0.9)',
+    fontWeight: '400',
     marginBottom: 8,
   },
   modalDivider: {
@@ -2326,80 +2688,232 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   premiumSectionTitle: {
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: '700',
-    color: 'rgba(212, 175, 55, 0.6)',
+    color: 'rgba(212, 175, 55, 0.7)',
     letterSpacing: 1.5,
     marginBottom: 12,
     textTransform: 'uppercase',
   },
   premiumCard: {
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.1)',
-    shadowColor: '#000',
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+    shadowColor: '#8b5cf6',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 32,
     elevation: 8,
+    backgroundColor: 'transparent',
+    overflow: 'hidden',
   },
   premiumHighlightRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     marginBottom: 16,
   },
+  highlightIconContainer: {
+    marginRight: 12,
+  },
+  iconGlowCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: 'rgba(212, 175, 55, 0.6)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  highlightTextContainer: {
+    flex: 1,
+  },
   premiumHighlightText: {
-    fontSize: 15,
+    fontSize: 16,
     lineHeight: 24,
-    color: '#F5F1E8',
+    color: 'rgba(255, 255, 255, 0.95)',
+    fontWeight: '500',
   },
   premiumHighlightIcon: {
-    fontSize: 16,
+    fontSize: 20,
   },
   premiumHighlightLabel: {
-    color: '#B8A99A',
+    color: 'rgba(255, 255, 255, 0.75)',
+    fontWeight: '500',
   },
   premiumHighlightValue: {
-    fontWeight: '500',
-    color: '#F5F1E8',
+    fontWeight: '600',
+    color: '#ffffff',
   },
   premiumHighlightMeta: {
-    color: '#B8A99A',
+    color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 14,
   },
   premiumHighlightSubtext: {
-    fontSize: 13,
-    color: '#B8A99A',
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.7)',
     marginTop: 4,
     fontStyle: 'italic',
+    lineHeight: 20,
   },
   premiumStatsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
   },
-  premiumStatRow: {
-    paddingVertical: 4,
+  statCompactCard: {
+    width: '48%',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: 'rgba(88, 50, 150, 0.2)',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.2)',
   },
-  premiumStatText: {
+  statTextContainer: {
+    marginLeft: 12,
+    flex: 1,
+    justifyContent: 'center',
+  },
+  statIconGlow: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: 'rgba(212, 175, 55, 0.4)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  statIcon: {
+    fontSize: 22,
+  },
+  statValue: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    lineHeight: 32,
+    textShadowColor: 'rgba(255, 255, 255, 0.3)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
+  },
+  statLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.65)',
+    marginTop: 2,
+  },
+  statMeta: {
+    fontSize: 11,
+    fontWeight: '400',
+    color: 'rgba(255, 255, 255, 0.5)',
+    marginTop: 2,
+  },
+  // Pattern Recognition Section Styles
+  patternsAnalysisCard: {
+    padding: 24,
+    marginBottom: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  patternsAnalysisHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  patternsAnalysisTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  patternsAnalysisSubtitle: {
     fontSize: 15,
-    lineHeight: 24,
-    color: '#F5F1E8',
+    lineHeight: 22,
+    marginBottom: 24,
   },
-  premiumStatIcon: {
-    fontSize: 18,
+  recurringThemesSection: {
+    marginBottom: 24,
   },
-  premiumStatValue: {
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    marginBottom: 12,
+    textTransform: 'uppercase',
+  },
+  themeCard: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  themeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  themeText: {
+    fontSize: 15,
+    lineHeight: 22,
+    flex: 1,
+    marginRight: 12,
+  },
+  themeBadge: {
+    backgroundColor: 'rgba(212, 175, 55, 0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  themeBadgeText: {
+    fontSize: 12,
     fontWeight: '600',
     color: '#D4AF37',
-    fontSize: 16,
   },
-  premiumStatLabel: {
-    color: '#F5F1E8',
+  themeFrequency: {
+    fontSize: 13,
+  },
+  patternInsightsSection: {
+    marginBottom: 24,
+  },
+  patternInsightCard: {
+    padding: 16,
+    backgroundColor: 'rgba(212, 175, 55, 0.05)',
+    borderRadius: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#D4AF37',
+    marginBottom: 12,
+  },
+  patternInsightText: {
     fontSize: 15,
-    fontWeight: '300',
+    lineHeight: 22,
+    fontStyle: 'italic',
+    marginBottom: 12,
   },
-  premiumStatMeta: {
-    color: '#B8A99A',
+  explorePatternButton: {
+    alignSelf: 'flex-start',
+  },
+  explorePatternText: {
     fontSize: 14,
-    fontWeight: '300',
+    fontWeight: '600',
+  },
+  emotionalPatternsSection: {
+    marginBottom: 0,
+  },
+  emotionalPatternText: {
+    fontSize: 15,
+    lineHeight: 24,
+    marginBottom: 12,
+  },
+  emotionalPatternSuggestion: {
+    fontSize: 14,
+    lineHeight: 22,
+    fontStyle: 'italic',
   },
   // Enhanced Modal Sections (legacy - keeping for compatibility)
   modalSectionTitle: {
@@ -2564,7 +3078,7 @@ const styles = StyleSheet.create({
   },
   patternTap: {
     fontSize: 12,
-    color: '#8b5cf6',
+    color: '#D4AF37',
     fontStyle: 'italic',
   },
   viewAllButton: {
@@ -2594,14 +3108,14 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 8,
-    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+    backgroundColor: 'rgba(212, 175, 55, 0.15)',
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.4)',
+    borderColor: 'rgba(212, 175, 55, 0.4)',
   },
   keepGoingText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#8b5cf6',
+    color: '#D4AF37',
   },
   // What's Working Section
   workingCard: {
@@ -2649,7 +3163,7 @@ const styles = StyleSheet.create({
   },
   // Aggregate Insights Sections
   aggregateCard: {
-    marginBottom: 16,
+    marginBottom: 20,
     borderRadius: 20,
     padding: 0,
     overflow: 'hidden',
@@ -2662,6 +3176,56 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 20,
+  },
+  aggregateHeaderLeft: {
+    flex: 1,
+  },
+  aggregateSectionTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    marginBottom: 4,
+  },
+  aggregateCount: {
+    fontSize: 13,
+    fontWeight: '400',
+  },
+  aggregateContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  aggregateItem: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderLeftWidth: 3,
+  },
+  aggregateItemText: {
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 8,
+  },
+  aggregateItemCount: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  aggregateItemFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  addToPlaybookButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(212, 175, 55, 0.15)',
+  },
+  addToPlaybookText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#D4AF37',
   },
   strengthsTitle: {
     fontSize: 15,

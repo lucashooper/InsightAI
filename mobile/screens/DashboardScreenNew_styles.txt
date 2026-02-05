@@ -1,4 +1,4 @@
-// Streak Modal Styles to add to DashboardScreenNew.tsx StyleSheet
+ // Streak Modal Styles to add to DashboardScreenNew.tsx StyleSheet
   modalOverlay: {
     position: 'absolute',
     top: 0,

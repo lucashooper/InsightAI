@@ -32,6 +32,8 @@ import AuthSelectionScreen from '../screens/onboarding/AuthSelectionScreen';
 import OnboardingQuestionScreen from '../screens/onboarding/OnboardingQuestionScreen';
 import NotificationPermissionScreen from '../screens/onboarding/NotificationPermissionScreen';
 import OnboardingSummaryScreen from '../screens/onboarding/OnboardingSummaryScreen';
+import PrivacyOnboardingScreen from '../screens/onboarding/PrivacyOnboardingScreen';
+import NotificationsOnboardingScreen from '../screens/onboarding/NotificationsOnboardingScreen';
 import AnalyzingScreen from '../screens/onboarding/AnalyzingScreen';
 import AnalysisCompleteScreen from '../screens/onboarding/AnalysisCompleteScreen';
 import PaywallScreen from '../screens/onboarding/PaywallScreen';
@@ -41,6 +43,7 @@ import GratitudeHistoryScreen from '../screens/GratitudeHistoryScreen';
 import EmotionDetailScreen from '../screens/EmotionDetailScreen';
 import AmbientSoundsScreen from '../screens/AmbientSoundsScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DailyMoodCheckIn from '../components/DailyMoodCheckIn';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -50,6 +53,45 @@ function CenterFabButton() {
   const navigation = useNavigation<any>();
   const { theme } = useTheme();
   const [showMenu, setShowMenu] = React.useState(false);
+  const [showDailyMoodCheckIn, setShowDailyMoodCheckIn] = React.useState(false);
+  const { user } = useAuth();
+
+  // Check if daily mood check-in should be shown
+  React.useEffect(() => {
+    const checkDailyMoodCheckIn = async () => {
+      try {
+        const lastCheckIn = await AsyncStorage.getItem('lastMoodCheckIn');
+        const dailyMoodEnabled = await AsyncStorage.getItem('dailyMoodCheckInEnabled');
+        
+        // Default to enabled if not set
+        if (dailyMoodEnabled === 'false') return;
+        
+        if (!lastCheckIn) {
+          // First time - show after 2 seconds
+          setTimeout(() => setShowDailyMoodCheckIn(true), 2000);
+          return;
+        }
+        
+        const lastCheckInDate = new Date(lastCheckIn);
+        const today = new Date();
+        
+        // Check if it's a new day
+        if (
+          lastCheckInDate.getDate() !== today.getDate() ||
+          lastCheckInDate.getMonth() !== today.getMonth() ||
+          lastCheckInDate.getFullYear() !== today.getFullYear()
+        ) {
+          setTimeout(() => setShowDailyMoodCheckIn(true), 2000);
+        }
+      } catch (error) {
+        console.error('Error checking daily mood check-in:', error);
+      }
+    };
+    
+    if (user) {
+      checkDailyMoodCheckIn();
+    }
+  }, [user]);
 
   const menuOptions = [
     { icon: 'create-outline', label: 'Journal Entry', screen: 'CreateEntry' },
@@ -110,6 +152,17 @@ function CenterFabButton() {
           </View>
         </Pressable>
       </Modal>
+
+      {/* Daily Mood Check-In */}
+      <DailyMoodCheckIn
+        visible={showDailyMoodCheckIn}
+        onDismiss={() => setShowDailyMoodCheckIn(false)}
+        onJournal={() => {
+          setShowDailyMoodCheckIn(false);
+          navigation.navigate('CreateEntry');
+        }}
+        userName={user?.user_metadata?.name || 'there'}
+      />
     </>
   );
 }
@@ -229,6 +282,10 @@ export default function AppNavigator() {
   const [isOnboardingCompleted, setIsOnboardingCompleted] = React.useState<boolean | null>(null);
 
   React.useEffect(() => {
+    // CRITICAL FIX: Reset state to null when user changes to force re-check
+    // This prevents stale state from persisting across sign-out/sign-in
+    setIsOnboardingCompleted(null);
+    
     const checkOnboarding = async () => {
       try {
         // First check AsyncStorage
@@ -321,10 +378,11 @@ export default function AppNavigator() {
   };
 
   return (
-    <NavigationContainer theme={darkTheme}>
+    <NavigationContainer theme={darkTheme} key={user?.id || 'logged-out'}>
       {user ? (
         // Authenticated screens
         <Stack.Navigator
+          initialRouteName={isOnboardingCompleted ? 'MainTabs' : undefined}
           screenOptions={{
             headerShown: false,
             animation: 'fade',
@@ -332,49 +390,36 @@ export default function AppNavigator() {
             animationDuration: 650,
           }}
         >
-          {isOnboardingCompleted ? (
-            <>
-              {/* Main App Flow - Show first for existing users */}
-              <Stack.Screen name="MainTabs" component={MainTabs} />
-              <Stack.Screen name="EntryDetail" component={EntryDetailScreen} />
-              <Stack.Screen name="CreateEntry" component={CreateEntryScreen} />
-              <Stack.Screen name="Analytics" component={DashboardScreen} />
-              <Stack.Screen name="Meditation" component={MeditationScreen} />
-              <Stack.Screen name="Gratitude" component={GratitudeScreen} />
-              <Stack.Screen name="GratitudeHistory" component={GratitudeHistoryScreen} options={{ headerShown: false }} />
-              <Stack.Screen name="EmotionDetail" component={EmotionDetailScreen} options={{ headerShown: false }} />
-              <Stack.Screen name="AmbientSounds" component={AmbientSoundsScreen} options={{ headerShown: false }} />
-              <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
-              <Stack.Screen name="Paywall" component={PaywallScreen} />
-            </>
-          ) : (
-            <>
-              {/* Onboarding Flow - Show first for new users */}
-              <Stack.Screen name="Welcome" component={WelcomeScreen} />
-              <Stack.Screen name="ProductReveal" component={ProductRevealScreen} />
-              <Stack.Screen name="AuthSelection" component={AuthSelectionScreen} />
-              <Stack.Screen name="EmailVerified" component={EmailVerifiedScreen} />
-              <Stack.Screen name="OnboardingQuestion" component={OnboardingQuestionScreen} />
-              <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
-              <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
-              <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
-              <Stack.Screen name="ValueProp" component={ValuePropScreen} />
-              <Stack.Screen name="Paywall" component={PaywallScreen} />
-              <Stack.Screen name="OnboardingSummary" component={OnboardingSummaryScreen} />
-
-              {/* Main App Flow - Available after onboarding */}
-              <Stack.Screen name="MainTabs" component={MainTabs} />
-              <Stack.Screen name="EntryDetail" component={EntryDetailScreen} />
-              <Stack.Screen name="CreateEntry" component={CreateEntryScreen} />
-              <Stack.Screen name="Analytics" component={DashboardScreen} />
-              <Stack.Screen name="Meditation" component={MeditationScreen} />
-              <Stack.Screen name="Gratitude" component={GratitudeScreen} />
-              <Stack.Screen name="GratitudeHistory" component={GratitudeHistoryScreen} options={{ headerShown: false }} />
-              <Stack.Screen name="EmotionDetail" component={EmotionDetailScreen} options={{ headerShown: false }} />
-              <Stack.Screen name="AmbientSounds" component={AmbientSoundsScreen} options={{ headerShown: false }} />
-              <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
-            </>
-          )}
+          {/* CRITICAL FIX: Always include ALL screens in authenticated stack
+              The issue was that conditional rendering would cause React Navigation
+              to default to the first screen (MainTabs) when the stack re-rendered
+              after email verification. By including all screens and using initialRouteName,
+              we let navigation.reset() calls control the flow properly. */}
+          
+          {/* Onboarding Flow - For new users */}
+          <Stack.Screen name="EmailVerified" component={EmailVerifiedScreen} />
+          <Stack.Screen name="OnboardingQuestion" component={OnboardingQuestionScreen} />
+          <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
+          <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
+          <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
+          <Stack.Screen name="ValueProp" component={ValuePropScreen} />
+          <Stack.Screen name="Paywall" component={PaywallScreen} />
+          <Stack.Screen name="OnboardingSummary" component={OnboardingSummaryScreen} />
+          <Stack.Screen name="PrivacyOnboarding" component={PrivacyOnboardingScreen} />
+          <Stack.Screen name="NotificationsOnboarding" component={NotificationsOnboardingScreen} />
+          
+          {/* Main App Flow */}
+          <Stack.Screen name="MainTabs" component={MainTabs} />
+          <Stack.Screen name="EntryDetail" component={EntryDetailScreen} />
+          <Stack.Screen name="CreateEntry" component={CreateEntryScreen} />
+          <Stack.Screen name="Playbook" component={PlaybookScreen} />
+          <Stack.Screen name="Analytics" component={DashboardScreen} />
+          <Stack.Screen name="Meditation" component={MeditationScreen} />
+          <Stack.Screen name="Gratitude" component={GratitudeScreen} />
+          <Stack.Screen name="GratitudeHistory" component={GratitudeHistoryScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="EmotionDetail" component={EmotionDetailScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="AmbientSounds" component={AmbientSoundsScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
         </Stack.Navigator>
       ) : (
         // Unauthenticated - show Welcome first, then Login/Signup
@@ -391,6 +436,9 @@ export default function AppNavigator() {
           <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
           <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
           <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
+          <Stack.Screen name="OnboardingSummary" component={OnboardingSummaryScreen} />
+          <Stack.Screen name="PrivacyOnboarding" component={PrivacyOnboardingScreen} />
+          <Stack.Screen name="NotificationsOnboarding" component={NotificationsOnboardingScreen} />
           <Stack.Screen name="ValueProp" component={ValuePropScreen} />
           <Stack.Screen name="Paywall" component={PaywallScreen} />
           

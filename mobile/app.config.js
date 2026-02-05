@@ -14,6 +14,7 @@ export default {
     },
     ios: {
       supportsTablet: true,
+      buildNumber: "57",
       infoPlist: {
         NSMicrophoneUsageDescription: "InsightAI uses the microphone for voice notes.",
         NSSpeechRecognitionUsageDescription: "InsightAI uses speech recognition to convert your voice into text for taking notes and searching your content.",
@@ -48,6 +49,7 @@ export default {
     owner: "crupid",
     plugins: [
       "expo-speech-recognition",
+      "expo-secure-store",
       [
         "@react-native-google-signin/google-signin",
         {

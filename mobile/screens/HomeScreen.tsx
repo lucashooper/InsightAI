@@ -21,8 +21,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { useFocusEffect } from '@react-navigation/native';
+import { EncryptionService } from '../services/encryptionService';
 import PageHeader from '../components/shared/PageHeader';
 import StandardContainer from '../components/shared/StandardContainer';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getMoodIndicator, MoodIndicator } from '../utils/moodIndicators';
 
 const insightLogo = require('../assets/192px-Insight-ICON.png');
 
@@ -60,6 +63,7 @@ export default function HomeScreen({ navigation, route }: any) {
   const [filter, setFilter] = useState<'all' | 'analyzed' | 'unanalyzed' | 'favorites'>('all');
   const [hiddenEntryIds, setHiddenEntryIds] = useState<Set<string>>(new Set());
   const [dominantEmotions, setDominantEmotions] = useState<{ emotion: string; percentage: number }[]>([]);
+  const [moodIndicatorsEnabled, setMoodIndicatorsEnabled] = useState(true);
 
   const calculateStreak = (notes: DiaryEntry[]) => {
     if (!notes || notes.length === 0) return { currentStreak: 0, longestStreak: 0 };
@@ -171,30 +175,34 @@ export default function HomeScreen({ navigation, route }: any) {
 
   const handleEntryLongPress = (entry: DiaryEntry) => {
     console.log('[Journal] Long press on entry:', entry.id);
-    const isFav = !!entry.is_favorite;
-    const isHidden = hiddenEntryIds.has(entry.id);
+    showEntryOptions(entry);
+  };
+
+  const showEntryOptions = (entry: DiaryEntry) => {
     const options = [
       'View Insights',
-      isFav ? 'Remove from Favorites' : 'Add to Favorites',
-      isHidden ? 'Unhide entry' : 'Hide entry',
+      'Rename',
+      entry.is_favorite ? 'Remove from Favorites' : 'Add to Favorites',
+      'Hide entry',
       'Share',
       'Delete',
       'Cancel',
     ];
-    const cancelButtonIndex = options.length - 1;
-    const destructiveButtonIndex = 4;
+    const cancelButtonIndex = 6;
+    const destructiveButtonIndex = 5;
 
-    const handleSelection = async (buttonIndex: number) => {
-      console.log('[Journal] Action sheet selection:', buttonIndex, options[buttonIndex]);
+    const handleSelection = (buttonIndex: number) => {
       if (buttonIndex === 0) {
         navigation.navigate('EntryDetail', { entry, openInsights: true });
       } else if (buttonIndex === 1) {
-        toggleFavorite(entry);
+        handleRenameEntry(entry);
       } else if (buttonIndex === 2) {
-        toggleHidden(entry.id);
+        toggleFavorite(entry);
       } else if (buttonIndex === 3) {
-        handleShareEntry(entry);
+        toggleHidden(entry.id);
       } else if (buttonIndex === 4) {
+        handleShareEntry(entry);
+      } else if (buttonIndex === 5) {
         console.log('[Journal] Deleted entry:', entry.id);
         handleDeleteEntry(entry);
         Alert.alert('Deleted', 'Entry removed', [{ text: 'OK' }]);
@@ -216,10 +224,40 @@ export default function HomeScreen({ navigation, route }: any) {
         { text: options[1], onPress: () => handleSelection(1) },
         { text: options[2], onPress: () => handleSelection(2) },
         { text: options[3], onPress: () => handleSelection(3) },
-        { text: options[4], style: 'destructive', onPress: () => handleSelection(4) },
-        { text: options[5], style: 'cancel' },
+        { text: options[4], onPress: () => handleSelection(4) },
+        { text: options[5], style: 'destructive', onPress: () => handleSelection(5) },
+        { text: options[6], style: 'cancel' },
       ]);
     }
+  };
+
+  const handleRenameEntry = (entry: DiaryEntry) => {
+    Alert.prompt(
+      'Rename Entry',
+      'Enter a new title for this entry',
+      async (newTitle) => {
+        if (newTitle && newTitle.trim()) {
+          try {
+            const { error } = await supabase
+              .from('notes')
+              .update({ title: newTitle.trim() })
+              .eq('id', entry.id);
+
+            if (!error) {
+              loadEntries();
+              Alert.alert('Success', 'Entry renamed');
+            } else {
+              Alert.alert('Error', 'Failed to rename entry');
+            }
+          } catch (err) {
+            console.error('[Home] Error renaming entry:', err);
+            Alert.alert('Error', 'Failed to rename entry');
+          }
+        }
+      },
+      'plain-text',
+      entry.title
+    );
   };
 
   const toggleHidden = (id: string) => {
@@ -269,12 +307,49 @@ export default function HomeScreen({ navigation, route }: any) {
         .limit(20);
 
       if (error) throw error;
-      setEntries(data || []);
-      setStreak(calculateStreak(data || []));
+
+      // Smart decryption: handles both encrypted and legacy plain text entries
+      const encryptionKey = await EncryptionService.getKey();
+      console.log('[HomeScreen] Encryption key available:', !!encryptionKey);
+      console.log('[HomeScreen] Processing', (data || []).length, 'entries');
+      
+      const processedEntries = await Promise.all((data || []).map(async (entry, index) => {
+        console.log(`[HomeScreen] Entry ${index + 1}:`, {
+          id: entry.id,
+          contentPreview: entry.content?.substring(0, 50) + '...',
+          isEncrypted: entry.is_encrypted,
+          looksEncrypted: entry.content?.includes(':') && entry.content.length > 32
+        });
+
+        // If no key, return as-is (legacy entries will display, encrypted ones won't)
+        if (!encryptionKey) {
+          console.log('[HomeScreen] No encryption key, returning entry as-is');
+          return entry;
+        }
+
+        // If entry is marked as encrypted or looks encrypted, try to decrypt
+        if (entry.is_encrypted || (entry.content?.includes(':') && entry.content.length > 32)) {
+          try {
+            const decryptedContent = await EncryptionService.decrypt(entry.content, encryptionKey);
+            console.log('[HomeScreen] Decrypted entry', entry.id);
+            return { ...entry, content: decryptedContent };
+          } catch (decryptError) {
+            console.error('[HomeScreen] Failed to decrypt entry:', entry.id, decryptError);
+            return { ...entry, content: '[Encrypted - Unable to decrypt]' };
+          }
+        }
+
+        // Legacy plain text entry
+        console.log('[HomeScreen] Legacy plain text entry:', entry.id);
+        return entry;
+      }));
+
+      setEntries(processedEntries);
+      setStreak(calculateStreak(processedEntries));
 
       // Calculate dominant emotions for greeting
       const emotionCounts: Record<string, number> = {};
-      (data || [])
+      processedEntries
         .filter((n: any) => n.ai_structured_insights?.mood_analysis?.primary_emotion)
         .forEach((n: any) => {
           const key = String(n.ai_structured_insights.mood_analysis.primary_emotion).trim();
@@ -304,120 +379,140 @@ export default function HomeScreen({ navigation, route }: any) {
 
   useFocusEffect(
     useCallback(() => {
-      loadUserProfile();
-    }, [user])
+      loadEntries();
+      loadMoodIndicatorsSetting();
+    }, [])
   );
 
-  // Handle search query from navigation params (e.g., from Recent Topics)
-  useEffect(() => {
-    if (route?.params?.searchQuery) {
-      setSearchQuery(route.params.searchQuery);
+  const loadMoodIndicatorsSetting = async () => {
+    try {
+      const setting = await AsyncStorage.getItem('moodIndicatorsEnabled');
+      if (setting !== null) {
+        setMoodIndicatorsEnabled(setting === 'true');
+      }
+    } catch (error) {
+      console.error('Error loading mood indicators setting:', error);
     }
-  }, [route?.params?.searchQuery]);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadEntries();
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
+// Handle search query from navigation params (e.g., from Recent Topics)
+useEffect(() => {
+  if (route?.params?.searchQuery) {
+    setSearchQuery(route.params.searchQuery);
+  }
+}, [route?.params?.searchQuery]);
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    const name = userProfile?.username || 'there';
-    if (hour < 12) return `Good morning, ${name}`;
-    if (hour < 18) return `Good afternoon, ${name}`;
-    return `Good evening, ${name}`;
-  };
+const onRefresh = () => {
+  setRefreshing(true);
+  loadEntries();
+};
 
-  const getMicroMessage = () => {
-    const name = userProfile?.username || 'there';
-    const messages = [
-      `Welcome back, ${name}.`,
-      `Reflection streak: ${streak.currentStreak} days.`,
-      entries.length > 0 && dominantEmotions.length > 0
-        ? `Your last entry was mostly ${dominantEmotions[0].emotion.toLowerCase()}.`
-        : null,
-      'Good to see you again.',
-    ].filter(Boolean);
-    // Simple rotation based on current second (changes every render but feels dynamic)
-    const index = Math.floor(Date.now() / 5000) % messages.length;
-    return messages[index];
-  };
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
 
-  // Helper to highlight search query matches in text
-  const highlightText = (text: string, query: string) => {
-    if (!query.trim()) return <Text>{text}</Text>;
-    
-    const parts = text.split(new RegExp(`(${query})`, 'gi'));
-    return (
-      <Text>
-        {parts.map((part, index) => 
-          part.toLowerCase() === query.toLowerCase() ? (
-            <Text key={index} style={{ backgroundColor: '#8b5cf6', color: '#ffffff', fontWeight: '600' }}>
-              {part}
-            </Text>
-          ) : (
-            <Text key={index}>{part}</Text>
-          )
-        )}
-      </Text>
-    );
-  };
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  const name = userProfile?.username || 'there';
+  if (hour < 12) return `Good morning, ${name}`;
+  if (hour < 18) return `Good afternoon, ${name}`;
+  return `Good evening, ${name}`;
+};
 
-  const renderEntry = ({ item }: { item: DiaryEntry }) => {
-    const hasInsights = item.ai_structured_insights?.wellbeingScore;
-    const isHidden = hiddenEntryIds.has(item.id);
-    
-    return (
-      <TouchableOpacity
-        style={styles.premiumCardPressable}
-        onPress={() => {
-          if (isHidden) {
-            Alert.alert('Locked entry', 'Unlock this entry to view its contents?', [
-              { text: 'Cancel', style: 'cancel' },
-              {
-                text: 'Unlock',
-                onPress: () => {
-                  toggleHidden(item.id);
-                  navigation.navigate('EntryDetail', { entry: item });
-                },
+const getMicroMessage = () => {
+  const name = userProfile?.username || 'there';
+  const messages = [
+    `Welcome back, ${name}.`,
+    `Reflection streak: ${streak.currentStreak} days.`,
+    entries.length > 0 && dominantEmotions.length > 0
+      ? `Your last entry was mostly ${dominantEmotions[0].emotion.toLowerCase()}.`
+      : null,
+    'Good to see you again.',
+  ].filter(Boolean);
+  // Simple rotation based on current second (changes every render but feels dynamic)
+  const index = Math.floor(Date.now() / 5000) % messages.length;
+  return messages[index];
+};
+
+// Helper to highlight search query matches in text
+const highlightText = (text: string, query: string) => {
+  if (!query.trim()) return <Text>{text}</Text>;
+  
+  const parts = text.split(new RegExp(`(${query})`, 'gi'));
+  return (
+    <Text>
+      {parts.map((part, index) => 
+        part.toLowerCase() === query.toLowerCase() ? (
+          <Text key={index} style={{ backgroundColor: '#8b5cf6', color: '#ffffff', fontWeight: '600' }}>
+            {part}
+          </Text>
+        ) : (
+          <Text key={index}>{part}</Text>
+        )
+      )}
+    </Text>
+  );
+};
+
+const renderEntry = ({ item }: { item: DiaryEntry }) => {
+  const hasInsights = item.ai_structured_insights?.wellbeingScore;
+  const isHidden = hiddenEntryIds.has(item.id);
+  
+  return (
+    <TouchableOpacity
+      style={styles.premiumCardPressable}
+      onPress={() => {
+        if (isHidden) {
+          Alert.alert('Locked entry', 'Unlock this entry to view its contents?', [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Unlock',
+              onPress: () => {
+                toggleHidden(item.id);
+                navigation.navigate('EntryDetail', { entry: item });
               },
-            ]);
-          } else {
-            navigation.navigate('EntryDetail', { entry: item });
-          }
-        }}
-        onLongPress={() => handleEntryLongPress(item)}
-        activeOpacity={0.7}
-      >
-        <StandardContainer style={[styles.premiumCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-          <View style={styles.cardGradient}>
-            <View style={styles.entryHeader}>
-              <View style={styles.entryTitleRow}>
-                <Text style={[styles.entryTitle, { color: theme.colors.primaryText }]} numberOfLines={1}>
-                  {isHidden ? 'Locked entry' : searchQuery.trim() ? highlightText(item.title || 'Untitled Entry', searchQuery) : item.title || 'Untitled Entry'}
-                </Text>
-                {item.mood && (
-                  <View style={styles.moodBadge}>
-                    <Text style={styles.moodEmoji}>{item.mood}</Text>
-                  </View>
-                )}
-              </View>
-              {hasInsights && (
-                <View style={styles.insightBadge}>
-                  <Ionicons name="sparkles" size={12} color="#8b5cf6" />
-                  <Text style={styles.insightBadgeText}>Analyzed</Text>
-                </View>
-              )}
+            },
+          ]);
+        } else {
+          navigation.navigate('EntryDetail', { entry: item });
+        }
+      }}
+      onLongPress={() => handleEntryLongPress(item)}
+      activeOpacity={0.7}
+    >
+      <StandardContainer style={[styles.premiumCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+        <View style={styles.cardGradient}>
+          <View style={styles.entryTitleRow}>
+            <View style={styles.entryTitleWithIndicator}>
+              {moodIndicatorsEnabled && (() => {
+                const moodIndicator = getMoodIndicator(item.ai_structured_insights);
+                return moodIndicator ? (
+                  <Text style={styles.moodIndicatorEmoji}>{moodIndicator.emoji}</Text>
+                ) : null;
+              })()}
+              <Text style={[styles.entryTitle, { color: theme.colors.primaryText }]} numberOfLines={1}>
+                {isHidden ? 'Locked entry' : searchQuery.trim() ? highlightText(item.title || 'Untitled Entry', searchQuery) : item.title || 'Untitled Entry'}
+              </Text>
             </View>
+            {item.mood && (
+              <View style={styles.moodBadge}>
+                <Text style={styles.moodEmoji}>{item.mood}</Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.entryHeader}>
+            {hasInsights && (
+              <View style={styles.insightBadge}>
+                <Ionicons name="sparkles" size={12} color="#ffffff" />
+                <Text style={styles.insightBadgeText}>Analyzed</Text>
+              </View>
+            )}
+          </View>
 
             <Text style={[styles.entryContent, { color: theme.colors.secondaryText }]} numberOfLines={3}>
               {isHidden ? 'Tap to unlock and view this entry.' : searchQuery.trim() ? highlightText(item.content, searchQuery) : item.content}
@@ -426,13 +521,20 @@ export default function HomeScreen({ navigation, route }: any) {
             <View style={styles.entryFooter}>
               <Text style={[styles.entryDate, { color: theme.colors.tertiaryText }]}>{formatDate(item.created_at)}</Text>
               {hasInsights && (
-                <TouchableOpacity
+                <LinearGradient
+                  colors={['#8b5cf6', '#7c3aed']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
                   style={styles.viewInsightsButton}
-                  onPress={() => navigation.navigate('EntryDetail', { entry: item })}
                 >
-                  <Text style={styles.viewInsightsText}>View Insights</Text>
-                  <Ionicons name="arrow-forward" size={14} color="#8b5cf6" />
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.viewInsightsButtonInner}
+                    onPress={() => navigation.navigate('EntryDetail', { entry: item })}
+                  >
+                    <Text style={styles.viewInsightsText}>View Insights</Text>
+                    <Ionicons name="arrow-forward" size={14} color="#ffffff" />
+                  </TouchableOpacity>
+                </LinearGradient>
               )}
             </View>
           </View>
@@ -1116,6 +1218,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 8,
+    position: 'relative',
+  },
+  moodIndicatorBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+    borderRadius: 2,
+  },
+  entryTitleWithIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  moodIndicatorEmoji: {
+    fontSize: 20,
   },
   entryTitle: {
     fontSize: 20,
@@ -1143,13 +1263,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: '#8b5cf620',
+    backgroundColor: 'rgba(139, 92, 246, 0.25)',
     alignSelf: 'flex-start',
   },
   insightBadgeText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#8b5cf6',
+    color: '#ffffff',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -1170,18 +1290,24 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   viewInsightsButton: {
+    borderRadius: 8,
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  viewInsightsButtonInner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: '#8b5cf615',
   },
   viewInsightsText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#8b5cf6',
+    color: '#ffffff',
   },
   emptyContainer: {
     flex: 1,

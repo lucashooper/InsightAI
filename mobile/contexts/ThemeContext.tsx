@@ -295,7 +295,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const THEME_STORAGE_KEY = '@insightai_theme';
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [themeName, setThemeName] = useState<ThemeName>('sunset');
+  const [themeName, setThemeName] = useState<ThemeName>('dark');
 
   useEffect(() => {
     loadTheme();
@@ -308,7 +308,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setThemeName(stored as ThemeName);
         console.log('[THEME] Active theme:', stored);
       } else {
-        console.log('[THEME] Active theme:', 'sunset (default)');
+        console.log('[THEME] Active theme:', 'dark (default)');
       }
     } catch (error) {
       console.error('Error loading theme:', error);

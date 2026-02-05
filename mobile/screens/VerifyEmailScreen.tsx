@@ -8,6 +8,9 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Image,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -158,23 +161,30 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
   };
 
   return (
-    <View style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        {/* Back Button */}
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
         >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
+          {/* Back Button */}
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
 
-        <View style={styles.content}>
-          {/* Icon */}
+          <View style={styles.content}>
+          {/* Logo */}
+          <Image source={require('../public/Insight-Logo-nobg.webp')} style={styles.logo} />
+        
           <View style={styles.iconContainer}>
-            <Ionicons name="mail-outline" size={64} color="#8b5cf6" />
+            <Image
+              source={require('../public/onboarding-icons/Email-Icon2.webp')}
+              style={styles.emailIcon}
+              resizeMode="contain"
+            />
           </View>
 
           {/* Title */}
@@ -182,9 +192,9 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
 
           {/* Subtitle */}
           <Text style={styles.subtitle}>
-            We sent a 6-digit code to
+            We sent a 6-digit code to{' '}
+            <Text style={styles.emailInline}>{email}</Text>
           </Text>
-          <Text style={styles.emailText}>{email}</Text>
 
           {/* OTP Input */}
           <View style={styles.otpContainer}>
@@ -205,10 +215,16 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
             onPress={handleResendCode}
             disabled={loading || resendCooldown > 0}
           >
+            <Ionicons 
+              name="refresh-outline" 
+              size={18} 
+              color={resendCooldown > 0 ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.7)'} 
+              style={styles.resendIcon}
+            />
             <Text style={[styles.resendButtonText, resendCooldown > 0 && styles.resendButtonTextDisabled]}>
               {resendCooldown > 0
-                ? `Resend code in ${resendCooldown}s`
-                : "Didn't receive the code? Resend"}
+                ? `Resend code (${resendCooldown}s)`
+                : 'Resend code'}
             </Text>
           </TouchableOpacity>
 
@@ -219,9 +235,10 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
           >
             <Text style={styles.changeEmailText}>Change email address</Text>
           </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-    </View>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -247,11 +264,22 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 80,
+    paddingTop: 60,
     alignItems: 'center',
   },
+  logo: {
+    width: 100,
+    height: 100,
+    opacity: 0.9,
+    position: 'absolute',
+    top: 16,
+  },
   iconContainer: {
-    marginBottom: 32,
+    marginBottom: 12,
+  },
+  emailIcon: {
+    width: 280,
+    height: 280,
   },
   title: {
     fontSize: 32,
@@ -262,16 +290,14 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 15,
-    color: 'rgba(255, 255, 255, 0.7)',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emailText: {
-    fontSize: 16,
-    color: '#8b5cf6',
-    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.6)',
     marginBottom: 40,
     textAlign: 'center',
+    lineHeight: 22,
+  },
+  emailInline: {
+    color: '#fff',
+    fontWeight: '500',
   },
   otpContainer: {
     marginBottom: 24,
@@ -280,27 +306,36 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   resendButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 12,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   resendButtonDisabled: {
     opacity: 0.5,
   },
+  resendIcon: {
+    marginRight: 8,
+  },
   resendButtonText: {
-    color: '#8b5cf6',
-    fontSize: 14,
-    fontWeight: '500',
-    textAlign: 'center',
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 15,
+    fontWeight: '600',
   },
   resendButtonTextDisabled: {
-    color: 'rgba(139, 92, 246, 0.5)',
+    color: 'rgba(255, 255, 255, 0.3)',
   },
   changeEmailButton: {
     paddingVertical: 12,
   },
   changeEmailText: {
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: 'rgba(255, 255, 255, 0.5)',
     fontSize: 14,
     textAlign: 'center',
   },

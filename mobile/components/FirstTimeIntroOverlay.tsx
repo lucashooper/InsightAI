@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,12 @@ import {
   Modal,
   Dimensions,
   Image,
+  Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import ConfettiCannon from 'react-native-confetti-cannon';
 
 const { width, height } = Dimensions.get('window');
 const insightLogo = require('../public/Insight-Logo-nobg.webp');
@@ -21,6 +23,27 @@ interface FirstTimeIntroOverlayProps {
 }
 
 export default function FirstTimeIntroOverlay({ visible, onClose }: FirstTimeIntroOverlayProps) {
+  const confettiRef = useRef<any>(null);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      // Trigger confetti when overlay appears
+      setTimeout(() => {
+        confettiRef.current?.start();
+      }, 300);
+      
+      // Fade in animation
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      fadeAnim.setValue(0);
+    }
+  }, [visible]);
+
   const handleGetStarted = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onClose();
@@ -39,7 +62,16 @@ export default function FirstTimeIntroOverlay({ visible, onClose }: FirstTimeInt
           style={styles.gradient}
         />
 
-        <View style={styles.content}>
+        <ConfettiCannon
+          ref={confettiRef}
+          count={150}
+          origin={{ x: width / 2, y: -10 }}
+          fadeOut
+          autoStart={false}
+          colors={['#8b5cf6', '#a855f7', '#c084fc', '#e9d5ff', '#fbbf24']}
+        />
+
+        <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
           {/* Welcome Header */}
           <View style={styles.header}>
             <Image 
@@ -108,7 +140,7 @@ export default function FirstTimeIntroOverlay({ visible, onClose }: FirstTimeInt
               <Ionicons name="arrow-forward" size={20} color="#fff" />
             </LinearGradient>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -130,20 +162,25 @@ const styles = StyleSheet.create({
   content: {
     width: width - 48,
     maxWidth: 400,
-    backgroundColor: 'rgba(20, 20, 20, 0.95)',
+    backgroundColor: '#0a0a0a',
     borderRadius: 24,
     padding: 32,
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.2)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 12,
   },
   header: {
     alignItems: 'center',
     marginBottom: 32,
   },
   logoImage: {
-    width: 72,
-    height: 72,
-    marginBottom: 16,
+    width: 120,
+    height: 120,
+    marginBottom: 8,
   },
   title: {
     fontSize: 28,
@@ -164,7 +201,7 @@ const styles = StyleSheet.create({
   },
   featureCard: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 16,
   },
   featureIcon: {
@@ -173,6 +210,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   featureText: {
     flex: 1,

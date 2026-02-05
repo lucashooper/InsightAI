@@ -6,6 +6,7 @@ import * as Haptics from 'expo-haptics';
 const { width, height } = Dimensions.get('window');
 
 const phoneMockup = require('../../public/InsightAI-Onboarding-MAIN.png');
+const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 export default function ProductRevealScreen({ navigation }: any) {
 

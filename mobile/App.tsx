@@ -8,6 +8,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { OnboardingProvider } from './contexts/OnboardingContext';
 import AppNavigator from './navigation/AppNavigator';
+import { EncryptionService } from './services/encryptionService';
 
 const REVENUECAT_IOS_API_KEY = 'appl_kqCbylJegHaNzqoGMLhkrprqibn';
 
@@ -17,10 +18,49 @@ export default function App() {
   useEffect(() => {
     async function loadResourcesAndDataAsync() {
       try {
-        // Configure RevenueCat
+        // Configure RevenueCat with comprehensive logging
+        console.log('[REVENUECAT] 🚀 Configuring RevenueCat...');
+        console.log('[REVENUECAT] API Key:', REVENUECAT_IOS_API_KEY);
+        
         Purchases.configure({
           apiKey: REVENUECAT_IOS_API_KEY,
         });
+        
+        console.log('[REVENUECAT] ✅ Configuration complete');
+        
+        // Set debug logs enabled
+        Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
+        console.log('[REVENUECAT] Debug logging enabled');
+        
+        // CRITICAL FIX: Invalidate cache and force fresh validation on startup
+        // This ensures we validate against the CURRENT Apple ID, not cached data
+        try {
+          console.log('[REVENUECAT] 🔄 Invalidating cache to force fresh validation...');
+          await Purchases.invalidateCustomerInfoCache();
+          console.log('[REVENUECAT] ✅ Cache invalidated');
+          
+          // Now get fresh customer info from Apple servers
+          const customerInfo = await Purchases.getCustomerInfo();
+          console.log('[REVENUECAT] 📊 Fresh Customer Info (validated against current Apple ID):');
+          console.log('[REVENUECAT] - User ID:', customerInfo.originalAppUserId);
+          console.log('[REVENUECAT] - Active Entitlements:', Object.keys(customerInfo.entitlements.active));
+          console.log('[REVENUECAT] - All Entitlements:', Object.keys(customerInfo.entitlements.all));
+          console.log('[REVENUECAT] - Active Subscriptions:', customerInfo.activeSubscriptions);
+          console.log('[REVENUECAT] - All Purchased Product IDs:', customerInfo.allPurchasedProductIdentifiers);
+          console.log('[REVENUECAT] - Management URL:', customerInfo.managementURL);
+        } catch (customerInfoError: any) {
+          console.error('[REVENUECAT] ❌ Failed to get customer info:', customerInfoError);
+          console.error('[REVENUECAT] Error details:', customerInfoError.message);
+        }
+
+        // Test encryption on startup
+        console.log('=== ENCRYPTION TEST START ===');
+        try {
+          await EncryptionService.testEncryption();
+        } catch (testError) {
+          console.error('=== ENCRYPTION TEST FAILED ===', testError);
+        }
+        console.log('=== ENCRYPTION TEST END ===');
 
         // Preload critical assets to prevent loading delays
         await Promise.all([
@@ -29,9 +69,12 @@ export default function App() {
           Asset.fromModule(require('./public/InsightAI-Onboarding-MAIN.png')).downloadAsync(),
           Asset.fromModule(require('./assets/Cambridge-logo.png')).downloadAsync(),
         ]);
-      } catch (e) {
-        console.warn('Error preloading assets:', e);
+      } catch (e: any) {
+        console.error('[APP] ❌ Error in loadResourcesAndDataAsync:', e);
+        console.error('[APP] Error message:', e.message);
+        console.error('[APP] Error stack:', e.stack);
       } finally {
+        console.log('[APP] ✅ Assets loaded, rendering app');
         setAssetsLoaded(true);
       }
     }

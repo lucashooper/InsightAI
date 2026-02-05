@@ -12,6 +12,7 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,18 +21,18 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { mobileAiService } from '../services/mobileAiService';
+import { EncryptionService } from '../services/encryptionService';
 
 export default function CreateEntryScreen({ navigation, route }: any) {
   const { user } = useAuth();
   const { theme } = useTheme();
   const { initialContent } = route?.params || {};
+  const [title, setTitle] = useState('');
   const [content, setContent] = useState(initialContent || '');
   const [showMoodPicker, setShowMoodPicker] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
-  const [showMoodCheckIn, setShowMoodCheckIn] = useState(!initialContent);
-  const [showBreathingPrompt, setShowBreathingPrompt] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const [mood, setMood] = useState('');
-  const [initialMood, setInitialMood] = useState('');
   const [aiResponse, setAiResponse] = useState<{ reflection: string; questions: string[] } | null>(null);
   const [displayedText, setDisplayedText] = useState('');
   const [isLoadingAi, setIsLoadingAi] = useState(false);
@@ -81,19 +82,40 @@ export default function CreateEntryScreen({ navigation, route }: any) {
     if (!content.trim()) return;
 
     try {
+      // Get encryption key from secure storage
+      const encryptionKey = await EncryptionService.getKey();
+      
+      let contentToSave = content.trim();
+      let isEncrypted = false;
+      
+      if (encryptionKey) {
+        try {
+          contentToSave = await EncryptionService.encrypt(content.trim(), encryptionKey);
+          isEncrypted = true;
+          console.log('[CreateEntry] Content encrypted before save');
+          console.log('[CreateEntry] Encrypted content preview:', contentToSave.substring(0, 40) + '...');
+        } catch (encryptError) {
+          console.error('[CreateEntry] Encryption failed, saving unencrypted:', encryptError);
+          // Fall back to unencrypted if encryption fails
+        }
+      } else {
+        console.warn('[CreateEntry] No encryption key found, saving unencrypted');
+      }
+
       const { error } = await supabase
         .from('notes')
         .insert({
           user_id: user?.id,
-          title: 'Journal Entry',
-          content: content.trim(),
+          title: title.trim() || 'Journal Entry',
+          content: contentToSave,
+          is_encrypted: isEncrypted,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         });
 
       if (!error) {
         hasUnsavedChanges.current = false;
-        // Don't navigate away - let user stay on screen
+        console.log('[CreateEntry] Entry saved successfully (encrypted:', isEncrypted, ')');
       }
     } catch (error) {
       console.error('Auto-save error:', error);
@@ -302,117 +324,6 @@ export default function CreateEntryScreen({ navigation, route }: any) {
         </View>
       </View>
 
-      {/* Initial Mood Check-In Modal */}
-      {showMoodCheckIn && (
-        <>
-          <Pressable 
-            style={styles.overlayBackdrop} 
-            onPress={() => setShowMoodCheckIn(false)}
-          />
-          <Animated.View style={[styles.moodCheckInOverlay, { opacity: overlayOpacity }]}>
-            <BlurView intensity={80} style={styles.blurContainer}>
-              <LinearGradient
-                colors={theme.name === 'light' ? ['rgba(255, 255, 255, 0.98)', 'rgba(250, 250, 250, 0.98)'] : ['rgba(20, 20, 30, 0.95)', 'rgba(10, 10, 20, 0.98)']}
-                style={styles.moodCheckInContainer}
-              >
-                <Text style={[styles.moodCheckInTitle, { color: theme.colors.primaryText }]}>How are you feeling right now?</Text>
-                <Text style={[styles.moodCheckInSubtitle, { color: theme.name === 'light' ? '#6B6B6B' : 'rgba(255, 255, 255, 0.6)' }]}>Take a moment to check in with yourself</Text>
-                
-                <View style={styles.moodGrid}>
-                  {moods.map((emoji) => (
-                    <TouchableOpacity
-                      key={emoji}
-                      style={[
-                        styles.moodOption,
-                        initialMood === emoji && styles.moodOptionActive,
-                      ]}
-                      onPress={() => {
-                        setInitialMood(emoji);
-                        setMood(emoji);
-                      }}
-                    >
-                      <Text style={styles.moodEmoji}>{emoji}</Text>
-                      <Text style={[styles.moodLabel, { color: theme.name === 'light' ? '#6B6B6B' : 'rgba(255, 255, 255, 0.7)' }]}>{moodLabels[emoji]}</Text>
-                      {initialMood === emoji && (
-                        <View style={styles.checkmarkContainer}>
-                          <Ionicons name="checkmark-circle" size={20} color="#8b5cf6" />
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </View>
-
-                <TouchableOpacity 
-                  style={[styles.breathingPromptButton, { backgroundColor: theme.name === 'light' ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.15)' }]}
-                  onPress={() => {
-                    setShowMoodCheckIn(false);
-                    setShowBreathingPrompt(true);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="leaf-outline" size={20} color="#8b5cf6" />
-                  <Text style={[styles.breathingPromptText, { color: '#8b5cf6' }]}>Take 3 deep breaths first</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                  style={styles.continueButton}
-                  onPress={() => setShowMoodCheckIn(false)}
-                  activeOpacity={0.7}
-                >
-                  <LinearGradient
-                    colors={['#8b5cf6', '#7c3aed']}
-                    style={styles.continueButtonGradient}
-                  >
-                    <Text style={styles.continueButtonText}>Continue to journal</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </LinearGradient>
-            </BlurView>
-          </Animated.View>
-        </>
-      )}
-
-      {/* Breathing Prompt Modal */}
-      {showBreathingPrompt && (
-        <>
-          <Pressable 
-            style={styles.overlayBackdrop} 
-            onPress={() => setShowBreathingPrompt(false)}
-          />
-          <Animated.View style={[styles.breathingOverlay, { opacity: overlayOpacity }]}>
-            <BlurView intensity={80} style={styles.blurContainer}>
-              <LinearGradient
-                colors={theme.name === 'light' ? ['rgba(255, 255, 255, 0.98)', 'rgba(250, 250, 250, 0.98)'] : ['rgba(20, 20, 30, 0.95)', 'rgba(10, 10, 20, 0.98)']}
-                style={styles.breathingContainer}
-              >
-                <Ionicons name="leaf" size={48} color="#8b5cf6" style={{ marginBottom: 20 }} />
-                <Text style={[styles.breathingTitle, { color: theme.colors.primaryText }]}>Let's take a moment</Text>
-                <Text style={[styles.breathingInstructions, { color: theme.name === 'light' ? '#6B6B6B' : 'rgba(255, 255, 255, 0.7)' }]}>Take 3 deep breaths before we explore this together</Text>
-                
-                <View style={styles.breathingSteps}>
-                  <Text style={[styles.breathingStep, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.9)' }]}>1. Breathe in slowly through your nose</Text>
-                  <Text style={[styles.breathingStep, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.9)' }]}>2. Hold for a moment</Text>
-                  <Text style={[styles.breathingStep, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.9)' }]}>3. Exhale gently through your mouth</Text>
-                </View>
-
-                <TouchableOpacity 
-                  style={styles.continueButton}
-                  onPress={() => setShowBreathingPrompt(false)}
-                  activeOpacity={0.7}
-                >
-                  <LinearGradient
-                    colors={['#8b5cf6', '#7c3aed']}
-                    style={styles.continueButtonGradient}
-                  >
-                    <Text style={styles.continueButtonText}>I'm ready</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </LinearGradient>
-            </BlurView>
-          </Animated.View>
-        </>
-      )}
-
       {/* Glassmorphic Mood Picker Overlay */}
       {showMoodPicker && (
         <>
@@ -465,6 +376,15 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          <TextInput
+            style={[styles.titleInput, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}
+            placeholder="Title (optional)"
+            placeholderTextColor={theme.name === 'light' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.3)'}
+            value={title}
+            onChangeText={setTitle}
+            multiline={false}
+            returnKeyType="next"
+          />
           <TextInput
             style={[styles.contentInput, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}
             value={content}
@@ -533,7 +453,17 @@ export default function CreateEntryScreen({ navigation, route }: any) {
               colors={['rgba(20, 20, 30, 0.95)', 'rgba(10, 10, 20, 0.98)']}
               style={styles.quickActionsContainer}
             >
-              <TouchableOpacity style={styles.quickActionItem}>
+              <TouchableOpacity 
+                style={styles.quickActionItem}
+                onPress={() => {
+                  setShowQuickActions(false);
+                  Alert.alert(
+                    'Voice-to-Text',
+                    'Voice recording is available on physical devices. Install the app via TestFlight or build to your device to use this feature.',
+                    [{ text: 'Got it' }]
+                  );
+                }}
+              >
                 <Ionicons name="mic" size={20} color="rgba(255, 255, 255, 0.8)" />
                 <Text style={styles.quickActionText}>Voice mode</Text>
               </TouchableOpacity>
@@ -805,6 +735,21 @@ const styles = StyleSheet.create({
   writingArea: {
     flex: 1,
   },
+  titleInput: {
+    fontSize: 24,
+    fontWeight: '600',
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 12,
+  },
+  contentInput: {
+    flex: 1,
+    fontSize: 17,
+    lineHeight: 26,
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: 100,
+  },
   aiPromptContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -818,24 +763,6 @@ const styles = StyleSheet.create({
   },
   aiPromptText: {
     flex: 1,
-    color: '#a78bfa',
-    fontSize: 16,
-    fontStyle: 'italic',
-    lineHeight: 22,
-  },
-  contentInput: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 8,
-    paddingBottom: 24,
-    fontSize: 17,
-    lineHeight: 26,
-    fontWeight: '400',
-  },
-  aiResponseContainer: {
-    marginHorizontal: 24,
-    marginTop: 24,
-    marginBottom: 100,
   },
   aiResponseRow: {
     flexDirection: 'row',

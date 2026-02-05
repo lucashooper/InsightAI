@@ -3,12 +3,14 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIn
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
+import Purchases from 'react-native-purchases';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme, ThemeName } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import StandardContainer from '../components/shared/StandardContainer';
 import PageHeader from '../components/shared/PageHeader';
+import { printSubscriptionDebugReport, resetRevenueCatOnly, nukeAllSubscriptionState } from '../utils/subscriptionDebug';
 
 interface UserProfile {
   id: string;
@@ -29,6 +31,10 @@ export default function SettingsScreen({ navigation }: any) {
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [feedbackSuccess, setFeedbackSuccess] = useState(false);
+  const [dailyMoodCheckInEnabled, setDailyMoodCheckInEnabled] = useState(true);
+  const [breathingPromptsEnabled, setBreathingPromptsEnabled] = useState(true);
+  const [monthlyStoriesEnabled, setMonthlyStoriesEnabled] = useState(true);
+  const [moodIndicatorsEnabled, setMoodIndicatorsEnabled] = useState(true);
 
   const defaultThemes: { name: ThemeName; label: string; emoji: string }[] = [
     { name: 'dark', label: 'Dark', emoji: '🌑' },
@@ -38,7 +44,7 @@ export default function SettingsScreen({ navigation }: any) {
   const otherThemes: { name: ThemeName; label: string; emoji: string }[] = [
     { name: 'sunset', label: 'Sunset', emoji: '🌅' },
     { name: 'vibrant', label: 'Vibrant', emoji: '✨' },
-    { name: 'ocean', label: 'Ocean', emoji: '�' },
+    { name: 'ocean', label: 'Ocean', emoji: '🌊' },
     { name: 'midnight', label: 'Midnight', emoji: '🌙' },
   ];
 
@@ -46,8 +52,45 @@ export default function SettingsScreen({ navigation }: any) {
     if (user) {
       loadUserProfile();
       loadUsageStats();
+      loadPersonalizationSettings();
     }
   }, [user]);
+
+  const loadPersonalizationSettings = async () => {
+    try {
+      const dailyMood = await AsyncStorage.getItem('dailyMoodCheckInEnabled');
+      const breathingPrompts = await AsyncStorage.getItem('breathingPromptsEnabled');
+      const monthlyStories = await AsyncStorage.getItem('monthlyStoriesEnabled');
+      const moodIndicators = await AsyncStorage.getItem('moodIndicatorsEnabled');
+      
+      if (dailyMood !== null) setDailyMoodCheckInEnabled(dailyMood === 'true');
+      if (breathingPrompts !== null) setBreathingPromptsEnabled(breathingPrompts === 'true');
+      if (monthlyStories !== null) setMonthlyStoriesEnabled(monthlyStories === 'true');
+      if (moodIndicators !== null) setMoodIndicatorsEnabled(moodIndicators === 'true');
+    } catch (error) {
+      console.error('Error loading personalization settings:', error);
+    }
+  };
+
+  const toggleDailyMoodCheckIn = async (value: boolean) => {
+    setDailyMoodCheckInEnabled(value);
+    await AsyncStorage.setItem('dailyMoodCheckInEnabled', value.toString());
+  };
+
+  const toggleBreathingPrompts = async (value: boolean) => {
+    setBreathingPromptsEnabled(value);
+    await AsyncStorage.setItem('breathingPromptsEnabled', value.toString());
+  };
+
+  const toggleMonthlyStories = async (value: boolean) => {
+    setMonthlyStoriesEnabled(value);
+    await AsyncStorage.setItem('monthlyStoriesEnabled', value.toString());
+  };
+
+  const toggleMoodIndicators = async (value: boolean) => {
+    setMoodIndicatorsEnabled(value);
+    await AsyncStorage.setItem('moodIndicatorsEnabled', value.toString());
+  };
 
   const handleEditUsername = () => {
     Alert.prompt(
@@ -330,6 +373,8 @@ export default function SettingsScreen({ navigation }: any) {
           style: 'destructive',
           onPress: async () => {
             await signOut();
+            // Navigation will automatically switch to unauthenticated stack
+            // when user becomes null
           }
         },
       ]
@@ -452,6 +497,74 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         </View>
 
+        {/* Personalization */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>⚙️ Personalization</Text>
+          <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+            <TouchableOpacity 
+              style={styles.settingRow}
+              onPress={() => toggleDailyMoodCheckIn(!dailyMoodCheckInEnabled)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.settingLeft}>
+                <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Daily mood check-in</Text>
+                <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Get a quick check-in when you open the app</Text>
+              </View>
+              <View style={[styles.toggle, dailyMoodCheckInEnabled && styles.toggleActive]}>
+                <View style={[styles.toggleThumb, dailyMoodCheckInEnabled && styles.toggleThumbActive]} />
+              </View>
+            </TouchableOpacity>
+            
+            <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
+            
+            <TouchableOpacity 
+              style={styles.settingRow}
+              onPress={() => toggleBreathingPrompts(!breathingPromptsEnabled)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.settingLeft}>
+                <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Breathing prompts before journaling</Text>
+                <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Take 3 deep breaths before reflecting</Text>
+              </View>
+              <View style={[styles.toggle, breathingPromptsEnabled && styles.toggleActive]}>
+                <View style={[styles.toggleThumb, breathingPromptsEnabled && styles.toggleThumbActive]} />
+              </View>
+            </TouchableOpacity>
+            
+            <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
+            
+            <TouchableOpacity 
+              style={styles.settingRow}
+              onPress={() => toggleMonthlyStories(!monthlyStoriesEnabled)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.settingLeft}>
+                <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Monthly progress stories</Text>
+                <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Receive a narrative summary of your month</Text>
+              </View>
+              <View style={[styles.toggle, monthlyStoriesEnabled && styles.toggleActive]}>
+                <View style={[styles.toggleThumb, monthlyStoriesEnabled && styles.toggleThumbActive]} />
+              </View>
+            </TouchableOpacity>
+            
+            <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
+            
+            <TouchableOpacity 
+              style={styles.settingRow}
+              onPress={() => toggleMoodIndicators(!moodIndicatorsEnabled)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.settingLeft}>
+                <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Show entry mood indicators</Text>
+                <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Display emoji and color indicators on journal entries</Text>
+              </View>
+              <View style={[styles.toggle, moodIndicatorsEnabled && styles.toggleActive]}>
+                <View style={[styles.toggleThumb, moodIndicatorsEnabled && styles.toggleThumbActive]} />
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Subscription & Usage */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>💎 Subscription & Usage</Text>
@@ -548,6 +661,66 @@ export default function SettingsScreen({ navigation }: any) {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>Actions</Text>
 
+          {/* Debug: Subscription Debug Tools */}
+          <TouchableOpacity 
+            style={{ marginBottom: 12 }} 
+            onPress={async () => {
+              Alert.alert(
+                '🔍 Subscription Debug',
+                'Choose a debug action:',
+                [
+                  {
+                    text: 'Print Debug Report',
+                    onPress: async () => {
+                      await printSubscriptionDebugReport();
+                      Alert.alert('Debug Report', 'Check the console for detailed subscription state info');
+                    }
+                  },
+                  {
+                    text: 'Reset RevenueCat Only',
+                    style: 'destructive',
+                    onPress: async () => {
+                      await resetRevenueCatOnly();
+                      Alert.alert('Reset Complete', 'RevenueCat cache cleared. Check console for details.');
+                    }
+                  },
+                  {
+                    text: 'NUKE Everything',
+                    style: 'destructive',
+                    onPress: () => {
+                      Alert.alert(
+                        '⚠️ WARNING',
+                        'This will delete ALL app data including:\n• Subscription cache\n• User preferences\n• Onboarding flags\n• Encryption keys\n\nAre you SURE?',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          {
+                            text: 'Yes, Nuke It',
+                            style: 'destructive',
+                            onPress: async () => {
+                              await nukeAllSubscriptionState();
+                              Alert.alert('Nuked', 'All data cleared. Restart the app.');
+                            }
+                          }
+                        ]
+                      );
+                    }
+                  },
+                  { text: 'Cancel', style: 'cancel' }
+                ]
+              );
+            }} 
+            activeOpacity={0.85}
+          >
+            <StandardContainer style={styles.card}>
+              <View style={styles.cardGradient}>
+                <View style={styles.actionRow}>
+                  <Ionicons name="bug" size={20} color="#f59e0b" />
+                  <Text style={[styles.actionText, { color: '#f59e0b' }]}>Subscription Debug Tools</Text>
+                </View>
+              </View>
+            </StandardContainer>
+          </TouchableOpacity>
+
           <TouchableOpacity style={{}} onPress={handleSignOut} activeOpacity={0.85}>
             <StandardContainer style={styles.card}>
               <View style={styles.cardGradient}>
@@ -562,32 +735,47 @@ export default function SettingsScreen({ navigation }: any) {
           <TouchableOpacity 
             style={{ marginTop: 12 }} 
             onPress={() => {
+              // First confirmation
               Alert.alert(
-                'Delete Account',
+                '⚠️ Delete Account',
                 'Are you sure you want to permanently delete your account? This action cannot be undone and will delete all your journal entries, insights, and personal data.',
                 [
                   { text: 'Cancel', style: 'cancel' },
                   {
-                    text: 'Delete Account',
+                    text: 'Continue',
                     style: 'destructive',
-                    onPress: async () => {
-                      try {
-                        // Delete user data from Supabase
-                        if (user) {
-                          // Delete user's journal entries
-                          await supabase.from('journal_entries').delete().eq('user_id', user.id);
-                          // Delete user's profile
-                          await supabase.from('user_profiles').delete().eq('user_id', user.id);
-                          // Delete the auth user
-                          const { error } = await supabase.rpc('delete_user');
-                          if (error) throw error;
-                        }
-                        Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
-                        await signOut();
-                      } catch (error) {
-                        console.error('Error deleting account:', error);
-                        Alert.alert('Error', 'Failed to delete account. Please contact support at support@myinsightai.app');
-                      }
+                    onPress: () => {
+                      // Second confirmation - require typing confirmation
+                      Alert.alert(
+                        '⚠️ Final Confirmation',
+                        'This will PERMANENTLY delete:\n\n• All journal entries\n• All AI insights\n• Your profile and data\n\nThis CANNOT be undone.\n\nAre you absolutely sure?',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          {
+                            text: 'Yes, Delete Everything',
+                            style: 'destructive',
+                            onPress: async () => {
+                              try {
+                                // Delete user data from Supabase
+                                if (user) {
+                                  // Delete user's journal entries
+                                  await supabase.from('journal_entries').delete().eq('user_id', user.id);
+                                  // Delete user's profile
+                                  await supabase.from('user_profiles').delete().eq('user_id', user.id);
+                                  // Delete the auth user
+                                  const { error } = await supabase.rpc('delete_user');
+                                  if (error) throw error;
+                                }
+                                Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
+                                await signOut();
+                              } catch (error) {
+                                console.error('Error deleting account:', error);
+                                Alert.alert('Error', 'Failed to delete account. Please contact support at support@myinsightai.app');
+                              }
+                            }
+                          }
+                        ]
+                      );
                     }
                   }
                 ]
@@ -851,6 +1039,55 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '600',
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
+  settingLeft: {
+    flex: 1,
+    marginRight: 16,
+  },
+  settingLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  settingDescription: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  settingDivider: {
+    height: 1,
+    marginHorizontal: 16,
+  },
+  toggle: {
+    width: 51,
+    height: 31,
+    borderRadius: 16,
+    backgroundColor: 'rgba(120, 120, 128, 0.16)',
+    padding: 2,
+    justifyContent: 'center',
+  },
+  toggleActive: {
+    backgroundColor: '#34C759',
+  },
+  toggleThumb: {
+    width: 27,
+    height: 27,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  toggleThumbActive: {
+    transform: [{ translateX: 20 }],
   },
   feedbackSuccess: {
     flexDirection: 'row',

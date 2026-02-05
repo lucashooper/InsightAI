@@ -6,14 +6,21 @@ import * as Haptics from 'expo-haptics';
 
 const noisyImage = require('../../public/noisy-image.webp');
 const clarityImage = require('../../public/clarity-image.webp');
+const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 const { width } = Dimensions.get('window');
 
 export default function ValuePropScreen({ navigation }: any) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
+  
+  // Separate animations for each bullet point
+  const bullet1Anim = useRef(new Animated.Value(0)).current;
+  const bullet2Anim = useRef(new Animated.Value(0)).current;
+  const bullet3Anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Main content animation
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -26,14 +33,34 @@ export default function ValuePropScreen({ navigation }: any) {
         useNativeDriver: true,
       }),
     ]).start();
+
+    // Staggered bullet animations for premium feel
+    Animated.sequence([
+      Animated.delay(600),
+      Animated.timing(bullet1Anim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.delay(200),
+      Animated.timing(bullet2Anim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.delay(200),
+      Animated.timing(bullet3Anim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={['#000000', '#0a0a0a', '#000000']}
-        style={styles.background}
-      />
+      {/* Logo */}
+      <Image source={insightLogo} style={styles.logo} />
 
       <View style={styles.content}>
         <Animated.View
@@ -94,33 +121,48 @@ export default function ValuePropScreen({ navigation }: any) {
             </View>
           </View>
 
-          {/* Supporting text */}
+          {/* Supporting text with staggered animations */}
           <View style={styles.bulletContainer}>
-            <Text style={[styles.bulletText, styles.bulletTextGrey]}>
-              Capture how you feel
-            </Text>
-
-            <Text style={[styles.bulletText, styles.bulletTextGrey]}>
-              Understand patterns over time
-            </Text>
-
-            <MaskedView
-              maskElement={
-                <Text style={[styles.bulletText, { backgroundColor: 'transparent' }]}>
-                  Gain clarity — not clutter
+            <Animated.View style={{ opacity: bullet1Anim, transform: [{ translateY: bullet1Anim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }}>
+              <View style={styles.bulletRow}>
+                <Text style={styles.bulletDot}>•</Text>
+                <Text style={[styles.bulletText, styles.bulletTextGrey]}>
+                  Capture how you feel
                 </Text>
-              }
-            >
-              <LinearGradient
-                colors={['#A78BFA', '#C084FC']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-              >
-                <Text style={[styles.bulletText, { opacity: 0 }]}>
-                  Gain clarity — not clutter
+              </View>
+            </Animated.View>
+
+            <Animated.View style={{ opacity: bullet2Anim, transform: [{ translateY: bullet2Anim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }}>
+              <View style={styles.bulletRow}>
+                <Text style={styles.bulletDot}>•</Text>
+                <Text style={[styles.bulletText, styles.bulletTextGrey]}>
+                  Understand patterns over time
                 </Text>
-              </LinearGradient>
-            </MaskedView>
+              </View>
+            </Animated.View>
+
+            <Animated.View style={{ opacity: bullet3Anim, transform: [{ translateY: bullet3Anim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }}>
+              <View style={styles.bulletRow}>
+                <Text style={styles.bulletDot}>•</Text>
+                <MaskedView
+                  maskElement={
+                    <Text style={[styles.bulletText, { backgroundColor: 'transparent' }]}>
+                      Gain clarity — not clutter
+                    </Text>
+                  }
+                >
+                  <LinearGradient
+                    colors={['#A78BFA', '#C084FC']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    <Text style={[styles.bulletText, { opacity: 0 }]}>
+                      Gain clarity — not clutter
+                    </Text>
+                  </LinearGradient>
+                </MaskedView>
+              </View>
+            </Animated.View>
           </View>
         </Animated.View>
       </View>
@@ -154,17 +196,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
-  background: {
+  logo: {
+    width: 100,
+    height: 100,
+    opacity: 0.9,
     position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
+    top: 60,
+    alignSelf: 'center',
+    zIndex: 10,
   },
   content: {
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
+    paddingTop: 40,
   },
   mainContent: {
     alignItems: 'center',
@@ -213,16 +258,27 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   bulletContainer: {
-    gap: 16,
+    gap: 20,
     alignItems: 'center',
+    width: '100%',
+  },
+  bulletRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  bulletDot: {
+    fontSize: 24,
+    color: '#8b5cf6',
+    fontWeight: '700',
   },
   bulletText: {
-    fontSize: 17,
+    fontSize: 19,
     fontWeight: '500',
-    letterSpacing: 0.3,
+    letterSpacing: 0.4,
   },
   bulletTextGrey: {
-    color: '#CCCCCC',
+    color: '#E5E5E5',
   },
   footer: {
     paddingHorizontal: 24,

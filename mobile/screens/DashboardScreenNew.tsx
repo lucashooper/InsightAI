@@ -23,6 +23,7 @@ import FirstTimeIntroOverlay from '../components/FirstTimeIntroOverlay';
 // Temporarily disabled for Expo Go testing
 // import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 const orbImage = require('../public/InsightAI-Orb.png');
+const insightLogo = require('../public/Insight-Logo-nobg.webp');
 
 const { width } = Dimensions.get('window');
 
@@ -83,15 +84,48 @@ export default function DashboardScreenNew() {
     try {
       console.log('[Dashboard] Checking if first-time user...');
       const hasSeenIntro = await AsyncStorage.getItem('HAS_SEEN_DASHBOARD_INTRO');
+      const needsEmailSignup = await AsyncStorage.getItem('NEEDS_EMAIL_SIGNUP');
       console.log('[Dashboard] HAS_SEEN_DASHBOARD_INTRO:', hasSeenIntro);
+      console.log('[Dashboard] NEEDS_EMAIL_SIGNUP:', needsEmailSignup);
       
       if (!hasSeenIntro) {
         console.log('[Dashboard] First-time user detected, will show intro overlay');
-        // Show intro after a short delay to let dashboard load
-        setTimeout(() => {
-          console.log('[Dashboard] Showing intro overlay now');
-          setShowIntroOverlay(true);
-        }, 1000);
+        
+        // Check if user needs to complete email signup
+        if (needsEmailSignup === 'true') {
+          console.log('[Dashboard] User skipped email signup, will show email prompt');
+          // Show email signup prompt after a short delay
+          setTimeout(() => {
+            Alert.alert(
+              'Welcome to Insight! 🎉',
+              'To get the most out of Insight and ensure you never lose access to your journal, please add your email address.',
+              [
+                {
+                  text: 'Add Email',
+                  onPress: () => {
+                    // Navigate to email signup
+                    navigation.navigate('Settings');
+                  }
+                },
+                {
+                  text: 'Later',
+                  style: 'cancel',
+                  onPress: async () => {
+                    await AsyncStorage.removeItem('NEEDS_EMAIL_SIGNUP');
+                    await AsyncStorage.setItem('HAS_SEEN_DASHBOARD_INTRO', 'true');
+                    setShowIntroOverlay(true);
+                  }
+                }
+              ]
+            );
+          }, 1000);
+        } else {
+          // Show standard intro after a short delay to let dashboard load
+          setTimeout(() => {
+            console.log('[Dashboard] Showing intro overlay now');
+            setShowIntroOverlay(true);
+          }, 1000);
+        }
       } else {
         console.log('[Dashboard] User has already seen intro, skipping');
       }
@@ -422,26 +456,21 @@ export default function DashboardScreenNew() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header - Logo & Branding */}
+        {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Image 
-              source={require('../public/Insight-Logo-nobg.webp')} 
-              style={styles.logoIcon}
-            />
-            <Text style={[styles.brandText, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>Insight</Text>
+            <Image source={insightLogo} style={styles.headerLogo} resizeMode="contain" />
+            <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>Insight</Text>
           </View>
-          <View style={styles.headerIcons}>
-            <TouchableOpacity 
-              onPress={() => setShowStreakModal(true)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.streakInline, theme.name === 'light' && { backgroundColor: '#FFFFFF', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16, borderWidth: 1, borderColor: '#E8E5DC', shadowColor: 'rgba(139, 92, 70, 0.08)', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 8 }]}>
-                <Text style={[styles.streakEmoji, { fontSize: theme.name === 'light' ? 16 : 18 }]}>🔥</Text>
-                <Text style={[styles.streakCount, { color: theme.colors.primaryText, fontSize: theme.name === 'light' ? 14 : 14, fontWeight: theme.name === 'light' ? '700' : '600' }]}>{streak > 0 ? streak : '-'}</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity 
+            onPress={() => setShowStreakModal(true)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.streakInline, theme.name === 'light' && { backgroundColor: '#FFFFFF', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16, borderWidth: 1, borderColor: '#E8E5DC', shadowColor: 'rgba(139, 92, 70, 0.08)', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 8 }]}>
+              <Text style={[styles.streakEmoji, { fontSize: theme.name === 'light' ? 16 : 18 }]}>🔥</Text>
+              <Text style={[styles.streakCount, { color: theme.colors.primaryText, fontSize: theme.name === 'light' ? 14 : 14, fontWeight: theme.name === 'light' ? '700' : '600' }]}>{streak > 0 ? streak : '-'}</Text>
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* Orb Section with Centered Greeting */}
@@ -746,14 +775,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingHorizontal: 8,
+    paddingTop: 50,
     paddingBottom: 20,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+  },
+  headerLogo: {
+    width: 100,
+    height: 100,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    marginLeft: -12,
   },
   logoIcon: {
     width: 64,

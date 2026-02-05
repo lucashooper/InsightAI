@@ -207,7 +207,21 @@ Entry text: ${content}`;
       if (!response.ok) {
         const text = await response.text();
         console.error('[mobileAiService] Non-OK response from GROQ API', response.status, text);
-        throw new Error(`AI analysis failed with status ${response.status}`);
+        
+        // Provide specific error messages based on status code
+        let errorMessage = `AI analysis failed (Status ${response.status})`;
+        
+        if (response.status === 401) {
+          errorMessage = 'API authentication failed. Please check your GROQ API key.';
+        } else if (response.status === 429) {
+          errorMessage = 'Rate limit exceeded. You may have run out of API credits or made too many requests. Please try again later.';
+        } else if (response.status === 500 || response.status === 503) {
+          errorMessage = 'GROQ API server error. The service may be temporarily down. Please try again in a few moments.';
+        } else if (response.status >= 400 && response.status < 500) {
+          errorMessage = `Request error (${response.status}). ${text.slice(0, 100)}`;
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();

@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar, Animated, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import OnboardingBackground from '../../components/OnboardingBackground';
+
+const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 const { width } = Dimensions.get('window');
 
@@ -30,14 +32,10 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
 
     const handleFinish = async () => {
         try {
-            await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
-            // Reset navigation to MainTabs
-            navigation.reset({
-                index: 0,
-                routes: [{ name: 'MainTabs' }],
-            });
+            // Navigate to privacy onboarding screen
+            navigation.navigate('PrivacyOnboarding');
         } catch (e) {
-            console.error('Failed to save onboarding status', e);
+            console.error('Failed to navigate to privacy onboarding', e);
         }
     };
 
@@ -62,6 +60,9 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
             <StatusBar barStyle="light-content" />
 
             <OnboardingBackground />
+            
+            {/* Logo */}
+            <Image source={insightLogo} style={styles.logo} />
 
             <View style={styles.content}>
                 <Animated.View style={[styles.centerContent, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
@@ -87,8 +88,7 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
                             end={{ x: 1, y: 1 }}
                             style={styles.buttonGradient}
                         >
-                            <Text style={styles.buttonText}>Go to Journal</Text>
-                            <Ionicons name="arrow-forward" size={20} color="#fff" />
+                            <Text style={styles.buttonText}>Continue</Text>
                         </LinearGradient>
                     </TouchableOpacity>
                 </View>
@@ -101,6 +101,15 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#000',
+    },
+    logo: {
+        width: 100,
+        height: 100,
+        opacity: 0.9,
+        position: 'absolute',
+        top: 60,
+        alignSelf: 'center',
+        zIndex: 10,
     },
     content: {
         flex: 1,

@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import Purchases from 'react-native-purchases';
+import { EncryptionService } from '../services/encryptionService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import { Platform } from 'react-native';
@@ -102,10 +104,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+    
+    // Initialize encryption key on successful login
+    if (!error && data.user) {
+      try {
+        await EncryptionService.initializeKey(password, data.user.id);
+        console.log('[Auth] Encryption key initialized on login');
+      } catch (encError) {
+        console.error('[Auth] Failed to initialize encryption key:', encError);
+      }
+    }
+    
     return { error };
   };
 
@@ -125,6 +138,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error) {
       console.error('[AUTH] Signup error:', error);
       return { error };
+    }
+
+    // Initialize encryption key on successful signup
+    if (data.user) {
+      try {
+        await EncryptionService.initializeKey(password, data.user.id);
+        console.log('[Auth] Encryption key initialized on signup');
+      } catch (encError) {
+        console.error('[Auth] Failed to initialize encryption key:', encError);
+      }
+
+      // Clear onboarding flags for new account (prevents skip on re-signup)
+      try {
+        await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
+        await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
+        console.log('[Auth] Cleared onboarding flags for new account');
+      } catch (storageError) {
+        console.error('[Auth] Failed to clear onboarding flags:', storageError);
+      }
     }
 
     // Check if email confirmation is required
@@ -198,7 +230,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    // Clear encryption key from keychain on logout
+    try {
+      await EncryptionService.clearKey();
+      console.log('[Auth] Encryption key cleared on logout');
+    } catch (error) {
+      console.error('[Auth] Failed to clear encryption key:', error);
+    }
+    
+    // CRITICAL FIX: Invalidate RevenueCat cache and log out when user signs out
+    // This ensures the next user sees their own subscription status, not cached data
+    try {
+      console.log('[Auth] Invalidating RevenueCat cache on sign out...');
+      await Purchases.invalidateCustomerInfoCache();
+      await Purchases.logOut();
+      console.log('[Auth] RevenueCat cache cleared and logged out');
+    } catch (error) {
+      console.error('[Auth] Failed to clear RevenueCat cache:', error);
+    }
+    
+    // Clear state immediately before calling Supabase signOut
+    setUser(null);
+    setSession(null);
+    
     await supabase.auth.signOut();
+    console.log('[Auth] User signed out successfully');
   };
 
   return (

@@ -1,18 +1,79 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function EmailVerifiedScreen({ navigation }: any) {
+  const { user, loading } = useAuth();
+  const [isReady, setIsReady] = useState(false);
+
+  // CRITICAL FIX: Wait for auth state to update after email verification
+  useEffect(() => {
+    console.log('[EmailVerified] Checking auth state...');
+    console.log('[EmailVerified] User:', user?.id);
+    console.log('[EmailVerified] Loading:', loading);
+
+    // Wait for loading to complete and user to be present
+    if (!loading && user) {
+      console.log('[EmailVerified] ✅ Auth state ready, user authenticated');
+      setIsReady(true);
+    } else if (!loading && !user) {
+      // If loading is done but still no user after a delay, something went wrong
+      console.warn('[EmailVerified] ⚠️ Loading complete but no user found');
+      const timeout = setTimeout(() => {
+        if (!user) {
+          console.error('[EmailVerified] ❌ User not authenticated after verification');
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Login' }],
+          });
+        }
+      }, 2000); // Give it 2 seconds
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [user, loading, navigation]);
+
   const handleContinue = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Navigate to onboarding questions, starting at index 0 (name question)
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'OnboardingQuestion', params: { startIndex: 0 } }],
-    });
+    
+    // User should be authenticated at this point
+    if (user) {
+      console.log('[EmailVerified] Navigating to OnboardingQuestion');
+      // Navigate to onboarding questions for authenticated user
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'OnboardingQuestion', params: { startIndex: 0 } }],
+      });
+    } else {
+      // Shouldn't happen, but fallback to login if not authenticated
+      console.warn('[EmailVerified] User not authenticated, redirecting to login');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    }
   };
+
+  // Show loading state while auth updates
+  if (!isReady) {
+    return (
+      <View style={styles.container}>
+        <LinearGradient
+          colors={['#0a0a0a', '#1a0a2e', '#0a0a0a']}
+          style={styles.gradient}
+        />
+        <View style={styles.content}>
+          <ActivityIndicator size="large" color="#8b5cf6" />
+          <Text style={[styles.subtitle, { marginTop: 16 }]}>
+            Verifying your account...
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
