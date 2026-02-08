@@ -18,7 +18,7 @@ export default function App() {
   useEffect(() => {
     async function loadResourcesAndDataAsync() {
       try {
-        // Configure RevenueCat with comprehensive logging
+        // STEP 1: Configure RevenueCat
         console.log('[REVENUECAT] 🚀 Configuring RevenueCat...');
         console.log('[REVENUECAT] API Key:', REVENUECAT_IOS_API_KEY);
         
@@ -27,27 +27,55 @@ export default function App() {
         });
         
         console.log('[REVENUECAT] ✅ Configuration complete');
-        
-        // Set debug logs enabled
         Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
         console.log('[REVENUECAT] Debug logging enabled');
         
-        // CRITICAL FIX: Invalidate cache and force fresh validation on startup
-        // This ensures we validate against the CURRENT Apple ID, not cached data
+        // STEP 2: CRITICAL - Logout to clear any persisted anonymous user from Keychain
+        // iOS Keychain persists across app deletions, so old subscription data remains
+        // We MUST logout immediately after configure to clear stale data
+        console.log('[REVENUECAT] 🔄 Logging out to clear any persisted anonymous user from Keychain...');
         try {
-          console.log('[REVENUECAT] 🔄 Invalidating cache to force fresh validation...');
+          await Purchases.logOut();
+          console.log('[REVENUECAT] ✅ Logged out - Keychain cleared');
+        } catch (logoutError: any) {
+          console.log('[REVENUECAT] ℹ️ Logout completed (no previous user):', logoutError.message);
+        }
+        
+        // STEP 3: Invalidate cache to force fresh validation against Apple servers
+        console.log('[REVENUECAT] 🔄 Invalidating cache to force fresh validation...');
+        try {
           await Purchases.invalidateCustomerInfoCache();
           console.log('[REVENUECAT] ✅ Cache invalidated');
-          
-          // Now get fresh customer info from Apple servers
+        } catch (cacheError: any) {
+          console.log('[REVENUECAT] ℹ️ Cache invalidation completed:', cacheError.message);
+        }
+        
+        // STEP 4: Get fresh customer info from Apple servers
+        console.log('[REVENUECAT] 📡 Fetching fresh customer info from Apple servers...');
+        try {
           const customerInfo = await Purchases.getCustomerInfo();
-          console.log('[REVENUECAT] 📊 Fresh Customer Info (validated against current Apple ID):');
-          console.log('[REVENUECAT] - User ID:', customerInfo.originalAppUserId);
-          console.log('[REVENUECAT] - Active Entitlements:', Object.keys(customerInfo.entitlements.active));
-          console.log('[REVENUECAT] - All Entitlements:', Object.keys(customerInfo.entitlements.all));
-          console.log('[REVENUECAT] - Active Subscriptions:', customerInfo.activeSubscriptions);
-          console.log('[REVENUECAT] - All Purchased Product IDs:', customerInfo.allPurchasedProductIdentifiers);
-          console.log('[REVENUECAT] - Management URL:', customerInfo.managementURL);
+          
+          // Comprehensive debug logging
+          console.log('=== REVENUECAT STARTUP DEBUG ===');
+          console.log('Request Date:', new Date().toISOString());
+          console.log('Original App User ID:', customerInfo.originalAppUserId);
+          console.log('All Entitlements:', Object.keys(customerInfo.entitlements.all));
+          console.log('Active Entitlements:', Object.keys(customerInfo.entitlements.active));
+          console.log('Active Subscriptions:', customerInfo.activeSubscriptions);
+          console.log('All Purchased Product IDs:', customerInfo.allPurchasedProductIdentifiers);
+          console.log('Management URL:', customerInfo.managementURL);
+          
+          if (customerInfo.latestExpirationDate) {
+            const expDate = new Date(customerInfo.latestExpirationDate);
+            const now = new Date();
+            console.log('Latest Expiration Date:', expDate.toISOString());
+            console.log('Current Time:', now.toISOString());
+            console.log('Is Expired:', expDate < now);
+            console.log('Minutes Until Expiry:', Math.round((expDate.getTime() - now.getTime()) / 1000 / 60));
+          } else {
+            console.log('Latest Expiration Date: null (no subscription)');
+          }
+          console.log('================================');
         } catch (customerInfoError: any) {
           console.error('[REVENUECAT] ❌ Failed to get customer info:', customerInfoError);
           console.error('[REVENUECAT] Error details:', customerInfoError.message);
@@ -67,6 +95,7 @@ export default function App() {
           Asset.fromModule(require('./public/Insight-Logo-nobg.webp')).downloadAsync(),
           Asset.fromModule(require('./public/InsightAI-New-Logo.png')).downloadAsync(),
           Asset.fromModule(require('./public/InsightAI-Onboarding-MAIN.png')).downloadAsync(),
+          Asset.fromModule(require('./public/InsightAI-Orb.png')).downloadAsync(),
           Asset.fromModule(require('./assets/Cambridge-logo.png')).downloadAsync(),
         ]);
       } catch (e: any) {

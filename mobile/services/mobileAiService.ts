@@ -1,4 +1,4 @@
-// Minimal mobile AI service that mirrors the web aiService.analyzeEntry
+// Mobile AI service - calls Supabase Edge Function for server-side validation
 import { Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
 
@@ -50,13 +50,13 @@ export interface EnhancedAIAnalysis {
   };
 }
 
-// Groq Chat Completions endpoint (OpenAI-compatible)
-const GROQ_API_URL = (process.env.EXPO_PUBLIC_GROQ_API_URL as string) ||
-  'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_API_KEY = process.env.EXPO_PUBLIC_GROQ_API_KEY as string || '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';
+// Supabase Edge Function URL
+const SUPABASE_FUNCTION_URL = process.env.EXPO_PUBLIC_SUPABASE_URL
+  ? `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1`
+  : 'https://YOUR_PROJECT.supabase.co/functions/v1';
 
-if (!GROQ_API_URL || !GROQ_API_KEY) {
-  console.warn('[mobileAiService] Missing EXPO_PUBLIC_GROQ_API_URL or EXPO_PUBLIC_GROQ_API_KEY. Analysis will fail.');
+if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+  console.warn('[mobileAiService] Missing EXPO_PUBLIC_SUPABASE_URL. Analysis will fail.');
 }
 
 async function waitForRateLimit() {
@@ -177,59 +177,76 @@ Entry text: ${content}`;
     4. Each card's 'text' should be 1-3 sentences, specific to their entry, and address them as 'You'.
     5. You MUST also provide 3-5 items in 'keyTakeaways' for backward compatibility.
     6. **STRICT GRAMMAR RULE**: ALWAYS use second person ("You", "Your"). NEVER use "their", "the user", "he", "she", or third person. Example: "Your contentment suggests..." NOT "You's contentment" or "their contentment".
-    7. **Tone**: Write with warmth and empathy, like a supportive therapist speaking directly to the person.`;
+    7. **Tone**: Write with warmth, encouragement, and empathy, like a supportive therapist speaking directly to the person.
+    8. **POSITIVITY BIAS**: Always lead with strengths and wins. Frame challenges as growth opportunities. Key Themes should be ENCOURAGING and GROWTH-ORIENTED, not negative labels. For example:
+       - GOOD: "Building social confidence", "Embracing new experiences", "Developing self-compassion"
+       - BAD: "Social anxiety and self-perception", "Missed opportunities and self-doubt", "Accidental loss of personal data"
+    9. Even when addressing struggles, use empowering language that highlights their awareness and potential for growth.`;
+
+    // Get user session for authentication
+    console.log('[mobileAiService] Getting user session...');
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.error('[mobileAiService] No session found');
+      throw new Error('Not authenticated. Please sign in to use AI features.');
+    }
+
+    console.log('[mobileAiService] Session found, user ID:', session.user?.id);
+    console.log('[mobileAiService] Calling Edge Function:', `${SUPABASE_FUNCTION_URL}/clever-api`);
 
     try {
-      const response = await fetch(GROQ_API_URL, {
+      // Call Supabase Edge Function instead of Groq directly
+      const response = await fetch(`${SUPABASE_FUNCTION_URL}/clever-api`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${GROQ_API_KEY}`,
+          'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
         signal: options?.signal,
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [
-            {
-              role: 'system',
-              content: systemInstruction,
-            },
-            {
-              role: 'user',
-              content: enhancedPrompt,
-            },
-          ],
-          temperature: 0.7,
-          max_tokens: 2000,
+          content,
+          systemInstruction,
+          enhancedPrompt,
         }),
       });
 
+      console.log('[mobileAiService] Edge Function response status:', response.status);
+
       if (!response.ok) {
-        const text = await response.text();
-        console.error('[mobileAiService] Non-OK response from GROQ API', response.status, text);
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('[mobileAiService] Edge function error', response.status, errorData);
+        
+        // Handle subscription-specific errors
+        if (response.status === 402) {
+          throw new Error(errorData.message || 'Subscription required to use AI features.');
+        }
         
         // Provide specific error messages based on status code
-        let errorMessage = `AI analysis failed (Status ${response.status})`;
+        let errorMessage = errorData.error || `AI analysis failed (Status ${response.status})`;
         
         if (response.status === 401) {
-          errorMessage = 'API authentication failed. Please check your GROQ API key.';
+          errorMessage = 'Authentication failed. Please sign in again.';
         } else if (response.status === 429) {
-          errorMessage = 'Rate limit exceeded. You may have run out of API credits or made too many requests. Please try again later.';
+          errorMessage = 'Rate limit exceeded. Please try again later.';
         } else if (response.status === 500 || response.status === 503) {
-          errorMessage = 'GROQ API server error. The service may be temporarily down. Please try again in a few moments.';
-        } else if (response.status >= 400 && response.status < 500) {
-          errorMessage = `Request error (${response.status}). ${text.slice(0, 100)}`;
+          errorMessage = 'AI service temporarily unavailable. Please try again in a few moments.';
         }
         
         throw new Error(errorMessage);
       }
 
       const data = await response.json();
+      console.log('[mobileAiService] ✅ Edge Function success, parsing response...');
+      
       const analysisText: string = data.choices?.[0]?.message?.content || '';
 
       if (!analysisText || analysisText.trim() === '') {
+        console.error('[mobileAiService] Empty AI response received');
         throw new Error('Empty AI response');
       }
+      
+      console.log('[mobileAiService] AI response length:', analysisText.length);
 
       let parsed: any;
       try {

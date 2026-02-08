@@ -13,7 +13,7 @@ import { supabase } from '../../lib/supabase';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
-const ENTITLEMENT_ID = 'pro';
+const ENTITLEMENT_ID = 'InsightAI Pro';
 
 export default function PaywallScreen({ navigation }: any) {
   const { user } = useAuth();
@@ -36,6 +36,13 @@ export default function PaywallScreen({ navigation }: any) {
         console.log('[REVENUECAT] ✅ Offerings loaded successfully');
         console.log('[REVENUECAT] All offerings:', Object.keys(offerings.all));
         console.log('[REVENUECAT] Current offering ID:', offerings.current?.identifier);
+        
+        // Check current subscription status
+        console.log('[REVENUECAT] Checking current subscription status...');
+        const customerInfo = await Purchases.getCustomerInfo();
+        console.log('[REVENUECAT] Active entitlements:', Object.keys(customerInfo.entitlements.active));
+        console.log('[REVENUECAT] Active subscriptions:', customerInfo.activeSubscriptions);
+        console.log('[REVENUECAT] All purchased products:', customerInfo.allPurchasedProductIdentifiers);
         
         if (offerings.current) {
           console.log('[REVENUECAT] 📦 Available packages:', offerings.current.availablePackages.length);
@@ -150,31 +157,65 @@ export default function PaywallScreen({ navigation }: any) {
   };
 
   const handleCustomerInfo = async (customerInfo: CustomerInfo) => {
+    // CRITICAL DEBUG: Log all entitlements to identify the correct one
+    console.log('[Paywall] 🔍 All active entitlements:', Object.keys(customerInfo.entitlements.active));
+    console.log('[Paywall] 🔍 Looking for entitlement ID:', ENTITLEMENT_ID);
+    console.log('[Paywall] 🔍 All entitlements (active and inactive):', Object.keys(customerInfo.entitlements.all));
+    
     const isProActive = !!customerInfo.entitlements.active[ENTITLEMENT_ID];
     console.log('[Paywall] Checking subscription status:', isProActive);
     
-    if (isProActive) {
-      console.log('[Paywall] ✅ Subscription is active, proceeding with onboarding completion');
+    // TEMPORARY FIX: If we have ANY active entitlement, consider it valid
+    const hasAnyActiveEntitlement = Object.keys(customerInfo.entitlements.active).length > 0;
+    console.log('[Paywall] Has any active entitlement:', hasAnyActiveEntitlement);
+    
+    if (isProActive || hasAnyActiveEntitlement) {
+      console.log('[Paywall] ✅ Subscription is active');
       
-      // Save username to profile and mark onboarding complete
-      await saveUsernameToProfile();
+      // Check if user has completed onboarding
+      const hasCompletedOnboarding = await AsyncStorage.getItem('HAS_COMPLETED_ONBOARDING');
+      console.log('[Paywall] Has completed onboarding:', hasCompletedOnboarding);
       
-      // Check if user has email (didn't skip email signup)
-      const hasEmail = user?.email && !user.email.includes('privaterelay');
-      console.log('[Paywall] User has email:', hasEmail);
-      
-      if (!hasEmail) {
-        // User skipped email signup - store flag to show email prompt overlay
-        await AsyncStorage.setItem('NEEDS_EMAIL_SIGNUP', 'true');
-        console.log('[Paywall] User needs email signup, flag set');
+      if (hasCompletedOnboarding === 'true') {
+        // User is upgrading from Settings - just show success and go back
+        console.log('[Paywall] User upgrading from Settings - showing success alert');
+        Alert.alert(
+          'Purchase Successful! 🎉',
+          'You now have access to unlimited AI insights and all Pro features.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                console.log('[Paywall] Navigating back to Settings');
+                navigation.goBack();
+              }
+            }
+          ]
+        );
+      } else {
+        // User is in onboarding flow - complete onboarding
+        console.log('[Paywall] User in onboarding flow - completing onboarding');
+        
+        // Save username to profile and mark onboarding complete
+        await saveUsernameToProfile();
+        
+        // Check if user has email (didn't skip email signup)
+        const hasEmail = user?.email && !user.email.includes('privaterelay');
+        console.log('[Paywall] User has email:', hasEmail);
+        
+        if (!hasEmail) {
+          // User skipped email signup - store flag to show email prompt overlay
+          await AsyncStorage.setItem('NEEDS_EMAIL_SIGNUP', 'true');
+          console.log('[Paywall] User needs email signup, flag set');
+        }
+        
+        // Navigate to main app
+        console.log('[Paywall] Navigating to MainTabs');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs' }],
+        });
       }
-      
-      // Navigate to main app
-      console.log('[Paywall] Navigating to MainTabs');
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'MainTabs' }],
-      });
     } else {
       console.log('[Paywall] ❌ Subscription not active after purchase');
       Alert.alert('Subscription not active', 'Your purchase could not be confirmed. Please contact support if this persists.');
@@ -241,11 +282,27 @@ export default function PaywallScreen({ navigation }: any) {
       const { customerInfo } = await Purchases.purchasePackage(selectedPackage);
       
       console.log('[REVENUECAT] ✅ Purchase successful!');
-      console.log('[REVENUECAT] Customer Info:');
-      console.log('[REVENUECAT] - User ID:', customerInfo.originalAppUserId);
-      console.log('[REVENUECAT] - Active Entitlements:', Object.keys(customerInfo.entitlements.active));
-      console.log('[REVENUECAT] - Active Subscriptions:', customerInfo.activeSubscriptions);
-      console.log('[REVENUECAT] - All Purchased Products:', customerInfo.allPurchasedProductIdentifiers);
+      
+      // Comprehensive debug logging
+      console.log('=== REVENUECAT PURCHASE DEBUG ===');
+      console.log('Request Date:', new Date().toISOString());
+      console.log('Original App User ID:', customerInfo.originalAppUserId);
+      console.log('All Entitlements:', Object.keys(customerInfo.entitlements.all));
+      console.log('Active Entitlements:', Object.keys(customerInfo.entitlements.active));
+      console.log('Active Subscriptions:', customerInfo.activeSubscriptions);
+      console.log('All Purchased Product IDs:', customerInfo.allPurchasedProductIdentifiers);
+      
+      if (customerInfo.latestExpirationDate) {
+        const expDate = new Date(customerInfo.latestExpirationDate);
+        const now = new Date();
+        console.log('Latest Expiration Date:', expDate.toISOString());
+        console.log('Current Time:', now.toISOString());
+        console.log('Is Expired:', expDate < now);
+        console.log('Minutes Until Expiry:', Math.round((expDate.getTime() - now.getTime()) / 1000 / 60));
+      } else {
+        console.log('Latest Expiration Date: null (no subscription)');
+      }
+      console.log('================================');
       
       handleCustomerInfo(customerInfo);
     } catch (error: any) {
@@ -260,11 +317,29 @@ export default function PaywallScreen({ navigation }: any) {
         return;
       }
       
-      Alert.alert(
-        'Purchase Failed',
-        `Error: ${error.message}\n\nCode: ${error.code || 'unknown'}\n\nPlease check:\n1. Sandbox account is signed in (Settings > App Store)\n2. Products are configured in App Store Connect\n3. Try again in a few moments`,
-        [{ text: 'OK' }]
-      );
+      // Check if this is the "already subscribed" error from StoreKit
+      const errorMsg = error.message?.toLowerCase() || '';
+      const isAlreadySubscribed = errorMsg.includes('already') || errorMsg.includes('subscribed') || error.code === 'PRODUCT_ALREADY_PURCHASED_ERROR';
+      
+      if (isAlreadySubscribed) {
+        Alert.alert(
+          'Sandbox Subscription Cache',
+          'Apple\'s sandbox environment has a cached subscription record.\n\nThis is a testing limitation - your actual subscription status is "Free" as shown in Settings.\n\nTo test purchases:\n1. Settings → App Store → Sign out of sandbox account\n2. Sign in with a different sandbox account\n3. Or wait 30 minutes for auto-expiration\n\nYou can skip this screen and continue to the app.',
+          [
+            { text: 'Continue to App', onPress: async () => {
+              await saveUsernameToProfile();
+              navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+            }},
+            { text: 'OK', style: 'cancel' }
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Purchase Failed',
+          `Error: ${error.message}\n\nCode: ${error.code || 'unknown'}\n\nPlease check:\n1. Sandbox account is signed in (Settings > App Store)\n2. Products are configured in App Store Connect\n3. Try again in a few moments`,
+          [{ text: 'OK' }]
+        );
+      }
     } finally {
       setIsPurchasing(false);
       console.log('[REVENUECAT] Purchase flow complete');
@@ -276,15 +351,32 @@ export default function PaywallScreen({ navigation }: any) {
       setIsPurchasing(true);
       console.log('[REVENUECAT] 🔄 Restoring purchases...');
       
-      // CRITICAL FIX: Invalidate cache before restoring to force fresh validation
+      // Invalidate cache before restoring to force fresh validation
       console.log('[REVENUECAT] Invalidating cache before restore...');
       await Purchases.invalidateCustomerInfoCache();
       
       const customerInfo = await Purchases.restorePurchases();
       
-      console.log('[REVENUECAT] ✅ Restore successful');
-      console.log('[REVENUECAT] Active Entitlements:', Object.keys(customerInfo.entitlements.active));
-      console.log('[REVENUECAT] Active Subscriptions:', customerInfo.activeSubscriptions);
+      // Comprehensive debug logging
+      console.log('=== REVENUECAT RESTORE DEBUG ===');
+      console.log('Request Date:', new Date().toISOString());
+      console.log('Original App User ID:', customerInfo.originalAppUserId);
+      console.log('All Entitlements:', Object.keys(customerInfo.entitlements.all));
+      console.log('Active Entitlements:', Object.keys(customerInfo.entitlements.active));
+      console.log('Active Subscriptions:', customerInfo.activeSubscriptions);
+      console.log('All Purchased Product IDs:', customerInfo.allPurchasedProductIdentifiers);
+      
+      if (customerInfo.latestExpirationDate) {
+        const expDate = new Date(customerInfo.latestExpirationDate);
+        const now = new Date();
+        console.log('Latest Expiration Date:', expDate.toISOString());
+        console.log('Current Time:', now.toISOString());
+        console.log('Is Expired:', expDate < now);
+        console.log('Minutes Until Expiry:', Math.round((expDate.getTime() - now.getTime()) / 1000 / 60));
+      } else {
+        console.log('Latest Expiration Date: null (no subscription)');
+      }
+      console.log('================================');
       
       if (Object.keys(customerInfo.entitlements.active).length === 0) {
         Alert.alert('No Purchases Found', 'No active subscriptions were found for this Apple ID.');

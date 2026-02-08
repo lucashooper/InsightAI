@@ -35,6 +35,8 @@ export default function SettingsScreen({ navigation }: any) {
   const [breathingPromptsEnabled, setBreathingPromptsEnabled] = useState(true);
   const [monthlyStoriesEnabled, setMonthlyStoriesEnabled] = useState(true);
   const [moodIndicatorsEnabled, setMoodIndicatorsEnabled] = useState(true);
+  const [subscriptionPlan, setSubscriptionPlan] = useState<string>('Free');
+  const [isLoadingSubscription, setIsLoadingSubscription] = useState(true);
 
   const defaultThemes: { name: ThemeName; label: string; emoji: string }[] = [
     { name: 'dark', label: 'Dark', emoji: '🌑' },
@@ -53,6 +55,7 @@ export default function SettingsScreen({ navigation }: any) {
       loadUserProfile();
       loadUsageStats();
       loadPersonalizationSettings();
+      loadSubscriptionStatus();
     }
   }, [user]);
 
@@ -223,6 +226,42 @@ export default function SettingsScreen({ navigation }: any) {
       }
     } catch (error) {
       console.error('Error loading usage:', error);
+    }
+  };
+
+  const loadSubscriptionStatus = async () => {
+    try {
+      setIsLoadingSubscription(true);
+      console.log('[Settings] Loading subscription status...');
+      
+      const customerInfo = await Purchases.getCustomerInfo();
+      console.log('[Settings] Customer info loaded');
+      console.log('[Settings] Active entitlements:', Object.keys(customerInfo.entitlements.active));
+      console.log('[Settings] Active subscriptions:', customerInfo.activeSubscriptions);
+      
+      const ENTITLEMENT_ID = 'InsightAI Pro';
+      const isProActive = !!customerInfo.entitlements.active[ENTITLEMENT_ID];
+      const hasAnyActiveEntitlement = Object.keys(customerInfo.entitlements.active).length > 0;
+      
+      console.log('[Settings] Is Pro Active:', isProActive);
+      console.log('[Settings] Has any active entitlement:', hasAnyActiveEntitlement);
+      
+      if (isProActive || hasAnyActiveEntitlement) {
+        setSubscriptionPlan('Pro');
+        setUsageLimit(999999);
+        console.log('[Settings] ✅ Subscription is active - setting plan to Pro');
+      } else {
+        setSubscriptionPlan('Free');
+        setUsageLimit(2);
+        console.log('[Settings] ℹ️ No active subscription - setting plan to Free');
+      }
+    } catch (error: any) {
+      console.error('[Settings] ❌ Error loading subscription status:', error);
+      console.error('[Settings] Error message:', error.message);
+      setSubscriptionPlan('Free');
+      setUsageLimit(2);
+    } finally {
+      setIsLoadingSubscription(false);
     }
   };
 
@@ -572,37 +611,43 @@ export default function SettingsScreen({ navigation }: any) {
             <View style={styles.cardGradient}>
               <View style={styles.usageRow}>
                 <Text style={styles.usageLabel}>Current Plan</Text>
-                <Text style={styles.usageTier}>Free</Text>
+                {isLoadingSubscription ? (
+                  <ActivityIndicator size="small" color="#a855f7" />
+                ) : (
+                  <Text style={styles.usageTier}>{subscriptionPlan}</Text>
+                )}
               </View>
-              <View style={styles.usageProgress}>
-                <View style={styles.usageProgressRow}>
-                  <Text style={styles.usageProgressLabel}>AI Analyses Today</Text>
-                  <Text style={styles.usageProgressValue}>{usageCount} / {usageLimit}</Text>
+              {subscriptionPlan === 'Pro' && (
+                <View style={styles.usageProgress}>
+                  <View style={styles.usageProgressRow}>
+                    <Text style={styles.usageProgressLabel}>AI Analyses Today</Text>
+                    <Text style={styles.usageProgressValue}>{usageCount} / 2</Text>
+                  </View>
+                  <View style={styles.progressBarContainer}>
+                    <View
+                      style={[
+                        styles.progressBarFill,
+                        { width: `${(usageCount / 2) * 100}%` }
+                      ]}
+                    />
+                  </View>
                 </View>
-                <View style={styles.progressBarContainer}>
-                  <View
-                    style={[
-                      styles.progressBarFill,
-                      { width: `${(usageCount / usageLimit) * 100}%` }
-                    ]}
-                  />
-                </View>
-              </View>
+              )}
               
-              {/* Upgrade Button */}
+              {/* Upgrade/Manage Button */}
               <TouchableOpacity
                 style={styles.upgradeButton}
                 onPress={() => navigation.navigate('Paywall')}
                 activeOpacity={0.8}
               >
                 <LinearGradient
-                  colors={['#a855f7', '#8b5cf6']}
+                  colors={subscriptionPlan === 'Pro' ? ['#10b981', '#059669'] : ['#a855f7', '#8b5cf6']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.upgradeGradient}
                 >
-                  <Ionicons name="sparkles" size={18} color="#fff" />
-                  <Text style={styles.upgradeButtonText}>Upgrade to Pro</Text>
+                  <Ionicons name={subscriptionPlan === 'Pro' ? 'settings-outline' : 'sparkles'} size={18} color="#fff" />
+                  <Text style={styles.upgradeButtonText}>{subscriptionPlan === 'Pro' ? 'Manage Subscription' : 'Upgrade to Pro'}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>

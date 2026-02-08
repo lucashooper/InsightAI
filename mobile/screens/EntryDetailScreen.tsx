@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, LayoutAnimation, Platform, UIManager, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
+import Purchases from 'react-native-purchases';
 import { supabase } from '../lib/supabase';
 import { mobileAiService } from '../services/mobileAiService';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import ImmersiveAnalysisOverlay from '../components/shared/ImmersiveAnalysisOverlay';
+import PremiumUpsellOverlay from '../components/PremiumUpsellOverlay';
+import * as Haptics from 'expo-haptics';
 
 // Helper function to get color styling based on emotion sentiment
 const getSentimentStyle = (emotion: string) => {
@@ -112,6 +114,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
   const analysisProgress = useRef(new Animated.Value(0)).current;
   const analysisAbortRef = useRef<AbortController | null>(null);
   const analysisMessageIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [premiumUpsellVisible, setPremiumUpsellVisible] = useState(false);
   
   const toggleAccordion = (section: 'strengths' | 'growth') => {
     // Configure smooth animation
@@ -242,6 +245,26 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
     const targetEntry = entryData || entry;
     if (!targetEntry?.content || analyzing) return;
 
+    // Check subscription status BEFORE starting animation
+    try {
+      const customerInfo = await Purchases.getCustomerInfo();
+      const ENTITLEMENT_ID = 'InsightAI Pro';
+      const isProActive = !!customerInfo.entitlements.active[ENTITLEMENT_ID];
+      const hasAnyActiveEntitlement = Object.keys(customerInfo.entitlements.active).length > 0;
+      
+      // If user doesn't have subscription, show premium overlay immediately
+      if (!isProActive && !hasAnyActiveEntitlement) {
+        console.log('[EntryDetail] User has no subscription - showing premium overlay');
+        setPremiumUpsellVisible(true);
+        return;
+      }
+    } catch (error) {
+      console.error('[EntryDetail] Error checking subscription:', error);
+      // If we can't check subscription, show premium overlay to be safe
+      setPremiumUpsellVisible(true);
+      return;
+    }
+
     const ANALYSIS_MIN_MS = 10000;
     const messages = [
       'Connecting with your thoughts...',
@@ -326,7 +349,28 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
         // Cancelled by user
         return;
       }
-      Alert.alert('Analysis failed', 'Something went wrong while analyzing this entry.');
+      
+      // Stop rotating messages
+      if (analysisMessageIntervalRef.current) {
+        clearInterval(analysisMessageIntervalRef.current);
+        analysisMessageIntervalRef.current = null;
+      }
+      
+      // Close the analysis overlay
+      setAnalysisOverlayVisible(false);
+      analysisProgress.setValue(0);
+      
+      // Show specific error message from the service
+      const errorMessage = err?.message || 'Something went wrong while analyzing this entry.';
+      
+      // Check if this is a subscription error
+      if (errorMessage.includes('Subscription required') || errorMessage.includes('subscription')) {
+        // Show premium upsell overlay
+        setPremiumUpsellVisible(true);
+      } else {
+        // Show generic error alert
+        Alert.alert('Analysis failed', errorMessage);
+      }
     } finally {
       analysisAbortRef.current = null;
       setAnalyzing(false);
@@ -659,6 +703,17 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                 setAnalysisOverlayVisible(false);
               },
             })}
+      />
+
+      <PremiumUpsellOverlay
+        visible={premiumUpsellVisible}
+        onUpgrade={() => {
+          setPremiumUpsellVisible(false);
+          navigation.navigate('Paywall');
+        }}
+        onDismiss={() => {
+          setPremiumUpsellVisible(false);
+        }}
       />
     </View>
   );

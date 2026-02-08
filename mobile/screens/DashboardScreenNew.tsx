@@ -9,6 +9,7 @@ import {
   Image,
   Animated,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -37,6 +38,7 @@ export default function DashboardScreenNew() {
   const { user } = useAuth();
   const { theme } = useTheme();
   const rotateAnim = useRef(new Animated.Value(0)).current;
+  const [orbImageLoaded, setOrbImageLoaded] = useState(false);
   const navigation = useNavigation<any>();
   const [loading, setLoading] = useState(true);
   const [emotionalState, setEmotionalState] = useState<EmotionalState>({
@@ -475,11 +477,19 @@ export default function DashboardScreenNew() {
 
         {/* Orb Section with Centered Greeting */}
         <View style={styles.orbSection}>
+          {!orbImageLoaded && (
+            <ActivityIndicator 
+              size="large" 
+              color="#a855f7" 
+              style={styles.orbLoader}
+            />
+          )}
           <Animated.Image 
             source={orbImage} 
             style={[
               styles.orbImage,
               {
+                opacity: orbImageLoaded ? 1 : 0,
                 transform: [{
                   rotate: rotateAnim.interpolate({
                     inputRange: [0, 1],
@@ -489,6 +499,7 @@ export default function DashboardScreenNew() {
               }
             ]}
             resizeMode="contain"
+            onLoad={() => setOrbImageLoaded(true)}
           />
           <View style={styles.greetingInOrb}>
             <Text style={[styles.greetingText, { 
@@ -872,6 +883,10 @@ const styles = StyleSheet.create({
     height: 360,
     position: 'relative',
     marginBottom: 20,
+  },
+  orbLoader: {
+    position: 'absolute',
+    top: 180,
   },
   orbImage: {
     width: 320,
