@@ -15,7 +15,7 @@ const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 const ENTITLEMENT_ID = 'InsightAI Pro';
 
-export default function PaywallScreen({ navigation }: any) {
+export default function PaywallScreen({ navigation, route }: any) {
   const { user } = useAuth();
   const { userName } = useOnboarding();
   const [offering, setOffering] = useState<PurchasesOffering | null>(null);
@@ -132,6 +132,10 @@ export default function PaywallScreen({ navigation }: any) {
         }
       }
       
+      // Cache username locally so Settings can always display it
+      await AsyncStorage.setItem('CACHED_USERNAME', userName);
+      console.log('[Paywall] ✅ Username cached locally');
+      
       // Mark onboarding as complete
       await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
       console.log('[Paywall] ✅ Onboarding marked as complete');
@@ -172,11 +176,11 @@ export default function PaywallScreen({ navigation }: any) {
     if (isProActive || hasAnyActiveEntitlement) {
       console.log('[Paywall] ✅ Subscription is active');
       
-      // Check if user has completed onboarding
-      const hasCompletedOnboarding = await AsyncStorage.getItem('HAS_COMPLETED_ONBOARDING');
-      console.log('[Paywall] Has completed onboarding:', hasCompletedOnboarding);
+      // Check if user came from Settings (upgrading) vs onboarding (new user)
+      const fromSettings = route?.params?.fromSettings === true;
+      console.log('[Paywall] fromSettings param:', fromSettings);
       
-      if (hasCompletedOnboarding === 'true') {
+      if (fromSettings) {
         // User is upgrading from Settings - just show success and go back
         console.log('[Paywall] User upgrading from Settings - showing success alert');
         Alert.alert(
@@ -204,17 +208,19 @@ export default function PaywallScreen({ navigation }: any) {
         console.log('[Paywall] User has email:', hasEmail);
         
         if (!hasEmail) {
-          // User skipped email signup - store flag to show email prompt overlay
+          // User skipped email signup - show welcome screen then prompt to create account
           await AsyncStorage.setItem('NEEDS_EMAIL_SIGNUP', 'true');
-          console.log('[Paywall] User needs email signup, flag set');
+          console.log('[Paywall] User needs email signup - navigating to PostPurchaseWelcome');
+          navigation.navigate('PostPurchaseWelcome');
+        } else {
+          // User has email - mark onboarding complete and go to main app
+          await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+          console.log('[Paywall] Navigating to MainTabs');
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'MainTabs' }],
+          });
         }
-        
-        // Navigate to main app
-        console.log('[Paywall] Navigating to MainTabs');
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'MainTabs' }],
-        });
       }
     } else {
       console.log('[Paywall] ❌ Subscription not active after purchase');
@@ -323,9 +329,19 @@ export default function PaywallScreen({ navigation }: any) {
       
       if (isAlreadySubscribed) {
         Alert.alert(
-          'Sandbox Subscription Cache',
-          'Apple\'s sandbox environment has a cached subscription record.\n\nThis is a testing limitation - your actual subscription status is "Free" as shown in Settings.\n\nTo test purchases:\n1. Settings → App Store → Sign out of sandbox account\n2. Sign in with a different sandbox account\n3. Or wait 30 minutes for auto-expiration\n\nYou can skip this screen and continue to the app.',
+          'Sandbox Cache Issue',
+          'Apple\'s StoreKit has a cached subscription receipt on this device.\n\n✅ Server Status: No active subscription\n❌ Device Cache: Old receipt blocking purchase\n\n🔧 SOLUTIONS:\n\n1. App Store Connect → Sandbox → Clear Purchase History (RECOMMENDED)\n\n2. Device Settings → App Store → Sign out → Sign in with different sandbox account\n\n3. Use a different sandbox tester account\n\nThis is an Apple sandbox limitation, not an app bug. Production works correctly.',
           [
+            { text: 'Try Force Refresh', onPress: async () => {
+              try {
+                console.log('[REVENUECAT] Force invalidating cache and retrying...');
+                await Purchases.invalidateCustomerInfoCache();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                handleStartJourney();
+              } catch (error) {
+                console.error('[REVENUECAT] Force refresh failed:', error);
+              }
+            }},
             { text: 'Continue to App', onPress: async () => {
               await saveUsernameToProfile();
               navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });

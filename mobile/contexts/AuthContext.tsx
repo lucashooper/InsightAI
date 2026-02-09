@@ -150,12 +150,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // Clear onboarding flags for new account (prevents skip on re-signup)
+      // BUT preserve them if user is in post-purchase flow (already completed onboarding)
       try {
-        await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
-        await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
-        console.log('[Auth] Cleared onboarding flags for new account');
+        const needsEmailSignup = await AsyncStorage.getItem('NEEDS_EMAIL_SIGNUP');
+        if (needsEmailSignup === 'true') {
+          // Post-purchase flow: user already completed onboarding, preserve the flag
+          // so EmailVerified navigates to MainTabs instead of OnboardingQuestion
+          console.log('[Auth] Post-purchase signup - preserving onboarding flags');
+          await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+        } else {
+          await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
+          await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
+          console.log('[Auth] Cleared onboarding flags for new account');
+        }
       } catch (storageError) {
-        console.error('[Auth] Failed to clear onboarding flags:', storageError);
+        console.error('[Auth] Failed to handle onboarding flags:', storageError);
       }
     }
 
@@ -247,6 +256,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('[Auth] RevenueCat cache cleared and logged out');
     } catch (error) {
       console.error('[Auth] Failed to clear RevenueCat cache:', error);
+    }
+    
+    // Clear onboarding flags to prevent stale state for new accounts
+    try {
+      await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
+      await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
+      await AsyncStorage.removeItem('NEEDS_EMAIL_SIGNUP');
+      console.log('[Auth] Cleared onboarding flags on sign out');
+    } catch (error) {
+      console.error('[Auth] Failed to clear onboarding flags:', error);
     }
     
     // Clear state immediately before calling Supabase signOut

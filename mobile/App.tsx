@@ -10,7 +10,14 @@ import { OnboardingProvider } from './contexts/OnboardingContext';
 import AppNavigator from './navigation/AppNavigator';
 import { EncryptionService } from './services/encryptionService';
 
-const REVENUECAT_IOS_API_KEY = 'appl_kqCbylJegHaNzqoGMLhkrprqibn';
+// RevenueCat API Keys
+// Test Store: Bypasses Apple sandbox, works in simulator, instant testing
+// Production: Real Apple StoreKit integration for production builds
+const REVENUECAT_TEST_STORE_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_TEST_STORE_API_KEY || 'test_wuTAwQKYtsAjXmbyqtuVVRCMWGF';
+const REVENUECAT_PRODUCTION_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY || 'appl_kqCbylJegHaNzqoGMLhkrprqibn';
+
+// Use Test Store in development for easier testing, Production for releases
+const REVENUECAT_API_KEY = __DEV__ ? REVENUECAT_TEST_STORE_API_KEY : REVENUECAT_PRODUCTION_API_KEY;
 
 export default function App() {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
@@ -20,10 +27,11 @@ export default function App() {
       try {
         // STEP 1: Configure RevenueCat
         console.log('[REVENUECAT] 🚀 Configuring RevenueCat...');
-        console.log('[REVENUECAT] API Key:', REVENUECAT_IOS_API_KEY);
+        console.log('[REVENUECAT] Environment:', __DEV__ ? 'DEVELOPMENT (Test Store)' : 'PRODUCTION');
+        console.log('[REVENUECAT] API Key:', REVENUECAT_API_KEY.substring(0, 20) + '...');
         
         Purchases.configure({
-          apiKey: REVENUECAT_IOS_API_KEY,
+          apiKey: REVENUECAT_API_KEY,
         });
         
         console.log('[REVENUECAT] ✅ Configuration complete');

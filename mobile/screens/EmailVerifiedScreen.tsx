@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'rea
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function EmailVerifiedScreen({ navigation }: any) {
@@ -36,17 +37,34 @@ export default function EmailVerifiedScreen({ navigation }: any) {
     }
   }, [user, loading, navigation]);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
     // User should be authenticated at this point
     if (user) {
-      console.log('[EmailVerified] Navigating to OnboardingQuestion');
-      // Navigate to onboarding questions for authenticated user
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'OnboardingQuestion', params: { startIndex: 0 } }],
-      });
+      // Clear the email signup flag since user now has an email
+      await AsyncStorage.removeItem('NEEDS_EMAIL_SIGNUP');
+      
+      // Check if user already completed onboarding (post-purchase flow)
+      // If they already went through onboarding questions + purchased, go straight to MainTabs
+      const hasCompletedOnboarding = await AsyncStorage.getItem('HAS_COMPLETED_ONBOARDING');
+      console.log('[EmailVerified] HAS_COMPLETED_ONBOARDING:', hasCompletedOnboarding);
+      
+      if (hasCompletedOnboarding === 'true') {
+        // Post-purchase flow: user already did onboarding, go to main app
+        console.log('[EmailVerified] Post-purchase flow - navigating to MainTabs');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs' }],
+        });
+      } else {
+        // Normal signup flow: user needs to complete onboarding questions
+        console.log('[EmailVerified] Normal flow - navigating to OnboardingQuestion');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'OnboardingQuestion', params: { startIndex: 0 } }],
+        });
+      }
     } else {
       // Shouldn't happen, but fallback to login if not authenticated
       console.warn('[EmailVerified] User not authenticated, redirecting to login');

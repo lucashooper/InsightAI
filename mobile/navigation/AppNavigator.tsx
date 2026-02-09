@@ -37,6 +37,7 @@ import NotificationsOnboardingScreen from '../screens/onboarding/NotificationsOn
 import AnalyzingScreen from '../screens/onboarding/AnalyzingScreen';
 import AnalysisCompleteScreen from '../screens/onboarding/AnalysisCompleteScreen';
 import PaywallScreen from '../screens/onboarding/PaywallScreen';
+import PostPurchaseWelcomeScreen from '../screens/onboarding/PostPurchaseWelcomeScreen';
 import MeditationScreen from '../screens/MeditationScreen';
 import GratitudeScreen from '../screens/GratitudeScreen';
 import GratitudeHistoryScreen from '../screens/GratitudeHistoryScreen';
@@ -280,15 +281,22 @@ function MainTabs() {
 export default function AppNavigator() {
   const { user, loading } = useAuth();
   const [isOnboardingCompleted, setIsOnboardingCompleted] = React.useState<boolean | null>(null);
+  const prevUserIdRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
-    // CRITICAL FIX: Reset state to null when user changes to force re-check
-    // This prevents stale state from persisting across sign-out/sign-in
-    setIsOnboardingCompleted(null);
+    // Detect user changes (sign-in, sign-out, or user ID change from OTP)
+    // Always reset to null to show loading spinner while async check runs
+    // This prevents rendering the wrong stack with stale isOnboardingCompleted
+    const currentUserId = user?.id || null;
+    if (currentUserId !== prevUserIdRef.current) {
+      console.log('[NAV] User changed:', prevUserIdRef.current, '->', currentUserId);
+      setIsOnboardingCompleted(null);
+      prevUserIdRef.current = currentUserId;
+    }
     
     const checkOnboarding = async () => {
       try {
-        // First check AsyncStorage
+        // Always check AsyncStorage first - this is the source of truth
         const value = await AsyncStorage.getItem('HAS_COMPLETED_ONBOARDING');
         console.log('[NAV] HAS_COMPLETED_ONBOARDING from storage:', value);
         
@@ -316,12 +324,18 @@ export default function AppNavigator() {
             await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
             setIsOnboardingCompleted(true);
           } else {
-            console.log('[NAV] New user detected, will show onboarding');
-            // Clear intro overlay flag for new users
-            console.log('[NAV] Clearing HAS_SEEN_DASHBOARD_INTRO flag');
-            await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
-            await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
-            setIsOnboardingCompleted(false);
+            // Final re-check: the flag may have been set during the profile query
+            // (e.g., post-purchase OTP verification flow sets it concurrently)
+            const recheck = await AsyncStorage.getItem('HAS_COMPLETED_ONBOARDING');
+            if (recheck === 'true') {
+              console.log('[NAV] HAS_COMPLETED_ONBOARDING was set during profile check, honoring it');
+              setIsOnboardingCompleted(true);
+            } else {
+              console.log('[NAV] New user detected, will show onboarding');
+              console.log('[NAV] Clearing HAS_SEEN_DASHBOARD_INTRO flag');
+              await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
+              setIsOnboardingCompleted(false);
+            }
           }
         } else {
           setIsOnboardingCompleted(false);
@@ -378,7 +392,7 @@ export default function AppNavigator() {
   };
 
   return (
-    <NavigationContainer theme={darkTheme} key={user?.id || 'logged-out'}>
+    <NavigationContainer theme={darkTheme}>
       {user ? (
         // Authenticated screens
         <Stack.Navigator
@@ -397,8 +411,8 @@ export default function AppNavigator() {
               we let navigation.reset() calls control the flow properly. */}
           
           {/* Onboarding Flow - For new users */}
-          <Stack.Screen name="EmailVerified" component={EmailVerifiedScreen} />
           <Stack.Screen name="OnboardingQuestion" component={OnboardingQuestionScreen} />
+          <Stack.Screen name="EmailVerified" component={EmailVerifiedScreen} />
           <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
           <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
           <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
@@ -441,6 +455,7 @@ export default function AppNavigator() {
           <Stack.Screen name="NotificationsOnboarding" component={NotificationsOnboardingScreen} />
           <Stack.Screen name="ValueProp" component={ValuePropScreen} />
           <Stack.Screen name="Paywall" component={PaywallScreen} />
+          <Stack.Screen name="PostPurchaseWelcome" component={PostPurchaseWelcomeScreen} />
           
           {/* Auth screens */}
           <Stack.Screen name="Login" component={LoginScreen} />

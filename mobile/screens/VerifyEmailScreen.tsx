@@ -55,11 +55,19 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
     try {
       // For new signups, clear AsyncStorage flags BEFORE verifying
       // This prevents race condition where auth state changes before flags are cleared
+      // BUT preserve flags if user is in post-purchase flow (already completed onboarding)
       if (type === 'signup') {
-        console.log('[OTP VERIFY] New signup - clearing AsyncStorage flags BEFORE verification');
-        await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
-        await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
-        console.log('[OTP VERIFY] AsyncStorage flags cleared');
+        const needsEmailSignup = await AsyncStorage.getItem('NEEDS_EMAIL_SIGNUP');
+        if (needsEmailSignup === 'true') {
+          console.log('[OTP VERIFY] Post-purchase signup - preserving HAS_COMPLETED_ONBOARDING');
+          // Ensure the flag is set so EmailVerified navigates to MainTabs
+          await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+        } else {
+          console.log('[OTP VERIFY] New signup - clearing AsyncStorage flags BEFORE verification');
+          await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
+          await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
+          console.log('[OTP VERIFY] AsyncStorage flags cleared');
+        }
       }
 
       const { data, error: verifyError } = await supabase.auth.verifyOtp({
@@ -113,12 +121,26 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
           setUserName(username);
         }
         
-        // Navigate to email verified confirmation screen
-        console.log('[OTP VERIFY] Navigating to EmailVerified');
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'EmailVerified' }],
-        });
+        // Check if this is a post-purchase signup
+        const needsEmailSignup = await AsyncStorage.getItem('NEEDS_EMAIL_SIGNUP');
+        if (needsEmailSignup === 'true') {
+          // Post-purchase flow: skip EmailVerified screen entirely
+          // Clear the flag and ensure onboarding is marked complete
+          // The navigator will auto-route to MainTabs when it sees
+          // authenticated user + HAS_COMPLETED_ONBOARDING = true
+          console.log('[OTP VERIFY] Post-purchase flow - clearing flags, letting navigator route to MainTabs');
+          await AsyncStorage.removeItem('NEEDS_EMAIL_SIGNUP');
+          await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+          // No navigation needed - NavigationContainer remounts with new user.id key
+          // and initialRouteName will be 'MainTabs'
+        } else {
+          // Normal signup flow: show email verified confirmation screen
+          console.log('[OTP VERIFY] Navigating to EmailVerified');
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'EmailVerified' }],
+          });
+        }
       }
     } catch (err: any) {
       console.error('[OTP VERIFY] ❌ Exception:', err);

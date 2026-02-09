@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Image, TextInput } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
@@ -58,6 +59,17 @@ export default function SettingsScreen({ navigation }: any) {
       loadSubscriptionStatus();
     }
   }, [user]);
+
+  // Refresh subscription status when screen comes into focus (e.g., after purchase)
+  useFocusEffect(
+    React.useCallback(() => {
+      if (user) {
+        console.log('[Settings] Screen focused - refreshing subscription status');
+        loadSubscriptionStatus();
+        loadUsageStats();
+      }
+    }, [user])
+  );
 
   const loadPersonalizationSettings = async () => {
     try {
@@ -121,8 +133,11 @@ export default function SettingsScreen({ navigation }: any) {
                 Alert.alert('Error', 'Failed to update name. Please try again.');
               } else {
                 console.log('[Settings] ✅ Username updated successfully');
-                // Reload profile to show new name
-                loadUserProfile();
+                // Update local state immediately for live UI update
+                const trimmedName = newName.trim();
+                setUserProfile(prev => prev ? { ...prev, username: trimmedName } : prev);
+                // Also cache locally
+                await AsyncStorage.setItem('CACHED_USERNAME', trimmedName);
                 Alert.alert('Success', 'Your name has been updated!');
               }
             } catch (err) {
@@ -190,21 +205,21 @@ export default function SettingsScreen({ navigation }: any) {
       } else {
         // No profile found - likely RLS blocking the query
         console.log('⚠️ No profile found (RLS may be blocking SELECT). Using fallback.');
-        console.log('Note: Profile exists on desktop but mobile cannot read it due to RLS policy.');
+        const cachedName = await AsyncStorage.getItem('CACHED_USERNAME');
         setUserProfile({
           id: user.id,
           email: user.email || '',
-          username: user.email?.split('@')[0] || 'User',
+          username: cachedName || user.user_metadata?.username || user.email?.split('@')[0] || 'User',
           profile_picture_url: null
         });
       }
     } catch (error) {
       console.error('Error loading profile:', error);
-      // Use fallback profile
+      const cachedName = await AsyncStorage.getItem('CACHED_USERNAME');
       setUserProfile({
         id: user.id,
         email: user.email || '',
-        username: user.email?.split('@')[0] || 'User',
+        username: cachedName || user.user_metadata?.username || user.email?.split('@')[0] || 'User',
         profile_picture_url: null
       });
     }
@@ -464,7 +479,7 @@ export default function SettingsScreen({ navigation }: any) {
                 </TouchableOpacity>
                 <View style={styles.profileInfo}>
                   <TouchableOpacity onPress={handleEditUsername}>
-                    <Text style={[styles.profileName, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>{user?.user_metadata?.username || userProfile?.username || 'User'}</Text>
+                    <Text style={[styles.profileName, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>{userProfile?.username || user?.user_metadata?.username || 'User'}</Text>
                   </TouchableOpacity>
                   <Text style={[styles.profileEmail, { color: theme.name === 'light' ? '#6B6B6B' : 'rgba(255, 255, 255, 0.6)' }]}>{user?.email}</Text>
                 </View>
@@ -637,7 +652,7 @@ export default function SettingsScreen({ navigation }: any) {
               {/* Upgrade/Manage Button */}
               <TouchableOpacity
                 style={styles.upgradeButton}
-                onPress={() => navigation.navigate('Paywall')}
+                onPress={() => navigation.navigate('Paywall', { fromSettings: true })}
                 activeOpacity={0.8}
               >
                 <LinearGradient
@@ -653,6 +668,67 @@ export default function SettingsScreen({ navigation }: any) {
             </View>
           </View>
         </View>
+
+        {/* Developer Testing Tools (Sandbox Only) */}
+        {__DEV__ && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>🔧 Developer Tools</Text>
+            <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+              <TouchableOpacity
+                style={styles.devToolButton}
+                onPress={async () => {
+                  Alert.alert(
+                    'Clear RevenueCat Cache',
+                    'This will invalidate the local RevenueCat cache and force a fresh check with Apple servers.\n\nNote: This won\'t fix Apple\'s sandbox cache issue. For that, use App Store Connect → Clear Purchase History.',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Clear Cache', onPress: async () => {
+                        try {
+                          await Purchases.invalidateCustomerInfoCache();
+                          const customerInfo = await Purchases.getCustomerInfo();
+                          const hasEntitlement = Object.keys(customerInfo.entitlements.active).length > 0;
+                          Alert.alert(
+                            'Cache Cleared',
+                            `Fresh subscription status:\n\nEntitlements: ${hasEntitlement ? 'Active' : 'None'}\nPlan: ${hasEntitlement ? 'Pro' : 'Free'}\n\nIf still showing "Already subscribed" error, clear purchase history in App Store Connect.`
+                          );
+                        } catch (error: any) {
+                          Alert.alert('Error', error.message);
+                        }
+                      }}
+                    ]
+                  );
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="refresh" size={20} color="#a855f7" />
+                <Text style={styles.devToolButtonText}>Clear RevenueCat Cache</Text>
+              </TouchableOpacity>
+              
+              <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
+              
+              <TouchableOpacity
+                style={styles.devToolButton}
+                onPress={async () => {
+                  try {
+                    const customerInfo = await Purchases.getCustomerInfo();
+                    const hasEntitlement = Object.keys(customerInfo.entitlements.active).length > 0;
+                    const entitlementsList = Object.keys(customerInfo.entitlements.active).join(', ') || 'None';
+                    Alert.alert(
+                      'Subscription Debug Info',
+                      `User ID: ${customerInfo.originalAppUserId}\n\nActive Entitlements:\n${entitlementsList}\n\nPlan: ${hasEntitlement ? 'Pro' : 'Free'}\n\nOriginal Purchase Date:\n${customerInfo.originalPurchaseDate || 'Never'}\n\nLatest Expiration:\n${customerInfo.latestExpirationDate || 'N/A'}`
+                    );
+                  } catch (error: any) {
+                    Alert.alert('Error', error.message);
+                  }
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="information-circle" size={20} color="#3b82f6" />
+                <Text style={styles.devToolButtonText}>Show Subscription Debug Info</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {/* Send Feedback */}
         <View style={styles.section}>
@@ -1146,20 +1222,22 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(16, 185, 129, 0.2)',
   },
   feedbackSuccessText: {
-    fontSize: 14,
     color: '#10b981',
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '500',
   },
   themeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+    marginTop: 12,
   },
   themeOption: {
-    width: '30%',
+    width: 80,
     aspectRatio: 1,
     borderRadius: 16,
     borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
@@ -1184,5 +1262,17 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
+  },
+  devToolButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
+  devToolButtonText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#ffffff',
   },
 });

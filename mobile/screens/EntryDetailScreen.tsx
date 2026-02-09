@@ -709,7 +709,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
         visible={premiumUpsellVisible}
         onUpgrade={() => {
           setPremiumUpsellVisible(false);
-          navigation.navigate('Paywall');
+          navigation.navigate('Paywall', { fromSettings: true });
         }}
         onDismiss={() => {
           setPremiumUpsellVisible(false);

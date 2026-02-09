@@ -4,11 +4,11 @@ export default {
     slug: "mobile",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/512px-Insight-ICON.png",
+    icon: "./assets/InsightAI-New-Logo.png",
     userInterfaceStyle: "light",
     newArchEnabled: true,
     splash: {
-      image: "./assets/512px-Insight-ICON.png",
+      image: "./assets/InsightAI-New-Logo.png",
       resizeMode: "contain",
       backgroundColor: "#ffffff"
     },
@@ -25,7 +25,7 @@ export default {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/512px-Insight-ICON.png",
+        foregroundImage: "./assets/InsightAI-New-Logo.png",
         backgroundColor: "#ffffff"
       },
       permissions: [

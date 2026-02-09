@@ -93,8 +93,9 @@ export default function DashboardScreenNew() {
       if (!hasSeenIntro) {
         console.log('[Dashboard] First-time user detected, will show intro overlay');
         
-        // Check if user needs to complete email signup
-        if (needsEmailSignup === 'true') {
+        // Check if user needs to complete email signup (and doesn't already have one)
+        const userHasEmail = user?.email && !user.email.includes('privaterelay');
+        if (needsEmailSignup === 'true' && !userHasEmail) {
           console.log('[Dashboard] User skipped email signup, will show email prompt');
           // Show email signup prompt after a short delay
           setTimeout(() => {
