@@ -702,6 +702,34 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
               onDone: () => {
                 setAnalysisOverlayVisible(false);
               },
+              onWellbeingChange: async (newScore: number) => {
+                if (!entry?.id) return;
+                try {
+                  // Update local state
+                  const updatedInsights = { ...analysisOverlayInsights, wellbeingScore: newScore };
+                  setAnalysisOverlayInsights(updatedInsights);
+                  if (entry) {
+                    const updatedEntry = { ...entry };
+                    if (updatedEntry.ai_structured_insights) {
+                      updatedEntry.ai_structured_insights.wellbeingScore = newScore;
+                    }
+                    if (updatedEntry.ai_insights) {
+                      updatedEntry.ai_insights.wellbeingScore = newScore;
+                    }
+                    setEntry(updatedEntry);
+                  }
+                  // Persist to database
+                  await supabase
+                    .from('notes')
+                    .update({
+                      ai_structured_insights: { ...entry.ai_structured_insights, wellbeingScore: newScore },
+                      ai_insights: { ...entry.ai_insights, wellbeingScore: newScore },
+                    })
+                    .eq('id', entry.id);
+                } catch (err) {
+                  console.error('[EntryDetail] Error saving wellbeing score:', err);
+                }
+              },
             })}
       />
 

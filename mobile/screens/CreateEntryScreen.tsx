@@ -40,6 +40,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasUnsavedChanges = useRef(false);
+  const savedEntryIdRef = useRef<string | null>(null);
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const quickActionsAnim = useRef(new Animated.Value(0)).current;
   const controlsBottomAnim = useRef(new Animated.Value(20)).current;
@@ -96,26 +97,46 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           console.log('[CreateEntry] Encrypted content preview:', contentToSave.substring(0, 40) + '...');
         } catch (encryptError) {
           console.error('[CreateEntry] Encryption failed, saving unencrypted:', encryptError);
-          // Fall back to unencrypted if encryption fails
         }
       } else {
         console.warn('[CreateEntry] No encryption key found, saving unencrypted');
       }
 
-      const { error } = await supabase
-        .from('notes')
-        .insert({
-          user_id: user?.id,
-          title: title.trim() || 'Journal Entry',
-          content: contentToSave,
-          is_encrypted: isEncrypted,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
+      // If we already saved this entry, update it instead of inserting a new one
+      if (savedEntryIdRef.current) {
+        const { error } = await supabase
+          .from('notes')
+          .update({
+            title: title.trim() || content.trim().split('\n')[0].substring(0, 50) || 'Journal Entry',
+            content: contentToSave,
+            is_encrypted: isEncrypted,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', savedEntryIdRef.current);
 
-      if (!error) {
-        hasUnsavedChanges.current = false;
-        console.log('[CreateEntry] Entry saved successfully (encrypted:', isEncrypted, ')');
+        if (!error) {
+          hasUnsavedChanges.current = false;
+          console.log('[CreateEntry] Entry updated successfully (id:', savedEntryIdRef.current, ')');
+        }
+      } else {
+        const { data, error } = await supabase
+          .from('notes')
+          .insert({
+            user_id: user?.id,
+            title: title.trim() || 'Journal Entry',
+            content: contentToSave,
+            is_encrypted: isEncrypted,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (!error && data) {
+          savedEntryIdRef.current = data.id;
+          hasUnsavedChanges.current = false;
+          console.log('[CreateEntry] Entry saved successfully (id:', data.id, ', encrypted:', isEncrypted, ')');
+        }
       }
     } catch (error) {
       console.error('Auto-save error:', error);
@@ -150,27 +171,65 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       console.log('[CreateEntry] Content too short, aborting');
       return;
     }
-    
-    // Save entry first, then navigate to analyze
-    try {
-      const { data, error } = await supabase
-        .from('notes')
-        .insert({
-          user_id: user?.id,
-          title: content.trim().split('\n')[0].substring(0, 50) || 'Journal Entry',
-          content: content.trim(),
-          mood: mood || null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
 
-      if (!error && data) {
-        console.log('[CreateEntry] Entry saved successfully, navigating to analyze');
-        navigation.navigate('EntryDetail', { entry: data, shouldAnalyze: true });
+    // Cancel any pending auto-save to prevent race conditions
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+    
+    try {
+      const entryTitle = content.trim().split('\n')[0].substring(0, 50) || 'Journal Entry';
+
+      // If auto-save already created the entry, update it and reuse
+      if (savedEntryIdRef.current) {
+        const { error } = await supabase
+          .from('notes')
+          .update({
+            title: entryTitle,
+            content: content.trim(),
+            mood: mood || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', savedEntryIdRef.current);
+
+        if (!error) {
+          console.log('[CreateEntry] Updated existing entry, navigating to analyze');
+          // Fetch the full entry to pass to EntryDetail
+          const { data: updatedEntry } = await supabase
+            .from('notes')
+            .select('*')
+            .eq('id', savedEntryIdRef.current)
+            .single();
+
+          if (updatedEntry) {
+            navigation.navigate('EntryDetail', { entry: updatedEntry, shouldAnalyze: true });
+          }
+        } else {
+          console.error('[CreateEntry] Error updating entry:', error);
+        }
       } else {
-        console.error('[CreateEntry] Error saving entry:', error);
+        // No existing entry, insert a new one
+        const { data, error } = await supabase
+          .from('notes')
+          .insert({
+            user_id: user?.id,
+            title: entryTitle,
+            content: content.trim(),
+            mood: mood || null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (!error && data) {
+          savedEntryIdRef.current = data.id;
+          console.log('[CreateEntry] Entry saved successfully, navigating to analyze');
+          navigation.navigate('EntryDetail', { entry: data, shouldAnalyze: true });
+        } else {
+          console.error('[CreateEntry] Error saving entry:', error);
+        }
       }
     } catch (error) {
       console.error('[CreateEntry] Exception saving entry:', error);

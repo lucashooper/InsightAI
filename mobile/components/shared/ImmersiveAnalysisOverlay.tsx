@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Circle } from 'react-native-svg';
 import { useTheme } from '../../contexts/ThemeContext';
 
 type LoadingProps = {
@@ -38,6 +39,7 @@ type ResultsProps = {
     };
   };
   onDone: () => void;
+  onWellbeingChange?: (score: number) => void;
 };
 
 type Props = {
@@ -51,6 +53,14 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
   const opacity = useRef(new Animated.Value(0)).current;
   const [strengthsExpanded, setStrengthsExpanded] = useState(true);
   const [growthExpanded, setGrowthExpanded] = useState(true);
+  const [editedWellbeing, setEditedWellbeing] = useState<number | null>(null);
+
+  // Reset edited wellbeing when insights change
+  useEffect(() => {
+    if (props.variant === 'results' && props.insights?.wellbeingScore !== undefined) {
+      setEditedWellbeing(props.insights.wellbeingScore);
+    }
+  }, [props.variant === 'results' ? props.insights?.wellbeingScore : undefined]);
 
   useEffect(() => {
     if (!props.visible) {
@@ -127,15 +137,73 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
                     {props.insights?.mood_analysis?.primary_emotion || '—'}
                   </Text>
                 </View>
-                {props.insights?.wellbeingScore !== undefined && (
-                  <View style={styles.scoreSection}>
-                    <Text style={styles.resultsLabel}>WELLBEING</Text>
-                    <View style={styles.scoreCircle}>
-                      <Text style={styles.scoreText}>{props.insights.wellbeingScore}</Text>
-                      <Text style={styles.scoreMax}>/10</Text>
+                {props.insights?.wellbeingScore !== undefined && (() => {
+                  const score = editedWellbeing ?? props.insights!.wellbeingScore!;
+                  const ringSize = 90;
+                  const strokeWidth = 6;
+                  const radius = (ringSize - strokeWidth) / 2;
+                  const circumference = 2 * Math.PI * radius;
+                  const progress = (score / 10) * circumference;
+                  const ringColor = score >= 7 ? '#10b981' : score >= 4 ? '#f59e0b' : '#ef4444';
+
+                  const handleIncrement = () => {
+                    const newScore = Math.min(10, score + 1);
+                    setEditedWellbeing(newScore);
+                    if (props.variant === 'results' && props.onWellbeingChange) {
+                      props.onWellbeingChange(newScore);
+                    }
+                  };
+                  const handleDecrement = () => {
+                    const newScore = Math.max(1, score - 1);
+                    setEditedWellbeing(newScore);
+                    if (props.variant === 'results' && props.onWellbeingChange) {
+                      props.onWellbeingChange(newScore);
+                    }
+                  };
+
+                  return (
+                    <View style={styles.scoreSection}>
+                      <Text style={styles.resultsLabel}>WELLBEING</Text>
+                      <View style={styles.scoreRingContainer}>
+                        <Svg width={ringSize} height={ringSize} style={styles.scoreRingSvg}>
+                          <Circle
+                            cx={ringSize / 2}
+                            cy={ringSize / 2}
+                            r={radius}
+                            stroke="rgba(255, 255, 255, 0.1)"
+                            strokeWidth={strokeWidth}
+                            fill="transparent"
+                          />
+                          <Circle
+                            cx={ringSize / 2}
+                            cy={ringSize / 2}
+                            r={radius}
+                            stroke={ringColor}
+                            strokeWidth={strokeWidth}
+                            fill="transparent"
+                            strokeDasharray={`${progress} ${circumference - progress}`}
+                            strokeDashoffset={circumference * 0.25}
+                            strokeLinecap="round"
+                            transform={`rotate(-90 ${ringSize / 2} ${ringSize / 2})`}
+                          />
+                        </Svg>
+                        <View style={styles.scoreRingInner}>
+                          <Text style={[styles.scoreText, { color: ringColor }]}>{score}</Text>
+                          <Text style={styles.scoreMax}>/10</Text>
+                        </View>
+                      </View>
+                      <View style={styles.scoreAdjustRow}>
+                        <TouchableOpacity onPress={handleDecrement} style={styles.scoreAdjustBtn} activeOpacity={0.7}>
+                          <Text style={styles.scoreAdjustText}>−</Text>
+                        </TouchableOpacity>
+                        <Text style={styles.scoreAdjustLabel}>Adjust</Text>
+                        <TouchableOpacity onPress={handleIncrement} style={styles.scoreAdjustBtn} activeOpacity={0.7}>
+                          <Text style={styles.scoreAdjustText}>+</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
-                  </View>
-                )}
+                  );
+                })()}
               </View>
             </View>
 
@@ -384,11 +452,12 @@ const styles = StyleSheet.create({
   },
   accordionContent: {
     padding: 16,
-    paddingTop: 20,
+    paddingTop: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderTopWidth: 0,
-    marginTop: -12,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    marginTop: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
@@ -415,33 +484,56 @@ const styles = StyleSheet.create({
   scoreSection: {
     alignItems: 'center',
   },
-  scoreCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(139, 92, 246, 0.18)',
-    borderWidth: 3,
-    borderColor: 'rgba(139, 92, 246, 0.5)',
+  scoreRingContainer: {
+    width: 90,
+    height: 90,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 6,
+  },
+  scoreRingSvg: {
+    position: 'absolute',
+  },
+  scoreRingInner: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scoreText: {
     fontSize: 32,
     fontWeight: '800',
-    color: '#a78bfa',
     lineHeight: 36,
   },
   scoreMax: {
     fontSize: 14,
     fontWeight: '600',
-    color: 'rgba(167, 139, 250, 0.8)',
+    color: 'rgba(255, 255, 255, 0.5)',
     marginTop: -2,
+  },
+  scoreAdjustRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 8,
+  },
+  scoreAdjustBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scoreAdjustText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: 'rgba(255, 255, 255, 0.8)',
+    lineHeight: 20,
+  },
+  scoreAdjustLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.5)',
+    letterSpacing: 0.3,
   },
   cardHeader: {
     flexDirection: 'row',

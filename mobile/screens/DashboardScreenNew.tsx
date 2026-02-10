@@ -865,11 +865,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   greetingText: {
-    fontSize: sf(38),
+    fontSize: sf(44),
     fontWeight: '600',
     letterSpacing: 1.2,
     textAlign: 'center',
-    lineHeight: sf(48),
+    lineHeight: sf(54),
   },
   iconButton: {
     width: isTablet ? 56 : 44,
