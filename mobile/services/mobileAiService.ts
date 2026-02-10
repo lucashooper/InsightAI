@@ -1,5 +1,6 @@
 // Mobile AI service - calls Supabase Edge Function for server-side validation
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 import { supabase } from '../lib/supabase';
 
 export interface MoodAnalysis {
@@ -51,11 +52,16 @@ export interface EnhancedAIAnalysis {
 }
 
 // Supabase Edge Function URL
-const SUPABASE_FUNCTION_URL = process.env.EXPO_PUBLIC_SUPABASE_URL
-  ? `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1`
+const supabaseUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL;
+const SUPABASE_FUNCTION_URL = supabaseUrl
+  ? `${supabaseUrl}/functions/v1`
   : 'https://YOUR_PROJECT.supabase.co/functions/v1';
 
-if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+// Groq API credentials (fallback for direct client-side calls)
+const GROQ_API_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_GROQ_API_URL || process.env.EXPO_PUBLIC_GROQ_API_URL || '';
+const GROQ_API_KEY = Constants.expoConfig?.extra?.EXPO_PUBLIC_GROQ_API_KEY || process.env.EXPO_PUBLIC_GROQ_API_KEY || '';
+
+if (!supabaseUrl) {
   console.warn('[mobileAiService] Missing EXPO_PUBLIC_SUPABASE_URL. Analysis will fail.');
 }
 

@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 import ImmersiveAnalysisOverlay from '../components/shared/ImmersiveAnalysisOverlay';
 import PremiumUpsellOverlay from '../components/PremiumUpsellOverlay';
 import * as Haptics from 'expo-haptics';
+import { isTablet, sf, ss, si } from '../utils/responsive';
 
 // Helper function to get color styling based on emotion sentiment
 const getSentimentStyle = (emotion: string) => {
@@ -755,13 +756,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 16,
+    paddingHorizontal: isTablet ? 32 : 20,
+    paddingTop: isTablet ? 70 : 60,
+    paddingBottom: isTablet ? 20 : 16,
   },
   backButton: {
-    width: 44,
-    height: 44,
+    width: isTablet ? 52 : 44,
+    height: isTablet ? 52 : 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -785,15 +786,15 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   analyzeHeaderGradient: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: isTablet ? 24 : 16,
+    paddingVertical: isTablet ? 14 : 10,
     borderRadius: 12,
-    minWidth: 80,
+    minWidth: isTablet ? 100 : 80,
     alignItems: 'center',
   },
   analyzeHeaderText: {
     color: '#ffffff',
-    fontSize: 15,
+    fontSize: sf(15),
     fontWeight: '600',
   },
   scrollView: {
@@ -804,26 +805,26 @@ const styles = StyleSheet.create({
   },
   entryContainer: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 20,
+    paddingHorizontal: isTablet ? 40 : 24,
+    paddingTop: isTablet ? 28 : 20,
   },
   titleInput: {
-    fontSize: 28,
+    fontSize: sf(28),
     fontWeight: '700',
     color: 'rgba(255, 255, 255, 0.95)',
-    marginBottom: 12,
+    marginBottom: isTablet ? 16 : 12,
     padding: 0,
   },
   metaLine: {
-    fontSize: 14,
+    fontSize: sf(14),
     color: 'rgba(255, 255, 255, 0.5)',
-    marginBottom: 24,
+    marginBottom: isTablet ? 32 : 24,
   },
   contentInput: {
-    fontSize: 17,
+    fontSize: sf(17),
     color: 'rgba(255, 255, 255, 0.95)',
-    lineHeight: 26,
-    minHeight: 200,
+    lineHeight: sf(28),
+    minHeight: isTablet ? 300 : 200,
     padding: 0,
   },
   inlineInsightsSection: {
@@ -836,16 +837,16 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   inlineInsightsTitle: {
-    fontSize: 20,
+    fontSize: sf(20),
     fontWeight: '600',
     color: 'rgba(139, 92, 246, 0.95)',
-    marginBottom: 16,
+    marginBottom: isTablet ? 20 : 16,
   },
   inlineBriefingCard: {
     backgroundColor: 'rgba(139, 92, 246, 0.12)',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: isTablet ? 20 : 16,
+    padding: isTablet ? 28 : 20,
+    marginBottom: isTablet ? 20 : 16,
     borderWidth: 1,
     borderColor: 'rgba(139, 92, 246, 0.25)',
   },
@@ -859,20 +860,20 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(139, 92, 246, 0.2)',
   },
   insightHeaderText: {
-    fontSize: 14,
+    fontSize: sf(14),
     fontWeight: '700',
     color: 'rgba(168, 85, 247, 0.95)',
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
   inlineBriefingText: {
-    fontSize: 16,
+    fontSize: sf(16),
     color: 'rgba(255, 255, 255, 0.9)',
-    lineHeight: 24,
+    lineHeight: sf(26),
   },
   inlineMoodCard: {
-    borderRadius: 14,
-    padding: 20,
+    borderRadius: isTablet ? 18 : 14,
+    padding: isTablet ? 28 : 20,
     alignItems: 'center',
     borderWidth: 1.5,
     shadowColor: '#000',
@@ -888,15 +889,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   inlineMoodLabel: {
-    fontSize: 11,
+    fontSize: sf(11),
     fontWeight: '700',
     color: 'rgba(255, 255, 255, 0.6)',
     textTransform: 'uppercase',
     letterSpacing: 1.5,
-    marginBottom: 8,
+    marginBottom: isTablet ? 12 : 8,
   },
   inlineMoodEmotion: {
-    fontSize: 24,
+    fontSize: sf(24),
     fontWeight: '700',
     color: 'rgba(255, 255, 255, 0.98)',
     textTransform: 'capitalize',
@@ -906,8 +907,8 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   insightCard: {
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: isTablet ? 16 : 12,
+    padding: isTablet ? 22 : 16,
     position: 'relative',
     overflow: 'hidden',
   },
@@ -929,14 +930,14 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   insightBadgeText: {
-    fontSize: 10,
+    fontSize: sf(10),
     fontWeight: '700',
     letterSpacing: 1.2,
     textTransform: 'uppercase',
   },
   insightCardText: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: sf(15),
+    lineHeight: sf(24),
     color: 'rgba(255, 255, 255, 0.9)',
   },
   playbookButton: {
@@ -951,7 +952,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   playbookButtonText: {
-    fontSize: 13,
+    fontSize: sf(13),
     fontWeight: '600',
     letterSpacing: 0.3,
   },
@@ -963,8 +964,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    padding: 16,
-    borderRadius: 12,
+    padding: isTablet ? 22 : 16,
+    borderRadius: isTablet ? 16 : 12,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
@@ -975,7 +976,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   accordionHeaderText: {
-    fontSize: 16,
+    fontSize: sf(16),
     fontWeight: '700',
     letterSpacing: 0.3,
   },
@@ -988,7 +989,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   accordionBadgeText: {
-    fontSize: 12,
+    fontSize: sf(12),
     fontWeight: '700',
     color: 'rgba(255, 255, 255, 0.9)',
   },

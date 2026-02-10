@@ -230,18 +230,11 @@ function MainTabs() {
       />
       {/* Tab 3: Center FAB (+) */}
       <Tab.Screen
-        name="CreateEntryPlaceholder"
-        component={View}
+        name="Playbook"
+        component={PlaybookScreen}
         options={{
           tabBarButton: () => <CenterFabButton />,
         }}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            e.preventDefault();
-            console.log('[TabBar] + (FAB) tab pressed -> navigate to CreateEntry');
-            navigation.navigate('CreateEntry');
-          },
-        })}
       />
       {/* Tab 5: Dashboard (Analytics) */}
       <Tab.Screen
@@ -427,7 +420,6 @@ export default function AppNavigator() {
           <Stack.Screen name="MainTabs" component={MainTabs} />
           <Stack.Screen name="EntryDetail" component={EntryDetailScreen} />
           <Stack.Screen name="CreateEntry" component={CreateEntryScreen} />
-          <Stack.Screen name="Playbook" component={PlaybookScreen} />
           <Stack.Screen name="Analytics" component={DashboardScreen} />
           <Stack.Screen name="Meditation" component={MeditationScreen} />
           <Stack.Screen name="Gratitude" component={GratitudeScreen} />

@@ -510,7 +510,6 @@ export default function DashboardScreenNew() {
               textShadowOffset: { width: 0, height: 1 },
               textShadowRadius: 3,
               fontWeight: '400',
-              fontSize: 28,
               letterSpacing: 0.5
             }]}>
               Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}
@@ -865,11 +864,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   greetingText: {
-    fontSize: sf(44),
+    fontSize: isTablet ? 52 : 28,
     fontWeight: '600',
     letterSpacing: 1.2,
     textAlign: 'center',
-    lineHeight: sf(54),
+    lineHeight: isTablet ? 62 : 36,
   },
   iconButton: {
     width: isTablet ? 56 : 44,
@@ -882,17 +881,17 @@ const styles = StyleSheet.create({
   orbSection: {
     alignItems: 'center',
     justifyContent: 'center',
-    height: isTablet ? 520 : 360,
+    height: isTablet ? 640 : 360,
     position: 'relative',
-    marginBottom: isTablet ? 32 : 20,
+    marginBottom: isTablet ? 40 : 20,
   },
   orbLoader: {
     position: 'absolute',
     top: 180,
   },
   orbImage: {
-    width: isTablet ? 460 : 320,
-    height: isTablet ? 460 : 320,
+    width: isTablet ? 580 : 320,
+    height: isTablet ? 580 : 320,
     position: 'absolute',
     top: isTablet ? 30 : 20,
   },
