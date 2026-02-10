@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, StatusBar, Image, TouchableWithoutFeedback } from 'react-native';
 import { Asset } from 'expo-asset';
+import { isTablet, sf, ss } from '../../utils/responsive';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
@@ -83,10 +84,10 @@ const styles = StyleSheet.create({
         position: 'relative',
     },
     splashLogo: {
-        width: 64,
-        height: 64,
-        borderRadius: 16,
-        marginRight: 14,
+        width: isTablet ? 96 : 64,
+        height: isTablet ? 96 : 64,
+        borderRadius: isTablet ? 24 : 16,
+        marginRight: isTablet ? 20 : 14,
         overflow: 'hidden',
     },
     logoHanging: {
@@ -99,7 +100,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
     },
     brandNameTop: {
-        fontSize: 44,
+        fontSize: sf(44),
         fontWeight: '700',
         color: '#fff',
         letterSpacing: -1.2,

@@ -11,6 +11,7 @@ import { supabase } from '../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import StandardContainer from '../components/shared/StandardContainer';
 import PageHeader from '../components/shared/PageHeader';
+import { isTablet, sf, ss, si, iPadContentStyle } from '../utils/responsive';
 import { printSubscriptionDebugReport, resetRevenueCatOnly, nukeAllSubscriptionState } from '../utils/subscriptionDebug';
 
 interface UserProfile {
@@ -959,31 +960,31 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: isTablet ? 48 : 20,
   },
   scrollContent: {
     paddingBottom: 100,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: isTablet ? 32 : 24,
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: sf(12),
     fontWeight: '600',
     color: '#666',
     textTransform: 'uppercase',
     letterSpacing: 1,
-    marginBottom: 12,
+    marginBottom: isTablet ? 16 : 12,
     paddingHorizontal: 4,
   },
   card: {
-    borderRadius: 16,
+    borderRadius: isTablet ? 20 : 16,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(139, 92, 246, 0.15)',
   },
   cardGradient: {
-    padding: 20,
+    padding: isTablet ? 24 : 20,
   },
   infoRow: {
     flexDirection: 'row',
@@ -991,26 +992,26 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   infoText: {
-    fontSize: 16,
+    fontSize: sf(16),
     color: '#ffffff',
   },
   infoSubtext: {
-    fontSize: 14,
+    fontSize: sf(14),
     color: '#999',
     marginTop: 4,
   },
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: isTablet ? 16 : 12,
   },
   actionText: {
-    fontSize: 16,
+    fontSize: sf(16),
     fontWeight: '600',
     color: '#ffffff',
   },
   actionSubtext: {
-    fontSize: 13,
+    fontSize: sf(13),
     color: '#999',
     marginTop: 4,
   },
@@ -1020,20 +1021,20 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   avatarContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: isTablet ? 80 : 60,
+    height: isTablet ? 80 : 60,
+    borderRadius: isTablet ? 40 : 30,
     overflow: 'hidden',
   },
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: isTablet ? 80 : 60,
+    height: isTablet ? 80 : 60,
+    borderRadius: isTablet ? 40 : 30,
   },
   avatarPlaceholder: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: isTablet ? 80 : 60,
+    height: isTablet ? 80 : 60,
+    borderRadius: isTablet ? 40 : 30,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1047,19 +1048,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   profileName: {
-    fontSize: 18,
+    fontSize: sf(18),
     fontWeight: '700',
     color: '#ffffff',
     marginBottom: 4,
   },
   profileEmail: {
-    fontSize: 14,
+    fontSize: sf(14),
     color: '#999',
   },
   avatarImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: isTablet ? 80 : 60,
+    height: isTablet ? 80 : 60,
+    borderRadius: isTablet ? 40 : 30,
   },
   usageRow: {
     flexDirection: 'row',
@@ -1068,11 +1069,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   usageLabel: {
-    fontSize: 14,
+    fontSize: sf(14),
     color: '#999',
   },
   usageTier: {
-    fontSize: 16,
+    fontSize: sf(16),
     fontWeight: '700',
     color: '#ffffff',
   },
@@ -1085,11 +1086,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   usageProgressLabel: {
-    fontSize: 13,
+    fontSize: sf(13),
     color: '#999',
   },
   usageProgressValue: {
-    fontSize: 13,
+    fontSize: sf(13),
     fontWeight: '600',
     color: '#ffffff',
   },
@@ -1125,7 +1126,7 @@ const styles = StyleSheet.create({
   },
   upgradeButtonText: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: sf(16),
     fontWeight: '600',
     letterSpacing: 0.3,
   },
@@ -1134,9 +1135,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 8,
-    padding: 12,
+    padding: isTablet ? 16 : 12,
     color: '#ffffff',
-    fontSize: 14,
+    fontSize: sf(14),
     marginBottom: 12,
   },
   feedbackTextArea: {
@@ -1229,13 +1230,13 @@ const styles = StyleSheet.create({
   themeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    marginTop: 12,
+    gap: isTablet ? 16 : 12,
+    marginTop: isTablet ? 16 : 12,
   },
   themeOption: {
-    width: 80,
+    width: isTablet ? 100 : 80,
     aspectRatio: 1,
-    borderRadius: 16,
+    borderRadius: isTablet ? 20 : 16,
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
@@ -1248,10 +1249,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(139, 92, 246, 0.15)',
   },
   themeEmoji: {
-    fontSize: 32,
+    fontSize: sf(32),
   },
   themeLabel: {
-    fontSize: 13,
+    fontSize: sf(13),
     fontWeight: '600',
     color: '#999',
   },

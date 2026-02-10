@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
 
 const { width, height } = Dimensions.get('window');
 
@@ -63,9 +64,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#000',
-        paddingHorizontal: 24,
-        paddingTop: 60,
-        paddingBottom: 50,
+        paddingHorizontal: isTablet ? 48 : 24,
+        paddingTop: isTablet ? 80 : 60,
+        paddingBottom: isTablet ? 70 : 50,
     },
     phoneSection: {
         flex: 1,
@@ -73,16 +74,16 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     phoneMockup: {
-        width: width * 0.85,
-        height: height * 0.58,
-        maxHeight: 600,
+        width: isTablet ? width * 0.65 : width * 0.85,
+        height: isTablet ? height * 0.62 : height * 0.58,
+        maxHeight: isTablet ? 900 : 600,
     },
     taglineContainer: {
         alignItems: 'center',
-        marginBottom: 32,
+        marginBottom: isTablet ? 48 : 32,
     },
     taglineMain: {
-        fontSize: 34,
+        fontSize: sf(34),
         fontWeight: '600',
         color: '#fff',
         textAlign: 'center',
@@ -91,6 +92,7 @@ const styles = StyleSheet.create({
     footer: {
         width: '100%',
         alignItems: 'center',
+        ...(iPadContentStyle as any),
     },
     button: {
         width: '100%',
@@ -112,17 +114,17 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255,255,255,0.15)',
     },
     buttonText: {
-        fontSize: 19,
+        fontSize: sf(19),
         fontWeight: '700',
         color: '#fff',
         letterSpacing: 0.3,
     },
     signInLink: {
-        marginTop: 20,
+        marginTop: isTablet ? 28 : 20,
         paddingVertical: 8,
     },
     signInText: {
-        fontSize: 15,
+        fontSize: sf(15),
         color: 'rgba(255, 255, 255, 0.6)',
         textAlign: 'center',
     },

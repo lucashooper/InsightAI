@@ -22,6 +22,7 @@ import { mobileAiService } from '../services/mobileAiService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import StandardContainer from '../components/shared/StandardContainer';
 import PageHeader from '../components/shared/PageHeader';
+import { isTablet, sf, ss, iPadWideContentStyle } from '../utils/responsive';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -1818,7 +1819,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
+    padding: isTablet ? 40 : 20,
     paddingBottom: 100,
   },
   loadingContainer: {
@@ -1856,14 +1857,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   heroTitle: {
-    fontSize: 18,
+    fontSize: sf(18),
     fontWeight: '700',
     color: '#f9fafb',
     marginBottom: 8,
     paddingTop: 2,
   },
   heroSubtitle: {
-    fontSize: 13,
+    fontSize: sf(13),
     color: '#9ca3af',
   },
   moodRingContainer: {
@@ -1921,7 +1922,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   heroStatValue: {
-    fontSize: 18,
+    fontSize: sf(18),
     fontWeight: '700',
     color: '#f9fafb',
   },
@@ -1961,7 +1962,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   dominantTitle: {
-    fontSize: 15,
+    fontSize: sf(15),
     fontWeight: '600',
     color: '#f9fafb',
   },
@@ -2031,7 +2032,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   statValue: {
-    fontSize: 40,
+    fontSize: sf(40),
     fontWeight: '700',
     color: '#ffffff',
     letterSpacing: -2,
@@ -2061,7 +2062,7 @@ const styles = StyleSheet.create({
     paddingTop: 100,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: sf(16),
     color: '#666',
     marginTop: 16,
   },
@@ -2086,7 +2087,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   chartTitle: {
-    fontSize: 16,
+    fontSize: sf(16),
     fontWeight: '600',
     color: '#ffffff',
   },
@@ -2299,18 +2300,18 @@ const styles = StyleSheet.create({
   bubbleMapCard: {
     marginBottom: 16,
     borderRadius: 20,
-    padding: 20,
+    padding: isTablet ? 24 : 20,
   },
   bubbleMapHeader: {
     marginBottom: 16,
   },
   bubbleMapTitle: {
-    fontSize: 18,
+    fontSize: sf(18),
     fontWeight: '700',
     marginBottom: 4,
   },
   bubbleMapSubtitle: {
-    fontSize: 13,
+    fontSize: sf(13),
     fontWeight: '500',
   },
   bubbleMapContainer: {
@@ -2384,19 +2385,19 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   metricEmoji: {
-    fontSize: 24,
+    fontSize: sf(24),
   },
   metricValue: {
-    fontSize: 24,
+    fontSize: sf(24),
     fontWeight: '700',
   },
   metricLabel: {
-    fontSize: 11,
+    fontSize: sf(11),
     fontWeight: '600',
     letterSpacing: 0.5,
   },
   interpretiveSentence: {
-    fontSize: 14,
+    fontSize: sf(14),
     fontStyle: 'italic',
     marginTop: 8,
     textAlign: 'center',
@@ -2408,8 +2409,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   emptyBubbleText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: sf(14),
+    lineHeight: sf(20),
     textAlign: 'center',
     fontStyle: 'italic',
     paddingHorizontal: 16,
@@ -2420,21 +2421,19 @@ const styles = StyleSheet.create({
   progressStoryCard: {
     marginBottom: 16,
     borderRadius: 20,
-    padding: 20,
-    maxWidth: 400,
-    alignSelf: 'center',
+    padding: isTablet ? 24 : 20,
     width: '100%',
-    minHeight: 220,
+    minHeight: isTablet ? 240 : 220,
   },
   progressStoryTitle: {
-    fontSize: 18,
+    fontSize: sf(18),
     fontWeight: '700',
     color: '#D4AF37',
     marginBottom: 12,
   },
   progressStoryText: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: sf(15),
+    lineHeight: sf(22),
     color: 'rgba(255, 255, 255, 0.85)',
     marginBottom: 16,
   },
@@ -2454,7 +2453,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   readFullStoryText: {
-    fontSize: 15,
+    fontSize: sf(15),
     fontWeight: '600',
     color: '#ffffff',
   },
@@ -2474,8 +2473,8 @@ const styles = StyleSheet.create({
   },
   inlineHighlightText: {
     flex: 1,
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: sf(13),
+    lineHeight: sf(20),
     color: 'rgba(255, 255, 255, 0.7)',
   },
   inlineHighlightValue: {
@@ -2490,7 +2489,7 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(255, 255, 255, 0.1)',
   },
   emotionInsightText: {
-    fontSize: 14,
+    fontSize: sf(14),
     color: 'rgba(255, 255, 255, 0.7)',
     marginBottom: 12,
   },
@@ -2499,8 +2498,8 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.95)',
   },
   emotionPromptText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: sf(14),
+    lineHeight: sf(20),
     color: 'rgba(255, 255, 255, 0.65)',
     fontStyle: 'italic',
     marginBottom: 16,

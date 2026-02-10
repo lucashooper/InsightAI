@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { isTablet, sf, si } from '../../utils/responsive';
 
 type Props = {
   title: string;
@@ -18,7 +19,7 @@ export default function PageHeader({ title, onBack, right, style }: Props) {
       <View style={styles.left}>
         {onBack ? (
           <TouchableOpacity onPress={onBack} style={styles.backButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Ionicons name="arrow-back" size={22} color={theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.85)'} />
+            <Ionicons name="arrow-back" size={si(22)} color={theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.85)'} />
           </TouchableOpacity>
         ) : (
           <View style={styles.backPlaceholder} />
@@ -32,9 +33,9 @@ export default function PageHeader({ title, onBack, right, style }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 60,
-    paddingBottom: 14,
-    paddingHorizontal: 16,
+    paddingTop: isTablet ? 70 : 60,
+    paddingBottom: isTablet ? 18 : 14,
+    paddingHorizontal: isTablet ? 28 : 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -47,9 +48,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: isTablet ? 44 : 36,
+    height: isTablet ? 44 : 36,
+    borderRadius: isTablet ? 22 : 18,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.06)',
@@ -61,7 +62,7 @@ const styles = StyleSheet.create({
     height: 0,
   },
   title: {
-    fontSize: 30,
+    fontSize: sf(30),
     fontWeight: '700',
     color: 'rgba(255, 255, 255, 0.95)',
     letterSpacing: -0.6,

@@ -21,6 +21,7 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import StandardContainer from '../components/shared/StandardContainer';
 import FirstTimeIntroOverlay from '../components/FirstTimeIntroOverlay';
+import { isTablet, sf, ss, si, iPadContentStyle } from '../utils/responsive';
 // Temporarily disabled for Expo Go testing
 // import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 const orbImage = require('../public/InsightAI-Orb.png');
@@ -532,7 +533,7 @@ export default function DashboardScreenNew() {
               >
                 <LinearGradient colors={["rgba(255,255,255,0.22)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.8,y:1}} style={styles.innerHighlight} pointerEvents="none" />
                 <View style={styles.iconWrap}>
-                  <Ionicons name="create-outline" size={24} color="rgba(255, 255, 255, 0.98)" />
+                  <Ionicons name="create-outline" size={si(24)} color="rgba(255, 255, 255, 0.98)" />
                 </View>
               </LinearGradient>
             </TouchableOpacity>
@@ -552,7 +553,7 @@ export default function DashboardScreenNew() {
               >
                 <LinearGradient colors={["rgba(255,255,255,0.22)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.8,y:1}} style={styles.innerHighlight} pointerEvents="none" />
                 <View style={styles.iconWrap}>
-                  <Ionicons name={isRecording ? "mic" : "mic-outline"} size={24} color="rgba(255, 255, 255, 0.98)" />
+                  <Ionicons name={isRecording ? "mic" : "mic-outline"} size={si(24)} color="rgba(255, 255, 255, 0.98)" />
                 </View>
               </LinearGradient>
             </TouchableOpacity>
@@ -571,7 +572,7 @@ export default function DashboardScreenNew() {
               >
                 <LinearGradient colors={["rgba(255,255,255,0.22)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.8,y:1}} style={styles.innerHighlight} pointerEvents="none" />
                 <View style={styles.iconWrap}>
-                  <Ionicons name="scan-outline" size={24} color="rgba(255, 255, 255, 0.98)" />
+                  <Ionicons name="scan-outline" size={si(24)} color="rgba(255, 255, 255, 0.98)" />
                 </View>
               </LinearGradient>
             </TouchableOpacity>
@@ -592,7 +593,7 @@ export default function DashboardScreenNew() {
             >
               <View style={styles.insightHeader}>
                 <Ionicons name="create-outline" size={24} color={theme.colors.primary} />
-                <Text style={[styles.insightTitle, { color: theme.colors.primaryText, fontSize: 18 }]}>No check-in yet</Text>
+                <Text style={[styles.insightTitle, { color: theme.colors.primaryText, fontSize: sf(18) }]}>No check-in yet</Text>
               </View>
               <Text style={[styles.insightText, { color: theme.colors.secondaryText }]}>Write now to unlock insights</Text>
               <View style={styles.ctaArrow}>
@@ -787,9 +788,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingTop: 50,
-    paddingBottom: 20,
+    paddingHorizontal: isTablet ? 32 : 8,
+    paddingTop: isTablet ? 60 : 50,
+    paddingBottom: isTablet ? 28 : 20,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -800,18 +801,18 @@ const styles = StyleSheet.create({
     height: 100,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: sf(24),
     fontWeight: '700',
     letterSpacing: 0.5,
     marginLeft: -12,
   },
   logoIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 12,
+    width: isTablet ? 80 : 64,
+    height: isTablet ? 80 : 64,
+    borderRadius: isTablet ? 16 : 12,
   },
   brandText: {
-    fontSize: 24,
+    fontSize: sf(24),
     fontWeight: '600',
     letterSpacing: 0.8,
   },
@@ -850,30 +851,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   greeting: {
-    fontSize: 16,
-    marginBottom: 8,
+    fontSize: sf(16),
+    marginBottom: isTablet ? 12 : 8,
     fontWeight: '600',
     letterSpacing: 0.2,
     textAlign: 'center',
   },
   userName: {
-    fontSize: 32,
+    fontSize: sf(32),
     fontWeight: '700',
     textTransform: 'capitalize',
     letterSpacing: -0.8,
     textAlign: 'center',
   },
   greetingText: {
-    fontSize: 32,
+    fontSize: sf(38),
     fontWeight: '600',
     letterSpacing: 1.2,
     textAlign: 'center',
-    lineHeight: 42,
+    lineHeight: sf(48),
   },
   iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: isTablet ? 56 : 44,
+    height: isTablet ? 56 : 44,
+    borderRadius: isTablet ? 28 : 22,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -881,26 +882,26 @@ const styles = StyleSheet.create({
   orbSection: {
     alignItems: 'center',
     justifyContent: 'center',
-    height: 360,
+    height: isTablet ? 520 : 360,
     position: 'relative',
-    marginBottom: 20,
+    marginBottom: isTablet ? 32 : 20,
   },
   orbLoader: {
     position: 'absolute',
     top: 180,
   },
   orbImage: {
-    width: 320,
-    height: 320,
+    width: isTablet ? 460 : 320,
+    height: isTablet ? 460 : 320,
     position: 'absolute',
-    top: 20,
+    top: isTablet ? 30 : 20,
   },
   orbContent: {
     alignItems: 'center',
     gap: 12,
   },
   orbMood: {
-    fontSize: 28,
+    fontSize: sf(28),
     fontWeight: '500',
     letterSpacing: 0.8,
   },
@@ -910,12 +911,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   orbScore: {
-    fontSize: 52,
+    fontSize: sf(52),
     fontWeight: '300',
     letterSpacing: -1,
   },
   orbScoreMax: {
-    fontSize: 18,
+    fontSize: sf(18),
     fontWeight: '300',
   },
   trendContainer: {
@@ -948,19 +949,19 @@ const styles = StyleSheet.create({
   },
   actionsSection: {
     flexDirection: 'row',
-    paddingHorizontal: 36,
-    gap: 24,
-    marginBottom: 32,
+    paddingHorizontal: isTablet ? 60 : 36,
+    gap: isTablet ? 40 : 24,
+    marginBottom: isTablet ? 48 : 32,
     justifyContent: 'center',
   },
   actionItem: {
     alignItems: 'center',
-    gap: 10,
+    gap: isTablet ? 14 : 10,
   },
   actionCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: isTablet ? 88 : 64,
+    height: isTablet ? 88 : 64,
+    borderRadius: isTablet ? 44 : 32,
     overflow: 'hidden',
     shadowColor: '#8b5cf6',
     shadowOffset: { width: 0, height: 4 },
@@ -990,31 +991,31 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   actionLabel: {
-    fontSize: 11,
+    fontSize: sf(11),
     fontWeight: '500',
     letterSpacing: 0.3,
   },
   patternsSection: {
-    paddingHorizontal: 24,
+    paddingHorizontal: isTablet ? 56 : 24,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: sf(20),
     fontWeight: '700',
-    marginBottom: 16,
+    marginBottom: isTablet ? 20 : 16,
   },
   patternCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 16,
-    borderRadius: 12,
+    gap: isTablet ? 16 : 12,
+    padding: isTablet ? 20 : 16,
+    borderRadius: isTablet ? 16 : 12,
     borderWidth: 1,
     marginBottom: 12,
   },
   patternText: {
     flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: sf(14),
+    lineHeight: sf(20),
   },
   streakButton: {
     flexDirection: 'row',
@@ -1041,19 +1042,19 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   moodLabel: {
-    fontSize: 24,
+    fontSize: sf(24),
     fontWeight: '500',
     letterSpacing: 0.5,
     marginBottom: 4,
   },
   moodSubtext: {
-    fontSize: 13,
+    fontSize: sf(13),
     fontWeight: '400',
     letterSpacing: 0.3,
   },
   recentTopicsSection: {
-    paddingHorizontal: 24,
-    marginBottom: 32,
+    paddingHorizontal: isTablet ? 56 : 24,
+    marginBottom: isTablet ? 40 : 32,
   },
   topicsScroll: {
     marginTop: 12,
@@ -1083,16 +1084,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   topicText: {
-    fontSize: 13,
+    fontSize: sf(13),
     fontWeight: '600',
   },
   insightsSection: {
-    paddingHorizontal: 24,
-    marginBottom: 32,
+    paddingHorizontal: isTablet ? 56 : 24,
+    marginBottom: isTablet ? 40 : 32,
   },
   insightCard: {
-    padding: 16,
-    borderRadius: 12,
+    padding: isTablet ? 20 : 16,
+    borderRadius: isTablet ? 16 : 12,
     borderWidth: 1,
     marginTop: 12,
   },
@@ -1103,23 +1104,23 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   insightTitle: {
-    fontSize: 15,
+    fontSize: sf(17),
     fontWeight: '600',
   },
   insightText: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: sf(13),
+    lineHeight: sf(18),
   },
   challengesSection: {
-    paddingHorizontal: 24,
-    marginBottom: 32,
+    paddingHorizontal: isTablet ? 56 : 24,
+    marginBottom: isTablet ? 40 : 32,
   },
   challengeCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    borderRadius: 12,
+    padding: isTablet ? 20 : 16,
+    borderRadius: isTablet ? 16 : 12,
     borderWidth: 1,
     marginTop: 12,
   },
@@ -1130,19 +1131,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   challengeEmoji: {
-    fontSize: 28,
+    fontSize: isTablet ? 36 : 28,
   },
   challengeInfo: {
     flex: 1,
   },
   challengeTitle: {
-    fontSize: 15,
+    fontSize: sf(17),
     fontWeight: '600',
     marginBottom: 2,
   },
   challengeSubtext: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: sf(12),
+    lineHeight: sf(16),
   },
   noEntryCard: {
     position: 'relative',

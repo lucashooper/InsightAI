@@ -10,6 +10,7 @@ import Purchases, { PurchasesOffering, PurchasesPackage, CustomerInfo } from 're
 import { useAuth } from '../../contexts/AuthContext';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { supabase } from '../../lib/supabase';
+import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
@@ -861,17 +862,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 72,
-    paddingBottom: 40,
+    paddingHorizontal: isTablet ? 80 : 24,
+    paddingTop: isTablet ? 90 : 72,
+    paddingBottom: isTablet ? 60 : 40,
   },
   logoContainer: {
     alignItems: 'center',
     marginBottom: 24,
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: isTablet ? 140 : 100,
+    height: isTablet ? 140 : 100,
     opacity: 0.9,
   },
   header: {
@@ -879,19 +880,19 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   title: {
-    fontSize: 36,
+    fontSize: sf(36),
     fontWeight: '700',
     color: '#fff',
-    marginBottom: 12,
+    marginBottom: isTablet ? 16 : 12,
     letterSpacing: -0.8,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: sf(18),
     color: '#a1a1aa',
     textAlign: 'center',
     fontWeight: '500',
-    lineHeight: 26,
+    lineHeight: sf(26),
   },
   subscriptionInfo: {
     marginTop: 20,
@@ -912,10 +913,10 @@ const styles = StyleSheet.create({
   },
   planCard: {
     backgroundColor: '#0a0a0a',
-    borderRadius: 16,
+    borderRadius: isTablet ? 20 : 16,
     borderWidth: 1.5,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-    padding: 20,
+    padding: isTablet ? 24 : 20,
     position: 'relative',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -925,10 +926,10 @@ const styles = StyleSheet.create({
   },
   planCardSelected: {
     backgroundColor: '#0a0a0a',
-    borderRadius: 16,
+    borderRadius: isTablet ? 20 : 16,
     borderWidth: 1.5,
     borderColor: 'rgba(168, 85, 247, 0.6)',
-    padding: 20,
+    padding: isTablet ? 24 : 20,
     position: 'relative',
     shadowColor: '#a855f7',
     shadowOffset: { width: 0, height: 0 },
@@ -986,7 +987,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#a855f7',
   },
   planTitle: {
-    fontSize: 17,
+    fontSize: sf(17),
     fontWeight: '600',
     color: '#fff',
   },
@@ -994,17 +995,17 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   planPrice: {
-    fontSize: 22,
+    fontSize: sf(22),
     fontWeight: '700',
     color: '#fff',
   },
   planPeriod: {
-    fontSize: 13,
+    fontSize: sf(13),
     color: '#9ca3af',
     fontWeight: '500',
   },
   planDaily: {
-    fontSize: 14,
+    fontSize: sf(14),
     color: '#9ca3af',
     fontWeight: '500',
     marginLeft: 36,
@@ -1029,9 +1030,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   testimonialText: {
-    fontSize: 15,
+    fontSize: sf(15),
     color: '#e5e7eb',
-    lineHeight: 22,
+    lineHeight: sf(22),
     marginBottom: 12,
     fontWeight: '400',
   },
@@ -1073,7 +1074,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   featureText: {
-    fontSize: 13,
+    fontSize: sf(13),
     color: '#9ca3af',
     flex: 1,
   },
@@ -1082,7 +1083,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   featureTextPro: {
-    fontSize: 13,
+    fontSize: sf(13),
     color: '#e5e7eb',
     flex: 1,
   },
@@ -1100,13 +1101,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 18,
+    paddingVertical: isTablet ? 22 : 18,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.15)',
   },
   ctaText: {
-    fontSize: 19,
+    fontSize: sf(19),
     fontWeight: '700',
     color: '#fff',
     letterSpacing: 0.3,

@@ -26,6 +26,7 @@ import PageHeader from '../components/shared/PageHeader';
 import StandardContainer from '../components/shared/StandardContainer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getMoodIndicator, MoodIndicator } from '../utils/moodIndicators';
+import { isTablet, sf, ss, iPadWideContentStyle } from '../utils/responsive';
 
 const insightLogo = require('../assets/192px-Insight-ICON.png');
 
@@ -1133,7 +1134,7 @@ const styles = StyleSheet.create({
     color: '#f97373',
   },
   listContent: {
-    padding: 20,
+    padding: isTablet ? 40 : 20,
     paddingBottom: 120,
   },
   // Streak Card Styles
@@ -1150,9 +1151,9 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   streakIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: isTablet ? 72 : 56,
+    height: isTablet ? 72 : 56,
+    borderRadius: isTablet ? 36 : 28,
     backgroundColor: '#ff6b3520',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1169,13 +1170,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   streakCardNumber: {
-    fontSize: 32,
+    fontSize: sf(32),
     fontWeight: '700',
     color: '#ffffff',
     letterSpacing: -1,
   },
   streakLabel: {
-    fontSize: 16,
+    fontSize: sf(16),
     fontWeight: '600',
     color: '#e5e5e5',
   },
@@ -1238,7 +1239,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   entryTitle: {
-    fontSize: 20,
+    fontSize: sf(20),
     fontWeight: '700',
     color: '#ffffff',
     flex: 1,
@@ -1274,9 +1275,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   entryContent: {
-    fontSize: 15,
+    fontSize: sf(15),
     color: '#999999',
-    lineHeight: 22,
+    lineHeight: sf(22),
     marginBottom: 16,
   },
   entryFooter: {
@@ -1320,13 +1321,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: sf(20),
     fontWeight: '600',
     color: '#ffffff',
     marginBottom: 8,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: sf(14),
     color: '#999',
     textAlign: 'center',
     marginBottom: 24,
@@ -1359,9 +1360,9 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   centerFabGradient: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: isTablet ? 80 : 64,
+    height: isTablet ? 80 : 64,
+    borderRadius: isTablet ? 40 : 32,
     alignItems: 'center',
     justifyContent: 'center',
   },

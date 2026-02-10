@@ -10,6 +10,7 @@ import ProgressBarNeon from '../../components/onboarding/ProgressBarNeon';
 import PillOption from '../../components/onboarding/PillOption';
 import AnimatedSlider from '../../components/onboarding/AnimatedSlider';
 import { useOnboarding } from '../../contexts/OnboardingContext';
+import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
 
 const cambridgeLogo = require('../../assets/Cambridge-logo.png');
 const stressManagementLottie = require('../../public/animations/Stress Management.json');
@@ -689,8 +690,8 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
-        paddingHorizontal: 24,
-        paddingTop: 20,
+        paddingHorizontal: isTablet ? 60 : 24,
+        paddingTop: isTablet ? 32 : 20,
     },
     stepIndicator: {
         fontSize: 12,
@@ -720,25 +721,25 @@ const styles = StyleSheet.create({
     // ========================================
     // Main question/info page title
     title: {
-        fontSize: 32,
+        fontSize: sf(32),
         fontWeight: '700',
         color: '#fff',
-        marginBottom: 16,
-        lineHeight: 40,
+        marginBottom: isTablet ? 24 : 16,
+        lineHeight: sf(40),
     },
     // Info page title variant
     infoTitle: {
-        fontSize: 30,
+        fontSize: sf(30),
         fontWeight: '800',
         letterSpacing: -0.8,
-        lineHeight: 38,
+        lineHeight: sf(38),
     },
     // Subtitle text below title
     subtitle: {
-        fontSize: 17,
+        fontSize: sf(17),
         color: '#d1d5db',
-        lineHeight: 26,
-        marginBottom: 24,
+        lineHeight: sf(26),
+        marginBottom: isTablet ? 32 : 24,
         fontWeight: '500',
     },
     
@@ -888,8 +889,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: 20,
-        borderRadius: 16,
+        padding: isTablet ? 24 : 20,
+        borderRadius: isTablet ? 20 : 16,
         borderWidth: 1,
         borderColor: 'rgba(139, 92, 246, 0.2)',
     },
@@ -899,7 +900,7 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     optionText: {
-        fontSize: 16,
+        fontSize: sf(16),
         color: '#e0e7ff',
         fontWeight: '500',
     },
@@ -937,14 +938,14 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 18,
+        paddingVertical: isTablet ? 22 : 18,
         borderRadius: 999,
         gap: 10,
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.15)',
     },
     continueText: {
-        fontSize: 18,
+        fontSize: sf(18),
         fontWeight: '700',
         color: '#fff',
         letterSpacing: 0.3,
@@ -1247,12 +1248,12 @@ const styles = StyleSheet.create({
     },
     nameInput: {
         backgroundColor: 'rgba(255, 255, 255, 0.08)',
-        borderRadius: 16,
+        borderRadius: isTablet ? 20 : 16,
         borderWidth: 1.5,
         borderColor: 'rgba(168, 85, 247, 0.3)',
-        paddingVertical: 18,
-        paddingHorizontal: 20,
-        fontSize: 18,
+        paddingVertical: isTablet ? 22 : 18,
+        paddingHorizontal: isTablet ? 24 : 20,
+        fontSize: sf(18),
         color: '#fff',
         fontWeight: '500',
         marginBottom: 24,

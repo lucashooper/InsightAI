@@ -44,6 +44,7 @@ import GratitudeHistoryScreen from '../screens/GratitudeHistoryScreen';
 import EmotionDetailScreen from '../screens/EmotionDetailScreen';
 import AmbientSoundsScreen from '../screens/AmbientSoundsScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isTablet, sf, si } from '../utils/responsive';
 import DailyMoodCheckIn from '../components/DailyMoodCheckIn';
 
 const Stack = createNativeStackNavigator();
@@ -182,9 +183,9 @@ function MainTabs() {
           backgroundColor: theme.name === 'light' ? '#FFFFFF' : '#0a0a0a',
           borderTopColor: theme.name === 'light' ? '#E8E5DC' : '#1a1a1a',
           borderTopWidth: 1,
-          height: 70,
-          paddingBottom: 10,
-          paddingTop: 10,
+          height: isTablet ? 90 : 70,
+          paddingBottom: isTablet ? 14 : 10,
+          paddingTop: isTablet ? 14 : 10,
         },
         tabBarItemStyle: {
           flex: 1,
@@ -201,7 +202,7 @@ function MainTabs() {
         component={DashboardScreenNew}
         options={{
           tabBarIcon: ({ color }) => (
-            <Ionicons name="home" size={24} color={color} />
+            <Ionicons name="home" size={si(24)} color={color} />
           ),
           tabBarAccessibilityLabel: "Home",
         }}
@@ -217,7 +218,7 @@ function MainTabs() {
         component={HomeScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Ionicons name="journal" size={24} color={color} />
+            <Ionicons name="journal" size={si(24)} color={color} />
           ),
           tabBarAccessibilityLabel: "Journal",
         }}
@@ -248,7 +249,7 @@ function MainTabs() {
         component={DashboardScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Ionicons name="analytics" size={24} color={color} />
+            <Ionicons name="analytics" size={si(24)} color={color} />
           ),
           tabBarAccessibilityLabel: "Dashboard",
         }}
@@ -264,7 +265,7 @@ function MainTabs() {
         component={SettingsScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Ionicons name="settings-outline" size={24} color={color} />
+            <Ionicons name="settings-outline" size={si(24)} color={color} />
           ),
           tabBarAccessibilityLabel: "Settings",
         }}

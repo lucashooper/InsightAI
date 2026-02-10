@@ -18,7 +18,7 @@ export default {
       infoPlist: {
         NSMicrophoneUsageDescription: "InsightAI uses the microphone for voice notes.",
         NSSpeechRecognitionUsageDescription: "InsightAI uses speech recognition to convert your voice into text for taking notes and searching your content.",
-        NSPhotoLibraryUsageDescription: "InsightAI needs access to your photo library to let you select and upload a profile picture for your account.",
+        NSPhotoLibraryUsageDescription: "Insight uses your photo library so you can choose a profile picture from your existing photos. For example, you can select a photo to personalize your account profile displayed in the Settings screen. Your photos are not accessed for any other purpose.",
         ITSAppUsesNonExemptEncryption: false
       },
       bundleIdentifier: "com.crupid.mobile"
