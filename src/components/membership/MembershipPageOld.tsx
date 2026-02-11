@@ -82,7 +82,7 @@ const MembershipPage: React.FC<MembershipPageProps> = ({ onSkip, showCloseButton
           <div className="membership-logo">
             <img 
               src="/InsightAI-New-Logo.png" 
-              alt="InsightAI Logo" 
+              alt="Insight Logo" 
               className="logo-image"
             />
           </div>

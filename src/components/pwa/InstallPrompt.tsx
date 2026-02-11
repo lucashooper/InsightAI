@@ -85,7 +85,7 @@ export function InstallPrompt() {
           <Download className="w-6 h-6 text-white" />
         </div>
         <div className="flex-1">
-          <h3 className="font-semibold text-white mb-1">Install InsightAI</h3>
+          <h3 className="font-semibold text-white mb-1">Install Insight</h3>
           <p className="text-sm text-white/80 leading-relaxed">
             Get quick access from your home screen and use the app offline
           </p>

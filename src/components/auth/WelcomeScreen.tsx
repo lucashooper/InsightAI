@@ -85,7 +85,7 @@ const WelcomeScreen: React.FC = () => {
           >
             <img 
               src="/InsightAI-New-Logo.png" 
-              alt="InsightAI Logo" 
+              alt="Insight Logo" 
               className="auth-logo"
             />
           </motion.div>
@@ -96,7 +96,7 @@ const WelcomeScreen: React.FC = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            Welcome to InsightAI
+            Welcome to Insight
           </motion.h1>
 
           <motion.p

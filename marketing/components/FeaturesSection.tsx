@@ -42,7 +42,7 @@ const FeaturesSection: React.FC = () => {
           Everything you need to understand yourself.
         </h2>
         <p className="section-subtitle">
-          InsightAI combines powerful AI with beautiful design to help you gain deeper insights into your habits and emotions
+          Insight combines powerful AI with beautiful design to help you gain deeper insights into your habits and emotions
         </p>
         
         <div className="features-grid">

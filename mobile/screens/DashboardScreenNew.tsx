@@ -261,12 +261,11 @@ export default function DashboardScreenNew() {
   };
 
   const startRecording = async () => {
-    // Disabled for Expo Go testing
-    Alert.alert('Voice Recording', 'Voice recording requires a development build and is not available in Expo Go.');
+    // Navigate to CreateEntry in voice mode
+    navigation.navigate('CreateEntry', { voiceMode: true });
   };
 
   const stopRecording = async () => {
-    // Disabled for Expo Go testing
     setIsRecording(false);
   };
 

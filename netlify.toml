@@ -7,13 +7,13 @@
   
 # Routing
 
-# 1) Root serves main app shell (index.html)
+# 1) Root serves marketing site landing page
 [[redirects]]
   from = "/"
-  to = "/index.html"
+  to = "/marketing-dist/index.html"
   status = 200
 
-# 2) Public legal pages (must be accessible without auth)
+# 2) Public legal/support pages
 [[redirects]]
   from = "/privacy"
   to = "/marketing-dist/privacy.html"
@@ -29,7 +29,13 @@
   to = "/marketing-dist/support.html"
   status = 200
 
-# 3) App shell under /app - SPA redirect so React Router works on refresh
+# 3) Login page - serves the web app (React Router handles /login route)
+[[redirects]]
+  from = "/login"
+  to = "/index.html"
+  status = 200
+
+# 4) App shell under /app - SPA redirect so React Router works on refresh
 #    Only /app/* falls back to index.html; static assets are still served directly.
 [[redirects]]
   from = "/app/*"

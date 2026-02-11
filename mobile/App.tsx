@@ -7,7 +7,9 @@ import { Asset } from 'expo-asset';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { OnboardingProvider } from './contexts/OnboardingContext';
+import { AppLockProvider, useAppLock } from './contexts/AppLockContext';
 import AppNavigator from './navigation/AppNavigator';
+import LockScreen from './components/LockScreen';
 import { EncryptionService } from './services/encryptionService';
 
 // RevenueCat API Keys
@@ -129,12 +131,29 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <OnboardingProvider>
-          <AppNavigator />
-          <StatusBar style="light" />
-        </OnboardingProvider>
-      </AuthProvider>
+      <AppLockProvider>
+        <AuthProvider>
+          <OnboardingProvider>
+            <AppContent />
+            <StatusBar style="light" />
+          </OnboardingProvider>
+        </AuthProvider>
+      </AppLockProvider>
     </ThemeProvider>
+  );
+}
+
+function AppContent() {
+  const { isLocked, isLockEnabled } = useAppLock();
+
+  return (
+    <View style={{ flex: 1 }}>
+      <AppNavigator />
+      {isLocked && isLockEnabled && (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}>
+          <LockScreen />
+        </View>
+      )}
+    </View>
   );
 }

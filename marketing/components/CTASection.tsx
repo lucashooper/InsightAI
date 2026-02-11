@@ -7,11 +7,11 @@ const CTASection: React.FC = () => {
         <div className="cta-content">
           <h2 className="cta-title">Ready to understand yourself better?</h2>
           <p className="cta-description">
-            Start your journey with InsightAI today. Free, private, and powerful.
+            Start your journey with Insight today. Free, private, and powerful.
           </p>
           <div className="cta-buttons">
-            <a href="/app" className="cta-button primary">
-              Try InsightAI Now
+            <a href="/login" className="cta-button primary">
+              Try Insight Now
             </a>
             <a href="#features" className="cta-button secondary">
               Learn More

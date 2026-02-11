@@ -128,7 +128,7 @@ const MembershipPage: React.FC<MembershipPageProps> = ({ onSkip, showCloseButton
                 <span className="price-period">/month</span>
               </div>
               <p className="plan-description">
-                Perfect for getting started with InsightAI
+                Perfect for getting started with Insight
               </p>
             </div>
 

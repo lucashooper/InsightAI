@@ -98,7 +98,7 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
             style={styles.authButton}
             onPress={handleAppleAuth}
           >
-            <Ionicons name="logo-apple" size={20} color="#fff" />
+            <Ionicons name="logo-apple" size={24} color="#fff" />
             <Text style={styles.authButtonText}>Continue with Apple</Text>
           </TouchableOpacity>
 

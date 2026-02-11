@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -34,6 +35,14 @@ export default function NotificationsOnboardingScreen({ navigation }: Notificati
 
   return (
     <View style={styles.container}>
+      {/* Back Button */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="chevron-back" size={28} color="#fff" />
+      </TouchableOpacity>
+
       {/* Logo */}
       <Image source={insightLogo} style={styles.logo} />
       
@@ -73,6 +82,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     paddingHorizontal: 24,
     paddingTop: 140,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 60,
+    left: 24,
+    zIndex: 10,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },

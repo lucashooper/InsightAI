@@ -18,8 +18,9 @@ export default {
       infoPlist: {
         NSMicrophoneUsageDescription: "InsightAI uses the microphone for voice notes.",
         NSSpeechRecognitionUsageDescription: "InsightAI uses speech recognition to convert your voice into text for taking notes and searching your content.",
-        NSPhotoLibraryUsageDescription: "Insight uses your photo library so you can choose a profile picture from your existing photos. For example, you can select a photo to personalize your account profile displayed in the Settings screen. Your photos are not accessed for any other purpose.",
-        ITSAppUsesNonExemptEncryption: false
+        NSPhotoLibraryUsageDescription: "Insight needs access to your photo library so you can select a profile picture. For example, you can choose a photo from your library to personalize your account profile shown on the Settings screen. Only the photo you select is uploaded — your other photos are never accessed or stored.",
+        ITSAppUsesNonExemptEncryption: false,
+        NSFaceIDUsageDescription: "Insight uses Face ID to quickly unlock your journal so only you can access your entries."
       },
       bundleIdentifier: "com.crupid.mobile"
     },
@@ -58,7 +59,13 @@ export default {
           iosUrlScheme: "com.googleusercontent.apps.878031859491-tub0qt8omp6enuiaqr7liivotmkq7gef"
         }
       ],
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Insight uses Face ID to quickly unlock your journal so only you can access your entries."
+        }
+      ]
     ]
   }
 }

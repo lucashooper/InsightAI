@@ -188,27 +188,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       await GoogleSignin.hasPlayServices();
-      
-      // Generate a nonce for security (required for @react-native-google-signin v16+)
-      const rawNonce = Math.random().toString(36).substring(2, 10) + 
-                       Math.random().toString(36).substring(2, 10);
-      const hashedNonce = await Crypto.digestStringAsync(
-        Crypto.CryptoDigestAlgorithm.SHA256,
-        rawNonce
-      );
-      
-      // Pass hashed nonce to Google, raw nonce to Supabase
-      const userInfo = await GoogleSignin.signIn({ nonce: hashedNonce });
+      const userInfo = await GoogleSignin.signIn();
       
       // v12+ moved idToken to userInfo.data.idToken
       const idToken = userInfo.data?.idToken || userInfo.idToken;
       
       if (idToken) {
+        // Do NOT pass a nonce for Google Sign-In.
+        // The native Google SDK auto-generates and hashes a nonce internally.
+        // We cannot access the raw (unhashed) nonce, and Supabase expects the raw one.
+        // Omitting the nonce lets Supabase skip nonce verification entirely.
+        console.log('[AUTH] Signing in with Google ID token (no nonce - native SDK flow)');
+        
         const { data, error } = await supabase.auth.signInWithIdToken({
           provider: 'google',
           token: idToken,
-          nonce: rawNonce,
         });
+        
+        if (error) {
+          console.error('[AUTH] Supabase signInWithIdToken error:', error.message);
+        } else {
+          console.log('[AUTH] Google Sign-In successful, user:', data.user?.email);
+        }
         
         return { error };
       } else {

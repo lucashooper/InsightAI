@@ -171,7 +171,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
       // Add title
       pdf.setFontSize(20);
       pdf.setTextColor(56, 189, 248); // Blue color
-      pdf.text('InsightAI Monthly Review', 20, 20);
+      pdf.text('Insight Monthly Review', 20, 20);
 
       // Add date
       pdf.setFontSize(12);
@@ -182,7 +182,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ setActiveView, setActiveN
       pdf.addImage(imgData, 'PNG', 0, 40, pdfWidth, pdfHeight - 40);
 
       // Save the PDF
-      const fileName = `InsightAI-Report-${new Date().toLocaleDateString().replace(/\//g, '-')}.pdf`;
+      const fileName = `Insight-Report-${new Date().toLocaleDateString().replace(/\//g, '-')}.pdf`;
       pdf.save(fileName);
 
       console.log('✅ PDF exported successfully:', fileName);

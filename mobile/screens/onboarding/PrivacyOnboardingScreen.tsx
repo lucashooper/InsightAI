@@ -18,6 +18,14 @@ export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardin
 
   return (
     <View style={styles.container}>
+      {/* Back Button */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="chevron-back" size={28} color="#fff" />
+      </TouchableOpacity>
+
       {/* Logo */}
       <Image source={insightLogo} style={styles.logo} />
       
@@ -70,6 +78,16 @@ const styles = StyleSheet.create({
     paddingTop: 140,
     alignItems: 'center',
   },
+  backButton: {
+    position: 'absolute',
+    top: 60,
+    left: 24,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   logo: {
     width: 100,
     height: 100,
@@ -78,11 +96,11 @@ const styles = StyleSheet.create({
     top: 60,
   },
   iconContainer: {
-    marginBottom: 8,
+    marginBottom: 0,
   },
   lockIcon: {
-    width: 240,
-    height: 240,
+    width: 180,
+    height: 180,
   },
   title: {
     fontSize: 32,

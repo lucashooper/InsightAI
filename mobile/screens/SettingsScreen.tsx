@@ -7,6 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import Purchases from 'react-native-purchases';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme, ThemeName } from '../contexts/ThemeContext';
+import { useAppLock } from '../contexts/AppLockContext';
 import { supabase } from '../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import StandardContainer from '../components/shared/StandardContainer';
@@ -24,6 +25,12 @@ interface UserProfile {
 export default function SettingsScreen({ navigation }: any) {
   const { user, signOut } = useAuth();
   const { theme, themeName, setTheme } = useTheme();
+  const { isLockEnabled, isBiometricEnabled, isBiometricAvailable, enableLock, disableLock, toggleBiometric } = useAppLock();
+  const [showPinSetup, setShowPinSetup] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [pinConfirm, setPinConfirm] = useState('');
+  const [pinStep, setPinStep] = useState<'enter' | 'confirm' | 'disable'>('enter');
+  const [pinError, setPinError] = useState('');
   const [syncing, setSyncing] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -549,6 +556,169 @@ export default function SettingsScreen({ navigation }: any) {
                 )}
               </TouchableOpacity>
             ))}
+          </View>
+        </View>
+
+        {/* Security */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>🔒 Security</Text>
+          <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+            <TouchableOpacity 
+              style={styles.settingRow}
+              onPress={() => {
+                if (isLockEnabled) {
+                  // Disable - ask for current PIN
+                  Alert.prompt(
+                    'Disable App Lock',
+                    'Enter your current PIN to disable the lock.',
+                    async (text) => {
+                      if (text && text.length === 4) {
+                        const success = await disableLock(text);
+                        if (!success) {
+                          Alert.alert('Incorrect PIN', 'The PIN you entered is incorrect.');
+                        }
+                      }
+                    },
+                    'secure-text',
+                    '',
+                    'number-pad'
+                  );
+                } else {
+                  // Enable - set up new PIN
+                  Alert.prompt(
+                    'Set App Lock PIN',
+                    'Choose a 4-digit PIN to lock your journal.',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'Next',
+                        onPress: (pin) => {
+                          if (!pin || pin.length !== 4) {
+                            Alert.alert('Invalid PIN', 'Please enter exactly 4 digits.');
+                            return;
+                          }
+                          // Confirm PIN
+                          Alert.prompt(
+                            'Confirm PIN',
+                            'Re-enter your 4-digit PIN to confirm.',
+                            [
+                              { text: 'Cancel', style: 'cancel' },
+                              {
+                                text: 'Enable Lock',
+                                onPress: async (confirmPin) => {
+                                  if (confirmPin === pin) {
+                                    await enableLock(pin);
+                                    Alert.alert('App Lock Enabled', 'Your journal is now protected with a PIN.');
+                                  } else {
+                                    Alert.alert('PINs Don\'t Match', 'The PINs you entered don\'t match. Please try again.');
+                                  }
+                                },
+                              },
+                            ],
+                            'secure-text',
+                            '',
+                            'number-pad'
+                          );
+                        },
+                      },
+                    ],
+                    'secure-text',
+                    '',
+                    'number-pad'
+                  );
+                }
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={styles.settingLeft}>
+                <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>App Lock</Text>
+                <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Require a PIN to open Insight</Text>
+              </View>
+              <View style={[styles.toggle, isLockEnabled && styles.toggleActive]}>
+                <View style={[styles.toggleThumb, isLockEnabled && styles.toggleThumbActive]} />
+              </View>
+            </TouchableOpacity>
+
+            {isLockEnabled && (
+              <>
+                <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
+                
+                {isBiometricAvailable && (
+                  <TouchableOpacity 
+                    style={styles.settingRow}
+                    onPress={() => toggleBiometric(!isBiometricEnabled)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.settingLeft}>
+                      <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Face ID / Touch ID</Text>
+                      <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Unlock with biometrics instead of PIN</Text>
+                    </View>
+                    <View style={[styles.toggle, isBiometricEnabled && styles.toggleActive]}>
+                      <View style={[styles.toggleThumb, isBiometricEnabled && styles.toggleThumbActive]} />
+                    </View>
+                  </TouchableOpacity>
+                )}
+
+                <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
+                
+                <TouchableOpacity 
+                  style={styles.settingRow}
+                  onPress={() => {
+                    Alert.prompt(
+                      'Change PIN',
+                      'Enter your current PIN first.',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Next',
+                          onPress: async (currentPin) => {
+                            if (!currentPin) return;
+                            // Use the disableLock + enableLock flow
+                            const valid = await disableLock(currentPin);
+                            if (!valid) {
+                              Alert.alert('Incorrect PIN', 'The PIN you entered is incorrect.');
+                              return;
+                            }
+                            Alert.prompt(
+                              'New PIN',
+                              'Choose a new 4-digit PIN.',
+                              [
+                                { text: 'Cancel', style: 'cancel' },
+                                {
+                                  text: 'Set PIN',
+                                  onPress: async (newPin) => {
+                                    if (!newPin || newPin.length !== 4) {
+                                      Alert.alert('Invalid PIN', 'Please enter exactly 4 digits.');
+                                      await enableLock(currentPin); // Re-enable with old PIN
+                                      return;
+                                    }
+                                    await enableLock(newPin);
+                                    Alert.alert('PIN Changed', 'Your new PIN has been set.');
+                                  },
+                                },
+                              ],
+                              'secure-text',
+                              '',
+                              'number-pad'
+                            );
+                          },
+                        },
+                      ],
+                      'secure-text',
+                      '',
+                      'number-pad'
+                    );
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.settingLeft}>
+                    <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Change PIN</Text>
+                    <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Update your 4-digit lock PIN</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={theme.colors.secondaryText} />
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
 

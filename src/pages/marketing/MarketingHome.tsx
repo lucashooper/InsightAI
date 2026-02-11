@@ -44,7 +44,7 @@ const MarketingHome: React.FC = () => {
           animation: 'spin 1s linear infinite',
           margin: '0 auto 16px'
         }} />
-        <p>Loading InsightAI...</p>
+        <p>Loading Insight...</p>
       </div>
     </div>
   );

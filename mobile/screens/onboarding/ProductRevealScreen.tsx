@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
 
 const { width, height } = Dimensions.get('window');
 
-const phoneMockup = require('../../public/InsightAI-Onboarding-MAIN.png');
+const phoneMockup = require('../../public/Onboarding-Main-Phone-Image.png');
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 export default function ProductRevealScreen({ navigation }: any) {
@@ -67,6 +68,16 @@ const styles = StyleSheet.create({
         paddingHorizontal: isTablet ? 48 : 24,
         paddingTop: isTablet ? 80 : 60,
         paddingBottom: isTablet ? 70 : 50,
+    },
+    backButton: {
+        position: 'absolute',
+        top: 60,
+        left: 24,
+        zIndex: 10,
+        width: 40,
+        height: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     phoneSection: {
         flex: 1,

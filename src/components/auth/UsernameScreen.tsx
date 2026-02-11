@@ -164,7 +164,7 @@ const UsernameScreen: React.FC<UsernameScreenProps> = ({ onComplete }) => {
           textAlign: 'center',
           lineHeight: '1.5'
         }}>
-          This is how you'll be identified in InsightAI
+          This is how you'll be identified in Insight
         </p>
 
         {/* Username Input */}

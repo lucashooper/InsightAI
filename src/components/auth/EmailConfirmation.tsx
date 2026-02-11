@@ -147,7 +147,7 @@ const EmailConfirmation: React.FC<EmailConfirmationProps> = ({ email, onBack }) 
             margin: 0
           }}>
             <li>Open your email inbox</li>
-            <li>Look for an email from InsightAI</li>
+            <li>Look for an email from Insight</li>
             <li>Click the confirmation link</li>
             <li>You'll be redirected back to sign in</li>
           </ol>

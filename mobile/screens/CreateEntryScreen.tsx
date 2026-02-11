@@ -22,16 +22,27 @@ import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { mobileAiService } from '../services/mobileAiService';
 import { EncryptionService } from '../services/encryptionService';
+// Conditionally import speech recognition (crashes in Expo Go where native module isn't available)
+let ExpoSpeechRecognitionModule: any = null;
+let useSpeechRecognitionEvent: any = (_event: string, _handler: any) => {};
+try {
+  const speechModule = require('expo-speech-recognition');
+  ExpoSpeechRecognitionModule = speechModule.ExpoSpeechRecognitionModule;
+  useSpeechRecognitionEvent = speechModule.useSpeechRecognitionEvent;
+} catch (e) {
+  console.log('[CreateEntry] Speech recognition not available (Expo Go)');
+}
 
 export default function CreateEntryScreen({ navigation, route }: any) {
   const { user } = useAuth();
   const { theme } = useTheme();
-  const { initialContent } = route?.params || {};
+  const { initialContent, voiceMode } = route?.params || {};
   const [title, setTitle] = useState('');
   const [content, setContent] = useState(initialContent || '');
   const [showMoodPicker, setShowMoodPicker] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [speechAvailable, setSpeechAvailable] = useState(true);
   const [mood, setMood] = useState('');
   const [aiResponse, setAiResponse] = useState<{ reflection: string; questions: string[] } | null>(null);
   const [displayedText, setDisplayedText] = useState('');
@@ -303,6 +314,71 @@ export default function CreateEntryScreen({ navigation, route }: any) {
     }
   };
 
+  // Speech recognition event handlers
+  useSpeechRecognitionEvent('result', (event) => {
+    const transcript = event.results[0]?.transcript || '';
+    if (transcript) {
+      setContent((prev: string) => {
+        // If this is the first result, just set it
+        if (!prev.trim()) return transcript;
+        // Otherwise append with a space
+        return prev + ' ' + transcript;
+      });
+      hasUnsavedChanges.current = true;
+    }
+  });
+
+  useSpeechRecognitionEvent('end', () => {
+    setIsRecording(false);
+  });
+
+  useSpeechRecognitionEvent('error', (event) => {
+    console.warn('[CreateEntry] Speech recognition error:', event.error);
+    setIsRecording(false);
+    if (event.error === 'not-allowed') {
+      Alert.alert('Microphone Access', 'Please allow microphone access in Settings to use voice recording.');
+    }
+  });
+
+  // Auto-start voice mode if navigated with voiceMode param
+  useEffect(() => {
+    if (voiceMode) {
+      setTimeout(() => toggleVoiceRecording(), 500);
+    }
+  }, [voiceMode]);
+
+  const toggleVoiceRecording = async () => {
+    if (!ExpoSpeechRecognitionModule) {
+      Alert.alert('Voice Recording', 'Voice recording requires a development build and is not available in Expo Go.');
+      return;
+    }
+
+    if (isRecording) {
+      ExpoSpeechRecognitionModule.stop();
+      setIsRecording(false);
+      return;
+    }
+
+    try {
+      const { granted } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+      if (!granted) {
+        Alert.alert('Microphone Access', 'Please allow microphone access in Settings to use voice recording.');
+        return;
+      }
+
+      ExpoSpeechRecognitionModule.start({
+        lang: 'en-US',
+        interimResults: false,
+        continuous: true,
+        addsPunctuation: true,
+      });
+      setIsRecording(true);
+    } catch (error: any) {
+      console.error('[CreateEntry] Speech recognition start error:', error);
+      Alert.alert('Voice Recording', 'Voice recording is not available on this device. Please use a development build or TestFlight.');
+    }
+  };
+
   useEffect(() => {
     Animated.timing(overlayOpacity, {
       toValue: showMoodPicker ? 1 : 0,
@@ -516,15 +592,11 @@ export default function CreateEntryScreen({ navigation, route }: any) {
                 style={styles.quickActionItem}
                 onPress={() => {
                   setShowQuickActions(false);
-                  Alert.alert(
-                    'Voice-to-Text',
-                    'Voice recording is available on physical devices. Install the app via TestFlight or build to your device to use this feature.',
-                    [{ text: 'Got it' }]
-                  );
+                  toggleVoiceRecording();
                 }}
               >
-                <Ionicons name="mic" size={20} color="rgba(255, 255, 255, 0.8)" />
-                <Text style={styles.quickActionText}>Voice mode</Text>
+                <Ionicons name={isRecording ? 'mic-off' : 'mic'} size={20} color={isRecording ? '#ef4444' : 'rgba(255, 255, 255, 0.8)'} />
+                <Text style={styles.quickActionText}>{isRecording ? 'Stop recording' : 'Voice mode'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.quickActionItem}>
                 <Ionicons name="image" size={20} color="rgba(255, 255, 255, 0.8)" />

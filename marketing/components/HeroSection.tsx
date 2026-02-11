@@ -18,9 +18,9 @@ const HeroSection: React.FC = () => {
         <p className="hero-tagline">
           Meet Insight. A toolkit for understanding yourself and your habits, allowing you to find a routine that works for you, based on the data.
         </p>
-        <button className="cta-button-premium">
+        <a href="/login" className="cta-button-premium" style={{ textDecoration: 'none' }}>
           Join Insight
-        </button>
+        </a>
         
         {/* Premium App Slider */}
         <div className="dashboard-preview-premium">

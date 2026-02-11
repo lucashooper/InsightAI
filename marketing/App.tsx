@@ -14,7 +14,7 @@ function App() {
       {/* Navigation */}
       <nav className="main-nav">
         <div className="nav-logo">
-          <img src="./Insight-logo.png" alt="Insight" />
+          <img src="./InsightAI-New-Logo.png" alt="Insight" />
         </div>
         <div className="nav-links">
           <a 
@@ -28,7 +28,7 @@ function App() {
             Home
           </a>
           <a 
-            href="/app" 
+            href="/login" 
             className="nav-link nav-login-btn"
           >
             Login

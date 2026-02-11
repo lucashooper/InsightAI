@@ -183,7 +183,7 @@ const SettingsView: React.FC = () => {
         const delay = scheduledTime.getTime() - now.getTime();
         
         setTimeout(() => {
-          new Notification('InsightAI Reminder', {
+          new Notification('Insight Reminder', {
             body: 'Time to reflect on your day. How are you feeling?',
             icon: '/vite.svg',
             tag: 'daily-reminder'
