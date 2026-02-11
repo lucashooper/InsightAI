@@ -1,6 +1,6 @@
 {
-  "name": "InsightAI - AI Journal & Diary",
-  "short_name": "InsightAI",
+  "name": "Insight - AI Journal & Diary",
+  "short_name": "Insight",
   "description": "AI-powered emotional wellness journal and self-improvement tracker",
   "start_url": "/",
   "display": "standalone",
