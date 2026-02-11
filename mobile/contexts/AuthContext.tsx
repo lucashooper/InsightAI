@@ -188,16 +188,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
       
-      if (userInfo.idToken) {
+      // Generate a nonce for security (required for @react-native-google-signin v16+)
+      const rawNonce = Math.random().toString(36).substring(2, 10) + 
+                       Math.random().toString(36).substring(2, 10);
+      const hashedNonce = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        rawNonce
+      );
+      
+      // Pass hashed nonce to Google, raw nonce to Supabase
+      const userInfo = await GoogleSignin.signIn({ nonce: hashedNonce });
+      
+      // v12+ moved idToken to userInfo.data.idToken
+      const idToken = userInfo.data?.idToken || userInfo.idToken;
+      
+      if (idToken) {
         const { data, error } = await supabase.auth.signInWithIdToken({
           provider: 'google',
-          token: userInfo.idToken,
+          token: idToken,
+          nonce: rawNonce,
         });
         
         return { error };
       } else {
+        console.error('[AUTH] Google Sign-In response:', JSON.stringify(userInfo));
         return { error: new Error('No ID token present') };
       }
     } catch (error: any) {
@@ -258,10 +273,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('[Auth] Failed to clear RevenueCat cache:', error);
     }
     
-    // Clear onboarding flags to prevent stale state for new accounts
+    // Clear onboarding flow flags but NOT the intro overlay flag
+    // HAS_SEEN_DASHBOARD_INTRO should persist so the welcome overlay only shows once
     try {
       await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
-      await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
       await AsyncStorage.removeItem('NEEDS_EMAIL_SIGNUP');
       console.log('[Auth] Cleared onboarding flags on sign out');
     } catch (error) {

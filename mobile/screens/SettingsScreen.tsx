@@ -264,7 +264,7 @@ export default function SettingsScreen({ navigation }: any) {
       
       if (isProActive || hasAnyActiveEntitlement) {
         setSubscriptionPlan('Pro');
-        setUsageLimit(999999);
+        setUsageLimit(2);
         console.log('[Settings] ✅ Subscription is active - setting plan to Pro');
       } else {
         setSubscriptionPlan('Free');
@@ -633,22 +633,22 @@ export default function SettingsScreen({ navigation }: any) {
                   <Text style={styles.usageTier}>{subscriptionPlan}</Text>
                 )}
               </View>
-              {subscriptionPlan === 'Pro' && (
-                <View style={styles.usageProgress}>
-                  <View style={styles.usageProgressRow}>
-                    <Text style={styles.usageProgressLabel}>AI Analyses Today</Text>
-                    <Text style={styles.usageProgressValue}>{usageCount} / 2</Text>
-                  </View>
-                  <View style={styles.progressBarContainer}>
-                    <View
-                      style={[
-                        styles.progressBarFill,
-                        { width: `${(usageCount / 2) * 100}%` }
-                      ]}
-                    />
-                  </View>
+              <View style={styles.usageProgress}>
+                <View style={styles.usageProgressRow}>
+                  <Text style={styles.usageProgressLabel}>AI Analyses Today</Text>
+                  <Text style={styles.usageProgressValue}>
+                    {`${usageCount} / 2`}
+                  </Text>
                 </View>
-              )}
+                <View style={styles.progressBarContainer}>
+                  <View
+                    style={[
+                      styles.progressBarFill,
+                      { width: `${Math.min((usageCount / 2) * 100, 100)}%` }
+                    ]}
+                  />
+                </View>
+              </View>
               
               {/* Upgrade/Manage Button */}
               <TouchableOpacity
@@ -782,66 +782,6 @@ export default function SettingsScreen({ navigation }: any) {
         {/* Actions */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>Actions</Text>
-
-          {/* Debug: Subscription Debug Tools */}
-          <TouchableOpacity 
-            style={{ marginBottom: 12 }} 
-            onPress={async () => {
-              Alert.alert(
-                '🔍 Subscription Debug',
-                'Choose a debug action:',
-                [
-                  {
-                    text: 'Print Debug Report',
-                    onPress: async () => {
-                      await printSubscriptionDebugReport();
-                      Alert.alert('Debug Report', 'Check the console for detailed subscription state info');
-                    }
-                  },
-                  {
-                    text: 'Reset RevenueCat Only',
-                    style: 'destructive',
-                    onPress: async () => {
-                      await resetRevenueCatOnly();
-                      Alert.alert('Reset Complete', 'RevenueCat cache cleared. Check console for details.');
-                    }
-                  },
-                  {
-                    text: 'NUKE Everything',
-                    style: 'destructive',
-                    onPress: () => {
-                      Alert.alert(
-                        '⚠️ WARNING',
-                        'This will delete ALL app data including:\n• Subscription cache\n• User preferences\n• Onboarding flags\n• Encryption keys\n\nAre you SURE?',
-                        [
-                          { text: 'Cancel', style: 'cancel' },
-                          {
-                            text: 'Yes, Nuke It',
-                            style: 'destructive',
-                            onPress: async () => {
-                              await nukeAllSubscriptionState();
-                              Alert.alert('Nuked', 'All data cleared. Restart the app.');
-                            }
-                          }
-                        ]
-                      );
-                    }
-                  },
-                  { text: 'Cancel', style: 'cancel' }
-                ]
-              );
-            }} 
-            activeOpacity={0.85}
-          >
-            <StandardContainer style={styles.card}>
-              <View style={styles.cardGradient}>
-                <View style={styles.actionRow}>
-                  <Ionicons name="bug" size={20} color="#f59e0b" />
-                  <Text style={[styles.actionText, { color: '#f59e0b' }]}>Subscription Debug Tools</Text>
-                </View>
-              </View>
-            </StandardContainer>
-          </TouchableOpacity>
 
           <TouchableOpacity style={{}} onPress={handleSignOut} activeOpacity={0.85}>
             <StandardContainer style={styles.card}>

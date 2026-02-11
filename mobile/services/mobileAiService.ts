@@ -57,10 +57,6 @@ const SUPABASE_FUNCTION_URL = supabaseUrl
   ? `${supabaseUrl}/functions/v1`
   : 'https://YOUR_PROJECT.supabase.co/functions/v1';
 
-// Groq API credentials (fallback for direct client-side calls)
-const GROQ_API_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_GROQ_API_URL || process.env.EXPO_PUBLIC_GROQ_API_URL || '';
-const GROQ_API_KEY = Constants.expoConfig?.extra?.EXPO_PUBLIC_GROQ_API_KEY || process.env.EXPO_PUBLIC_GROQ_API_KEY || '';
-
 if (!supabaseUrl) {
   console.warn('[mobileAiService] Missing EXPO_PUBLIC_SUPABASE_URL. Analysis will fail.');
 }
@@ -68,6 +64,34 @@ if (!supabaseUrl) {
 async function waitForRateLimit() {
   // Simple client-side rate limit spacer used on web as well
   return new Promise((resolve) => setTimeout(resolve, 500));
+}
+
+// Helper: call the groq-proxy edge function (keeps API key server-side)
+async function callGroqProxy(messages: Array<{role: string; content: string}>, opts?: { temperature?: number; max_tokens?: number; model?: string }): Promise<string> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Not authenticated');
+
+  const response = await fetch(`${SUPABASE_FUNCTION_URL}/groq-proxy`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${session.access_token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      messages,
+      model: opts?.model || 'llama-3.3-70b-versatile',
+      temperature: opts?.temperature ?? 0.8,
+      max_tokens: opts?.max_tokens ?? 500,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(err.error || `Groq proxy error (${response.status})`);
+  }
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || '';
 }
 
 export const mobileAiService = {
@@ -189,9 +213,10 @@ Entry text: ${content}`;
        - BAD: "Social anxiety and self-perception", "Missed opportunities and self-doubt", "Accidental loss of personal data"
     9. Even when addressing struggles, use empowering language that highlights their awareness and potential for growth.`;
 
-    // Get user session for authentication
+    // Get user session for authentication (refresh first to avoid stale tokens)
     console.log('[mobileAiService] Getting user session...');
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
+    const session = refreshedSession || (await supabase.auth.getSession()).data.session;
     
     if (!session) {
       console.error('[mobileAiService] No session found');
@@ -351,35 +376,16 @@ Example:
 Provide ONLY the protocol in the exact format above, nothing else.`;
 
     try {
-      const response = await fetch(GROQ_API_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${GROQ_API_KEY}`,
-          'Content-Type': 'application/json',
+      const protocolText = await callGroqProxy([
+        {
+          role: 'system',
+          content: 'You are a practical mental health coach who creates simple, actionable daily protocols. Always format your response exactly as requested.',
         },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a practical mental health coach who creates simple, actionable daily protocols. Always format your response exactly as requested.',
-            },
-            {
-              role: 'user',
-              content: prompt,
-            },
-          ],
-          temperature: 0.8,
-          max_tokens: 300,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Protocol generation failed with status ${response.status}`);
-      }
-
-      const data = await response.json();
-      const protocolText: string = data.choices?.[0]?.message?.content || '';
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ], { temperature: 0.8, max_tokens: 300 });
 
       // Parse the protocol text
       const nameMatch = protocolText.match(/\*\*Protocol Name:\*\*\s*(.+?)(?:\n|$)/i);
@@ -456,35 +462,16 @@ Example for an entry about procrastination:
 Provide ONLY the JSON, nothing else.`;
 
     try {
-      const response = await fetch(GROQ_API_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${GROQ_API_KEY}`,
-          'Content-Type': 'application/json',
+      const responseText = await callGroqProxy([
+        {
+          role: 'system',
+          content: 'You are a compassionate therapist who asks thoughtful, specific questions that help people understand themselves better. You write in a warm, conversational style like Mindsera.',
         },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a compassionate therapist who asks thoughtful, specific questions that help people understand themselves better. You write in a warm, conversational style like Mindsera.',
-            },
-            {
-              role: 'user',
-              content: prompt,
-            },
-          ],
-          temperature: 0.8,
-          max_tokens: 500,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Follow-up generation failed with status ${response.status}`);
-      }
-
-      const data = await response.json();
-      const responseText: string = data.choices?.[0]?.message?.content || '';
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ], { temperature: 0.8, max_tokens: 500 });
 
       let parsed: any;
       try {
@@ -540,35 +527,16 @@ Create a warm, personalized 2-3 sentence summary of their emotional journey this
 Write in second person ("you"). Keep it under 60 words.`;
 
     try {
-      const response = await fetch(GROQ_API_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${GROQ_API_KEY}`,
-          'Content-Type': 'application/json',
+      const story = await callGroqProxy([
+        {
+          role: 'system',
+          content: 'You are a compassionate journal companion who helps users reflect on their emotional journey with warmth and wisdom.',
         },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a compassionate journal companion who helps users reflect on their emotional journey with warmth and wisdom.',
-            },
-            {
-              role: 'user',
-              content: prompt,
-            },
-          ],
-          temperature: 0.8,
-          max_tokens: 150,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Story generation failed with status ${response.status}`);
-      }
-
-      const data = await response.json();
-      const story: string = data.choices?.[0]?.message?.content || '';
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ], { temperature: 0.8, max_tokens: 150 });
 
       return story.trim() || "You've been navigating your emotions with care this month. That takes real courage.";
     } catch (error: any) {

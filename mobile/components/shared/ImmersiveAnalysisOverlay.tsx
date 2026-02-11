@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Animated,
   Dimensions,
   ScrollView,
@@ -40,6 +41,8 @@ type ResultsProps = {
   };
   onDone: () => void;
   onWellbeingChange?: (score: number) => void;
+  onAddToPlaybook?: (text: string, index: number) => void;
+  addingToPlaybook?: string | null;
 };
 
 type Props = {
@@ -232,16 +235,28 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
                     <Text style={styles.accordionChevron}>{strengthsExpanded ? '▼' : '▶'}</Text>
                   </TouchableOpacity>
                   
-                  {strengthsExpanded && (
-                    <View style={[styles.accordionContent, styles.strengthsContent]}>
-                      {strengthCards.map((card: any, idx: number) => (
-                        <View key={idx} style={styles.insightItem}>
-                          <Text style={styles.insightTitle}>{card.short_label || card.type.toUpperCase()}</Text>
-                          <Text style={styles.insightDescription}>{card.text}</Text>
+                  {strengthsExpanded && strengthCards.map((card: any, idx: number) => {
+                    const badgeColor = '#10b981';
+                    return (
+                      <View key={idx} style={[styles.growthCard, { backgroundColor: 'rgba(16, 185, 129, 0.06)', borderColor: 'rgba(16, 185, 129, 0.2)' }]}>
+                        <View style={[styles.growthCardBorder, { backgroundColor: badgeColor }]} />
+                        <View style={styles.growthCardInner}>
+                          <View style={[styles.growthBadge, { backgroundColor: badgeColor + '25', borderColor: badgeColor + '50' }]}>
+                            <Text style={[styles.growthBadgeText, { color: badgeColor }]}>
+                              {card.short_label || card.type.toUpperCase()}
+                            </Text>
+                          </View>
+                          <Text style={styles.insightDescription}>
+                            {card.text
+                              .replace(/The user/g, 'You')
+                              .replace(/the user/g, 'you')
+                              .replace(/their/g, 'your')
+                              .replace(/Their/g, 'Your')}
+                          </Text>
                         </View>
-                      ))}
-                    </View>
-                  )}
+                      </View>
+                    );
+                  })}
                 </View>
               );
             })()}
@@ -253,6 +268,9 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
               ) || [];
               
               if (growthCards.length === 0) return null;
+
+              const addToPlaybook = props.variant === 'results' ? props.onAddToPlaybook : undefined;
+              const addingId = props.variant === 'results' ? props.addingToPlaybook : null;
               
               return (
                 <View style={styles.accordionSection}>
@@ -271,16 +289,46 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
                     <Text style={styles.accordionChevron}>{growthExpanded ? '▼' : '▶'}</Text>
                   </TouchableOpacity>
                   
-                  {growthExpanded && (
-                    <View style={[styles.accordionContent, styles.growthContent]}>
-                      {growthCards.map((card: any, idx: number) => (
-                        <View key={idx} style={styles.insightItem}>
-                          <Text style={styles.insightTitle}>{card.short_label || card.type.toUpperCase()}</Text>
-                          <Text style={styles.insightDescription}>{card.text}</Text>
+                  {growthExpanded && growthCards.map((card: any, idx: number) => {
+                    const isGrowth = card.type === 'growth';
+                    const badgeColor = isGrowth ? '#f59e0b' : '#a78bfa';
+                    return (
+                      <View key={idx} style={styles.growthCard}>
+                        <View style={[styles.growthCardBorder, { backgroundColor: badgeColor }]} />
+                        <View style={styles.growthCardInner}>
+                          <View style={[styles.growthBadge, { backgroundColor: badgeColor + '25', borderColor: badgeColor + '50' }]}>
+                            <Text style={[styles.growthBadgeText, { color: badgeColor }]}>
+                              {card.short_label || card.type.toUpperCase()}
+                            </Text>
+                          </View>
+                          <Text style={styles.insightDescription}>
+                            {card.text
+                              .replace(/The user/g, 'You')
+                              .replace(/the user/g, 'you')
+                              .replace(/their/g, 'your')
+                              .replace(/Their/g, 'Your')}
+                          </Text>
+                          {addToPlaybook && (
+                            <TouchableOpacity
+                              style={[styles.overlayPlaybookBtn, { borderColor: badgeColor + '60' }]}
+                              onPress={() => addToPlaybook(card.text, idx)}
+                              disabled={addingId === `growth-${idx}`}
+                              activeOpacity={0.7}
+                            >
+                              {addingId === `growth-${idx}` ? (
+                                <ActivityIndicator size="small" color={badgeColor} />
+                              ) : (
+                                <>
+                                  <Text style={{ fontSize: 14, color: badgeColor }}>⊕</Text>
+                                  <Text style={[styles.overlayPlaybookText, { color: badgeColor }]}>Add to Playbook</Text>
+                                </>
+                              )}
+                            </TouchableOpacity>
+                          )}
                         </View>
-                      ))}
-                    </View>
-                  )}
+                      </View>
+                    );
+                  })}
                 </View>
               );
             })()}
@@ -620,5 +668,51 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#ffffff',
+  },
+  growthCard: {
+    flexDirection: 'row',
+    borderRadius: 14,
+    backgroundColor: 'rgba(245, 158, 11, 0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.2)',
+    overflow: 'hidden',
+    marginTop: 10,
+    marginBottom: 2,
+  },
+  growthCardBorder: {
+    width: 4,
+  },
+  growthCardInner: {
+    flex: 1,
+    padding: 14,
+  },
+  growthBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    marginBottom: 10,
+  },
+  growthBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  overlayPlaybookBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+  },
+  overlayPlaybookText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

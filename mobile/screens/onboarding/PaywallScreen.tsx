@@ -284,6 +284,30 @@ export default function PaywallScreen({ navigation, route }: any) {
 
     try {
       setIsPurchasing(true);
+      
+      // Check if user already has an active subscription before attempting purchase
+      const existingInfo = await Purchases.getCustomerInfo();
+      const alreadySubscribed = !!existingInfo.entitlements.active[ENTITLEMENT_ID] || 
+                                Object.keys(existingInfo.entitlements.active).length > 0;
+      
+      if (alreadySubscribed) {
+        console.log('[REVENUECAT] User already has active subscription - skipping purchase');
+        Alert.alert(
+          'Already Subscribed',
+          'You already have an active Pro subscription. Enjoy your premium features!',
+          [{ text: 'OK', onPress: () => {
+            const fromSettings = route?.params?.fromSettings === true;
+            if (fromSettings) {
+              navigation.goBack();
+            } else {
+              handleCustomerInfo(existingInfo);
+            }
+          }}]
+        );
+        setIsPurchasing(false);
+        return;
+      }
+      
       console.log('[REVENUECAT] 💳 Initiating purchase...');
       
       const { customerInfo } = await Purchases.purchasePackage(selectedPackage);

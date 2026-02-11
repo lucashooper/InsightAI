@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, LayoutAnimation, Platform, UIManager, Animated } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, LayoutAnimation, Platform, UIManager, Animated, Modal, KeyboardAvoidingView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Purchases from 'react-native-purchases';
@@ -116,6 +116,8 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
   const analysisAbortRef = useRef<AbortController | null>(null);
   const analysisMessageIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [premiumUpsellVisible, setPremiumUpsellVisible] = useState(false);
+  const [playbookPreviewVisible, setPlaybookPreviewVisible] = useState(false);
+  const [playbookDraft, setPlaybookDraft] = useState({ title: '', description: '', emoji: '📈' });
   
   const toggleAccordion = (section: 'strengths' | 'growth') => {
     // Configure smooth animation
@@ -266,6 +268,36 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
       return;
     }
 
+    // Check daily usage limit (2 per day for ALL users)
+    // Exception: unlimited for developer/tester accounts
+    const UNLIMITED_EMAILS = ['edwardsjonny547@gmail.com'];
+    const isUnlimited = UNLIMITED_EMAILS.includes(user?.email?.toLowerCase() || '') || __DEV__;
+    
+    if (!isUnlimited) {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const { count, error: countError } = await supabase
+          .from('usage_tracking')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user?.id)
+          .eq('action_type', 'ai_analysis')
+          .gte('created_at', today);
+
+        if (!countError && (count || 0) >= 2) {
+          console.log('[EntryDetail] Daily usage limit reached:', count);
+          Alert.alert(
+            'Daily Limit Reached',
+            'You\'ve used your 2 AI analyses for today. Come back tomorrow for more insights!',
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+      } catch (err) {
+        console.warn('[EntryDetail] Error checking usage limit:', err);
+        // Don't block on error — allow analysis to proceed
+      }
+    }
+
     const ANALYSIS_MIN_MS = 10000;
     const messages = [
       'Connecting with your thoughts...',
@@ -336,6 +368,44 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
       targetEntry.ai_last_analyzed = new Date().toISOString();
       setEntry({ ...targetEntry });
 
+      // Track usage for daily limit counter
+      if (user) {
+        supabase.from('usage_tracking').insert({
+          user_id: user.id,
+          action_type: 'ai_analysis',
+        }).then(({ error: trackError }) => {
+          if (trackError) console.warn('[EntryDetail] Usage tracking insert failed:', JSON.stringify(trackError));
+          else console.log('[EntryDetail] Usage tracking recorded successfully');
+        });
+
+        // Save growth recommendations as suggested strategies for the Playbook
+        // Generate proper actionable protocols via AI (non-blocking, parallel)
+        const allCards = analysis?.insights_report?.insightCards || [];
+        const growthCards = allCards.filter((c: any) => c.type === 'growth' || c.type === 'reflection');
+        Promise.all(growthCards.map(async (card: any) => {
+          if (!card.text) return;
+          try {
+            const protocol = await mobileAiService.generateProtocol(card.text);
+            const description = `${protocol.practice}\n\n**Why it works:** ${protocol.why}`;
+            const { error: suggestError } = await supabase.from('actionable_insights').insert({
+              user_id: user.id,
+              title: protocol.name,
+              description,
+              category: 'general',
+              difficulty: 'moderate',
+              emoji: card.type === 'growth' ? '🌱' : '💭',
+              status: 'suggested',
+              source: 'ai_suggested',
+              source_entry_id: targetEntry.id,
+            });
+            if (suggestError) console.warn('[EntryDetail] Suggested strategy insert failed:', JSON.stringify(suggestError));
+            else console.log('[EntryDetail] Suggested strategy saved:', protocol.name);
+          } catch (err) {
+            console.warn('[EntryDetail] Failed to generate suggested protocol:', err);
+          }
+        })).catch(err => console.warn('[EntryDetail] Suggested strategies batch error:', err));
+      }
+
       // Stop rotating messages
       if (analysisMessageIntervalRef.current) {
         clearInterval(analysisMessageIntervalRef.current);
@@ -388,40 +458,57 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
       // Generate actionable protocol using AI
       const protocol = await mobileAiService.generateProtocol(growthText);
 
-      // Save to actionable_insights table (Daily Protocols)
+      // Show preview overlay so user can review/edit before saving
+      setPlaybookDraft({
+        title: protocol.name,
+        description: `${protocol.practice}\n\nWhy it works: ${protocol.why}`,
+        emoji: '📈',
+      });
+      setPlaybookPreviewVisible(true);
+    } catch (error) {
+      console.error('[EntryDetail] Error generating protocol:', error);
+      Alert.alert('Error', 'Failed to create protocol. Please try again.');
+    } finally {
+      setAddingToPlaybook(null);
+    }
+  };
+
+  const confirmAddToPlaybook = async () => {
+    if (!user || !playbookDraft.title.trim()) return;
+
+    try {
       const { error } = await supabase
         .from('actionable_insights')
         .insert({
           user_id: user.id,
-          title: protocol.name,
-          description: `${protocol.practice}\n\n**Why it works:** ${protocol.why}`,
+          title: playbookDraft.title.trim(),
+          description: playbookDraft.description.trim(),
           category: 'general',
           difficulty: 'moderate',
-          emoji: '📈',
+          emoji: playbookDraft.emoji,
           status: 'active',
           source: 'ai_suggested',
         });
 
       if (error) {
         console.error('[EntryDetail] Error saving protocol:', error);
-        Alert.alert('Error', 'Failed to add protocol to Playbook. Please try again.');
+        Alert.alert('Error', 'Failed to add protocol to Playbook.');
         return;
       }
 
+      setPlaybookPreviewVisible(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert(
-        'Added to Playbook! 🎯',
-        `"${protocol.name}" has been added to your Daily Protocols.`,
+        'Added to Playbook!',
+        `"${playbookDraft.title}" has been added to your Daily Protocols.`,
         [
           { text: 'View Playbook', onPress: () => navigation.navigate('Playbook') },
           { text: 'OK', style: 'cancel' },
         ]
       );
     } catch (error) {
-      console.error('[EntryDetail] Error adding to playbook:', error);
-      Alert.alert('Error', 'Failed to create protocol. Please try again.');
-    } finally {
-      setAddingToPlaybook(null);
+      console.error('[EntryDetail] Error saving protocol:', error);
+      Alert.alert('Error', 'Failed to save. Please try again.');
     }
   };
 
@@ -458,7 +545,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
           <Ionicons name="arrow-back" size={24} color="rgba(255, 255, 255, 0.7)" />
         </TouchableOpacity>
         <View style={styles.headerRight}>
-          {!structuredInsights && (
+          {(!structuredInsights || isModified) && (
             <TouchableOpacity 
               onPress={() => handleAnalyzeEntry()}
               disabled={analyzing}
@@ -478,7 +565,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                   style={styles.analyzeHeaderGradient}
                 >
                   <Text style={styles.analyzeHeaderText}>
-                    Analyze
+                    {structuredInsights ? 'Re-analyze' : 'Analyze'}
                   </Text>
                 </LinearGradient>
               )}
@@ -703,6 +790,8 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
               onDone: () => {
                 setAnalysisOverlayVisible(false);
               },
+              onAddToPlaybook: handleAddToPlaybook,
+              addingToPlaybook,
               onWellbeingChange: async (newScore: number) => {
                 if (!entry?.id) return;
                 try {
@@ -733,6 +822,76 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
               },
             })}
       />
+
+      {/* Playbook Preview/Edit Overlay */}
+      <Modal
+        visible={playbookPreviewVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setPlaybookPreviewVisible(false)}
+      >
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+          <View style={styles.playbookOverlay}>
+            <View style={[styles.playbookModal, { backgroundColor: theme.colors.cardBackground }]}>
+              <View style={styles.playbookModalHeader}>
+                <Text style={[styles.playbookModalTitle, { color: theme.colors.primaryText }]}>Add to Playbook</Text>
+                <TouchableOpacity onPress={() => setPlaybookPreviewVisible(false)}>
+                  <Ionicons name="close" size={24} color={theme.colors.secondaryText} />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView style={styles.playbookModalBody} keyboardShouldPersistTaps="handled">
+                {/* Emoji Picker */}
+                <Text style={[styles.playbookLabel, { color: theme.colors.secondaryText }]}>Icon</Text>
+                <View style={styles.playbookEmojiRow}>
+                  {['📈', '🌱', '💭', '🧘', '💪', '🎯', '🔥', '✨', '🌟', '💡', '🌈', '☕'].map((e) => (
+                    <TouchableOpacity
+                      key={e}
+                      style={[
+                        styles.playbookEmojiOption,
+                        playbookDraft.emoji === e && styles.playbookEmojiActive,
+                      ]}
+                      onPress={() => setPlaybookDraft({ ...playbookDraft, emoji: e })}
+                    >
+                      <Text style={{ fontSize: 22 }}>{e}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* Title */}
+                <Text style={[styles.playbookLabel, { color: theme.colors.secondaryText }]}>Title</Text>
+                <TextInput
+                  style={[styles.playbookInput, { color: theme.colors.primaryText, borderColor: theme.colors.border }]}
+                  value={playbookDraft.title}
+                  onChangeText={(t) => setPlaybookDraft({ ...playbookDraft, title: t })}
+                  placeholder="Protocol title"
+                  placeholderTextColor={theme.colors.secondaryText}
+                />
+
+                {/* Description */}
+                <Text style={[styles.playbookLabel, { color: theme.colors.secondaryText }]}>Description</Text>
+                <TextInput
+                  style={[styles.playbookInput, styles.playbookTextArea, { color: theme.colors.primaryText, borderColor: theme.colors.border }]}
+                  value={playbookDraft.description}
+                  onChangeText={(t) => setPlaybookDraft({ ...playbookDraft, description: t })}
+                  placeholder="Describe the daily practice..."
+                  placeholderTextColor={theme.colors.secondaryText}
+                  multiline
+                  textAlignVertical="top"
+                />
+
+                {/* Confirm Button */}
+                <TouchableOpacity onPress={confirmAddToPlaybook} style={{ marginTop: 16, borderRadius: 12, overflow: 'hidden' }}>
+                  <LinearGradient colors={['#8b5cf6', '#7c3aed']} style={styles.playbookConfirmBtn}>
+                    <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                    <Text style={styles.playbookConfirmText}>Add to Daily Protocols</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
       <PremiumUpsellOverlay
         visible={premiumUpsellVisible}
@@ -996,5 +1155,84 @@ const styles = StyleSheet.create({
   accordionContent: {
     marginTop: 12,
     gap: 12,
+  },
+  // Playbook Preview Overlay
+  playbookOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    justifyContent: 'flex-end',
+  },
+  playbookModal: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '85%',
+    paddingBottom: 40,
+  },
+  playbookModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
+  },
+  playbookModalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  playbookModalBody: {
+    padding: 20,
+  },
+  playbookLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+    marginTop: 16,
+  },
+  playbookEmojiRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  playbookEmojiOption: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  playbookEmojiActive: {
+    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+    borderColor: '#8b5cf6',
+    borderWidth: 2,
+  },
+  playbookInput: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 16,
+    borderWidth: 1,
+  },
+  playbookTextArea: {
+    minHeight: 120,
+    textAlignVertical: 'top',
+  },
+  playbookConfirmBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    gap: 8,
+    borderRadius: 12,
+  },
+  playbookConfirmText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

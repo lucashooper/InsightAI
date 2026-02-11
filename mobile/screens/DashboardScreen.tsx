@@ -185,16 +185,15 @@ export default function DashboardScreen() {
       if (!user?.id) return;
 
       const { data, error } = await supabase
-        .from('profiles')
-        .select('first_name, full_name')
-        .eq('id', user.id)
-        .single();
+        .from('user_profiles')
+        .select('username')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
       if (error) throw error;
 
       if (data) {
-        const firstName = data.first_name || data.full_name?.split(' ')[0] || '';
-        setUserName(firstName);
+        setUserName(data.username || '');
       }
     } catch (error) {
       console.error('[Dashboard] Error loading user profile:', error);

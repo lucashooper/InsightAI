@@ -34,10 +34,10 @@ CREATE POLICY "Users can view their own usage" ON usage_tracking
 CREATE POLICY "Users can insert their own usage" ON usage_tracking
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- Grant unlimited tier to specific email
+-- Grant unlimited tier to specific developer/tester emails
 UPDATE user_profiles 
 SET subscription_tier = 'unlimited' 
-WHERE email = 'edwardsjonny547@gmail.com';
+WHERE email IN ('edwardsjonny547@gmail.com', 'lucashooper100@outlook.com');
 
 -- Create a function to check daily usage limit
 CREATE OR REPLACE FUNCTION check_daily_usage_limit(
@@ -57,10 +57,8 @@ BEGIN
     -- Set limit based on tier
     IF v_tier = 'unlimited' THEN
         RETURN TRUE;
-    ELSIF v_tier = 'pro' THEN
-        v_limit := 999; -- Effectively unlimited for pro
     ELSE
-        v_limit := 2; -- Free tier: 2 AI analyses per day
+        v_limit := 2; -- 2 AI analyses per day for all users (free and pro)
     END IF;
     
     -- Count today's usage
@@ -93,10 +91,8 @@ BEGIN
     -- Set limit based on tier
     IF v_tier = 'unlimited' THEN
         RETURN 999999; -- Effectively unlimited
-    ELSIF v_tier = 'pro' THEN
-        RETURN 999999; -- Effectively unlimited for pro
     ELSE
-        v_limit := 2; -- Free tier: 2 AI analyses per day
+        v_limit := 2; -- 2 AI analyses per day for all users (free and pro)
     END IF;
     
     -- Count today's usage

@@ -30,6 +30,9 @@ export default function PlaybookScreen() {
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingStrategy, setEditingStrategy] = useState<Strategy | null>(null);
+  const [editDraft, setEditDraft] = useState({ title: '', description: '', emoji: '✨', category: 'general' });
   const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   const [newStrategy, setNewStrategy] = useState({
     title: '',
@@ -190,12 +193,56 @@ export default function PlaybookScreen() {
     }
   };
 
+  const handleStrategyTap = (strategy: Strategy) => {
+    setEditingStrategy(strategy);
+    setEditDraft({
+      title: strategy.title,
+      description: strategy.description || '',
+      emoji: strategy.emoji || '✨',
+      category: strategy.category || 'general',
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateStrategy = async () => {
+    if (!user || !editingStrategy || !editDraft.title.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from('actionable_insights')
+        .update({
+          title: editDraft.title.trim(),
+          description: editDraft.description.trim(),
+          emoji: editDraft.emoji,
+          category: editDraft.category,
+        })
+        .eq('id', editingStrategy.id)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('[Playbook] Error updating strategy:', error);
+        Alert.alert('Error', 'Failed to update strategy.');
+        return;
+      }
+
+      setShowEditModal(false);
+      setEditingStrategy(null);
+      await loadStrategies();
+    } catch (error) {
+      console.error('Error updating strategy:', error);
+    }
+  };
+
   const handleStrategyLongPress = (strategy: Strategy) => {
     Alert.alert(
       'Strategy options',
       `"${strategy.title}"`,
       [
         { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Edit',
+          onPress: () => handleStrategyTap(strategy),
+        },
         {
           text: 'Delete strategy',
           style: 'destructive',
@@ -367,6 +414,7 @@ export default function PlaybookScreen() {
               key={strategy.id}
               style={styles.premiumCardPressable}
               activeOpacity={0.7}
+              onPress={() => handleStrategyTap(strategy)}
               onLongPress={() => handleStrategyLongPress(strategy)}
             >
               <StandardContainer style={[styles.premiumCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
@@ -377,7 +425,7 @@ export default function PlaybookScreen() {
                   </View>
                   <View style={styles.cardInfo}>
                     <View style={styles.titleRow}>
-                      <Text style={[styles.cardTitle, { color: theme.colors.primaryText }]}>{strategy.title}</Text>
+                      <Text style={[styles.cardTitle, { color: theme.colors.primaryText }]} numberOfLines={2} ellipsizeMode="tail">{strategy.title}</Text>
                       {/* Only show streaks for active protocols */}
                       {strategy.status === 'active' && protocolStats[strategy.id] && (
                         <View style={styles.inlineStreaks}>
@@ -561,6 +609,111 @@ export default function PlaybookScreen() {
                   <Text style={styles.modalPrimaryButtonText}>Create Strategy</Text>
                 </LinearGradient>
               </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Strategy Modal */}
+      <Modal
+        visible={showEditModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => { setShowEditModal(false); setEditingStrategy(null); }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Strategy</Text>
+              <TouchableOpacity onPress={() => { setShowEditModal(false); setEditingStrategy(null); }}>
+                <Ionicons name="close" size={24} color="#999" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled">
+              <Text style={styles.label}>Emoji</Text>
+              <View style={styles.emojiGrid}>
+                {['✨', '💪', '🏃', '👥', '🧘', '😴', '🥗', '🎯', '🌟', '💡', '🔥', '🌈', '🎨', '📚', '🎵', '🌱', '☕', '🍃', '💝', '🌸', '📈', '💭'].map((emoji) => (
+                  <TouchableOpacity
+                    key={emoji}
+                    style={[
+                      styles.emojiOption,
+                      editDraft.emoji === emoji && styles.emojiOptionActive
+                    ]}
+                    onPress={() => setEditDraft({ ...editDraft, emoji })}
+                  >
+                    <Text style={styles.emojiText}>{emoji}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={styles.label}>Title *</Text>
+              <TextInput
+                style={styles.input}
+                value={editDraft.title}
+                onChangeText={(text) => setEditDraft({ ...editDraft, title: text })}
+                placeholder="Strategy title"
+                placeholderTextColor="#666"
+              />
+
+              <Text style={styles.label}>Description</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={editDraft.description}
+                onChangeText={(text) => setEditDraft({ ...editDraft, description: text })}
+                placeholder="Describe your strategy..."
+                placeholderTextColor="#666"
+                multiline
+              />
+
+              <Text style={styles.label}>Category</Text>
+              <View style={styles.categoryGrid}>
+                {['general', 'coping', 'exercise', 'social', 'mindfulness', 'sleep', 'nutrition'].map((cat) => (
+                  <TouchableOpacity
+                    key={cat}
+                    style={[
+                      styles.categoryOption,
+                      editDraft.category === cat && styles.categoryOptionActive
+                    ]}
+                    onPress={() => setEditDraft({ ...editDraft, category: cat })}
+                  >
+                    <Text style={[
+                      styles.categoryOptionText,
+                      editDraft.category === cat && styles.categoryOptionTextActive
+                    ]}>
+                      {cat}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <TouchableOpacity
+                style={styles.modalPrimaryButton}
+                onPress={handleUpdateStrategy}
+                disabled={!editDraft.title.trim()}
+              >
+                <LinearGradient
+                  colors={['#8b5cf6', '#7c3aed']}
+                  style={styles.modalPrimaryButtonGradient}
+                >
+                  <Ionicons name="checkmark" size={18} color="#ffffff" />
+                  <Text style={styles.modalPrimaryButtonText}>Save Changes</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {editingStrategy && (
+                <TouchableOpacity
+                  style={styles.editDeleteButton}
+                  onPress={() => {
+                    setShowEditModal(false);
+                    deleteStrategy(editingStrategy.id);
+                    setEditingStrategy(null);
+                  }}
+                >
+                  <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                  <Text style={styles.editDeleteText}>Delete Strategy</Text>
+                </TouchableOpacity>
+              )}
             </ScrollView>
           </View>
         </View>
@@ -1064,5 +1217,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#8b5cf6',
+  },
+  editDeleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    marginTop: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+  },
+  editDeleteText: {
+    color: '#ef4444',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
