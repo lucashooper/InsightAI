@@ -11,6 +11,9 @@ import {
   Animated,
   Keyboard,
   Image,
+  Modal,
+  ScrollView,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,6 +24,9 @@ import { mobileAiService } from '../services/mobileAiService';
 import { sf } from '../utils/responsive';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+const CHAT_HISTORY_KEY = 'AI_CHAT_HISTORY';
+const AI_PERSONALITY_KEY = 'AI_PERSONALITY';
+
 interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
@@ -29,6 +35,25 @@ interface ChatMessage {
   isTyping?: boolean;
   timestamp: Date;
 }
+
+interface SavedChat {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  createdAt: string;
+  updatedAt: string;
+  isTemporary?: boolean;
+}
+
+type Personality = 'balanced' | 'cheerful' | 'direct' | 'playful' | 'gentle';
+
+const PERSONALITIES: { key: Personality; label: string; emoji: string; desc: string }[] = [
+  { key: 'balanced', label: 'Balanced', emoji: '⚖️', desc: 'Warm and thoughtful' },
+  { key: 'cheerful', label: 'Cheerful', emoji: '☀️', desc: 'Upbeat and encouraging' },
+  { key: 'direct', label: 'Direct', emoji: '🎯', desc: 'Concise and to the point' },
+  { key: 'playful', label: 'Playful', emoji: '✨', desc: 'Light-hearted and fun' },
+  { key: 'gentle', label: 'Gentle', emoji: '🌿', desc: 'Extra soft and nurturing' },
+];
 
 export default function AIChatScreen({ navigation }: any) {
   const { theme } = useTheme();
@@ -40,36 +65,45 @@ export default function AIChatScreen({ navigation }: any) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [savedChats, setSavedChats] = useState<SavedChat[]>([]);
+  const [showPersonality, setShowPersonality] = useState(false);
+  const [personality, setPersonality] = useState<Personality>('balanced');
+  const [isTemporary, setIsTemporary] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const typingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const typingRef = useRef<{ timer: NodeJS.Timeout | null; cancelled: boolean }>({ timer: null, cancelled: false });
 
   useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 400,
-      useNativeDriver: true,
-    }).start();
+    Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
   }, []);
 
   useEffect(() => {
-    const loadPfp = async () => {
+    const load = async () => {
       const cached = await AsyncStorage.getItem('CACHED_PROFILE_PICTURE');
       if (cached) setProfilePicture(cached);
+      const savedPersonality = await AsyncStorage.getItem(AI_PERSONALITY_KEY);
+      if (savedPersonality) setPersonality(savedPersonality as Personality);
     };
-    loadPfp();
+    load();
   }, []);
 
-  useEffect(() => {
-    loadSuggestions();
-  }, []);
+  useEffect(() => { loadSuggestions(); }, []);
 
   useEffect(() => {
     return () => {
-      if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+      if (typingRef.current.timer) clearInterval(typingRef.current.timer);
     };
   }, []);
+
+  // Auto-save chat when messages change
+  useEffect(() => {
+    if (messages.length > 0 && !isTemporary) {
+      saveChatToHistory();
+    }
+  }, [messages.filter(m => !m.isTyping).length]);
 
   const loadSuggestions = async () => {
     try {
@@ -85,29 +119,130 @@ export default function AIChatScreen({ navigation }: any) {
     }
   };
 
-  const startTypingEffect = (messageId: string, fullContent: string) => {
-    let currentIndex = 0;
-    if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+  const loadChatHistory = async () => {
+    try {
+      const raw = await AsyncStorage.getItem(CHAT_HISTORY_KEY);
+      if (raw) {
+        const chats: SavedChat[] = JSON.parse(raw);
+        setSavedChats(chats.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
+      }
+    } catch (e) {
+      console.error('[AIChat] Error loading history', e);
+    }
+  };
 
-    typingIntervalRef.current = setInterval(() => {
-      currentIndex += 1;
-      const displayed = fullContent.substring(0, currentIndex);
+  const saveChatToHistory = async () => {
+    if (isTemporary || messages.length === 0) return;
+    try {
+      const raw = await AsyncStorage.getItem(CHAT_HISTORY_KEY);
+      let chats: SavedChat[] = raw ? JSON.parse(raw) : [];
+
+      const firstUserMsg = messages.find(m => m.role === 'user');
+      const title = firstUserMsg ? firstUserMsg.content.substring(0, 50) + (firstUserMsg.content.length > 50 ? '...' : '') : 'New chat';
+      const chatId = currentChatId || `chat-${Date.now()}`;
+
+      if (!currentChatId) setCurrentChatId(chatId);
+
+      const existing = chats.findIndex(c => c.id === chatId);
+      const chatData: SavedChat = {
+        id: chatId,
+        title,
+        messages: messages.map(m => ({ ...m, displayedContent: undefined, isTyping: undefined })),
+        createdAt: existing >= 0 ? chats[existing].createdAt : new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      if (existing >= 0) {
+        chats[existing] = chatData;
+      } else {
+        chats.unshift(chatData);
+      }
+
+      // Keep max 30 chats
+      if (chats.length > 30) chats = chats.slice(0, 30);
+      await AsyncStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(chats));
+    } catch (e) {
+      console.error('[AIChat] Error saving chat', e);
+    }
+  };
+
+  const loadChat = (chat: SavedChat) => {
+    if (typingRef.current.timer) {
+      clearInterval(typingRef.current.timer);
+      typingRef.current.cancelled = true;
+    }
+    setMessages(chat.messages.map(m => ({ ...m, timestamp: new Date(m.timestamp) })));
+    setCurrentChatId(chat.id);
+    setShowSuggestions(false);
+    setShowHistory(false);
+    setIsTemporary(false);
+  };
+
+  const deleteChat = async (chatId: string) => {
+    try {
+      const raw = await AsyncStorage.getItem(CHAT_HISTORY_KEY);
+      if (raw) {
+        let chats: SavedChat[] = JSON.parse(raw);
+        chats = chats.filter(c => c.id !== chatId);
+        await AsyncStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(chats));
+        setSavedChats(chats);
+        if (currentChatId === chatId) {
+          startNewChat();
+        }
+      }
+    } catch (e) {
+      console.error('[AIChat] Error deleting chat', e);
+    }
+  };
+
+  const startNewChat = () => {
+    if (typingRef.current.timer) {
+      clearInterval(typingRef.current.timer);
+      typingRef.current.cancelled = true;
+    }
+    setMessages([]);
+    setCurrentChatId(null);
+    setShowSuggestions(true);
+    setIsTemporary(false);
+    setShowHistory(false);
+    loadSuggestions();
+  };
+
+  const startTypingEffect = (messageId: string, fullContent: string) => {
+    let idx = 0;
+    if (typingRef.current.timer) clearInterval(typingRef.current.timer);
+    typingRef.current.cancelled = false;
+
+    typingRef.current.timer = setInterval(() => {
+      if (typingRef.current.cancelled) {
+        if (typingRef.current.timer) clearInterval(typingRef.current.timer);
+        typingRef.current.timer = null;
+        return;
+      }
+
+      // Variable speed: faster for spaces/punctuation, slower for new words
+      const char = fullContent[idx];
+      const step = (char === ' ' || char === ',' || char === '.') ? 2 : 1;
+      idx = Math.min(idx + step, fullContent.length);
+
+      const displayed = fullContent.substring(0, idx);
+      const done = idx >= fullContent.length;
 
       setMessages(prev => prev.map(m =>
         m.id === messageId
-          ? { ...m, displayedContent: displayed, isTyping: currentIndex < fullContent.length }
+          ? { ...m, displayedContent: displayed, isTyping: !done }
           : m
       ));
 
-      if (currentIndex % 15 === 0 || currentIndex >= fullContent.length) {
-        flatListRef.current?.scrollToEnd({ animated: true });
+      if (idx % 20 === 0 || done) {
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 10);
       }
 
-      if (currentIndex >= fullContent.length) {
-        if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
-        typingIntervalRef.current = null;
+      if (done) {
+        if (typingRef.current.timer) clearInterval(typingRef.current.timer);
+        typingRef.current.timer = null;
       }
-    }, 18);
+    }, 16);
   };
 
   const sendMessage = useCallback(async (text?: string) => {
@@ -135,7 +270,7 @@ export default function AIChatScreen({ navigation }: any) {
         content: m.content,
       }));
 
-      const response = await mobileAiService.chat(allMessages);
+      const response = await mobileAiService.chat(allMessages, { personality });
 
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
@@ -159,7 +294,7 @@ export default function AIChatScreen({ navigation }: any) {
       setMessages(prev => [...prev, errorMsg]);
       setIsLoading(false);
     }
-  }, [inputText, isLoading, messages]);
+  }, [inputText, isLoading, messages, personality]);
 
   const renderMessage = ({ item }: { item: ChatMessage }) => {
     const isUser = item.role === 'user';
@@ -172,10 +307,7 @@ export default function AIChatScreen({ navigation }: any) {
       ]}>
         {!isUser && (
           <View style={styles.avatarWrap}>
-            <LinearGradient
-              colors={['#8b5cf6', '#6d28d9']}
-              style={styles.avatarGradient}
-            >
+            <LinearGradient colors={['#8b5cf6', '#6d28d9']} style={styles.avatarGradient}>
               <Ionicons name="sparkles" size={12} color="#fff" />
             </LinearGradient>
           </View>
@@ -189,7 +321,7 @@ export default function AIChatScreen({ navigation }: any) {
             isUser ? styles.userMessageText : styles.assistantMessageText,
           ]}>
             {displayText}
-            {item.isTyping && <Text style={{ color: '#8b5cf6' }}>▊</Text>}
+            {item.isTyping ? <Text style={{ color: '#a78bfa', fontSize: sf(14) }}> ▍</Text> : null}
           </Text>
         </View>
         {isUser && (
@@ -211,23 +343,23 @@ export default function AIChatScreen({ navigation }: any) {
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
+      {/* Premium orb */}
       <View style={styles.orbContainer}>
-        <View style={styles.orbOuterRing} />
         <LinearGradient
           colors={['#a78bfa', '#8b5cf6', '#7c3aed', '#6d28d9']}
           style={styles.orb}
           start={{ x: 0.1, y: 0 }}
           end={{ x: 0.9, y: 1 }}
         >
-          <Ionicons name="sparkles" size={28} color="rgba(255,255,255,0.95)" />
+          <Ionicons name="sparkles" size={26} color="#fff" />
         </LinearGradient>
       </View>
 
-      <Text style={styles.emptyTitle}>Insight</Text>
       <Text style={styles.emptySubtitle}>
-        Your personal companion. I know your journal inside out — ask me anything.
+        I know your journal inside out.{'\n'}Ask me anything about your patterns, emotions, or growth.
       </Text>
 
+      {/* Suggestion chips */}
       {showSuggestions && suggestions.length > 0 && (
         <View style={styles.suggestionsContainer}>
           {suggestions.map((suggestion, index) => (
@@ -235,10 +367,17 @@ export default function AIChatScreen({ navigation }: any) {
               key={index}
               style={styles.suggestionChip}
               onPress={() => sendMessage(suggestion)}
-              activeOpacity={0.7}
+              activeOpacity={0.8}
             >
-              <Text style={styles.suggestionText}>{suggestion}</Text>
-              <Ionicons name="arrow-forward" size={14} color="rgba(139,92,246,0.5)" style={{ marginLeft: 8 }} />
+              <LinearGradient
+                colors={['rgba(139, 92, 246, 0.12)', 'rgba(139, 92, 246, 0.06)']}
+                style={styles.suggestionChipInner}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={styles.suggestionText}>{suggestion}</Text>
+                <Ionicons name="arrow-forward" size={14} color="rgba(167,139,250,0.7)" style={{ marginLeft: 8 }} />
+              </LinearGradient>
             </TouchableOpacity>
           ))}
         </View>
@@ -255,28 +394,29 @@ export default function AIChatScreen({ navigation }: any) {
         style={StyleSheet.absoluteFill}
       />
 
+      {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
           <Ionicons name="chevron-down" size={28} color={isDark ? '#fff' : '#1a1a1a'} />
         </TouchableOpacity>
-        <View style={styles.headerCenter}>
+        <TouchableOpacity style={styles.headerCenter} onPress={() => setShowPersonality(true)} activeOpacity={0.7}>
           <View style={styles.headerDot} />
           <Text style={[styles.headerTitle, { color: isDark ? '#fff' : '#1a1a1a' }]}>Insight</Text>
-        </View>
+          <Ionicons name="chevron-down" size={14} color={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'} />
+        </TouchableOpacity>
         <TouchableOpacity
-          style={styles.newChatButton}
+          style={styles.headerBtn}
           onPress={() => {
-            if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
-            setMessages([]);
-            setShowSuggestions(true);
-            loadSuggestions();
+            loadChatHistory();
+            setShowHistory(true);
           }}
           activeOpacity={0.7}
         >
-          <Ionicons name="add-circle-outline" size={24} color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.4)'} />
+          <Ionicons name="chatbubbles-outline" size={22} color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.4)'} />
         </TouchableOpacity>
       </View>
 
+      {/* Messages */}
       <KeyboardAvoidingView
         style={styles.chatContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -313,11 +453,29 @@ export default function AIChatScreen({ navigation }: any) {
           </View>
         )}
 
+        {/* Input bar */}
         <View style={[
           styles.inputContainer,
           { paddingBottom: Math.max(insets.bottom, 12) },
           { backgroundColor: isDark ? 'rgba(10,10,10,0.95)' : 'rgba(248,247,255,0.95)' },
         ]}>
+          {/* Temporary toggle */}
+          {messages.length === 0 && (
+            <TouchableOpacity
+              style={styles.tempToggle}
+              onPress={() => setIsTemporary(!isTemporary)}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={isTemporary ? 'eye-off-outline' : 'save-outline'}
+                size={14}
+                color={isTemporary ? '#ef4444' : 'rgba(255,255,255,0.35)'}
+              />
+              <Text style={[styles.tempToggleText, isTemporary && { color: '#ef4444' }]}>
+                {isTemporary ? 'Temporary chat' : 'Chat will be saved'}
+              </Text>
+            </TouchableOpacity>
+          )}
           <View style={[
             styles.inputWrapper,
             { backgroundColor: isDark ? '#1a1a2e' : '#f0ebff', borderColor: isDark ? '#2a2a3e' : '#e0d8ff' },
@@ -350,6 +508,94 @@ export default function AIChatScreen({ navigation }: any) {
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Chat History Modal */}
+      <Modal visible={showHistory} animationType="slide" transparent>
+        <View style={[styles.modalOverlay, { paddingTop: insets.top }]}>
+          <View style={[styles.modalContent, { backgroundColor: isDark ? '#111' : '#fff' }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: isDark ? '#fff' : '#1a1a1a' }]}>Chats</Text>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <TouchableOpacity onPress={startNewChat} activeOpacity={0.7}>
+                  <Ionicons name="add-circle" size={28} color="#8b5cf6" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setShowHistory(false)} activeOpacity={0.7}>
+                  <Ionicons name="close" size={28} color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.4)'} />
+                </TouchableOpacity>
+              </View>
+            </View>
+            <ScrollView style={styles.chatList} showsVerticalScrollIndicator={false}>
+              {savedChats.length === 0 ? (
+                <Text style={styles.noChatText}>No saved chats yet</Text>
+              ) : (
+                savedChats.map(chat => (
+                  <TouchableOpacity
+                    key={chat.id}
+                    style={[
+                      styles.chatHistoryItem,
+                      { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' },
+                      currentChatId === chat.id && { borderColor: '#8b5cf6', borderWidth: 1 },
+                    ]}
+                    onPress={() => loadChat(chat)}
+                    onLongPress={() => {
+                      Alert.alert('Delete Chat', 'Are you sure?', [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Delete', style: 'destructive', onPress: () => deleteChat(chat.id) },
+                      ]);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.chatHistoryTitle, { color: isDark ? '#fff' : '#1a1a1a' }]} numberOfLines={1}>
+                        {chat.title}
+                      </Text>
+                      <Text style={styles.chatHistoryDate}>
+                        {new Date(chat.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {chat.messages.length} messages
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.2)" />
+                  </TouchableOpacity>
+                ))
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Personality Modal */}
+      <Modal visible={showPersonality} animationType="fade" transparent>
+        <TouchableOpacity
+          style={styles.personalityOverlay}
+          activeOpacity={1}
+          onPress={() => setShowPersonality(false)}
+        >
+          <View style={[styles.personalitySheet, { backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
+            <Text style={[styles.personalityTitle, { color: isDark ? '#fff' : '#1a1a1a' }]}>AI Personality</Text>
+            {PERSONALITIES.map(p => (
+              <TouchableOpacity
+                key={p.key}
+                style={[
+                  styles.personalityOption,
+                  personality === p.key && { backgroundColor: 'rgba(139,92,246,0.15)', borderColor: '#8b5cf6' },
+                ]}
+                onPress={async () => {
+                  setPersonality(p.key);
+                  await AsyncStorage.setItem(AI_PERSONALITY_KEY, p.key);
+                  setShowPersonality(false);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={{ fontSize: 20 }}>{p.emoji}</Text>
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={[styles.personalityLabel, { color: isDark ? '#fff' : '#1a1a1a' }]}>{p.label}</Text>
+                  <Text style={styles.personalityDesc}>{p.desc}</Text>
+                </View>
+                {personality === p.key && <Ionicons name="checkmark-circle" size={22} color="#8b5cf6" />}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </Animated.View>
   );
 }
@@ -384,74 +630,58 @@ function TypingDots() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  // Header
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(139, 92, 246, 0.1)',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(139,92,246,0.1)',
   },
-  backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
+  headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   headerDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#22c55e' },
-  headerTitle: { fontSize: sf(17), fontWeight: '600', letterSpacing: 0.3 },
-  newChatButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { fontSize: sf(17), fontWeight: '700', letterSpacing: 0.2 },
   chatContainer: { flex: 1 },
   messagesList: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
   emptyMessagesList: { flexGrow: 1, justifyContent: 'center' },
 
   // Empty state
-  emptyState: { alignItems: 'center', paddingHorizontal: 32 },
+  emptyState: { alignItems: 'center', paddingHorizontal: 24 },
   orbContainer: {
-    width: 72, height: 72,
-    justifyContent: 'center', alignItems: 'center',
-    marginBottom: 20,
-  },
-  orbOuterRing: {
-    position: 'absolute', width: 72, height: 72, borderRadius: 36,
-    borderWidth: 1, borderColor: 'rgba(139, 92, 246, 0.2)',
+    width: 64, height: 64, justifyContent: 'center', alignItems: 'center', marginBottom: 20,
   },
   orb: {
-    width: 56, height: 56, borderRadius: 28,
-    justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#8b5cf6', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35, shadowRadius: 16, elevation: 12,
-  },
-  emptyTitle: {
-    fontSize: sf(22), fontWeight: '700', color: '#fff',
-    marginBottom: 8, letterSpacing: -0.3,
+    width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#8b5cf6', shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4, shadowRadius: 20, elevation: 14,
   },
   emptySubtitle: {
-    fontSize: sf(14), color: 'rgba(255,255,255,0.45)',
-    textAlign: 'center', lineHeight: sf(20),
-    marginBottom: 32, maxWidth: 280,
+    fontSize: sf(15), color: 'rgba(255,255,255,0.55)', textAlign: 'center',
+    lineHeight: sf(22), marginBottom: 28, maxWidth: 300, fontWeight: '400',
   },
-  suggestionsContainer: { width: '100%', gap: 8 },
+  suggestionsContainer: { width: '100%', gap: 10 },
   suggestionChip: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(139, 92, 246, 0.08)',
-    borderWidth: 1, borderColor: 'rgba(139, 92, 246, 0.15)',
-    borderRadius: 14, paddingHorizontal: 18, paddingVertical: 13,
+    borderRadius: 16, overflow: 'hidden',
+    borderWidth: 1, borderColor: 'rgba(139,92,246,0.18)',
   },
-  suggestionText: { fontSize: sf(14), color: 'rgba(255,255,255,0.7)' },
+  suggestionChipInner: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: 20, paddingVertical: 15,
+  },
+  suggestionText: {
+    fontSize: sf(14.5), color: 'rgba(255,255,255,0.8)', fontWeight: '500',
+  },
 
   // Messages
   messageBubbleContainer: { flexDirection: 'row', marginBottom: 16, alignItems: 'flex-end' },
   userBubbleContainer: { justifyContent: 'flex-end' },
   assistantBubbleContainer: { justifyContent: 'flex-start' },
   avatarWrap: { marginRight: 8, marginBottom: 2 },
-  avatarGradient: {
-    width: 26, height: 26, borderRadius: 13,
-    justifyContent: 'center', alignItems: 'center',
-  },
+  avatarGradient: { width: 26, height: 26, borderRadius: 13, justifyContent: 'center', alignItems: 'center' },
   userAvatarWrap: { marginLeft: 8, marginBottom: 2 },
   userAvatarImage: { width: 26, height: 26, borderRadius: 13 },
   userAvatarFallback: {
     width: 26, height: 26, borderRadius: 13,
-    backgroundColor: 'rgba(139, 92, 246, 0.25)',
-    justifyContent: 'center', alignItems: 'center',
+    backgroundColor: 'rgba(139,92,246,0.25)', justifyContent: 'center', alignItems: 'center',
   },
   userAvatarInitial: { fontSize: 12, fontWeight: '700', color: '#a78bfa' },
   messageBubble: { maxWidth: '75%', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 12 },
@@ -461,11 +691,11 @@ const styles = StyleSheet.create({
   userMessageText: { color: '#fff' },
   assistantMessageText: { color: 'rgba(255,255,255,0.9)' },
 
-  // Typing indicator
+  // Typing
   typingIndicator: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
   typingDotsContainer: {
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12,
+    backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 16,
+    paddingHorizontal: 16, paddingVertical: 12,
   },
   dotsRow: { flexDirection: 'row', gap: 4 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#8b5cf6' },
@@ -473,24 +703,57 @@ const styles = StyleSheet.create({
   // Input
   inputContainer: {
     paddingHorizontal: 16, paddingTop: 8,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(139, 92, 246, 0.1)',
+    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(139,92,246,0.1)',
   },
+  tempToggle: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, paddingBottom: 8,
+  },
+  tempToggleText: { fontSize: 12, color: 'rgba(255,255,255,0.35)' },
   inputWrapper: {
-    flexDirection: 'row', alignItems: 'flex-end',
-    borderRadius: 24, borderWidth: 1,
-    paddingLeft: 16, paddingRight: 6, paddingVertical: 6,
-    minHeight: 48,
+    flexDirection: 'row', alignItems: 'flex-end', borderRadius: 24, borderWidth: 1,
+    paddingLeft: 16, paddingRight: 6, paddingVertical: 6, minHeight: 48,
   },
   textInput: {
     flex: 1, fontSize: sf(16), maxHeight: 120,
-    paddingTop: Platform.OS === 'ios' ? 8 : 4,
-    paddingBottom: Platform.OS === 'ios' ? 8 : 4,
+    paddingTop: Platform.OS === 'ios' ? 8 : 4, paddingBottom: Platform.OS === 'ios' ? 8 : 4,
   },
   sendButton: { marginLeft: 8, marginBottom: 2 },
   sendButtonDisabled: { opacity: 0.4 },
-  sendButtonGradient: {
-    width: 36, height: 36, borderRadius: 18,
-    justifyContent: 'center', alignItems: 'center',
+  sendButtonGradient: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
+
+  // History modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
+  modalContent: { flex: 1, borderTopLeftRadius: 24, borderTopRightRadius: 24, marginTop: 60, paddingTop: 20 },
+  modalHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 20, marginBottom: 16,
   },
+  modalTitle: { fontSize: sf(22), fontWeight: '700' },
+  chatList: { paddingHorizontal: 20 },
+  noChatText: { color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginTop: 40, fontSize: sf(15) },
+  chatHistoryItem: {
+    flexDirection: 'row', alignItems: 'center', padding: 16,
+    borderRadius: 14, marginBottom: 8, borderWidth: 1, borderColor: 'transparent',
+  },
+  chatHistoryTitle: { fontSize: sf(15), fontWeight: '600', marginBottom: 4 },
+  chatHistoryDate: { fontSize: sf(12), color: 'rgba(255,255,255,0.35)' },
+
+  // Personality modal
+  personalityOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24,
+  },
+  personalitySheet: {
+    width: '100%', borderRadius: 20, padding: 20,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3, shadowRadius: 24, elevation: 20,
+  },
+  personalityTitle: { fontSize: sf(18), fontWeight: '700', marginBottom: 16 },
+  personalityOption: {
+    flexDirection: 'row', alignItems: 'center', padding: 14,
+    borderRadius: 14, marginBottom: 6, borderWidth: 1, borderColor: 'transparent',
+  },
+  personalityLabel: { fontSize: sf(15), fontWeight: '600' },
+  personalityDesc: { fontSize: sf(12), color: 'rgba(255,255,255,0.4)', marginTop: 2 },
 });

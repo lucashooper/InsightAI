@@ -484,8 +484,12 @@ export default function DashboardScreenNew() {
           </TouchableOpacity>
         </View>
 
-        {/* Orb Section with Centered Greeting */}
-        <View style={styles.orbSection}>
+        {/* Orb Section with Centered Greeting — taps to AI Chat */}
+        <TouchableOpacity 
+          style={styles.orbSection} 
+          onPress={() => navigation.navigate('AIChat')}
+          activeOpacity={0.85}
+        >
           {!orbImageLoaded && (
             <ActivityIndicator 
               size="large" 
@@ -522,7 +526,7 @@ export default function DashboardScreenNew() {
               Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}{userName && userName !== 'there' ? `, ${userName.charAt(0).toUpperCase() + userName.slice(1)}` : ''}
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
 
         {/* Primary Actions */}
