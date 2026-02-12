@@ -10,36 +10,41 @@ import {
   Platform,
   Animated,
   Keyboard,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 import { mobileAiService } from '../services/mobileAiService';
-import { isTablet, sf, ss, si } from '../utils/responsive';
+import { sf } from '../utils/responsive';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  displayedContent?: string;
+  isTyping?: boolean;
   timestamp: Date;
 }
 
 export default function AIChatScreen({ navigation }: any) {
   const { theme } = useTheme();
+  const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(true);
+  const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const orbPulse = useRef(new Animated.Value(1)).current;
-  const orbGlow = useRef(new Animated.Value(0.3)).current;
+  const typingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Entrance animation
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -48,44 +53,22 @@ export default function AIChatScreen({ navigation }: any) {
     }).start();
   }, []);
 
-  // Orb breathing animation
   useEffect(() => {
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.timing(orbPulse, {
-          toValue: 1.08,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(orbPulse, {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    const glow = Animated.loop(
-      Animated.sequence([
-        Animated.timing(orbGlow, {
-          toValue: 0.6,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(orbGlow, {
-          toValue: 0.3,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    pulse.start();
-    glow.start();
-    return () => { pulse.stop(); glow.stop(); };
+    const loadPfp = async () => {
+      const cached = await AsyncStorage.getItem('CACHED_PROFILE_PICTURE');
+      if (cached) setProfilePicture(cached);
+    };
+    loadPfp();
   }, []);
 
-  // Load suggestions on mount
   useEffect(() => {
     loadSuggestions();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+    };
   }, []);
 
   const loadSuggestions = async () => {
@@ -100,6 +83,31 @@ export default function AIChatScreen({ navigation }: any) {
         'Help me reflect on my entries',
       ]);
     }
+  };
+
+  const startTypingEffect = (messageId: string, fullContent: string) => {
+    let currentIndex = 0;
+    if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+
+    typingIntervalRef.current = setInterval(() => {
+      currentIndex += 1;
+      const displayed = fullContent.substring(0, currentIndex);
+
+      setMessages(prev => prev.map(m =>
+        m.id === messageId
+          ? { ...m, displayedContent: displayed, isTyping: currentIndex < fullContent.length }
+          : m
+      ));
+
+      if (currentIndex % 15 === 0 || currentIndex >= fullContent.length) {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }
+
+      if (currentIndex >= fullContent.length) {
+        if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+        typingIntervalRef.current = null;
+      }
+    }, 18);
   };
 
   const sendMessage = useCallback(async (text?: string) => {
@@ -119,8 +127,6 @@ export default function AIChatScreen({ navigation }: any) {
 
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
-
-    // Scroll to bottom
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
 
     try {
@@ -135,26 +141,29 @@ export default function AIChatScreen({ navigation }: any) {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
         content: response,
+        displayedContent: '',
+        isTyping: true,
         timestamp: new Date(),
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+      setIsLoading(false);
+      startTypingEffect(assistantMessage.id, response);
     } catch (error: any) {
-      const errorMessage: ChatMessage = {
+      const errorMsg: ChatMessage = {
         id: `error-${Date.now()}`,
         role: 'assistant',
         content: "I'm having trouble connecting right now. Please try again in a moment.",
         timestamp: new Date(),
       };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
+      setMessages(prev => [...prev, errorMsg]);
       setIsLoading(false);
     }
   }, [inputText, isLoading, messages]);
 
   const renderMessage = ({ item }: { item: ChatMessage }) => {
     const isUser = item.role === 'user';
+    const displayText = isUser ? item.content : (item.displayedContent ?? item.content);
 
     return (
       <View style={[
@@ -162,12 +171,12 @@ export default function AIChatScreen({ navigation }: any) {
         isUser ? styles.userBubbleContainer : styles.assistantBubbleContainer,
       ]}>
         {!isUser && (
-          <View style={styles.assistantAvatar}>
+          <View style={styles.avatarWrap}>
             <LinearGradient
               colors={['#8b5cf6', '#6d28d9']}
-              style={styles.assistantAvatarGradient}
+              style={styles.avatarGradient}
             >
-              <Ionicons name="sparkles" size={14} color="#fff" />
+              <Ionicons name="sparkles" size={12} color="#fff" />
             </LinearGradient>
           </View>
         )}
@@ -179,37 +188,46 @@ export default function AIChatScreen({ navigation }: any) {
             styles.messageText,
             isUser ? styles.userMessageText : styles.assistantMessageText,
           ]}>
-            {item.content}
+            {displayText}
+            {item.isTyping && <Text style={{ color: '#8b5cf6' }}>▊</Text>}
           </Text>
         </View>
+        {isUser && (
+          <View style={styles.userAvatarWrap}>
+            {profilePicture ? (
+              <Image source={{ uri: profilePicture }} style={styles.userAvatarImage} />
+            ) : (
+              <View style={styles.userAvatarFallback}>
+                <Text style={styles.userAvatarInitial}>
+                  {(user?.user_metadata?.username || user?.email || 'U').charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
       </View>
     );
   };
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      {/* Animated Orb */}
-      <Animated.View style={[
-        styles.orbContainer,
-        { transform: [{ scale: orbPulse }] },
-      ]}>
-        <Animated.View style={[styles.orbGlow, { opacity: orbGlow }]} />
+      <View style={styles.orbContainer}>
+        <View style={styles.orbOuterRing} />
         <LinearGradient
-          colors={['#8b5cf6', '#7c3aed', '#6d28d9', '#5b21b6']}
+          colors={['#a78bfa', '#8b5cf6', '#7c3aed', '#6d28d9']}
           style={styles.orb}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+          start={{ x: 0.1, y: 0 }}
+          end={{ x: 0.9, y: 1 }}
         >
-          <Ionicons name="sparkles" size={32} color="rgba(255,255,255,0.9)" />
+          <Ionicons name="sparkles" size={28} color="rgba(255,255,255,0.95)" />
         </LinearGradient>
-      </Animated.View>
+      </View>
 
-      <Text style={styles.emptyTitle}>Hey, I'm Insight</Text>
+      <Text style={styles.emptyTitle}>Insight</Text>
       <Text style={styles.emptySubtitle}>
-        I know your journal inside out. Ask me anything about your patterns, emotions, or growth.
+        Your personal companion. I know your journal inside out — ask me anything.
       </Text>
 
-      {/* Suggestion chips */}
       {showSuggestions && suggestions.length > 0 && (
         <View style={styles.suggestionsContainer}>
           {suggestions.map((suggestion, index) => (
@@ -220,6 +238,7 @@ export default function AIChatScreen({ navigation }: any) {
               activeOpacity={0.7}
             >
               <Text style={styles.suggestionText}>{suggestion}</Text>
+              <Ionicons name="arrow-forward" size={14} color="rgba(139,92,246,0.5)" style={{ marginLeft: 8 }} />
             </TouchableOpacity>
           ))}
         </View>
@@ -231,19 +250,13 @@ export default function AIChatScreen({ navigation }: any) {
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      {/* Background gradient */}
       <LinearGradient
         colors={isDark ? ['#0a0a0a', '#0d0515', '#0a0a0a'] : ['#f8f7ff', '#f0ebff', '#f8f7ff']}
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.7}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.7}>
           <Ionicons name="chevron-down" size={28} color={isDark ? '#fff' : '#1a1a1a'} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
@@ -253,6 +266,7 @@ export default function AIChatScreen({ navigation }: any) {
         <TouchableOpacity
           style={styles.newChatButton}
           onPress={() => {
+            if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
             setMessages([]);
             setShowSuggestions(true);
             loadSuggestions();
@@ -263,7 +277,6 @@ export default function AIChatScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      {/* Messages */}
       <KeyboardAvoidingView
         style={styles.chatContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -287,24 +300,19 @@ export default function AIChatScreen({ navigation }: any) {
           }}
         />
 
-        {/* Loading indicator */}
         {isLoading && (
           <View style={styles.typingIndicator}>
-            <View style={styles.assistantAvatar}>
-              <LinearGradient
-                colors={['#8b5cf6', '#6d28d9']}
-                style={styles.assistantAvatarGradient}
-              >
-                <Ionicons name="sparkles" size={14} color="#fff" />
+            <View style={styles.avatarWrap}>
+              <LinearGradient colors={['#8b5cf6', '#6d28d9']} style={styles.avatarGradient}>
+                <Ionicons name="sparkles" size={12} color="#fff" />
               </LinearGradient>
             </View>
-            <View style={styles.typingDots}>
+            <View style={styles.typingDotsContainer}>
               <TypingDots />
             </View>
           </View>
         )}
 
-        {/* Input bar */}
         <View style={[
           styles.inputContainer,
           { paddingBottom: Math.max(insets.bottom, 12) },
@@ -327,10 +335,7 @@ export default function AIChatScreen({ navigation }: any) {
               blurOnSubmit={false}
             />
             <TouchableOpacity
-              style={[
-                styles.sendButton,
-                (!inputText.trim() || isLoading) && styles.sendButtonDisabled,
-              ]}
+              style={[styles.sendButton, (!inputText.trim() || isLoading) && styles.sendButtonDisabled]}
               onPress={() => sendMessage()}
               disabled={!inputText.trim() || isLoading}
               activeOpacity={0.7}
@@ -349,7 +354,6 @@ export default function AIChatScreen({ navigation }: any) {
   );
 }
 
-// Typing dots animation component
 function TypingDots() {
   const dot1 = useRef(new Animated.Value(0.3)).current;
   const dot2 = useRef(new Animated.Value(0.3)).current;
@@ -372,19 +376,14 @@ function TypingDots() {
   return (
     <View style={styles.dotsRow}>
       {[dot1, dot2, dot3].map((dot, i) => (
-        <Animated.View
-          key={i}
-          style={[styles.dot, { opacity: dot }]}
-        />
+        <Animated.View key={i} style={[styles.dot, { opacity: dot }]} />
       ))}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -392,218 +391,106 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(139, 92, 246, 0.15)',
+    borderBottomColor: 'rgba(139, 92, 246, 0.1)',
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerCenter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#22c55e',
-  },
-  headerTitle: {
-    fontSize: sf(17),
-    fontWeight: '600',
-    letterSpacing: 0.3,
-  },
-  newChatButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  chatContainer: {
-    flex: 1,
-  },
-  messagesList: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  emptyMessagesList: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
+  backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
+  headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#22c55e' },
+  headerTitle: { fontSize: sf(17), fontWeight: '600', letterSpacing: 0.3 },
+  newChatButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
+  chatContainer: { flex: 1 },
+  messagesList: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
+  emptyMessagesList: { flexGrow: 1, justifyContent: 'center' },
+
   // Empty state
-  emptyState: {
-    alignItems: 'center',
-    paddingHorizontal: 32,
-  },
+  emptyState: { alignItems: 'center', paddingHorizontal: 32 },
   orbContainer: {
-    width: 80,
-    height: 80,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
+    width: 72, height: 72,
+    justifyContent: 'center', alignItems: 'center',
+    marginBottom: 20,
   },
-  orbGlow: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#8b5cf6',
+  orbOuterRing: {
+    position: 'absolute', width: 72, height: 72, borderRadius: 36,
+    borderWidth: 1, borderColor: 'rgba(139, 92, 246, 0.2)',
   },
   orb: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 24,
-    elevation: 16,
+    width: 56, height: 56, borderRadius: 28,
+    justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#8b5cf6', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35, shadowRadius: 16, elevation: 12,
   },
   emptyTitle: {
-    fontSize: sf(24),
-    fontWeight: '700',
-    color: '#fff',
-    marginBottom: 8,
-    letterSpacing: -0.3,
+    fontSize: sf(22), fontWeight: '700', color: '#fff',
+    marginBottom: 8, letterSpacing: -0.3,
   },
   emptySubtitle: {
-    fontSize: sf(15),
-    color: 'rgba(255,255,255,0.5)',
-    textAlign: 'center',
-    lineHeight: sf(22),
-    marginBottom: 32,
-    maxWidth: 300,
+    fontSize: sf(14), color: 'rgba(255,255,255,0.45)',
+    textAlign: 'center', lineHeight: sf(20),
+    marginBottom: 32, maxWidth: 280,
   },
-  suggestionsContainer: {
-    width: '100%',
-    gap: 10,
-  },
+  suggestionsContainer: { width: '100%', gap: 8 },
   suggestionChip: {
-    backgroundColor: 'rgba(139, 92, 246, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.2)',
-    borderRadius: 16,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(139, 92, 246, 0.08)',
+    borderWidth: 1, borderColor: 'rgba(139, 92, 246, 0.15)',
+    borderRadius: 14, paddingHorizontal: 18, paddingVertical: 13,
   },
-  suggestionText: {
-    fontSize: sf(14),
-    color: 'rgba(255,255,255,0.75)',
-    textAlign: 'center',
+  suggestionText: { fontSize: sf(14), color: 'rgba(255,255,255,0.7)' },
+
+  // Messages
+  messageBubbleContainer: { flexDirection: 'row', marginBottom: 16, alignItems: 'flex-end' },
+  userBubbleContainer: { justifyContent: 'flex-end' },
+  assistantBubbleContainer: { justifyContent: 'flex-start' },
+  avatarWrap: { marginRight: 8, marginBottom: 2 },
+  avatarGradient: {
+    width: 26, height: 26, borderRadius: 13,
+    justifyContent: 'center', alignItems: 'center',
   },
-  // Message bubbles
-  messageBubbleContainer: {
-    flexDirection: 'row',
-    marginBottom: 16,
-    alignItems: 'flex-end',
+  userAvatarWrap: { marginLeft: 8, marginBottom: 2 },
+  userAvatarImage: { width: 26, height: 26, borderRadius: 13 },
+  userAvatarFallback: {
+    width: 26, height: 26, borderRadius: 13,
+    backgroundColor: 'rgba(139, 92, 246, 0.25)',
+    justifyContent: 'center', alignItems: 'center',
   },
-  userBubbleContainer: {
-    justifyContent: 'flex-end',
-  },
-  assistantBubbleContainer: {
-    justifyContent: 'flex-start',
-  },
-  assistantAvatar: {
-    marginRight: 8,
-    marginBottom: 2,
-  },
-  assistantAvatarGradient: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  messageBubble: {
-    maxWidth: '78%',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  userBubble: {
-    backgroundColor: '#8b5cf6',
-    borderBottomRightRadius: 6,
-    marginLeft: 'auto',
-  },
-  assistantBubble: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderBottomLeftRadius: 6,
-  },
-  messageText: {
-    fontSize: sf(15),
-    lineHeight: sf(22),
-  },
-  userMessageText: {
-    color: '#fff',
-  },
-  assistantMessageText: {
-    color: 'rgba(255,255,255,0.9)',
-  },
+  userAvatarInitial: { fontSize: 12, fontWeight: '700', color: '#a78bfa' },
+  messageBubble: { maxWidth: '75%', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 12 },
+  userBubble: { backgroundColor: '#8b5cf6', borderBottomRightRadius: 6, marginLeft: 'auto' },
+  assistantBubble: { backgroundColor: 'rgba(255,255,255,0.07)', borderBottomLeftRadius: 6 },
+  messageText: { fontSize: sf(15), lineHeight: sf(22) },
+  userMessageText: { color: '#fff' },
+  assistantMessageText: { color: 'rgba(255,255,255,0.9)' },
+
   // Typing indicator
-  typingIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 8,
+  typingIndicator: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
+  typingDotsContainer: {
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12,
   },
-  typingDots: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  dotsRow: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#8b5cf6',
-  },
+  dotsRow: { flexDirection: 'row', gap: 4 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#8b5cf6' },
+
   // Input
   inputContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingHorizontal: 16, paddingTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(139, 92, 246, 0.15)',
+    borderTopColor: 'rgba(139, 92, 246, 0.1)',
   },
   inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    borderRadius: 24,
-    borderWidth: 1,
-    paddingLeft: 16,
-    paddingRight: 6,
-    paddingVertical: 6,
+    flexDirection: 'row', alignItems: 'flex-end',
+    borderRadius: 24, borderWidth: 1,
+    paddingLeft: 16, paddingRight: 6, paddingVertical: 6,
     minHeight: 48,
   },
   textInput: {
-    flex: 1,
-    fontSize: sf(16),
-    maxHeight: 120,
+    flex: 1, fontSize: sf(16), maxHeight: 120,
     paddingTop: Platform.OS === 'ios' ? 8 : 4,
     paddingBottom: Platform.OS === 'ios' ? 8 : 4,
   },
-  sendButton: {
-    marginLeft: 8,
-    marginBottom: 2,
-  },
-  sendButtonDisabled: {
-    opacity: 0.4,
-  },
+  sendButton: { marginLeft: 8, marginBottom: 2 },
+  sendButtonDisabled: { opacity: 0.4 },
   sendButtonGradient: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: 36, height: 36, borderRadius: 18,
+    justifyContent: 'center', alignItems: 'center',
   },
 });

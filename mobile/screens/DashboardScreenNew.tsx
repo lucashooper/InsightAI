@@ -519,7 +519,7 @@ export default function DashboardScreenNew() {
               fontWeight: '400',
               letterSpacing: 0.5
             }]}>
-              Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}
+              Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}{userName && userName !== 'there' ? `, ${userName.charAt(0).toUpperCase() + userName.slice(1)}` : ''}
             </Text>
           </View>
         </View>

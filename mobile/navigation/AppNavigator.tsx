@@ -47,6 +47,7 @@ import AIChatScreen from '../screens/AIChatScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isTablet, sf, si } from '../utils/responsive';
 import DailyMoodCheckIn from '../components/DailyMoodCheckIn';
+import { useAppLock } from '../contexts/AppLockContext';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -58,6 +59,7 @@ function CenterFabButton() {
   const [showMenu, setShowMenu] = React.useState(false);
   const [showDailyMoodCheckIn, setShowDailyMoodCheckIn] = React.useState(false);
   const { user } = useAuth();
+  const { isLocked, isLockEnabled } = useAppLock();
 
   // Check if daily mood check-in should be shown
   React.useEffect(() => {
@@ -91,14 +93,14 @@ function CenterFabButton() {
       }
     };
     
-    if (user) {
+    if (user && !(isLocked && isLockEnabled)) {
       checkDailyMoodCheckIn();
     }
-  }, [user]);
+  }, [user, isLocked, isLockEnabled]);
 
   const menuOptions = [
     { icon: 'create-outline', label: 'Journal Entry', screen: 'CreateEntry' },
-    { icon: 'book-outline', label: 'Playbook', screen: 'Playbook' },
+    { icon: 'sparkles-outline', label: 'AI Chat', screen: 'AIChat' },
     { icon: 'heart-outline', label: 'Gratitude', screen: 'Gratitude' },
     { icon: 'musical-notes-outline', label: 'Meditation', screen: 'Meditation' },
   ];
@@ -107,10 +109,9 @@ function CenterFabButton() {
     <>
       <TouchableOpacity
         style={styles.centerFabButton}
-        onPress={() => navigation.navigate('AIChat')}
-        onLongPress={() => setShowMenu(!showMenu)}
+        onPress={() => setShowMenu(!showMenu)}
         activeOpacity={0.85}
-        accessibilityLabel="Open AI Chat"
+        accessibilityLabel="Open quick actions menu"
         accessibilityRole="button"
       >
         <LinearGradient
@@ -119,7 +120,7 @@ function CenterFabButton() {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          <Ionicons name={showMenu ? "close" : "sparkles"} size={24} color="#ffffff" />
+          <Ionicons name={showMenu ? "close" : "add"} size={28} color="#ffffff" />
         </LinearGradient>
       </TouchableOpacity>
 
@@ -159,7 +160,7 @@ function CenterFabButton() {
 
       {/* Daily Mood Check-In */}
       <DailyMoodCheckIn
-        visible={showDailyMoodCheckIn}
+        visible={showDailyMoodCheckIn && !(isLocked && isLockEnabled)}
         onDismiss={() => setShowDailyMoodCheckIn(false)}
         onJournal={() => {
           setShowDailyMoodCheckIn(false);
