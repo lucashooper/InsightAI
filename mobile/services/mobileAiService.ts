@@ -94,6 +94,13 @@ async function callGroqProxy(messages: Array<{role: string; content: string}>, o
   return data.choices?.[0]?.message?.content || '';
 }
 
+const defaultChatSuggestions = [
+  'How have I been feeling lately?',
+  'What patterns do you notice in my journal?',
+  'What should I focus on this week?',
+  'Help me reflect on my recent entries',
+];
+
 export const mobileAiService = {
   async analyzeEntry(content: string, options?: { signal?: AbortSignal }): Promise<EnhancedAIAnalysis> {
     await waitForRateLimit();
@@ -543,6 +550,111 @@ Write in second person ("you"). Keep it under 60 words.`;
       console.error('[mobileAiService] generateMonthlyStory error', error);
       return "You've been showing up for yourself this month. That's what matters.";
     }
+  },
+
+  /**
+   * AI Chat Companion — conversational AI with access to all journal entries.
+   * Fetches recent entries from Supabase and includes them as context so the AI
+   * can answer questions about the user's emotional history, patterns, etc.
+   */
+  async chat(
+    messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+    options?: { signal?: AbortSignal }
+  ): Promise<string> {
+    await waitForRateLimit();
+
+    // Fetch recent journal entries for context
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const { data: entries } = await supabase
+      .from('notes')
+      .select('content, created_at, ai_structured_insights')
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    // Build journal context summary
+    let journalContext = '';
+    if (entries && entries.length > 0) {
+      const summaries = entries.map((e: any) => {
+        const date = new Date(e.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const emotion = e.ai_structured_insights?.mood_analysis?.primary_emotion || '';
+        const themes = e.ai_structured_insights?.key_themes?.slice(0, 3).map((t: any) => t.theme).join(', ') || '';
+        const snippet = e.content?.substring(0, 300) || '';
+        return `[${date}]${emotion ? ` (${emotion})` : ''}${themes ? ` Themes: ${themes}` : ''}\n${snippet}`;
+      });
+      journalContext = `\n\nHere are the user's recent journal entries (most recent first):\n\n${summaries.join('\n\n---\n\n')}`;
+    }
+
+    const systemMessage = `You are Insight, a warm, empathetic AI companion embedded in a journaling app. You have access to the user's journal entries and can reference them to provide personalized support.
+
+Your personality:
+- Warm, supportive, and genuinely curious about the user's wellbeing
+- Like a wise friend who remembers everything they've shared
+- You use "you" and speak directly to them
+- Concise but thoughtful — 2-4 sentences per response unless they ask for more
+- You can reference specific entries, emotions, patterns, and themes from their journal
+- When they ask about their history, quote or paraphrase specific entries
+- Suggest actionable insights based on patterns you notice
+- Never be preachy or give unsolicited advice — ask before suggesting
+- If they seem distressed, be extra gentle and validating
+- You can use light emoji sparingly for warmth ✨
+
+You are NOT a therapist. You're a supportive companion who helps them reflect and discover patterns in their own words.${journalContext}`;
+
+    try {
+      const apiMessages = [
+        { role: 'system', content: systemMessage },
+        ...messages.map(m => ({ role: m.role, content: m.content })),
+      ];
+
+      const response = await callGroqProxy(apiMessages, {
+        temperature: 0.85,
+        max_tokens: 600,
+        model: 'llama-3.3-70b-versatile',
+      });
+
+      return response.trim();
+    } catch (error: any) {
+      if (error?.name === 'AbortError') throw error;
+      console.error('[mobileAiService] chat error', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Generate suggested conversation starters based on recent journal entries.
+   */
+  async getChatSuggestions(): Promise<string[]> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return defaultChatSuggestions;
+
+    const { data: entries } = await supabase
+      .from('notes')
+      .select('content, created_at, ai_structured_insights')
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (!entries || entries.length === 0) return defaultChatSuggestions;
+
+    // Generate contextual suggestions based on recent entries
+    const recentEmotion = entries[0]?.ai_structured_insights?.mood_analysis?.primary_emotion;
+    const recentThemes = entries[0]?.ai_structured_insights?.key_themes?.slice(0, 2).map((t: any) => t.theme) || [];
+
+    const suggestions: string[] = [];
+    if (recentEmotion) {
+      suggestions.push(`Why have I been feeling ${recentEmotion} lately?`);
+    }
+    suggestions.push('When was I happiest this week?');
+    if (recentThemes.length > 0) {
+      suggestions.push(`Tell me about my ${recentThemes[0].toLowerCase()} patterns`);
+    }
+    suggestions.push('What should I focus on this week?');
+    suggestions.push('Summarize my emotional journey this month');
+
+    return suggestions.slice(0, 4);
   },
 };
 

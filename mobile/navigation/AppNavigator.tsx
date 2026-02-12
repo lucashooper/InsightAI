@@ -43,6 +43,7 @@ import GratitudeScreen from '../screens/GratitudeScreen';
 import GratitudeHistoryScreen from '../screens/GratitudeHistoryScreen';
 import EmotionDetailScreen from '../screens/EmotionDetailScreen';
 import AmbientSoundsScreen from '../screens/AmbientSoundsScreen';
+import AIChatScreen from '../screens/AIChatScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isTablet, sf, si } from '../utils/responsive';
 import DailyMoodCheckIn from '../components/DailyMoodCheckIn';
@@ -106,9 +107,10 @@ function CenterFabButton() {
     <>
       <TouchableOpacity
         style={styles.centerFabButton}
-        onPress={() => setShowMenu(!showMenu)}
+        onPress={() => navigation.navigate('AIChat')}
+        onLongPress={() => setShowMenu(!showMenu)}
         activeOpacity={0.85}
-        accessibilityLabel="Open quick actions menu"
+        accessibilityLabel="Open AI Chat"
         accessibilityRole="button"
       >
         <LinearGradient
@@ -117,7 +119,7 @@ function CenterFabButton() {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          <Ionicons name={showMenu ? "close" : "add"} size={28} color="#ffffff" />
+          <Ionicons name={showMenu ? "close" : "sparkles"} size={24} color="#ffffff" />
         </LinearGradient>
       </TouchableOpacity>
 
@@ -426,6 +428,7 @@ export default function AppNavigator() {
           <Stack.Screen name="GratitudeHistory" component={GratitudeHistoryScreen} options={{ headerShown: false }} />
           <Stack.Screen name="EmotionDetail" component={EmotionDetailScreen} options={{ headerShown: false }} />
           <Stack.Screen name="AmbientSounds" component={AmbientSoundsScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="AIChat" component={AIChatScreen} options={{ headerShown: false, animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
           <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
         </Stack.Navigator>
       ) : (

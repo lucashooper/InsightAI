@@ -284,15 +284,38 @@ export default function HomeScreen({ navigation, route }: any) {
         .maybeSingle();
 
       if (!error && data) {
+        const validPfp = data.profile_picture_url && 
+          (data.profile_picture_url.startsWith('http://') || data.profile_picture_url.startsWith('https://'))
+          ? data.profile_picture_url : null;
+        if (validPfp) AsyncStorage.setItem('CACHED_PROFILE_PICTURE', validPfp);
+        if (data.username) AsyncStorage.setItem('CACHED_USERNAME', data.username);
         setUserProfile({
           id: data.id,
           email: data.email,
           username: data.username,
-          profile_picture_url: data.profile_picture_url || null,
+          profile_picture_url: validPfp,
+        });
+      } else {
+        // Fallback to cached data
+        const cachedName = await AsyncStorage.getItem('CACHED_USERNAME');
+        const cachedPfp = await AsyncStorage.getItem('CACHED_PROFILE_PICTURE');
+        setUserProfile({
+          id: user.id,
+          email: user.email || '',
+          username: cachedName || user.email?.split('@')[0] || 'User',
+          profile_picture_url: cachedPfp || null,
         });
       }
     } catch (err) {
       console.error('[Home] Error loading user profile for avatar', err);
+      const cachedName = await AsyncStorage.getItem('CACHED_USERNAME');
+      const cachedPfp = await AsyncStorage.getItem('CACHED_PROFILE_PICTURE');
+      setUserProfile({
+        id: user.id,
+        email: user.email || '',
+        username: cachedName || user.email?.split('@')[0] || 'User',
+        profile_picture_url: cachedPfp || null,
+      });
     }
   };
 

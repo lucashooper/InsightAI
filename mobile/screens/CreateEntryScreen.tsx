@@ -36,9 +36,9 @@ try {
 export default function CreateEntryScreen({ navigation, route }: any) {
   const { user } = useAuth();
   const { theme } = useTheme();
-  const { initialContent, voiceMode } = route?.params || {};
+  const { initialContent, voiceMode, prefillPrompt } = route?.params || {};
   const [title, setTitle] = useState('');
-  const [content, setContent] = useState(initialContent || '');
+  const [content, setContent] = useState(initialContent || (prefillPrompt ? `${prefillPrompt}\n\n` : ''));
   const [showMoodPicker, setShowMoodPicker] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [isRecording, setIsRecording] = useState(false);

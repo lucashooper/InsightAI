@@ -190,12 +190,14 @@ export default function SettingsScreen({ navigation }: any) {
 
       if (error) {
         console.error('Error loading profile:', error);
-        // Use fallback profile on error
+        // Use fallback profile on error — restore cached picture
+        const cachedName = await AsyncStorage.getItem('CACHED_USERNAME');
+        const cachedPfp = await AsyncStorage.getItem('CACHED_PROFILE_PICTURE');
         setUserProfile({
           id: user.id,
           email: user.email || '',
-          username: user.email?.split('@')[0] || 'User',
-          profile_picture_url: null
+          username: cachedName || user.email?.split('@')[0] || 'User',
+          profile_picture_url: cachedPfp || null
         });
       } else if (data) {
         console.log('✅ Profile loaded successfully:', data.username, data.profile_picture_url);
@@ -204,6 +206,13 @@ export default function SettingsScreen({ navigation }: any) {
           (data.profile_picture_url.startsWith('http://') || data.profile_picture_url.startsWith('https://'))
           ? data.profile_picture_url
           : null;
+        // Cache the profile picture URL for persistence
+        if (validProfilePicture) {
+          await AsyncStorage.setItem('CACHED_PROFILE_PICTURE', validProfilePicture);
+        }
+        if (data.username) {
+          await AsyncStorage.setItem('CACHED_USERNAME', data.username);
+        }
         setUserProfile({
           id: data.id,
           email: data.email,
@@ -214,21 +223,23 @@ export default function SettingsScreen({ navigation }: any) {
         // No profile found - likely RLS blocking the query
         console.log('⚠️ No profile found (RLS may be blocking SELECT). Using fallback.');
         const cachedName = await AsyncStorage.getItem('CACHED_USERNAME');
+        const cachedPfp = await AsyncStorage.getItem('CACHED_PROFILE_PICTURE');
         setUserProfile({
           id: user.id,
           email: user.email || '',
           username: cachedName || user.user_metadata?.username || user.email?.split('@')[0] || 'User',
-          profile_picture_url: null
+          profile_picture_url: cachedPfp || null
         });
       }
     } catch (error) {
       console.error('Error loading profile:', error);
       const cachedName = await AsyncStorage.getItem('CACHED_USERNAME');
+      const cachedPfp = await AsyncStorage.getItem('CACHED_PROFILE_PICTURE');
       setUserProfile({
         id: user.id,
         email: user.email || '',
         username: cachedName || user.user_metadata?.username || user.email?.split('@')[0] || 'User',
-        profile_picture_url: null
+        profile_picture_url: cachedPfp || null
       });
     }
   };

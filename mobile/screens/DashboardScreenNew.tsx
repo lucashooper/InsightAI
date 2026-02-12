@@ -22,6 +22,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import StandardContainer from '../components/shared/StandardContainer';
 import FirstTimeIntroOverlay from '../components/FirstTimeIntroOverlay';
 import { isTablet, sf, ss, si, iPadContentStyle } from '../utils/responsive';
+import { getTodayPrompt, DailyPrompt } from '../data/dailyPrompts';
 // Temporarily disabled for Expo Go testing
 // import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 const orbImage = require('../public/InsightAI-Orb.png');
@@ -59,6 +60,7 @@ export default function DashboardScreenNew() {
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [showIntroOverlay, setShowIntroOverlay] = useState(false);
+  const [dailyPrompt] = useState<DailyPrompt>(getTodayPrompt());
 
   useEffect(() => {
     loadDashboardData();
@@ -169,19 +171,25 @@ export default function DashboardScreenNew() {
 
       if (data?.username) {
         setUserName(data.username);
+        AsyncStorage.setItem('CACHED_USERNAME', data.username);
       } else {
-        setUserName(user.email?.split('@')[0] || 'there');
+        const cachedName = await AsyncStorage.getItem('CACHED_USERNAME');
+        setUserName(cachedName || user.email?.split('@')[0] || 'there');
       }
       
       // Only use profile picture if it's a valid URL (starts with http/https)
       if (data?.profile_picture_url && (data.profile_picture_url.startsWith('http://') || data.profile_picture_url.startsWith('https://'))) {
         setProfilePicture(data.profile_picture_url);
+        AsyncStorage.setItem('CACHED_PROFILE_PICTURE', data.profile_picture_url);
       } else {
-        setProfilePicture(null);
+        const cachedPfp = await AsyncStorage.getItem('CACHED_PROFILE_PICTURE');
+        setProfilePicture(cachedPfp || null);
       }
     } catch (error) {
-      setUserName(user.email?.split('@')[0] || 'there');
-      setProfilePicture(null);
+      const cachedName = await AsyncStorage.getItem('CACHED_USERNAME');
+      const cachedPfp = await AsyncStorage.getItem('CACHED_PROFILE_PICTURE');
+      setUserName(cachedName || user.email?.split('@')[0] || 'there');
+      setProfilePicture(cachedPfp || null);
     }
   };
 
@@ -617,6 +625,35 @@ export default function DashboardScreenNew() {
               <Text style={[styles.insightText, { color: theme.colors.secondaryText }]}>You've journaled today. Keep it up!</Text>
             </View>
           )}
+        </View>
+
+        {/* Daily Prompt */}
+        <View style={styles.challengesSection}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>Today's prompt</Text>
+          <TouchableOpacity
+            style={[styles.insightCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
+            onPress={() => navigation.navigate('CreateEntry', { prefillPrompt: dailyPrompt.prompt + (dailyPrompt.followUp ? `\n\n${dailyPrompt.followUp}` : '') })}
+            activeOpacity={0.7}
+          >
+            <View style={styles.insightHeader}>
+              <Text style={{ fontSize: 22 }}>{dailyPrompt.emoji}</Text>
+              <View style={{ flex: 1, marginLeft: 4 }}>
+                <Text style={[styles.insightTitle, { color: theme.colors.primaryText, fontSize: sf(15) }]}>{dailyPrompt.prompt}</Text>
+                {dailyPrompt.followUp && (
+                  <Text style={[styles.insightText, { color: theme.colors.tertiaryText, fontSize: sf(13), marginTop: 4 }]}>{dailyPrompt.followUp}</Text>
+                )}
+              </View>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
+              <LinearGradient
+                colors={['rgba(139, 92, 246, 0.15)', 'rgba(139, 92, 246, 0.08)']}
+                style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20 }}
+              >
+                <Text style={{ color: '#8b5cf6', fontSize: sf(13), fontWeight: '600' }}>Start writing →</Text>
+              </LinearGradient>
+              <Text style={[{ color: theme.colors.tertiaryText, fontSize: sf(11), marginLeft: 12, textTransform: 'capitalize' }]}>{dailyPrompt.category.replace('-', ' ')}</Text>
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* Suggested Challenges */}
