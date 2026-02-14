@@ -17,7 +17,7 @@ import { BlurView } from 'expo-blur';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import StandardContainer from '../components/shared/StandardContainer';
 import FirstTimeIntroOverlay from '../components/FirstTimeIntroOverlay';
@@ -61,6 +61,19 @@ export default function DashboardScreenNew() {
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [showIntroOverlay, setShowIntroOverlay] = useState(false);
   const [dailyPrompt] = useState<DailyPrompt>(getTodayPrompt());
+
+  // Reload username from cache when screen comes into focus (instant Settings updates)
+  useFocusEffect(
+    React.useCallback(() => {
+      const refreshName = async () => {
+        const cachedName = await AsyncStorage.getItem('CACHED_USERNAME');
+        if (cachedName && cachedName !== userName) {
+          setUserName(cachedName);
+        }
+      };
+      refreshName();
+    }, [])
+  );
 
   useEffect(() => {
     loadDashboardData();
@@ -523,7 +536,7 @@ export default function DashboardScreenNew() {
               fontWeight: '400',
               letterSpacing: 0.5
             }]}>
-              Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}{userName && userName !== 'there' ? `, ${userName.charAt(0).toUpperCase() + userName.slice(1)}` : ''}
+              Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}{userName && userName !== 'there' ? `,\n${userName.charAt(0).toUpperCase() + userName.slice(1)}` : ''}
             </Text>
           </View>
         </TouchableOpacity>

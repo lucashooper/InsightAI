@@ -118,7 +118,7 @@ export default function SettingsScreen({ navigation }: any) {
   const handleEditUsername = () => {
     Alert.prompt(
       'Edit Name',
-      'Enter your new name',
+      'Enter your new name (max 30 characters)',
       [
         {
           text: 'Cancel',
@@ -129,11 +129,13 @@ export default function SettingsScreen({ navigation }: any) {
           onPress: async (newName?: string) => {
             if (!newName || !newName.trim()) return;
             
+            const trimmedName = newName.trim().substring(0, 30);
+            
             try {
-              console.log('[Settings] Updating username to:', newName);
+              console.log('[Settings] Updating username to:', trimmedName);
               const { error } = await supabase
                 .from('user_profiles')
-                .update({ username: newName.trim() })
+                .update({ username: trimmedName })
                 .eq('user_id', user?.id);
               
               if (error) {
@@ -141,10 +143,7 @@ export default function SettingsScreen({ navigation }: any) {
                 Alert.alert('Error', 'Failed to update name. Please try again.');
               } else {
                 console.log('[Settings] ✅ Username updated successfully');
-                // Update local state immediately for live UI update
-                const trimmedName = newName.trim();
                 setUserProfile(prev => prev ? { ...prev, username: trimmedName } : prev);
-                // Also cache locally
                 await AsyncStorage.setItem('CACHED_USERNAME', trimmedName);
                 Alert.alert('Success', 'Your name has been updated!');
               }
@@ -498,7 +497,7 @@ export default function SettingsScreen({ navigation }: any) {
                 </TouchableOpacity>
                 <View style={styles.profileInfo}>
                   <TouchableOpacity onPress={handleEditUsername}>
-                    <Text style={[styles.profileName, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>{userProfile?.username || user?.user_metadata?.username || 'User'}</Text>
+                    <Text style={[styles.profileName, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]} numberOfLines={1}>{userProfile?.username || user?.user_metadata?.username || 'User'}</Text>
                   </TouchableOpacity>
                   <Text style={[styles.profileEmail, { color: theme.name === 'light' ? '#6B6B6B' : 'rgba(255, 255, 255, 0.6)' }]}>{user?.email}</Text>
                 </View>
