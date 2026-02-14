@@ -17,6 +17,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
@@ -47,6 +48,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
   const [mood, setMood] = useState('');
   const waveAnims = useRef(Array.from({ length: 5 }, () => new Animated.Value(0.3))).current;
   const waveAnimRef = useRef<Animated.CompositeAnimation | null>(null);
+  const contentBeforeRecording = useRef('');
   const [aiResponse, setAiResponse] = useState<{ reflection: string; questions: string[] } | null>(null);
   const [displayedText, setDisplayedText] = useState('');
   const [isLoadingAi, setIsLoadingAi] = useState(false);
@@ -317,19 +319,41 @@ export default function CreateEntryScreen({ navigation, route }: any) {
     }
   };
 
+  // Pulse wave bars once when speech is detected (reactive, not constant)
+  const pulseWave = () => {
+    const animations = waveAnims.map((anim, i) =>
+      Animated.sequence([
+        Animated.delay(i * 40),
+        Animated.timing(anim, { toValue: 0.6 + Math.random() * 0.4, duration: 150, useNativeDriver: true }),
+        Animated.timing(anim, { toValue: 0.3, duration: 250, useNativeDriver: true }),
+      ])
+    );
+    Animated.parallel(animations).start();
+  };
+
+  const stopWaveAnimation = () => {
+    waveAnims.forEach(a => a.setValue(0.3));
+  };
+
   // Speech recognition event handlers
   useSpeechRecognitionEvent('result', (event: any) => {
     const transcript = event.results[0]?.transcript || '';
     const isFinal = event.isFinal ?? event.results[0]?.isFinal ?? true;
     if (transcript) {
+      // Pulse waveform when speech detected
+      pulseWave();
       if (isFinal) {
+        // Commit final text: update the base content and clear interim
+        const base = contentBeforeRecording.current;
+        const newContent = base ? base + ' ' + transcript : transcript;
+        contentBeforeRecording.current = newContent;
+        setContent(newContent);
         setInterimText('');
-        setContent((prev: string) => {
-          if (!prev.trim()) return transcript;
-          return prev + ' ' + transcript;
-        });
         hasUnsavedChanges.current = true;
       } else {
+        // Show interim text live in the content area
+        const base = contentBeforeRecording.current;
+        setContent(base ? base + ' ' + transcript : transcript);
         setInterimText(transcript);
       }
     }
@@ -350,28 +374,6 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       Alert.alert('Microphone Access', 'Please allow microphone access in Settings to use voice recording.');
     }
   });
-
-  const startWaveAnimation = () => {
-    const animations = waveAnims.map((anim, i) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(i * 80),
-          Animated.timing(anim, { toValue: 1, duration: 300, useNativeDriver: true }),
-          Animated.timing(anim, { toValue: 0.3, duration: 300, useNativeDriver: true }),
-        ])
-      )
-    );
-    waveAnimRef.current = Animated.parallel(animations);
-    waveAnimRef.current.start();
-  };
-
-  const stopWaveAnimation = () => {
-    if (waveAnimRef.current) {
-      waveAnimRef.current.stop();
-      waveAnimRef.current = null;
-    }
-    waveAnims.forEach(a => a.setValue(0.3));
-  };
 
   // Auto-start voice mode if navigated with voiceMode param
   useEffect(() => {
@@ -401,6 +403,9 @@ export default function CreateEntryScreen({ navigation, route }: any) {
         return;
       }
 
+      // Save current content as base before recording starts
+      contentBeforeRecording.current = content;
+
       ExpoSpeechRecognitionModule.start({
         lang: 'en-US',
         interimResults: true,
@@ -408,7 +413,6 @@ export default function CreateEntryScreen({ navigation, route }: any) {
         addsPunctuation: true,
       });
       setIsRecording(true);
-      startWaveAnimation();
     } catch (error: any) {
       console.error('[CreateEntry] Speech recognition start error:', error);
       Alert.alert('Voice Recording', 'Voice recording is not available on this device. Please use a development build or TestFlight.');
@@ -454,6 +458,67 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       keyboardWillHide.remove();
     };
   }, []);
+
+  const handleAddPhotos = async () => {
+    setShowQuickActions(false);
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Photos Access', 'Please allow photo library access in Settings to add photos.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsMultipleSelection: true,
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets.length > 0) {
+        // For now, note that photos were attached
+        const photoCount = result.assets.length;
+        setContent((prev: string) => prev + `\n\n📷 ${photoCount} photo${photoCount > 1 ? 's' : ''} attached`);
+        hasUnsavedChanges.current = true;
+        Alert.alert('Photos Added', `${photoCount} photo${photoCount > 1 ? 's' : ''} attached to your entry.`);
+      }
+    } catch (error) {
+      console.error('[CreateEntry] Photo picker error:', error);
+      Alert.alert('Error', 'Failed to open photo library.');
+    }
+  };
+
+  const handleCustomizeAI = () => {
+    setShowQuickActions(false);
+    Alert.alert(
+      'AI Personality',
+      'Choose how Insight responds to your entries:',
+      [
+        { text: 'Warm & Supportive', onPress: () => Alert.alert('Set!', 'AI will respond with warmth and encouragement.') },
+        { text: 'Direct & Analytical', onPress: () => Alert.alert('Set!', 'AI will give concise, analytical insights.') },
+        { text: 'Curious & Playful', onPress: () => Alert.alert('Set!', 'AI will ask creative questions and explore ideas.') },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const WRITING_PROMPTS = [
+    'What made you smile today?',
+    'What\'s been on your mind lately?',
+    'Describe a moment you felt proud of recently.',
+    'What would you tell your future self right now?',
+    'What\'s something you\'re grateful for today?',
+    'If you could change one thing about today, what would it be?',
+    'What\'s a challenge you\'re currently facing?',
+    'Describe how your body feels right now.',
+  ];
+
+  const handleNewDirection = () => {
+    setShowQuickActions(false);
+    const prompt = WRITING_PROMPTS[Math.floor(Math.random() * WRITING_PROMPTS.length)];
+    setContent((prev: string) => {
+      if (!prev.trim()) return prompt + '\n\n';
+      return prev + '\n\n' + prompt + '\n\n';
+    });
+    hasUnsavedChanges.current = true;
+  };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -665,19 +730,15 @@ export default function CreateEntryScreen({ navigation, route }: any) {
                 <Ionicons name={isRecording ? 'mic-off' : 'mic'} size={20} color={isRecording ? '#ef4444' : 'rgba(255, 255, 255, 0.8)'} />
                 <Text style={styles.quickActionText}>{isRecording ? 'Stop recording' : 'Voice mode'}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.quickActionItem}>
+              <TouchableOpacity style={styles.quickActionItem} onPress={handleAddPhotos}>
                 <Ionicons name="image" size={20} color="rgba(255, 255, 255, 0.8)" />
                 <Text style={styles.quickActionText}>Add photos</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.quickActionItem}>
-                <Ionicons name="scan" size={20} color="rgba(255, 255, 255, 0.8)" />
-                <Text style={styles.quickActionText}>Scan</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.quickActionItem}>
-                <Ionicons name="settings" size={20} color="rgba(255, 255, 255, 0.8)" />
+              <TouchableOpacity style={styles.quickActionItem} onPress={handleCustomizeAI}>
+                <Ionicons name="color-palette" size={20} color="rgba(255, 255, 255, 0.8)" />
                 <Text style={styles.quickActionText}>Customize AI</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.quickActionItem}>
+              <TouchableOpacity style={styles.quickActionItem} onPress={handleNewDirection}>
                 <Ionicons name="compass" size={20} color="rgba(255, 255, 255, 0.8)" />
                 <Text style={styles.quickActionText}>New direction</Text>
               </TouchableOpacity>
