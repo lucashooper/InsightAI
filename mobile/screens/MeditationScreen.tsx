@@ -261,8 +261,8 @@ export default function MeditationScreen({ navigation }: any) {
   });
 
   // Headspace-inspired gradient colors
-  const skyColors = ['#2F8FFF', '#4CB6FF', '#73D2FF'];
-  const sunsetColors = ['#FF6B6B', '#FFA07A', '#FFB88C']; // Warm sunset
+  const skyColors: [string, string, string] = ['#1a6fd4', '#2b85e0', '#4ca8f0'];
+  const sunsetColors: [string, string, string] = ['#FF6B6B', '#FFA07A', '#FFB88C'];
 
   return (
     <View style={styles.container}>
@@ -437,10 +437,13 @@ const styles = StyleSheet.create({
   breathText: {
     fontSize: 34,
     fontWeight: '700',
-    color: 'rgba(255, 252, 248, 0.98)', // Warm off-white for better readability
+    color: '#ffffff',
     marginBottom: 14,
     letterSpacing: 0.5,
     textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.35)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
   },
   progressBarContainer: {
     width: width * 0.8,
@@ -469,62 +472,80 @@ const styles = StyleSheet.create({
   breathCountText: {
     fontSize: 17,
     fontWeight: '600',
-    color: 'rgba(255, 252, 248, 0.75)',
+    color: 'rgba(255, 255, 255, 0.95)',
     marginTop: 8,
     letterSpacing: 0.5,
     textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
   },
   startButton: {
     marginTop: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.22)',
-    paddingVertical: 12,
-    paddingHorizontal: 22,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    paddingVertical: 14,
+    paddingHorizontal: 26,
     borderRadius: 999,
   },
   startButtonText: {
     fontSize: 16,
     fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.95)',
+    color: '#ffffff',
     letterSpacing: 0.2,
+    textShadowColor: 'rgba(0, 0, 0, 0.25)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   exercisePhaseText: {
     fontSize: 40,
     fontWeight: '700',
-    color: 'rgba(255, 252, 248, 0.98)',
+    color: '#ffffff',
     marginBottom: 48,
     letterSpacing: 0.3,
     textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.35)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
   },
   exerciseBreathCountText: {
     fontSize: 18,
     fontWeight: '600',
-    color: 'rgba(255, 252, 248, 0.75)',
+    color: 'rgba(255, 255, 255, 0.95)',
     marginTop: 22,
     letterSpacing: 0.5,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
   },
   cycleProgressText: {
     fontSize: 15,
     fontWeight: '500',
-    color: 'rgba(255, 252, 248, 0.6)',
+    color: 'rgba(255, 255, 255, 0.85)',
     marginTop: 8,
     letterSpacing: 0.3,
+    textShadowColor: 'rgba(0, 0, 0, 0.25)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   stopButton: {
     marginTop: 32,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    paddingVertical: 12,
+    paddingHorizontal: 22,
     borderRadius: 999,
   },
   stopButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: '#ffffff',
     letterSpacing: 0.2,
+    textShadowColor: 'rgba(0, 0, 0, 0.25)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   debugOverlay: {
     position: 'absolute',
@@ -548,10 +569,13 @@ const styles = StyleSheet.create({
   },
   phraseText: {
     fontSize: 18,
-    fontWeight: '300',
-    color: 'rgba(255, 255, 255, 0.95)',
+    fontWeight: '500',
+    color: '#ffffff',
     textAlign: 'center',
     letterSpacing: 0.5,
     lineHeight: 28,
+    textShadowColor: 'rgba(0, 0, 0, 0.35)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
   },
 });

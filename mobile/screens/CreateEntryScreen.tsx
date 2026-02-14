@@ -43,7 +43,10 @@ export default function CreateEntryScreen({ navigation, route }: any) {
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [speechAvailable, setSpeechAvailable] = useState(true);
+  const [interimText, setInterimText] = useState('');
   const [mood, setMood] = useState('');
+  const waveAnims = useRef(Array.from({ length: 5 }, () => new Animated.Value(0.3))).current;
+  const waveAnimRef = useRef<Animated.CompositeAnimation | null>(null);
   const [aiResponse, setAiResponse] = useState<{ reflection: string; questions: string[] } | null>(null);
   const [displayedText, setDisplayedText] = useState('');
   const [isLoadingAi, setIsLoadingAi] = useState(false);
@@ -315,30 +318,60 @@ export default function CreateEntryScreen({ navigation, route }: any) {
   };
 
   // Speech recognition event handlers
-  useSpeechRecognitionEvent('result', (event) => {
+  useSpeechRecognitionEvent('result', (event: any) => {
     const transcript = event.results[0]?.transcript || '';
+    const isFinal = event.isFinal ?? event.results[0]?.isFinal ?? true;
     if (transcript) {
-      setContent((prev: string) => {
-        // If this is the first result, just set it
-        if (!prev.trim()) return transcript;
-        // Otherwise append with a space
-        return prev + ' ' + transcript;
-      });
-      hasUnsavedChanges.current = true;
+      if (isFinal) {
+        setInterimText('');
+        setContent((prev: string) => {
+          if (!prev.trim()) return transcript;
+          return prev + ' ' + transcript;
+        });
+        hasUnsavedChanges.current = true;
+      } else {
+        setInterimText(transcript);
+      }
     }
   });
 
   useSpeechRecognitionEvent('end', () => {
     setIsRecording(false);
+    setInterimText('');
+    stopWaveAnimation();
   });
 
-  useSpeechRecognitionEvent('error', (event) => {
+  useSpeechRecognitionEvent('error', (event: any) => {
     console.warn('[CreateEntry] Speech recognition error:', event.error);
     setIsRecording(false);
+    setInterimText('');
+    stopWaveAnimation();
     if (event.error === 'not-allowed') {
       Alert.alert('Microphone Access', 'Please allow microphone access in Settings to use voice recording.');
     }
   });
+
+  const startWaveAnimation = () => {
+    const animations = waveAnims.map((anim, i) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(i * 80),
+          Animated.timing(anim, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.timing(anim, { toValue: 0.3, duration: 300, useNativeDriver: true }),
+        ])
+      )
+    );
+    waveAnimRef.current = Animated.parallel(animations);
+    waveAnimRef.current.start();
+  };
+
+  const stopWaveAnimation = () => {
+    if (waveAnimRef.current) {
+      waveAnimRef.current.stop();
+      waveAnimRef.current = null;
+    }
+    waveAnims.forEach(a => a.setValue(0.3));
+  };
 
   // Auto-start voice mode if navigated with voiceMode param
   useEffect(() => {
@@ -356,6 +389,8 @@ export default function CreateEntryScreen({ navigation, route }: any) {
     if (isRecording) {
       ExpoSpeechRecognitionModule.stop();
       setIsRecording(false);
+      setInterimText('');
+      stopWaveAnimation();
       return;
     }
 
@@ -368,11 +403,12 @@ export default function CreateEntryScreen({ navigation, route }: any) {
 
       ExpoSpeechRecognitionModule.start({
         lang: 'en-US',
-        interimResults: false,
+        interimResults: true,
         continuous: true,
         addsPunctuation: true,
       });
       setIsRecording(true);
+      startWaveAnimation();
     } catch (error: any) {
       console.error('[CreateEntry] Speech recognition start error:', error);
       Alert.alert('Voice Recording', 'Voice recording is not available on this device. Please use a development build or TestFlight.');
@@ -496,6 +532,37 @@ export default function CreateEntryScreen({ navigation, route }: any) {
             </BlurView>
           </Animated.View>
         </>
+      )}
+
+      {/* Voice Recording Indicator */}
+      {isRecording && (
+        <View style={[styles.recordingBanner, { backgroundColor: theme.name === 'light' ? 'rgba(139,92,246,0.08)' : 'rgba(139,92,246,0.15)' }]}>
+          <View style={styles.waveformContainer}>
+            {waveAnims.map((anim, i) => (
+              <Animated.View
+                key={i}
+                style={[
+                  styles.waveBar,
+                  {
+                    transform: [{ scaleY: anim }],
+                    backgroundColor: '#8b5cf6',
+                  },
+                ]}
+              />
+            ))}
+          </View>
+          <View style={styles.recordingTextContainer}>
+            <Text style={[styles.recordingLabel, { color: '#8b5cf6' }]}>Listening...</Text>
+            {interimText ? (
+              <Text style={[styles.interimText, { color: theme.name === 'light' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)' }]} numberOfLines={1}>
+                {interimText}
+              </Text>
+            ) : null}
+          </View>
+          <TouchableOpacity onPress={toggleVoiceRecording} style={styles.stopRecordingBtn} activeOpacity={0.7}>
+            <Ionicons name="stop-circle" size={28} color="#ef4444" />
+          </TouchableOpacity>
+        </View>
       )}
 
       {/* Full-Screen Writing Canvas */}
@@ -987,5 +1054,45 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 8,
+  },
+  // Voice recording indicator
+  recordingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(139, 92, 246, 0.2)',
+  },
+  waveformContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    height: 24,
+  },
+  waveBar: {
+    width: 3,
+    height: 24,
+    borderRadius: 2,
+  },
+  recordingTextContainer: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  recordingLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  interimText: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  stopRecordingBtn: {
+    padding: 4,
+  },
+  aiResponseContainer: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 24,
   },
 });
