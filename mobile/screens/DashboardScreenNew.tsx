@@ -663,12 +663,14 @@ export default function DashboardScreenNew() {
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
               <LinearGradient
-                colors={['rgba(139, 92, 246, 0.15)', 'rgba(139, 92, 246, 0.08)']}
-                style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20 }}
+                colors={['#8b5cf6', '#7c3aed']}
+                style={{ paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20 }}
               >
-                <Text style={{ color: '#8b5cf6', fontSize: sf(13), fontWeight: '600' }}>Start writing →</Text>
+                <Text style={{ color: '#ffffff', fontSize: sf(13), fontWeight: '600' }}>Start writing →</Text>
               </LinearGradient>
-              <Text style={[{ color: theme.colors.tertiaryText, fontSize: sf(11), marginLeft: 12, textTransform: 'capitalize' }]}>{dailyPrompt.category.replace('-', ' ')}</Text>
+              <View style={{ marginLeft: 12, backgroundColor: 'rgba(139, 92, 246, 0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+                <Text style={{ color: '#8b5cf6', fontSize: sf(11), fontWeight: '600', textTransform: 'capitalize' }}>{dailyPrompt.category.replace('-', ' ')}</Text>
+              </View>
             </View>
           </TouchableOpacity>
         </View>

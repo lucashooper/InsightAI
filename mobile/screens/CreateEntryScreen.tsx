@@ -13,11 +13,14 @@ import {
   TouchableWithoutFeedback,
   ScrollView,
   Alert,
+  Image,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
@@ -39,12 +42,16 @@ export default function CreateEntryScreen({ navigation, route }: any) {
   const { theme } = useTheme();
   const { initialContent, voiceMode, prefillPrompt } = route?.params || {};
   const [title, setTitle] = useState('');
-  const [content, setContent] = useState(initialContent || (prefillPrompt ? `${prefillPrompt}\n\n` : ''));
+  const [content, setContent] = useState(initialContent || '');
+  const [promptText] = useState<string | null>(prefillPrompt || null);
   const [showMoodPicker, setShowMoodPicker] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [speechAvailable, setSpeechAvailable] = useState(true);
   const [interimText, setInterimText] = useState('');
+  const [attachedPhotos, setAttachedPhotos] = useState<Array<{ uri: string; width: number; height: number }>>([]);
+  const [showPersonalityModal, setShowPersonalityModal] = useState(false);
+  const [personality, setPersonality] = useState<string>('balanced');
   const [mood, setMood] = useState('');
   const waveAnims = useRef(Array.from({ length: 5 }, () => new Animated.Value(0.3))).current;
   const waveAnimRef = useRef<Animated.CompositeAnimation | null>(null);
@@ -102,12 +109,17 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       // Get encryption key from secure storage
       const encryptionKey = await EncryptionService.getKey();
       
-      let contentToSave = content.trim();
+      // If there's a prompt, prepend it as context for AI analysis
+      let fullContent = content.trim();
+      if (promptText && fullContent) {
+        fullContent = `[Insight Prompt: ${promptText}]\n\n${fullContent}`;
+      }
+      let contentToSave = fullContent;
       let isEncrypted = false;
       
       if (encryptionKey) {
         try {
-          contentToSave = await EncryptionService.encrypt(content.trim(), encryptionKey);
+          contentToSave = await EncryptionService.encrypt(fullContent, encryptionKey);
           isEncrypted = true;
           console.log('[CreateEntry] Content encrypted before save');
           console.log('[CreateEntry] Encrypted content preview:', contentToSave.substring(0, 40) + '...');
@@ -203,7 +215,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           .from('notes')
           .update({
             title: entryTitle,
-            content: content.trim(),
+            content: promptText ? `[Insight Prompt: ${promptText}]\n\n${content.trim()}` : content.trim(),
             mood: mood || null,
             updated_at: new Date().toISOString(),
           })
@@ -231,7 +243,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           .insert({
             user_id: user?.id,
             title: entryTitle,
-            content: content.trim(),
+            content: promptText ? `[Insight Prompt: ${promptText}]\n\n${content.trim()}` : content.trim(),
             mood: mood || null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
@@ -473,11 +485,9 @@ export default function CreateEntryScreen({ navigation, route }: any) {
         quality: 0.8,
       });
       if (!result.canceled && result.assets.length > 0) {
-        // For now, note that photos were attached
-        const photoCount = result.assets.length;
-        setContent((prev: string) => prev + `\n\n📷 ${photoCount} photo${photoCount > 1 ? 's' : ''} attached`);
+        const newPhotos = result.assets.map(a => ({ uri: a.uri, width: a.width || 300, height: a.height || 300 }));
+        setAttachedPhotos(prev => [...prev, ...newPhotos]);
         hasUnsavedChanges.current = true;
-        Alert.alert('Photos Added', `${photoCount} photo${photoCount > 1 ? 's' : ''} attached to your entry.`);
       }
     } catch (error) {
       console.error('[CreateEntry] Photo picker error:', error);
@@ -485,18 +495,26 @@ export default function CreateEntryScreen({ navigation, route }: any) {
     }
   };
 
+  const AI_PERSONALITY_KEY = 'AI_PERSONALITY';
+  const PERSONALITIES = [
+    { key: 'balanced', label: 'Balanced', emoji: '⚖️', desc: 'Warm and thoughtful' },
+    { key: 'cheerful', label: 'Cheerful', emoji: '☀️', desc: 'Upbeat and encouraging' },
+    { key: 'direct', label: 'Direct', emoji: '🎯', desc: 'Concise and to the point' },
+    { key: 'playful', label: 'Playful', emoji: '✨', desc: 'Light-hearted and fun' },
+    { key: 'gentle', label: 'Gentle', emoji: '🌿', desc: 'Extra soft and nurturing' },
+  ];
+
+  useEffect(() => {
+    const loadPersonality = async () => {
+      const saved = await AsyncStorage.getItem(AI_PERSONALITY_KEY);
+      if (saved) setPersonality(saved);
+    };
+    loadPersonality();
+  }, []);
+
   const handleCustomizeAI = () => {
     setShowQuickActions(false);
-    Alert.alert(
-      'AI Personality',
-      'Choose how Insight responds to your entries:',
-      [
-        { text: 'Warm & Supportive', onPress: () => Alert.alert('Set!', 'AI will respond with warmth and encouragement.') },
-        { text: 'Direct & Analytical', onPress: () => Alert.alert('Set!', 'AI will give concise, analytical insights.') },
-        { text: 'Curious & Playful', onPress: () => Alert.alert('Set!', 'AI will ask creative questions and explore ideas.') },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
+    setShowPersonalityModal(true);
   };
 
   const WRITING_PROMPTS = [
@@ -510,14 +528,12 @@ export default function CreateEntryScreen({ navigation, route }: any) {
     'Describe how your body feels right now.',
   ];
 
+  const [inlinePrompt, setInlinePrompt] = useState<string | null>(null);
+
   const handleNewDirection = () => {
     setShowQuickActions(false);
     const prompt = WRITING_PROMPTS[Math.floor(Math.random() * WRITING_PROMPTS.length)];
-    setContent((prev: string) => {
-      if (!prev.trim()) return prompt + '\n\n';
-      return prev + '\n\n' + prompt + '\n\n';
-    });
-    hasUnsavedChanges.current = true;
+    setInlinePrompt(prompt);
   };
 
   return (
@@ -652,17 +668,64 @@ export default function CreateEntryScreen({ navigation, route }: any) {
             multiline={false}
             returnKeyType="next"
           />
+
+          {/* Branded Prompt Display */}
+          {promptText && (
+            <View style={styles.promptBanner}>
+              <View style={styles.promptIconWrap}>
+                <Image source={require('../public/Insight-Logo-nobg.webp')} style={styles.promptLogo} resizeMode="contain" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.promptLabel}>Insight prompt</Text>
+                <Text style={[styles.promptQuestion, { color: theme.name === 'light' ? '#4a3a6b' : 'rgba(200, 180, 255, 0.9)' }]}>{promptText}</Text>
+              </View>
+            </View>
+          )}
+
           <TextInput
             style={[styles.contentInput, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}
             value={content}
             onChangeText={handleContentChange}
-            placeholder="Write here..."
+            placeholder={promptText ? "Your thoughts..." : "Write here..."}
             placeholderTextColor={theme.name === 'light' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.3)'}
             multiline
             textAlignVertical="top"
             autoFocus={false}
           />
+
+          {/* Attached Photo Thumbnails */}
+          {attachedPhotos.length > 0 && (
+            <View style={styles.photoGrid}>
+              {attachedPhotos.map((photo, index) => (
+                <View key={index} style={styles.photoThumbWrap}>
+                  <Image source={{ uri: photo.uri }} style={styles.photoThumb} resizeMode="cover" />
+                  <TouchableOpacity
+                    style={styles.photoRemoveBtn}
+                    onPress={() => setAttachedPhotos(prev => prev.filter((_, i) => i !== index))}
+                  >
+                    <Ionicons name="close-circle" size={22} color="#ef4444" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
           
+          {/* Inline Prompt from New Direction */}
+          {inlinePrompt && (
+            <View style={styles.promptBanner}>
+              <View style={styles.promptIconWrap}>
+                <Image source={require('../public/Insight-Logo-nobg.webp')} style={styles.promptLogo} resizeMode="contain" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.promptLabel}>New direction</Text>
+                <Text style={[styles.promptQuestion, { color: theme.name === 'light' ? '#4a3a6b' : 'rgba(200, 180, 255, 0.9)' }]}>{inlinePrompt}</Text>
+              </View>
+              <TouchableOpacity onPress={() => setInlinePrompt(null)} style={{ padding: 4 }}>
+                <Ionicons name="close" size={16} color="rgba(139,92,246,0.5)" />
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* AI Response - Conversational style with typewriter effect */}
           {aiResponse && displayedText && (
             <View style={styles.aiResponseContainer}>
@@ -766,6 +829,41 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           </LinearGradient>
         </TouchableOpacity>
       </Animated.View>
+
+      {/* AI Personality Modal */}
+      <Modal visible={showPersonalityModal} animationType="fade" transparent>
+        <TouchableOpacity
+          style={styles.personalityOverlay}
+          activeOpacity={1}
+          onPress={() => setShowPersonalityModal(false)}
+        >
+          <View style={[styles.personalitySheet, { backgroundColor: theme.name === 'light' ? '#fff' : '#1a1a1a' }]}>
+            <Text style={[styles.personalityTitle, { color: theme.name === 'light' ? '#1a1a1a' : '#fff' }]}>AI Personality</Text>
+            {PERSONALITIES.map(p => (
+              <TouchableOpacity
+                key={p.key}
+                style={[
+                  styles.personalityOption,
+                  personality === p.key && { backgroundColor: 'rgba(139,92,246,0.15)', borderColor: '#8b5cf6' },
+                ]}
+                onPress={async () => {
+                  setPersonality(p.key);
+                  await AsyncStorage.setItem(AI_PERSONALITY_KEY, p.key);
+                  setShowPersonalityModal(false);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={{ fontSize: 20 }}>{p.emoji}</Text>
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={[styles.personalityLabel, { color: theme.name === 'light' ? '#1a1a1a' : '#fff' }]}>{p.label}</Text>
+                  <Text style={[styles.personalityDesc, { color: theme.name === 'light' ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.4)' }]}>{p.desc}</Text>
+                </View>
+                {personality === p.key && <Ionicons name="checkmark-circle" size={22} color="#8b5cf6" />}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -1155,5 +1253,111 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 24,
+  },
+  // Branded prompt display
+  promptBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginHorizontal: 24,
+    marginTop: 8,
+    marginBottom: 4,
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: 'rgba(139, 92, 246, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.15)',
+    gap: 12,
+  },
+  promptIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  promptLogo: {
+    width: 20,
+    height: 20,
+  },
+  promptLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#8b5cf6',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  promptQuestion: {
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: '500',
+  },
+  // Photo thumbnails
+  photoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 24,
+    gap: 10,
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  photoThumbWrap: {
+    position: 'relative',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  photoThumb: {
+    width: 90,
+    height: 90,
+    borderRadius: 12,
+  },
+  photoRemoveBtn: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 11,
+  },
+  // Personality modal
+  personalityOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  personalitySheet: {
+    width: '100%',
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 20,
+  },
+  personalityTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
+  },
+  personalityOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 14,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  personalityLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  personalityDesc: {
+    fontSize: 12,
+    marginTop: 2,
   },
 });
