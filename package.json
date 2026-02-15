@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run build:marketing && tsc -b && vite build",
-    "build:marketing": "cd marketing && npm install && npm run build && cd ..",
+    "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -31,7 +30,7 @@
     "react-router-dom": "^7.7.0",
     "recharts": "^3.1.0",
     "stripe": "^14.0.0",
-    "swiper": "^12.0.3",
+    "swiper": "^12.1.1",
     "twemoji": "^14.0.2"
   },
   "devDependencies": {

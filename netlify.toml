@@ -5,44 +5,10 @@
   command = "npm run build"
   publish = "dist"
   
-# Routing
-
-# 1) Root serves marketing site landing page (force = true to override SPA fallback)
+# Routing - SPA fallback for all routes
+# React Router handles: /, /terms, /privacy, /login, /app/*
 [[redirects]]
-  from = "/"
-  to = "/marketing-dist/index.html"
-  status = 200
-  force = true
-
-# 2) Public legal/support pages
-[[redirects]]
-  from = "/privacy"
-  to = "/marketing-dist/privacy.html"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/terms"
-  to = "/marketing-dist/terms.html"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/support"
-  to = "/marketing-dist/support.html"
-  status = 200
-  force = true
-
-# 3) Login page - serves the web app (React Router handles /login route)
-[[redirects]]
-  from = "/login"
-  to = "/index.html"
-  status = 200
-
-# 4) App shell under /app - SPA redirect so React Router works on refresh
-#    Only /app/* falls back to index.html; static assets are still served directly.
-[[redirects]]
-  from = "/app/*"
+  from = "/*"
   to = "/index.html"
   status = 200
 

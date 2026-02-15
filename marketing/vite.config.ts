@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   root: '.',
-  base: './', // Use relative paths so it works when served from /marketing-dist/
+  base: '/marketing-dist/', // Absolute path so assets load correctly when served from root
   build: {
     outDir: 'dist',
     emptyOutDir: true,
