@@ -39,7 +39,7 @@ export default function PostPurchaseWelcomeScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="dark-content" />
       
       <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         {/* Logo */}
@@ -103,7 +103,7 @@ export default function PostPurchaseWelcomeScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#fef7f2',
   },
   content: {
     flex: 1,
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 36,
     fontWeight: '800',
-    color: '#fff',
+    color: '#1a1a2e',
     textAlign: 'center',
     marginBottom: 10,
     letterSpacing: -0.5,
@@ -157,11 +157,11 @@ const styles = StyleSheet.create({
   featureText: {
     fontSize: 17,
     fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: '#374151',
   },
   infoText: {
     fontSize: 15,
-    color: 'rgba(255, 255, 255, 0.45)',
+    color: 'rgba(0, 0, 0, 0.45)',
     textAlign: 'center',
     lineHeight: 22,
     paddingHorizontal: 16,

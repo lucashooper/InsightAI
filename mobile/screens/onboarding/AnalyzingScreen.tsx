@@ -58,7 +58,7 @@ export default function AnalyzingScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#000',
+        backgroundColor: '#fef7f2',
     },
     content: {
         flex: 1,
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     statusText: {
         fontSize: 29,
         fontWeight: '600',
-        color: '#e5e7eb',
+        color: '#374151',
         textAlign: 'center',
         marginBottom: 60,
         letterSpacing: 0.3,

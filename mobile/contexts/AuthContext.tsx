@@ -244,6 +244,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         nonce,
       });
 
+      if (!error && data?.user) {
+        // Extract name from Apple credential (only provided on first sign-in)
+        const fullName = credential.fullName;
+        let displayName = '';
+        
+        if (fullName?.givenName && fullName?.familyName) {
+          displayName = `${fullName.givenName} ${fullName.familyName}`;
+        } else if (fullName?.givenName) {
+          displayName = fullName.givenName;
+        }
+
+        // Save name to profile if provided by Apple
+        if (displayName) {
+          console.log('[AUTH] Apple provided name:', displayName);
+          try {
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .upsert({
+                id: data.user.id,
+                username: displayName,
+                updated_at: new Date().toISOString(),
+              });
+            
+            if (profileError) {
+              console.error('[AUTH] Failed to save Apple name to profile:', profileError);
+            } else {
+              console.log('[AUTH] ✅ Apple name saved to profile');
+              // Mark onboarding as complete since Apple provided the name
+              await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+              console.log('[AUTH] ✅ Onboarding marked complete for Apple Sign-In');
+            }
+          } catch (err) {
+            console.error('[AUTH] Error saving Apple name:', err);
+          }
+        }
+      }
+
       return { error };
     } catch (error: any) {
       if (error.code === 'ERR_REQUEST_CANCELED') {

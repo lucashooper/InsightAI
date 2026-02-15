@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar, Animat
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import OnboardingBackground from '../../components/OnboardingBackground';
+import SunoGradient from '../../components/onboarding/SunoGradient';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
@@ -57,16 +57,16 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="light-content" />
+            <StatusBar barStyle="dark-content" />
 
-            <OnboardingBackground />
+            <SunoGradient />
             
             {/* Back Button */}
             <TouchableOpacity
                 style={styles.backButton}
                 onPress={() => navigation.goBack()}
             >
-                <Ionicons name="chevron-back" size={28} color="#fff" />
+                <Ionicons name="chevron-back" size={28} color="#6b7280" />
             </TouchableOpacity>
 
             {/* Logo */}
@@ -108,7 +108,7 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#000',
+        backgroundColor: '#fef7f2',
     },
     backButton: {
         position: 'absolute',
@@ -152,13 +152,13 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 36,
         fontWeight: '700',
-        color: '#fff',
+        color: '#1a1a2e',
         marginBottom: 16,
         textAlign: 'center',
     },
     subtitle: {
         fontSize: 18,
-        color: '#9ca3af',
+        color: '#6b7280',
         textAlign: 'center',
         lineHeight: 26,
     },

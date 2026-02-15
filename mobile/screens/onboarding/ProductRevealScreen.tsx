@@ -14,7 +14,7 @@ export default function ProductRevealScreen({ navigation }: any) {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="light-content" />
+            <StatusBar barStyle="dark-content" />
 
             <View style={styles.phoneSection}>
                 <Image
@@ -64,7 +64,7 @@ export default function ProductRevealScreen({ navigation }: any) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#000',
+        backgroundColor: '#fef7f2',
         paddingHorizontal: isTablet ? 48 : 24,
         paddingTop: isTablet ? 80 : 60,
         paddingBottom: isTablet ? 70 : 50,
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     taglineMain: {
         fontSize: sf(34),
         fontWeight: '600',
-        color: '#fff',
+        color: '#1a1a2e',
         textAlign: 'center',
         marginBottom: 4,
     },
@@ -121,8 +121,6 @@ const styles = StyleSheet.create({
         paddingVertical: 20,
         borderRadius: 999,
         gap: 10,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.15)',
     },
     buttonText: {
         fontSize: sf(19),
@@ -136,11 +134,11 @@ const styles = StyleSheet.create({
     },
     signInText: {
         fontSize: sf(15),
-        color: 'rgba(255, 255, 255, 0.6)',
+        color: 'rgba(0, 0, 0, 0.45)',
         textAlign: 'center',
     },
     signInTextBold: {
-        color: '#fff',
+        color: '#1a1a2e',
         fontWeight: '600',
     },
     loginLink: {
@@ -149,11 +147,11 @@ const styles = StyleSheet.create({
     },
     loginLinkText: {
         fontSize: 15,
-        color: 'rgba(255, 255, 255, 0.7)',
+        color: 'rgba(0, 0, 0, 0.5)',
         textAlign: 'center',
     },
     loginLinkBold: {
         fontWeight: '700',
-        color: '#fff',
+        color: '#1a1a2e',
     },
 });

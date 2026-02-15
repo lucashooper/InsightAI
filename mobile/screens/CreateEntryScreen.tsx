@@ -559,19 +559,21 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           </TouchableOpacity>
           <TouchableOpacity 
             onPress={handleAnalyze}
-            style={[
-              styles.analyzeButton,
-              content.trim().length < 5 && styles.analyzeButtonDisabled
-            ]}
             disabled={content.trim().length < 5}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
+            style={[
+              { borderRadius: 12, overflow: 'hidden', minWidth: 80, alignItems: 'center', shadowColor: '#8b5cf6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 },
+              content.trim().length < 5 && { opacity: 0.4 }
+            ]}
           >
-            <Text style={[
-              styles.analyzeText,
-              content.trim().length < 5 && styles.analyzeTextDisabled
-            ]}>
-              Analyze
-            </Text>
+            <LinearGradient
+              colors={['#8b5cf6', '#7c3aed']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, minWidth: 80, alignItems: 'center' }}
+            >
+              <Text style={{ color: '#ffffff', fontSize: 15, fontWeight: '600' }}>Analyze</Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </View>

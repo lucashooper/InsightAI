@@ -74,14 +74,14 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="dark-content" />
       
       {/* Back Button */}
       <TouchableOpacity 
         style={styles.backButton}
         onPress={() => navigation.goBack()}
       >
-        <Ionicons name="chevron-back" size={28} color="#fff" />
+        <Ionicons name="chevron-back" size={28} color="#6b7280" />
       </TouchableOpacity>
 
       <View style={styles.content}>
@@ -98,7 +98,7 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
             style={styles.authButton}
             onPress={handleAppleAuth}
           >
-            <Ionicons name="logo-apple" size={24} color="#fff" />
+            <Ionicons name="logo-apple" size={24} color="#1a1a2e" />
             <Text style={styles.authButtonText}>Continue with Apple</Text>
           </TouchableOpacity>
 
@@ -116,7 +116,7 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
             style={styles.authButton}
             onPress={handleEmailAuth}
           >
-            <Ionicons name="mail-outline" size={20} color="#fff" />
+            <Ionicons name="mail-outline" size={20} color="#1a1a2e" />
             <Text style={styles.authButtonText}>Continue with email</Text>
           </TouchableOpacity>
         </View>
@@ -148,7 +148,7 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#fef7f2',
   },
   backButton: {
     position: 'absolute',
@@ -171,12 +171,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: sf(32),
     fontWeight: '700',
-    color: '#fff',
+    color: '#1a1a2e',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: sf(16),
-    color: 'rgba(255, 255, 255, 0.6)',
+    color: 'rgba(0, 0, 0, 0.5)',
   },
   authOptions: {
     gap: isTablet ? 16 : 12,
@@ -188,15 +188,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: isTablet ? 16 : 12,
     height: isTablet ? 64 : 56,
     gap: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: 'rgba(0, 0, 0, 0.08)',
   },
   authButtonText: {
-    color: '#fff',
+    color: '#1a1a2e',
     fontSize: sf(16),
     fontWeight: '600',
   },
@@ -212,11 +212,11 @@ const styles = StyleSheet.create({
   },
   signInText: {
     fontSize: sf(15),
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: 'rgba(0, 0, 0, 0.5)',
   },
   signInTextBold: {
     fontWeight: '700',
-    color: '#fff',
+    color: '#1a1a2e',
   },
   skipButton: {
     position: 'absolute',
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
   },
   skipButtonText: {
     fontSize: sf(16),
-    color: '#60a5fa',
+    color: '#8b5cf6',
     fontWeight: '500',
   },
 });

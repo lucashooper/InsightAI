@@ -153,7 +153,7 @@ export default function AnalysisCompleteScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#000',
+        backgroundColor: '#fef7f2',
     },
     content: {
         flex: 1,
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     headline: {
         fontSize: 36,
         fontWeight: '700',
-        color: '#fff',
+        color: '#1a1a2e',
         textAlign: 'center',
         marginBottom: 20,
         letterSpacing: -0.5,
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     },
     reassurance: {
         fontSize: 19,
-        color: '#9ca3af',
+        color: '#6b7280',
         textAlign: 'center',
         fontWeight: '400',
         letterSpacing: 0,

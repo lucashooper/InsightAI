@@ -10,7 +10,7 @@ const InstagramSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48
 
 const FacebookSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#1877F2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`;
 
-const TikTokSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#fff" d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>`;
+const TikTokSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#000000" d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>`;
 
 const YouTubeSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#FF0000" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`;
 
@@ -54,18 +54,18 @@ export default function PillOption({ label, icon, selected, onPress }: PillOptio
   };
 
   const getIconBackgroundColor = () => {
-    // Black background for all social media icons for consistency
+    // Soft neutral background for social media icons on light theme
     if (['Instagram', 'Facebook', 'TikTok', 'YouTube', 'Google'].includes(label)) {
-      return '#000000';
+      return 'rgba(0, 0, 0, 0.04)';
     }
-    return 'rgba(255,255,255,0.08)';
+    return 'rgba(139, 92, 246, 0.08)';
   };
 
   const isSocialMedia = ['Instagram', 'Facebook', 'TikTok', 'YouTube', 'Google'].includes(label);
   const svgLogo = getSvgLogo();
 
-  const selectedColors = ['#38bdf8', '#6366f1'] as const;
-  const defaultColors = ['rgba(15, 23, 42, 0.55)', 'rgba(2, 6, 23, 0.45)'] as const;
+  const selectedColors = ['#a855f7', '#8b5cf6'] as const;
+  const defaultColors = ['rgba(255, 255, 255, 0.7)', 'rgba(255, 255, 255, 0.5)'] as const;
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -117,7 +117,7 @@ export default function PillOption({ label, icon, selected, onPress }: PillOptio
               <Ionicons
                 name={icon as any}
                 size={18}
-                color={selected ? '#0b1220' : '#cbd5e1'}
+                color={selected ? '#ffffff' : '#6b7280'}
               />
             ) : null}
           </View>
@@ -128,7 +128,7 @@ export default function PillOption({ label, icon, selected, onPress }: PillOptio
         <Ionicons
           name="chevron-forward"
           size={18}
-          color={selected ? '#e0f2fe' : '#94a3b8'}
+          color={selected ? '#ffffff' : '#9ca3af'}
         />
 
         <View pointerEvents="none" style={styles.insetOverlay} />
@@ -177,9 +177,9 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(0, 0, 0, 0.04)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
+    borderColor: 'rgba(0, 0, 0, 0.06)',
   },
   iconChipSelected: {
     backgroundColor: 'rgba(255, 255, 255, 0.85)',
@@ -187,21 +187,21 @@ const styles = StyleSheet.create({
   },
   pillDefault: {
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.14)',
+    borderColor: 'rgba(0, 0, 0, 0.06)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.18,
-    shadowRadius: 18,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
   },
   pillSelected: {
-    borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.40)',
-    shadowColor: '#38bdf8',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.28,
-    shadowRadius: 20,
-    elevation: 10,
+    borderWidth: 1.5,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 8,
   },
   insetOverlay: {
     position: 'absolute',
@@ -209,14 +209,14 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.5)',
     opacity: 0.5,
   },
   label: {
     flex: 1,
     fontSize: 17,
     fontWeight: '600',
-    color: '#f8fafc',
+    color: '#374151',
     letterSpacing: -0.2,
   },
   labelSelected: {

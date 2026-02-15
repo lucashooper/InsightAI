@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, ActivityIndicator, Alert, Image } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, ActivityIndicator, Alert, Image, Dimensions, FlatList, NativeSyntheticEvent, NativeScrollEvent, Linking } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -14,6 +14,24 @@ import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
+const phoneImages = [
+  require('../../public/phone-images/Insight-Main-Page-Phone.png'),
+  require('../../public/phone-images/Insight-Dashboard-Page-Phone.png'),
+  require('../../public/phone-images/Insight-Journal-Page-Phone.png'),
+  require('../../public/phone-images/Insight-Playbook-Page-Phone.png'),
+];
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const CAROUSEL_IMAGE_WIDTH = SCREEN_WIDTH;
+const PHONE_DISPLAY_HEIGHT = SCREEN_HEIGHT * 0.42;
+
+const slideHeadings = [
+  'Understand Yourself\nwith Insight',
+  'Track Your Growth\n& Progress',
+  'Reflect Deeper,\nLive Better',
+  'Your Personal\nPlaybook',
+];
+
 const ENTITLEMENT_ID = 'InsightAI Pro';
 
 export default function PaywallScreen({ navigation, route }: any) {
@@ -22,7 +40,9 @@ export default function PaywallScreen({ navigation, route }: any) {
   const [offering, setOffering] = useState<PurchasesOffering | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<'weekly' | 'monthly' | 'yearly'>('monthly');
+  const [selectedPlan, setSelectedPlan] = useState<'weekly' | 'monthly' | 'yearly'>('yearly');
+  const [activeCarouselIndex, setActiveCarouselIndex] = useState(0);
+  const carouselRef = useRef<FlatList>(null);
 
   useEffect(() => {
     const loadOfferings = async () => {
@@ -433,191 +453,160 @@ export default function PaywallScreen({ navigation, route }: any) {
     }
   };
 
+  const onCarouselScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const index = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+    setActiveCarouselIndex(index);
+  };
+
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
+      <SunoGradient />
+      <StatusBar barStyle="dark-content" />
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      {/* Scrollable top content */}
+      <ScrollView style={styles.topContent} showsVerticalScrollIndicator={false} nestedScrollEnabled>
         {/* Logo */}
         <View style={styles.logoContainer}>
           <Image source={insightLogo} style={styles.logo} resizeMode="cover" />
         </View>
 
-        {/* Header */}
+        {/* Dynamic heading that changes per slide */}
         <View style={styles.header}>
-          <Text style={styles.title}>Choose your plan</Text>
-          <Text style={styles.subtitle}>
-            Unlock clarity, growth, and daily insights.
-          </Text>
+          <Text style={styles.title}>{slideHeadings[activeCarouselIndex]}</Text>
         </View>
 
-        {/* Pricing Plans */}
-        <View style={styles.plansContainer}>
-          {/* 1-Week Plan */}
+        {/* Phone Image Carousel - half phone with fade */}
+        <View style={styles.carouselContainer}>
+          <FlatList
+            ref={carouselRef}
+            data={phoneImages}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={onCarouselScroll}
+            scrollEventThrottle={16}
+            snapToInterval={SCREEN_WIDTH}
+            decelerationRate="fast"
+            renderItem={({ item }) => (
+              <View style={styles.carouselSlide}>
+                <Image source={item} style={styles.carouselImage} resizeMode="contain" />
+              </View>
+            )}
+            keyExtractor={(_, index) => index.toString()}
+          />
+          {/* White fade at bottom of phone */}
+          <LinearGradient
+            colors={['rgba(254, 247, 242, 0)', 'rgba(254, 247, 242, 0.6)', 'rgba(254, 247, 242, 1)']}
+            locations={[0, 0.5, 1]}
+            style={styles.phoneFade}
+            pointerEvents="none"
+          />
+        </View>
+
+        {/* Pagination Dots */}
+        <View style={styles.dotsContainer}>
+          {phoneImages.map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.dot,
+                activeCarouselIndex === index && styles.dotActive,
+              ]}
+            />
+          ))}
+        </View>
+
+        {/* Compact 3-in-a-row Pricing */}
+        <View style={styles.plansRow}>
+          {/* Weekly */}
           <TouchableOpacity
-            style={[styles.planCard, selectedPlan === 'weekly' && styles.planCardSelected]}
+            style={[styles.compactPlan, selectedPlan === 'weekly' && styles.compactPlanSelected]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setSelectedPlan('weekly');
             }}
             activeOpacity={0.8}
           >
-            <View style={styles.trialBadge}>
-              <Text style={styles.trialBadgeText}>3-DAY FREE TRIAL</Text>
-            </View>
-            <View style={styles.planHeader}>
-              <View style={styles.planTitleRow}>
-                <View style={[styles.radioButton, selectedPlan === 'weekly' && styles.radioButtonSelected]}>
-                  {selectedPlan === 'weekly' && <View style={styles.radioButtonInner} />}
-                </View>
-                <Text style={styles.planTitle}>1-Week Plan</Text>
-              </View>
-              <View style={styles.planPricing}>
-                <Text style={styles.planPrice}>$4.99</Text>
-                <Text style={styles.planPeriod}>per week</Text>
-              </View>
-            </View>
-            <Text style={styles.planDaily}>$0.71 per day</Text>
+            <Text style={[styles.compactPlanName, selectedPlan === 'weekly' && styles.compactPlanNameSelected]}>Weekly</Text>
+            <Text style={[styles.compactPlanDaily, selectedPlan === 'weekly' && styles.compactPlanDailySelected]}>$0.71 / day</Text>
+            <Text style={[styles.compactPlanPrice, selectedPlan === 'weekly' && styles.compactPlanPriceSelected]}>$4.99 per week</Text>
           </TouchableOpacity>
 
-          {/* Monthly Plan - MOST POPULAR */}
+          {/* Yearly - Best Value */}
           <TouchableOpacity
-            style={[styles.planCard, selectedPlan === 'monthly' && styles.planCardSelected]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setSelectedPlan('monthly');
-            }}
-            activeOpacity={0.8}
-          >
-            <View style={styles.popularBadge}>
-              <Text style={styles.popularBadgeText}>MOST POPULAR</Text>
-            </View>
-            <View style={styles.planHeader}>
-              <View style={styles.planTitleRow}>
-                <View style={[styles.radioButton, selectedPlan === 'monthly' && styles.radioButtonSelected]}>
-                  {selectedPlan === 'monthly' && <View style={styles.radioButtonInner} />}
-                </View>
-                <Text style={styles.planTitle}>Monthly Plan</Text>
-              </View>
-              <View style={styles.planPricing}>
-                <Text style={styles.planPrice}>$17.99</Text>
-                <Text style={styles.planPeriod}>per month</Text>
-              </View>
-            </View>
-            <Text style={styles.planDaily}>$0.60 per day</Text>
-          </TouchableOpacity>
-
-          {/* Yearly Plan */}
-          <TouchableOpacity
-            style={[styles.planCard, selectedPlan === 'yearly' && styles.planCardSelected]}
+            style={[styles.compactPlan, selectedPlan === 'yearly' && styles.compactPlanSelected]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setSelectedPlan('yearly');
             }}
             activeOpacity={0.8}
           >
-            <View style={styles.planHeader}>
-              <View style={styles.planTitleRow}>
-                <View style={[styles.radioButton, selectedPlan === 'yearly' && styles.radioButtonSelected]}>
-                  {selectedPlan === 'yearly' && <View style={styles.radioButtonInner} />}
-                </View>
-                <Text style={styles.planTitle}>1-Year Plan</Text>
-              </View>
-              <View style={styles.planPricing}>
-                <Text style={styles.planPrice}>$69.99</Text>
-                <Text style={styles.planPeriod}>per year</Text>
-              </View>
+            <View style={styles.saveBadge}>
+              <Text style={styles.saveBadgeText}>Save 73%</Text>
             </View>
-            <Text style={styles.planDaily}>$0.19 per day</Text>
+            <Text style={[styles.compactPlanName, selectedPlan === 'yearly' && styles.compactPlanNameSelected]}>Yearly</Text>
+            <Text style={[styles.compactPlanDaily, selectedPlan === 'yearly' && styles.compactPlanDailySelected]}>$0.19 / day</Text>
+            <Text style={[styles.compactPlanPrice, selectedPlan === 'yearly' && styles.compactPlanPriceSelected]}>$69.99 per year</Text>
+          </TouchableOpacity>
+
+          {/* Monthly */}
+          <TouchableOpacity
+            style={[styles.compactPlan, selectedPlan === 'monthly' && styles.compactPlanSelected]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setSelectedPlan('monthly');
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.compactPlanName, selectedPlan === 'monthly' && styles.compactPlanNameSelected]}>Monthly</Text>
+            <Text style={[styles.compactPlanDaily, selectedPlan === 'monthly' && styles.compactPlanDailySelected]}>$0.60 / day</Text>
+            <Text style={[styles.compactPlanPrice, selectedPlan === 'monthly' && styles.compactPlanPriceSelected]}>$17.99 per month</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Testimonial */}
-        <LinearGradient
-          colors={['rgba(88, 50, 150, 0.25)', 'rgba(50, 30, 90, 0.35)', 'rgba(30, 20, 60, 0.45)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={styles.testimonialContainer}
-        >
-          <View style={styles.starsRow}>
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Ionicons key={i} name="star" size={16} color="#fbbf24" />
+        {/* What you get */}
+        <View style={styles.whatYouGetContainer}>
+          <Text style={styles.whatYouGetTitle}>What you get:</Text>
+          <View style={styles.whatYouGetList}>
+            {[
+              'Unlimited AI-powered journal insights',
+              'Deep pattern & trigger detection',
+              'Personalized weekly summaries',
+              'Growth playbook & action plans',
+            ].map((item, i) => (
+              <View key={i} style={styles.whatYouGetItem}>
+                <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+                <Text style={styles.whatYouGetText}>{item}</Text>
+              </View>
             ))}
-          </View>
-          <Text style={styles.testimonialText}>
-            Insight has completely transformed how I process my thoughts. The AI insights help me understand patterns I never noticed before.
-          </Text>
-          <Text style={styles.testimonialAuthor}>— Jessica</Text>
-        </LinearGradient>
-
-        {/* Free vs Pro Comparison */}
-        <View style={styles.comparisonContainer}>
-          <View style={styles.comparisonColumn}>
-            <Text style={styles.comparisonTitle}>Free</Text>
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={18} color="#6b7280" />
-              <Text style={styles.featureText}>Daily journal</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={18} color="#6b7280" />
-              <Text style={styles.featureText}>Limited AI analysis</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="close-circle" size={18} color="#4b5563" />
-              <Text style={[styles.featureText, styles.featureDisabled]}>No weekly insights</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="close-circle" size={18} color="#4b5563" />
-              <Text style={[styles.featureText, styles.featureDisabled]}>No pattern tracking</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="close-circle" size={18} color="#4b5563" />
-              <Text style={[styles.featureText, styles.featureDisabled]}>No deep summaries</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="close-circle" size={18} color="#4b5563" />
-              <Text style={[styles.featureText, styles.featureDisabled]}>No trigger detection</Text>
-            </View>
-          </View>
-
-          <View style={styles.comparisonColumn}>
-            <Text style={[styles.comparisonTitle, styles.proTitle]}>Pro</Text>
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={18} color="#10b981" />
-              <Text style={styles.featureTextPro}>Unlimited insights</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={18} color="#10b981" />
-              <Text style={styles.featureTextPro}>Weekly summaries</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={18} color="#10b981" />
-              <Text style={styles.featureTextPro}>Deep pattern detection</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={18} color="#10b981" />
-              <Text style={styles.featureTextPro}>Trigger analysis</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={18} color="#10b981" />
-              <Text style={styles.featureTextPro}>Personalized guidance</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={18} color="#10b981" />
-              <Text style={styles.featureTextPro}>Streak protection</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={18} color="#10b981" />
-              <Text style={styles.featureTextPro}>Private processing</Text>
-            </View>
           </View>
         </View>
 
-        {/* CTA Button */}
+        {/* Testimonial */}
+        <View style={styles.testimonialContainer}>
+          <View style={styles.testimonialCard}>
+            <View style={styles.starsRow}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Ionicons key={star} name="star" size={14} color="#fbbf24" />
+              ))}
+            </View>
+            <Text style={styles.testimonialText}>
+              "Insight has completely changed how I understand my emotions. The AI insights are incredibly accurate and helpful."
+            </Text>
+            <Text style={styles.testimonialAuthor}>— Jessica M.</Text>
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* Sticky Bottom Footer */}
+      <View style={styles.stickyFooter}>
+        {/* Commitment Badge */}
+        <View style={styles.commitmentBadge}>
+          <Text style={styles.commitmentEmoji}>✅</Text>
+          <Text style={styles.commitmentText}>No Commitment, Cancel anytime.</Text>
+        </View>
+
+        {/* CTA Button - Purple gradient */}
         <TouchableOpacity
           style={[styles.ctaButton, isPurchasing && { opacity: 0.7 }]}
           activeOpacity={0.9}
@@ -625,7 +614,7 @@ export default function PaywallScreen({ navigation, route }: any) {
           disabled={isPurchasing || isLoading}
         >
           <LinearGradient
-            colors={['#a855f7', '#8b5cf6', '#7c3aed']}
+            colors={['#a855f7', '#8b5cf6']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.ctaGradient}
@@ -633,9 +622,7 @@ export default function PaywallScreen({ navigation, route }: any) {
             {isPurchasing ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.ctaText}>
-                {selectedPlan === 'weekly' ? 'Start free trial' : 'Subscribe now'}
-              </Text>
+              <Text style={styles.ctaText}>Start My Journey Today</Text>
             )}
           </LinearGradient>
         </TouchableOpacity>
@@ -643,18 +630,18 @@ export default function PaywallScreen({ navigation, route }: any) {
         {/* Footer Links */}
         <View style={styles.footer}>
           <TouchableOpacity onPress={handleRestorePurchases}>
-            <Text style={styles.footerLink}>Restore Purchases</Text>
+            <Text style={styles.footerLink}>Restore Purchase</Text>
           </TouchableOpacity>
           <Text style={styles.footerDivider}>•</Text>
-          <TouchableOpacity onPress={() => {}}>
-            <Text style={styles.footerLink}>Terms</Text>
+          <TouchableOpacity onPress={() => Linking.openURL('https://myinsightai.app/terms')}>
+            <Text style={styles.footerLink}>Terms & Conditions</Text>
           </TouchableOpacity>
           <Text style={styles.footerDivider}>•</Text>
-          <TouchableOpacity onPress={() => {}}>
-            <Text style={styles.footerLink}>Privacy</Text>
+          <TouchableOpacity onPress={() => Linking.openURL('https://myinsightai.app/privacy')}>
+            <Text style={styles.footerLink}>Privacy Policy</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -662,476 +649,251 @@ export default function PaywallScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#fef7f2',
   },
-  backgroundGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-  },
-  radialOverlay1: {
-    position: 'absolute',
-    top: -200,
-    right: -200,
-    width: 600,
-    height: 600,
-    borderRadius: 300,
-  },
-  radialOverlay2: {
-    position: 'absolute',
-    bottom: -100,
-    left: -200,
-    width: 700,
-    height: 700,
-    borderRadius: 350,
-  },
-  radialOverlay3: {
-    position: 'absolute',
-    top: '30%',
-    right: -100,
-    width: 500,
-    height: 500,
-    borderRadius: 250,
-  },
-  starsContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-  },
-  star: {
-    position: 'absolute',
-    backgroundColor: '#fff',
-    borderRadius: 1,
-  },
-  star1: {
-    width: 2,
-    height: 2,
-    top: '15%',
-    left: '20%',
-    opacity: 0.8,
-  },
-  star2: {
-    width: 1,
-    height: 1,
-    top: '25%',
-    left: '80%',
-    opacity: 0.6,
-  },
-  star3: {
-    width: 1.5,
-    height: 1.5,
-    top: '35%',
-    left: '15%',
-    opacity: 0.4,
-  },
-  star4: {
-    width: 1,
-    height: 1,
-    top: '45%',
-    left: '70%',
-    opacity: 0.7,
-  },
-  star5: {
-    width: 2,
-    height: 2,
-    top: '55%',
-    left: '30%',
-    opacity: 0.5,
-  },
-  star6: {
-    width: 1,
-    height: 1,
-    top: '65%',
-    left: '85%',
-    opacity: 0.6,
-  },
-  star7: {
-    width: 1.5,
-    height: 1.5,
-    top: '75%',
-    left: '25%',
-    opacity: 0.8,
-  },
-  star8: {
-    width: 1,
-    height: 1,
-    top: '20%',
-    left: '50%',
-    opacity: 0.5,
-  },
-  star9: {
-    width: 2,
-    height: 2,
-    top: '40%',
-    left: '90%',
-    opacity: 0.7,
-  },
-  star10: {
-    width: 1,
-    height: 1,
-    top: '80%',
-    left: '60%',
-    opacity: 0.4,
-  },
-  star11: {
-    width: 1.5,
-    height: 1.5,
-    top: '10%',
-    left: '40%',
-    opacity: 0.7,
-  },
-  star12: {
-    width: 1,
-    height: 1,
-    top: '30%',
-    left: '60%',
-    opacity: 0.5,
-  },
-  star13: {
-    width: 2,
-    height: 2,
-    top: '50%',
-    left: '10%',
-    opacity: 0.8,
-  },
-  star14: {
-    width: 1,
-    height: 1,
-    top: '70%',
-    left: '50%',
-    opacity: 0.6,
-  },
-  star15: {
-    width: 1.5,
-    height: 1.5,
-    top: '90%',
-    left: '80%',
-    opacity: 0.7,
-  },
-  star16: {
-    width: 1,
-    height: 1,
-    top: '18%',
-    left: '75%',
-    opacity: 0.4,
-  },
-  star17: {
-    width: 2,
-    height: 2,
-    top: '38%',
-    left: '35%',
-    opacity: 0.6,
-  },
-  star18: {
-    width: 1,
-    height: 1,
-    top: '58%',
-    left: '65%',
-    opacity: 0.5,
-  },
-  star19: {
-    width: 1.5,
-    height: 1.5,
-    top: '78%',
-    left: '15%',
-    opacity: 0.8,
-  },
-  star20: {
-    width: 1,
-    height: 1,
-    top: '12%',
-    left: '88%',
-    opacity: 0.6,
-  },
-  star21: {
-    width: 2,
-    height: 2,
-    top: '42%',
-    left: '22%',
-    opacity: 0.7,
-  },
-  star22: {
-    width: 1,
-    height: 1,
-    top: '62%',
-    left: '78%',
-    opacity: 0.4,
-  },
-  star23: {
-    width: 1.5,
-    height: 1.5,
-    top: '82%',
-    left: '42%',
-    opacity: 0.5,
-  },
-  star24: {
-    width: 1,
-    height: 1,
-    top: '28%',
-    left: '92%',
-    opacity: 0.7,
-  },
-  star25: {
-    width: 2,
-    height: 2,
-    top: '48%',
-    left: '52%',
-    opacity: 0.6,
-  },
-  scrollView: {
+  topContent: {
     flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: isTablet ? 80 : 24,
-    paddingTop: isTablet ? 90 : 72,
-    paddingBottom: isTablet ? 60 : 40,
+    paddingTop: isTablet ? 70 : 50,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 8,
   },
   logo: {
-    width: isTablet ? 140 : 100,
-    height: isTablet ? 140 : 100,
+    width: isTablet ? 90 : 70,
+    height: isTablet ? 90 : 70,
     opacity: 0.9,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 40,
-  },
-  title: {
-    fontSize: sf(36),
-    fontWeight: '700',
-    color: '#fff',
-    marginBottom: isTablet ? 16 : 12,
-    letterSpacing: -0.8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: sf(18),
-    color: '#a1a1aa',
-    textAlign: 'center',
-    fontWeight: '500',
-    lineHeight: sf(26),
-  },
-  subscriptionInfo: {
-    marginTop: 20,
-    marginBottom: 24,
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  noteText: {
-    fontSize: 13,
-    color: '#9ca3af',
-    textAlign: 'center',
-    lineHeight: 20,
-    fontWeight: '500',
-  },
-  plansContainer: {
-    gap: 12,
-    marginBottom: 32,
-  },
-  planCard: {
-    backgroundColor: '#0a0a0a',
-    borderRadius: isTablet ? 20 : 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    padding: isTablet ? 24 : 20,
-    position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  planCardSelected: {
-    backgroundColor: '#0a0a0a',
-    borderRadius: isTablet ? 20 : 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(168, 85, 247, 0.6)',
-    padding: isTablet ? 24 : 20,
-    position: 'relative',
-    shadowColor: '#a855f7',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 30,
-    elevation: 15,
-  },
-  planCardPopular: {
-    borderColor: '#3b82f6',
-  },
-  popularBadge: {
-    position: 'absolute',
-    top: -10,
-    left: '50%',
-    transform: [{ translateX: -55 }],
-    backgroundColor: '#3b82f6',
-    borderRadius: 999,
-    paddingVertical: 4,
-    paddingHorizontal: 16,
-    zIndex: 10,
-  },
-  popularBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#fff',
-    letterSpacing: 0.5,
-  },
-  planHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  planTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  radioButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#6b7280',
-    alignItems: 'center',
+    marginBottom: 4,
+    paddingHorizontal: 24,
+    minHeight: sf(80),
     justifyContent: 'center',
   },
-  radioButtonSelected: {
-    borderColor: '#a855f7',
-  },
-  radioButtonInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#a855f7',
-  },
-  planTitle: {
-    fontSize: sf(17),
+  title: {
+    fontSize: sf(28),
     fontWeight: '600',
-    color: '#fff',
+    color: '#1a1a2e',
+    letterSpacing: -0.5,
+    textAlign: 'center',
+    lineHeight: sf(36),
   },
-  planPricing: {
-    alignItems: 'flex-end',
+  // Carousel
+  carouselContainer: {
+    height: PHONE_DISPLAY_HEIGHT,
+    overflow: 'hidden',
+    position: 'relative',
   },
-  planPrice: {
-    fontSize: sf(22),
-    fontWeight: '700',
-    color: '#fff',
+  carouselSlide: {
+    width: SCREEN_WIDTH,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
   },
-  planPeriod: {
-    fontSize: sf(13),
-    color: '#9ca3af',
-    fontWeight: '500',
+  carouselImage: {
+    width: SCREEN_WIDTH * 0.72,
+    height: SCREEN_WIDTH * 0.72 * 2.1,
+    borderRadius: 28,
   },
-  planDaily: {
-    fontSize: sf(14),
-    color: '#9ca3af',
-    fontWeight: '500',
-    marginLeft: 36,
+  phoneFade: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 80,
   },
-  testimonialContainer: {
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 32,
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.3)',
+  dotsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+  },
+  dotActive: {
+    backgroundColor: '#8b5cf6',
+    width: 20,
+  },
+  // Compact pricing
+  plansRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 16,
+    paddingHorizontal: isTablet ? 80 : 24,
+  },
+  compactPlan: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    position: 'relative',
+  },
+  compactPlanSelected: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderColor: '#8b5cf6',
+    borderWidth: 2,
     shadowColor: '#8b5cf6',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
-    overflow: 'hidden',
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  compactPlanName: {
+    fontSize: sf(14),
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 4,
+  },
+  compactPlanNameSelected: {
+    color: '#1a1a2e',
+    fontWeight: '700',
+  },
+  compactPlanDaily: {
+    fontSize: sf(13),
+    fontWeight: '700',
+    color: '#6b7280',
+    marginBottom: 3,
+  },
+  compactPlanDailySelected: {
+    color: '#1a1a2e',
+  },
+  compactPlanPrice: {
+    fontSize: sf(10),
+    color: '#9ca3af',
+    fontWeight: '500',
+  },
+  compactPlanPriceSelected: {
+    color: '#6b7280',
+  },
+  saveBadge: {
+    position: 'absolute',
+    top: -10,
+    alignSelf: 'center',
+    backgroundColor: '#34d399',
+    borderRadius: 999,
+    paddingVertical: 3,
+    paddingHorizontal: 10,
+    zIndex: 10,
+  },
+  saveBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.3,
+  },
+  // What you get
+  whatYouGetContainer: {
+    marginBottom: 8,
+    paddingHorizontal: isTablet ? 80 : 24,
+  },
+  whatYouGetTitle: {
+    fontSize: sf(17),
+    fontWeight: '700',
+    color: '#1a1a2e',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  whatYouGetList: {
+    gap: 10,
+  },
+  whatYouGetItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  whatYouGetText: {
+    fontSize: sf(14),
+    color: '#374151',
+    fontWeight: '500',
+    flex: 1,
+  },
+  // Testimonial
+  testimonialContainer: {
+    paddingHorizontal: isTablet ? 80 : 24,
+    marginBottom: 16,
+  },
+  testimonialCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.06)',
   },
   starsRow: {
     flexDirection: 'row',
     gap: 4,
-    marginBottom: 12,
-    justifyContent: 'center',
+    marginBottom: 10,
   },
   testimonialText: {
-    fontSize: sf(15),
-    color: '#e5e7eb',
-    lineHeight: sf(22),
-    marginBottom: 12,
+    fontSize: sf(13),
+    color: '#374151',
+    lineHeight: sf(20),
     fontWeight: '400',
+    fontStyle: 'italic',
+    marginBottom: 8,
   },
   testimonialAuthor: {
-    fontSize: 13,
-    color: '#9ca3af',
-    fontWeight: '500',
-    textAlign: 'center',
+    fontSize: sf(12),
+    color: '#6b7280',
+    fontWeight: '600',
   },
-  comparisonContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 40,
-    paddingHorizontal: 8,
+  // Sticky footer
+  stickyFooter: {
+    paddingHorizontal: isTablet ? 80 : 24,
+    paddingBottom: isTablet ? 30 : 20,
+    paddingTop: 14,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  comparisonColumn: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 16,
-    padding: 16,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-  },
-  comparisonTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#9ca3af',
-    marginBottom: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  proTitle: {
-    color: '#10b981',
-  },
-  featureItem: {
+  commitmentBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
+    gap: 6,
+    marginBottom: 10,
   },
-  featureText: {
+  commitmentEmoji: {
+    fontSize: 14,
+  },
+  commitmentText: {
     fontSize: sf(13),
-    color: '#9ca3af',
-    flex: 1,
-  },
-  featureDisabled: {
     color: '#6b7280',
-    opacity: 0.6,
-  },
-  featureTextPro: {
-    fontSize: sf(13),
-    color: '#e5e7eb',
-    flex: 1,
+    fontWeight: '400',
   },
   ctaButton: {
     width: '100%',
     borderRadius: 999,
-    marginBottom: 24,
-    shadowColor: '#a855f7',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.6,
-    shadowRadius: 24,
-    elevation: 12,
+    marginBottom: 12,
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 10,
   },
   ctaGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: isTablet ? 22 : 18,
+    paddingVertical: isTablet ? 20 : 18,
     borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
   },
   ctaText: {
-    fontSize: sf(19),
+    fontSize: sf(17),
     fontWeight: '700',
     color: '#fff',
     letterSpacing: 0.3,
@@ -1140,48 +902,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
-    paddingBottom: 20,
+    gap: 6,
+    paddingBottom: 4,
+    marginTop: 6,
   },
   footerLink: {
-    fontSize: 13,
-    color: '#71717a',
+    fontSize: 10,
+    color: '#9ca3af',
     fontWeight: '500',
   },
   footerDivider: {
-    fontSize: 13,
-    color: '#52525b',
-  },
-  trialBadge: {
-    position: 'absolute',
-    top: -10,
-    left: '50%',
-    transform: [{ translateX: -70 }],
-    backgroundColor: '#10b981',
-    borderRadius: 999,
-    paddingVertical: 4,
-    paddingHorizontal: 16,
-  },
-  trialBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#fff',
-    letterSpacing: 0.5,
-  },
-  devSkipButton: {
-    marginBottom: 20,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    backgroundColor: '#10b981',
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#ffffff',
-  },
-  devSkipText: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#ffffff',
-    letterSpacing: 1,
+    fontSize: 10,
+    color: '#d1d5db',
   },
 });

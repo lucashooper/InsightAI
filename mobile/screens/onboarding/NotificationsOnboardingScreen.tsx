@@ -40,7 +40,7 @@ export default function NotificationsOnboardingScreen({ navigation }: Notificati
         style={styles.backButton}
         onPress={() => navigation.goBack()}
       >
-        <Ionicons name="chevron-back" size={28} color="#fff" />
+        <Ionicons name="chevron-back" size={28} color="#6b7280" />
       </TouchableOpacity>
 
       {/* Logo */}
@@ -79,7 +79,7 @@ export default function NotificationsOnboardingScreen({ navigation }: Notificati
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#fef7f2',
     paddingHorizontal: 24,
     paddingTop: 140,
     alignItems: 'center',
@@ -114,13 +114,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#fff',
+    color: '#1a1a2e',
     marginBottom: 16,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.6)',
+    color: 'rgba(0, 0, 0, 0.5)',
     marginBottom: 48,
     textAlign: 'center',
     lineHeight: 24,
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   },
   skipText: {
     fontSize: 15,
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: 'rgba(0, 0, 0, 0.5)',
     textAlign: 'center',
   },
 });

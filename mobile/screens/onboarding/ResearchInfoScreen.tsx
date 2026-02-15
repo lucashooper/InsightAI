@@ -1,11 +1,16 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Linking } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import LottieView from 'lottie-react-native';
+import SunoGradient from '../../components/onboarding/SunoGradient';
+
+const meditationLottie = require('../../public/animations/Stress Management.json');
 
 export default function ResearchInfoScreen({ navigation }: any) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const cardAnim = useRef(new Animated.Value(20)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -14,7 +19,7 @@ export default function ResearchInfoScreen({ navigation }: any) {
         duration: 800,
         useNativeDriver: true,
       }),
-      Animated.timing(cardAnim, {
+      Animated.timing(slideAnim, {
         toValue: 0,
         duration: 800,
         useNativeDriver: true,
@@ -24,50 +29,58 @@ export default function ResearchInfoScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={['#000000', '#0a0a0a', '#000000']}
-        style={styles.background}
-      />
+      <SunoGradient />
+
+      {/* Back Button */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="chevron-back" size={28} color="#6b7280" />
+      </TouchableOpacity>
 
       <View style={styles.content}>
         <Animated.View
           style={[
-            styles.cardContainer,
+            styles.mainContent,
             {
               opacity: fadeAnim,
-              transform: [{ translateY: cardAnim }],
+              transform: [{ translateY: slideAnim }],
             },
           ]}
         >
-          {/* Glass card */}
-          <View style={styles.card}>
-            <LinearGradient
-              colors={['rgba(255, 255, 255, 0.05)', 'rgba(255, 255, 255, 0.02)']}
-              style={styles.cardGradient}
-            >
-              {/* Headline */}
-              <Text style={styles.headline}>Backed by psychology</Text>
-
-              {/* Body text */}
-              <Text style={styles.bodyText}>
-                Research shows that reflective journaling improves emotional awareness and long-term wellbeing.
-              </Text>
-
-              {/* Citation */}
-              <Text style={styles.citation}>Advances in Psychiatric Treatment, 2005</Text>
-
-              {/* Learn more link */}
-              <TouchableOpacity
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  Linking.openURL('https://www.cambridge.org/core/journals/advances-in-psychiatric-treatment/article/emotional-and-physical-health-benefits-of-expressive-writing/ED2976A61F5DE56B46F07A1CE9EA9F9F');
-                }}
-                style={styles.learnMoreButton}
-              >
-                <Text style={styles.learnMoreText}>Learn more →</Text>
-              </TouchableOpacity>
-            </LinearGradient>
+          {/* Illustration */}
+          <View style={styles.illustrationContainer}>
+            <LottieView
+              source={meditationLottie}
+              autoPlay
+              loop
+              style={styles.illustration}
+            />
           </View>
+
+          {/* Headline */}
+          <Text style={styles.headline}>Grounded in{'\n'}psychology</Text>
+
+          {/* Body text */}
+          <Text style={styles.bodyText}>
+            Research shows that reflective journaling improves emotional awareness and long-term wellbeing.
+          </Text>
+
+          {/* Citation */}
+          <Text style={styles.citation}>Advances in Psychiatric Treatment, 2005</Text>
+
+          {/* Learn more link */}
+          <TouchableOpacity
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              Linking.openURL('https://www.cambridge.org/core/journals/advances-in-psychiatric-treatment/article/emotional-and-physical-health-benefits-of-expressive-writing/ED2976A61F5DE56B46F07A1CE9EA9F9F');
+            }}
+            style={styles.learnMoreButton}
+          >
+            <Text style={styles.learnMoreText}>Learn more</Text>
+            <Ionicons name="arrow-forward" size={16} color="#8b5cf6" />
+          </TouchableOpacity>
         </Animated.View>
       </View>
 
@@ -98,73 +111,73 @@ export default function ResearchInfoScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#fef7f2',
   },
-  background: {
+  backButton: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
+    top: 60,
+    left: 24,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
+    justifyContent: 'flex-start',
+    paddingHorizontal: 28,
+    paddingTop: 110,
   },
-  cardContainer: {
-    alignItems: 'center',
+  mainContent: {
+    alignItems: 'flex-start',
   },
-  card: {
-    width: '100%',
-    borderRadius: 24,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.3,
-    shadowRadius: 30,
-    elevation: 10,
+  illustrationContainer: {
+    alignSelf: 'center',
+    marginBottom: 28,
   },
-  cardGradient: {
-    padding: 32,
-    gap: 20,
+  illustration: {
+    width: 340,
+    height: 340,
   },
   headline: {
-    fontSize: 28,
-    fontWeight: '600',
-    color: '#fff',
-    letterSpacing: -0.5,
-    lineHeight: 34,
+    fontSize: 40,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    letterSpacing: -1.2,
+    lineHeight: 48,
+    marginBottom: 16,
   },
   bodyText: {
     fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
-    lineHeight: 24,
+    color: '#4a4a4a',
+    lineHeight: 26,
     fontWeight: '400',
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
+    marginBottom: 12,
   },
   citation: {
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.4)',
+    color: 'rgba(0, 0, 0, 0.35)',
     fontWeight: '500',
     letterSpacing: 0.5,
-    marginTop: 8,
+    marginBottom: 14,
   },
   learnMoreButton: {
-    alignSelf: 'flex-start',
-    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   learnMoreText: {
-    fontSize: 14,
-    color: '#a855f7',
-    fontWeight: '600',
-    letterSpacing: 0.3,
+    fontSize: 15,
+    color: '#8B5CF6',
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
   footer: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 28,
     paddingBottom: 50,
+    paddingTop: 16,
   },
   button: {
     width: '100%',

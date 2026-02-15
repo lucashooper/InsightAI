@@ -23,7 +23,7 @@ export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardin
         style={styles.backButton}
         onPress={() => navigation.goBack()}
       >
-        <Ionicons name="chevron-back" size={28} color="#fff" />
+        <Ionicons name="chevron-back" size={28} color="#6b7280" />
       </TouchableOpacity>
 
       {/* Logo */}
@@ -73,7 +73,7 @@ export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardin
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#fef7f2',
     paddingHorizontal: 24,
     paddingTop: 140,
     alignItems: 'center',
@@ -105,13 +105,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#fff',
+    color: '#1a1a2e',
     marginBottom: 12,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.6)',
+    color: 'rgba(0, 0, 0, 0.5)',
     marginBottom: 24,
     textAlign: 'center',
     lineHeight: 24,
@@ -126,15 +126,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
     borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(0, 0, 0, 0.06)',
   },
   featureText: {
     fontSize: 16,
-    color: '#fff',
+    color: '#1a1a2e',
     marginLeft: 16,
     fontWeight: '500',
   },
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
   },
   skipText: {
     fontSize: 15,
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: 'rgba(0, 0, 0, 0.4)',
     textAlign: 'center',
   },
 });

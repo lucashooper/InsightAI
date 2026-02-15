@@ -274,7 +274,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="light-content" />
+            <StatusBar barStyle="dark-content" />
 
             <SunoGradient />
 
@@ -297,7 +297,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                     <Ionicons
                         name="arrow-back"
                         size={24}
-                        color="#9ca3af"
+                        color="#6b7280"
                     />
                 </TouchableOpacity>
                 <View style={styles.progressBarContainer}>
@@ -324,7 +324,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                             {/* Glassmorphic Card */}
                             <View style={styles.glassCard}>
                                 <LinearGradient
-                                    colors={['rgba(255, 255, 255, 0.08)', 'rgba(255, 255, 255, 0.03)']}
+                                    colors={['rgba(255, 255, 255, 0.6)', 'rgba(255, 255, 255, 0.35)']}
                                     style={styles.glassCardGradient}
                                 >
                                     {/* Title */}
@@ -366,7 +366,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                             <Text style={{
                                 fontSize: currentStep.type === 'info' ? 26 : 28,
                                 fontWeight: currentStep.type === 'info' ? '500' : '600',
-                                color: '#fff',
+                                color: '#1a1a2e',
                                 textAlign: 'left',
                                 lineHeight: currentStep.type === 'info' ? 34 : 36,
                                 letterSpacing: -0.3,
@@ -402,7 +402,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                             <Text style={{
                                 fontSize: 14,              // ⚡ Heading size
                                 fontWeight: '600',         // ⚡ Boldness
-                                color: 'rgba(226, 232, 240, 0.55)',
+                                color: 'rgba(0, 0, 0, 0.35)',
                                 textTransform: 'uppercase',
                                 letterSpacing: 1.5,
                                 marginBottom: 20,
@@ -428,20 +428,20 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                                     outputRange: [20, 0],
                                                 })
                                             }],
-                                            backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                                            backgroundColor: 'rgba(139, 92, 246, 0.08)',
                                             borderRadius: 24,
                                             paddingVertical: 16,
                                             paddingHorizontal: 20,
                                             borderWidth: 1.5,
-                                            borderColor: 'rgba(99, 102, 241, 0.28)',
+                                            borderColor: 'rgba(139, 92, 246, 0.15)',
                                             flexDirection: 'row',
                                             alignItems: 'center',
                                             gap: 14,
                                             minWidth: '85%',
                                             justifyContent: 'center',
-                                            shadowColor: '#38bdf8',
+                                            shadowColor: '#8b5cf6',
                                             shadowOffset: { width: 0, height: 4 },
-                                            shadowOpacity: 0.2,
+                                            shadowOpacity: 0.1,
                                             shadowRadius: 12,
                                         }}
                                     >
@@ -451,9 +451,9 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                             borderRadius: 17,
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            backgroundColor: 'rgba(255,255,255,0.10)',
+                                            backgroundColor: 'rgba(139, 92, 246, 0.12)',
                                             borderWidth: 1,
-                                            borderColor: 'rgba(255,255,255,0.10)',
+                                            borderColor: 'rgba(139, 92, 246, 0.15)',
                                         }}>
                                             <Ionicons
                                                 name={
@@ -464,12 +464,12 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                                             : 'sparkles-outline'
                                                 }
                                                 size={18}
-                                                color="#e0f2fe"
+                                                color="#7c3aed"
                                             />
                                         </View>
                                         <Text style={{
                                             fontSize: 15,
-                                            color: '#f8fafc',
+                                            color: '#374151',
                                             fontWeight: '600',
                                             textAlign: 'center',
                                         }}>
@@ -511,7 +511,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                 disabled={!textInputValue.trim()}
                             >
                                 <LinearGradient
-                                    colors={textInputValue.trim() ? ['#a855f7', '#8b5cf6'] : ['#4b5563', '#374151']}
+                                    colors={textInputValue.trim() ? ['#a855f7', '#8b5cf6'] : ['#d1d5db', '#c4c8cf']}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 1 }}
                                     style={styles.continueGradient}
@@ -558,7 +558,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                 disabled={!selectedOption}
                             >
                                 <LinearGradient
-                                    colors={selectedOption ? ['#38bdf8', '#6366f1'] : ['#4b5563', '#374151']}
+                                    colors={selectedOption ? ['#a855f7', '#8b5cf6'] : ['#d1d5db', '#c4c8cf']}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 1 }}
                                     style={styles.continueGradient}
@@ -617,7 +617,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                 }}
                             >
                                 <LinearGradient
-                                    colors={['#38bdf8', '#6366f1']}
+                                    colors={['#a855f7', '#8b5cf6']}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 1 }}
                                     style={styles.sliderContinueGradient}
@@ -662,7 +662,7 @@ const styles = StyleSheet.create({
     // ========================================
     container: {
         flex: 1,
-        backgroundColor: '#000',
+        backgroundColor: '#fef7f2',
     },
     topRow: {
         flexDirection: 'row',
@@ -721,26 +721,27 @@ const styles = StyleSheet.create({
     // ========================================
     // Main question/info page title
     title: {
-        fontSize: sf(32),
+        fontSize: sf(34),
         fontWeight: '700',
-        color: '#fff',
+        color: '#1a1a2e',
         marginBottom: isTablet ? 24 : 16,
-        lineHeight: sf(40),
+        lineHeight: sf(42),
+        letterSpacing: -1.2,
     },
     // Info page title variant
     infoTitle: {
         fontSize: sf(30),
         fontWeight: '800',
-        letterSpacing: -0.8,
+        letterSpacing: -1.2,
         lineHeight: sf(38),
     },
     // Subtitle text below title
     subtitle: {
-        fontSize: sf(17),
-        color: '#d1d5db',
+        fontSize: sf(16),
+        color: '#555555',
         lineHeight: sf(26),
-        marginBottom: isTablet ? 32 : 24,
-        fontWeight: '500',
+        marginBottom: isTablet ? 36 : 28,
+        fontWeight: '400',
     },
     
     // ========================================
@@ -847,7 +848,7 @@ const styles = StyleSheet.create({
     },
     featureText: {
         fontSize: 16,
-        color: '#e0e7ff',
+        color: '#374151',
         fontWeight: '500',
     },
     
@@ -901,7 +902,7 @@ const styles = StyleSheet.create({
     },
     optionText: {
         fontSize: sf(16),
-        color: '#e0e7ff',
+        color: '#374151',
         fontWeight: '500',
     },
     
@@ -923,11 +924,11 @@ const styles = StyleSheet.create({
         borderRadius: 999,
         marginTop: 16,
         marginBottom: 24,
-        shadowColor: '#38bdf8',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.6,
-        shadowRadius: 24,
-        elevation: 12,
+        shadowColor: '#8b5cf6',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.3,
+        shadowRadius: 16,
+        elevation: 8,
     },
     continueButtonDisabled: {
         shadowOpacity: 0,
@@ -941,8 +942,6 @@ const styles = StyleSheet.create({
         paddingVertical: isTablet ? 22 : 18,
         borderRadius: 999,
         gap: 10,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.15)',
     },
     continueText: {
         fontSize: sf(18),
@@ -976,7 +975,7 @@ const styles = StyleSheet.create({
     primaryButton: {
         width: '100%',
         borderRadius: 999,
-        shadowColor: '#38bdf8',
+        shadowColor: '#8b5cf6',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 12,
@@ -989,8 +988,6 @@ const styles = StyleSheet.create({
         paddingVertical: 18,
         borderRadius: 999,
         gap: 8,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
     },
     primaryButtonText: {
         fontSize: 18,
@@ -1005,27 +1002,27 @@ const styles = StyleSheet.create({
     sliderContent: {
         flex: 1,
         justifyContent: 'center',
-        paddingTop: 10,
+        paddingTop: 20,
     },
     sliderValueRow: {
         alignItems: 'center',
-        marginBottom: 32,
+        marginBottom: 40,
     },
     sliderValueText: {
-        fontSize: 56,
-        fontWeight: '700',
-        color: '#ffffff',
-        letterSpacing: -1.2,
-        textShadowColor: 'rgba(56, 189, 248, 0.4)',
+        fontSize: 72,
+        fontWeight: '800',
+        color: '#1a1a2e',
+        letterSpacing: -2,
+        textShadowColor: 'rgba(139, 92, 246, 0.15)',
         textShadowOffset: { width: 0, height: 0 },
         textShadowRadius: 20,
     },
     sliderHintText: {
-        marginTop: 8,
-        fontSize: 12,
-        fontWeight: '700',
-        color: 'rgba(226, 232, 240, 0.5)',
-        letterSpacing: 1.2,
+        marginTop: 10,
+        fontSize: 11,
+        fontWeight: '600',
+        color: 'rgba(0, 0, 0, 0.25)',
+        letterSpacing: 1.5,
         textTransform: 'uppercase',
     },
     sliderTrackContainer: {
@@ -1038,26 +1035,26 @@ const styles = StyleSheet.create({
         position: 'absolute',
         left: 0,
         right: 0,
-        height: 14,
+        height: 8,
         borderRadius: 999,
-        backgroundColor: 'rgba(255,255,255,0.12)',
+        backgroundColor: 'rgba(0,0,0,0.06)',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.08)',
+        borderColor: 'rgba(0,0,0,0.04)',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
     },
     sliderTrackFillWrap: {
         position: 'absolute',
         left: 0,
-        height: 14,
+        height: 8,
         borderRadius: 999,
         overflow: 'hidden',
-        shadowColor: '#06b6d4',
+        shadowColor: '#8b5cf6',
         shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.6,
-        shadowRadius: 16,
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
     },
     sliderTrackFill: {
         flex: 1,
@@ -1070,21 +1067,19 @@ const styles = StyleSheet.create({
     sliderContinueButton: {
         width: '100%',
         borderRadius: 999,
-        marginTop: 18,
+        marginTop: 24,
         marginBottom: 24,
-        shadowColor: '#38bdf8',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.35,
-        shadowRadius: 24,
-        elevation: 12,
+        shadowColor: '#8b5cf6',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.3,
+        shadowRadius: 16,
+        elevation: 8,
     },
     sliderContinueGradient: {
         paddingVertical: 18,
         borderRadius: 999,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.14)',
     },
     sliderContinueText: {
         fontSize: 18,
@@ -1144,10 +1139,10 @@ const styles = StyleSheet.create({
         borderRadius: 24,
         overflow: 'hidden',
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.12)',
+        borderColor: 'rgba(0, 0, 0, 0.06)',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 20 },
-        shadowOpacity: 0.4,
+        shadowOpacity: 0.08,
         shadowRadius: 30,
         elevation: 10,
     },
@@ -1158,20 +1153,20 @@ const styles = StyleSheet.create({
     glassCardTitle: {
         fontSize: 26,
         fontWeight: '600',
-        color: '#fff',
+        color: '#1a1a2e',
         letterSpacing: -0.5,
         lineHeight: 32,
     },
     glassCardBody: {
         fontSize: 15,
-        color: 'rgba(255, 255, 255, 0.85)',
+        color: 'rgba(0, 0, 0, 0.65)',
         lineHeight: 23,
         fontWeight: '400',
         letterSpacing: 0.1,
     },
     glassCardCitation: {
         fontSize: 11,
-        color: 'rgba(255, 255, 255, 0.4)',
+        color: 'rgba(0, 0, 0, 0.35)',
         fontWeight: '500',
         letterSpacing: 0.5,
         marginTop: 8,
@@ -1203,7 +1198,7 @@ const styles = StyleSheet.create({
     },
     apaStudyText: {
         fontSize: 13,
-        color: '#d1d5db',
+        color: '#6b7280',
         fontWeight: '500',
         lineHeight: 20,
         textAlign: 'center',
@@ -1229,13 +1224,13 @@ const styles = StyleSheet.create({
     premiumFeatureText: {
         flex: 1,
         fontSize: 16,
-        color: '#e5e7eb',
+        color: '#374151',
         fontWeight: '500',
         lineHeight: 24,
     },
     featureBold: {
         fontWeight: '700',
-        color: '#fff',
+        color: '#1a1a2e',
     },
     
     // ========================================
@@ -1247,14 +1242,14 @@ const styles = StyleSheet.create({
         paddingTop: 40,
     },
     nameInput: {
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        backgroundColor: 'rgba(255, 255, 255, 0.5)',
         borderRadius: isTablet ? 20 : 16,
         borderWidth: 1.5,
         borderColor: 'rgba(168, 85, 247, 0.3)',
         paddingVertical: isTablet ? 22 : 18,
         paddingHorizontal: isTablet ? 24 : 20,
         fontSize: sf(18),
-        color: '#fff',
+        color: '#1a1a2e',
         fontWeight: '500',
         marginBottom: 24,
     },

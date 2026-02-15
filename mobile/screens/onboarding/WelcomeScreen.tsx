@@ -37,7 +37,7 @@ export default function WelcomeScreen({ navigation }: any) {
     return (
         <TouchableWithoutFeedback onPress={handleContinue}>
             <View style={styles.container}>
-                <StatusBar barStyle="light-content" />
+                <StatusBar barStyle="dark-content" />
 
                 <View style={styles.content}>
                     {/* Logo + Heading - Text Centered, Logo Hanging Left */}
@@ -67,7 +67,7 @@ export default function WelcomeScreen({ navigation }: any) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#000',
+        backgroundColor: '#fef7f2',
     },
     content: {
         flex: 1,
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     brandNameTop: {
         fontSize: sf(44),
         fontWeight: '700',
-        color: '#fff',
+        color: '#1a1a2e',
         letterSpacing: -1.2,
         marginBottom: 0,
     },

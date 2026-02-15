@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, LayoutAnimation, Platform, UIManager, Animated, Modal, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, LayoutAnimation, Platform, UIManager, Animated, Modal, KeyboardAvoidingView, Image, Keyboard, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import Purchases from 'react-native-purchases';
+import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
 import { mobileAiService } from '../services/mobileAiService';
 import { useTheme } from '../contexts/ThemeContext';
@@ -118,6 +120,14 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
   const [premiumUpsellVisible, setPremiumUpsellVisible] = useState(false);
   const [playbookPreviewVisible, setPlaybookPreviewVisible] = useState(false);
   const [playbookDraft, setPlaybookDraft] = useState({ title: '', description: '', emoji: '📈' });
+  const [showQuickActions, setShowQuickActions] = useState(false);
+  const [showMoodPicker, setShowMoodPicker] = useState(false);
+  const [mood, setMood] = useState(initialEntry?.mood || '');
+  const [attachedPhotos, setAttachedPhotos] = useState<Array<{ uri: string; width: number; height: number }>>([]);
+  const quickActionsAnim = useRef(new Animated.Value(0)).current;
+  const controlsBottomAnim = useRef(new Animated.Value(20)).current;
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const scrollViewRef = useRef<ScrollView>(null);
   
   const toggleAccordion = (section: 'strengths' | 'growth') => {
     // Configure smooth animation
@@ -522,6 +532,53 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
     });
   };
 
+  const MOODS = ['😊', '😌', '😔', '😤', '😰', '🥰', '😴', '🤔', '😢', '🙂', '😁', '😐'];
+
+  const toggleQuickActions = () => {
+    const toValue = showQuickActions ? 0 : 1;
+    setShowQuickActions(!showQuickActions);
+    Animated.spring(quickActionsAnim, { toValue, useNativeDriver: true, friction: 8 }).start();
+  };
+
+  const handleAddPhotos = async () => {
+    setShowQuickActions(false);
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Photos Access', 'Please allow photo library access in Settings to add photos.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsMultipleSelection: true,
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets.length > 0) {
+        const newPhotos = result.assets.map(a => ({ uri: a.uri, width: a.width || 300, height: a.height || 300 }));
+        setAttachedPhotos(prev => [...prev, ...newPhotos]);
+        setIsModified(true);
+      }
+    } catch (error) {
+      console.error('[EntryDetail] Photo picker error:', error);
+      Alert.alert('Error', 'Failed to open photo library.');
+    }
+  };
+
+  const handleMoodSelect = (selectedMood: string) => {
+    setMood(selectedMood);
+    setShowMoodPicker(false);
+  };
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener('keyboardWillShow', (e) => {
+      Animated.timing(controlsBottomAnim, { toValue: e.endCoordinates.height - 20, duration: 250, useNativeDriver: false }).start();
+    });
+    const hideSub = Keyboard.addListener('keyboardWillHide', () => {
+      Animated.timing(controlsBottomAnim, { toValue: 20, duration: 250, useNativeDriver: false }).start();
+    });
+    return () => { showSub.remove(); hideSub.remove(); };
+  }, []);
+
   if (!entry) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -542,59 +599,115 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="rgba(255, 255, 255, 0.7)" />
+          <Ionicons name="arrow-back" size={24} color={theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.7)'} />
         </TouchableOpacity>
         <View style={styles.headerRight}>
-          {(!structuredInsights || isModified) && (
-            <TouchableOpacity 
-              onPress={() => handleAnalyzeEntry()}
-              disabled={analyzing}
-              style={[
-                styles.analyzeHeaderButton,
-                (!entry?.content || analyzing) && styles.analyzeHeaderButtonDisabled
-              ]}
-              activeOpacity={0.8}
-            >
-              {analyzing ? (
-                <ActivityIndicator size="small" color="#ffffff" />
-              ) : (
-                <LinearGradient
-                  colors={['#8b5cf6', '#7c3aed']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.analyzeHeaderGradient}
-                >
-                  <Text style={styles.analyzeHeaderText}>
-                    {structuredInsights ? 'Re-analyze' : 'Analyze'}
-                  </Text>
-                </LinearGradient>
-              )}
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity 
+            onPress={() => setShowMoodPicker(!showMoodPicker)} 
+            style={styles.backButton}
+          >
+            {mood ? (
+              <Text style={{ fontSize: 24 }}>{mood}</Text>
+            ) : (
+              <Ionicons name="happy-outline" size={24} color={theme.name === 'light' ? theme.colors.primaryText : 'rgba(255, 255, 255, 0.7)'} />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity 
+            onPress={() => handleAnalyzeEntry()}
+            disabled={analyzing}
+            style={[
+              styles.analyzeHeaderButton,
+              (!editableContent?.trim() || analyzing) && styles.analyzeHeaderButtonDisabled
+            ]}
+            activeOpacity={0.8}
+          >
+            {analyzing ? (
+              <ActivityIndicator size="small" color="#ffffff" />
+            ) : (
+              <LinearGradient
+                colors={['#8b5cf6', '#7c3aed']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.analyzeHeaderGradient}
+              >
+                <Text style={styles.analyzeHeaderText}>
+                  {structuredInsights ? 'Re-analyze' : 'Analyze'}
+                </Text>
+              </LinearGradient>
+            )}
+          </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+      {/* Mood Picker Overlay */}
+      {showMoodPicker && (
+        <>
+          <Pressable style={styles.overlayBackdrop} onPress={() => setShowMoodPicker(false)} />
+          <View style={styles.moodPickerOverlay}>
+            <BlurView intensity={80} tint="dark" style={styles.blurContainer}>
+              <LinearGradient colors={['rgba(139, 92, 246, 0.15)', 'rgba(99, 102, 241, 0.1)']} style={styles.glassmorphicContainer}>
+                <Text style={styles.moodPickerTitle}>How are you feeling?</Text>
+                <View style={styles.moodGrid}>
+                  {MOODS.map((m) => (
+                    <TouchableOpacity
+                      key={m}
+                      style={[styles.moodOption, mood === m && styles.moodOptionActive]}
+                      onPress={() => handleMoodSelect(m)}
+                    >
+                      <Text style={styles.moodEmoji}>{m}</Text>
+                      {mood === m && (
+                        <View style={styles.checkmarkContainer}>
+                          <Ionicons name="checkmark-circle" size={16} color="#8b5cf6" />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </LinearGradient>
+            </BlurView>
+          </View>
+        </>
+      )}
+
+      <ScrollView ref={scrollViewRef} style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.entryContainer}>
           <TextInput
-            style={styles.titleInput}
+            style={[styles.titleInput, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}
             value={editableTitle}
             onChangeText={setEditableTitle}
             placeholder="Untitled Entry"
-            placeholderTextColor="rgba(255, 255, 255, 0.3)"
+            placeholderTextColor={theme.name === 'light' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.3)'}
             autoFocus={false}
           />
-          <Text style={styles.metaLine}>
+          <Text style={[styles.metaLine, { color: theme.name === 'light' ? 'rgba(0,0,0,0.4)' : 'rgba(255, 255, 255, 0.5)' }]}>
             {formatDate(entry.created_at)}
           </Text>
+
+          {/* Attached Photo Thumbnails - inline above content */}
+          {attachedPhotos.length > 0 && (
+            <View style={styles.photoGrid}>
+              {attachedPhotos.map((photo, index) => (
+                <View key={index} style={styles.photoThumbWrap}>
+                  <Image source={{ uri: photo.uri }} style={styles.photoThumb} resizeMode="cover" />
+                  <TouchableOpacity
+                    style={styles.photoRemoveBtn}
+                    onPress={() => setAttachedPhotos(prev => prev.filter((_, i) => i !== index))}
+                  >
+                    <Ionicons name="close-circle" size={22} color="#ef4444" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
+
           <TextInput
-            style={styles.contentInput}
+            style={[styles.contentInput, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}
             value={editableContent}
             onChangeText={setEditableContent}
             multiline
             textAlignVertical="top"
             placeholder="What's on your mind?"
-            placeholderTextColor="rgba(255, 255, 255, 0.3)"
+            placeholderTextColor={theme.name === 'light' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.3)'}
             autoFocus={false}
           />
           
@@ -774,6 +887,52 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
           )}
         </View>
       </ScrollView>
+
+      {/* Bottom-Left Quick Actions Button */}
+      <Animated.View style={[styles.quickActionsButton, { bottom: controlsBottomAnim }]} pointerEvents="box-none">
+        <TouchableOpacity onPress={toggleQuickActions} activeOpacity={0.8}>
+          <LinearGradient
+            colors={theme.name === 'light' ? ['#8b5cf6', '#7c3aed'] : ['rgba(139, 92, 246, 0.3)', 'rgba(99, 102, 241, 0.2)']}
+            style={styles.fabGradient}
+          >
+            <Ionicons name={showQuickActions ? 'close' : 'add'} size={28} color="#ffffff" />
+          </LinearGradient>
+        </TouchableOpacity>
+      </Animated.View>
+
+      {/* Quick Actions Overlay */}
+      {showQuickActions && (
+        <Animated.View style={[styles.quickActionsOverlay, { opacity: quickActionsAnim, transform: [{ translateY: quickActionsAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}>
+          <BlurView intensity={80} tint="dark" style={styles.quickActionsBlur}>
+            <LinearGradient colors={['rgba(139, 92, 246, 0.15)', 'rgba(99, 102, 241, 0.1)']} style={styles.quickActionsContainer}>
+              <TouchableOpacity style={styles.quickActionItem} onPress={handleAddPhotos}>
+                <Ionicons name="image" size={20} color="rgba(255, 255, 255, 0.8)" />
+                <Text style={styles.quickActionText}>Add photos</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </BlurView>
+        </Animated.View>
+      )}
+
+      {/* Bottom-Right Go Deeper Button */}
+      <Animated.View style={[styles.sparkleButton, { bottom: controlsBottomAnim }]}>
+        <TouchableOpacity
+          onPress={() => handleAnalyzeEntry()}
+          disabled={analyzing || !editableContent?.trim()}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={['#8b5cf6', '#6d28d9']}
+            style={[styles.sparkleFabGradient, (!editableContent?.trim() || analyzing) && { opacity: 0.4 }]}
+          >
+            {analyzing ? (
+              <Ionicons name="hourglass" size={24} color="#ffffff" />
+            ) : (
+              <Ionicons name="sparkles" size={24} color="#ffffff" />
+            )}
+          </LinearGradient>
+        </TouchableOpacity>
+      </Animated.View>
 
       <ImmersiveAnalysisOverlay
         visible={analysisOverlayVisible}
@@ -1234,5 +1393,172 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  // Mood picker
+  overlayBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 99,
+  },
+  moodPickerOverlay: {
+    position: 'absolute',
+    top: 120,
+    left: 20,
+    right: 20,
+    zIndex: 100,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  blurContainer: {
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  glassmorphicContainer: {
+    padding: 24,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+  },
+  moodPickerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  moodGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'center',
+  },
+  moodOption: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  moodOptionActive: {
+    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+    borderColor: '#8b5cf6',
+    borderWidth: 2,
+  },
+  moodEmoji: {
+    fontSize: 28,
+  },
+  checkmarkContainer: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    backgroundColor: '#000',
+    borderRadius: 10,
+  },
+  // Photo thumbnails
+  photoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  photoThumbWrap: {
+    position: 'relative',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  photoThumb: {
+    width: 90,
+    height: 90,
+    borderRadius: 12,
+  },
+  photoRemoveBtn: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 11,
+  },
+  // Quick actions & FAB buttons
+  quickActionsButton: {
+    position: 'absolute',
+    bottom: 30,
+    left: 24,
+    zIndex: 10,
+  },
+  fabGradient: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  quickActionsOverlay: {
+    position: 'absolute',
+    bottom: 100,
+    left: 24,
+    zIndex: 9,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  quickActionsBlur: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  quickActionsContainer: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+    gap: 4,
+  },
+  quickActionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    gap: 12,
+    borderRadius: 8,
+  },
+  quickActionText: {
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  sparkleButton: {
+    position: 'absolute',
+    bottom: 30,
+    right: 24,
+    zIndex: 10,
+  },
+  sparkleFabGradient: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
 });
