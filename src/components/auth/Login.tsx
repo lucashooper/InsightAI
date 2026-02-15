@@ -81,7 +81,7 @@ const Login: React.FC<LoginProps> = ({ onSwitchToSignup }) => {
         <div className="auth-header">
           <div className="logo-container">
             <img 
-              src="/InsightAI-Logo-Transparent.png" 
+              src="/Insight-Logo-nobg.webp" 
               alt="InsightAI" 
               className="auth-logo"
               style={{ maxWidth: '80px', height: 'auto' }}
