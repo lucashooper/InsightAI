@@ -1571,8 +1571,7 @@ h1, h2, h3, h4, h5, h6 {
 /* Premium Footer */
 .footer-premium {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
+  background: transparent;
   padding: 3rem 0;
 }
 

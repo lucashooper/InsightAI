@@ -15,7 +15,7 @@ const HomePage: React.FC = () => {
       {/* Navigation */}
       <nav className="main-nav">
         <div className="nav-logo">
-          <img src="/InsightAI-New-Logo.png" alt="Insight" />
+          <img src="/InsightAI-Logo-Transparent.png" alt="Insight" style={{ height: '40px', width: 'auto' }} />
         </div>
         <div className="nav-links">
           <a 

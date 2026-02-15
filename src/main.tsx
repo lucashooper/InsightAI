@@ -31,34 +31,7 @@ history.replaceState = function(...args) {
   return originalReplaceState.apply(this, args);
 };
 
-// Track page loads to detect reload loops
-const loadCount = parseInt(sessionStorage.getItem('app_load_count') || '0') + 1;
-sessionStorage.setItem('app_load_count', loadCount.toString());
-const loadTime = new Date().toISOString();
-console.log(`🟢 main.tsx executing (page load #${loadCount}) at ${loadTime}`);
-console.log(`🟢 Current URL: ${window.location.href}`);
-console.log(`🟢 Referrer: ${document.referrer || 'none'}`);
-
-if (loadCount > 3) {
-  console.error(`🚨 RELOAD LOOP DETECTED! Page has loaded ${loadCount} times.`);
-  console.error('🚨 Stopping execution to prevent infinite loop');
-  
-  // Clear the counter so user can retry
-  sessionStorage.removeItem('app_load_count');
-  
-  document.body.innerHTML = `
-    <div style="padding: 40px; font-family: system-ui; background: #000; color: #fff; min-height: 100vh;">
-      <h1 style="color: #ef4444;">⚠️ Reload Loop Detected</h1>
-      <p>The app has reloaded ${loadCount} times. This indicates an infinite loop.</p>
-      <p><strong>Current URL:</strong> ${window.location.href}</p>
-      <p><strong>Check the console</strong> for navigation logs to see what's causing the reload.</p>
-      <button onclick="sessionStorage.clear(); localStorage.clear(); location.href='/';" style="padding: 12px 24px; background: #8b5cf6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin-top: 20px;">
-        Clear All Storage & Go to Home
-      </button>
-    </div>
-  `;
-  throw new Error('Reload loop detected - stopping execution');
-}
+// Reload loop detection removed - was causing false positives on legitimate navigation
 
 createRoot(document.getElementById('root')!).render(
   <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>

@@ -28,19 +28,19 @@ const Starfield: React.FC = () => {
     setCanvasSize();
     window.addEventListener('resize', setCanvasSize);
 
-    // Create stars - MUCH more subtle
+    // Create stars - Very subtle, minimal movement
     const stars: Star[] = [];
-    const starCount = 15; // Reduced from 150 to 15 for subtlety
+    const starCount = 20;
 
     for (let i = 0; i < starCount; i++) {
       stars.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        size: Math.random() * 1.5 + 0.5, // 0.5-2px (smaller)
-        opacity: Math.random() * 0.2 + 0.15, // 0.15-0.35 (much dimmer)
-        twinkleSpeed: Math.random() * 0.01 + 0.005, // Slower twinkle
-        driftX: (Math.random() - 0.5) * 0.05, // Slower drift
-        driftY: (Math.random() - 0.5) * 0.05,
+        size: Math.random() * 1.2 + 0.4,
+        opacity: Math.random() * 0.15 + 0.1,
+        twinkleSpeed: Math.random() * 0.005 + 0.002,
+        driftX: (Math.random() - 0.5) * 0.01, // Much slower drift
+        driftY: (Math.random() - 0.5) * 0.01,
       });
     }
 
