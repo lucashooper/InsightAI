@@ -56,6 +56,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  // Helper function to sync subscription status to Supabase
+  const syncSubscriptionToSupabase = async (userId: string, customerInfo: any) => {
+    try {
+      // Determine subscription tier based on active entitlements
+      let tier = 'free';
+      
+      console.log('[SUBSCRIPTION SYNC] 🔍 Checking entitlements:', customerInfo.entitlements.active);
+      
+      if (customerInfo.entitlements.active['pro']) {
+        tier = 'pro';
+        console.log('[SUBSCRIPTION SYNC] ✨ Pro entitlement detected');
+      }
+      
+      console.log('[SUBSCRIPTION SYNC] 📤 Updating Supabase with tier:', tier);
+      
+      // Update Supabase user_profiles table
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ subscription_tier: tier })
+        .eq('user_id', userId);
+      
+      if (error) {
+        console.error('[SUBSCRIPTION SYNC] ❌ Failed to update Supabase:', error);
+      } else {
+        console.log('[SUBSCRIPTION SYNC] ✅ Successfully synced to Supabase - tier:', tier);
+      }
+    } catch (error) {
+      console.error('[SUBSCRIPTION SYNC] ❌ Error:', error);
+    }
+  };
+
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
@@ -82,6 +113,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     });
 
+    // Set up RevenueCat listener for subscription changes
+    const revenueCatListener = Purchases.addCustomerInfoUpdateListener(async (customerInfo) => {
+      console.log('[REVENUECAT LISTENER] Subscription status changed');
+      if (user?.id) {
+        await syncSubscriptionToSupabase(user.id, customerInfo);
+      }
+    });
+
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
@@ -94,6 +133,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await Purchases.logIn(session.user.id);
           // Set user email for better analytics
           await Purchases.setEmail(session.user.email || '');
+          
+          // Sync initial subscription status to Supabase
+          const customerInfo = await Purchases.getCustomerInfo();
+          await syncSubscriptionToSupabase(session.user.id, customerInfo);
         } catch (error) {
           console.log('RevenueCat user identification error:', error);
         }
@@ -209,6 +252,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('[AUTH] Supabase signInWithIdToken error:', error.message);
         } else {
           console.log('[AUTH] Google Sign-In successful, user:', data.user?.email);
+          
+          // Handle Google Sign-In profile setup (similar to Apple)
+          if (data?.user) {
+            const googleName = userInfo.data?.user?.name || userInfo.user?.name || '';
+            const email = data.user.email || '';
+            
+            // Generate username from Google name or email
+            let displayName = googleName;
+            if (!displayName && email) {
+              displayName = email.split('@')[0].replace(/[._]/g, ' ');
+              displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
+            } else if (!displayName) {
+              displayName = 'Insight User';
+            }
+            
+            console.log('[AUTH] Google Sign-In - saving username:', displayName);
+            try {
+              const { error: profileError } = await supabase
+                .from('user_profiles')
+                .upsert({
+                  user_id: data.user.id,
+                  username: displayName,
+                  email: data.user.email,
+                  updated_at: new Date().toISOString(),
+                });
+              
+              if (profileError) {
+                console.error('[AUTH] Failed to save Google profile:', profileError);
+              } else {
+                console.log('[AUTH] ✅ Google profile saved');
+              }
+              
+              // Mark onboarding complete for Google Sign-In
+              await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+              await AsyncStorage.setItem('CACHED_USERNAME', displayName);
+              console.log('[AUTH] ✅ Onboarding marked complete for Google Sign-In');
+            } catch (err) {
+              console.error('[AUTH] Error saving Google profile:', err);
+            }
+          }
         }
         
         return { error };
@@ -245,6 +328,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (!error && data?.user) {
+        // APPLE COMPLIANCE: Always skip onboarding for Apple Sign-In users
+        // Apple provides name/email via Authentication Services framework
+        // We must NOT ask users for this information again
+        
         // Extract name from Apple credential (only provided on first sign-in)
         const fullName = credential.fullName;
         let displayName = '';
@@ -253,31 +340,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           displayName = `${fullName.givenName} ${fullName.familyName}`;
         } else if (fullName?.givenName) {
           displayName = fullName.givenName;
+        } else {
+          // Apple didn't provide name (repeat sign-in)
+          // Generate default username from email to comply with Apple guidelines
+          const email = data.user.email || '';
+          if (email) {
+            // Use email prefix as username (e.g., "john.doe@example.com" -> "john.doe")
+            displayName = email.split('@')[0].replace(/[._]/g, ' ');
+            // Capitalize first letter
+            displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
+          } else {
+            // Fallback to generic name if no email
+            displayName = 'Insight User';
+          }
+          console.log('[AUTH] Apple did not provide name, generated default:', displayName);
         }
 
-        // Save name to profile if provided by Apple
-        if (displayName) {
-          console.log('[AUTH] Apple provided name:', displayName);
-          try {
-            const { error: profileError } = await supabase
-              .from('profiles')
-              .upsert({
-                id: data.user.id,
-                username: displayName,
-                updated_at: new Date().toISOString(),
-              });
-            
-            if (profileError) {
-              console.error('[AUTH] Failed to save Apple name to profile:', profileError);
-            } else {
-              console.log('[AUTH] ✅ Apple name saved to profile');
-              // Mark onboarding as complete since Apple provided the name
-              await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
-              console.log('[AUTH] ✅ Onboarding marked complete for Apple Sign-In');
-            }
-          } catch (err) {
-            console.error('[AUTH] Error saving Apple name:', err);
+        // ALWAYS save username and mark onboarding complete for Apple users
+        console.log('[AUTH] Apple Sign-In - saving username:', displayName);
+        try {
+          const { error: profileError } = await supabase
+            .from('user_profiles')
+            .upsert({
+              user_id: data.user.id,
+              username: displayName,
+              email: data.user.email,
+              updated_at: new Date().toISOString(),
+            });
+          
+          if (profileError) {
+            console.error('[AUTH] Failed to save Apple profile:', profileError);
+          } else {
+            console.log('[AUTH] ✅ Apple profile saved');
           }
+          
+          // CRITICAL: Always mark onboarding complete for Apple Sign-In
+          // This prevents asking for name/email which violates Apple guidelines
+          await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+          await AsyncStorage.setItem('CACHED_USERNAME', displayName);
+          console.log('[AUTH] ✅ Onboarding marked complete for Apple Sign-In (compliance)');
+        } catch (err) {
+          console.error('[AUTH] Error saving Apple profile:', err);
         }
       }
 

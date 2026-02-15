@@ -79,14 +79,12 @@ const Login: React.FC<LoginProps> = ({ onSwitchToSignup }) => {
       
       <div className="auth-card">
         <div className="auth-header">
-          <div className="logo-container">
-            <img 
-              src="/Insight-Logo-nobg.webp" 
-              alt="InsightAI" 
-              className="auth-logo"
-              style={{ maxWidth: '80px', height: 'auto' }}
-            />
-          </div>
+          <img 
+            src="/Insight-Logo-nobg.webp" 
+            alt="InsightAI" 
+            className="auth-logo"
+            style={{ maxWidth: '80px', height: 'auto', marginBottom: '1.5rem' }}
+          />
           <h1 className="auth-title">Sign in to Insight</h1>
         </div>
 

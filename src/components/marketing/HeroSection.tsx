@@ -1,6 +1,15 @@
 import React from 'react';
+import PhoneCarousel from './PhoneCarousel';
 
 const HeroSection: React.FC = () => {
+  // Phone mockup images from mobile app
+  const phoneImages = [
+    '/phone-images/Insight-Main-Page-Phone.png',
+    '/phone-images/Insight-Journal-Page-Phone.png',
+    '/phone-images/Insight-Dashboard-Page-Phone.png',
+    '/phone-images/Insight-Playbook-Page-Phone.png',
+  ];
+
   return (
     <section className="hero-section">
       <div className="hero-content">
@@ -15,18 +24,9 @@ const HeroSection: React.FC = () => {
           Join Insight
         </a>
         
-        {/* Dashboard Preview - simplified without slider */}
-        <div className="dashboard-preview-premium" style={{ marginTop: '60px' }}>
-          <img 
-            src="/Dashboard.png" 
-            alt="Insight Dashboard" 
-            style={{ 
-              width: '100%', 
-              maxWidth: '900px', 
-              borderRadius: '16px',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
-            }} 
-          />
+        {/* Phone Carousel */}
+        <div style={{ marginTop: '60px' }}>
+          <PhoneCarousel images={phoneImages} />
         </div>
       </div>
     </section>

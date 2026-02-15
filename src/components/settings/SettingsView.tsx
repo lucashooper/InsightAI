@@ -9,6 +9,7 @@ import { importDiaryEntries } from '../../utils/importDiaryEntries';
 import { usageTrackingService } from '../../services/usageTrackingService';
 import { feedbackService } from '../../services/feedbackService';
 import { MigrationButton } from './MigrationButton';
+import SubscriptionModal from './SubscriptionModal';
 import './settings.css';
 import '../../styles/page-layout.css';
 import '../../styles/settings-layout.css';
@@ -35,10 +36,11 @@ const SettingsView: React.FC = () => {
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [feedbackSuccess, setFeedbackSuccess] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
   // Load settings only once on mount
   useEffect(() => {
-    console.log('🔄 [SettingsView] Initial mount - loading settings');
+    console.log(' [SettingsView] Initial mount - loading settings');
 
     // Load saved settings
     const savedReminders = localStorage.getItem('insightai-reminders-enabled');
@@ -88,22 +90,24 @@ const SettingsView: React.FC = () => {
 
   // Load usage statistics once on mount
   useEffect(() => {
-    console.log('📊 [SettingsView] Loading usage stats');
+    console.log(' [SettingsView] Loading usage stats');
     
     const loadUsageStats = async () => {
       try {
         const stats = await usageTrackingService.getTodayUsage('ai_analysis');
-        console.log('✅ [SettingsView] Stats loaded:', stats);
+        console.log(' [SettingsView] Stats loaded:', stats);
+        console.log(' [SettingsView] Tier from stats:', stats.tier);
+        console.log(' [SettingsView] Is Pro?', stats.tier === 'pro');
         setUsageStats(stats);
       } catch (error) {
-        console.error('❌ [SettingsView] Error loading stats:', error);
+        console.error(' [SettingsView] Error loading stats:', error);
       }
     };
     
     loadUsageStats();
   }, []); // Only run once on mount
 
-  const handleThemeChange = (newTheme: 'midnight' | 'dusk' | 'light') => {
+  const handleThemeChange = (newTheme: 'dark' | 'vibrant' | 'ocean' | 'forest' | 'sunset' | 'midnight' | 'light') => {
     setTheme(newTheme);
   };
 
@@ -263,33 +267,73 @@ const SettingsView: React.FC = () => {
 
   const themes = [
     {
-      id: 'midnight' as const,
-      name: 'Midnight',
-      description: 'Deep, calming darkness',
+      id: 'dark' as const,
+      name: 'Dark',
+      description: 'Pure black elegance',
       preview: {
-        primary: '#111827',
-        secondary: '#1F2937',
-        accent: '#38BDF8'
+        primary: '#000000',
+        secondary: '#0a0a0a',
+        accent: '#8b5cf6'
       }
     },
     {
-      id: 'dusk' as const,
-      name: 'Dusk',
-      description: 'Mystical purple twilight',
+      id: 'vibrant' as const,
+      name: 'Vibrant',
+      description: 'Bold purple energy',
       preview: {
-        primary: '#1C162C',
-        secondary: '#2D2A46',
-        accent: '#C482FF'
+        primary: '#0f0a1f',
+        secondary: '#1a0f2e',
+        accent: '#a855f7'
+      }
+    },
+    {
+      id: 'ocean' as const,
+      name: 'Ocean',
+      description: 'Deep blue serenity',
+      preview: {
+        primary: '#0a1628',
+        secondary: '#0f1f3a',
+        accent: '#3b82f6'
+      }
+    },
+    {
+      id: 'forest' as const,
+      name: 'Forest',
+      description: 'Natural green calm',
+      preview: {
+        primary: '#0a1f0f',
+        secondary: '#0f2e1a',
+        accent: '#10b981'
+      }
+    },
+    {
+      id: 'sunset' as const,
+      name: 'Sunset',
+      description: 'Warm orange glow',
+      preview: {
+        primary: '#1f0a0f',
+        secondary: '#2e0f1a',
+        accent: '#f97316'
+      }
+    },
+    {
+      id: 'midnight' as const,
+      name: 'Midnight',
+      description: 'Deep indigo night',
+      preview: {
+        primary: '#0a0a1f',
+        secondary: '#0f0f2e',
+        accent: '#6366f1'
       }
     },
     {
       id: 'light' as const,
       name: 'Light',
-      description: 'Clean, minimal brightness',
+      description: 'Warm minimalism',
       preview: {
-        primary: '#F8F8F8',
+        primary: '#FAF8F3',
         secondary: '#FFFFFF',
-        accent: '#3b82f6'
+        accent: '#FFA726'
       }
     }
   ];
@@ -323,7 +367,7 @@ const SettingsView: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
           style={{
-            background: 'rgba(255, 255, 255, 0.03)',
+            background: 'rgba(10, 10, 10, 0.95)',
             border: '1px solid rgba(255, 255, 255, 0.08)',
             borderRadius: '16px',
             padding: '24px 32px'
@@ -555,7 +599,7 @@ const SettingsView: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
         style={{
-          background: 'rgba(255, 255, 255, 0.03)',
+          background: 'rgba(10, 10, 10, 0.95)',
           border: '1px solid rgba(255, 255, 255, 0.08)',
           borderRadius: '16px',
           padding: '32px'
@@ -577,11 +621,11 @@ const SettingsView: React.FC = () => {
         <div style={{ marginBottom: '1.5rem' }}>
           <div style={{
             padding: '1.25rem',
-            background: usageStats?.tier === 'unlimited' 
+            background: usageStats?.tier === 'pro' 
               ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%)'
               : 'rgba(255, 255, 255, 0.05)',
             borderRadius: '12px',
-            border: usageStats?.tier === 'unlimited'
+            border: usageStats?.tier === 'pro'
               ? '1px solid rgba(139, 92, 246, 0.3)'
               : '1px solid rgba(255, 255, 255, 0.1)'
           }}>
@@ -590,72 +634,87 @@ const SettingsView: React.FC = () => {
               <span style={{ 
                 fontSize: '1.1rem', 
                 fontWeight: '600', 
-                color: usageStats?.tier === 'unlimited' ? '#a78bfa' : 'var(--text-primary)',
+                color: usageStats?.tier === 'pro' ? '#a78bfa' : 'var(--text-primary)',
                 textTransform: 'capitalize'
               }}>
-                {usageStats?.tier === 'unlimited' ? '✨ Unlimited' : usageStats?.tier === 'pro' ? 'Pro' : 'Free'}
+                {usageStats?.tier === 'pro' ? '✨ Pro' : 'Free'}
               </span>
             </div>
             
-            {usageStats && usageStats.tier === 'free' && (
-              <>
-                <div style={{ marginTop: '1rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>AI Analyses Today</span>
-                    <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-primary)' }}>
-                      {usageStats.count} / {usageStats.limit}
-                    </span>
-                  </div>
-                  <div style={{
-                    width: '100%',
-                    height: '8px',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    borderRadius: '4px',
-                    overflow: 'hidden'
-                  }}>
-                    <div style={{
-                      width: `${(usageStats.count / usageStats.limit) * 100}%`,
-                      height: '100%',
-                      background: usageStats.count >= usageStats.limit 
-                        ? 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)'
-                        : 'linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%)',
-                      transition: 'width 0.3s ease'
-                    }} />
-                  </div>
-                </div>
-                
-                <div style={{
-                  marginTop: '1rem',
-                  padding: '0.75rem',
-                  background: 'rgba(139, 92, 246, 0.1)',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(139, 92, 246, 0.2)'
-                }}>
-                  <p style={{ margin: 0, fontSize: '0.85rem', color: '#a78bfa', lineHeight: '1.5' }}>
-                    💡 <strong>Free Plan Includes:</strong><br />
+            <div style={{
+              marginTop: '1rem',
+              padding: '0.75rem',
+              background: 'rgba(139, 92, 246, 0.1)',
+              borderRadius: '8px',
+              border: '1px solid rgba(139, 92, 246, 0.2)'
+            }}>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: '#a78bfa', lineHeight: '1.5' }}>
+                {usageStats?.tier === 'pro' ? (
+                  <>
+                    ✨ <strong>Pro Plan Includes:</strong><br />
                     • 2 AI analyses per day<br />
                     • Unlimited journal entries<br />
+                    • Premium insights & features
+                  </>
+                ) : (
+                  <>
+                    💡 <strong>Free Plan Includes:</strong><br />
+                    • 0 AI analyses per day<br />
+                    • Unlimited journal entries<br />
                     • Basic insights
-                  </p>
-                </div>
-              </>
-            )}
+                  </>
+                )}
+              </p>
+            </div>
             
-            {usageStats && usageStats.tier === 'unlimited' && (
-              <div style={{
-                marginTop: '1rem',
-                padding: '0.75rem',
-                background: 'rgba(139, 92, 246, 0.15)',
-                borderRadius: '8px',
-                border: '1px solid rgba(139, 92, 246, 0.3)'
-              }}>
-                <p style={{ margin: 0, fontSize: '0.85rem', color: '#c4b5fd', lineHeight: '1.5' }}>
-                  ✨ <strong>Unlimited Access:</strong><br />
-                  • Unlimited AI analyses<br />
-                  • Unlimited Probe Deeper conversations<br />
-                  • All premium features
-                </p>
-              </div>
+            {usageStats?.tier === 'pro' ? (
+              <button
+                onClick={() => setShowSubscriptionModal(true)}
+                style={{
+                  marginTop: '1rem',
+                  width: '100%',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(139, 92, 246, 0.3)',
+                  background: 'transparent',
+                  color: '#a78bfa',
+                  fontSize: '0.95rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)';
+                  e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
+                }}
+              >
+                Manage Subscription
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowSubscriptionModal(true)}
+                style={{
+                  marginTop: '1rem',
+                  width: '100%',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+                  color: 'white',
+                  fontSize: '0.95rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'opacity 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+              >
+                ✨ View Plans & Upgrade
+              </button>
             )}
           </div>
         </div>
@@ -668,7 +727,7 @@ const SettingsView: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
         style={{
-          background: 'rgba(255, 255, 255, 0.03)',
+          background: 'rgba(10, 10, 10, 0.95)',
           border: '1px solid rgba(255, 255, 255, 0.08)',
           borderRadius: '16px',
           padding: '32px'
@@ -695,7 +754,8 @@ const SettingsView: React.FC = () => {
         </p>
         
         <div className="theme-options" style={{ 
-          display: 'flex', 
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
           gap: '16px',
           marginTop: '16px'
         }}>
@@ -707,24 +767,24 @@ const SettingsView: React.FC = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: '1rem',
+                gap: '0.75rem',
                 padding: '1rem',
-                borderRadius: '8px',
-                border: `2px solid ${theme === themeOption.id ? 'var(--accent-primary)' : 'var(--border-color)'}`,
-                background: theme === themeOption.id ? 'rgba(56, 189, 248, 0.1)' : 'transparent',
+                borderRadius: '12px',
+                border: `2px solid ${theme === themeOption.id ? 'var(--accent-primary)' : 'rgba(255, 255, 255, 0.1)'}`,
+                background: theme === themeOption.id ? 'rgba(139, 92, 246, 0.15)' : 'rgba(0, 0, 0, 0.3)',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease'
               }}
               onMouseEnter={(e) => {
                 if (theme !== themeOption.id) {
-                  e.currentTarget.style.borderColor = 'var(--accent-primary)';
-                  e.currentTarget.style.background = 'rgba(56, 189, 248, 0.05)';
+                  e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.5)';
+                  e.currentTarget.style.background = 'rgba(139, 92, 246, 0.08)';
                 }
               }}
               onMouseLeave={(e) => {
                 if (theme !== themeOption.id) {
-                  e.currentTarget.style.borderColor = 'var(--border-color)';
-                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                  e.currentTarget.style.background = 'rgba(0, 0, 0, 0.3)';
                 }
               }}
             >
@@ -786,7 +846,7 @@ const SettingsView: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
         style={{
-          background: 'rgba(255, 255, 255, 0.03)',
+          background: 'rgba(10, 10, 10, 0.95)',
           border: '1px solid rgba(255, 255, 255, 0.08)',
           borderRadius: '16px',
           padding: '32px'
@@ -879,7 +939,7 @@ const SettingsView: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
         style={{
-          background: 'rgba(255, 255, 255, 0.03)',
+          background: 'rgba(10, 10, 10, 0.95)',
           border: '1px solid rgba(255, 255, 255, 0.08)',
           borderRadius: '16px',
           padding: '32px'
@@ -988,7 +1048,7 @@ const SettingsView: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
         style={{
-          background: 'rgba(255, 255, 255, 0.03)',
+          background: 'rgba(10, 10, 10, 0.95)',
           border: '1px solid rgba(255, 255, 255, 0.08)',
           borderRadius: '16px',
           padding: '32px'
@@ -1139,6 +1199,13 @@ const SettingsView: React.FC = () => {
           </div>
         )}
       </motion.div>
+
+      {/* Subscription Modal */}
+      <SubscriptionModal 
+        isOpen={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        currentTier={usageStats?.tier === 'pro' ? 'pro' : 'free'}
+      />
 
       </div>
       </div>

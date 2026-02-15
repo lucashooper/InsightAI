@@ -112,13 +112,12 @@ const Signup: React.FC<SignupProps> = ({ onSwitchToLogin }) => {
         </button>
         
         <div className="auth-header">
-          <div className="logo-container">
-            <img 
-              src="/InsightAI-New-Logo.png" 
-              alt="Insight" 
-              className="auth-logo"
-            />
-          </div>
+          <img 
+            src="/Insight-Logo-nobg.webp" 
+            alt="Insight" 
+            className="auth-logo"
+            style={{ maxWidth: '80px', height: 'auto', marginBottom: '1.5rem' }}
+          />
           <h1 className="auth-title">Create Account</h1>
           <p className="auth-subtitle">Start your journey with Insight</p>
         </div>

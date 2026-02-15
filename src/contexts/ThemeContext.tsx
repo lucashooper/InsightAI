@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 
-export type Theme = 'midnight' | 'dusk' | 'light';
+export type Theme = 'dark' | 'vibrant' | 'ocean' | 'forest' | 'sunset' | 'midnight' | 'light';
 
 interface ThemeContextType {
   theme: Theme;
@@ -16,9 +16,9 @@ interface ThemeProviderProps {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>(() => {
-    // Get theme from localStorage or default to midnight
+    // Get theme from localStorage or default to dark
     const savedTheme = localStorage.getItem('insightai-theme') as Theme;
-    return savedTheme || 'midnight';
+    return savedTheme || 'dark';
   });
 
   const setTheme = (newTheme: Theme) => {

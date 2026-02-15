@@ -595,21 +595,9 @@ const AIAnalysis: React.FC<AIAnalysisProps> = ({ note, setActiveView, onUpdateNo
   // Auto-trigger analysis when no analysis exists (only after saved analysis has loaded)
   useEffect(() => {
     if (!isLoadingSavedAnalysis && !hasAnalysis && !isAnalyzing && note?.content && !note?.isAnalyzed) {
-      console.log('🚀 Auto-triggering analysis (no existing analysis found)');
       handleAnalyze(true);
     }
-  }, [note?.id, isLoadingSavedAnalysis, hasAnalysis, isAnalyzing, note?.isAnalyzed]); // Wait for saved analysis to load
-
-  // Debug logging
-  console.log('🔍 AIAnalysis render state:', {
-    noteId: note?.id,
-    isLoadingSavedAnalysis,
-    hasAnalysis,
-    hasConversationalResponse,
-    isAnalyzing,
-    savedAIResponse: !!savedAIResponse,
-    analysis: !!analysis
-  });
+  }, [note?.id, note?.content, isLoadingSavedAnalysis, hasAnalysis, isAnalyzing, note?.isAnalyzed, handleAnalyze]); // Wait for saved analysis to load
 
   return (
     <>

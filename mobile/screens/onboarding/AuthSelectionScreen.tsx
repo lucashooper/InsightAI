@@ -15,19 +15,8 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
   const [socialLoading, setSocialLoading] = useState(false);
   const postPurchase = route?.params?.postPurchase === true;
 
-  // When user authenticates, mark onboarding complete and clear email signup flag
-  // The AppNavigator will automatically switch to the authenticated stack
-  React.useEffect(() => {
-    if (user) {
-      const completeOnboarding = async () => {
-        await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
-        await AsyncStorage.removeItem('NEEDS_EMAIL_SIGNUP');
-        await AsyncStorage.setItem('HAS_SEEN_DASHBOARD_INTRO', 'true');
-        console.log('[AuthSelection] User authenticated, onboarding marked complete, flags cleared');
-      };
-      completeOnboarding();
-    }
-  }, [user]);
+  // Note: Onboarding completion is now handled in AuthContext for Apple/Google sign-ins
+  // to ensure compliance with Apple's Sign in with Apple guidelines
 
   const handleSkip = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

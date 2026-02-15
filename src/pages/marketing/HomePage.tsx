@@ -10,12 +10,12 @@ const HomePage: React.FC = () => {
   useScrollReveal();
   
   return (
-    <div className="App">
+    <div className="App marketing-page">
       <Starfield />
       {/* Navigation */}
       <nav className="main-nav">
         <div className="nav-logo">
-          <img src="/InsightAI-Logo-Transparent.png" alt="Insight" style={{ height: '40px', width: 'auto' }} />
+          <img src="/Insight-Logo-nobg.webp" alt="Insight" style={{ height: '80px', width: 'auto' }} />
         </div>
         <div className="nav-links">
           <a 

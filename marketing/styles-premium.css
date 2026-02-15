@@ -187,6 +187,26 @@ body {
   color: white !important;
 }
 
+/* Styled Login Button - Enhanced */
+.nav-login-btn-styled {
+  background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
+  color: white !important;
+  padding: 0.75rem 2rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-login-btn-styled:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(168, 85, 247, 0.6);
+  background: linear-gradient(135deg, #b366ff 0%, #9d6fff 100%);
+  color: white !important;
+}
+
 /* Typography - Basic defaults (overridden by specific classes) */
 h1, h2, h3, h4, h5, h6 {
   line-height: 1.2;
@@ -488,6 +508,7 @@ h1, h2, h3, h4, h5, h6 {
 .features-section {
   padding: var(--space-10) var(--space-4);
   position: relative;
+  background: transparent;
 }
 
 .section-title {
@@ -1570,9 +1591,9 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Premium Footer */
 .footer-premium {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
+  border-top: none;
+  background: transparent;
+  backdrop-filter: none;
   padding: 3rem 0;
 }
 
@@ -1590,7 +1611,7 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   margin-bottom: 2rem;
   padding-bottom: 2rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: none;
 }
 
 .footer-links-minimal {

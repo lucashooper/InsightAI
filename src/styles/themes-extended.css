@@ -1,0 +1,149 @@
+/* Extended Theme System - Mobile Parity */
+/* Porting mobile's 7-theme system to desktop */
+
+/* Dark Theme (Default - replaces old midnight) */
+body.theme-dark {
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --bg-tertiary: #141414;
+  --bg-quaternary: #1f1f1f;
+  --text-primary: #ffffff;
+  --text-secondary: #e5e7eb;
+  --text-tertiary: #9ca3af;
+  --accent-primary: #8b5cf6;
+  --accent-secondary: #6366f1;
+  --accent-warning: #f59e0b;
+  --accent-danger: #ef4444;
+  --border-color: #1a1a1a;
+  --border-muted: #0a0a0a;
+  --shadow-color: rgba(0, 0, 0, 0.9);
+  --overlay-color: rgba(0, 0, 0, 0.95);
+  --hover-overlay: rgba(139, 92, 246, 0.08);
+  --active-overlay: rgba(139, 92, 246, 0.12);
+}
+
+/* Vibrant Theme */
+body.theme-vibrant {
+  --bg-primary: #0f0a1f;
+  --bg-secondary: #1a0f2e;
+  --bg-tertiary: #251a3d;
+  --bg-quaternary: #30254c;
+  --text-primary: #ffffff;
+  --text-secondary: #e0d5ff;
+  --text-tertiary: #a78bfa;
+  --accent-primary: #a855f7;
+  --accent-secondary: #3b82f6;
+  --accent-warning: #fbbf24;
+  --accent-danger: #f87171;
+  --border-color: rgba(168, 85, 247, 0.2);
+  --border-muted: rgba(168, 85, 247, 0.1);
+  --shadow-color: rgba(139, 92, 246, 0.3);
+  --overlay-color: rgba(15, 10, 31, 0.95);
+  --hover-overlay: rgba(168, 85, 247, 0.15);
+  --active-overlay: rgba(168, 85, 247, 0.25);
+}
+
+/* Ocean Theme */
+body.theme-ocean {
+  --bg-primary: #0a1628;
+  --bg-secondary: #0f1f3a;
+  --bg-tertiary: #1a2a4c;
+  --bg-quaternary: #25355e;
+  --text-primary: #ffffff;
+  --text-secondary: #dbeafe;
+  --text-tertiary: #93c5fd;
+  --accent-primary: #3b82f6;
+  --accent-secondary: #06b6d4;
+  --accent-warning: #f59e0b;
+  --accent-danger: #ef4444;
+  --border-color: rgba(59, 130, 246, 0.2);
+  --border-muted: rgba(59, 130, 246, 0.1);
+  --shadow-color: rgba(30, 64, 175, 0.3);
+  --overlay-color: rgba(10, 22, 40, 0.95);
+  --hover-overlay: rgba(59, 130, 246, 0.15);
+  --active-overlay: rgba(59, 130, 246, 0.25);
+}
+
+/* Forest Theme */
+body.theme-forest {
+  --bg-primary: #0a1f0f;
+  --bg-secondary: #0f2e1a;
+  --bg-tertiary: #1a3d25;
+  --bg-quaternary: #254c30;
+  --text-primary: #ffffff;
+  --text-secondary: #d1fae5;
+  --text-tertiary: #6ee7b7;
+  --accent-primary: #10b981;
+  --accent-secondary: #14b8a6;
+  --accent-warning: #f59e0b;
+  --accent-danger: #ef4444;
+  --border-color: rgba(16, 185, 129, 0.2);
+  --border-muted: rgba(16, 185, 129, 0.1);
+  --shadow-color: rgba(6, 95, 70, 0.3);
+  --overlay-color: rgba(10, 31, 15, 0.95);
+  --hover-overlay: rgba(16, 185, 129, 0.15);
+  --active-overlay: rgba(16, 185, 129, 0.25);
+}
+
+/* Sunset Theme */
+body.theme-sunset {
+  --bg-primary: #1f0a0f;
+  --bg-secondary: #2e0f1a;
+  --bg-tertiary: #3d1a25;
+  --bg-quaternary: #4c2530;
+  --text-primary: #ffffff;
+  --text-secondary: #fed7aa;
+  --text-tertiary: #fdba74;
+  --accent-primary: #f97316;
+  --accent-secondary: #ec4899;
+  --accent-warning: #fbbf24;
+  --accent-danger: #dc2626;
+  --border-color: rgba(249, 115, 22, 0.2);
+  --border-muted: rgba(249, 115, 22, 0.1);
+  --shadow-color: rgba(154, 52, 18, 0.3);
+  --overlay-color: rgba(31, 10, 15, 0.95);
+  --hover-overlay: rgba(249, 115, 22, 0.15);
+  --active-overlay: rgba(249, 115, 22, 0.25);
+}
+
+/* Midnight Theme */
+body.theme-midnight {
+  --bg-primary: #0a0a1f;
+  --bg-secondary: #0f0f2e;
+  --bg-tertiary: #1a1a3d;
+  --bg-quaternary: #25254c;
+  --text-primary: #ffffff;
+  --text-secondary: #c7d2fe;
+  --text-tertiary: #a5b4fc;
+  --accent-primary: #6366f1;
+  --accent-secondary: #818cf8;
+  --accent-warning: #f59e0b;
+  --accent-danger: #ef4444;
+  --border-color: rgba(99, 102, 241, 0.2);
+  --border-muted: rgba(99, 102, 241, 0.1);
+  --shadow-color: rgba(49, 46, 129, 0.3);
+  --overlay-color: rgba(10, 10, 31, 0.95);
+  --hover-overlay: rgba(99, 102, 241, 0.15);
+  --active-overlay: rgba(99, 102, 241, 0.25);
+}
+
+/* Light Theme */
+body.theme-light {
+  --bg-primary: #FAF8F3;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #F7F5F0;
+  --bg-quaternary: #F3F1EC;
+  --text-primary: #2C2C2C;
+  --text-secondary: #4A4A4A;
+  --text-tertiary: #6B6B6B;
+  --accent-primary: #FFA726;
+  --accent-secondary: #4DD0E1;
+  --accent-warning: #FFA726;
+  --accent-danger: #EF5350;
+  --border-color: #E8E5DC;
+  --border-muted: #F0EDE8;
+  --shadow-color: rgba(139, 92, 70, 0.15);
+  --overlay-color: rgba(250, 248, 243, 0.95);
+  --hover-overlay: rgba(255, 167, 38, 0.08);
+  --active-overlay: rgba(255, 167, 38, 0.12);
+}

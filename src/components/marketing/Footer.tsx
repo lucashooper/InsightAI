@@ -20,7 +20,7 @@ const Footer: React.FC = () => {
         </div>
         
         <div className="footer-bottom">
-          <p>&copy; 2025 InsightAI. All rights reserved.</p>
+          <p>&copy; 2025 Insight. All rights reserved.</p>
         </div>
       </div>
     </footer>

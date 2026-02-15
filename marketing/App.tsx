@@ -14,7 +14,7 @@ function App() {
       {/* Navigation */}
       <nav className="main-nav">
         <div className="nav-logo">
-          <img src="./InsightAI-New-Logo.png" alt="Insight" />
+          <img src="./Insight-Logo-nobg.webp" alt="Insight" />
         </div>
         <div className="nav-links">
           <a 
@@ -29,7 +29,7 @@ function App() {
           </a>
           <a 
             href="/login" 
-            className="nav-link nav-login-btn"
+            className="nav-link nav-login-btn-styled"
           >
             Login
           </a>

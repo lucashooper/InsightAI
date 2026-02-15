@@ -21,33 +21,49 @@ export const usageTrackingService = {
         throw new Error('User not authenticated');
       }
 
-      // Verify user profile exists (but don't query subscription_tier since it doesn't exist yet)
-      const { error: profileError } = await supabase
+      // Fetch user profile with subscription_tier
+      const { data: profile, error: profileError } = await supabase
         .from('user_profiles')
-        .select('id')
+        .select('subscription_tier')
         .eq('user_id', user.id)
         .single();
 
       if (profileError) {
         console.error('Error fetching user profile:', profileError);
-        // Don't throw - just default to free tier
+        // Default to free tier on error
+        return {
+          canUse: false,
+          remaining: 0,
+          limit: 0,
+          tier: 'free'
+        };
       }
 
-      // For now, everyone gets unlimited usage since we're using local LLM (it's free!)
-      // TODO: When implementing paid plans, add subscription_tier column and tier checks
+      // Map subscription tier to usage limits - treat unlimited as pro
+      const rawTier = profile?.subscription_tier || 'free';
+      const tier = (rawTier === 'unlimited' ? 'pro' : rawTier) as 'free' | 'pro';
+      
+      let limit = 0;
+      let canUse = false;
+      
+      if (tier === 'pro') {
+        limit = 2;
+        canUse = true;
+      }
+      
       return {
-        canUse: true,
-        remaining: 999999,
-        limit: 999999,
-        tier: 'free'
+        canUse,
+        remaining: limit,
+        limit,
+        tier
       };
     } catch (error) {
       console.error('Error checking daily limit:', error);
-      // On error, allow the action but log it
+      // On error, default to free tier
       return {
-        canUse: true,
+        canUse: false,
         remaining: 0,
-        limit: 2,
+        limit: 0,
         tier: 'free'
       };
     }
@@ -65,11 +81,52 @@ export const usageTrackingService = {
 
   /**
    * Get today's usage statistics
-   * NOTE: Disabled - usage_tracking table doesn't exist yet
    */
   async getTodayUsage(_actionType: ActionType): Promise<{ count: number; limit: number; tier: string }> {
-    // Disabled - no usage tracking table in database
-    // Everyone gets unlimited for now
-    return Promise.resolve({ count: 0, limit: 999999, tier: 'free' });
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.log('❌ [UsageTracking] No user found');
+        return { count: 0, limit: 0, tier: 'free' };
+      }
+
+      console.log('🔍 [UsageTracking] Fetching subscription for user:', user.id);
+
+      // Fetch subscription tier from user profile
+      const { data: profile, error } = await supabase
+        .from('user_profiles')
+        .select('subscription_tier')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('❌ [UsageTracking] Error fetching profile:', error);
+        return { count: 0, limit: 0, tier: 'free' };
+      }
+
+      console.log('📦 [UsageTracking] Profile data:', profile);
+      console.log('💎 [UsageTracking] Subscription tier from DB:', profile?.subscription_tier);
+
+      const rawTier = profile?.subscription_tier || 'free';
+      
+      // Map tier to limits - treat 'unlimited' as 'pro' for compatibility
+      let tier = rawTier;
+      let limit = 0;
+      
+      if (rawTier === 'pro' || rawTier === 'unlimited') {
+        tier = 'pro'; // Normalize unlimited to pro
+        limit = 2;
+        console.log('✨ [UsageTracking] Pro/Unlimited tier detected - normalized to pro, limit: 2');
+      } else {
+        console.log('🆓 [UsageTracking] Free tier detected - limit: 0');
+      }
+      
+      // TODO: Track actual usage count when usage_tracking table is implemented
+      return { count: 0, limit, tier };
+    } catch (error) {
+      console.error('❌ [UsageTracking] Error getting usage stats:', error);
+      return { count: 0, limit: 0, tier: 'free' };
+    }
   }
 };
