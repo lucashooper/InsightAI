@@ -1,12 +1,8 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
-import MarketingLayout from './layouts/MarketingLayout';
+import { createBrowserRouter } from 'react-router-dom';
 import AppLayout from './layouts/AppLayout';
 import AuthLayout from './layouts/AuthLayout';
 import RequireAuth from './components/auth/RequireAuth';
 import RedirectIfAuthenticated from './components/auth/RedirectIfAuthenticated';
-
-// Marketing pages
-import MarketingHome from './pages/marketing/MarketingHome';
 
 // Auth pages
 import LoginPage from './pages/auth/LoginPage';
@@ -15,18 +11,6 @@ import LoginPage from './pages/auth/LoginPage';
 import AppHome from './pages/app/AppHome';
 
 export const router = createBrowserRouter([
-  // Marketing routes (public)
-  {
-    path: '/',
-    element: <MarketingLayout />,
-    children: [
-      {
-        index: true,
-        element: <MarketingHome />,
-      },
-    ],
-  },
-
   // Auth routes (public, but redirect if already authenticated)
   {
     path: '/login',
@@ -63,9 +47,8 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // Catch-all redirect
-  {
-    path: '*',
-    element: <Navigate to="/" replace />,
-  },
+  // DO NOT add a root "/" route here!
+  // Netlify serves the marketing site at / via rewrite rule in netlify.toml
+  // The marketing site includes /terms, /privacy, /support pages
+  // React Router should only handle /login and /app/* routes
 ]);
