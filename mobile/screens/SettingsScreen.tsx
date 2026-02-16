@@ -48,15 +48,15 @@ export default function SettingsScreen({ navigation }: any) {
   const [isLoadingSubscription, setIsLoadingSubscription] = useState(true);
 
   const defaultThemes: { name: ThemeName; label: string; emoji: string }[] = [
-    { name: 'dark', label: 'Dark', emoji: '🌑' },
-    { name: 'light', label: 'Light', emoji: '☀️' },
+    { name: 'dark', label: 'Dark', emoji: '' },
+    { name: 'light', label: 'Light', emoji: '' },
   ];
 
   const otherThemes: { name: ThemeName; label: string; emoji: string }[] = [
-    { name: 'sunset', label: 'Sunset', emoji: '🌅' },
-    { name: 'vibrant', label: 'Vibrant', emoji: '✨' },
-    { name: 'ocean', label: 'Ocean', emoji: '🌊' },
-    { name: 'midnight', label: 'Midnight', emoji: '🌙' },
+    { name: 'sunset', label: 'Sunset', emoji: '' },
+    { name: 'vibrant', label: 'Vibrant', emoji: '' },
+    { name: 'ocean', label: 'Ocean', emoji: '' },
+    { name: 'midnight', label: 'Midnight', emoji: '' },
   ];
 
   useEffect(() => {
@@ -509,7 +509,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Default Themes */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>🎨 Default Themes</Text>
+          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>DEFAULT THEMES</Text>
           <View style={styles.themeGrid}>
             {defaultThemes.map((t) => (
               <TouchableOpacity
@@ -540,7 +540,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Other Themes */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>✨ Other Themes</Text>
+          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>OTHER THEMES</Text>
           <View style={styles.themeGrid}>
             {otherThemes.map((t) => (
               <TouchableOpacity
@@ -571,7 +571,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Security */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>🔒 Security</Text>
+          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>SECURITY</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <TouchableOpacity 
               style={styles.settingRow}
@@ -734,7 +734,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Personalization */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>⚙️ Personalization</Text>
+          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>PERSONALIZATION</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <TouchableOpacity 
               style={styles.settingRow}
@@ -802,7 +802,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Subscription & Usage */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>💎 Subscription & Usage</Text>
+          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>SUBSCRIPTION & USAGE</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <View style={styles.cardGradient}>
               <View style={styles.usageRow}>
@@ -856,7 +856,7 @@ export default function SettingsScreen({ navigation }: any) {
         {/* Developer Testing Tools (Sandbox Only) */}
         {__DEV__ && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>🔧 Developer Tools</Text>
+            <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>DEVELOPER TOOLS</Text>
             <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
               <TouchableOpacity
                 style={styles.devToolButton}
@@ -916,7 +916,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Send Feedback */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>💬 Send Feedback</Text>
+          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>SEND FEEDBACK</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <View style={styles.cardGradient}>
               <TextInput
@@ -964,7 +964,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Actions */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>Actions</Text>
+          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>ACTIONS</Text>
 
           <TouchableOpacity style={{}} onPress={handleSignOut} activeOpacity={0.85}>
             <StandardContainer style={styles.card}>
@@ -1041,7 +1041,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* App Info */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About</Text>
+          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>ABOUT</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <View style={styles.cardGradient}>
               <Text style={styles.infoText}>Insight Mobile v1.0.0</Text>
@@ -1148,6 +1148,8 @@ const styles = StyleSheet.create({
     height: isTablet ? 80 : 60,
     borderRadius: isTablet ? 40 : 30,
     overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'rgba(139, 92, 246, 0.2)',
   },
   avatar: {
     width: isTablet ? 80 : 60,

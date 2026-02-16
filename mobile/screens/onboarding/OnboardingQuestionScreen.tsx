@@ -151,6 +151,7 @@ const STEPS: Step[] = [
 
 export default function OnboardingQuestionScreen({ navigation, route }: any) {
     const { userName, setUserName, setOnboardingAnswers } = useOnboarding();
+    const { theme } = useTheme();
     const startIndex = route?.params?.startIndex ?? 0;
     const [currentIndex, setCurrentIndex] = useState(startIndex);
     const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -301,7 +302,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" />
 
-            <SunoGradient />
+            <SunoGradient themeColors={theme.colors.backgroundGradient as any} />
 
             {/* Back Arrow + Centered Progress Bar Row */}
             <View style={styles.topRow}>
