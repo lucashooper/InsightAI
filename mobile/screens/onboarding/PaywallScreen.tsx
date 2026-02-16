@@ -18,6 +18,7 @@ const phoneImages = [
   require('../../public/phone-images/Insight-Main-Page-Phone.png'),
   require('../../public/phone-images/Insight-Dashboard-Page-Phone.png'),
   require('../../public/phone-images/Insight-Journal-Page-Phone.png'),
+  require('../../public/phone-images/Insight-Insights-Page-Phone-Real.png'),
   require('../../public/phone-images/Insight-Playbook-Page-Phone.png'),
 ];
 
@@ -29,6 +30,7 @@ const slideHeadings = [
   'Understand Yourself\nwith Insight',
   'Track Your Growth\n& Progress',
   'Reflect Deeper,\nLive Better',
+  'Unlock AI-Powered\nInsights',
   'Your Personal\nPlaybook',
 ];
 
@@ -737,22 +739,22 @@ const styles = StyleSheet.create({
   },
   compactPlan: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: 'transparent',
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 8,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
+    borderColor: 'rgba(0, 0, 0, 0.15)',
     position: 'relative',
   },
   compactPlanSelected: {
     backgroundColor: '#ffffff',
     borderColor: '#8b5cf6',
-    borderWidth: 2,
+    borderWidth: 2.5,
     shadowColor: '#8b5cf6',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.25,
     shadowRadius: 12,
     elevation: 6,
   },
