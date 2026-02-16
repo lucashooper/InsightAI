@@ -503,16 +503,25 @@ export default function PaywallScreen({ navigation, route }: any) {
           />
         </View>
 
-        {/* Pagination Dots */}
+        {/* Pagination Dots - Now Clickable */}
         <View style={styles.dotsContainer}>
           {phoneImages.map((_, index) => (
-            <View
+            <TouchableOpacity
               key={index}
-              style={[
-                styles.dot,
-                activeCarouselIndex === index && styles.dotActive,
-              ]}
-            />
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                carouselRef.current?.scrollToIndex({ index, animated: true });
+                setActiveCarouselIndex(index);
+              }}
+              activeOpacity={0.7}
+            >
+              <View
+                style={[
+                  styles.dot,
+                  activeCarouselIndex === index && styles.dotActive,
+                ]}
+              />
+            </TouchableOpacity>
           ))}
         </View>
 
@@ -728,7 +737,7 @@ const styles = StyleSheet.create({
   },
   compactPlan: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: '#ffffff',
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 8,
@@ -738,7 +747,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   compactPlanSelected: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: '#ffffff',
     borderColor: '#8b5cf6',
     borderWidth: 2,
     shadowColor: '#8b5cf6',
@@ -822,11 +831,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   testimonialCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    backgroundColor: 'transparent',
     borderRadius: 16,
     padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.06)',
+    borderWidth: 0,
+    borderColor: 'transparent',
   },
   starsRow: {
     flexDirection: 'row',
