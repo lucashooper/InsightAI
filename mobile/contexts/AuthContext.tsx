@@ -284,8 +284,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.log('[AUTH] ✅ Google profile saved');
               }
               
-              // Cache the username for quick access
+              // Cache the username and set flag for Google Sign-In
               await AsyncStorage.setItem('CACHED_USERNAME', displayName);
+              await AsyncStorage.setItem('SKIP_NAME_STEP', 'true');
               console.log('[AUTH] ✅ Username cached for Google Sign-In');
               
               // IMPORTANT: Do NOT set HAS_COMPLETED_ONBOARDING here
@@ -377,8 +378,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.log('[AUTH] ✅ Apple profile saved');
           }
           
-          // Cache the username for quick access
+          // Cache the username and set flag for Apple Sign-In
           await AsyncStorage.setItem('CACHED_USERNAME', displayName);
+          await AsyncStorage.setItem('SKIP_NAME_STEP', 'true');
           console.log('[AUTH] ✅ Username cached for Apple Sign-In');
           
           // IMPORTANT: Do NOT set HAS_COMPLETED_ONBOARDING here

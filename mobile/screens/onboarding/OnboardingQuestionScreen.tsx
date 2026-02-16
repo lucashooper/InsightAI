@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
 import { Asset } from 'expo-asset';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import ProgressBarNeon from '../../components/onboarding/ProgressBarNeon';
 import PillOption from '../../components/onboarding/PillOption';
@@ -169,20 +170,27 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
     const currentStep = STEPS[currentIndex];
     const totalQuestionSteps = STEPS.length;
 
-    // CRITICAL: Skip name step if user already has a username (from Apple/Google Sign-In)
+    // CRITICAL: Skip name step ONLY if user explicitly used Apple/Google Sign-In
     useEffect(() => {
-        const checkCachedUsername = async () => {
-            if (currentStep.id === 'name' && userName) {
-                console.log('[OnboardingQuestion] User already has username from social sign-in:', userName);
-                console.log('[OnboardingQuestion] Skipping name step and moving to next question');
-                // Skip the name step since they signed in with Apple/Google
-                setAnswers(prev => ({ ...prev, name: userName }));
-                if (currentIndex < STEPS.length - 1) {
-                    setCurrentIndex(currentIndex + 1);
+        const checkShouldSkipName = async () => {
+            if (currentStep.id === 'name') {
+                const skipFlag = await AsyncStorage.getItem('SKIP_NAME_STEP');
+                if (skipFlag === 'true' && userName) {
+                    console.log('[OnboardingQuestion] User signed in with Apple/Google, skipping name step');
+                    console.log('[OnboardingQuestion] Using cached username:', userName);
+                    // Skip the name step since they signed in with Apple/Google
+                    setAnswers(prev => ({ ...prev, name: userName }));
+                    if (currentIndex < STEPS.length - 1) {
+                        setCurrentIndex(currentIndex + 1);
+                    }
+                    // Clear the flag after using it
+                    await AsyncStorage.removeItem('SKIP_NAME_STEP');
+                } else {
+                    console.log('[OnboardingQuestion] Regular onboarding - showing name step');
                 }
             }
         };
-        checkCachedUsername();
+        checkShouldSkipName();
     }, [currentStep.id, userName, currentIndex]);
 
     useEffect(() => {

@@ -165,20 +165,7 @@ function OrbOption({ vibe, isSelected, onPress, delay }: OrbOptionProps) {
       useNativeDriver: true,
     }).start();
 
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.05,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
+    // Removed pulsing animation - user found it annoying
   }, []);
 
   useEffect(() => {
@@ -190,10 +177,10 @@ function OrbOption({ vibe, isSelected, onPress, delay }: OrbOptionProps) {
     }).start();
   }, [isSelected]);
 
-  const orbScale = Animated.multiply(scaleAnim, pulseAnim);
+  const orbScale = scaleAnim; // Removed pulse animation
   const selectionScale = selectionAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [1, 1.1],
+    outputRange: [1, 1.08],
   });
 
   return (
@@ -232,6 +219,12 @@ function OrbOption({ vibe, isSelected, onPress, delay }: OrbOptionProps) {
             style={styles.orbGradient}
           />
           
+          {/* Frosted glass overlay */}
+          <View style={styles.frostOverlay} />
+          
+          {/* Subtle highlight */}
+          <View style={styles.highlight} />
+          
           <View
             style={[
               styles.orbGlow,
@@ -244,10 +237,7 @@ function OrbOption({ vibe, isSelected, onPress, delay }: OrbOptionProps) {
         </View>
       </Animated.View>
 
-      <View style={styles.labelContainer}>
-        <Text style={styles.emoji}>{vibe.emoji}</Text>
-        <Text style={styles.label}>{vibe.label}</Text>
-      </View>
+      <Text style={styles.label}>{vibe.label}</Text>
     </TouchableOpacity>
   );
 }
@@ -330,25 +320,37 @@ const styles = StyleSheet.create({
     borderRadius: GLOW_SIZE / 2,
     top: -(GLOW_SIZE - ORB_SIZE) / 2,
     left: -(GLOW_SIZE - ORB_SIZE) / 2,
-    opacity: 0.3,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 30,
-    elevation: 8,
+    opacity: 0.25,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 12,
   },
-  labelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  frostOverlay: {
+    position: 'absolute',
+    width: ORB_SIZE,
+    height: ORB_SIZE,
+    borderRadius: ORB_SIZE / 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
-  emoji: {
-    fontSize: isTablet ? 18 : 16,
+  highlight: {
+    position: 'absolute',
+    top: ORB_SIZE * 0.15,
+    left: ORB_SIZE * 0.2,
+    width: ORB_SIZE * 0.4,
+    height: ORB_SIZE * 0.25,
+    borderRadius: ORB_SIZE * 0.2,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    transform: [{ rotate: '-15deg' }],
   },
   label: {
-    fontSize: isTablet ? sf(16) : sf(14),
+    fontSize: isTablet ? sf(18) : sf(16),
     fontWeight: '600',
     color: '#1a1a2e',
     textAlign: 'center',
+    marginTop: 4,
   },
   continueButton: {
     marginTop: 'auto',
