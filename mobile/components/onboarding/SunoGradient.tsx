@@ -5,16 +5,35 @@ import Svg, { Defs, Pattern, Rect, Circle, RadialGradient, Stop, Circle as SvgCi
 
 const { width, height } = Dimensions.get('window');
 
+interface SunoGradientProps {
+  themeColors?: string[];
+  themeBlobColors?: {
+    pink?: string;
+    lavender?: string;
+    peach?: string;
+    blue?: string;
+  };
+}
+
 /**
  * Premium pastel multi-gradient background
  * Inspired by Unchained — soft pink, peach, lavender, cream tones
+ * Can be customized with theme colors
  */
-export default function SunoGradient() {
+export default function SunoGradient({ themeColors, themeBlobColors }: SunoGradientProps = {}) {
+  const baseColors = themeColors || ['#fef5f8', '#fef0f5', '#f5f0fe', '#f0f9ff', '#fef7f2'];
+  const blobColors = themeBlobColors || {
+    pink: '#ffc9d9',
+    lavender: '#ddd6fe',
+    peach: '#fed7aa',
+    blue: '#bfdbfe',
+  };
+
   return (
     <View style={styles.container}>
       {/* Base warm cream gradient - enhanced for more vibrant pastel tones */}
       <LinearGradient
-        colors={['#fef5f8', '#fef0f5', '#f5f0fe', '#f0f9ff', '#fef7f2']}
+        colors={baseColors}
         locations={[0, 0.25, 0.5, 0.75, 1]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
