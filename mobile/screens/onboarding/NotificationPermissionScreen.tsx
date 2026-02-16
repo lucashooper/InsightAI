@@ -89,7 +89,7 @@ export default function NotificationPermissionScreen({ navigation }: any) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#fef7f2',
     },
     content: {
         flex: 1,

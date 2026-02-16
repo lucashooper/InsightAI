@@ -668,11 +668,11 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: isTablet ? 12 : 8,
+    marginBottom: isTablet ? 12 : 6,
   },
   logo: {
-    width: isTablet ? 110 : 70,
-    height: isTablet ? 110 : 70,
+    width: isTablet ? 110 : 105,
+    height: isTablet ? 110 : 105,
     opacity: 0.9,
   },
   header: {
