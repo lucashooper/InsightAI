@@ -285,14 +285,14 @@ export default function SettingsScreen({ navigation }: any) {
         console.log('[Settings] ✅ Subscription is active - setting plan to Pro');
       } else {
         setSubscriptionPlan('Free');
-        setUsageLimit(2);
+        setUsageLimit(0);
         console.log('[Settings] ℹ️ No active subscription - setting plan to Free');
       }
     } catch (error: any) {
       console.error('[Settings] ❌ Error loading subscription status:', error);
       console.error('[Settings] Error message:', error.message);
       setSubscriptionPlan('Free');
-      setUsageLimit(2);
+      setUsageLimit(0);
     } finally {
       setIsLoadingSubscription(false);
     }
@@ -813,22 +813,25 @@ export default function SettingsScreen({ navigation }: any) {
                   <Text style={styles.usageTier}>{subscriptionPlan}</Text>
                 )}
               </View>
-              <View style={styles.usageProgress}>
-                <View style={styles.usageProgressRow}>
-                  <Text style={styles.usageProgressLabel}>AI Analyses Today</Text>
-                  <Text style={styles.usageProgressValue}>
-                    {`${usageCount} / 2`}
-                  </Text>
+              {/* Only show usage counter for Pro users */}
+              {subscriptionPlan === 'Pro' && (
+                <View style={styles.usageProgress}>
+                  <View style={styles.usageProgressRow}>
+                    <Text style={styles.usageProgressLabel}>AI Analyses Today</Text>
+                    <Text style={styles.usageProgressValue}>
+                      {`${usageCount} / ${usageLimit}`}
+                    </Text>
+                  </View>
+                  <View style={styles.progressBarContainer}>
+                    <View
+                      style={[
+                        styles.progressBarFill,
+                        { width: `${Math.min((usageCount / usageLimit) * 100, 100)}%` }
+                      ]}
+                    />
+                  </View>
                 </View>
-                <View style={styles.progressBarContainer}>
-                  <View
-                    style={[
-                      styles.progressBarFill,
-                      { width: `${Math.min((usageCount / 2) * 100, 100)}%` }
-                    ]}
-                  />
-                </View>
-              </View>
+              )}
               
               {/* Upgrade/Manage Button */}
               <TouchableOpacity
@@ -1089,7 +1092,7 @@ const styles = StyleSheet.create({
     marginBottom: isTablet ? 32 : 24,
   },
   sectionTitle: {
-    fontSize: sf(12),
+    fontSize: isTablet ? sf(16) : sf(12),
     fontWeight: '600',
     color: '#666',
     textTransform: 'uppercase',
@@ -1112,11 +1115,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   infoText: {
-    fontSize: sf(16),
+    fontSize: isTablet ? sf(20) : sf(16),
     color: '#ffffff',
   },
   infoSubtext: {
-    fontSize: sf(14),
+    fontSize: isTablet ? sf(18) : sf(14),
     color: '#999',
     marginTop: 4,
   },
@@ -1126,12 +1129,12 @@ const styles = StyleSheet.create({
     gap: isTablet ? 16 : 12,
   },
   actionText: {
-    fontSize: sf(16),
+    fontSize: isTablet ? sf(20) : sf(16),
     fontWeight: '600',
     color: '#ffffff',
   },
   actionSubtext: {
-    fontSize: sf(13),
+    fontSize: isTablet ? sf(17) : sf(13),
     color: '#999',
     marginTop: 4,
   },
@@ -1168,13 +1171,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   profileName: {
-    fontSize: sf(18),
+    fontSize: isTablet ? sf(24) : sf(18),
     fontWeight: '700',
     color: '#ffffff',
     marginBottom: 4,
   },
   profileEmail: {
-    fontSize: sf(14),
+    fontSize: isTablet ? sf(18) : sf(14),
     color: '#999',
   },
   avatarImage: {
@@ -1189,11 +1192,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   usageLabel: {
-    fontSize: sf(14),
+    fontSize: isTablet ? sf(18) : sf(14),
     color: '#999',
   },
   usageTier: {
-    fontSize: sf(16),
+    fontSize: isTablet ? sf(20) : sf(16),
     fontWeight: '700',
     color: '#ffffff',
   },
@@ -1246,7 +1249,7 @@ const styles = StyleSheet.create({
   },
   upgradeButtonText: {
     color: '#ffffff',
-    fontSize: sf(16),
+    fontSize: isTablet ? sf(20) : sf(16),
     fontWeight: '600',
     letterSpacing: 0.3,
   },

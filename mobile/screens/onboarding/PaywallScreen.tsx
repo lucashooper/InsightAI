@@ -23,7 +23,7 @@ const phoneImages = [
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CAROUSEL_IMAGE_WIDTH = SCREEN_WIDTH;
-const PHONE_DISPLAY_HEIGHT = SCREEN_HEIGHT * 0.42;
+const PHONE_DISPLAY_HEIGHT = isTablet ? SCREEN_HEIGHT * 0.50 : SCREEN_HEIGHT * 0.42;
 
 const slideHeadings = [
   'Understand Yourself\nwith Insight',
@@ -657,27 +657,27 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: isTablet ? 12 : 8,
   },
   logo: {
-    width: isTablet ? 90 : 70,
-    height: isTablet ? 90 : 70,
+    width: isTablet ? 110 : 70,
+    height: isTablet ? 110 : 70,
     opacity: 0.9,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: isTablet ? 16 : 4,
     paddingHorizontal: 24,
-    minHeight: sf(80),
+    minHeight: isTablet ? sf(100) : sf(80),
     justifyContent: 'center',
   },
   title: {
-    fontSize: sf(28),
+    fontSize: isTablet ? sf(38) : sf(28),
     fontWeight: '600',
     color: '#1a1a2e',
     letterSpacing: -0.5,
     textAlign: 'center',
-    lineHeight: sf(36),
+    lineHeight: isTablet ? sf(46) : sf(36),
   },
   // Carousel
   carouselContainer: {
@@ -691,8 +691,8 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   carouselImage: {
-    width: SCREEN_WIDTH * 0.72,
-    height: SCREEN_WIDTH * 0.72 * 2.1,
+    width: isTablet ? SCREEN_WIDTH * 0.45 : SCREEN_WIDTH * 0.72,
+    height: isTablet ? SCREEN_WIDTH * 0.45 * 2.1 : SCREEN_WIDTH * 0.72 * 2.1,
     borderRadius: 28,
   },
   phoneFade: {
@@ -907,12 +907,12 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   footerLink: {
-    fontSize: 10,
+    fontSize: isTablet ? 14 : 10,
     color: '#9ca3af',
     fontWeight: '500',
   },
   footerDivider: {
-    fontSize: 10,
+    fontSize: isTablet ? 14 : 10,
     color: '#d1d5db',
   },
 });

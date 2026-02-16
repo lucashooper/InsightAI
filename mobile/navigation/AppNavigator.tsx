@@ -189,11 +189,13 @@ function MainTabs() {
           height: isTablet ? 90 : 70,
           paddingBottom: isTablet ? 14 : 10,
           paddingTop: isTablet ? 14 : 10,
+          paddingHorizontal: isTablet ? 40 : 0,
         },
         tabBarItemStyle: {
           flex: 1,
           justifyContent: 'center',
           alignItems: 'center',
+          marginHorizontal: isTablet ? 8 : 0,
         },
         tabBarActiveTintColor: '#8b5cf6',
         tabBarInactiveTintColor: theme.name === 'light' ? '#6B6B6B' : '#666',
