@@ -332,18 +332,22 @@ export default function AppNavigator() {
             console.log('[NAV] Profile check result:', profile);
             console.log('[NAV] Profile error:', profileError);
 
-            // If profile exists and has a username AND created_at is old (> 1 hour ago), they're a returning user
-            // New users (< 1 hour) with username from Apple/Google should still see onboarding
+            // Check if user has completed onboarding by looking for onboarding completion timestamp
+            // This is more reliable than checking account age
             if (profile && profile.username) {
-              const createdAt = new Date(profile.created_at);
-              const hoursSinceCreation = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
+              // Check if they have completed onboarding (stored in user_profiles table)
+              const { data: onboardingData } = await supabase
+                .from('user_profiles')
+                .select('onboarding_completed_at')
+                .eq('user_id', user.id)
+                .single();
               
-              if (hoursSinceCreation > 1) {
-                console.log('[NAV] ✅ Returning user detected (created', hoursSinceCreation.toFixed(1), 'hours ago), skipping onboarding');
+              if (onboardingData?.onboarding_completed_at) {
+                console.log('[NAV] ✅ User has completed onboarding before, skipping');
                 await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
                 setIsOnboardingCompleted(true);
               } else {
-                console.log('[NAV] New user with username from social sign-in (created', hoursSinceCreation.toFixed(1), 'hours ago), showing onboarding');
+                console.log('[NAV] User has username but has not completed onboarding, showing onboarding');
                 setIsOnboardingCompleted(false);
               }
             } else {

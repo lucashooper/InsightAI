@@ -159,9 +159,21 @@ export default function PaywallScreen({ navigation, route }: any) {
       await AsyncStorage.setItem('CACHED_USERNAME', userName);
       console.log('[Paywall] ✅ Username cached locally');
       
-      // Mark onboarding as complete
+      // Mark onboarding as complete with timestamp in database
       await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
       console.log('[Paywall] ✅ Onboarding marked as complete');
+      
+      // Set onboarding completion timestamp in database for reliable tracking
+      const { error: timestampError } = await supabase
+        .from('user_profiles')
+        .update({ onboarding_completed_at: new Date().toISOString() })
+        .eq('user_id', user.id);
+      
+      if (timestampError) {
+        console.error('[Paywall] ❌ Error setting onboarding timestamp:', timestampError);
+      } else {
+        console.log('[Paywall] ✅ Onboarding completion timestamp set');
+      }
       
     } catch (err) {
       console.error('[Paywall] ❌ Exception in saveUsernameToProfile:', err);
@@ -866,10 +878,10 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     backgroundColor: '#ffffff',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 4,
   },
   commitmentBadge: {
     flexDirection: 'row',
