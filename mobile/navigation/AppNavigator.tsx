@@ -339,7 +339,7 @@ export default function AppNavigator() {
               // Check if they have completed onboarding (stored in user_profiles table)
               const { data: onboardingData } = await supabase
                 .from('user_profiles')
-                .select('onboarding_completed_at')
+                .select('onboarding_completed_at, created_at')
                 .eq('user_id', user.id)
                 .single();
               
@@ -348,8 +348,25 @@ export default function AppNavigator() {
                 await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
                 setIsOnboardingCompleted(true);
               } else {
-                console.log('[NAV] User has username but has not completed onboarding, showing onboarding');
-                setIsOnboardingCompleted(false);
+                // FALLBACK: If user has username and account is older than 5 minutes, assume they completed onboarding
+                // This handles legacy users who don't have onboarding_completed_at timestamp
+                const accountAge = Date.now() - new Date(onboardingData?.created_at || profile.created_at).getTime();
+                const fiveMinutes = 5 * 60 * 1000;
+                
+                if (accountAge > fiveMinutes) {
+                  console.log('[NAV] ✅ Legacy user with username and old account, skipping onboarding');
+                  await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+                  setIsOnboardingCompleted(true);
+                  
+                  // Backfill the timestamp for future checks
+                  await supabase
+                    .from('user_profiles')
+                    .update({ onboarding_completed_at: new Date().toISOString() })
+                    .eq('user_id', user.id);
+                } else {
+                  console.log('[NAV] User has username but has not completed onboarding, showing onboarding');
+                  setIsOnboardingCompleted(false);
+                }
               }
             } else {
               // Final re-check: the flag may have been set during the profile query
@@ -526,7 +543,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#000000',
+    backgroundColor: '#fef7f2',
   },
   centerFabButton: {
     top: -20,
