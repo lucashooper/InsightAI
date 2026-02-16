@@ -75,7 +75,7 @@ export default function SignupPasswordScreen({ navigation, route }: any) {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
 
         <View style={styles.content}>
@@ -90,7 +90,7 @@ export default function SignupPasswordScreen({ navigation, route }: any) {
             <TextInput
               style={styles.input}
               placeholder="Password"
-              placeholderTextColor="rgba(255, 255, 255, 0.5)"
+              placeholderTextColor="rgba(0, 0, 0, 0.4)"
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
@@ -106,7 +106,7 @@ export default function SignupPasswordScreen({ navigation, route }: any) {
               <Ionicons
                 name={showPassword ? 'eye-off' : 'eye'}
                 size={20}
-                color="rgba(255, 255, 255, 0.5)"
+                color="rgba(0, 0, 0, 0.6)"
               />
             </TouchableOpacity>
           </View>
@@ -137,7 +137,7 @@ export default function SignupPasswordScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#fef7f2',
     paddingTop: 60,
   },
   keyboardView: {
@@ -179,12 +179,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#fff',
+    color: '#1a1a2e',
     marginBottom: 12,
   },
   subtitle: {
     fontSize: 15,
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: 'rgba(0, 0, 0, 0.5)',
     marginBottom: 32,
   },
   inputContainer: {
@@ -192,14 +192,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(0, 0, 0, 0.15)',
     borderRadius: 12,
     padding: 16,
     paddingRight: 48,
     fontSize: 16,
-    color: '#fff',
+    color: '#1a1a2e',
   },
   eyeIcon: {
     position: 'absolute',

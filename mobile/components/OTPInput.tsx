@@ -103,13 +103,13 @@ const styles = StyleSheet.create({
   input: {
     width: 48,
     height: 56,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(0, 0, 0, 0.15)',
     borderRadius: 12,
     fontSize: 24,
     fontWeight: '600',
-    color: '#fff',
+    color: '#1a1a2e',
     textAlign: 'center',
   },
   inputFilled: {

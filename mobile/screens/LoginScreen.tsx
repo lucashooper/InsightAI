@@ -110,7 +110,7 @@ export default function LoginScreen({ navigation }: any) {
             }
           }}
         >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
         </TouchableOpacity>
 
         <ScrollView 
@@ -127,7 +127,7 @@ export default function LoginScreen({ navigation }: any) {
             <TextInput
               style={styles.input}
               placeholder="Email"
-              placeholderTextColor="rgba(255, 255, 255, 0.5)"
+              placeholderTextColor="rgba(0, 0, 0, 0.4)"
               value={emailOrUsername}
               onChangeText={setEmailOrUsername}
               autoCapitalize="none"
@@ -139,7 +139,7 @@ export default function LoginScreen({ navigation }: any) {
               <TextInput
                 style={styles.passwordInput}
                 placeholder="Password"
-                placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                placeholderTextColor="rgba(0, 0, 0, 0.4)"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -151,7 +151,7 @@ export default function LoginScreen({ navigation }: any) {
                 <Ionicons
                   name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                   size={20}
-                  color="rgba(255, 255, 255, 0.6)"
+                  color="rgba(0, 0, 0, 0.6)"
                 />
               </TouchableOpacity>
             </View>
