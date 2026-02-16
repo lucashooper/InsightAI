@@ -293,11 +293,13 @@ export default function AppNavigator() {
     
     const checkOnboarding = async () => {
       try {
-        // Always check AsyncStorage first - this is the source of truth
+        // CRITICAL FIX: Always check AsyncStorage first - this is the source of truth
+        // Apple/Google Sign-In sets this flag immediately in AuthContext
         const value = await AsyncStorage.getItem('HAS_COMPLETED_ONBOARDING');
         console.log('[NAV] HAS_COMPLETED_ONBOARDING from storage:', value);
         
         if (value === 'true') {
+          console.log('[NAV] ✅ Onboarding complete flag found - going to MainTabs');
           setIsOnboardingCompleted(true);
           return;
         }
@@ -305,32 +307,58 @@ export default function AppNavigator() {
         // If user is logged in but no AsyncStorage flag, check if they have profile data
         // This handles existing users logging in on a new device or after reinstall
         if (user) {
+          console.log('[NAV] No onboarding flag, checking user profile...');
           const { supabase } = await import('../lib/supabase');
-          const { data: profile, error: profileError } = await supabase
+          
+          // Add timeout to prevent hanging on iPad
+          const profilePromise = supabase
             .from('user_profiles')
             .select('username, created_at')
             .eq('user_id', user.id)
             .single();
+          
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Profile check timeout')), 5000)
+          );
+          
+          try {
+            const { data: profile, error: profileError } = await Promise.race([
+              profilePromise,
+              timeoutPromise
+            ]) as any;
 
-          console.log('[NAV] Profile check result:', profile);
-          console.log('[NAV] Profile error:', profileError);
+            console.log('[NAV] Profile check result:', profile);
+            console.log('[NAV] Profile error:', profileError);
 
-          // If profile exists and has a username, they're an existing user
-          if (profile && profile.username) {
-            console.log('[NAV] Existing user detected, skipping onboarding');
-            await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
-            setIsOnboardingCompleted(true);
-          } else {
-            // Final re-check: the flag may have been set during the profile query
-            // (e.g., post-purchase OTP verification flow sets it concurrently)
-            const recheck = await AsyncStorage.getItem('HAS_COMPLETED_ONBOARDING');
-            if (recheck === 'true') {
-              console.log('[NAV] HAS_COMPLETED_ONBOARDING was set during profile check, honoring it');
+            // If profile exists and has a username, they're an existing user
+            if (profile && profile.username) {
+              console.log('[NAV] ✅ Existing user detected, skipping onboarding');
+              await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
               setIsOnboardingCompleted(true);
             } else {
-              console.log('[NAV] New user detected, will show onboarding');
-              console.log('[NAV] Clearing HAS_SEEN_DASHBOARD_INTRO flag');
-              await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
+              // Final re-check: the flag may have been set during the profile query
+              // (e.g., Apple/Google Sign-In sets it in AuthContext while we're checking)
+              const recheck = await AsyncStorage.getItem('HAS_COMPLETED_ONBOARDING');
+              if (recheck === 'true') {
+                console.log('[NAV] ✅ HAS_COMPLETED_ONBOARDING was set during profile check, honoring it');
+                setIsOnboardingCompleted(true);
+              } else {
+                console.log('[NAV] New user detected, will show onboarding');
+                console.log('[NAV] Clearing HAS_SEEN_DASHBOARD_INTRO flag');
+                await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
+                setIsOnboardingCompleted(false);
+              }
+            }
+          } catch (timeoutError) {
+            console.error('[NAV] Profile check timed out or failed:', timeoutError);
+            // On timeout/error, re-check AsyncStorage one more time
+            // Apple/Google Sign-In may have set it while we were waiting
+            const finalCheck = await AsyncStorage.getItem('HAS_COMPLETED_ONBOARDING');
+            if (finalCheck === 'true') {
+              console.log('[NAV] ✅ Found onboarding flag after timeout, proceeding to MainTabs');
+              setIsOnboardingCompleted(true);
+            } else {
+              console.log('[NAV] ⚠️ Profile check failed and no onboarding flag - showing onboarding');
               setIsOnboardingCompleted(false);
             }
           }
@@ -339,7 +367,14 @@ export default function AppNavigator() {
         }
       } catch (e) {
         console.error('[NAV] Error checking onboarding:', e);
-        setIsOnboardingCompleted(false);
+        // Even on error, check if onboarding was completed
+        const errorCheck = await AsyncStorage.getItem('HAS_COMPLETED_ONBOARDING');
+        if (errorCheck === 'true') {
+          console.log('[NAV] ✅ Found onboarding flag despite error');
+          setIsOnboardingCompleted(true);
+        } else {
+          setIsOnboardingCompleted(false);
+        }
       }
     };
     checkOnboarding();
