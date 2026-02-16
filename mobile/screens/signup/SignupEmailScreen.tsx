@@ -9,6 +9,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import SunoGradient from '../../components/onboarding/SunoGradient';
 
 export default function SignupEmailScreen({ navigation, route }: any) {
   const [email, setEmail] = useState('');
@@ -22,6 +23,7 @@ export default function SignupEmailScreen({ navigation, route }: any) {
 
   return (
     <View style={styles.container}>
+      <SunoGradient />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}

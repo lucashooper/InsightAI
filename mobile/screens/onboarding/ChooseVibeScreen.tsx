@@ -22,8 +22,8 @@ const vibeOptions: VibeOption[] = [
     name: 'dark',
     label: 'Dark',
     emoji: '🌑',
-    orbColors: ['rgba(30, 30, 46, 0.95)', 'rgba(24, 24, 37, 0.85)', 'rgba(17, 17, 27, 0.75)'],
-    glowColor: 'rgba(139, 92, 246, 0.3)',
+    orbColors: ['rgba(139, 92, 246, 0.9)', 'rgba(168, 85, 247, 0.7)', 'rgba(99, 102, 241, 0.8)'],
+    glowColor: 'rgba(139, 92, 246, 0.4)',
   },
   {
     name: 'light',

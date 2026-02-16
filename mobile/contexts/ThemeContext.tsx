@@ -82,22 +82,22 @@ const themes: Record<ThemeName, Theme> = {
   vibrant: {
     name: 'vibrant',
     colors: {
-      background: '#0f0a1f',
-      backgroundGradient: ['#1a0f2e', '#0f0a1f', '#0a0515'],
-      cardBackground: 'rgba(26, 15, 46, 0.95)',
+      background: '#1a0f2e',
+      backgroundGradient: ['#faf5ff', '#f3e8ff', '#e9d5ff'],
+      cardBackground: 'rgba(250, 245, 255, 0.95)',
       
-      primaryText: '#ffffff',
-      secondaryText: '#e0d5ff',
-      tertiaryText: '#a78bfa',
+      primaryText: '#2C2C2C',
+      secondaryText: '#4A4A4A',
+      tertiaryText: '#6B6B6B',
       
       primary: '#a855f7',
-      primaryGradient: ['#a855f7', '#8b5cf6', '#7c3aed'],
-      secondary: '#3b82f6',
-      accent: '#ec4899',
+      primaryGradient: ['#a855f7', '#8b5cf6'],
+      secondary: '#c084fc',
+      accent: '#d8b4fe',
       
-      orbPrimary: ['rgba(168, 85, 247, 0.95)', 'rgba(139, 92, 246, 0.85)'],
-      orbSecondary: ['rgba(59, 130, 246, 0.95)', 'rgba(29, 78, 216, 0.85)'],
-      orbAccent: ['rgba(236, 72, 153, 0.9)', 'rgba(219, 39, 119, 0.8)'],
+      orbPrimary: ['rgba(168, 85, 247, 0.95)', 'rgba(139, 92, 246, 0.85)', 'rgba(124, 58, 237, 0.75)'],
+      orbSecondary: ['rgba(192, 132, 252, 0.9)', 'rgba(167, 139, 250, 0.8)'],
+      orbAccent: ['rgba(216, 180, 254, 0.85)', 'rgba(233, 213, 255, 0.75)'],
       
       success: '#34d399',
       warning: '#fbbf24',
@@ -116,22 +116,22 @@ const themes: Record<ThemeName, Theme> = {
   ocean: {
     name: 'ocean',
     colors: {
-      background: '#0a1628',
-      backgroundGradient: ['#0f1f3a', '#0a1628', '#051018'],
-      cardBackground: 'rgba(15, 31, 58, 0.95)',
+      background: '#eff6ff',
+      backgroundGradient: ['#eff6ff', '#dbeafe', '#bfdbfe'],
+      cardBackground: 'rgba(239, 246, 255, 0.95)',
       
-      primaryText: '#ffffff',
-      secondaryText: '#dbeafe',
-      tertiaryText: '#93c5fd',
+      primaryText: '#2C2C2C',
+      secondaryText: '#4A4A4A',
+      tertiaryText: '#6B6B6B',
       
       primary: '#3b82f6',
       primaryGradient: ['#3b82f6', '#2563eb'],
-      secondary: '#06b6d4',
-      accent: '#0ea5e9',
+      secondary: '#60a5fa',
+      accent: '#93c5fd',
       
-      orbPrimary: ['rgba(59, 130, 246, 0.95)', 'rgba(37, 99, 235, 0.85)'],
-      orbSecondary: ['rgba(6, 182, 212, 0.9)', 'rgba(8, 145, 178, 0.8)'],
-      orbAccent: ['rgba(14, 165, 233, 0.85)', 'rgba(2, 132, 199, 0.75)'],
+      orbPrimary: ['rgba(59, 130, 246, 0.95)', 'rgba(37, 99, 235, 0.85)', 'rgba(29, 78, 216, 0.75)'],
+      orbSecondary: ['rgba(96, 165, 250, 0.9)', 'rgba(147, 197, 253, 0.8)'],
+      orbAccent: ['rgba(147, 197, 253, 0.85)', 'rgba(191, 219, 254, 0.75)'],
       
       success: '#14b8a6',
       warning: '#f59e0b',
@@ -184,22 +184,22 @@ const themes: Record<ThemeName, Theme> = {
   sunset: {
     name: 'sunset',
     colors: {
-      background: '#1f0a0f',
-      backgroundGradient: ['#2e0f1a', '#1f0a0f', '#100508'],
-      cardBackground: 'rgba(46, 15, 26, 0.95)',
+      background: '#fff5ed',
+      backgroundGradient: ['#fff5ed', '#ffedd5', '#fed7aa'],
+      cardBackground: 'rgba(255, 245, 237, 0.95)',
       
-      primaryText: '#ffffff',
-      secondaryText: '#fed7aa',
-      tertiaryText: '#fdba74',
+      primaryText: '#2C2C2C',
+      secondaryText: '#4A4A4A',
+      tertiaryText: '#6B6B6B',
       
       primary: '#f97316',
       primaryGradient: ['#f97316', '#ea580c'],
-      secondary: '#ec4899',
-      accent: '#fb923c',
+      secondary: '#fb923c',
+      accent: '#fdba74',
       
-      orbPrimary: ['rgba(249, 115, 22, 0.95)', 'rgba(234, 88, 12, 0.85)'],
-      orbSecondary: ['rgba(236, 72, 153, 0.9)', 'rgba(219, 39, 119, 0.8)'],
-      orbAccent: ['rgba(251, 146, 60, 0.85)', 'rgba(249, 115, 22, 0.75)'],
+      orbPrimary: ['rgba(249, 115, 22, 0.95)', 'rgba(234, 88, 12, 0.85)', 'rgba(194, 65, 12, 0.75)'],
+      orbSecondary: ['rgba(251, 146, 60, 0.9)', 'rgba(253, 186, 116, 0.8)'],
+      orbAccent: ['rgba(253, 186, 116, 0.85)', 'rgba(254, 215, 170, 0.75)'],
       
       success: '#10b981',
       warning: '#fbbf24',
@@ -218,22 +218,22 @@ const themes: Record<ThemeName, Theme> = {
   midnight: {
     name: 'midnight',
     colors: {
-      background: '#0a0a1f',
-      backgroundGradient: ['#0f0f2e', '#0a0a1f', '#050515'],
-      cardBackground: 'rgba(15, 15, 46, 0.95)',
+      background: '#eef2ff',
+      backgroundGradient: ['#eef2ff', '#e0e7ff', '#c7d2fe'],
+      cardBackground: 'rgba(238, 242, 255, 0.95)',
       
-      primaryText: '#ffffff',
-      secondaryText: '#c7d2fe',
-      tertiaryText: '#a5b4fc',
+      primaryText: '#2C2C2C',
+      secondaryText: '#4A4A4A',
+      tertiaryText: '#6B6B6B',
       
       primary: '#6366f1',
       primaryGradient: ['#6366f1', '#4f46e5'],
       secondary: '#818cf8',
-      accent: '#a78bfa',
+      accent: '#a5b4fc',
       
-      orbPrimary: ['rgba(99, 102, 241, 0.95)', 'rgba(79, 70, 229, 0.85)'],
-      orbSecondary: ['rgba(129, 140, 248, 0.9)', 'rgba(99, 102, 241, 0.8)'],
-      orbAccent: ['rgba(167, 139, 250, 0.85)', 'rgba(139, 92, 246, 0.75)'],
+      orbPrimary: ['rgba(99, 102, 241, 0.95)', 'rgba(79, 70, 229, 0.85)', 'rgba(67, 56, 202, 0.75)'],
+      orbSecondary: ['rgba(129, 140, 248, 0.9)', 'rgba(165, 180, 252, 0.8)'],
+      orbAccent: ['rgba(165, 180, 252, 0.85)', 'rgba(199, 210, 254, 0.75)'],
       
       success: '#10b981',
       warning: '#f59e0b',

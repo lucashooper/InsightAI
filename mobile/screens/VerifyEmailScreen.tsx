@@ -17,6 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import OTPInput from '../components/OTPInput';
 import { useOnboarding } from '../contexts/OnboardingContext';
+import SunoGradient from '../components/onboarding/SunoGradient';
 
 interface VerifyEmailScreenProps {
   navigation: any;
@@ -185,6 +186,7 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
+        <SunoGradient />
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}

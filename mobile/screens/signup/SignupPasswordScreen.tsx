@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
+import SunoGradient from '../../components/onboarding/SunoGradient';
 
 export default function SignupPasswordScreen({ navigation, route }: any) {
   const { email } = route.params;
@@ -66,6 +67,7 @@ export default function SignupPasswordScreen({ navigation, route }: any) {
 
   return (
     <View style={styles.container}>
+      <SunoGradient />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
