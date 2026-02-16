@@ -20,8 +20,8 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
 
   const handleSkip = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Continue to onboarding questions without auth
-    navigation.navigate('OnboardingQuestion');
+    // Continue to value prop screen
+    navigation.navigate('ValueProp');
   };
 
   const handleEmailAuth = () => {

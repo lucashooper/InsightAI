@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface OnboardingContextType {
   userName: string;
@@ -12,6 +13,22 @@ const OnboardingContext = createContext<OnboardingContextType | undefined>(undef
 export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
   const [userName, setUserName] = useState<string>('');
   const [onboardingAnswers, setOnboardingAnswers] = useState<Record<string, string>>({});
+
+  // Load cached username on mount (for Apple/Google Sign-In users)
+  useEffect(() => {
+    const loadCachedUsername = async () => {
+      try {
+        const cached = await AsyncStorage.getItem('CACHED_USERNAME');
+        if (cached) {
+          console.log('[OnboardingContext] Loaded cached username:', cached);
+          setUserName(cached);
+        }
+      } catch (error) {
+        console.error('[OnboardingContext] Error loading cached username:', error);
+      }
+    };
+    loadCachedUsername();
+  }, []);
 
   const setUserNameWithLogging = (name: string) => {
     console.log('[OnboardingContext] setUserName called with:', name);

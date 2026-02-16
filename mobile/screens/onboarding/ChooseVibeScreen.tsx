@@ -98,8 +98,8 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
       onVibeSelected(selectedVibe);
     }
     
-    // Navigate to Paywall (next step in onboarding)
-    navigation.navigate('Paywall');
+    // Navigate to onboarding questions (name, referral, goals, etc.)
+    navigation.navigate('OnboardingQuestion');
   };
 
   return (

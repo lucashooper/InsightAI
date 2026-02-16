@@ -169,6 +169,22 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
     const currentStep = STEPS[currentIndex];
     const totalQuestionSteps = STEPS.length;
 
+    // CRITICAL: Skip name step if user already has a username (from Apple/Google Sign-In)
+    useEffect(() => {
+        const checkCachedUsername = async () => {
+            if (currentStep.id === 'name' && userName) {
+                console.log('[OnboardingQuestion] User already has username from social sign-in:', userName);
+                console.log('[OnboardingQuestion] Skipping name step and moving to next question');
+                // Skip the name step since they signed in with Apple/Google
+                setAnswers(prev => ({ ...prev, name: userName }));
+                if (currentIndex < STEPS.length - 1) {
+                    setCurrentIndex(currentIndex + 1);
+                }
+            }
+        };
+        checkCachedUsername();
+    }, [currentStep.id, userName, currentIndex]);
+
     useEffect(() => {
         // Floating animation for icons
         Animated.loop(
