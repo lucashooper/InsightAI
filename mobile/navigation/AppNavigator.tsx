@@ -28,6 +28,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import WelcomeScreen from '../screens/onboarding/WelcomeScreen';
 import ProductRevealScreen from '../screens/onboarding/ProductRevealScreen';
 import ValuePropScreen from '../screens/onboarding/ValuePropScreen';
+import ChooseVibeScreen from '../screens/onboarding/ChooseVibeScreen';
 import AuthSelectionScreen from '../screens/onboarding/AuthSelectionScreen';
 import OnboardingQuestionScreen from '../screens/onboarding/OnboardingQuestionScreen';
 import NotificationPermissionScreen from '../screens/onboarding/NotificationPermissionScreen';
@@ -464,6 +465,7 @@ export default function AppNavigator() {
           <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
           <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
           <Stack.Screen name="ValueProp" component={ValuePropScreen} />
+          <Stack.Screen name="ChooseVibe" component={ChooseVibeScreen} />
           <Stack.Screen name="Paywall" component={PaywallScreen} />
           <Stack.Screen name="OnboardingSummary" component={OnboardingSummaryScreen} />
           <Stack.Screen name="PrivacyOnboarding" component={PrivacyOnboardingScreen} />

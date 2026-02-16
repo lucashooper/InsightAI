@@ -151,7 +151,7 @@ export default function ValuePropScreen({ navigation }: any) {
           activeOpacity={0.9}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            navigation.navigate('Paywall');
+            navigation.navigate('ChooseVibe');
           }}
         >
           <LinearGradient

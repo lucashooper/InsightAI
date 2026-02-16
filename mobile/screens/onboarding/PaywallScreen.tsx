@@ -478,7 +478,12 @@ export default function PaywallScreen({ navigation, route }: any) {
       <StatusBar barStyle="dark-content" />
 
       {/* Scrollable top content */}
-      <ScrollView style={styles.topContent} showsVerticalScrollIndicator={false} nestedScrollEnabled>
+      <ScrollView
+        style={styles.topContent}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled
+      >
         {/* Logo */}
         <View style={styles.logoContainer}>
           <Image source={insightLogo} style={styles.logo} resizeMode="cover" />
@@ -678,6 +683,9 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: isTablet ? 70 : 50,
   },
+  scrollContent: {
+    paddingBottom: isTablet ? 190 : 160,
+  },
   logoContainer: {
     alignItems: 'center',
     marginBottom: isTablet ? 12 : 6,
@@ -871,6 +879,10 @@ const styles = StyleSheet.create({
   },
   // Sticky footer
   stickyFooter: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     paddingHorizontal: isTablet ? 80 : 24,
     paddingBottom: isTablet ? 30 : 20,
     paddingTop: 14,
@@ -879,9 +891,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 6,
   },
   commitmentBadge: {
     flexDirection: 'row',
