@@ -252,9 +252,9 @@ const themes: Record<ThemeName, Theme> = {
   light: {
     name: 'light',
     colors: {
-      background: '#FAF8F3',
-      backgroundGradient: ['#FDFCFA', '#FAF8F3', '#F7F5F0'],
-      cardBackground: '#FFFFFF',
+      background: '#fef7f2',
+      backgroundGradient: ['#fef5f8', '#fef0f5', '#fef7f2'],
+      cardBackground: 'rgba(255, 255, 255, 0.8)',
       
       primaryText: '#2C2C2C',
       secondaryText: '#4A4A4A',

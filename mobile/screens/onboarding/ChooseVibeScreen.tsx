@@ -19,18 +19,18 @@ interface VibeOption {
 
 const vibeOptions: VibeOption[] = [
   {
-    name: 'vibrant',
-    label: 'Vibrant',
-    emoji: '✨',
-    orbColors: ['rgba(168, 85, 247, 0.95)', 'rgba(139, 92, 246, 0.85)', 'rgba(124, 58, 237, 0.75)'],
-    glowColor: 'rgba(168, 85, 247, 0.4)',
+    name: 'dark',
+    label: 'Dark',
+    emoji: '🌑',
+    orbColors: ['rgba(30, 30, 46, 0.95)', 'rgba(24, 24, 37, 0.85)', 'rgba(17, 17, 27, 0.75)'],
+    glowColor: 'rgba(139, 92, 246, 0.3)',
   },
   {
-    name: 'ocean',
-    label: 'Ocean',
-    emoji: '🌊',
-    orbColors: ['rgba(59, 130, 246, 0.95)', 'rgba(37, 99, 235, 0.85)', 'rgba(29, 78, 216, 0.75)'],
-    glowColor: 'rgba(59, 130, 246, 0.4)',
+    name: 'light',
+    label: 'Light',
+    emoji: '☀️',
+    orbColors: ['rgba(255, 167, 38, 0.9)', 'rgba(255, 152, 0, 0.8)', 'rgba(251, 140, 0, 0.7)'],
+    glowColor: 'rgba(255, 167, 38, 0.4)',
   },
   {
     name: 'sunset',
@@ -40,11 +40,18 @@ const vibeOptions: VibeOption[] = [
     glowColor: 'rgba(249, 115, 22, 0.4)',
   },
   {
-    name: 'forest',
-    label: 'Forest',
-    emoji: '🌲',
-    orbColors: ['rgba(16, 185, 129, 0.95)', 'rgba(5, 150, 105, 0.85)', 'rgba(4, 120, 87, 0.75)'],
-    glowColor: 'rgba(16, 185, 129, 0.4)',
+    name: 'vibrant',
+    label: 'Vibrant',
+    emoji: '✨',
+    orbColors: ['rgba(168, 85, 247, 0.95)', 'rgba(139, 92, 246, 0.85)', 'rgba(124, 58, 237, 0.75)'],
+    glowColor: 'rgba(168, 85, 247, 0.4)',
+  },
+  {
+    name: 'ocean',
+    label: 'Ocean',
+    emoji: '�',
+    orbColors: ['rgba(59, 130, 246, 0.95)', 'rgba(37, 99, 235, 0.85)', 'rgba(29, 78, 216, 0.75)'],
+    glowColor: 'rgba(59, 130, 246, 0.4)',
   },
   {
     name: 'midnight',
@@ -52,13 +59,6 @@ const vibeOptions: VibeOption[] = [
     emoji: '🌙',
     orbColors: ['rgba(99, 102, 241, 0.95)', 'rgba(79, 70, 229, 0.85)', 'rgba(67, 56, 202, 0.75)'],
     glowColor: 'rgba(99, 102, 241, 0.4)',
-  },
-  {
-    name: 'light',
-    label: 'Light',
-    emoji: '☀️',
-    orbColors: ['rgba(255, 167, 38, 0.9)', 'rgba(255, 152, 0, 0.8)', 'rgba(251, 140, 0, 0.7)'],
-    glowColor: 'rgba(255, 167, 38, 0.4)',
   },
 ];
 
@@ -68,8 +68,10 @@ interface Props {
 }
 
 export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) {
-  const [selectedVibe, setSelectedVibe] = useState<ThemeName | null>(null);
+  const [selectedVibe, setSelectedVibe] = useState<ThemeName | null>('light');
+  const [backgroundColors, setBackgroundColors] = useState<string[]>(['#fef5f8', '#fef0f5', '#f5f0fe', '#f0f9ff', '#fef7f2']);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const bgTransitionAnim = useRef(new Animated.Value(0)).current;
   const { setTheme } = useTheme();
 
   useEffect(() => {
@@ -80,9 +82,39 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
     }).start();
   }, []);
 
+  const getThemeBackgroundColors = (themeName: ThemeName): string[] => {
+    switch (themeName) {
+      case 'dark':
+        return ['#1e1e2e', '#18182d', '#11111b', '#0d0d15', '#1a1a2e'];
+      case 'light':
+        return ['#fef5f8', '#fef0f5', '#f5f0fe', '#f0f9ff', '#fef7f2'];
+      case 'sunset':
+        return ['#fff5ed', '#ffedd5', '#fed7aa', '#fdba74', '#fb923c'];
+      case 'vibrant':
+        return ['#faf5ff', '#f3e8ff', '#e9d5ff', '#d8b4fe', '#c084fc'];
+      case 'ocean':
+        return ['#eff6ff', '#dbeafe', '#bfdbfe', '#93c5fd', '#60a5fa'];
+      case 'midnight':
+        return ['#eef2ff', '#e0e7ff', '#c7d2fe', '#a5b4fc', '#818cf8'];
+      default:
+        return ['#fef5f8', '#fef0f5', '#f5f0fe', '#f0f9ff', '#fef7f2'];
+    }
+  };
+
   const handleVibeSelect = (vibe: ThemeName) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setSelectedVibe(vibe);
+    
+    // Animate background color transition
+    const newColors = getThemeBackgroundColors(vibe);
+    Animated.timing(bgTransitionAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: false,
+    }).start(() => {
+      setBackgroundColors(newColors);
+      bgTransitionAnim.setValue(0);
+    });
   };
 
   const handleContinue = async () => {
@@ -104,7 +136,7 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
 
   return (
     <View style={styles.container}>
-      <SunoGradient />
+      <SunoGradient themeColors={backgroundColors} />
       
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
         <View style={styles.header}>

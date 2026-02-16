@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, StatusBar, Image, TouchableWithoutFeedback } from 'react-native';
 import { Asset } from 'expo-asset';
 import { isTablet, sf, ss } from '../../utils/responsive';
+import SunoGradient from '../../components/onboarding/SunoGradient';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
@@ -37,6 +38,7 @@ export default function WelcomeScreen({ navigation }: any) {
     return (
         <TouchableWithoutFeedback onPress={handleContinue}>
             <View style={styles.container}>
+                <SunoGradient />
                 <StatusBar barStyle="dark-content" />
 
                 <View style={styles.content}>

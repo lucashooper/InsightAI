@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
+import SunoGradient from '../../components/onboarding/SunoGradient';
 
 const { width, height } = Dimensions.get('window');
 
@@ -14,6 +15,7 @@ export default function ProductRevealScreen({ navigation }: any) {
 
     return (
         <View style={styles.container}>
+            <SunoGradient />
             <StatusBar barStyle="dark-content" />
 
             <View style={styles.phoneSection}>
