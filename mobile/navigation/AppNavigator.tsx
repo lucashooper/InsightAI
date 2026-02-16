@@ -332,11 +332,20 @@ export default function AppNavigator() {
             console.log('[NAV] Profile check result:', profile);
             console.log('[NAV] Profile error:', profileError);
 
-            // If profile exists and has a username, they're an existing user
+            // If profile exists and has a username AND created_at is old (> 1 hour ago), they're a returning user
+            // New users (< 1 hour) with username from Apple/Google should still see onboarding
             if (profile && profile.username) {
-              console.log('[NAV] ✅ Existing user detected, skipping onboarding');
-              await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
-              setIsOnboardingCompleted(true);
+              const createdAt = new Date(profile.created_at);
+              const hoursSinceCreation = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
+              
+              if (hoursSinceCreation > 1) {
+                console.log('[NAV] ✅ Returning user detected (created', hoursSinceCreation.toFixed(1), 'hours ago), skipping onboarding');
+                await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+                setIsOnboardingCompleted(true);
+              } else {
+                console.log('[NAV] New user with username from social sign-in (created', hoursSinceCreation.toFixed(1), 'hours ago), showing onboarding');
+                setIsOnboardingCompleted(false);
+              }
             } else {
               // Final re-check: the flag may have been set during the profile query
               // (e.g., Apple/Google Sign-In sets it in AuthContext while we're checking)

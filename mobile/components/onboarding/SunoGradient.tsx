@@ -12,37 +12,37 @@ const { width, height } = Dimensions.get('window');
 export default function SunoGradient() {
   return (
     <View style={styles.container}>
-      {/* Base warm cream gradient */}
+      {/* Base warm cream gradient - enhanced for more vibrant pastel tones */}
       <LinearGradient
-        colors={['#fef7f2', '#fdf2ec', '#f8ece8', '#f5eef8', '#fef9f5']}
+        colors={['#fef5f8', '#fef0f5', '#f5f0fe', '#f0f9ff', '#fef7f2']}
         locations={[0, 0.25, 0.5, 0.75, 1]}
-        start={{ x: 0.1, y: 0 }}
-        end={{ x: 0.9, y: 1 }}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFillObject}
       />
 
-      {/* Soft radial color accents via SVG */}
+      {/* Enhanced radial color accents via SVG - more vibrant like Unchained */}
       <Svg width={width} height={height} style={StyleSheet.absoluteFillObject}>
         <Defs>
-          {/* Soft pink blob top-right */}
-          <RadialGradient id="pinkBlob" cx="80%" cy="15%" rx="50%" ry="40%">
-            <Stop offset="0%" stopColor="#f8d7da" stopOpacity="0.35" />
-            <Stop offset="100%" stopColor="#f8d7da" stopOpacity="0" />
+          {/* Vibrant pink blob top-right */}
+          <RadialGradient id="pinkBlob" cx="85%" cy="10%" rx="55%" ry="45%">
+            <Stop offset="0%" stopColor="#ffc9d9" stopOpacity="0.45" />
+            <Stop offset="100%" stopColor="#ffc9d9" stopOpacity="0" />
           </RadialGradient>
-          {/* Soft lavender blob center-left */}
-          <RadialGradient id="lavenderBlob" cx="15%" cy="45%" rx="45%" ry="35%">
-            <Stop offset="0%" stopColor="#e8dff5" stopOpacity="0.3" />
-            <Stop offset="100%" stopColor="#e8dff5" stopOpacity="0" />
+          {/* Vibrant lavender blob center-left */}
+          <RadialGradient id="lavenderBlob" cx="10%" cy="50%" rx="50%" ry="40%">
+            <Stop offset="0%" stopColor="#ddd6fe" stopOpacity="0.4" />
+            <Stop offset="100%" stopColor="#ddd6fe" stopOpacity="0" />
           </RadialGradient>
-          {/* Soft peach blob bottom */}
-          <RadialGradient id="peachBlob" cx="60%" cy="85%" rx="55%" ry="30%">
-            <Stop offset="0%" stopColor="#fde2d4" stopOpacity="0.3" />
-            <Stop offset="100%" stopColor="#fde2d4" stopOpacity="0" />
+          {/* Vibrant peach/orange blob bottom */}
+          <RadialGradient id="peachBlob" cx="65%" cy="90%" rx="60%" ry="35%">
+            <Stop offset="0%" stopColor="#fed7aa" stopOpacity="0.4" />
+            <Stop offset="100%" stopColor="#fed7aa" stopOpacity="0" />
           </RadialGradient>
-          {/* Subtle blue blob top-left */}
-          <RadialGradient id="blueBlob" cx="25%" cy="8%" rx="40%" ry="25%">
-            <Stop offset="0%" stopColor="#dbeafe" stopOpacity="0.2" />
-            <Stop offset="100%" stopColor="#dbeafe" stopOpacity="0" />
+          {/* Vibrant blue blob top-left */}
+          <RadialGradient id="blueBlob" cx="20%" cy="5%" rx="45%" ry="30%">
+            <Stop offset="0%" stopColor="#bfdbfe" stopOpacity="0.35" />
+            <Stop offset="100%" stopColor="#bfdbfe" stopOpacity="0" />
           </RadialGradient>
         </Defs>
         <Rect x="0" y="0" width={width} height={height} fill="url(#pinkBlob)" />

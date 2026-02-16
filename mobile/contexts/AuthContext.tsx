@@ -243,10 +243,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Omitting the nonce lets Supabase skip nonce verification entirely.
         console.log('[AUTH] Signing in with Google ID token (no nonce - native SDK flow)');
         
-        // CRITICAL FIX: Set onboarding flag BEFORE signing in to prevent race condition
-        console.log('[AUTH] Google Sign-In - setting onboarding flag BEFORE auth to prevent race condition');
-        await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
-        
         const { data, error } = await supabase.auth.signInWithIdToken({
           provider: 'google',
           token: idToken,
@@ -291,6 +287,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               // Cache the username for quick access
               await AsyncStorage.setItem('CACHED_USERNAME', displayName);
               console.log('[AUTH] ✅ Username cached for Google Sign-In');
+              
+              // IMPORTANT: Do NOT set HAS_COMPLETED_ONBOARDING here
+              // Google users still need to see paywall and onboarding questions
+              // The username being saved will allow them to skip the name input screen
             } catch (err) {
               console.error('[AUTH] Error saving Google profile:', err);
             }
@@ -324,11 +324,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         nonce: hashedNonce,
       });
 
-      // CRITICAL FIX: Set onboarding flag BEFORE signing in to prevent race condition
-      // The navigation effect triggers when auth state changes, so we must set the flag first
-      console.log('[AUTH] Apple Sign-In - setting onboarding flag BEFORE auth to prevent race condition');
-      await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
-
       const { data, error } = await supabase.auth.signInWithIdToken({
         provider: 'apple',
         token: credential.identityToken!,
@@ -336,7 +331,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (!error && data?.user) {
-        // APPLE COMPLIANCE: Always skip onboarding for Apple Sign-In users
+        // APPLE COMPLIANCE: Skip email/name input screens for Apple Sign-In
         // Apple provides name/email via Authentication Services framework
         // We must NOT ask users for this information again
         
@@ -364,7 +359,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('[AUTH] Apple did not provide name, generated default:', displayName);
         }
 
-        // ALWAYS save username and cache it for Apple users
+        // Save username and cache it for Apple users
         console.log('[AUTH] Apple Sign-In - saving username:', displayName);
         try {
           const { error: profileError } = await supabase
@@ -385,6 +380,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Cache the username for quick access
           await AsyncStorage.setItem('CACHED_USERNAME', displayName);
           console.log('[AUTH] ✅ Username cached for Apple Sign-In');
+          
+          // IMPORTANT: Do NOT set HAS_COMPLETED_ONBOARDING here
+          // Apple/Google users still need to see paywall and onboarding questions
+          // The username being saved will allow them to skip the name input screen
         } catch (err) {
           console.error('[AUTH] Error saving Apple profile:', err);
         }

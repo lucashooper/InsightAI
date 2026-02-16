@@ -683,12 +683,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: isTablet ? sf(38) : sf(42),
+    fontSize: isTablet ? sf(38) : sf(36),
     fontWeight: '600',
     color: '#1a1a2e',
     letterSpacing: -0.5,
     textAlign: 'center',
-    lineHeight: isTablet ? sf(46) : sf(50),
+    lineHeight: isTablet ? sf(46) : sf(43),
   },
   // Carousel
   carouselContainer: {
