@@ -219,7 +219,7 @@ export default function LoginScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#fef7f2',
   },
   keyboardView: {
     flex: 1,
@@ -248,32 +248,32 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#fff',
+    color: '#1a1a2e',
     marginBottom: 32,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(0, 0, 0, 0.15)',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     fontSize: 16,
-    color: '#fff',
+    color: '#1a1a2e',
   },
   passwordContainer: {
     position: 'relative',
     marginBottom: 16,
   },
   passwordInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(0, 0, 0, 0.15)',
     borderRadius: 12,
     padding: 16,
     paddingRight: 50,
     fontSize: 16,
-    color: '#fff',
+    color: '#1a1a2e',
   },
   eyeButton: {
     position: 'absolute',
@@ -307,11 +307,11 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   signupText: {
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: 'rgba(0, 0, 0, 0.5)',
     fontSize: 14,
   },
   signupTextBold: {
-    color: '#fff',
+    color: '#1a1a2e',
     fontWeight: '600',
   },
   dividerContainer: {
@@ -322,10 +322,10 @@ const styles = StyleSheet.create({
   divider: {
     flex: 1,
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
   },
   dividerText: {
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: 'rgba(0, 0, 0, 0.5)',
     paddingHorizontal: 16,
     fontSize: 14,
   },
@@ -333,11 +333,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: 12,
     padding: 14,
     gap: 12,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
   },
   appleButtonText: {
     color: '#000',
@@ -348,10 +350,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: 12,
     padding: 14,
     gap: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
   },
   googleButtonText: {
     color: '#000',

@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
   },
   skipButtonText: {
     fontSize: sf(16),
-    color: '#8b5cf6',
+    color: 'rgba(0, 0, 0, 0.5)',
     fontWeight: '500',
   },
 });

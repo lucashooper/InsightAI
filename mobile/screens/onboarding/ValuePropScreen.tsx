@@ -203,11 +203,11 @@ const styles = StyleSheet.create({
   },
   headline: {
     fontSize: 44,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#1a1a2e',
     textAlign: 'center',
     lineHeight: 54,
-    letterSpacing: -1.2,
+    letterSpacing: -0.5,
     marginBottom: 56,
   },
   contrastContainer: {

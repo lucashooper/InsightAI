@@ -194,7 +194,7 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="arrow-back" size={24} color="#fff" />
+            <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
           </TouchableOpacity>
 
           <View style={styles.content}>
@@ -240,7 +240,7 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
             <Ionicons 
               name="refresh-outline" 
               size={18} 
-              color={resendCooldown > 0 ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.7)'} 
+              color={resendCooldown > 0 ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.6)'} 
               style={styles.resendIcon}
             />
             <Text style={[styles.resendButtonText, resendCooldown > 0 && styles.resendButtonTextDisabled]}>
@@ -267,7 +267,7 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#fef7f2',
     paddingTop: 60,
   },
   keyboardView: {
@@ -306,19 +306,19 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#fff',
+    color: '#1a1a2e',
     marginBottom: 12,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 15,
-    color: 'rgba(255, 255, 255, 0.6)',
+    color: 'rgba(0, 0, 0, 0.5)',
     marginBottom: 40,
     textAlign: 'center',
     lineHeight: 22,
   },
   emailInline: {
-    color: '#fff',
+    color: '#1a1a2e',
     fontWeight: '500',
   },
   otpContainer: {
@@ -333,11 +333,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 14,
     paddingHorizontal: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderRadius: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(0, 0, 0, 0.15)',
   },
   resendButtonDisabled: {
     opacity: 0.5,
@@ -346,18 +346,18 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   resendButtonText: {
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: 'rgba(0, 0, 0, 0.6)',
     fontSize: 15,
     fontWeight: '600',
   },
   resendButtonTextDisabled: {
-    color: 'rgba(255, 255, 255, 0.3)',
+    color: 'rgba(0, 0, 0, 0.3)',
   },
   changeEmailButton: {
     paddingVertical: 12,
   },
   changeEmailText: {
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: 'rgba(0, 0, 0, 0.5)',
     fontSize: 14,
     textAlign: 'center',
   },
