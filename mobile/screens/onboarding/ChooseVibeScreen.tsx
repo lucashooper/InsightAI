@@ -22,8 +22,8 @@ const vibeOptions: VibeOption[] = [
     name: 'dark',
     label: 'Dark',
     emoji: '🌑',
-    orbColors: ['rgba(139, 92, 246, 0.9)', 'rgba(168, 85, 247, 0.7)', 'rgba(99, 102, 241, 0.8)'],
-    glowColor: 'rgba(139, 92, 246, 0.4)',
+    orbColors: ['rgba(20, 20, 30, 0.95)', 'rgba(15, 15, 25, 0.85)', 'rgba(10, 10, 20, 0.75)'],
+    glowColor: 'rgba(139, 92, 246, 0.3)',
   },
   {
     name: 'light',
@@ -85,7 +85,7 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
   const getThemeBackgroundColors = (themeName: ThemeName): string[] => {
     switch (themeName) {
       case 'dark':
-        return ['#1e1e2e', '#18182d', '#11111b', '#0d0d15', '#1a1a2e'];
+        return ['#000000', '#0a0a0a', '#050505', '#000000', '#0a0a0a'];
       case 'light':
         return ['#fef5f8', '#fef0f5', '#f5f0fe', '#f0f9ff', '#fef7f2'];
       case 'sunset':
@@ -134,14 +134,16 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
     navigation.navigate('OnboardingQuestion');
   };
 
+  const textColor = selectedVibe === 'dark' ? '#ffffff' : '#1a1a2e';
+  
   return (
     <View style={styles.container}>
       <SunoGradient themeColors={backgroundColors} />
       
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
         <View style={styles.header}>
-          <Text style={styles.title}>Choose your vibe</Text>
-          <Text style={styles.subtitle}>Pick a theme that feels like you.</Text>
+          <Text style={[styles.title, { color: textColor }]}>Choose your vibe</Text>
+          <Text style={[styles.subtitle, { color: textColor }]}>Pick a theme that feels like you.</Text>
         </View>
 
         <View style={styles.orbGrid}>
@@ -152,6 +154,7 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
               isSelected={selectedVibe === vibe.name}
               onPress={() => handleVibeSelect(vibe.name)}
               delay={index * 80}
+              selectedTheme={selectedVibe}
             />
           ))}
         </View>
@@ -181,9 +184,10 @@ interface OrbOptionProps {
   isSelected: boolean;
   onPress: () => void;
   delay: number;
+  selectedTheme: ThemeName | null;
 }
 
-function OrbOption({ vibe, isSelected, onPress, delay }: OrbOptionProps) {
+function OrbOption({ vibe, isSelected, onPress, delay, selectedTheme }: OrbOptionProps) {
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const selectionAnim = useRef(new Animated.Value(0)).current;
@@ -269,7 +273,7 @@ function OrbOption({ vibe, isSelected, onPress, delay }: OrbOptionProps) {
         </View>
       </Animated.View>
 
-      <Text style={styles.label}>{vibe.label}</Text>
+      <Text style={[styles.label, { color: selectedTheme === 'dark' ? '#ffffff' : '#1a1a2e' }]}>{vibe.label}</Text>
     </TouchableOpacity>
   );
 }

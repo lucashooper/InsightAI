@@ -11,6 +11,7 @@ import ProgressBarNeon from '../../components/onboarding/ProgressBarNeon';
 import PillOption from '../../components/onboarding/PillOption';
 import AnimatedSlider from '../../components/onboarding/AnimatedSlider';
 import { useOnboarding } from '../../contexts/OnboardingContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
 
 const cambridgeLogo = require('../../assets/Cambridge-logo.png');
