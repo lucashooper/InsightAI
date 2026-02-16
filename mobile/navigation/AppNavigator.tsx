@@ -494,6 +494,7 @@ export default function AppNavigator() {
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="ProductReveal" component={ProductRevealScreen} />
           <Stack.Screen name="AuthSelection" component={AuthSelectionScreen} />
+          <Stack.Screen name="ChooseVibe" component={ChooseVibeScreen} />
           <Stack.Screen name="EmailVerified" component={EmailVerifiedScreen} />
           <Stack.Screen name="OnboardingQuestion" component={OnboardingQuestionScreen} />
           <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />

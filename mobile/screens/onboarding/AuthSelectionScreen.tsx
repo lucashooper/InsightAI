@@ -20,8 +20,8 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
 
   const handleSkip = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Continue to value prop screen
-    navigation.navigate('ValueProp');
+    // Continue to theme selection screen
+    navigation.navigate('ChooseVibe');
   };
 
   const handleEmailAuth = () => {
