@@ -7,7 +7,7 @@ import Purchases from 'react-native-purchases';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
 import { mobileAiService } from '../services/mobileAiService';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import ImmersiveAnalysisOverlay from '../components/shared/ImmersiveAnalysisOverlay';
 import PremiumUpsellOverlay from '../components/PremiumUpsellOverlay';
@@ -261,7 +261,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
     // Check subscription status BEFORE starting animation
     try {
       const customerInfo = await Purchases.getCustomerInfo();
-      const ENTITLEMENT_ID = 'InsightAI Pro';
+      const ENTITLEMENT_ID = 'Insight Pro';
       const isProActive = !!customerInfo.entitlements.active[ENTITLEMENT_ID];
       const hasAnyActiveEntitlement = Object.keys(customerInfo.entitlements.active).length > 0;
       
@@ -354,6 +354,11 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
 
       const [analysis] = (await Promise.all([analysisPromise, minDelay])) as any;
 
+      // Check if analysis was successful
+      if (!analysis || typeof analysis !== 'object') {
+        throw new Error('Invalid analysis response from AI service');
+      }
+
       const elapsed = Date.now() - startedAt;
       if (elapsed < ANALYSIS_MIN_MS) {
         await new Promise((resolve) => setTimeout(resolve, ANALYSIS_MIN_MS - elapsed));
@@ -370,8 +375,8 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
         .eq('id', targetEntry.id);
 
       if (error) {
-        Alert.alert('Analysis failed', 'Unable to save AI insights.');
-        return;
+        console.error('[EntryDetail] Supabase update error:', error);
+        throw new Error(`Failed to save analysis: ${error.message}`);
       }
 
       targetEntry.ai_structured_insights = analysis;
@@ -584,10 +589,10 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="rgba(255, 255, 255, 0.7)" />
+            <Ionicons name="arrow-back" size={24} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : '#1a1a1a'} />
           </TouchableOpacity>
         </View>
-        <ActivityIndicator size="large" color="#8b5cf6" style={{ marginTop: 100 }} />
+        <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: 100 }} />
       </View>
     );
   }
@@ -599,7 +604,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.7)'} />
+          <Ionicons name="arrow-back" size={24} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : '#1a1a1a'} />
         </TouchableOpacity>
         <View style={styles.headerRight}>
           <TouchableOpacity 
@@ -609,7 +614,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
             {mood ? (
               <Text style={{ fontSize: 24 }}>{mood}</Text>
             ) : (
-              <Ionicons name="happy-outline" size={24} color={theme.name === 'light' ? theme.colors.primaryText : 'rgba(255, 255, 255, 0.7)'} />
+              <Ionicons name="happy-outline" size={24} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : theme.colors.primaryText} />
             )}
           </TouchableOpacity>
           <TouchableOpacity 
@@ -672,14 +677,14 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
       <ScrollView ref={scrollViewRef} style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.entryContainer}>
           <TextInput
-            style={[styles.titleInput, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}
+            style={[styles.titleInput, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}
             value={editableTitle}
             onChangeText={setEditableTitle}
             placeholder="Untitled Entry"
-            placeholderTextColor={theme.name === 'light' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.3)'}
+            placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'}
             autoFocus={false}
           />
-          <Text style={[styles.metaLine, { color: theme.name === 'light' ? 'rgba(0,0,0,0.4)' : 'rgba(255, 255, 255, 0.5)' }]}>
+          <Text style={[styles.metaLine, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0,0,0,0.4)' }]}>
             {formatDate(entry.created_at)}
           </Text>
 
@@ -701,20 +706,20 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
           )}
 
           <TextInput
-            style={[styles.contentInput, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}
+            style={[styles.contentInput, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}
             value={editableContent}
             onChangeText={setEditableContent}
             multiline
             textAlignVertical="top"
             placeholder="What's on your mind?"
-            placeholderTextColor={theme.name === 'light' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.3)'}
+            placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'}
             autoFocus={false}
           />
           
           {structuredInsights && (
             <View style={styles.inlineInsightsSection}>
               <View style={styles.insightsDivider} />
-              <Text style={styles.inlineInsightsTitle}>Insights</Text>
+              <Text style={[styles.inlineInsightsTitle, { color: theme.colors.primary }]}>Insights</Text>
               
               {/* Primary Emotion Badge - MOVED TO TOP */}
               {moodAnalysis && (
@@ -724,8 +729,8 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                   getSentimentStyle(moodAnalysis.primary_emotion)
                 ]}>
                   <View style={styles.emotionBadge}>
-                    <Text style={styles.inlineMoodLabel}>PRIMARY EMOTION</Text>
-                    <Text style={styles.inlineMoodEmotion}>{moodAnalysis.primary_emotion}</Text>
+                    <Text style={[styles.inlineMoodLabel, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.6)' : '#6B6B6B' }]}>PRIMARY EMOTION</Text>
+                    <Text style={[styles.inlineMoodEmotion, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.98)' : '#1a1a1a' }]}>{moodAnalysis.primary_emotion}</Text>
                   </View>
                 </View>
               )}
@@ -737,7 +742,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                     <Ionicons name="sparkles" size={20} color="#a855f7" />
                     <Text style={styles.insightHeaderText}>Summary</Text>
                   </View>
-                  <Text style={styles.inlineBriefingText}>
+                  <Text style={[styles.inlineBriefingText, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.9)' : '#2C2C2C' }]}>
                     {structuredInsights.insights_report.conversationalSummary
                       .replace(/The user/g, 'You')
                       .replace(/the user/g, 'you')
@@ -794,7 +799,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                                         {card.short_label || card.type.toUpperCase()}
                                       </Text>
                                     </View>
-                                    <Text style={styles.insightCardText}>
+                                    <Text style={[styles.insightCardText, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.9)' : '#2C2C2C' }]}>
                                       {card.text
                                         .replace(/The user/g, 'You')
                                         .replace(/the user/g, 'you')
@@ -847,7 +852,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                                         {card.short_label || card.type.toUpperCase()}
                                       </Text>
                                     </View>
-                                    <Text style={styles.insightCardText}>
+                                    <Text style={[styles.insightCardText, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.9)' : '#2C2C2C' }]}>
                                       {card.text
                                         .replace(/The user/g, 'You')
                                         .replace(/the user/g, 'you')
@@ -892,7 +897,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
       <Animated.View style={[styles.quickActionsButton, { bottom: controlsBottomAnim }]} pointerEvents="box-none">
         <TouchableOpacity onPress={toggleQuickActions} activeOpacity={0.8}>
           <LinearGradient
-            colors={theme.name === 'light' ? ['#8b5cf6', '#7c3aed'] : ['rgba(139, 92, 246, 0.3)', 'rgba(99, 102, 241, 0.2)']}
+            colors={isDarkTheme(theme.name) ? ['rgba(139, 92, 246, 0.3)', 'rgba(99, 102, 241, 0.2)'] : ['#8b5cf6', '#7c3aed']}
             style={styles.fabGradient}
           >
             <Ionicons name={showQuickActions ? 'close' : 'add'} size={28} color="#ffffff" />
@@ -936,6 +941,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
 
       <ImmersiveAnalysisOverlay
         visible={analysisOverlayVisible}
+        entryTitle={editableTitle || entry?.title}
         {...(analysisOverlayMode === 'loading'
           ? {
               variant: 'loading' as const,
@@ -1281,11 +1287,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     padding: isTablet ? 22 : 16,
     borderRadius: isTablet ? 16 : 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(128, 128, 128, 0.15)',
   },
   accordionHeaderLeft: {
     flexDirection: 'row',
@@ -1299,7 +1304,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   accordionBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(128, 128, 128, 0.12)',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
@@ -1309,7 +1314,6 @@ const styles = StyleSheet.create({
   accordionBadgeText: {
     fontSize: sf(12),
     fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.9)',
   },
   accordionContent: {
     marginTop: 12,

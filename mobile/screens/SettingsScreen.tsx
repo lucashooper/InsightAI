@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import Purchases from 'react-native-purchases';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme, ThemeName } from '../contexts/ThemeContext';
+import { useTheme, ThemeName, isDarkTheme } from '../contexts/ThemeContext';
 import { useAppLock } from '../contexts/AppLockContext';
 import { supabase } from '../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -44,6 +44,8 @@ export default function SettingsScreen({ navigation }: any) {
   const [breathingPromptsEnabled, setBreathingPromptsEnabled] = useState(true);
   const [monthlyStoriesEnabled, setMonthlyStoriesEnabled] = useState(true);
   const [moodIndicatorsEnabled, setMoodIndicatorsEnabled] = useState(true);
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderTime, setReminderTime] = useState('20:00');
   const [subscriptionPlan, setSubscriptionPlan] = useState<string>('Free');
   const [isLoadingSubscription, setIsLoadingSubscription] = useState(true);
 
@@ -85,11 +87,15 @@ export default function SettingsScreen({ navigation }: any) {
       const breathingPrompts = await AsyncStorage.getItem('breathingPromptsEnabled');
       const monthlyStories = await AsyncStorage.getItem('monthlyStoriesEnabled');
       const moodIndicators = await AsyncStorage.getItem('moodIndicatorsEnabled');
+      const reminder = await AsyncStorage.getItem('reminderEnabled');
+      const time = await AsyncStorage.getItem('reminderTime');
       
       if (dailyMood !== null) setDailyMoodCheckInEnabled(dailyMood === 'true');
       if (breathingPrompts !== null) setBreathingPromptsEnabled(breathingPrompts === 'true');
       if (monthlyStories !== null) setMonthlyStoriesEnabled(monthlyStories === 'true');
       if (moodIndicators !== null) setMoodIndicatorsEnabled(moodIndicators === 'true');
+      if (reminder !== null) setReminderEnabled(reminder === 'true');
+      if (time !== null) setReminderTime(time);
     } catch (error) {
       console.error('Error loading personalization settings:', error);
     }
@@ -113,6 +119,41 @@ export default function SettingsScreen({ navigation }: any) {
   const toggleMoodIndicators = async (value: boolean) => {
     setMoodIndicatorsEnabled(value);
     await AsyncStorage.setItem('moodIndicatorsEnabled', value.toString());
+  };
+
+  const toggleReminder = async (value: boolean) => {
+    setReminderEnabled(value);
+    await AsyncStorage.setItem('reminderEnabled', value.toString());
+    
+    if (value) {
+      // Show time picker when enabling
+      handleSetReminderTime();
+    }
+  };
+
+  const handleSetReminderTime = () => {
+    Alert.prompt(
+      'Set Reminder Time',
+      'Enter time in 24-hour format (HH:MM, e.g., 20:00 for 8 PM)',
+      async (time) => {
+        if (time && time.trim()) {
+          const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+          if (!timeRegex.test(time.trim())) {
+            Alert.alert('Invalid Format', 'Please use HH:MM format (e.g., 20:00)');
+            return;
+          }
+          
+          setReminderTime(time.trim());
+          await AsyncStorage.setItem('reminderTime', time.trim());
+          Alert.alert(
+            'Reminder Set',
+            `You'll receive a daily reminder at ${time.trim()}.\n\nNote: Make sure notifications are enabled in your iPhone settings.`
+          );
+        }
+      },
+      'plain-text',
+      reminderTime
+    );
   };
 
   const handleEditUsername = () => {
@@ -272,7 +313,7 @@ export default function SettingsScreen({ navigation }: any) {
       console.log('[Settings] Active entitlements:', Object.keys(customerInfo.entitlements.active));
       console.log('[Settings] Active subscriptions:', customerInfo.activeSubscriptions);
       
-      const ENTITLEMENT_ID = 'InsightAI Pro';
+      const ENTITLEMENT_ID = 'Insight Pro';
       const isProActive = !!customerInfo.entitlements.active[ENTITLEMENT_ID];
       const hasAnyActiveEntitlement = Object.keys(customerInfo.entitlements.active).length > 0;
       
@@ -471,7 +512,7 @@ export default function SettingsScreen({ navigation }: any) {
       >
         {/* Profile Section */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>Profile</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>PROFILE</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <View style={styles.cardGradient}>
               <View style={styles.profileSection}>
@@ -491,15 +532,15 @@ export default function SettingsScreen({ navigation }: any) {
                     />
                   ) : (
                     <View style={styles.avatarPlaceholder}>
-                      <Ionicons name="person" size={32} color="rgba(255, 255, 255, 0.6)" />
+                      <Ionicons name="person-circle-outline" size={isTablet ? 80 : 60} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.6)' : '#6B6B6B'} />
                     </View>
                   )}
                 </TouchableOpacity>
                 <View style={styles.profileInfo}>
                   <TouchableOpacity onPress={handleEditUsername}>
-                    <Text style={[styles.profileName, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]} numberOfLines={1}>{userProfile?.username || user?.user_metadata?.username || 'User'}</Text>
+                    <Text style={[styles.profileName, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]} numberOfLines={1}>{userProfile?.username || user?.user_metadata?.username || 'User'}</Text>
                   </TouchableOpacity>
-                  <Text style={[styles.profileEmail, { color: theme.name === 'light' ? '#6B6B6B' : 'rgba(255, 255, 255, 0.6)' }]}>{user?.email}</Text>
+                  {user?.email && <Text style={[styles.profileEmail, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.6)' : '#6B6B6B' }]}>{user.email}</Text>}
                 </View>
               </View>
             </View>
@@ -509,7 +550,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Default Themes */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>DEFAULT THEMES</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>DEFAULT THEMES</Text>
           <View style={styles.themeGrid}>
             {defaultThemes.map((t) => (
               <TouchableOpacity
@@ -521,18 +562,12 @@ export default function SettingsScreen({ navigation }: any) {
                 ]}
                 onPress={() => setTheme(t.name)}
               >
-                <Text style={styles.themeEmoji}>{t.emoji}</Text>
                 <Text style={[
                   styles.themeLabel,
-                  themeName === t.name && styles.themeLabelActive
+                  { color: themeName === t.name ? '#8b5cf6' : theme.colors.secondaryText }
                 ]}>
                   {t.label}
                 </Text>
-                {themeName === t.name && (
-                  <View style={styles.themeCheckmark}>
-                    <Ionicons name="checkmark-circle" size={20} color="#8b5cf6" />
-                  </View>
-                )}
               </TouchableOpacity>
             ))}
           </View>
@@ -540,7 +575,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Other Themes */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>OTHER THEMES</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>OTHER THEMES</Text>
           <View style={styles.themeGrid}>
             {otherThemes.map((t) => (
               <TouchableOpacity
@@ -552,18 +587,12 @@ export default function SettingsScreen({ navigation }: any) {
                 ]}
                 onPress={() => setTheme(t.name)}
               >
-                <Text style={styles.themeEmoji}>{t.emoji}</Text>
                 <Text style={[
                   styles.themeLabel,
-                  themeName === t.name && styles.themeLabelActive
+                  { color: themeName === t.name ? '#8b5cf6' : theme.colors.secondaryText }
                 ]}>
                   {t.label}
                 </Text>
-                {themeName === t.name && (
-                  <View style={styles.themeCheckmark}>
-                    <Ionicons name="checkmark-circle" size={20} color="#8b5cf6" />
-                  </View>
-                )}
               </TouchableOpacity>
             ))}
           </View>
@@ -571,7 +600,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Security */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>SECURITY</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>SECURITY</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <TouchableOpacity 
               style={styles.settingRow}
@@ -732,9 +761,46 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         </View>
 
+        {/* Reminders */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>REMINDERS</Text>
+          <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+            <TouchableOpacity 
+              style={styles.settingRow}
+              onPress={() => toggleReminder(!reminderEnabled)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.settingLeft}>
+                <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Daily journal reminder</Text>
+                <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Receive a notification at {reminderTime}</Text>
+              </View>
+              <View style={[styles.toggle, reminderEnabled && styles.toggleActive]}>
+                <View style={[styles.toggleThumb, reminderEnabled && styles.toggleThumbActive]} />
+              </View>
+            </TouchableOpacity>
+            
+            {reminderEnabled && (
+              <>
+                <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
+                <TouchableOpacity 
+                  style={styles.settingRow}
+                  onPress={handleSetReminderTime}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.settingLeft}>
+                    <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Change time</Text>
+                    <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Currently set to {reminderTime}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={theme.colors.secondaryText} />
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+
         {/* Personalization */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>PERSONALIZATION</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>PERSONALIZATION</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <TouchableOpacity 
               style={styles.settingRow}
@@ -802,25 +868,23 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Subscription & Usage */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>SUBSCRIPTION & USAGE</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>SUBSCRIPTION & USAGE</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <View style={styles.cardGradient}>
               <View style={styles.usageRow}>
-                <Text style={styles.usageLabel}>Current Plan</Text>
+                <Text style={[styles.usageLabel, { color: theme.colors.secondaryText }]}>Current Plan</Text>
                 {isLoadingSubscription ? (
                   <ActivityIndicator size="small" color="#a855f7" />
                 ) : (
-                  <Text style={styles.usageTier}>{subscriptionPlan}</Text>
+                  <Text style={[styles.usageTier, { color: theme.colors.primaryText }]}>Insight {subscriptionPlan}</Text>
                 )}
               </View>
               {/* Only show usage counter for Pro users */}
               {subscriptionPlan === 'Pro' && (
                 <View style={styles.usageProgress}>
                   <View style={styles.usageProgressRow}>
-                    <Text style={styles.usageProgressLabel}>AI Analyses Today</Text>
-                    <Text style={styles.usageProgressValue}>
-                      {`${usageCount} / ${usageLimit}`}
-                    </Text>
+                    <Text style={[styles.usageProgressLabel, { color: theme.colors.secondaryText }]}>Entries today</Text>
+                    <Text style={[styles.usageProgressValue, { color: theme.colors.primaryText }]}>{usageCount} / {usageLimit}</Text>
                   </View>
                   <View style={styles.progressBarContainer}>
                     <View
@@ -856,7 +920,7 @@ export default function SettingsScreen({ navigation }: any) {
         {/* Developer Testing Tools (Sandbox Only) */}
         {__DEV__ && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>DEVELOPER TOOLS</Text>
+            <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>DEVELOPER TOOLS</Text>
             <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
               <TouchableOpacity
                 style={styles.devToolButton}
@@ -916,7 +980,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Send Feedback */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>SEND FEEDBACK</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>SEND FEEDBACK</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <View style={styles.cardGradient}>
               <TextInput
@@ -964,7 +1028,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Actions */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>ACTIONS</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>ACTIONS</Text>
 
           <TouchableOpacity style={{}} onPress={handleSignOut} activeOpacity={0.85}>
             <StandardContainer style={styles.card}>
@@ -1041,11 +1105,11 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* App Info */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>ABOUT</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>ABOUT</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <View style={styles.cardGradient}>
-              <Text style={styles.infoText}>Insight Mobile v1.0.0</Text>
-              <Text style={styles.infoSubtext}>Your Personal AI Journal</Text>
+              <Text style={[styles.infoText, { color: theme.colors.primaryText }]}>Insight Mobile v1.0.0</Text>
+              <Text style={[styles.infoSubtext, { color: theme.colors.secondaryText }]}>Your Personal AI Journal</Text>
             </View>
           </View>
         </View>
@@ -1116,11 +1180,9 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: isTablet ? sf(20) : sf(16),
-    color: '#ffffff',
   },
   infoSubtext: {
     fontSize: isTablet ? sf(18) : sf(14),
-    color: '#999',
     marginTop: 4,
   },
   actionRow: {
@@ -1131,11 +1193,9 @@ const styles = StyleSheet.create({
   actionText: {
     fontSize: isTablet ? sf(20) : sf(16),
     fontWeight: '600',
-    color: '#ffffff',
   },
   actionSubtext: {
     fontSize: isTablet ? sf(17) : sf(13),
-    color: '#999',
     marginTop: 4,
   },
   profileSection: {
@@ -1148,8 +1208,6 @@ const styles = StyleSheet.create({
     height: isTablet ? 80 : 60,
     borderRadius: isTablet ? 40 : 30,
     overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: 'rgba(139, 92, 246, 0.2)',
   },
   avatar: {
     width: isTablet ? 80 : 60,
@@ -1160,7 +1218,6 @@ const styles = StyleSheet.create({
     width: isTablet ? 80 : 60,
     height: isTablet ? 80 : 60,
     borderRadius: isTablet ? 40 : 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1175,7 +1232,6 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: isTablet ? sf(24) : sf(18),
     fontWeight: '700',
-    color: '#ffffff',
     marginBottom: 4,
   },
   profileEmail: {
@@ -1195,12 +1251,10 @@ const styles = StyleSheet.create({
   },
   usageLabel: {
     fontSize: isTablet ? sf(18) : sf(14),
-    color: '#999',
   },
   usageTier: {
     fontSize: isTablet ? sf(20) : sf(16),
     fontWeight: '700',
-    color: '#ffffff',
   },
   usageProgress: {
     marginTop: 8,
@@ -1212,12 +1266,10 @@ const styles = StyleSheet.create({
   },
   usageProgressLabel: {
     fontSize: sf(13),
-    color: '#999',
   },
   usageProgressValue: {
     fontSize: sf(13),
     fontWeight: '600',
-    color: '#ffffff',
   },
   progressBarContainer: {
     width: '100%',
@@ -1359,14 +1411,13 @@ const styles = StyleSheet.create({
     marginTop: isTablet ? 16 : 12,
   },
   themeOption: {
-    width: isTablet ? 100 : 80,
-    aspectRatio: 1,
-    borderRadius: isTablet ? 20 : 16,
+    width: isTablet ? 90 : 70,
+    height: isTablet ? 50 : 40,
+    borderRadius: isTablet ? 16 : 12,
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
     position: 'relative',
   },
   themeOptionActive: {
@@ -1379,7 +1430,6 @@ const styles = StyleSheet.create({
   themeLabel: {
     fontSize: sf(13),
     fontWeight: '600',
-    color: '#999',
   },
   themeLabelActive: {
     color: '#8b5cf6',

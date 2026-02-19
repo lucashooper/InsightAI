@@ -65,7 +65,7 @@ export default function PillOption({ label, icon, selected, onPress }: PillOptio
   const svgLogo = getSvgLogo();
 
   const selectedColors = ['#a855f7', '#8b5cf6'] as const;
-  const defaultColors = ['rgba(255, 255, 255, 0.7)', 'rgba(255, 255, 255, 0.5)'] as const;
+  const defaultColors = ['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.9)'] as const;
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

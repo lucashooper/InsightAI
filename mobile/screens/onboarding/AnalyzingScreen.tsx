@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import SunoGradient from '../../components/onboarding/SunoGradient';
+import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 
 type Props = {
     navigation: NativeStackNavigationProp<any>;
@@ -15,6 +16,7 @@ const STATUS_MESSAGES = [
 ];
 
 export default function AnalyzingScreen({ navigation }: Props) {
+    const { theme } = useTheme();
     const [statusIndex, setStatusIndex] = useState(0);
 
     useEffect(() => {
@@ -35,12 +37,16 @@ export default function AnalyzingScreen({ navigation }: Props) {
     }, []);
 
     return (
-        <View style={styles.container}>
-            <SunoGradient />
+        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+            {isDarkTheme(theme.name) ? (
+                <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
+            ) : (
+                <SunoGradient />
+            )}
             
             <View style={styles.content}>
                 {/* Status Text */}
-                <Text style={styles.statusText}>
+                <Text style={[styles.statusText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#374151' }]}>
                     {STATUS_MESSAGES[statusIndex]}
                 </Text>
 

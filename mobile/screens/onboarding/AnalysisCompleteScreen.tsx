@@ -7,6 +7,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { supabase } from '../../lib/supabase';
 
 const { width } = Dimensions.get('window');
@@ -18,6 +19,7 @@ type Props = {
 export default function AnalysisCompleteScreen({ navigation }: Props) {
     const { userName } = useOnboarding();
     const { user } = useAuth();
+    const { theme } = useTheme();
     const checkmarkScale = useRef(new Animated.Value(0)).current;
     const contentFade = useRef(new Animated.Value(0)).current;
 
@@ -115,8 +117,12 @@ export default function AnalysisCompleteScreen({ navigation }: Props) {
     };
 
     return (
-        <View style={styles.container}>
-            <SunoGradient />
+        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+            {isDarkTheme(theme.name) ? (
+                <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
+            ) : (
+                <SunoGradient />
+            )}
             
             <View style={styles.content}>
                 {/* Check + Headline Unit */}
@@ -124,8 +130,8 @@ export default function AnalysisCompleteScreen({ navigation }: Props) {
                     <Animated.View style={[styles.checkIcon, { transform: [{ scale: checkmarkScale }] }]}>
                         <Ionicons name="checkmark-outline" size={90} color="#a855f7" />
                     </Animated.View>
-                    <Text style={styles.headline}>{userName ? `${userName}, your personal plan is ready` : "You're all set"}</Text>
-                    <Text style={styles.reassurance}>Your space is ready.</Text>
+                    <Text style={[styles.headline, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>{userName ? `${userName}, your personal plan is ready` : "You're all set"}</Text>
+                    <Text style={[styles.reassurance, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.6)' : '#6b7280' }]}>Your space is ready.</Text>
                 </Animated.View>
 
                 {/* CTA Button */}

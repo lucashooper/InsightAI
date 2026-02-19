@@ -23,9 +23,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { mobileAiService } from '../services/mobileAiService';
 import { sf } from '../utils/responsive';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../lib/supabase';
+import Purchases from 'react-native-purchases';
 
 const CHAT_HISTORY_KEY = 'AI_CHAT_HISTORY';
 const AI_PERSONALITY_KEY = 'AI_PERSONALITY';
+const FREE_USER_DAILY_LIMIT = 50;
 
 interface ChatMessage {
   id: string;
@@ -71,6 +74,8 @@ export default function AIChatScreen({ navigation }: any) {
   const [showPersonality, setShowPersonality] = useState(false);
   const [personality, setPersonality] = useState<Personality>('balanced');
   const [isTemporary, setIsTemporary] = useState(false);
+  const [dailyMessageCount, setDailyMessageCount] = useState(0);
+  const [isProUser, setIsProUser] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -91,6 +96,12 @@ export default function AIChatScreen({ navigation }: any) {
   }, []);
 
   useEffect(() => { loadSuggestions(); }, []);
+
+  useEffect(() => {
+    if (user) {
+      checkAndUpdateUsage();
+    }
+  }, [user]);
 
   useEffect(() => {
     return () => {
@@ -242,12 +253,99 @@ export default function AIChatScreen({ navigation }: any) {
         if (typingRef.current.timer) clearInterval(typingRef.current.timer);
         typingRef.current.timer = null;
       }
-    }, 16);
+    }, 30);
+  };
+
+  // Rate limiting check function
+  const checkAndUpdateUsage = async (): Promise<boolean> => {
+    try {
+      console.log('[AIChatScreen] 🔍 Checking rate limit...');
+      if (!user) {
+        console.log('[AIChatScreen] ❌ No user found');
+        return false;
+      }
+      
+      // Check if user is Pro
+      console.log('[AIChatScreen] Checking Pro status...');
+      const customerInfo = await Purchases.getCustomerInfo();
+      const isPro = !!customerInfo.entitlements.active['InsightAI Pro'] || Object.keys(customerInfo.entitlements.active).length > 0;
+      setIsProUser(isPro);
+      console.log('[AIChatScreen] Is Pro:', isPro);
+      
+      // Pro users have unlimited messages
+      if (isPro) {
+        console.log('[AIChatScreen] ✅ Pro user - unlimited messages');
+        return true;
+      }
+      
+      // Get today's usage
+      const today = new Date().toISOString().split('T')[0];
+      console.log('[AIChatScreen] Checking usage for date:', today);
+      const { data: usage, error } = await supabase
+        .from('ai_chat_usage')
+        .select('message_count')
+        .eq('user_id', user.id)
+        .eq('date', today)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows
+        console.error('[AIChatScreen] ❌ Error checking usage:', error);
+        // Allow message to go through on error to avoid blocking users
+        return true;
+      }
+      
+      const currentCount = usage?.message_count || 0;
+      setDailyMessageCount(currentCount);
+      console.log('[AIChatScreen] Current usage:', currentCount, '/', FREE_USER_DAILY_LIMIT);
+      
+      // Check if limit reached
+      if (currentCount >= FREE_USER_DAILY_LIMIT) {
+        console.log('[AIChatScreen] ❌ Daily limit reached');
+        Alert.alert(
+          'Daily Limit Reached',
+          `You've reached your daily limit of ${FREE_USER_DAILY_LIMIT} messages. Upgrade to Insight Pro for unlimited AI conversations!`,
+          [
+            { text: 'Maybe Later', style: 'cancel' },
+            { text: 'Upgrade to Pro', onPress: () => navigation.navigate('Paywall') }
+          ]
+        );
+        return false;
+      }
+      
+      // Increment usage
+      console.log('[AIChatScreen] Incrementing usage count...');
+      if (usage) {
+        const { error: updateError } = await supabase
+          .from('ai_chat_usage')
+          .update({ message_count: currentCount + 1, updated_at: new Date().toISOString() })
+          .eq('user_id', user.id)
+          .eq('date', today);
+        if (updateError) console.error('[AIChatScreen] Update error:', updateError);
+      } else {
+        const { error: insertError } = await supabase
+          .from('ai_chat_usage')
+          .insert({ user_id: user.id, date: today, message_count: 1 });
+        if (insertError) console.error('[AIChatScreen] Insert error:', insertError);
+      }
+      
+      setDailyMessageCount(currentCount + 1);
+      console.log('[AIChatScreen] ✅ Rate limit check passed');
+      return true;
+      
+    } catch (error) {
+      console.error('[AIChatScreen] ❌ Exception in checkAndUpdateUsage:', error);
+      // Allow message to go through on error to avoid blocking users
+      return true;
+    }
   };
 
   const sendMessage = useCallback(async (text?: string) => {
     const messageText = (text || inputText).trim();
     if (!messageText || isLoading) return;
+
+    // CHECK RATE LIMIT BEFORE SENDING
+    const canSend = await checkAndUpdateUsage();
+    if (!canSend) return;
 
     setInputText('');
     setShowSuggestions(false);
@@ -265,12 +363,15 @@ export default function AIChatScreen({ navigation }: any) {
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
 
     try {
+      console.log('[AIChatScreen] 📤 Sending message to AI...');
       const allMessages = [...messages, userMessage].map(m => ({
         role: m.role,
         content: m.content,
       }));
 
+      console.log('[AIChatScreen] Message count:', allMessages.length);
       const response = await mobileAiService.chat(allMessages, { personality });
+      console.log('[AIChatScreen] ✅ Received AI response, length:', response?.length);
 
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
@@ -285,10 +386,12 @@ export default function AIChatScreen({ navigation }: any) {
       setIsLoading(false);
       startTypingEffect(assistantMessage.id, response);
     } catch (error: any) {
+      console.error('[AIChatScreen] ❌ Error sending message:', error);
+      console.error('[AIChatScreen] Error details:', JSON.stringify(error, null, 2));
       const errorMsg: ChatMessage = {
         id: `error-${Date.now()}`,
         role: 'assistant',
-        content: "I'm having trouble connecting right now. Please try again in a moment.",
+        content: `I'm having trouble connecting right now. ${error?.message || 'Please try again in a moment.'}`,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMsg]);
@@ -321,7 +424,6 @@ export default function AIChatScreen({ navigation }: any) {
             isUser ? styles.userMessageText : styles.assistantMessageText,
           ]}>
             {displayText}
-            {item.isTyping ? <Text style={{ color: '#a78bfa', fontSize: sf(14) }}> ▍</Text> : null}
           </Text>
         </View>
         {isUser && (
@@ -330,9 +432,7 @@ export default function AIChatScreen({ navigation }: any) {
               <Image source={{ uri: profilePicture }} style={styles.userAvatarImage} />
             ) : (
               <View style={styles.userAvatarFallback}>
-                <Text style={styles.userAvatarInitial}>
-                  {(user?.user_metadata?.username || user?.email || 'U').charAt(0).toUpperCase()}
-                </Text>
+                <Ionicons name="person-circle-outline" size={32} color="rgba(255, 255, 255, 0.6)" />
               </View>
             )}
           </View>
@@ -390,7 +490,7 @@ export default function AIChatScreen({ navigation }: any) {
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <LinearGradient
-        colors={isDark ? ['#0a0a0a', '#0d0515', '#0a0a0a'] : ['#f8f7ff', '#f0ebff', '#f8f7ff']}
+        colors={['#0a0a0a', '#0d0515', '#0a0a0a']}
         style={StyleSheet.absoluteFill}
       />
 
@@ -440,18 +540,6 @@ export default function AIChatScreen({ navigation }: any) {
           }}
         />
 
-        {isLoading && (
-          <View style={styles.typingIndicator}>
-            <View style={styles.avatarWrap}>
-              <LinearGradient colors={['#8b5cf6', '#6d28d9']} style={styles.avatarGradient}>
-                <Ionicons name="sparkles" size={12} color="#fff" />
-              </LinearGradient>
-            </View>
-            <View style={styles.typingDotsContainer}>
-              <TypingDots />
-            </View>
-          </View>
-        )}
 
         {/* Input bar */}
         <View style={[
@@ -459,6 +547,14 @@ export default function AIChatScreen({ navigation }: any) {
           { paddingBottom: Math.max(insets.bottom, 12) },
           { backgroundColor: isDark ? 'rgba(10,10,10,0.95)' : 'rgba(248,247,255,0.95)' },
         ]}>
+          {/* Usage indicator for free users */}
+          {!isProUser && (
+            <View style={styles.usageIndicator}>
+              <Text style={styles.usageText}>
+                {dailyMessageCount}/{FREE_USER_DAILY_LIMIT} messages today
+              </Text>
+            </View>
+          )}
           {/* Temporary toggle */}
           {messages.length === 0 && (
             <TouchableOpacity
@@ -480,6 +576,16 @@ export default function AIChatScreen({ navigation }: any) {
             styles.inputWrapper,
             { backgroundColor: isDark ? '#1a1a2e' : '#f0ebff', borderColor: isDark ? '#2a2a3e' : '#e0d8ff' },
           ]}>
+            <TouchableOpacity
+              style={styles.voiceButton}
+              onPress={() => {
+                // TODO: Implement voice recording functionality
+                Alert.alert('Voice Mode', 'Voice recording feature coming soon!');
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="mic-outline" size={20} color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'} />
+            </TouchableOpacity>
             <TextInput
               ref={inputRef}
               style={[styles.textInput, { color: isDark ? '#fff' : '#1a1a1a' }]}
@@ -678,18 +784,18 @@ const styles = StyleSheet.create({
   avatarWrap: { marginRight: 8, marginBottom: 2 },
   avatarGradient: { width: 26, height: 26, borderRadius: 13, justifyContent: 'center', alignItems: 'center' },
   userAvatarWrap: { marginLeft: 8, marginBottom: 2 },
-  userAvatarImage: { width: 26, height: 26, borderRadius: 13 },
+  userAvatarImage: { width: 32, height: 32, borderRadius: 16 },
   userAvatarFallback: {
-    width: 26, height: 26, borderRadius: 13,
-    backgroundColor: 'rgba(139,92,246,0.25)', justifyContent: 'center', alignItems: 'center',
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center',
   },
   userAvatarInitial: { fontSize: 12, fontWeight: '700', color: '#a78bfa' },
   messageBubble: { maxWidth: '75%', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 12 },
   userBubble: { backgroundColor: '#8b5cf6', borderBottomRightRadius: 6, marginLeft: 'auto' },
   assistantBubble: { backgroundColor: 'rgba(255,255,255,0.07)', borderBottomLeftRadius: 6 },
-  messageText: { fontSize: sf(15), lineHeight: sf(22) },
-  userMessageText: { color: '#fff' },
-  assistantMessageText: { color: 'rgba(255,255,255,0.9)' },
+  messageText: { fontSize: sf(15.5), lineHeight: sf(22), fontWeight: '400', letterSpacing: 0.2 },
+  userMessageText: { color: '#fff', fontWeight: '500' },
+  assistantMessageText: { color: 'rgba(255,255,255,0.95)', fontWeight: '400' },
 
   // Typing
   typingIndicator: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
@@ -705,6 +811,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(139,92,246,0.1)',
   },
+  usageIndicator: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    paddingBottom: 6,
+  },
+  usageText: { fontSize: 11, color: 'rgba(139,92,246,0.6)', fontWeight: '600' },
   tempToggle: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 6, paddingBottom: 8,
@@ -714,6 +825,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'flex-end', borderRadius: 24, borderWidth: 1,
     paddingLeft: 16, paddingRight: 6, paddingVertical: 6, minHeight: 48,
   },
+  voiceButton: { marginRight: 8, marginBottom: 2, padding: 4 },
   textInput: {
     flex: 1, fontSize: sf(16), maxHeight: 120,
     paddingTop: Platform.OS === 'ios' ? 8 : 4, paddingBottom: Platform.OS === 'ios' ? 8 : 4,

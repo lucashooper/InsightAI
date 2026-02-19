@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { LineChart } from 'react-native-chart-kit';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { useNavigation } from '@react-navigation/native';
 import { mobileAiService } from '../services/mobileAiService';
@@ -1482,7 +1482,7 @@ export default function DashboardScreen() {
                   style={styles.modalBackButton}
                   activeOpacity={0.6}
                 >
-                  <Ionicons name="arrow-back" size={24} color="rgba(255, 255, 255, 0.8)" />
+                  <Ionicons name="arrow-back" size={24} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.8)' : '#1a1a1a'} />
                 </TouchableOpacity>
                 <MaskedView
                   maskElement={

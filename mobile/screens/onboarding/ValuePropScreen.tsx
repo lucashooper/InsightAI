@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import SunoGradient from '../../components/onboarding/SunoGradient';
+import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 
 const noisyImage = require('../../public/noisy-image.webp');
 const clarityImage = require('../../public/clarity-image.webp');
@@ -12,6 +13,7 @@ const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 const { width } = Dimensions.get('window');
 
 export default function ValuePropScreen({ navigation }: any) {
+  const { theme } = useTheme();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
   
@@ -56,16 +58,22 @@ export default function ValuePropScreen({ navigation }: any) {
   }, []);
 
   return (
-    <View style={styles.container}>
-      <SunoGradient />
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {isDarkTheme(theme.name) ? (
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
+      ) : (
+        <SunoGradient />
+      )}
 
-      {/* Back Button */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Ionicons name="chevron-back" size={28} color="#6b7280" />
-      </TouchableOpacity>
+      {/* Back Button - only show if can go back */}
+      {navigation.canGoBack() && (
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="chevron-back" size={28} color={isDarkTheme(theme.name) ? '#ffffff' : '#6b7280'} />
+        </TouchableOpacity>
+      )}
 
       {/* Logo */}
       <Image source={insightLogo} style={styles.logo} />
@@ -81,7 +89,7 @@ export default function ValuePropScreen({ navigation }: any) {
           ]}
         >
           {/* Headline */}
-          <Text style={styles.headline}>
+          <Text style={[styles.headline, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>
             Insight turns thoughts{' '}into clarity
           </Text>
 
@@ -95,10 +103,10 @@ export default function ValuePropScreen({ navigation }: any) {
                   resizeMode="cover"
                 />
               </View>
-              <Text style={styles.contrastLabel}>Mental noise</Text>
+              <Text style={[styles.contrastLabel, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}>Mental noise</Text>
             </View>
 
-            <Text style={styles.arrow}>→</Text>
+            <Text style={[styles.arrow, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)' }]}>→</Text>
 
             <View style={styles.contrastColumn}>
               <View style={styles.imageContainer}>
@@ -108,7 +116,7 @@ export default function ValuePropScreen({ navigation }: any) {
                   resizeMode="cover"
                 />
               </View>
-              <Text style={styles.contrastLabel}>Understanding</Text>
+              <Text style={[styles.contrastLabel, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}>Understanding</Text>
             </View>
           </View>
 
@@ -117,7 +125,7 @@ export default function ValuePropScreen({ navigation }: any) {
             <Animated.View style={{ opacity: bullet1Anim, transform: [{ translateY: bullet1Anim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }}>
               <View style={styles.bulletRow}>
                 <Text style={styles.bulletDot}>•</Text>
-                <Text style={[styles.bulletText, styles.bulletTextGrey]}>
+                <Text style={[styles.bulletText, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.7)' : '#4a4a4a' }]}>
                   Capture how you feel
                 </Text>
               </View>
@@ -126,7 +134,7 @@ export default function ValuePropScreen({ navigation }: any) {
             <Animated.View style={{ opacity: bullet2Anim, transform: [{ translateY: bullet2Anim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }}>
               <View style={styles.bulletRow}>
                 <Text style={styles.bulletDot}>•</Text>
-                <Text style={[styles.bulletText, styles.bulletTextGrey]}>
+                <Text style={[styles.bulletText, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.7)' : '#4a4a4a' }]}>
                   Understand patterns over time
                 </Text>
               </View>
@@ -151,7 +159,7 @@ export default function ValuePropScreen({ navigation }: any) {
           activeOpacity={0.9}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            navigation.navigate('ChooseVibe');
+            navigation.navigate('Paywall');
           }}
         >
           <LinearGradient

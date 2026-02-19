@@ -34,7 +34,7 @@ const slideHeadings = [
   'Your Personal\nPlaybook',
 ];
 
-const ENTITLEMENT_ID = 'InsightAI Pro';
+const ENTITLEMENT_ID = 'Insight Pro';
 
 export default function PaywallScreen({ navigation, route }: any) {
   const { user } = useAuth();
@@ -235,22 +235,37 @@ export default function PaywallScreen({ navigation, route }: any) {
         // User is in onboarding flow - complete onboarding
         console.log('[Paywall] User in onboarding flow - completing onboarding');
         
-        // Save username to profile and mark onboarding complete
-        await saveUsernameToProfile();
-        
-        // Check if user has email (didn't skip email signup)
-        const hasEmail = user?.email && !user.email.includes('privaterelay');
-        console.log('[Paywall] User has email:', hasEmail);
-        
-        if (!hasEmail) {
-          // User skipped email signup - show welcome screen then prompt to create account
-          await AsyncStorage.setItem('NEEDS_EMAIL_SIGNUP', 'true');
-          console.log('[Paywall] User needs email signup - navigating to PostPurchaseWelcome');
-          navigation.navigate('PostPurchaseWelcome');
-        } else {
-          // User has email - mark onboarding complete and go to main app
+        try {
+          // Save username to profile and mark onboarding complete
+          await saveUsernameToProfile();
+          console.log('[Paywall] ✅ Username saved to profile');
+          
+          // Check if user has email (didn't skip email signup)
+          const hasEmail = user?.email && !user.email.includes('privaterelay');
+          console.log('[Paywall] User email:', user?.email);
+          console.log('[Paywall] Has valid email (not privaterelay):', hasEmail);
+          
+          if (!hasEmail) {
+            // User skipped email signup - show welcome screen then prompt to create account
+            await AsyncStorage.setItem('NEEDS_EMAIL_SIGNUP', 'true');
+            console.log('[Paywall] ✅ Set NEEDS_EMAIL_SIGNUP flag');
+            console.log('[Paywall] 🚀 Navigating to PostPurchaseWelcome');
+            navigation.navigate('PostPurchaseWelcome');
+          } else {
+            // User has email - mark onboarding complete and go to main app
+            await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+            console.log('[Paywall] ✅ Set HAS_COMPLETED_ONBOARDING flag');
+            console.log('[Paywall] 🚀 Navigating to MainTabs via reset');
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'MainTabs' }],
+            });
+          }
+        } catch (navError) {
+          console.error('[Paywall] ❌ Error during post-purchase navigation:', navError);
+          // Fallback - still try to navigate to main app
+          console.log('[Paywall] 🔄 Attempting fallback navigation to MainTabs');
           await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
-          console.log('[Paywall] Navigating to MainTabs');
           navigation.reset({
             index: 0,
             routes: [{ name: 'MainTabs' }],
@@ -477,6 +492,18 @@ export default function PaywallScreen({ navigation, route }: any) {
       <SunoGradient />
       <StatusBar barStyle="dark-content" />
 
+      {/* Back Button */}
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => {
+          if (navigation.canGoBack()) {
+            navigation.goBack();
+          }
+        }}
+      >
+        <Ionicons name="chevron-back" size={28} color="#1a1a2e" />
+      </TouchableOpacity>
+
       {/* Scrollable top content */}
       <ScrollView
         style={styles.topContent}
@@ -678,6 +705,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fef7f2',
+  },
+  backButton: {
+    position: 'absolute',
+    top: isTablet ? 60 : 50,
+    left: 20,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   topContent: {
     flex: 1,

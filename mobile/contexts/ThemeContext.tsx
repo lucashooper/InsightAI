@@ -82,9 +82,9 @@ const themes: Record<ThemeName, Theme> = {
   vibrant: {
     name: 'vibrant',
     colors: {
-      background: '#1a0f2e',
+      background: '#faf5ff',
       backgroundGradient: ['#faf5ff', '#f3e8ff', '#e9d5ff'],
-      cardBackground: 'rgba(250, 245, 255, 0.95)',
+      cardBackground: 'rgba(255, 255, 255, 0.95)',
       
       primaryText: '#2C2C2C',
       secondaryText: '#4A4A4A',
@@ -118,7 +118,7 @@ const themes: Record<ThemeName, Theme> = {
     colors: {
       background: '#eff6ff',
       backgroundGradient: ['#eff6ff', '#dbeafe', '#bfdbfe'],
-      cardBackground: 'rgba(239, 246, 255, 0.95)',
+      cardBackground: 'rgba(255, 255, 255, 0.95)',
       
       primaryText: '#2C2C2C',
       secondaryText: '#4A4A4A',
@@ -186,7 +186,7 @@ const themes: Record<ThemeName, Theme> = {
     colors: {
       background: '#fff5ed',
       backgroundGradient: ['#fff5ed', '#ffedd5', '#fed7aa'],
-      cardBackground: 'rgba(255, 245, 237, 0.95)',
+      cardBackground: 'rgba(255, 255, 255, 0.95)',
       
       primaryText: '#2C2C2C',
       secondaryText: '#4A4A4A',
@@ -218,13 +218,13 @@ const themes: Record<ThemeName, Theme> = {
   midnight: {
     name: 'midnight',
     colors: {
-      background: '#eef2ff',
-      backgroundGradient: ['#eef2ff', '#e0e7ff', '#c7d2fe'],
-      cardBackground: 'rgba(238, 242, 255, 0.95)',
+      background: '#0f0f23',
+      backgroundGradient: ['#0f0f23', '#1a1a3e', '#252550'],
+      cardBackground: 'rgba(10, 10, 10, 0.95)',
       
-      primaryText: '#2C2C2C',
-      secondaryText: '#4A4A4A',
-      tertiaryText: '#6B6B6B',
+      primaryText: '#ffffff',
+      secondaryText: '#e5e7eb',
+      tertiaryText: '#9ca3af',
       
       primary: '#6366f1',
       primaryGradient: ['#6366f1', '#4f46e5'],
@@ -239,9 +239,9 @@ const themes: Record<ThemeName, Theme> = {
       warning: '#f59e0b',
       error: '#ef4444',
       
-      border: 'rgba(99, 102, 241, 0.2)',
-      divider: 'rgba(99, 102, 241, 0.15)',
-      shadow: '#312e81',
+      border: '#1a1a1a',
+      divider: 'rgba(255, 255, 255, 0.1)',
+      shadow: '#000000',
       
       surface: 'rgba(99, 102, 241, 0.08)',
       surfaceElevated: 'rgba(99, 102, 241, 0.12)',
@@ -337,4 +337,9 @@ export const useTheme = () => {
     throw new Error('useTheme must be used within ThemeProvider');
   }
   return context;
+};
+
+// Helper function to check if a theme uses dark styling (dark backgrounds, white text)
+export const isDarkTheme = (themeName: ThemeName): boolean => {
+  return themeName === 'dark' || themeName === 'midnight' || themeName === 'forest';
 };

@@ -61,13 +61,15 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
 
             <SunoGradient />
             
-            {/* Back Button */}
-            <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => navigation.goBack()}
-            >
-                <Ionicons name="chevron-back" size={28} color="#6b7280" />
-            </TouchableOpacity>
+            {/* Back Button - only show if can go back */}
+            {navigation.canGoBack() && (
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => navigation.goBack()}
+                >
+                    <Ionicons name="chevron-back" size={28} color="#6b7280" />
+                </TouchableOpacity>
+            )}
 
             {/* Logo */}
             <Image source={insightLogo} style={styles.logo} />

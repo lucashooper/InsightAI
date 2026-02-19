@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -97,14 +97,14 @@ export default function GratitudeScreen({ navigation }: any) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.7)'} />
+          <Ionicons name="arrow-back" size={24} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : '#1a1a1a'} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>Gratitude Practice</Text>
+        <Text style={[styles.headerTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>Gratitude Practice</Text>
         <TouchableOpacity 
           onPress={() => navigation.navigate('GratitudeHistory')} 
           style={styles.historyButton}
         >
-          <Ionicons name="time-outline" size={24} color={theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.9)'} />
+          <Ionicons name="time-outline" size={24} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.9)' : '#1a1a1a'} />
         </TouchableOpacity>
       </View>
 
@@ -132,18 +132,18 @@ export default function GratitudeScreen({ navigation }: any) {
 
           {/* Prompt */}
           <View style={styles.promptContainer}>
-            <Text style={[styles.promptNumber, { color: theme.name === 'light' ? '#8b5cf6' : 'rgba(139, 92, 246, 0.8)' }]}>{currentPrompt + 1} of 3</Text>
-            <Text style={[styles.promptText, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}>{GRATITUDE_PROMPTS[currentPrompt]}</Text>
+            <Text style={[styles.promptNumber, { color: isDarkTheme(theme.name) ? 'rgba(139, 92, 246, 0.8)' : '#8b5cf6' }]}>{currentPrompt + 1} of 3</Text>
+            <Text style={[styles.promptText, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>{GRATITUDE_PROMPTS[currentPrompt]}</Text>
           </View>
 
           {/* Input */}
           <View style={styles.inputContainer}>
             <TextInput
-              style={[styles.input, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}
+              style={[styles.input, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}
               value={responses[currentPrompt]}
               onChangeText={handleResponseChange}
               placeholder="Write your thoughts..."
-              placeholderTextColor={theme.name === 'light' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.3)'}
+              placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'}
               multiline
               textAlignVertical="top"
               autoFocus={false}

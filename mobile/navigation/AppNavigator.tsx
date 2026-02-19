@@ -3,11 +3,12 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { ActivityIndicator, View, StyleSheet, TouchableOpacity, Pressable, Text, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Screens
 import LoginScreen from '../screens/LoginScreen';
@@ -104,6 +105,7 @@ function CenterFabButton() {
     { icon: 'sparkles-outline', label: 'AI Chat', screen: 'AIChat' },
     { icon: 'heart-outline', label: 'Gratitude', screen: 'Gratitude' },
     { icon: 'musical-notes-outline', label: 'Meditation', screen: 'Meditation' },
+    { icon: 'book-outline', label: 'Playbook', screen: 'Playbook' },
   ];
 
   return (
@@ -141,7 +143,7 @@ function CenterFabButton() {
               {menuOptions.map((option) => (
                 <TouchableOpacity
                   key={option.screen}
-                  style={[styles.menuCard, { backgroundColor: theme.name === 'light' ? '#FFFFFF' : '#1a1a1a' }]}
+                  style={[styles.menuCard, { backgroundColor: theme.name === 'dark' || theme.name === 'midnight' ? '#1a1a1a' : '#FFFFFF' }]}
                   onPress={() => {
                     setShowMenu(false);
                     navigation.navigate(option.screen);
@@ -184,8 +186,8 @@ function MainTabs() {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: theme.name === 'light' ? '#FFFFFF' : '#0a0a0a',
-          borderTopColor: theme.name === 'light' ? '#E8E5DC' : '#1a1a1a',
+          backgroundColor: isDarkTheme(theme.name) ? '#0a0a0a' : '#FFFFFF',
+          borderTopColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#E8E5DC',
           borderTopWidth: 1,
           height: isTablet ? 90 : 70,
           paddingBottom: isTablet ? 14 : 10,
@@ -198,8 +200,8 @@ function MainTabs() {
           alignItems: 'center',
           marginHorizontal: isTablet ? 8 : 0,
         },
-        tabBarActiveTintColor: '#8b5cf6',
-        tabBarInactiveTintColor: theme.name === 'light' ? '#6B6B6B' : '#666',
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: isDarkTheme(theme.name) ? '#666' : '#6B6B6B',
       }}
     >
       {/* Tab 1: Home (Dashboard) */}
@@ -258,19 +260,19 @@ function MainTabs() {
           },
         }}
       />
-      {/* Tab 6: Settings */}
+      {/* Tab 6: Profile (Settings) */}
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Ionicons name="settings-outline" size={si(24)} color={color} />
+            <Ionicons name="person-circle-outline" size={si(26)} color={color} />
           ),
-          tabBarAccessibilityLabel: "Settings",
+          tabBarAccessibilityLabel: "Profile",
         }}
         listeners={{
           tabPress: () => {
-            console.log('[TabBar] Settings tab pressed');
+            console.log('[TabBar] Profile tab pressed');
           },
         }}
       />
@@ -281,6 +283,7 @@ function MainTabs() {
 export default function AppNavigator() {
   const { user, loading } = useAuth();
   const [isOnboardingCompleted, setIsOnboardingCompleted] = React.useState<boolean | null>(null);
+  const [onboardingResumeScreen, setOnboardingResumeScreen] = React.useState<string | null>(null);
   const prevUserIdRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
@@ -296,6 +299,15 @@ export default function AppNavigator() {
     
     const checkOnboarding = async () => {
       try {
+        // Check if we need to resume onboarding at a specific screen
+        // (set by AuthSelectionScreen before Google/Apple sign-in)
+        const resumeScreen = await AsyncStorage.getItem('ONBOARDING_RESUME_SCREEN');
+        if (resumeScreen) {
+          console.log('[NAV] Found onboarding resume screen:', resumeScreen);
+          setOnboardingResumeScreen(resumeScreen);
+          await AsyncStorage.removeItem('ONBOARDING_RESUME_SCREEN');
+        }
+
         // CRITICAL FIX: Always check AsyncStorage first - this is the source of truth
         // Apple/Google Sign-In sets this flag immediately in AuthContext
         const value = await AsyncStorage.getItem('HAS_COMPLETED_ONBOARDING');
@@ -459,9 +471,9 @@ export default function AppNavigator() {
   return (
     <NavigationContainer theme={darkTheme}>
       {user ? (
-        // Authenticated screens
+        // Authenticated screens - user is already signed in
         <Stack.Navigator
-          initialRouteName={isOnboardingCompleted ? 'MainTabs' : undefined}
+          initialRouteName={isOnboardingCompleted ? 'MainTabs' : (onboardingResumeScreen || 'Welcome')}
           screenOptions={{
             headerShown: false,
             animation: 'fade',
@@ -475,18 +487,31 @@ export default function AppNavigator() {
               after email verification. By including all screens and using initialRouteName,
               we let navigation.reset() calls control the flow properly. */}
           
-          {/* Onboarding Flow - For new users */}
+          {/* Onboarding Flow - Include all onboarding screens so users can navigate back through full flow */}
+          <Stack.Screen name="Welcome" component={WelcomeScreen} />
+          <Stack.Screen name="ProductReveal" component={ProductRevealScreen} />
+          <Stack.Screen name="AuthSelection" component={AuthSelectionScreen} />
+          <Stack.Screen name="ChooseVibe" component={ChooseVibeScreen} />
           <Stack.Screen name="OnboardingQuestion" component={OnboardingQuestionScreen} />
           <Stack.Screen name="EmailVerified" component={EmailVerifiedScreen} />
           <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
           <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
           <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
           <Stack.Screen name="ValueProp" component={ValuePropScreen} />
-          <Stack.Screen name="ChooseVibe" component={ChooseVibeScreen} />
           <Stack.Screen name="Paywall" component={PaywallScreen} />
+          <Stack.Screen name="PostPurchaseWelcome" component={PostPurchaseWelcomeScreen} />
           <Stack.Screen name="OnboardingSummary" component={OnboardingSummaryScreen} />
           <Stack.Screen name="PrivacyOnboarding" component={PrivacyOnboardingScreen} />
           <Stack.Screen name="NotificationsOnboarding" component={NotificationsOnboardingScreen} />
+          
+          {/* Auth screens - needed for "Sign In" links on onboarding pages */}
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Signup" component={SignupScreen} />
+          <Stack.Screen name="SignupUsername" component={SignupUsernameScreen} />
+          <Stack.Screen name="SignupEmail" component={SignupEmailScreen} />
+          <Stack.Screen name="SignupPassword" component={SignupPasswordScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen as any} />
           
           {/* Main App Flow */}
           <Stack.Screen name="MainTabs" component={MainTabs} />

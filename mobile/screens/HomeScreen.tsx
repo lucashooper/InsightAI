@@ -18,7 +18,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { useFocusEffect } from '@react-navigation/native';
 import { EncryptionService } from '../services/encryptionService';
@@ -183,14 +183,15 @@ export default function HomeScreen({ navigation, route }: any) {
     const options = [
       'View Insights',
       'Rename',
+      'Change Date',
       entry.is_favorite ? 'Remove from Favorites' : 'Add to Favorites',
       'Hide entry',
       'Share',
       'Delete',
       'Cancel',
     ];
-    const cancelButtonIndex = 6;
-    const destructiveButtonIndex = 5;
+    const cancelButtonIndex = 7;
+    const destructiveButtonIndex = 6;
 
     const handleSelection = (buttonIndex: number) => {
       if (buttonIndex === 0) {
@@ -198,12 +199,14 @@ export default function HomeScreen({ navigation, route }: any) {
       } else if (buttonIndex === 1) {
         handleRenameEntry(entry);
       } else if (buttonIndex === 2) {
-        toggleFavorite(entry);
+        handleChangeDateEntry(entry);
       } else if (buttonIndex === 3) {
-        toggleHidden(entry.id);
+        toggleFavorite(entry);
       } else if (buttonIndex === 4) {
-        handleShareEntry(entry);
+        toggleHidden(entry.id);
       } else if (buttonIndex === 5) {
+        handleShareEntry(entry);
+      } else if (buttonIndex === 6) {
         console.log('[Journal] Deleted entry:', entry.id);
         handleDeleteEntry(entry);
         Alert.alert('Deleted', 'Entry removed', [{ text: 'OK' }]);
@@ -226,8 +229,9 @@ export default function HomeScreen({ navigation, route }: any) {
         { text: options[2], onPress: () => handleSelection(2) },
         { text: options[3], onPress: () => handleSelection(3) },
         { text: options[4], onPress: () => handleSelection(4) },
-        { text: options[5], style: 'destructive', onPress: () => handleSelection(5) },
-        { text: options[6], style: 'cancel' },
+        { text: options[5], onPress: () => handleSelection(5) },
+        { text: options[6], style: 'destructive', onPress: () => handleSelection(6) },
+        { text: options[7], style: 'cancel' },
       ]);
     }
   };
@@ -258,6 +262,53 @@ export default function HomeScreen({ navigation, route }: any) {
       },
       'plain-text',
       entry.title
+    );
+  };
+
+  const handleChangeDateEntry = (entry: DiaryEntry) => {
+    const currentDate = new Date(entry.created_at);
+    const formattedDate = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD
+    
+    Alert.prompt(
+      'Change Entry Date',
+      'Enter new date (YYYY-MM-DD format)',
+      async (newDate) => {
+        if (newDate && newDate.trim()) {
+          // Validate date format
+          const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+          if (!dateRegex.test(newDate.trim())) {
+            Alert.alert('Invalid Format', 'Please use YYYY-MM-DD format (e.g., 2026-02-17)');
+            return;
+          }
+
+          try {
+            const parsedDate = new Date(newDate.trim());
+            if (isNaN(parsedDate.getTime())) {
+              Alert.alert('Invalid Date', 'Please enter a valid date');
+              return;
+            }
+
+            // Update the created_at timestamp
+            const { error } = await supabase
+              .from('notes')
+              .update({ created_at: parsedDate.toISOString() })
+              .eq('id', entry.id);
+
+            if (!error) {
+              loadEntries();
+              Alert.alert('Success', 'Entry date updated');
+            } else {
+              console.error('[Home] Error changing date:', error);
+              Alert.alert('Error', 'Failed to change entry date');
+            }
+          } catch (err) {
+            console.error('[Home] Error changing entry date:', err);
+            Alert.alert('Error', 'Failed to change entry date');
+          }
+        }
+      },
+      'plain-text',
+      formattedDate
     );
   };
 
@@ -569,7 +620,7 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
+      <View style={[styles.centerContainer, { backgroundColor: theme.colors.background }]}>
         <ActivityIndicator size="large" color="#8b5cf6" />
       </View>
     );
@@ -1342,16 +1393,18 @@ const styles = StyleSheet.create({
   emptyIcon: {
     fontSize: 64,
     marginBottom: 16,
+    textAlign: 'center',
   },
   emptyTitle: {
     fontSize: sf(20),
     fontWeight: '600',
-    color: '#ffffff',
+    color: '#2C2C2C',
     marginBottom: 8,
+    textAlign: 'center',
   },
   emptyText: {
     fontSize: sf(14),
-    color: '#999',
+    color: '#6B6B6B',
     textAlign: 'center',
     marginBottom: 24,
   },

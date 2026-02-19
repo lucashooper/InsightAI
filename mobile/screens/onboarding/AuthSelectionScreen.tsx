@@ -34,20 +34,31 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
   const handleAppleAuth = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSocialLoading(true);
+    // Set resume flag BEFORE sign-in so AppNavigator knows where to start
+    // when the navigator switches from unauthenticated to authenticated stack
+    await AsyncStorage.setItem('ONBOARDING_RESUME_SCREEN', 'ChooseVibe');
     const { error } = await signInWithApple();
     setSocialLoading(false);
     if (error) {
+      await AsyncStorage.removeItem('ONBOARDING_RESUME_SCREEN');
       Alert.alert('Apple Sign-In Failed', error.message || 'An error occurred');
+    } else {
+      console.log('[AuthSelection] Apple Sign-In successful, navigator will resume at ChooseVibe');
     }
   };
 
   const handleGoogleAuth = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSocialLoading(true);
+    // Set resume flag BEFORE sign-in so AppNavigator knows where to start
+    await AsyncStorage.setItem('ONBOARDING_RESUME_SCREEN', 'ChooseVibe');
     const { error } = await signInWithGoogle();
     setSocialLoading(false);
     if (error) {
+      await AsyncStorage.removeItem('ONBOARDING_RESUME_SCREEN');
       Alert.alert('Google Sign-In Failed', error.message || 'An error occurred');
+    } else {
+      console.log('[AuthSelection] Google Sign-In successful, navigator will resume at ChooseVibe');
     }
   };
 
@@ -67,13 +78,15 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
       <SunoGradient />
       <StatusBar barStyle="dark-content" />
       
-      {/* Back Button */}
-      <TouchableOpacity 
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Ionicons name="chevron-back" size={28} color="#6b7280" />
-      </TouchableOpacity>
+      {/* Back Button - only show if can go back */}
+      {navigation.canGoBack() && (
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="chevron-back" size={28} color="#6b7280" />
+        </TouchableOpacity>
+      )}
 
       <View style={styles.content}>
         {/* Header */}

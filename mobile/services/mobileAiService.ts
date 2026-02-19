@@ -68,8 +68,13 @@ async function waitForRateLimit() {
 
 // Helper: call the groq-proxy edge function (keeps API key server-side)
 async function callGroqProxy(messages: Array<{role: string; content: string}>, opts?: { temperature?: number; max_tokens?: number; model?: string }): Promise<string> {
+  console.log('[callGroqProxy] Getting session...');
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error('Not authenticated');
+  if (!session) {
+    console.error('[callGroqProxy] No session found');
+    throw new Error('Not authenticated');
+  }
+  console.log('[callGroqProxy] Session found, calling groq-proxy...');
 
   const response = await fetch(`${SUPABASE_FUNCTION_URL}/groq-proxy`, {
     method: 'POST',
@@ -85,12 +90,16 @@ async function callGroqProxy(messages: Array<{role: string; content: string}>, o
     }),
   });
 
+  console.log('[callGroqProxy] Response status:', response.status);
+
   if (!response.ok) {
     const err = await response.json().catch(() => ({ error: 'Unknown error' }));
+    console.error('[callGroqProxy] Error response:', err);
     throw new Error(err.error || `Groq proxy error (${response.status})`);
   }
 
   const data = await response.json();
+  console.log('[callGroqProxy] ✅ Success, response length:', data.choices?.[0]?.message?.content?.length);
   return data.choices?.[0]?.message?.content || '';
 }
 
@@ -220,28 +229,100 @@ Entry text: ${content}`;
        - BAD: "Social anxiety and self-perception", "Missed opportunities and self-doubt", "Accidental loss of personal data"
     9. Even when addressing struggles, use empowering language that highlights their awareness and potential for growth.`;
 
-    // Get user session for authentication (refresh first to avoid stale tokens)
+    // Get user session for authentication - use multiple strategies with timeouts
     console.log('[mobileAiService] Getting user session...');
-    const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
-    const session = refreshedSession || (await supabase.auth.getSession()).data.session;
+    let session: any = null;
+    
+    // Strategy 1: Try getSession with a tight timeout (most reliable, reads from storage)
+    try {
+      console.log('[mobileAiService] Strategy 1: getSession...');
+      const getSessionResult = await Promise.race([
+        supabase.auth.getSession(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('getSession timeout')), 5000))
+      ]) as any;
+      session = getSessionResult?.data?.session;
+      console.log('[mobileAiService] Strategy 1 result:', session ? 'found' : 'null');
+    } catch (e: any) {
+      console.warn('[mobileAiService] Strategy 1 failed:', e.message);
+    }
+    
+    // Strategy 2: If getSession failed, try refreshSession
+    if (!session) {
+      try {
+        console.log('[mobileAiService] Strategy 2: refreshSession...');
+        const refreshResult = await Promise.race([
+          supabase.auth.refreshSession(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('refreshSession timeout')), 5000))
+        ]) as any;
+        session = refreshResult?.data?.session;
+        console.log('[mobileAiService] Strategy 2 result:', session ? 'found' : 'null');
+      } catch (e: any) {
+        console.warn('[mobileAiService] Strategy 2 failed:', e.message);
+      }
+    }
+    
+    // Strategy 3: Last resort - read token from AsyncStorage directly
+    if (!session) {
+      try {
+        console.log('[mobileAiService] Strategy 3: Reading token from storage...');
+        const AS = require('@react-native-async-storage/async-storage').default;
+        const allKeys: string[] = await AS.getAllKeys();
+        const authKeys = allKeys.filter((k: string) => k.includes('auth') || k.includes('supabase'));
+        console.log('[mobileAiService] Auth-related storage keys:', authKeys);
+        
+        for (const key of authKeys) {
+          try {
+            const value = await AS.getItem(key);
+            if (value) {
+              const parsed = JSON.parse(value);
+              if (parsed?.access_token) {
+                console.log('[mobileAiService] Strategy 3: Found token in key:', key);
+                session = parsed;
+                break;
+              }
+            }
+          } catch {} // Skip non-JSON values
+        }
+        console.log('[mobileAiService] Strategy 3 result:', session ? 'found' : 'null');
+      } catch (e: any) {
+        console.warn('[mobileAiService] Strategy 3 failed:', e.message);
+      }
+    }
     
     if (!session) {
-      console.error('[mobileAiService] No session found');
+      console.error('[mobileAiService] ❌ No session found after all 3 strategies');
       throw new Error('Not authenticated. Please sign in to use AI features.');
     }
 
-    console.log('[mobileAiService] Session found, user ID:', session.user?.id);
+    console.log('[mobileAiService] ✅ Session confirmed, user ID:', session.user?.id || 'unknown');
+    console.log('[mobileAiService] Token present:', !!session.access_token);
     console.log('[mobileAiService] Calling Edge Function:', `${SUPABASE_FUNCTION_URL}/clever-api`);
 
     try {
+      console.log('[mobileAiService] 🚀 Starting Edge Function call...');
+      console.log('[mobileAiService] Content length:', content.length);
+      
+      // Add timeout to prevent infinite hanging - use Promise.race for more reliable timeout
+      const controller = new AbortController();
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          console.error('[mobileAiService] ⏰ Request timeout after 45 seconds');
+          controller.abort();
+          reject(new Error('Analysis request timed out. Please try again.'));
+        }, 45000); // 45 second timeout (more aggressive)
+      });
+      
+      const combinedSignal = options?.signal || controller.signal;
+      
+      console.log('[mobileAiService] Fetching from Edge Function...');
       // Call Supabase Edge Function instead of Groq directly
-      const response = await fetch(`${SUPABASE_FUNCTION_URL}/clever-api`, {
+      const fetchPromise = fetch(`${SUPABASE_FUNCTION_URL}/clever-api`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
-        signal: options?.signal,
+        signal: combinedSignal,
         body: JSON.stringify({
           content,
           systemInstruction,
@@ -249,7 +330,10 @@ Entry text: ${content}`;
         }),
       });
 
-      console.log('[mobileAiService] Edge Function response status:', response.status);
+      const response = await Promise.race([fetchPromise, timeoutPromise]) as Response;
+
+      console.log('[mobileAiService] ✅ Edge Function response received');
+      console.log('[mobileAiService] Response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
@@ -561,11 +645,17 @@ Write in second person ("you"). Keep it under 60 words.`;
     messages: Array<{ role: 'user' | 'assistant'; content: string }>,
     options?: { signal?: AbortSignal; personality?: string }
   ): Promise<string> {
+    console.log('[mobileAiService] 💬 Chat function called');
     await waitForRateLimit();
 
     // Fetch recent journal entries for context
+    console.log('[mobileAiService] Getting session...');
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error('Not authenticated');
+    if (!session) {
+      console.error('[mobileAiService] No session found');
+      throw new Error('Not authenticated');
+    }
+    console.log('[mobileAiService] Session found, user:', session.user.id);
 
     const { data: entries } = await supabase
       .from('notes')
@@ -613,21 +703,28 @@ ${tone}
 You are NOT a therapist. You're a supportive companion who helps them reflect and discover patterns in their own words.${journalContext}`;
 
     try {
+      console.log('[mobileAiService] Building API messages...');
       const apiMessages = [
         { role: 'system', content: systemMessage },
         ...messages.map(m => ({ role: m.role, content: m.content })),
       ];
 
+      console.log('[mobileAiService] Calling Groq proxy...');
       const response = await callGroqProxy(apiMessages, {
         temperature: 0.85,
         max_tokens: 600,
         model: 'llama-3.3-70b-versatile',
       });
 
+      console.log('[mobileAiService] ✅ Chat response received, length:', response?.length);
       return response.trim();
     } catch (error: any) {
-      if (error?.name === 'AbortError') throw error;
-      console.error('[mobileAiService] chat error', error);
+      if (error?.name === 'AbortError') {
+        console.warn('[mobileAiService] Chat aborted');
+        throw error;
+      }
+      console.error('[mobileAiService] ❌ Chat error:', error);
+      console.error('[mobileAiService] Error details:', JSON.stringify(error, null, 2));
       throw error;
     }
   },

@@ -22,7 +22,7 @@ import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { mobileAiService } from '../services/mobileAiService';
 import { EncryptionService } from '../services/encryptionService';
@@ -543,7 +543,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
-            <Ionicons name="arrow-back" size={24} color={theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.7)'} />
+            <Ionicons name="arrow-back" size={24} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : '#1a1a1a'} />
           </TouchableOpacity>
         </View>
         <View style={styles.headerRight}>
@@ -554,7 +554,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
             {mood ? (
               <Text style={styles.selectedMoodEmoji}>{mood}</Text>
             ) : (
-              <Ionicons name="happy-outline" size={24} color={theme.name === 'light' ? theme.colors.primaryText : 'rgba(255, 255, 255, 0.7)'} />
+              <Ionicons name="happy-outline" size={24} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : theme.colors.primaryText} />
             )}
           </TouchableOpacity>
           <TouchableOpacity 
@@ -619,7 +619,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
 
       {/* Voice Recording Indicator */}
       {isRecording && (
-        <View style={[styles.recordingBanner, { backgroundColor: theme.name === 'light' ? 'rgba(139,92,246,0.08)' : 'rgba(139,92,246,0.15)' }]}>
+        <View style={[styles.recordingBanner, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.08)' }]}>
           <View style={styles.waveformContainer}>
             {waveAnims.map((anim, i) => (
               <Animated.View
@@ -637,7 +637,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           <View style={styles.recordingTextContainer}>
             <Text style={[styles.recordingLabel, { color: '#8b5cf6' }]}>Listening...</Text>
             {interimText ? (
-              <Text style={[styles.interimText, { color: theme.name === 'light' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)' }]} numberOfLines={1}>
+              <Text style={[styles.interimText, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }]} numberOfLines={1}>
                 {interimText}
               </Text>
             ) : null}
@@ -662,9 +662,9 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           keyboardShouldPersistTaps="handled"
         >
           <TextInput
-            style={[styles.titleInput, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}
+            style={[styles.titleInput, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}
             placeholder="Title (optional)"
-            placeholderTextColor={theme.name === 'light' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.3)'}
+            placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'}
             value={title}
             onChangeText={setTitle}
             multiline={false}
@@ -679,17 +679,17 @@ export default function CreateEntryScreen({ navigation, route }: any) {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.promptLabel}>Insight prompt</Text>
-                <Text style={[styles.promptQuestion, { color: theme.name === 'light' ? '#4a3a6b' : 'rgba(200, 180, 255, 0.9)' }]}>{promptText}</Text>
+                <Text style={[styles.promptQuestion, { color: isDarkTheme(theme.name) ? 'rgba(200, 180, 255, 0.9)' : '#4a3a6b' }]}>{promptText}</Text>
               </View>
             </View>
           )}
 
           <TextInput
-            style={[styles.contentInput, { color: theme.name === 'light' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.95)' }]}
+            style={[styles.contentInput, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}
             value={content}
             onChangeText={handleContentChange}
             placeholder={promptText ? "Your thoughts..." : "Write here..."}
-            placeholderTextColor={theme.name === 'light' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.3)'}
+            placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'}
             multiline
             textAlignVertical="top"
             autoFocus={false}
@@ -720,7 +720,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.promptLabel}>New direction</Text>
-                <Text style={[styles.promptQuestion, { color: theme.name === 'light' ? '#4a3a6b' : 'rgba(200, 180, 255, 0.9)' }]}>{inlinePrompt}</Text>
+                <Text style={[styles.promptQuestion, { color: isDarkTheme(theme.name) ? 'rgba(200, 180, 255, 0.9)' : '#4a3a6b' }]}>{inlinePrompt}</Text>
               </View>
               <TouchableOpacity onPress={() => setInlinePrompt(null)} style={{ padding: 4 }}>
                 <Ionicons name="close" size={16} color="rgba(139,92,246,0.5)" />
@@ -735,7 +735,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
                 <Animated.View style={[styles.aiIconContainer, { transform: [{ scale: isTyping ? pulseAnim : 1 }] }]}>
                   <Ionicons name="book-outline" size={20} color="#8b5cf6" />
                 </Animated.View>
-                <Text style={[styles.aiResponseText, { color: theme.name === 'light' ? '#6B6B6B' : 'rgba(255, 255, 255, 0.75)' }]}>
+                <Text style={[styles.aiResponseText, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.75)' : '#6B6B6B' }]}>
                   {displayedText}
                   {isTyping && <Text style={styles.cursor}>|</Text>}
                 </Text>
@@ -752,7 +752,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           activeOpacity={0.8}
         >
           <LinearGradient
-            colors={theme.name === 'light' ? ['#8b5cf6', '#7c3aed'] : ['rgba(139, 92, 246, 0.3)', 'rgba(99, 102, 241, 0.2)']}
+            colors={isDarkTheme(theme.name) ? ['rgba(139, 92, 246, 0.3)', 'rgba(99, 102, 241, 0.2)'] : ['#8b5cf6', '#7c3aed']}
             style={styles.fabGradient}
           >
             <Ionicons 
@@ -839,8 +839,8 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           activeOpacity={1}
           onPress={() => setShowPersonalityModal(false)}
         >
-          <View style={[styles.personalitySheet, { backgroundColor: theme.name === 'light' ? '#fff' : '#1a1a1a' }]}>
-            <Text style={[styles.personalityTitle, { color: theme.name === 'light' ? '#1a1a1a' : '#fff' }]}>AI Personality</Text>
+          <View style={[styles.personalitySheet, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#fff' }]}>
+            <Text style={[styles.personalityTitle, { color: isDarkTheme(theme.name) ? '#fff' : '#1a1a1a' }]}>AI Personality</Text>
             {PERSONALITIES.map(p => (
               <TouchableOpacity
                 key={p.key}
@@ -857,8 +857,8 @@ export default function CreateEntryScreen({ navigation, route }: any) {
               >
                 <Text style={{ fontSize: 20 }}>{p.emoji}</Text>
                 <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={[styles.personalityLabel, { color: theme.name === 'light' ? '#1a1a1a' : '#fff' }]}>{p.label}</Text>
-                  <Text style={[styles.personalityDesc, { color: theme.name === 'light' ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.4)' }]}>{p.desc}</Text>
+                  <Text style={[styles.personalityLabel, { color: isDarkTheme(theme.name) ? '#fff' : '#1a1a1a' }]}>{p.label}</Text>
+                  <Text style={[styles.personalityDesc, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }]}>{p.desc}</Text>
                 </View>
                 {personality === p.key && <Ionicons name="checkmark-circle" size={22} color="#8b5cf6" />}
               </TouchableOpacity>
@@ -1183,15 +1183,17 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(139, 92, 246, 0.3)',
-    gap: 4,
+    gap: 8,
+    minHeight: 200,
   },
   quickActionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
     gap: 12,
-    borderRadius: 8,
+    borderRadius: 10,
+    backgroundColor: 'rgba(139, 92, 246, 0.08)',
   },
   quickActionText: {
     color: 'rgba(255, 255, 255, 0.85)',

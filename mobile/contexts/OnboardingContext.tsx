@@ -20,6 +20,14 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
       try {
         const cached = await AsyncStorage.getItem('CACHED_USERNAME');
         if (cached) {
+          // Don't use cached username if it looks like an email prefix (e.g., "Dxysfs9kj2")
+          // This happens when Apple doesn't provide a name with Hide My Email
+          const looksLikeEmailPrefix = /^[a-z0-9]+$/i.test(cached) && cached.length < 15;
+          if (looksLikeEmailPrefix) {
+            console.log('[OnboardingContext] Cached username looks like email prefix, ignoring:', cached);
+            await AsyncStorage.removeItem('CACHED_USERNAME');
+            return;
+          }
           console.log('[OnboardingContext] Loaded cached username:', cached);
           setUserName(cached);
         }

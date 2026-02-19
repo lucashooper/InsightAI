@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal,
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { protocolCompletionService } from '../services/protocolCompletionService';
@@ -333,7 +333,7 @@ export default function PlaybookScreen() {
               <Text style={[styles.progressFraction, { color: theme.colors.primaryText }]}>{protocolProgress.completed}/{protocolProgress.total}</Text>
               <Text style={[styles.progressLabel, { color: theme.colors.secondaryText }]}>protocols completed</Text>
             </View>
-            <View style={styles.progressBarContainer}>
+            <View style={[styles.progressBarContainer, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : 'rgba(0,0,0,0.08)' }]}>
               <LinearGradient
                 colors={['#8b5cf6', '#7c3aed']}
                 style={[styles.progressBar, { width: `${protocolProgress.percentage}%` }]}
@@ -346,12 +346,12 @@ export default function PlaybookScreen() {
         </StandardContainer>
 
         {/* Tabs */}
-        <View style={styles.tabContainer}>
+        <View style={[styles.tabContainer, { backgroundColor: isDarkTheme(theme.name) ? '#0f0f0f' : 'rgba(0,0,0,0.06)', borderColor: isDarkTheme(theme.name) ? '#1a1a1a' : 'rgba(0,0,0,0.08)' }]}>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'protocols' && styles.tabActive]}
             onPress={() => setActiveTab('protocols')}
           >
-            <Text style={[styles.tabText, { color: theme.colors.secondaryText }, activeTab === 'protocols' && { color: theme.colors.primaryText, fontWeight: '600' }]}>
+            <Text style={[styles.tabText, { color: theme.colors.secondaryText }, activeTab === 'protocols' && { color: '#ffffff', fontWeight: '600' }]}>
               Daily Protocols
             </Text>
           </TouchableOpacity>
@@ -359,7 +359,7 @@ export default function PlaybookScreen() {
             style={[styles.tab, activeTab === 'strategies' && styles.tabActive]}
             onPress={() => setActiveTab('strategies')}
           >
-            <Text style={[styles.tabText, { color: theme.colors.secondaryText }, activeTab === 'strategies' && { color: theme.colors.primaryText, fontWeight: '600' }]}>
+            <Text style={[styles.tabText, { color: theme.colors.secondaryText }, activeTab === 'strategies' && { color: '#ffffff', fontWeight: '600' }]}>
               Suggested
             </Text>
           </TouchableOpacity>
@@ -420,7 +420,7 @@ export default function PlaybookScreen() {
               <StandardContainer style={[styles.premiumCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
               <View style={styles.cardGradient}>
                 <View style={styles.cardHeader}>
-                  <View style={styles.emojiContainer}>
+                  <View style={[styles.emojiContainer, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : 'rgba(139, 92, 246, 0.1)' }]}>
                     <Text style={styles.cardEmoji}>{strategy.emoji}</Text>
                   </View>
                   <View style={styles.cardInfo}>
@@ -448,13 +448,13 @@ export default function PlaybookScreen() {
                 
                 <View style={styles.cardFooter}>
                   <View style={styles.badges}>
-                    <View style={[styles.categoryPill, { backgroundColor: getCategoryColor(strategy.category) + '20', borderColor: getCategoryColor(strategy.category) + '40' }]}>
-                      <Text style={[styles.categoryText, { color: getCategoryColor(strategy.category) }]}>
+                    <View style={[styles.categoryPill, { backgroundColor: '#8b5cf6' }]}>
+                      <Text style={[styles.categoryText, { color: '#ffffff' }]}>
                         {strategy.category}
                       </Text>
                     </View>
-                    <View style={[styles.difficultyBadge, { backgroundColor: 'rgba(139, 92, 246, 0.15)', borderColor: 'rgba(139, 92, 246, 0.3)', borderWidth: 1 }]}>
-                      <Text style={[styles.difficultyText, { color: '#8b5cf6' }]}>{strategy.difficulty}</Text>
+                    <View style={[styles.difficultyBadge, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
+                      <Text style={[styles.difficultyText, { color: theme.colors.secondaryText }]}>{strategy.difficulty}</Text>
                     </View>
                   </View>
                   
@@ -530,42 +530,43 @@ export default function PlaybookScreen() {
         onRequestClose={() => setShowCreateModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>New Strategy</Text>
+          <View style={[styles.modalContent, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a2e' : '#ffffff' }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: isDarkTheme(theme.name) ? '#2a2a3e' : '#e5e5e5' }]}>
+              <Text style={[styles.modalTitle, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>New Strategy</Text>
               <TouchableOpacity onPress={() => setShowCreateModal(false)}>
-                <Ionicons name="close" size={24} color="#999" />
+                <Ionicons name="close" size={24} color={isDarkTheme(theme.name) ? '#999' : '#666'} />
               </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.modalBody}>
-              <Text style={styles.label}>Title *</Text>
+              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Title *</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', borderColor: isDarkTheme(theme.name) ? '#2a2a2a' : '#e0e0e0', color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}
                 value={newStrategy.title}
                 onChangeText={(text) => setNewStrategy({ ...newStrategy, title: text })}
                 placeholder="e.g., Morning Meditation"
-                placeholderTextColor="#666"
+                placeholderTextColor={isDarkTheme(theme.name) ? '#666' : '#999'}
               />
 
-              <Text style={styles.label}>Description</Text>
+              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Description</Text>
               <TextInput
-                style={[styles.input, styles.textArea]}
+                style={[styles.input, styles.textArea, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', borderColor: isDarkTheme(theme.name) ? '#2a2a2a' : '#e0e0e0', color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}
                 value={newStrategy.description}
                 onChangeText={(text) => setNewStrategy({ ...newStrategy, description: text })}
                 placeholder="Describe your strategy..."
-                placeholderTextColor="#666"
+                placeholderTextColor={isDarkTheme(theme.name) ? '#666' : '#999'}
                 multiline
                 numberOfLines={4}
               />
 
-              <Text style={styles.label}>Emoji</Text>
+              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Emoji</Text>
               <View style={styles.emojiGrid}>
                 {['✨', '💪', '🏃', '👥', '🧘', '😴', '🥗', '🎯', '🌟', '💡', '🔥', '🌈', '🎨', '📚', '🎵', '🌱', '☕', '🍃', '💝', '🌸'].map((emoji) => (
                   <TouchableOpacity
                     key={emoji}
                     style={[
                       styles.emojiOption,
+                      { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', borderColor: isDarkTheme(theme.name) ? '#2a2a2a' : '#e0e0e0' },
                       newStrategy.emoji === emoji && styles.emojiOptionActive
                     ]}
                     onPress={() => setNewStrategy({ ...newStrategy, emoji })}
@@ -575,20 +576,22 @@ export default function PlaybookScreen() {
                 ))}
               </View>
 
-              <Text style={styles.label}>Category</Text>
+              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Category</Text>
               <View style={styles.categoryGrid}>
                 {['general', 'coping', 'exercise', 'social', 'mindfulness', 'sleep', 'nutrition'].map((cat) => (
                   <TouchableOpacity
                     key={cat}
                     style={[
                       styles.categoryOption,
-                      newStrategy.category === cat && styles.categoryOptionActive
+                      { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', borderColor: isDarkTheme(theme.name) ? '#2a2a2a' : '#e0e0e0' },
+                      newStrategy.category === cat && { backgroundColor: '#8b5cf6', borderColor: '#8b5cf6' }
                     ]}
                     onPress={() => setNewStrategy({ ...newStrategy, category: cat })}
                   >
                     <Text style={[
                       styles.categoryOptionText,
-                      newStrategy.category === cat && styles.categoryOptionTextActive
+                      { color: isDarkTheme(theme.name) ? '#999' : '#666' },
+                      newStrategy.category === cat && { color: '#ffffff' }
                     ]}>
                       {cat}
                     </Text>
@@ -622,22 +625,23 @@ export default function PlaybookScreen() {
         onRequestClose={() => { setShowEditModal(false); setEditingStrategy(null); }}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Strategy</Text>
+          <View style={[styles.modalContent, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a2e' : '#ffffff' }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: isDarkTheme(theme.name) ? '#2a2a3e' : '#e5e5e5' }]}>
+              <Text style={[styles.modalTitle, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Edit Strategy</Text>
               <TouchableOpacity onPress={() => { setShowEditModal(false); setEditingStrategy(null); }}>
-                <Ionicons name="close" size={24} color="#999" />
+                <Ionicons name="close" size={24} color={isDarkTheme(theme.name) ? '#999' : '#666'} />
               </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled">
-              <Text style={styles.label}>Emoji</Text>
+              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Emoji</Text>
               <View style={styles.emojiGrid}>
                 {['✨', '💪', '🏃', '👥', '🧘', '😴', '🥗', '🎯', '🌟', '💡', '🔥', '🌈', '🎨', '📚', '🎵', '🌱', '☕', '🍃', '💝', '🌸', '📈', '💭'].map((emoji) => (
                   <TouchableOpacity
                     key={emoji}
                     style={[
                       styles.emojiOption,
+                      { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', borderColor: isDarkTheme(theme.name) ? '#2a2a2a' : '#e0e0e0' },
                       editDraft.emoji === emoji && styles.emojiOptionActive
                     ]}
                     onPress={() => setEditDraft({ ...editDraft, emoji })}
@@ -647,39 +651,41 @@ export default function PlaybookScreen() {
                 ))}
               </View>
 
-              <Text style={styles.label}>Title *</Text>
+              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Title *</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', borderColor: isDarkTheme(theme.name) ? '#2a2a2a' : '#e0e0e0', color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}
                 value={editDraft.title}
                 onChangeText={(text) => setEditDraft({ ...editDraft, title: text })}
                 placeholder="Strategy title"
-                placeholderTextColor="#666"
+                placeholderTextColor={isDarkTheme(theme.name) ? '#666' : '#999'}
               />
 
-              <Text style={styles.label}>Description</Text>
+              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Description</Text>
               <TextInput
-                style={[styles.input, styles.textArea]}
+                style={[styles.input, styles.textArea, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', borderColor: isDarkTheme(theme.name) ? '#2a2a2a' : '#e0e0e0', color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}
                 value={editDraft.description}
                 onChangeText={(text) => setEditDraft({ ...editDraft, description: text })}
                 placeholder="Describe your strategy..."
-                placeholderTextColor="#666"
+                placeholderTextColor={isDarkTheme(theme.name) ? '#666' : '#999'}
                 multiline
               />
 
-              <Text style={styles.label}>Category</Text>
+              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Category</Text>
               <View style={styles.categoryGrid}>
                 {['general', 'coping', 'exercise', 'social', 'mindfulness', 'sleep', 'nutrition'].map((cat) => (
                   <TouchableOpacity
                     key={cat}
                     style={[
                       styles.categoryOption,
-                      editDraft.category === cat && styles.categoryOptionActive
+                      { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', borderColor: isDarkTheme(theme.name) ? '#2a2a2a' : '#e0e0e0' },
+                      editDraft.category === cat && { backgroundColor: '#8b5cf6', borderColor: '#8b5cf6' }
                     ]}
                     onPress={() => setEditDraft({ ...editDraft, category: cat })}
                   >
                     <Text style={[
                       styles.categoryOptionText,
-                      editDraft.category === cat && styles.categoryOptionTextActive
+                      { color: isDarkTheme(theme.name) ? '#999' : '#666' },
+                      editDraft.category === cat && { color: '#ffffff' }
                     ]}>
                       {cat}
                     </Text>
@@ -952,8 +958,7 @@ const styles = StyleSheet.create({
   categoryPill: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 20,
   },
   categoryText: {
     fontSize: 12,
@@ -1066,13 +1071,13 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '90%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '85%',
   },
   modalHeader: {
     flexDirection: 'row',

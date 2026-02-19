@@ -11,7 +11,7 @@ import ProgressBarNeon from '../../components/onboarding/ProgressBarNeon';
 import PillOption from '../../components/onboarding/PillOption';
 import AnimatedSlider from '../../components/onboarding/AnimatedSlider';
 import { useOnboarding } from '../../contexts/OnboardingContext';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
 
 const cambridgeLogo = require('../../assets/Cambridge-logo.png');
@@ -164,6 +164,19 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
         new Animated.Value(0),
         new Animated.Value(0),
     ]);
+    // Animation values for pill options (staggered fade-in)
+    const [optionFadeAnims] = useState([
+        new Animated.Value(0),
+        new Animated.Value(0),
+        new Animated.Value(0),
+        new Animated.Value(0),
+        new Animated.Value(0),
+        new Animated.Value(0),
+        new Animated.Value(0),
+    ]);
+    // Animation values for info pages
+    const [infoLottieAnim] = useState(new Animated.Value(0));
+    const [infoCardAnim] = useState(new Animated.Value(0));
 
     // Animation values for placeholders
     const floatAnim = useRef(new Animated.Value(0)).current;
@@ -248,7 +261,45 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                 }).start();
             });
         }
-    }, [currentIndex, currentStep.type, currentStep.defaultValue, currentStep.features, featureFadeAnims]);
+
+        // Staggered fade-in for question pill options (like CAL AI)
+        if (currentStep.type === 'question' && currentStep.options) {
+            optionFadeAnims.forEach((anim) => anim.setValue(0));
+            currentStep.options.forEach((_, index) => {
+                if (index < optionFadeAnims.length) {
+                    Animated.timing(optionFadeAnims[index], {
+                        toValue: 1,
+                        duration: 400,
+                        delay: 80 + index * 80,
+                        easing: Easing.out(Easing.ease),
+                        useNativeDriver: true,
+                    }).start();
+                }
+            });
+        }
+
+        // Slide-in animations for info pages (research/meditation)
+        if (currentStep.type === 'info') {
+            infoLottieAnim.setValue(0);
+            infoCardAnim.setValue(0);
+            
+            Animated.sequence([
+                Animated.timing(infoLottieAnim, {
+                    toValue: 1,
+                    duration: 500,
+                    delay: 100,
+                    easing: Easing.out(Easing.cubic),
+                    useNativeDriver: true,
+                }),
+                Animated.timing(infoCardAnim, {
+                    toValue: 1,
+                    duration: 450,
+                    easing: Easing.out(Easing.cubic),
+                    useNativeDriver: true,
+                }),
+            ]).start();
+        }
+    }, [currentIndex, currentStep.type, currentStep.defaultValue, currentStep.features, currentStep.options, featureFadeAnims, optionFadeAnims, infoLottieAnim, infoCardAnim]);
 
     const handleNext = (value?: string) => {
         console.log('[OnboardingQuestion] handleNext called with value:', value);
@@ -300,36 +351,41 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="dark-content" />
+            <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} />
 
-            <SunoGradient themeColors={theme.colors.backgroundGradient as any} />
+            {/* Use solid background for dark themes, gradient for others */}
+            {isDarkTheme(theme.name) ? (
+                <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
+            ) : (
+                <SunoGradient themeColors={theme.colors.backgroundGradient as any} />
+            )}
 
-            {/* Back Arrow + Centered Progress Bar Row */}
+            {/* Back Arrow + Progress Bar Row (Left-aligned like CAL AI) */}
             <View style={styles.topRow}>
                 <TouchableOpacity
                     onPress={() => {
                         if (currentIndex === 0) {
-                            // Check if we can go back before attempting
-                            if (navigation.canGoBack()) {
-                                navigation.goBack();
-                            }
+                            // First step - go back to ChooseVibe
+                            navigation.goBack();
                         } else {
+                            // Other steps - go to previous question
                             setCurrentIndex(currentIndex - 1);
                             setSelectedOption(null);
                         }
                     }}
                     style={styles.backArrow}
                 >
-                    <Ionicons
-                        name="arrow-back"
-                        size={24}
-                        color="#6b7280"
-                    />
+                    <View style={[styles.backArrowCircle, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+                        <Ionicons
+                            name="arrow-back"
+                            size={20}
+                            color={isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e'}
+                        />
+                    </View>
                 </TouchableOpacity>
                 <View style={styles.progressBarContainer}>
                     <ProgressBarNeon currentStep={currentIndex + 1} totalSteps={totalQuestionSteps} />
                 </View>
-                <View style={styles.backArrowSpacer} />
             </View>
 
             <View style={styles.content}>
@@ -339,16 +395,39 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                     {/* Premium Info Page Layout for Journaling */}
                     {currentStep.type === 'info' && currentStep.id === 'research_info' ? (
                         <View style={styles.premiumInfoContainer}>
-                            {/* Lottie Animation */}
-                            <LottieView
-                                source={stressManagementLottie}
-                                autoPlay
-                                loop
-                                style={styles.premiumLottie}
-                            />
+                            {/* Lottie Animation with slide-in */}
+                            <Animated.View
+                                style={{
+                                    opacity: infoLottieAnim,
+                                    transform: [{
+                                        translateY: infoLottieAnim.interpolate({
+                                            inputRange: [0, 1],
+                                            outputRange: [30, 0],
+                                        })
+                                    }],
+                                }}
+                            >
+                                <LottieView
+                                    source={stressManagementLottie}
+                                    autoPlay
+                                    loop
+                                    style={styles.premiumLottie}
+                                />
+                            </Animated.View>
 
-                            {/* Glassmorphic Card */}
-                            <View style={styles.glassCard}>
+                            {/* Glassmorphic Card with slide-in */}
+                            <Animated.View
+                                style={{
+                                    opacity: infoCardAnim,
+                                    transform: [{
+                                        translateY: infoCardAnim.interpolate({
+                                            inputRange: [0, 1],
+                                            outputRange: [30, 0],
+                                        })
+                                    }],
+                                }}
+                            >
+                                <View style={styles.glassCard}>
                                 <LinearGradient
                                     colors={['rgba(255, 255, 255, 0.6)', 'rgba(255, 255, 255, 0.35)']}
                                     style={styles.glassCardGradient}
@@ -382,6 +461,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                     </TouchableOpacity>
                                 </LinearGradient>
                             </View>
+                            </Animated.View>
                         </View>
                     ) : (
                         <>
@@ -392,7 +472,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                             <Text style={{
                                 fontSize: currentStep.type === 'info' ? 26 : 28,
                                 fontWeight: currentStep.type === 'info' ? '500' : '600',
-                                color: '#1a1a2e',
+                                color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e',
                                 textAlign: 'left',
                                 lineHeight: currentStep.type === 'info' ? 34 : 36,
                                 letterSpacing: -0.3,
@@ -402,7 +482,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                             </Text>
 
                             {currentStep.subtitle && (
-                                <Text style={styles.subtitle}>{currentStep.subtitle}</Text>
+                                <Text style={[styles.subtitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : '#555555' }]}>{currentStep.subtitle}</Text>
                             )}
 
                             {/* Slim Pill APA Study Tag for Patterns Page */}
@@ -511,16 +591,23 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                     {currentStep.type === 'text_input' && (
                         <View style={styles.textInputContent}>
                             <TextInput
-                                style={styles.nameInput}
+                                style={[
+                                    styles.nameInput,
+                                    isDarkTheme(theme.name) && {
+                                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                        borderColor: 'rgba(255, 255, 255, 0.3)',
+                                        color: '#ffffff',
+                                    }
+                                ]}
                                 placeholder="Enter your name"
-                                placeholderTextColor="#6b7280"
+                                placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.5)' : '#6b7280'}
                                 value={textInputValue}
                                 onChangeText={setTextInputValue}
                                 autoFocus
                                 autoCapitalize="words"
                                 returnKeyType="done"
                                 onSubmitEditing={() => {
-                                    // Just dismiss keyboard, don't auto-advance
+                                    // Just dismiss the keyboard - user should press Continue button to advance
                                     Keyboard.dismiss();
                                 }}
                             />
@@ -553,14 +640,26 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                         <View style={styles.questionContent}>
                             <ScrollView style={styles.optionsList} showsVerticalScrollIndicator={false}>
                                 <View style={styles.optionsContainer}>
-                                    {currentStep.options.map((option) => (
-                                        <PillOption
+                                    {currentStep.options.map((option, index) => (
+                                        <Animated.View
                                             key={option.value}
-                                            label={option.label}
-                                            icon={option.icon}
-                                            selected={selectedOption === option.value}
-                                            onPress={() => setSelectedOption(option.value)}
-                                        />
+                                            style={{
+                                                opacity: optionFadeAnims[index] || 1,
+                                                transform: [{
+                                                    translateY: (optionFadeAnims[index] || new Animated.Value(1)).interpolate({
+                                                        inputRange: [0, 1],
+                                                        outputRange: [20, 0],
+                                                    })
+                                                }],
+                                            }}
+                                        >
+                                            <PillOption
+                                                label={option.label}
+                                                icon={option.icon}
+                                                selected={selectedOption === option.value}
+                                                onPress={() => setSelectedOption(option.value)}
+                                            />
+                                        </Animated.View>
                                     ))}
                                 </View>
 
@@ -696,19 +795,20 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingTop: 60,
         paddingBottom: 20,
-        gap: 16,
+        gap: 12,
     },
     backArrow: {
-        width: 40,
-        height: 40,
+        padding: 4,
+    },
+    backArrowCircle: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         alignItems: 'center',
         justifyContent: 'center',
     },
     progressBarContainer: {
         flex: 1,
-    },
-    backArrowSpacer: {
-        width: 40,
     },
     progressWrapper: {
         marginTop: 24,

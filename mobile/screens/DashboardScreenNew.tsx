@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -490,9 +490,9 @@ export default function DashboardScreenNew() {
             onPress={() => setShowStreakModal(true)}
             activeOpacity={0.7}
           >
-            <View style={[styles.streakInline, theme.name === 'light' && { backgroundColor: '#FFFFFF', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16, borderWidth: 1, borderColor: '#E8E5DC', shadowColor: 'rgba(139, 92, 70, 0.08)', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 8 }]}>
-              <Text style={[styles.streakEmoji, { fontSize: theme.name === 'light' ? 16 : 18 }]}>🔥</Text>
-              <Text style={[styles.streakCount, { color: theme.colors.primaryText, fontSize: theme.name === 'light' ? 14 : 14, fontWeight: theme.name === 'light' ? '700' : '600' }]}>{streak > 0 ? streak : '-'}</Text>
+            <View style={[styles.streakInline, !isDarkTheme(theme.name) && { backgroundColor: '#FFFFFF', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16, borderWidth: 1, borderColor: '#E8E5DC', shadowColor: 'rgba(139, 92, 70, 0.08)', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 8 }]}>
+              <Text style={[styles.streakEmoji, { fontSize: !isDarkTheme(theme.name) ? 16 : 18 }]}>🔥</Text>
+              <Text style={[styles.streakCount, { color: theme.colors.primaryText, fontSize: 14, fontWeight: !isDarkTheme(theme.name) ? '700' : '600' }]}>{streak > 0 ? streak : '-'}</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -530,7 +530,7 @@ export default function DashboardScreenNew() {
           <View style={styles.greetingInOrb}>
             <Text style={[styles.greetingText, { 
               color: '#FFFFFF',
-              textShadowColor: theme.name === 'light' ? 'rgba(0, 0, 0, 0.15)' : 'transparent',
+              textShadowColor: !isDarkTheme(theme.name) ? 'rgba(0, 0, 0, 0.15)' : 'transparent',
               textShadowOffset: { width: 0, height: 1 },
               textShadowRadius: 3,
               fontWeight: '400',

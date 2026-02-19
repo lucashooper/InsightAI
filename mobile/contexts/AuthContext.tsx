@@ -64,7 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log('[SUBSCRIPTION SYNC] 🔍 Checking entitlements:', customerInfo.entitlements.active);
       
-      if (customerInfo.entitlements.active['pro']) {
+      if (customerInfo.entitlements.active['InsightAI Pro'] || customerInfo.entitlements.active['pro'] || Object.keys(customerInfo.entitlements.active).length > 0) {
         tier = 'pro';
         console.log('[SUBSCRIPTION SYNC] ✨ Pro entitlement detected');
       }
@@ -325,10 +325,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         nonce: hashedNonce,
       });
 
+      console.log('[AUTH] Apple credential received:', {
+        user: credential.user,
+        email: credential.email,
+        fullName: credential.fullName,
+        givenName: credential.fullName?.givenName,
+        familyName: credential.fullName?.familyName,
+      });
+
       const { data, error } = await supabase.auth.signInWithIdToken({
         provider: 'apple',
         token: credential.identityToken!,
         nonce,
+      });
+
+      console.log('[AUTH] Supabase sign-in result:', {
+        success: !error,
+        userId: data?.user?.id,
+        email: data?.user?.email,
       });
 
       if (!error && data?.user) {
@@ -339,55 +353,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Extract name from Apple credential (only provided on first sign-in)
         const fullName = credential.fullName;
         let displayName = '';
+        let shouldSkipNameStep = false;
+        
+        console.log('[AUTH] Processing Apple name data:', {
+          givenName: fullName?.givenName,
+          familyName: fullName?.familyName,
+          nickname: fullName?.nickname,
+          middleName: fullName?.middleName,
+        });
         
         if (fullName?.givenName && fullName?.familyName) {
           displayName = `${fullName.givenName} ${fullName.familyName}`;
+          shouldSkipNameStep = true;
+          console.log('[AUTH] Apple provided full name:', displayName);
         } else if (fullName?.givenName) {
           displayName = fullName.givenName;
+          shouldSkipNameStep = true;
+          console.log('[AUTH] Apple provided first name:', displayName);
         } else {
-          // Apple didn't provide name (repeat sign-in)
-          // Generate default username from email to comply with Apple guidelines
-          const email = data.user.email || '';
-          if (email) {
-            // Use email prefix as username (e.g., "john.doe@example.com" -> "john.doe")
-            displayName = email.split('@')[0].replace(/[._]/g, ' ');
-            // Capitalize first letter
-            displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
-          } else {
-            // Fallback to generic name if no email
-            displayName = 'Insight User';
-          }
-          console.log('[AUTH] Apple did not provide name, generated default:', displayName);
+          // Apple didn't provide name (repeat sign-in or Hide My Email)
+          // Do NOT skip name step - let user enter their name manually
+          console.log('[AUTH] Apple did not provide name - user will be prompted for name in onboarding');
+          console.log('[AUTH] This is expected for repeat sign-ins - Apple only provides name on first sign-in');
         }
 
-        // Save username and cache it for Apple users
-        console.log('[AUTH] Apple Sign-In - saving username:', displayName);
-        try {
-          const { error: profileError } = await supabase
-            .from('user_profiles')
-            .upsert({
-              user_id: data.user.id,
-              username: displayName,
-              email: data.user.email,
-              updated_at: new Date().toISOString(),
-            });
-          
-          if (profileError) {
-            console.error('[AUTH] Failed to save Apple profile:', profileError);
-          } else {
-            console.log('[AUTH] ✅ Apple profile saved');
+        // Only save username and skip name step if Apple provided a name
+        if (shouldSkipNameStep && displayName) {
+          console.log('[AUTH] Apple Sign-In - saving username:', displayName);
+          try {
+            const { error: profileError } = await supabase
+              .from('user_profiles')
+              .upsert({
+                user_id: data.user.id,
+                username: displayName,
+                email: data.user.email,
+                updated_at: new Date().toISOString(),
+              });
+            
+            if (profileError) {
+              console.error('[AUTH] Failed to save Apple profile:', profileError);
+            } else {
+              console.log('[AUTH] ✅ Apple profile saved');
+            }
+            
+            // Cache the username and set flag for Apple Sign-In
+            await AsyncStorage.setItem('CACHED_USERNAME', displayName);
+            await AsyncStorage.setItem('SKIP_NAME_STEP', 'true');
+            console.log('[AUTH] ✅ Username cached for Apple Sign-In');
+            
+            // IMPORTANT: Do NOT set HAS_COMPLETED_ONBOARDING here
+            // Apple/Google users still need to see paywall and onboarding questions
+            // The username being saved will allow them to skip the name input screen
+          } catch (err) {
+            console.error('[AUTH] Error saving Apple profile:', err);
           }
-          
-          // Cache the username and set flag for Apple Sign-In
-          await AsyncStorage.setItem('CACHED_USERNAME', displayName);
-          await AsyncStorage.setItem('SKIP_NAME_STEP', 'true');
-          console.log('[AUTH] ✅ Username cached for Apple Sign-In');
-          
-          // IMPORTANT: Do NOT set HAS_COMPLETED_ONBOARDING here
-          // Apple/Google users still need to see paywall and onboarding questions
-          // The username being saved will allow them to skip the name input screen
-        } catch (err) {
-          console.error('[AUTH] Error saving Apple profile:', err);
         }
       }
 

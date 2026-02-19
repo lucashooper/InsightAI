@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ThemeName, useTheme } from '../../contexts/ThemeContext';
+import { ThemeName, useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import { isTablet, sf } from '../../utils/responsive';
 
@@ -22,8 +23,8 @@ const vibeOptions: VibeOption[] = [
     name: 'dark',
     label: 'Dark',
     emoji: '🌑',
-    orbColors: ['rgba(20, 20, 30, 0.95)', 'rgba(15, 15, 25, 0.85)', 'rgba(10, 10, 20, 0.75)'],
-    glowColor: 'rgba(139, 92, 246, 0.3)',
+    orbColors: ['rgba(30, 30, 35, 0.95)', 'rgba(20, 20, 25, 0.9)', 'rgba(15, 15, 20, 0.85)'],
+    glowColor: 'rgba(50, 50, 60, 0.4)',
   },
   {
     name: 'light',
@@ -69,7 +70,25 @@ interface Props {
 
 export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) {
   const [selectedVibe, setSelectedVibe] = useState<ThemeName | null>('light');
-  const [backgroundColors, setBackgroundColors] = useState<string[]>(['#fef5f8', '#fef0f5', '#f5f0fe', '#f0f9ff', '#fef7f2']);
+  const getThemeBackgroundColors = (themeName: ThemeName): string[] => {
+    switch (themeName) {
+      case 'dark':
+        return ['#0a0a0a', '#050505', '#000000', '#050505', '#0a0a0a'];
+      case 'light':
+        return ['#fef5f8', '#fef0f5', '#f5f0fe', '#f0f9ff', '#fef7f2'];
+      case 'sunset':
+        return ['#fff5ed', '#ffedd5', '#fed7aa', '#fdba74', '#fb923c'];
+      case 'vibrant':
+        return ['#faf5ff', '#f3e8ff', '#e9d5ff', '#d8b4fe', '#c084fc'];
+      case 'ocean':
+        return ['#eff6ff', '#dbeafe', '#bfdbfe', '#93c5fd', '#60a5fa'];
+      case 'midnight':
+        return ['#0f0f23', '#1a1a3e', '#252550', '#1a1a3e', '#0f0f23'];
+      default:
+        return ['#fef5f8', '#fef0f5', '#f5f0fe', '#f0f9ff', '#fef7f2'];
+    }
+  };
+  const [backgroundColors, setBackgroundColors] = useState<string[]>(getThemeBackgroundColors('light'));
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const bgTransitionAnim = useRef(new Animated.Value(0)).current;
   const { setTheme } = useTheme();
@@ -82,39 +101,13 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
     }).start();
   }, []);
 
-  const getThemeBackgroundColors = (themeName: ThemeName): string[] => {
-    switch (themeName) {
-      case 'dark':
-        return ['#000000', '#0a0a0a', '#050505', '#000000', '#0a0a0a'];
-      case 'light':
-        return ['#fef5f8', '#fef0f5', '#f5f0fe', '#f0f9ff', '#fef7f2'];
-      case 'sunset':
-        return ['#fff5ed', '#ffedd5', '#fed7aa', '#fdba74', '#fb923c'];
-      case 'vibrant':
-        return ['#faf5ff', '#f3e8ff', '#e9d5ff', '#d8b4fe', '#c084fc'];
-      case 'ocean':
-        return ['#eff6ff', '#dbeafe', '#bfdbfe', '#93c5fd', '#60a5fa'];
-      case 'midnight':
-        return ['#eef2ff', '#e0e7ff', '#c7d2fe', '#a5b4fc', '#818cf8'];
-      default:
-        return ['#fef5f8', '#fef0f5', '#f5f0fe', '#f0f9ff', '#fef7f2'];
-    }
-  };
-
   const handleVibeSelect = (vibe: ThemeName) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setSelectedVibe(vibe);
     
-    // Animate background color transition
+    // Apply background colors immediately for instant feedback (no flash)
     const newColors = getThemeBackgroundColors(vibe);
-    Animated.timing(bgTransitionAnim, {
-      toValue: 1,
-      duration: 800,
-      useNativeDriver: false,
-    }).start(() => {
-      setBackgroundColors(newColors);
-      bgTransitionAnim.setValue(0);
-    });
+    setBackgroundColors(newColors);
   };
 
   const handleContinue = async () => {
@@ -122,7 +115,7 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
     
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
-    // Save the selected theme
+    // Save the selected theme BEFORE navigating so the next screen picks it up immediately
     await setTheme(selectedVibe);
     console.log('[ChooseVibe] Theme saved:', selectedVibe);
     
@@ -130,15 +123,32 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
       onVibeSelected(selectedVibe);
     }
     
-    // Navigate to onboarding questions (name, referral, goals, etc.)
+    // Navigate to OnboardingQuestion (keep ChooseVibe in stack for back navigation)
     navigation.navigate('OnboardingQuestion');
   };
 
-  const textColor = selectedVibe === 'dark' ? '#ffffff' : '#1a1a2e';
+  const textColor = isDarkTheme(selectedVibe || 'light') ? '#ffffff' : '#1a1a2e';
   
   return (
     <View style={styles.container}>
-      <SunoGradient themeColors={backgroundColors} />
+      {/* Use solid background for dark themes, gradient for others */}
+      {isDarkTheme(selectedVibe || 'light') ? (
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: selectedVibe === 'midnight' ? '#0f0f23' : '#000000' }]} />
+      ) : (
+        <SunoGradient themeColors={backgroundColors} />
+      )}
+      
+      {/* Back Button */}
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => {
+          if (navigation.canGoBack()) {
+            navigation.goBack();
+          }
+        }}
+      >
+        <Ionicons name="chevron-back" size={28} color={textColor} />
+      </TouchableOpacity>
       
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
         <View style={styles.header}>
@@ -273,7 +283,7 @@ function OrbOption({ vibe, isSelected, onPress, delay, selectedTheme }: OrbOptio
         </View>
       </Animated.View>
 
-      <Text style={[styles.label, { color: selectedTheme === 'dark' ? '#ffffff' : '#1a1a2e' }]}>{vibe.label}</Text>
+      <Text style={[styles.label, { color: isDarkTheme(selectedTheme || 'light') ? '#ffffff' : '#1a1a2e' }]}>{vibe.label}</Text>
     </TouchableOpacity>
   );
 }
@@ -285,6 +295,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fef7f2',
+  },
+  backButton: {
+    position: 'absolute',
+    top: isTablet ? 60 : 50,
+    left: isTablet ? 32 : 20,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   content: {
     flex: 1,

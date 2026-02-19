@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle } from 'react-native-svg';
-import { useTheme } from '../../contexts/ThemeContext';
+import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 
 type LoadingProps = {
   variant: 'loading';
@@ -22,6 +22,7 @@ type LoadingProps = {
 
 type ResultsProps = {
   variant: 'results';
+  entryTitle?: string;
   insights?: {
     mood_analysis?: {
       primary_emotion?: string;
@@ -47,6 +48,7 @@ type ResultsProps = {
 
 type Props = {
   visible: boolean;
+  entryTitle?: string;
 } & (LoadingProps | ResultsProps);
 
 const { width } = Dimensions.get('window');
@@ -91,27 +93,41 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
 
   if (!props.visible) return null;
 
+  const dark = isDarkTheme(theme.name);
+  const textPrimary = dark ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a';
+  const textSecondary = dark ? 'rgba(255, 255, 255, 0.7)' : '#4A4A4A';
+  const textTertiary = dark ? 'rgba(255, 255, 255, 0.55)' : '#6B6B6B';
+  const cardBg = dark ? 'rgba(20, 20, 20, 0.85)' : 'rgba(255, 255, 255, 0.9)';
+  const cardBorder = dark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)';
+  const subtleBg = dark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.06)';
+  const ringTrack = dark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)';
+
   return (
     <Animated.View style={[styles.overlay, { opacity }]}>
       <LinearGradient
         colors={theme.colors.backgroundGradient as any}
         style={styles.background}
       />
-      <View style={styles.scrim} />
+      {dark && <View style={styles.scrim} />}
 
       {props.variant === 'loading' ? (
         <View style={styles.center}>
-          <Text style={styles.loadingText}>{props.message}</Text>
+          <Text style={[styles.loadingText, { color: textPrimary }]}>{props.message}</Text>
           <View style={styles.progressTrack}>
             <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
           </View>
           <TouchableOpacity onPress={props.onCancel} style={styles.cancelButton} activeOpacity={0.8}>
-            <Text style={styles.cancelText}>Cancel analysis</Text>
+            <Text style={[styles.cancelText, { color: textSecondary }]}>Cancel analysis</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <View style={styles.resultsContainer}>
-          <Text style={styles.resultsTitle}>New Insights</Text>
+          <Text style={[styles.resultsTitle, { color: textPrimary }]}>
+            {props.entryTitle || 'New Insights'}
+          </Text>
+          {props.entryTitle && (
+            <Text style={[styles.resultsSubtitle, { color: textTertiary }]}>Your personal insights</Text>
+          )}
           
           <ScrollView 
             style={styles.resultsScroll}
@@ -120,23 +136,23 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
           >
             {/* Summary */}
             {props.insights?.insights_report?.conversationalSummary && (
-              <View style={styles.resultsCard}>
+              <View style={[styles.resultsCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
                 <View style={styles.cardHeader}>
                   <Text style={styles.cardHeaderIcon}>📝</Text>
-                  <Text style={styles.cardHeaderTitle}>Summary</Text>
+                  <Text style={[styles.cardHeaderTitle, { color: textPrimary }]}>Summary</Text>
                 </View>
-                <Text style={styles.summaryText}>
+                <Text style={[styles.summaryText, { color: textSecondary }]}>
                   {props.insights.insights_report.conversationalSummary}
                 </Text>
               </View>
             )}
 
             {/* Primary Emotion & Wellbeing Score */}
-            <View style={styles.resultsCard}>
+            <View style={[styles.resultsCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
               <View style={styles.emotionWellbeingRow}>
                 <View style={styles.emotionSection}>
-                  <Text style={styles.resultsLabel}>PRIMARY EMOTION</Text>
-                  <Text style={styles.resultsValue}>
+                  <Text style={[styles.resultsLabel, { color: textTertiary }]}>PRIMARY EMOTION</Text>
+                  <Text style={[styles.resultsValue, { color: textPrimary }]}>
                     {props.insights?.mood_analysis?.primary_emotion || '—'}
                   </Text>
                 </View>
@@ -166,14 +182,14 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
 
                   return (
                     <View style={styles.scoreSection}>
-                      <Text style={styles.resultsLabel}>WELLBEING</Text>
+                      <Text style={[styles.resultsLabel, { color: textTertiary }]}>WELLBEING</Text>
                       <View style={styles.scoreRingContainer}>
                         <Svg width={ringSize} height={ringSize} style={styles.scoreRingSvg}>
                           <Circle
                             cx={ringSize / 2}
                             cy={ringSize / 2}
                             r={radius}
-                            stroke="rgba(255, 255, 255, 0.1)"
+                            stroke={ringTrack}
                             strokeWidth={strokeWidth}
                             fill="transparent"
                           />
@@ -192,16 +208,16 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
                         </Svg>
                         <View style={styles.scoreRingInner}>
                           <Text style={[styles.scoreText, { color: ringColor }]}>{score}</Text>
-                          <Text style={styles.scoreMax}>/10</Text>
+                          <Text style={[styles.scoreMax, { color: textTertiary }]}>/10</Text>
                         </View>
                       </View>
                       <View style={styles.scoreAdjustRow}>
-                        <TouchableOpacity onPress={handleDecrement} style={styles.scoreAdjustBtn} activeOpacity={0.7}>
-                          <Text style={styles.scoreAdjustText}>−</Text>
+                        <TouchableOpacity onPress={handleDecrement} style={[styles.scoreAdjustBtn, { backgroundColor: subtleBg }]} activeOpacity={0.7}>
+                          <Text style={[styles.scoreAdjustText, { color: textSecondary }]}>−</Text>
                         </TouchableOpacity>
-                        <Text style={styles.scoreAdjustLabel}>Adjust</Text>
-                        <TouchableOpacity onPress={handleIncrement} style={styles.scoreAdjustBtn} activeOpacity={0.7}>
-                          <Text style={styles.scoreAdjustText}>+</Text>
+                        <Text style={[styles.scoreAdjustLabel, { color: textTertiary }]}>Adjust</Text>
+                        <TouchableOpacity onPress={handleIncrement} style={[styles.scoreAdjustBtn, { backgroundColor: subtleBg }]} activeOpacity={0.7}>
+                          <Text style={[styles.scoreAdjustText, { color: textSecondary }]}>+</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -227,12 +243,12 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
                   >
                     <View style={styles.accordionHeaderLeft}>
                       <Text style={styles.accordionIcon}>✨</Text>
-                      <Text style={styles.accordionTitle}>Strengths & Wins</Text>
-                      <View style={styles.accordionBadge}>
-                        <Text style={styles.accordionBadgeText}>{strengthCards.length}</Text>
+                      <Text style={[styles.accordionTitle, { color: textPrimary }]}>Strengths & Wins</Text>
+                      <View style={[styles.accordionBadge, { backgroundColor: subtleBg }]}>
+                        <Text style={[styles.accordionBadgeText, { color: textSecondary }]}>{strengthCards.length}</Text>
                       </View>
                     </View>
-                    <Text style={styles.accordionChevron}>{strengthsExpanded ? '▼' : '▶'}</Text>
+                    <Text style={[styles.accordionChevron, { color: textTertiary }]}>{strengthsExpanded ? '▼' : '▶'}</Text>
                   </TouchableOpacity>
                   
                   {strengthsExpanded && strengthCards.map((card: any, idx: number) => {
@@ -246,7 +262,7 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
                               {card.short_label || card.type.toUpperCase()}
                             </Text>
                           </View>
-                          <Text style={styles.insightDescription}>
+                          <Text style={[styles.insightDescription, { color: textSecondary }]}>
                             {card.text
                               .replace(/The user/g, 'You')
                               .replace(/the user/g, 'you')
@@ -281,19 +297,19 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
                   >
                     <View style={styles.accordionHeaderLeft}>
                       <Text style={styles.accordionIcon}>📈</Text>
-                      <Text style={styles.accordionTitle}>Growth & Reflections</Text>
-                      <View style={styles.accordionBadge}>
-                        <Text style={styles.accordionBadgeText}>{growthCards.length}</Text>
+                      <Text style={[styles.accordionTitle, { color: textPrimary }]}>Growth & Reflections</Text>
+                      <View style={[styles.accordionBadge, { backgroundColor: subtleBg }]}>
+                        <Text style={[styles.accordionBadgeText, { color: textSecondary }]}>{growthCards.length}</Text>
                       </View>
                     </View>
-                    <Text style={styles.accordionChevron}>{growthExpanded ? '▼' : '▶'}</Text>
+                    <Text style={[styles.accordionChevron, { color: textTertiary }]}>{growthExpanded ? '▼' : '▶'}</Text>
                   </TouchableOpacity>
                   
                   {growthExpanded && growthCards.map((card: any, idx: number) => {
                     const isGrowth = card.type === 'growth';
                     const badgeColor = isGrowth ? '#f59e0b' : '#a78bfa';
                     return (
-                      <View key={idx} style={styles.growthCard}>
+                      <View key={idx} style={[styles.growthCard, { borderColor: badgeColor + '33' }]}>
                         <View style={[styles.growthCardBorder, { backgroundColor: badgeColor }]} />
                         <View style={styles.growthCardInner}>
                           <View style={[styles.growthBadge, { backgroundColor: badgeColor + '25', borderColor: badgeColor + '50' }]}>
@@ -301,7 +317,7 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
                               {card.short_label || card.type.toUpperCase()}
                             </Text>
                           </View>
-                          <Text style={styles.insightDescription}>
+                          <Text style={[styles.insightDescription, { color: textSecondary }]}>
                             {card.text
                               .replace(/The user/g, 'You')
                               .replace(/the user/g, 'you')
@@ -335,10 +351,10 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
 
             {/* Key Themes */}
             {props.insights?.key_themes && props.insights.key_themes.length > 0 && (
-              <View style={styles.resultsCard}>
+              <View style={[styles.resultsCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
                 <View style={styles.cardHeader}>
                   <Text style={styles.cardHeaderIcon}>💭</Text>
-                  <Text style={styles.cardHeaderTitle}>Key Themes</Text>
+                  <Text style={[styles.cardHeaderTitle, { color: textPrimary }]}>Key Themes</Text>
                 </View>
                 {props.insights.key_themes.slice(0, 3).map((t, idx) => (
                   <View key={idx} style={styles.themeChip}>
@@ -414,12 +430,18 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   resultsTitle: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.95)',
     letterSpacing: -0.8,
-    marginBottom: 20,
+    marginBottom: 4,
     textAlign: 'center',
+  },
+  resultsSubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginBottom: 16,
+    letterSpacing: 0.3,
   },
   resultsScroll: {
     flex: 1,
