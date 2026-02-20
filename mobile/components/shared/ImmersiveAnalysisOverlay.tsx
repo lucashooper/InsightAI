@@ -122,8 +122,8 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
         </View>
       ) : (
         <View style={styles.resultsContainer}>
-          <Text style={[styles.resultsTitle, { color: textPrimary }]}>
-            {props.entryTitle || 'New Insights'}
+          <Text style={[styles.resultsTitle, { color: textPrimary }]} numberOfLines={2}>
+            {props.entryTitle ? `"${props.entryTitle}"` : 'New Insights'}
           </Text>
           {props.entryTitle && (
             <Text style={[styles.resultsSubtitle, { color: textTertiary }]}>Your personal insights</Text>
@@ -430,11 +430,13 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   resultsTitle: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '700',
+    fontStyle: 'italic',
     letterSpacing: -0.8,
     marginBottom: 4,
     textAlign: 'center',
+    paddingHorizontal: 8,
   },
   resultsSubtitle: {
     fontSize: 14,

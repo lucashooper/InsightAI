@@ -721,17 +721,54 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
               <View style={styles.insightsDivider} />
               <Text style={[styles.inlineInsightsTitle, { color: theme.colors.primary }]}>Insights</Text>
               
-              {/* Primary Emotion Badge - MOVED TO TOP */}
-              {moodAnalysis && (
-                <View style={[
-                  styles.inlineMoodCard,
-                  styles.inlineMoodCardTop,
-                  getSentimentStyle(moodAnalysis.primary_emotion)
-                ]}>
-                  <View style={styles.emotionBadge}>
-                    <Text style={[styles.inlineMoodLabel, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.6)' : '#6B6B6B' }]}>PRIMARY EMOTION</Text>
-                    <Text style={[styles.inlineMoodEmotion, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.98)' : '#1a1a1a' }]}>{moodAnalysis.primary_emotion}</Text>
-                  </View>
+              {/* Primary Emotion & Wellbeing Row */}
+              {(moodAnalysis || structuredInsights?.wellbeingScore != null) && (
+                <View style={styles.emotionWellbeingRow}>
+                  {moodAnalysis && (
+                    <View style={[
+                      styles.inlineMoodCard,
+                      styles.inlineMoodCardTop,
+                      getSentimentStyle(moodAnalysis.primary_emotion),
+                      { flex: 1 }
+                    ]}>
+                      <View style={styles.emotionBadge}>
+                        <Text style={[styles.inlineMoodLabel, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.6)' : '#6B6B6B' }]}>PRIMARY EMOTION</Text>
+                        <Text style={[styles.inlineMoodEmotion, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.98)' : '#1a1a1a' }]}>{moodAnalysis.primary_emotion}</Text>
+                      </View>
+                    </View>
+                  )}
+                  {structuredInsights?.wellbeingScore != null && (
+                    <View style={[styles.inlineWellbeingCard, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.08)', borderColor: isDarkTheme(theme.name) ? 'rgba(139, 92, 246, 0.3)' : 'rgba(139, 92, 246, 0.15)' }]}>
+                      <Text style={[styles.inlineMoodLabel, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.6)' : '#6B6B6B' }]}>WELLBEING</Text>
+                      <Text style={[styles.inlineWellbeingScore, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.98)' : '#1a1a1a' }]}>{structuredInsights.wellbeingScore}<Text style={styles.inlineWellbeingMax}>/10</Text></Text>
+                      <View style={styles.inlineWellbeingAdjust}>
+                        <TouchableOpacity
+                          onPress={async () => {
+                            const newScore = Math.max(1, (structuredInsights.wellbeingScore || 5) - 1);
+                            const updatedInsights = { ...structuredInsights, wellbeingScore: newScore };
+                            const updatedEntry = { ...entry, ai_structured_insights: updatedInsights };
+                            setEntry(updatedEntry);
+                            await supabase.from('notes').update({ ai_structured_insights: updatedInsights }).eq('id', entry.id);
+                          }}
+                          style={styles.wellbeingAdjustBtn}
+                        >
+                          <Ionicons name="remove-circle-outline" size={20} color={isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : '#6B6B6B'} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={async () => {
+                            const newScore = Math.min(10, (structuredInsights.wellbeingScore || 5) + 1);
+                            const updatedInsights = { ...structuredInsights, wellbeingScore: newScore };
+                            const updatedEntry = { ...entry, ai_structured_insights: updatedInsights };
+                            setEntry(updatedEntry);
+                            await supabase.from('notes').update({ ai_structured_insights: updatedInsights }).eq('id', entry.id);
+                          }}
+                          style={styles.wellbeingAdjustBtn}
+                        >
+                          <Ionicons name="add-circle-outline" size={20} color={isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : '#6B6B6B'} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  )}
                 </View>
               )}
               
@@ -1207,7 +1244,37 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   inlineMoodCardTop: {
+    marginBottom: 0,
+  },
+  emotionWellbeingRow: {
+    flexDirection: 'row',
+    gap: 10,
     marginBottom: 20,
+  },
+  inlineWellbeingCard: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  inlineWellbeingScore: {
+    fontSize: sf(28),
+    fontWeight: '700',
+  },
+  inlineWellbeingMax: {
+    fontSize: sf(16),
+    fontWeight: '500',
+    color: 'rgba(139, 92, 246, 0.6)',
+  },
+  inlineWellbeingAdjust: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginTop: 6,
+  },
+  wellbeingAdjustBtn: {
+    padding: 4,
   },
   emotionBadge: {
     alignItems: 'center',

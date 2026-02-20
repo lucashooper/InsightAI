@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SunoGradient from '../../components/onboarding/SunoGradient';
+import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
@@ -11,6 +12,7 @@ const { width } = Dimensions.get('window');
 
 export default function OnboardingSummaryScreen({ navigation, route }: any) {
     const { answers } = route.params || {};
+    const { theme } = useTheme();
     const fadeAnim = new Animated.Value(0);
     const scaleAnim = new Animated.Value(0.9);
 
@@ -56,18 +58,24 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
     };
 
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle="dark-content" />
+        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+            <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} />
 
-            <SunoGradient />
+            {isDarkTheme(theme.name) ? (
+                <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
+            ) : (
+                <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+            )}
             
-            {/* Back Button - only show if can go back */}
+            {/* Back Button - Circular style matching other onboarding pages */}
             {navigation.canGoBack() && (
                 <TouchableOpacity
                     style={styles.backButton}
                     onPress={() => navigation.goBack()}
                 >
-                    <Ionicons name="chevron-back" size={28} color="#6b7280" />
+                    <View style={[styles.backArrowCircle, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+                        <Ionicons name="arrow-back" size={20} color={isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e'} />
+                    </View>
                 </TouchableOpacity>
             )}
 
@@ -80,8 +88,8 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
                         <Ionicons name="checkmark-circle" size={64} color="#4ade80" />
                     </View>
 
-                    <Text style={styles.title}>You're All Set!</Text>
-                    <Text style={styles.subtitle}>
+                    <Text style={[styles.title, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>You're All Set!</Text>
+                    <Text style={[styles.subtitle, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.7)' : '#6b7280' }]}>
                         {getSummaryText()}
                     </Text>
                 </Animated.View>
@@ -115,10 +123,14 @@ const styles = StyleSheet.create({
     backButton: {
         position: 'absolute',
         top: 60,
-        left: 24,
+        left: 20,
         zIndex: 10,
-        width: 40,
-        height: 40,
+        padding: 4,
+    },
+    backArrowCircle: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         alignItems: 'center',
         justifyContent: 'center',
     },

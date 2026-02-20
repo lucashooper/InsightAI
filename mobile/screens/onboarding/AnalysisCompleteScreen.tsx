@@ -121,7 +121,7 @@ export default function AnalysisCompleteScreen({ navigation }: Props) {
             {isDarkTheme(theme.name) ? (
                 <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
             ) : (
-                <SunoGradient />
+                <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
             )}
             
             <View style={styles.content}>

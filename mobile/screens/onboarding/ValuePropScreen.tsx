@@ -62,16 +62,18 @@ export default function ValuePropScreen({ navigation }: any) {
       {isDarkTheme(theme.name) ? (
         <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
       ) : (
-        <SunoGradient />
+        <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
       )}
 
-      {/* Back Button - only show if can go back */}
+      {/* Back Button - Circular style matching other onboarding pages */}
       {navigation.canGoBack() && (
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="chevron-back" size={28} color={isDarkTheme(theme.name) ? '#ffffff' : '#6b7280'} />
+          <View style={[styles.backArrowCircle, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+            <Ionicons name="arrow-back" size={20} color={isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e'} />
+          </View>
         </TouchableOpacity>
       )}
 
@@ -184,10 +186,14 @@ const styles = StyleSheet.create({
   backButton: {
     position: 'absolute',
     top: 60,
-    left: 24,
+    left: 20,
     zIndex: 10,
-    width: 40,
-    height: 40,
+    padding: 4,
+  },
+  backArrowCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -290,7 +296,7 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '100%',
-    borderRadius: 16,
+    borderRadius: 999,
     shadowColor: '#a855f7',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
@@ -299,7 +305,7 @@ const styles = StyleSheet.create({
   },
   buttonGradient: {
     paddingVertical: 18,
-    borderRadius: 16,
+    borderRadius: 999,
     alignItems: 'center',
   },
   buttonText: {

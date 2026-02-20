@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import SunoGradient from '../../components/onboarding/SunoGradient';
+import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 const bellIcon = require('../../public/onboarding-icons/BellIcon.webp');
@@ -14,6 +16,8 @@ interface NotificationsOnboardingScreenProps {
 }
 
 export default function NotificationsOnboardingScreen({ navigation }: NotificationsOnboardingScreenProps) {
+  const { theme } = useTheme();
+  
   const handleAllowNotifications = async () => {
     try {
       const { status } = await Notifications.requestPermissionsAsync();
@@ -34,14 +38,22 @@ export default function NotificationsOnboardingScreen({ navigation }: Notificati
   };
 
   return (
-    <View style={styles.container}>
-      {/* Back Button - only show if can go back */}
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {isDarkTheme(theme.name) ? (
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
+      ) : (
+        <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+      )}
+      
+      {/* Back Button - Circular style matching other onboarding pages */}
       {navigation.canGoBack() && (
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="chevron-back" size={28} color="#6b7280" />
+          <View style={[styles.backArrowCircle, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+            <Ionicons name="arrow-back" size={20} color={isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e'} />
+          </View>
         </TouchableOpacity>
       )}
 
@@ -58,21 +70,21 @@ export default function NotificationsOnboardingScreen({ navigation }: Notificati
       </View>
 
       {/* Title */}
-      <Text style={styles.title}>Turn on notifications</Text>
+      <Text style={[styles.title, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>Turn on notifications</Text>
 
       {/* Subtitle */}
-      <Text style={styles.subtitle}>
+      <Text style={[styles.subtitle, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>
         Get the most out of Insight by staying up to date with what's happening.
       </Text>
 
       {/* Allow Button */}
-      <TouchableOpacity style={styles.allowButton} onPress={handleAllowNotifications}>
-        <Text style={styles.allowButtonText}>Allow notifications</Text>
+      <TouchableOpacity style={[styles.allowButton, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : '#fff', borderColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)' }]} onPress={handleAllowNotifications}>
+        <Text style={[styles.allowButtonText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#000' }]}>Allow notifications</Text>
       </TouchableOpacity>
 
       {/* Skip */}
       <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
-        <Text style={styles.skipText}>Skip for now →</Text>
+        <Text style={[styles.skipText, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : 'rgba(0, 0, 0, 0.5)' }]}>Skip for now →</Text>
       </TouchableOpacity>
     </View>
   );
@@ -90,10 +102,14 @@ const styles = StyleSheet.create({
   backButton: {
     position: 'absolute',
     top: 60,
-    left: 24,
+    left: 20,
     zIndex: 10,
-    width: 40,
-    height: 40,
+    padding: 4,
+  },
+  backArrowCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -130,11 +146,12 @@ const styles = StyleSheet.create({
   },
   allowButton: {
     width: '100%',
-    paddingVertical: 16,
+    paddingVertical: 18,
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 999,
     alignItems: 'center',
     marginBottom: 16,
+    borderWidth: 1,
   },
   allowButtonText: {
     fontSize: 17,

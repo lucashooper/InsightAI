@@ -174,7 +174,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
         new Animated.Value(0),
         new Animated.Value(0),
     ]);
-    // Animation values for info pages
+    // Animation values for info pages - start at 0 so they're hidden initially
     const [infoLottieAnim] = useState(new Animated.Value(0));
     const [infoCardAnim] = useState(new Animated.Value(0));
 
@@ -187,26 +187,24 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
 
     // CRITICAL: Skip name step ONLY if user explicitly used Apple/Google Sign-In
     useEffect(() => {
-        const checkShouldSkipName = async () => {
+        const prefillNameFromSocialSignIn = async () => {
             if (currentStep.id === 'name') {
-                const skipFlag = await AsyncStorage.getItem('SKIP_NAME_STEP');
-                if (skipFlag === 'true' && userName) {
-                    console.log('[OnboardingQuestion] User signed in with Apple/Google, skipping name step');
-                    console.log('[OnboardingQuestion] Using cached username:', userName);
-                    // Skip the name step since they signed in with Apple/Google
-                    setAnswers(prev => ({ ...prev, name: userName }));
-                    if (currentIndex < STEPS.length - 1) {
-                        setCurrentIndex(currentIndex + 1);
-                    }
-                    // Clear the flag after using it
-                    await AsyncStorage.removeItem('SKIP_NAME_STEP');
-                } else {
-                    console.log('[OnboardingQuestion] Regular onboarding - showing name step');
+                // Read cached username from AsyncStorage (set by Google/Apple sign-in)
+                const cachedUsername = await AsyncStorage.getItem('CACHED_USERNAME');
+                
+                if (cachedUsername && !textInputValue) {
+                    console.log('[OnboardingQuestion] Prefilling name from social sign-in:', cachedUsername);
+                    // Prefill the name field so user can confirm or edit
+                    setUserName(cachedUsername);
+                    setTextInputValue(cachedUsername); // Update the actual input field value
+                    setAnswers(prev => ({ ...prev, name: cachedUsername }));
+                } else if (!cachedUsername) {
+                    console.log('[OnboardingQuestion] No cached username to prefill, showing empty name step');
                 }
             }
         };
-        checkShouldSkipName();
-    }, [currentStep.id, userName, currentIndex]);
+        prefillNameFromSocialSignIn();
+    }, [currentStep.id]);
 
     useEffect(() => {
         // Floating animation for icons
@@ -280,24 +278,28 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
 
         // Slide-in animations for info pages (research/meditation)
         if (currentStep.type === 'info') {
+            // Reset immediately to prevent flash
             infoLottieAnim.setValue(0);
             infoCardAnim.setValue(0);
             
-            Animated.sequence([
-                Animated.timing(infoLottieAnim, {
-                    toValue: 1,
-                    duration: 500,
-                    delay: 100,
-                    easing: Easing.out(Easing.cubic),
-                    useNativeDriver: true,
-                }),
-                Animated.timing(infoCardAnim, {
-                    toValue: 1,
-                    duration: 450,
-                    easing: Easing.out(Easing.cubic),
-                    useNativeDriver: true,
-                }),
-            ]).start();
+            // Delay before starting animation to ensure reset is applied and prevent flicker
+            setTimeout(() => {
+                Animated.sequence([
+                    Animated.timing(infoLottieAnim, {
+                        toValue: 1,
+                        duration: 500,
+                        delay: 50,
+                        easing: Easing.out(Easing.cubic),
+                        useNativeDriver: true,
+                    }),
+                    Animated.timing(infoCardAnim, {
+                        toValue: 1,
+                        duration: 450,
+                        easing: Easing.out(Easing.cubic),
+                        useNativeDriver: true,
+                    }),
+                ]).start();
+            }, 50); // Increased delay to prevent Lottie flicker
         }
     }, [currentIndex, currentStep.type, currentStep.defaultValue, currentStep.features, currentStep.options, featureFadeAnims, optionFadeAnims, infoLottieAnim, infoCardAnim]);
 
@@ -641,25 +643,13 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                             <ScrollView style={styles.optionsList} showsVerticalScrollIndicator={false}>
                                 <View style={styles.optionsContainer}>
                                     {currentStep.options.map((option, index) => (
-                                        <Animated.View
+                                        <PillOption
                                             key={option.value}
-                                            style={{
-                                                opacity: optionFadeAnims[index] || 1,
-                                                transform: [{
-                                                    translateY: (optionFadeAnims[index] || new Animated.Value(1)).interpolate({
-                                                        inputRange: [0, 1],
-                                                        outputRange: [20, 0],
-                                                    })
-                                                }],
-                                            }}
-                                        >
-                                            <PillOption
-                                                label={option.label}
-                                                icon={option.icon}
-                                                selected={selectedOption === option.value}
-                                                onPress={() => setSelectedOption(option.value)}
-                                            />
-                                        </Animated.View>
+                                            label={option.label}
+                                            icon={option.icon}
+                                            selected={selectedOption === option.value}
+                                            onPress={() => setSelectedOption(option.value)}
+                                        />
                                     ))}
                                 </View>
 
@@ -1257,6 +1247,7 @@ const styles = StyleSheet.create({
         width: 220,
         height: 220,
         marginBottom: 48,
+        opacity: 1, // Controlled by Animated.View wrapper
     },
     
     // Glassmorphic card styles

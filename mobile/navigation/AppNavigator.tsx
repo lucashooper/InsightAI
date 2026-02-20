@@ -200,7 +200,7 @@ function MainTabs() {
           alignItems: 'center',
           marginHorizontal: isTablet ? 8 : 0,
         },
-        tabBarActiveTintColor: theme.colors.primary,
+        tabBarActiveTintColor: '#8b5cf6',
         tabBarInactiveTintColor: isDarkTheme(theme.name) ? '#666' : '#6B6B6B',
       }}
     >
@@ -294,10 +294,24 @@ export default function AppNavigator() {
     if (currentUserId !== prevUserIdRef.current) {
       console.log('[NAV] User changed:', prevUserIdRef.current, '->', currentUserId);
       setIsOnboardingCompleted(null);
+      setOnboardingResumeScreen(null);
+      
+      // Clear cached username to prevent wrong names appearing for different accounts
+      AsyncStorage.removeItem('CACHED_USERNAME').catch(err => 
+        console.error('[NAV] Failed to clear cached username:', err)
+      );
+      
       prevUserIdRef.current = currentUserId;
     }
     
     const checkOnboarding = async () => {
+      // Add timeout to prevent infinite loading (must be longer than profile check timeout of 3s)
+      let timeoutId: NodeJS.Timeout | null = setTimeout(() => {
+        console.warn('[NAV] ⚠️ Onboarding check timed out after 4s, defaulting to show onboarding');
+        setIsOnboardingCompleted(false);
+        timeoutId = null;
+      }, 4000);
+
       try {
         // Check if we need to resume onboarding at a specific screen
         // (set by AuthSelectionScreen before Google/Apple sign-in)
@@ -319,93 +333,70 @@ export default function AppNavigator() {
           return;
         }
 
-        // If user is logged in but no AsyncStorage flag, check if they have profile data
-        // This handles existing users logging in on a new device or after reinstall
+        // If user is logged in but no AsyncStorage flag, check if they have a resume screen
+        // or try a quick profile check for returning users on a new device
         if (user) {
-          console.log('[NAV] No onboarding flag, checking user profile...');
-          const { supabase } = await import('../lib/supabase');
+          // If we have a resume screen, the user is mid-onboarding - don't waste time on profile check
+          if (onboardingResumeScreen) {
+            console.log('[NAV] Resume screen set, skipping profile check - showing onboarding at:', onboardingResumeScreen);
+            setIsOnboardingCompleted(false);
+            return;
+          }
           
-          // Add timeout to prevent hanging on iPad
-          const profilePromise = supabase
-            .from('user_profiles')
-            .select('username, created_at')
-            .eq('user_id', user.id)
-            .single();
+          console.log('[NAV] No onboarding flag and no resume screen, quick profile check...');
           
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Profile check timeout')), 5000)
-          );
+          // Import supabase
+          const { supabase: supabaseClient } = require('../lib/supabase');
+          
+          const startTime = Date.now();
+          
+          // Use AbortController to actually cancel the request on timeout (Promise.race doesn't cancel)
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second hard timeout
           
           try {
-            const { data: profile, error: profileError } = await Promise.race([
-              profilePromise,
-              timeoutPromise
-            ]) as any;
+            const { data: profile, error: profileError } = await supabaseClient
+              .from('user_profiles')
+              .select('username, onboarding_completed_at')
+              .eq('user_id', user.id)
+              .maybeSingle()
+              .abortSignal(controller.signal);
+            
+            clearTimeout(timeoutId);
+            const elapsed = Date.now() - startTime;
+            console.log(`[NAV] Profile check completed in ${elapsed}ms, result:`, profile);
+            if (profileError) console.log('[NAV] Profile error:', profileError);
 
-            console.log('[NAV] Profile check result:', profile);
-            console.log('[NAV] Profile error:', profileError);
-
-            // Check if user has completed onboarding by looking for onboarding completion timestamp
-            // This is more reliable than checking account age
-            if (profile && profile.username) {
-              // Check if they have completed onboarding (stored in user_profiles table)
-              const { data: onboardingData } = await supabase
-                .from('user_profiles')
-                .select('onboarding_completed_at, created_at')
-                .eq('user_id', user.id)
-                .single();
-              
-              if (onboardingData?.onboarding_completed_at) {
-                console.log('[NAV] ✅ User has completed onboarding before, skipping');
-                await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
-                setIsOnboardingCompleted(true);
-              } else {
-                // FALLBACK: If user has username and account is older than 5 minutes, assume they completed onboarding
-                // This handles legacy users who don't have onboarding_completed_at timestamp
-                const accountAge = Date.now() - new Date(onboardingData?.created_at || profile.created_at).getTime();
-                const fiveMinutes = 5 * 60 * 1000;
-                
-                if (accountAge > fiveMinutes) {
-                  console.log('[NAV] ✅ Legacy user with username and old account, skipping onboarding');
-                  await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
-                  setIsOnboardingCompleted(true);
-                  
-                  // Backfill the timestamp for future checks
-                  await supabase
-                    .from('user_profiles')
-                    .update({ onboarding_completed_at: new Date().toISOString() })
-                    .eq('user_id', user.id);
-                } else {
-                  console.log('[NAV] User has username but has not completed onboarding, showing onboarding');
-                  setIsOnboardingCompleted(false);
-                }
-              }
-            } else {
-              // Final re-check: the flag may have been set during the profile query
-              // (e.g., Apple/Google Sign-In sets it in AuthContext while we're checking)
-              const recheck = await AsyncStorage.getItem('HAS_COMPLETED_ONBOARDING');
-              if (recheck === 'true') {
-                console.log('[NAV] ✅ HAS_COMPLETED_ONBOARDING was set during profile check, honoring it');
-                setIsOnboardingCompleted(true);
-              } else {
-                console.log('[NAV] New user detected, will show onboarding');
-                console.log('[NAV] Clearing HAS_SEEN_DASHBOARD_INTRO flag');
-                await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
-                setIsOnboardingCompleted(false);
-              }
-            }
-          } catch (timeoutError) {
-            console.error('[NAV] Profile check timed out or failed:', timeoutError);
-            // On timeout/error, re-check AsyncStorage one more time
-            // Apple/Google Sign-In may have set it while we were waiting
-            const finalCheck = await AsyncStorage.getItem('HAS_COMPLETED_ONBOARDING');
-            if (finalCheck === 'true') {
-              console.log('[NAV] ✅ Found onboarding flag after timeout, proceeding to MainTabs');
+            if (profile?.username && profile?.onboarding_completed_at) {
+              console.log('[NAV] ✅ Returning user with completed onboarding');
+              await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
               setIsOnboardingCompleted(true);
-            } else {
-              console.log('[NAV] ⚠️ Profile check failed and no onboarding flag - showing onboarding');
-              setIsOnboardingCompleted(false);
+              return;
             }
+            
+            // Profile exists but no onboarding_completed_at - check account age
+            if (profile?.username) {
+              console.log('[NAV] ✅ Legacy user with username, marking onboarding complete');
+              await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+              setIsOnboardingCompleted(true);
+              // Backfill timestamp (non-blocking)
+              supabaseClient
+                .from('user_profiles')
+                .update({ onboarding_completed_at: new Date().toISOString() })
+                .eq('user_id', user.id)
+                .then(() => console.log('[NAV] Backfilled onboarding timestamp'))
+                .catch((err: any) => console.log('[NAV] Failed to backfill:', err));
+              return;
+            }
+            
+            // No profile - new user, show onboarding
+            console.log('[NAV] New user, showing onboarding');
+            setIsOnboardingCompleted(false);
+          } catch (err: any) {
+            clearTimeout(timeoutId);
+            console.log('[NAV] ⚠️ Profile check failed/aborted:', err.message || err);
+            // On failure, just show onboarding - it's the safe default
+            setIsOnboardingCompleted(false);
           }
         } else {
           setIsOnboardingCompleted(false);
@@ -419,6 +410,12 @@ export default function AppNavigator() {
           setIsOnboardingCompleted(true);
         } else {
           setIsOnboardingCompleted(false);
+        }
+      } finally {
+        // Clear timeout to prevent it from firing after completion
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
         }
       }
     };

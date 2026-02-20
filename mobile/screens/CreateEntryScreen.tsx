@@ -64,6 +64,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasUnsavedChanges = useRef(false);
   const savedEntryIdRef = useRef<string | null>(null);
+  const savingInProgress = useRef(false);
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const quickActionsAnim = useRef(new Animated.Value(0)).current;
   const controlsBottomAnim = useRef(new Animated.Value(20)).current;
@@ -104,6 +105,8 @@ export default function CreateEntryScreen({ navigation, route }: any) {
 
   const handleAutoSave = async () => {
     if (!content.trim()) return;
+    if (savingInProgress.current) return; // Prevent concurrent saves
+    savingInProgress.current = true;
 
     try {
       // Get encryption key from secure storage
@@ -168,6 +171,8 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       }
     } catch (error) {
       console.error('Auto-save error:', error);
+    } finally {
+      savingInProgress.current = false;
     }
   };
 
@@ -206,6 +211,12 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       saveTimeoutRef.current = null;
     }
     
+    // Wait for any in-progress auto-save to finish
+    while (savingInProgress.current) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    savingInProgress.current = true;
+    
     try {
       const entryTitle = content.trim().split('\n')[0].substring(0, 50) || 'Journal Entry';
 
@@ -216,6 +227,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           .update({
             title: entryTitle,
             content: promptText ? `[Insight Prompt: ${promptText}]\n\n${content.trim()}` : content.trim(),
+            is_encrypted: false, // Analyze always saves unencrypted for AI processing
             mood: mood || null,
             updated_at: new Date().toISOString(),
           })
@@ -261,6 +273,8 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       }
     } catch (error) {
       console.error('[CreateEntry] Exception saving entry:', error);
+    } finally {
+      savingInProgress.current = false;
     }
   };
 

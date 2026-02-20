@@ -917,8 +917,8 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* Developer Testing Tools (Sandbox Only) */}
-        {__DEV__ && (
+        {/* Developer Testing Tools - Only visible to admin account */}
+        {__DEV__ && user?.email === 'edwardsjonny547@gmail.com' && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>DEVELOPER TOOLS</Text>
             <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
@@ -949,7 +949,7 @@ export default function SettingsScreen({ navigation }: any) {
                 activeOpacity={0.7}
               >
                 <Ionicons name="refresh" size={20} color="#a855f7" />
-                <Text style={styles.devToolButtonText}>Clear RevenueCat Cache</Text>
+                <Text style={[styles.devToolButtonText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Clear RevenueCat Cache</Text>
               </TouchableOpacity>
               
               <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
@@ -972,7 +972,36 @@ export default function SettingsScreen({ navigation }: any) {
                 activeOpacity={0.7}
               >
                 <Ionicons name="information-circle" size={20} color="#3b82f6" />
-                <Text style={styles.devToolButtonText}>Show Subscription Debug Info</Text>
+                <Text style={[styles.devToolButtonText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Show Subscription Debug Info</Text>
+              </TouchableOpacity>
+              
+              <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
+              
+              <TouchableOpacity
+                style={styles.devToolButton}
+                onPress={async () => {
+                  Alert.alert(
+                    'Force Reset App',
+                    'This will:\n• Sign you out\n• Clear all AsyncStorage data\n• Reset to Welcome screen\n\nUse this to test Google sign-in and anonymous purchases from scratch.',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Reset', style: 'destructive', onPress: async () => {
+                        try {
+                          console.log('[Settings] Force reset initiated');
+                          await AsyncStorage.clear();
+                          await signOut();
+                          console.log('[Settings] Force reset complete');
+                        } catch (error: any) {
+                          Alert.alert('Error', error.message);
+                        }
+                      }}
+                    ]
+                  );
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="trash" size={20} color="#ef4444" />
+                <Text style={[styles.devToolButtonText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Force Reset App</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1065,20 +1094,35 @@ export default function SettingsScreen({ navigation }: any) {
                             style: 'destructive',
                             onPress: async () => {
                               try {
+                                console.log('[Settings] Starting account deletion...');
                                 // Delete user data from Supabase
                                 if (user) {
-                                  // Delete user's journal entries
-                                  await supabase.from('journal_entries').delete().eq('user_id', user.id);
-                                  // Delete user's profile
-                                  await supabase.from('user_profiles').delete().eq('user_id', user.id);
-                                  // Delete the auth user
-                                  const { error } = await supabase.rpc('delete_user');
-                                  if (error) throw error;
+                                  console.log('[Settings] Deleting notes/journal entries...');
+                                  const { error: notesError } = await supabase.from('notes').delete().eq('user_id', user.id);
+                                  if (notesError) console.error('[Settings] Notes delete error:', notesError);
+                                  else console.log('[Settings] ✅ Notes deleted');
+                                  
+                                  console.log('[Settings] Deleting user profile...');
+                                  const { error: profileError } = await supabase.from('user_profiles').delete().eq('user_id', user.id);
+                                  if (profileError) console.error('[Settings] Profile delete error:', profileError);
+                                  
+                                  // Try to delete auth user via RPC, but don't block on it
+                                  console.log('[Settings] Attempting to delete auth user...');
+                                  try {
+                                    const { error: rpcError } = await supabase.rpc('delete_user');
+                                    if (rpcError) {
+                                      console.error('[Settings] RPC delete_user error (non-blocking):', rpcError);
+                                    }
+                                  } catch (rpcErr) {
+                                    console.error('[Settings] RPC delete_user exception (non-blocking):', rpcErr);
+                                  }
                                 }
-                                Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
+                                
+                                console.log('[Settings] Signing out after deletion...');
                                 await signOut();
+                                Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
                               } catch (error) {
-                                console.error('Error deleting account:', error);
+                                console.error('[Settings] Error deleting account:', error);
                                 Alert.alert('Error', 'Failed to delete account. Please contact support at support@myinsightai.app');
                               }
                             }

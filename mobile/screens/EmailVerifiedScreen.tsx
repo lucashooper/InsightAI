@@ -58,11 +58,13 @@ export default function EmailVerifiedScreen({ navigation }: any) {
           routes: [{ name: 'MainTabs' }],
         });
       } else {
-        // Normal signup flow: user needs to complete onboarding questions
-        console.log('[EmailVerified] Normal flow - navigating to OnboardingQuestion');
+        // Normal signup flow: user needs to complete onboarding (start with theme selection)
+        console.log('[EmailVerified] Normal flow - navigating to ChooseVibe');
+        // Set the resume screen so navigation knows where to go after ChooseVibe
+        await AsyncStorage.setItem('ONBOARDING_RESUME_SCREEN', 'ChooseVibe');
         navigation.reset({
           index: 0,
-          routes: [{ name: 'OnboardingQuestion', params: { startIndex: 0 } }],
+          routes: [{ name: 'ChooseVibe' }],
         });
       }
     } else {

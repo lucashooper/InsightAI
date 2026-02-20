@@ -594,7 +594,14 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
             </Text>
 
             <View style={styles.entryFooter}>
-              <Text style={[styles.entryDate, { color: theme.colors.tertiaryText }]}>{formatDate(item.created_at)}</Text>
+              <View style={styles.entryFooterLeft}>
+                <Text style={[styles.entryDate, { color: theme.colors.tertiaryText }]}>{formatDate(item.created_at)}</Text>
+                {item.ai_structured_insights?.wellbeingScore != null && (
+                  <View style={styles.wellbeingBadge}>
+                    <Text style={styles.wellbeingBadgeText}>{item.ai_structured_insights.wellbeingScore}/10</Text>
+                  </View>
+                )}
+              </View>
               {hasInsights && (
                 <LinearGradient
                   colors={['#8b5cf6', '#7c3aed']}
@@ -1358,6 +1365,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  entryFooterLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  wellbeingBadge: {
+    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  wellbeingBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#8b5cf6',
   },
   entryDate: {
     fontSize: 12,

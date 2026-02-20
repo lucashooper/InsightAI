@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import SunoGradient from '../../components/onboarding/SunoGradient';
+import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 const lockIcon = require('../../public/onboarding-icons/LockIcon2.webp');
@@ -12,19 +14,29 @@ interface PrivacyOnboardingScreenProps {
 }
 
 export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardingScreenProps) {
+  const { theme } = useTheme();
+  
   const handleContinue = () => {
     navigation.navigate('NotificationsOnboarding');
   };
 
   return (
-    <View style={styles.container}>
-      {/* Back Button - only show if can go back */}
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {isDarkTheme(theme.name) ? (
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
+      ) : (
+        <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+      )}
+      
+      {/* Back Button - Circular style matching other onboarding pages */}
       {navigation.canGoBack() && (
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="chevron-back" size={28} color="#6b7280" />
+          <View style={[styles.backArrowCircle, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+            <Ionicons name="arrow-back" size={20} color={isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e'} />
+          </View>
         </TouchableOpacity>
       )}
 
@@ -41,26 +53,26 @@ export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardin
       </View>
 
       {/* Title */}
-      <Text style={styles.title}>Your notes are fully private</Text>
+      <Text style={[styles.title, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>Your notes are fully private</Text>
 
       {/* Subtitle */}
-      <Text style={styles.subtitle}>
+      <Text style={[styles.subtitle, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>
         We use end-to-end encryption to keep your journal entries secure. Only you can read them.
       </Text>
 
       {/* Features */}
       <View style={styles.featuresContainer}>
-        <View style={styles.feature}>
+        <View style={[styles.feature, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.05)' : 'rgba(255, 255, 255, 0.5)', borderColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0, 0, 0, 0.06)' }]}>
           <Ionicons name="shield-checkmark" size={24} color="#8b5cf6" />
-          <Text style={styles.featureText}>AES-256 encryption</Text>
+          <Text style={[styles.featureText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>AES-256 encryption</Text>
         </View>
-        <View style={styles.feature}>
+        <View style={[styles.feature, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.05)' : 'rgba(255, 255, 255, 0.5)', borderColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0, 0, 0, 0.06)' }]}>
           <Ionicons name="key" size={24} color="#8b5cf6" />
-          <Text style={styles.featureText}>Your password is the key</Text>
+          <Text style={[styles.featureText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>Your password is the key</Text>
         </View>
-        <View style={styles.feature}>
+        <View style={[styles.feature, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.05)' : 'rgba(255, 255, 255, 0.5)', borderColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0, 0, 0, 0.06)' }]}>
           <Ionicons name="eye-off" size={24} color="#8b5cf6" />
-          <Text style={styles.featureText}>We can't read your entries</Text>
+          <Text style={[styles.featureText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>We can't read your entries</Text>
         </View>
       </View>
 
@@ -79,14 +91,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 140,
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 60,
   },
   backButton: {
     position: 'absolute',
     top: 60,
-    left: 24,
+    left: 20,
     zIndex: 10,
-    width: 40,
-    height: 40,
+    padding: 4,
+  },
+  backArrowCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -98,11 +116,12 @@ const styles = StyleSheet.create({
     top: 60,
   },
   iconContainer: {
-    marginBottom: 0,
+    marginBottom: 24,
+    marginTop: 20,
   },
   lockIcon: {
-    width: 180,
-    height: 180,
+    width: 220,
+    height: 220,
   },
   title: {
     fontSize: 32,
@@ -114,14 +133,14 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: 'rgba(0, 0, 0, 0.5)',
-    marginBottom: 24,
+    marginBottom: 32,
     textAlign: 'center',
     lineHeight: 24,
     paddingHorizontal: 20,
   },
   featuresContainer: {
     width: '100%',
-    marginBottom: 32,
+    marginBottom: 'auto',
   },
   feature: {
     flexDirection: 'row',
@@ -142,11 +161,10 @@ const styles = StyleSheet.create({
   },
   continueButton: {
     width: '100%',
-    paddingVertical: 16,
+    paddingVertical: 18,
     backgroundColor: '#8b5cf6',
-    borderRadius: 12,
+    borderRadius: 999,
     alignItems: 'center',
-    marginBottom: 16,
   },
   continueButtonText: {
     fontSize: 17,

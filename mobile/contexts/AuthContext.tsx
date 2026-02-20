@@ -88,8 +88,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
+    // Get initial session and validate it's still valid
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (error) {
         // Ignore refresh token errors - they're expected when no valid session exists
         if (!error.message.includes('Refresh Token')) {
@@ -98,9 +98,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Clear invalid session
         setSession(null);
         setUser(null);
+        setLoading(false);
+        return;
+      }
+      
+      if (session) {
+        // Validate the session is still valid by attempting a token refresh
+        // If the user was deleted from Supabase, this will fail
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          console.log('[Auth] Session invalid (user may have been deleted), forcing sign out:', refreshError.message);
+          // Clear all cached data
+          await AsyncStorage.multiRemove([
+            'HAS_COMPLETED_ONBOARDING', 'NEEDS_EMAIL_SIGNUP',
+            'SKIP_NAME_STEP', 'CACHED_USERNAME'
+          ]).catch(() => {});
+          setSession(null);
+          setUser(null);
+          await supabase.auth.signOut().catch(() => {});
+        } else {
+          setSession(refreshData.session);
+          setUser(refreshData.session?.user ?? null);
+        }
       } else {
-        setSession(session);
-        setUser(session?.user ?? null);
+        setSession(null);
+        setUser(null);
       }
       setLoading(false);
     }).catch((err) => {
@@ -230,8 +252,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     try {
+      console.log('[AUTH] Starting Google sign-in flow...');
       await GoogleSignin.hasPlayServices();
       const userInfo = await GoogleSignin.signIn();
+      console.log('[AUTH] Google SDK sign-in completed, got user info');
       
       // v12+ moved idToken to userInfo.data.idToken
       const idToken = userInfo.data?.idToken || userInfo.idToken;
@@ -243,14 +267,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Omitting the nonce lets Supabase skip nonce verification entirely.
         console.log('[AUTH] Signing in with Google ID token (no nonce - native SDK flow)');
         
-        const { data, error } = await supabase.auth.signInWithIdToken({
-          provider: 'google',
-          token: idToken,
-        });
-        
-        if (error) {
-          console.error('[AUTH] Supabase signInWithIdToken error:', error.message);
-        } else {
+        try {
+          const { data, error } = await supabase.auth.signInWithIdToken({
+            provider: 'google',
+            token: idToken,
+          });
+          
+          console.log('[AUTH] Supabase signInWithIdToken result:', {
+            hasError: !!error,
+            hasData: !!data,
+            hasUser: !!data?.user,
+            userEmail: data?.user?.email,
+          });
+          
+          if (error) {
+            console.error('[AUTH] Supabase signInWithIdToken error:', error.message);
+            console.error('[AUTH] Full error:', error);
+            return { error };
+          }
+          
           console.log('[AUTH] Google Sign-In successful, user:', data.user?.email);
           
           // Handle Google Sign-In profile setup (similar to Apple)
@@ -269,6 +304,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             
             console.log('[AUTH] Google Sign-In - saving username:', displayName);
             try {
+              // Clear any old cached username first to prevent stale data
+              await AsyncStorage.removeItem('CACHED_USERNAME');
+              await AsyncStorage.removeItem('SKIP_NAME_STEP');
+              
+              // Always update username from Google on sign-in to prevent using stale cached names
               const { error: profileError } = await supabase
                 .from('user_profiles')
                 .upsert({
@@ -276,6 +316,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   username: displayName,
                   email: data.user.email,
                   updated_at: new Date().toISOString(),
+                }, {
+                  onConflict: 'user_id',
+                  ignoreDuplicates: false
                 });
               
               if (profileError) {
@@ -284,10 +327,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.log('[AUTH] ✅ Google profile saved');
               }
               
-              // Cache the username and set flag for Google Sign-In
+              // Cache the NEW username and set flag for Google Sign-In
               await AsyncStorage.setItem('CACHED_USERNAME', displayName);
               await AsyncStorage.setItem('SKIP_NAME_STEP', 'true');
-              console.log('[AUTH] ✅ Username cached for Google Sign-In');
+              console.log('[AUTH] ✅ Username cached for Google Sign-In:', displayName);
               
               // IMPORTANT: Do NOT set HAS_COMPLETED_ONBOARDING here
               // Google users still need to see paywall and onboarding questions
@@ -296,9 +339,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               console.error('[AUTH] Error saving Google profile:', err);
             }
           }
+          
+          return { error: null };
+        } catch (supabaseError: any) {
+          console.error('[AUTH] Exception during Supabase sign-in:', supabaseError);
+          return { error: supabaseError };
         }
-        
-        return { error };
       } else {
         console.error('[AUTH] Google Sign-In response:', JSON.stringify(userInfo));
         return { error: new Error('No ID token present') };
@@ -381,6 +427,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (shouldSkipNameStep && displayName) {
           console.log('[AUTH] Apple Sign-In - saving username:', displayName);
           try {
+            // Always update username from Apple on sign-in to prevent using stale cached names
             const { error: profileError } = await supabase
               .from('user_profiles')
               .upsert({
@@ -388,6 +435,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 username: displayName,
                 email: data.user.email,
                 updated_at: new Date().toISOString(),
+              }, {
+                onConflict: 'user_id',
+                ignoreDuplicates: false
               });
             
             if (profileError) {
@@ -445,7 +495,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
       await AsyncStorage.removeItem('NEEDS_EMAIL_SIGNUP');
-      console.log('[Auth] Cleared onboarding flags on sign out');
+      await AsyncStorage.removeItem('SKIP_NAME_STEP');
+      await AsyncStorage.removeItem('CACHED_USERNAME');
+      await AsyncStorage.removeItem('ONBOARDING_RESUME_SCREEN');
+      await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
+      console.log('[Auth] Cleared all onboarding/session flags on sign out');
     } catch (error) {
       console.error('[Auth] Failed to clear onboarding flags:', error);
     }

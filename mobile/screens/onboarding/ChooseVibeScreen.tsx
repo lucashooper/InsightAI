@@ -37,8 +37,8 @@ const vibeOptions: VibeOption[] = [
     name: 'sunset',
     label: 'Sunset',
     emoji: '🌅',
-    orbColors: ['rgba(249, 115, 22, 0.95)', 'rgba(234, 88, 12, 0.85)', 'rgba(194, 65, 12, 0.75)'],
-    glowColor: 'rgba(249, 115, 22, 0.4)',
+    orbColors: ['rgba(255, 107, 74, 0.95)', 'rgba(255, 87, 51, 0.85)', 'rgba(255, 69, 58, 0.75)'],
+    glowColor: 'rgba(255, 107, 74, 0.4)',
   },
   {
     name: 'vibrant',
@@ -77,7 +77,7 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
       case 'light':
         return ['#fef5f8', '#fef0f5', '#f5f0fe', '#f0f9ff', '#fef7f2'];
       case 'sunset':
-        return ['#fff5ed', '#ffedd5', '#fed7aa', '#fdba74', '#fb923c'];
+        return ['#fff5f0', '#ffe8dc', '#ffd4c4', '#ffb399', '#ff8c69'];
       case 'vibrant':
         return ['#faf5ff', '#f3e8ff', '#e9d5ff', '#d8b4fe', '#c084fc'];
       case 'ocean':
@@ -138,22 +138,26 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
         <SunoGradient themeColors={backgroundColors} />
       )}
       
-      {/* Back Button */}
+      {/* Back Button - Circular style matching other onboarding pages */}
       <TouchableOpacity 
         style={styles.backButton}
         onPress={() => {
           if (navigation.canGoBack()) {
             navigation.goBack();
+          } else {
+            // If no navigation history (e.g., after sign-out), go to Welcome
+            navigation.navigate('Welcome');
           }
         }}
       >
-        <Ionicons name="chevron-back" size={28} color={textColor} />
+        <View style={[styles.backArrowCircle, { backgroundColor: isDarkTheme(selectedVibe || 'light') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+          <Ionicons name="arrow-back" size={20} color={textColor} />
+        </View>
       </TouchableOpacity>
       
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
         <View style={styles.header}>
           <Text style={[styles.title, { color: textColor }]}>Choose your vibe</Text>
-          <Text style={[styles.subtitle, { color: textColor }]}>Pick a theme that feels like you.</Text>
         </View>
 
         <View style={styles.orbGrid}>
@@ -298,13 +302,17 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: isTablet ? 60 : 50,
-    left: isTablet ? 32 : 20,
+    top: 60,
+    left: 20,
     zIndex: 10,
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
+    padding: 4,
+  },
+  backArrowCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     flex: 1,

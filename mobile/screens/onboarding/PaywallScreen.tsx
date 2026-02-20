@@ -11,6 +11,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { supabase } from '../../lib/supabase';
 import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
+import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
@@ -39,6 +40,7 @@ const ENTITLEMENT_ID = 'Insight Pro';
 export default function PaywallScreen({ navigation, route }: any) {
   const { user } = useAuth();
   const { userName } = useOnboarding();
+  const { theme } = useTheme();
   const [offering, setOffering] = useState<PurchasesOffering | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
@@ -103,18 +105,20 @@ export default function PaywallScreen({ navigation, route }: any) {
       return;
     }
     
-    if (!userName) {
-      console.log('[Paywall] No username found in context, skipping profile save');
-      return;
-    }
-    
     try {
       console.log('[Paywall] Saving username to profile...');
       console.log('[Paywall] User ID:', user.id);
-      console.log('[Paywall] Username:', userName);
       console.log('[Paywall] User email:', user.email);
+      console.log('[Paywall] Context username:', userName);
       
-      // First, try to check if profile exists
+      // Check if this is a social sign-in user by looking at the auth provider
+      // This is more reliable than AsyncStorage flags which can get cleared/stale
+      const authProvider = user.app_metadata?.provider || '';
+      const isSocialSignIn = authProvider === 'google' || authProvider === 'apple';
+      console.log('[Paywall] Auth provider:', authProvider);
+      console.log('[Paywall] Is social sign-in:', isSocialSignIn);
+      
+      // Read the CURRENT username from database
       const { data: existingProfile, error: checkError } = await supabase
         .from('user_profiles')
         .select('id, username')
@@ -124,18 +128,45 @@ export default function PaywallScreen({ navigation, route }: any) {
       console.log('[Paywall] Existing profile check:', existingProfile);
       console.log('[Paywall] Check error:', checkError);
       
+      let finalUsername = '';
+      
+      if (isSocialSignIn && existingProfile?.username) {
+        // Social sign-in: ALWAYS trust the database username (set by Google/Apple sign-in)
+        // Never overwrite it with stale OnboardingContext value
+        finalUsername = existingProfile.username;
+        console.log('[Paywall] Social sign-in: using DB username:', finalUsername);
+      } else if (userName) {
+        // Manual sign-up: use the username from onboarding context (user typed it)
+        finalUsername = userName;
+        console.log('[Paywall] Manual sign-up: using context username:', finalUsername);
+      } else if (existingProfile?.username) {
+        // Fallback to database
+        finalUsername = existingProfile.username;
+        console.log('[Paywall] Fallback: using DB username:', finalUsername);
+      } else {
+        console.log('[Paywall] No username found anywhere, skipping profile save');
+        // Still mark onboarding complete
+        await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+        return;
+      }
+      
+      // Update or create profile
       if (existingProfile) {
-        // Profile exists, update it
-        console.log('[Paywall] Profile exists, updating username...');
-        const { error: updateError } = await supabase
-          .from('user_profiles')
-          .update({ username: userName })
-          .eq('user_id', user.id);
-        
-        if (updateError) {
-          console.error('[Paywall] ❌ Error updating profile:', updateError);
+        // Only update username if manual sign-up AND different from DB
+        if (!isSocialSignIn && userName && userName !== existingProfile.username) {
+          console.log('[Paywall] Updating username from', existingProfile.username, 'to', userName);
+          const { error: updateError } = await supabase
+            .from('user_profiles')
+            .update({ username: userName })
+            .eq('user_id', user.id);
+          
+          if (updateError) {
+            console.error('[Paywall] ❌ Error updating profile:', updateError);
+          } else {
+            console.log('[Paywall] ✅ Username updated successfully');
+          }
         } else {
-          console.log('[Paywall] ✅ Username updated successfully');
+          console.log('[Paywall] Username already correct in database, skipping update');
         }
       } else {
         // Profile doesn't exist, create it
@@ -144,7 +175,7 @@ export default function PaywallScreen({ navigation, route }: any) {
           .from('user_profiles')
           .insert({
             user_id: user.id,
-            username: userName,
+            username: finalUsername,
             email: user.email,
           });
         
@@ -155,25 +186,13 @@ export default function PaywallScreen({ navigation, route }: any) {
         }
       }
       
-      // Cache username locally so Settings can always display it
-      await AsyncStorage.setItem('CACHED_USERNAME', userName);
-      console.log('[Paywall] ✅ Username cached locally');
+      // Cache the final username locally
+      await AsyncStorage.setItem('CACHED_USERNAME', finalUsername);
+      console.log('[Paywall] ✅ Username cached locally:', finalUsername);
       
-      // Mark onboarding as complete with timestamp in database
+      // Mark onboarding as complete
       await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
       console.log('[Paywall] ✅ Onboarding marked as complete');
-      
-      // Set onboarding completion timestamp in database for reliable tracking
-      const { error: timestampError } = await supabase
-        .from('user_profiles')
-        .update({ onboarding_completed_at: new Date().toISOString() })
-        .eq('user_id', user.id);
-      
-      if (timestampError) {
-        console.error('[Paywall] ❌ Error setting onboarding timestamp:', timestampError);
-      } else {
-        console.log('[Paywall] ✅ Onboarding completion timestamp set');
-      }
       
     } catch (err) {
       console.error('[Paywall] ❌ Exception in saveUsernameToProfile:', err);
@@ -283,6 +302,42 @@ export default function PaywallScreen({ navigation, route }: any) {
     
     console.log('[REVENUECAT] 🛍️ Start Journey button pressed');
     console.log('[REVENUECAT] Selected plan:', selectedPlan);
+    console.log('[REVENUECAT] Current user:', user?.id || 'none');
+    
+    // If no user is signed in, create an anonymous account first
+    if (!user) {
+      console.log('[Paywall] No user signed in, creating anonymous account...');
+      try {
+        // Create anonymous Supabase account
+        const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously();
+        
+        if (anonError) {
+          console.error('[Paywall] Failed to create anonymous account:', anonError);
+          Alert.alert(
+            'Sign In Required',
+            'Please sign in to purchase a subscription. You can use "Continue with Google" or "Continue with Apple" for a quick sign-in.',
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+        
+        console.log('[Paywall] ✅ Anonymous account created:', anonData.user?.id);
+        
+        // Link RevenueCat to the anonymous user
+        await Purchases.logIn(anonData.user!.id);
+        console.log('[Paywall] ✅ RevenueCat linked to anonymous account');
+        
+        // Set flag to prompt for email after purchase
+        await AsyncStorage.setItem('NEEDS_EMAIL_SIGNUP', 'true');
+        console.log('[Paywall] ✅ Set NEEDS_EMAIL_SIGNUP flag for anonymous user');
+        
+        // Continue with purchase flow (user will now be set via AuthContext)
+      } catch (err) {
+        console.error('[Paywall] Error creating anonymous account:', err);
+        Alert.alert('Error', 'Failed to prepare purchase. Please try again.');
+        return;
+      }
+    }
     
     const selectedPackage = getSelectedPackage();
     
@@ -488,11 +543,15 @@ export default function PaywallScreen({ navigation, route }: any) {
   };
 
   return (
-    <View style={styles.container}>
-      <SunoGradient />
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {isDarkTheme(theme.name) ? (
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
+      ) : (
+        <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+      )}
+      <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} />
 
-      {/* Back Button */}
+      {/* Back Button - Circular style matching other onboarding pages */}
       <TouchableOpacity 
         style={styles.backButton}
         onPress={() => {
@@ -501,7 +560,9 @@ export default function PaywallScreen({ navigation, route }: any) {
           }
         }}
       >
-        <Ionicons name="chevron-back" size={28} color="#1a1a2e" />
+        <View style={[styles.backArrowCircle, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+          <Ionicons name="arrow-back" size={20} color={isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e'} />
+        </View>
       </TouchableOpacity>
 
       {/* Scrollable top content */}
@@ -539,13 +600,6 @@ export default function PaywallScreen({ navigation, route }: any) {
               </View>
             )}
             keyExtractor={(_, index) => index.toString()}
-          />
-          {/* White fade at bottom of phone */}
-          <LinearGradient
-            colors={['rgba(254, 247, 242, 0)', 'rgba(254, 247, 242, 0.6)', 'rgba(254, 247, 242, 1)']}
-            locations={[0, 0.5, 1]}
-            style={styles.phoneFade}
-            pointerEvents="none"
           />
         </View>
 
@@ -711,8 +765,12 @@ const styles = StyleSheet.create({
     top: isTablet ? 60 : 50,
     left: 20,
     zIndex: 10,
-    width: 40,
-    height: 40,
+    padding: 4,
+  },
+  backArrowCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -796,29 +854,29 @@ const styles = StyleSheet.create({
   },
   compactPlan: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 8,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(0, 0, 0, 0.15)',
+    borderColor: 'rgba(0, 0, 0, 0.12)',
     position: 'relative',
   },
   compactPlanSelected: {
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderColor: '#8b5cf6',
     borderWidth: 2.5,
     shadowColor: '#8b5cf6',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.3,
     shadowRadius: 12,
-    elevation: 6,
+    elevation: 8,
   },
   compactPlanName: {
-    fontSize: sf(14),
-    fontWeight: '600',
-    color: '#374151',
+    fontSize: sf(15),
+    fontWeight: '700',
+    color: '#1a1a2e',
     marginBottom: 4,
   },
   compactPlanNameSelected: {
@@ -826,9 +884,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   compactPlanDaily: {
-    fontSize: sf(13),
-    fontWeight: '700',
-    color: '#6b7280',
+    fontSize: sf(14),
+    fontWeight: '800',
+    color: '#1a1a2e',
     marginBottom: 3,
   },
   compactPlanDailySelected: {
@@ -864,10 +922,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: isTablet ? 80 : 24,
   },
   whatYouGetTitle: {
-    fontSize: sf(17),
+    fontSize: sf(20),
     fontWeight: '700',
     color: '#1a1a2e',
-    marginBottom: 12,
+    marginBottom: 16,
     textAlign: 'center',
   },
   whatYouGetList: {
@@ -879,9 +937,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   whatYouGetText: {
-    fontSize: sf(14),
-    color: '#374151',
-    fontWeight: '500',
+    fontSize: sf(16),
+    color: '#1a1a2e',
+    fontWeight: '600',
     flex: 1,
   },
   // Testimonial
@@ -902,17 +960,17 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   testimonialText: {
-    fontSize: sf(13),
-    color: '#374151',
-    lineHeight: sf(20),
-    fontWeight: '400',
+    fontSize: sf(15),
+    color: '#1a1a2e',
+    lineHeight: sf(22),
+    fontWeight: '500',
     fontStyle: 'italic',
     marginBottom: 8,
   },
   testimonialAuthor: {
-    fontSize: sf(12),
-    color: '#6b7280',
-    fontWeight: '600',
+    fontSize: sf(14),
+    color: '#374151',
+    fontWeight: '700',
   },
   // Sticky footer
   stickyFooter: {
@@ -925,12 +983,12 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 6,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
   },
   commitmentBadge: {
     flexDirection: 'row',
