@@ -91,6 +91,60 @@ export default function App() {
           console.error('[REVENUECAT] Error details:', customerInfoError.message);
         }
 
+        // === SUPABASE FETCH DIAGNOSTIC ===
+        console.log('=== SUPABASE FETCH DIAGNOSTIC START ===');
+        const SUPA_URL = 'https://ptpqvghlaesyrzlljzkk.supabase.co';
+        const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0cHF2Z2hsYWVzeXJ6bGxqemtrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxMDc4MzEsImV4cCI6MjA2ODY4MzgzMX0.dmkb2_Hdf0vQwirOwJKX4ssfr0ltA1eIZ5_v1s5p6DE';
+        
+        // Test 1: Raw fetch to Supabase REST API
+        try {
+          console.log('[DIAG] Test 1: Raw fetch to Supabase REST API...');
+          const t1 = Date.now();
+          const resp = await fetch(`${SUPA_URL}/rest/v1/user_profiles?select=username&limit=1`, {
+            headers: {
+              'apikey': SUPA_KEY,
+              'Authorization': `Bearer ${SUPA_KEY}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          console.log(`[DIAG] Test 1 completed in ${Date.now() - t1}ms - Status: ${resp.status}`);
+          const body = await resp.text();
+          console.log(`[DIAG] Test 1 response body: ${body.substring(0, 200)}`);
+        } catch (e: any) {
+          console.error(`[DIAG] Test 1 FAILED: ${e.message}`);
+        }
+
+        // Test 2: Supabase client query
+        try {
+          console.log('[DIAG] Test 2: Supabase client query...');
+          const { supabase: supa } = require('./lib/supabase');
+          const t2 = Date.now();
+          const { data, error } = await supa
+            .from('user_profiles')
+            .select('username')
+            .limit(1);
+          console.log(`[DIAG] Test 2 completed in ${Date.now() - t2}ms`);
+          console.log(`[DIAG] Test 2 result:`, data, error?.message || 'no error');
+        } catch (e: any) {
+          console.error(`[DIAG] Test 2 FAILED: ${e.message}`);
+        }
+
+        // Test 3: Supabase auth check
+        try {
+          console.log('[DIAG] Test 3: Supabase auth getSession...');
+          const { supabase: supa } = require('./lib/supabase');
+          const t3 = Date.now();
+          const { data: { session }, error } = await supa.auth.getSession();
+          console.log(`[DIAG] Test 3 completed in ${Date.now() - t3}ms`);
+          console.log(`[DIAG] Test 3 session:`, !!session, error?.message || 'no error');
+          if (session) {
+            console.log(`[DIAG] Test 3 user:`, session.user.id, session.user.email);
+          }
+        } catch (e: any) {
+          console.error(`[DIAG] Test 3 FAILED: ${e.message}`);
+        }
+        console.log('=== SUPABASE FETCH DIAGNOSTIC END ===');
+
         // Test encryption on startup
         console.log('=== ENCRYPTION TEST START ===');
         try {

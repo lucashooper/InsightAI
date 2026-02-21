@@ -17,17 +17,4 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: false,
   },
-  global: {
-    fetch: (url, options = {}) => {
-      // Add timeout and better error handling for Expo Go
-      const timeout = 30000; // 30 seconds
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
-      
-      return fetch(url, {
-        ...options,
-        signal: controller.signal,
-      }).finally(() => clearTimeout(timeoutId));
-    },
-  },
 });

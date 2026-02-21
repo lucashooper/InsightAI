@@ -71,11 +71,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log('[SUBSCRIPTION SYNC] 📤 Updating Supabase with tier:', tier);
       
-      // Update Supabase user_profiles table
-      const { error } = await supabase
+      // Update Supabase user_profiles table with timeout to prevent hanging
+      const updatePromise = supabase
         .from('user_profiles')
         .update({ subscription_tier: tier })
         .eq('user_id', userId);
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Subscription sync timeout after 5s')), 5000)
+      );
+      
+      const { error } = await Promise.race([updatePromise, timeoutPromise]) as any;
       
       if (error) {
         console.error('[SUBSCRIPTION SYNC] ❌ Failed to update Supabase:', error);
@@ -88,14 +94,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Get initial session and validate it's still valid
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+    // Get initial session - autoRefreshToken handles token refresh automatically
+    console.log('[AUTH] Getting initial session...');
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      console.log('[AUTH] getSession result:', !!session, error?.message || 'no error');
       if (error) {
-        // Ignore refresh token errors - they're expected when no valid session exists
         if (!error.message.includes('Refresh Token')) {
           console.error('Session error:', error);
         }
-        // Clear invalid session
         setSession(null);
         setUser(null);
         setLoading(false);
@@ -103,30 +109,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       if (session) {
-        // Validate the session is still valid by attempting a token refresh
-        // If the user was deleted from Supabase, this will fail
-        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-        if (refreshError) {
-          console.log('[Auth] Session invalid (user may have been deleted), forcing sign out:', refreshError.message);
-          // Clear all cached data
-          await AsyncStorage.multiRemove([
-            'HAS_COMPLETED_ONBOARDING', 'NEEDS_EMAIL_SIGNUP',
-            'SKIP_NAME_STEP', 'CACHED_USERNAME'
-          ]).catch(() => {});
-          setSession(null);
-          setUser(null);
-          await supabase.auth.signOut().catch(() => {});
-        } else {
-          setSession(refreshData.session);
-          setUser(refreshData.session?.user ?? null);
-        }
+        console.log('[AUTH] Session found for user:', session.user.id);
+        setSession(session);
+        setUser(session.user);
       } else {
         setSession(null);
         setUser(null);
       }
       setLoading(false);
     }).catch((err) => {
-      // Ignore refresh token errors
       if (!err.message?.includes('Refresh Token')) {
         console.error('Failed to get session:', err);
       }
@@ -135,33 +126,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     });
 
-    // Set up RevenueCat listener for subscription changes
-    const revenueCatListener = Purchases.addCustomerInfoUpdateListener(async (customerInfo) => {
+    // Set up RevenueCat listener for subscription changes (non-blocking)
+    const revenueCatListener = Purchases.addCustomerInfoUpdateListener((customerInfo) => {
       console.log('[REVENUECAT LISTENER] Subscription status changed');
       if (user?.id) {
-        await syncSubscriptionToSupabase(user.id, customerInfo);
+        syncSubscriptionToSupabase(user.id, customerInfo).catch(err =>
+          console.log('[REVENUECAT] Subscription sync error (non-blocking):', err)
+        );
       }
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('[AUTH] onAuthStateChange:', _event);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
       
-      // Set RevenueCat user ID for analytics
+      // CRITICAL: Do NOT await Supabase queries inside onAuthStateChange
+      // Awaiting here blocks the auth listener and deadlocks all subsequent queries
       if (session?.user) {
-        try {
-          await Purchases.logIn(session.user.id);
-          // Set user email for better analytics
-          await Purchases.setEmail(session.user.email || '');
-          
-          // Sync initial subscription status to Supabase
-          const customerInfo = await Purchases.getCustomerInfo();
-          await syncSubscriptionToSupabase(session.user.id, customerInfo);
-        } catch (error) {
-          console.log('RevenueCat user identification error:', error);
-        }
+        // Fire-and-forget: RevenueCat + subscription sync
+        (async () => {
+          try {
+            await Purchases.logIn(session.user.id);
+            await Purchases.setEmail(session.user.email || '');
+            const customerInfo = await Purchases.getCustomerInfo();
+            // Non-blocking subscription sync
+            syncSubscriptionToSupabase(session.user.id, customerInfo).catch(err => 
+              console.log('[AUTH] Subscription sync error (non-blocking):', err)
+            );
+          } catch (error) {
+            console.log('RevenueCat user identification error:', error);
+          }
+        })();
       }
     });
 

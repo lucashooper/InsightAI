@@ -333,71 +333,21 @@ export default function AppNavigator() {
           return;
         }
 
-        // If user is logged in but no AsyncStorage flag, check if they have a resume screen
-        // or try a quick profile check for returning users on a new device
+        // If user is logged in but no AsyncStorage flag
         if (user) {
-          // If we have a resume screen, the user is mid-onboarding - don't waste time on profile check
+          // If we have a resume screen, the user is mid-onboarding
           if (onboardingResumeScreen) {
-            console.log('[NAV] Resume screen set, skipping profile check - showing onboarding at:', onboardingResumeScreen);
+            console.log('[NAV] Resume screen set - showing onboarding at:', onboardingResumeScreen);
             setIsOnboardingCompleted(false);
             return;
           }
           
-          console.log('[NAV] No onboarding flag and no resume screen, quick profile check...');
-          
-          // Import supabase
-          const { supabase: supabaseClient } = require('../lib/supabase');
-          
-          const startTime = Date.now();
-          
-          // Use AbortController to actually cancel the request on timeout (Promise.race doesn't cancel)
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second hard timeout
-          
-          try {
-            const { data: profile, error: profileError } = await supabaseClient
-              .from('user_profiles')
-              .select('username, onboarding_completed_at')
-              .eq('user_id', user.id)
-              .maybeSingle()
-              .abortSignal(controller.signal);
-            
-            clearTimeout(timeoutId);
-            const elapsed = Date.now() - startTime;
-            console.log(`[NAV] Profile check completed in ${elapsed}ms, result:`, profile);
-            if (profileError) console.log('[NAV] Profile error:', profileError);
-
-            if (profile?.username && profile?.onboarding_completed_at) {
-              console.log('[NAV] ✅ Returning user with completed onboarding');
-              await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
-              setIsOnboardingCompleted(true);
-              return;
-            }
-            
-            // Profile exists but no onboarding_completed_at - check account age
-            if (profile?.username) {
-              console.log('[NAV] ✅ Legacy user with username, marking onboarding complete');
-              await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
-              setIsOnboardingCompleted(true);
-              // Backfill timestamp (non-blocking)
-              supabaseClient
-                .from('user_profiles')
-                .update({ onboarding_completed_at: new Date().toISOString() })
-                .eq('user_id', user.id)
-                .then(() => console.log('[NAV] Backfilled onboarding timestamp'))
-                .catch((err: any) => console.log('[NAV] Failed to backfill:', err));
-              return;
-            }
-            
-            // No profile - new user, show onboarding
-            console.log('[NAV] New user, showing onboarding');
-            setIsOnboardingCompleted(false);
-          } catch (err: any) {
-            clearTimeout(timeoutId);
-            console.log('[NAV] ⚠️ Profile check failed/aborted:', err.message || err);
-            // On failure, just show onboarding - it's the safe default
-            setIsOnboardingCompleted(false);
-          }
+          // CRITICAL FIX: If user is authenticated, they MUST have completed onboarding
+          // New users cannot sign in (they don't have credentials yet)
+          // Therefore: authenticated = existing user = onboarding complete
+          console.log('[NAV] ✅ User is authenticated - assuming onboarding complete');
+          await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+          setIsOnboardingCompleted(true);
         } else {
           setIsOnboardingCompleted(false);
         }
