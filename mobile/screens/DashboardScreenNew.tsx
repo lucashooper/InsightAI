@@ -649,7 +649,7 @@ export default function DashboardScreenNew() {
           <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>Today's prompt</Text>
           <TouchableOpacity
             style={[styles.insightCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
-            onPress={() => navigation.navigate('CreateEntry', { prefillPrompt: dailyPrompt.prompt + (dailyPrompt.followUp ? `\n\n${dailyPrompt.followUp}` : '') })}
+            onPress={() => navigation.navigate('PromptEntry', { promptText: dailyPrompt.prompt + (dailyPrompt.followUp ? `\n\n${dailyPrompt.followUp}` : '') })}
             activeOpacity={0.7}
           >
             <View style={styles.insightHeader}>

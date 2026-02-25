@@ -34,31 +34,50 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
   const handleAppleAuth = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSocialLoading(true);
-    // Set resume flag BEFORE sign-in so AppNavigator knows where to start
-    // when the navigator switches from unauthenticated to authenticated stack
-    await AsyncStorage.setItem('ONBOARDING_RESUME_SCREEN', 'ChooseVibe');
+    if (postPurchase) {
+      // Post-purchase: mark onboarding complete so navigator routes to MainTabs
+      await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+      await AsyncStorage.removeItem('NEEDS_EMAIL_SIGNUP');
+    } else {
+      // Normal onboarding: set resume flag so navigator continues at ChooseVibe
+      await AsyncStorage.setItem('ONBOARDING_RESUME_SCREEN', 'ChooseVibe');
+    }
     const { error } = await signInWithApple();
     setSocialLoading(false);
     if (error) {
-      await AsyncStorage.removeItem('ONBOARDING_RESUME_SCREEN');
+      if (postPurchase) {
+        await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
+      } else {
+        await AsyncStorage.removeItem('ONBOARDING_RESUME_SCREEN');
+      }
       Alert.alert('Apple Sign-In Failed', error.message || 'An error occurred');
     } else {
-      console.log('[AuthSelection] Apple Sign-In successful, navigator will resume at ChooseVibe');
+      console.log('[AuthSelection] Apple Sign-In successful, postPurchase:', postPurchase);
     }
   };
 
   const handleGoogleAuth = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSocialLoading(true);
-    // Set resume flag BEFORE sign-in so AppNavigator knows where to start
-    await AsyncStorage.setItem('ONBOARDING_RESUME_SCREEN', 'ChooseVibe');
+    if (postPurchase) {
+      // Post-purchase: mark onboarding complete so navigator routes to MainTabs
+      await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+      await AsyncStorage.removeItem('NEEDS_EMAIL_SIGNUP');
+    } else {
+      // Normal onboarding: set resume flag so navigator continues at ChooseVibe
+      await AsyncStorage.setItem('ONBOARDING_RESUME_SCREEN', 'ChooseVibe');
+    }
     const { error } = await signInWithGoogle();
     setSocialLoading(false);
     if (error) {
-      await AsyncStorage.removeItem('ONBOARDING_RESUME_SCREEN');
+      if (postPurchase) {
+        await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
+      } else {
+        await AsyncStorage.removeItem('ONBOARDING_RESUME_SCREEN');
+      }
       Alert.alert('Google Sign-In Failed', error.message || 'An error occurred');
     } else {
-      console.log('[AuthSelection] Google Sign-In successful, navigator will resume at ChooseVibe');
+      console.log('[AuthSelection] Google Sign-In successful, postPurchase:', postPurchase);
     }
   };
 

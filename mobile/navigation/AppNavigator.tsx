@@ -1,10 +1,12 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+const navigationRef = createNavigationContainerRef();
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
-import { ActivityIndicator, View, StyleSheet, TouchableOpacity, Pressable, Text, Modal } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Pressable, Text, Image, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
@@ -46,10 +48,12 @@ import GratitudeHistoryScreen from '../screens/GratitudeHistoryScreen';
 import EmotionDetailScreen from '../screens/EmotionDetailScreen';
 import AmbientSoundsScreen from '../screens/AmbientSoundsScreen';
 import AIChatScreen from '../screens/AIChatScreen';
+import PromptEntryScreen from '../screens/PromptEntryScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isTablet, sf, si } from '../utils/responsive';
 import DailyMoodCheckIn from '../components/DailyMoodCheckIn';
 import { useAppLock } from '../contexts/AppLockContext';
+import SunoGradient from '../components/onboarding/SunoGradient';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -342,12 +346,48 @@ export default function AppNavigator() {
             return;
           }
           
-          // CRITICAL FIX: If user is authenticated, they MUST have completed onboarding
-          // New users cannot sign in (they don't have credentials yet)
-          // Therefore: authenticated = existing user = onboarding complete
-          console.log('[NAV] ✅ User is authenticated - assuming onboarding complete');
-          await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
-          setIsOnboardingCompleted(true);
+          // Quick profile check to determine if user has completed onboarding
+          // This is needed for Google/Apple sign-in users on new devices
+          console.log('[NAV] No onboarding flag, checking profile...');
+          console.log('[NAV] Querying for user_id:', user.id);
+          try {
+            const { supabase: supabaseClient } = require('../lib/supabase');
+            const { data: profile, error: profileError } = await supabaseClient
+              .from('user_profiles')
+              .select('username')
+              .eq('user_id', user.id)
+              .maybeSingle();
+            
+            console.log('[NAV] Profile check result:', profile);
+            console.log('[NAV] Profile check error:', profileError);
+            
+            if (profile?.username) {
+              // User has a profile with username - they've completed onboarding
+              console.log('[NAV] ✅ User has profile, marking onboarding complete');
+              await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+              setIsOnboardingCompleted(true);
+              return;
+            }
+            
+            // Removed legacy timestamp check since column doesn't exist
+            if (false) {
+              supabaseClient
+                .from('user_profiles')
+                .update({ onboarding_completed_at: new Date().toISOString() })
+                .eq('user_id', user.id)
+                .then(() => console.log('[NAV] Backfilled onboarding timestamp'))
+                .catch((err: any) => console.log('[NAV] Failed to backfill:', err));
+              return;
+            }
+            
+            // No profile or no username - new user, show onboarding
+            console.log('[NAV] New user or incomplete profile, showing onboarding');
+            setIsOnboardingCompleted(false);
+          } catch (err: any) {
+            console.log('[NAV] ⚠️ Profile check failed:', err.message || err);
+            // On failure, show onboarding as safe default
+            setIsOnboardingCompleted(false);
+          }
         } else {
           setIsOnboardingCompleted(false);
         }
@@ -377,13 +417,21 @@ export default function AppNavigator() {
     console.log('[NAV] Auth state - user:', !!user, 'onboarding completed:', isOnboardingCompleted);
   }, [user, isOnboardingCompleted]);
 
-  if (loading || (user && isOnboardingCompleted === null)) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#8b5cf6" />
-      </View>
-    );
-  }
+  // Force navigate to MainTabs when onboarding completes after navigator is already mounted
+  // This handles the case where user signs in from LoginScreen and isOnboardingCompleted
+  // changes from false/null to true after the authenticated stack has already rendered
+  React.useEffect(() => {
+    if (user && isOnboardingCompleted === true && navigationRef.isReady()) {
+      const currentRoute = navigationRef.getCurrentRoute();
+      if (currentRoute && currentRoute.name !== 'MainTabs' && currentRoute.name !== 'Settings' && currentRoute.name !== 'EntryDetail' && currentRoute.name !== 'CreateEntry' && currentRoute.name !== 'AIChat') {
+        console.log('[NAV] Force navigating to MainTabs from:', currentRoute.name);
+        navigationRef.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs' as never }],
+        });
+      }
+    }
+  }, [user, isOnboardingCompleted]);
 
   const darkTheme = {
     dark: true,
@@ -416,7 +464,7 @@ export default function AppNavigator() {
   };
 
   return (
-    <NavigationContainer theme={darkTheme}>
+    <NavigationContainer ref={navigationRef} theme={darkTheme}>
       {user ? (
         // Authenticated screens - user is already signed in
         <Stack.Navigator
@@ -464,6 +512,7 @@ export default function AppNavigator() {
           <Stack.Screen name="MainTabs" component={MainTabs} />
           <Stack.Screen name="EntryDetail" component={EntryDetailScreen} />
           <Stack.Screen name="CreateEntry" component={CreateEntryScreen} />
+          <Stack.Screen name="PromptEntry" component={PromptEntryScreen} options={{ headerShown: false, animation: 'slide_from_bottom' }} />
           <Stack.Screen name="Analytics" component={DashboardScreen} />
           <Stack.Screen name="Meditation" component={MeditationScreen} />
           <Stack.Screen name="Gratitude" component={GratitudeScreen} />

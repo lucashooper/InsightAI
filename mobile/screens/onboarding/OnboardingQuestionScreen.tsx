@@ -156,9 +156,11 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
     const [currentIndex, setCurrentIndex] = useState(startIndex);
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
-    const [textInputValue, setTextInputValue] = useState(userName || '');
+    const [textInputValue, setTextInputValue] = useState('');
     const [wellbeingValue, setWellbeingValue] = useState(7);
-    const [fadeAnim] = useState(new Animated.Value(1));
+    const [contentFadeAnim] = useState(new Animated.Value(1));
+    const isTransitioning = useRef(false);
+    const [showLottie, setShowLottie] = useState(false);
     const [featureFadeAnims] = useState([
         new Animated.Value(0),
         new Animated.Value(0),
@@ -241,6 +243,17 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
     }, [floatAnim, pulseAnim]);
 
     useEffect(() => {
+        // Smooth fade-in for all step transitions
+        contentFadeAnim.setValue(0);
+        Animated.timing(contentFadeAnim, {
+            toValue: 1,
+            duration: 250,
+            easing: Easing.out(Easing.ease),
+            useNativeDriver: true,
+        }).start(() => {
+            isTransitioning.current = false;
+        });
+
         // Reset wellbeing default when entering slider step
         if (currentStep.type === 'slider') {
             setWellbeingValue(currentStep.defaultValue ?? 7);
@@ -253,7 +266,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                 Animated.timing(anim, {
                     toValue: 1,
                     duration: 520,
-                    delay: 140 + index * 160,
+                    delay: 200 + index * 160,
                     easing: Easing.out(Easing.cubic),
                     useNativeDriver: true,
                 }).start();
@@ -268,7 +281,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                     Animated.timing(optionFadeAnims[index], {
                         toValue: 1,
                         duration: 400,
-                        delay: 80 + index * 80,
+                        delay: 150 + index * 80,
                         easing: Easing.out(Easing.ease),
                         useNativeDriver: true,
                     }).start();
@@ -278,17 +291,20 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
 
         // Slide-in animations for info pages (research/meditation)
         if (currentStep.type === 'info') {
-            // Reset immediately to prevent flash
+            // Hide LottieView until animation starts to prevent flash
+            setShowLottie(false);
+            infoLottieAnim.stopAnimation();
+            infoCardAnim.stopAnimation();
             infoLottieAnim.setValue(0);
             infoCardAnim.setValue(0);
             
-            // Delay before starting animation to ensure reset is applied and prevent flicker
+            // Delay to ensure opacity 0 is applied before LottieView mounts
             setTimeout(() => {
+                setShowLottie(true);
                 Animated.sequence([
                     Animated.timing(infoLottieAnim, {
                         toValue: 1,
-                        duration: 500,
-                        delay: 50,
+                        duration: 600,
                         easing: Easing.out(Easing.cubic),
                         useNativeDriver: true,
                     }),
@@ -299,11 +315,16 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                         useNativeDriver: true,
                     }),
                 ]).start();
-            }, 50); // Increased delay to prevent Lottie flicker
+            }, 200);
+        } else {
+            setShowLottie(false);
         }
-    }, [currentIndex, currentStep.type, currentStep.defaultValue, currentStep.features, currentStep.options, featureFadeAnims, optionFadeAnims, infoLottieAnim, infoCardAnim]);
+    }, [currentIndex, currentStep.type, currentStep.defaultValue, currentStep.features, currentStep.options, featureFadeAnims, optionFadeAnims, infoLottieAnim, infoCardAnim, contentFadeAnim]);
 
     const handleNext = (value?: string) => {
+        if (isTransitioning.current) return; // Prevent double-taps during transition
+        isTransitioning.current = true;
+        
         console.log('[OnboardingQuestion] handleNext called with value:', value);
         console.log('[OnboardingQuestion] Current step:', currentStep.type, currentStep.id);
         
@@ -319,15 +340,24 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
             console.log('[OnboardingQuestion] Username saved to context');
         }
 
-        if (currentIndex < STEPS.length - 1) {
-            setCurrentIndex(currentIndex + 1);
-            setSelectedOption(null); // Reset selection for next question
-        } else {
-            // Finished - go to analyzing screen
-            const finalAnswers = value ? { ...answers, [currentStep.id]: value } : answers;
-            console.log('[OnboardingQuestion] Navigating to Analyzing with answers:', finalAnswers);
-            navigation.navigate('Analyzing', { answers: finalAnswers });
-        }
+        // Fade out current content, then swap to next step
+        Animated.timing(contentFadeAnim, {
+            toValue: 0,
+            duration: 150,
+            easing: Easing.in(Easing.ease),
+            useNativeDriver: true,
+        }).start(() => {
+            if (currentIndex < STEPS.length - 1) {
+                setCurrentIndex(currentIndex + 1);
+                setSelectedOption(null);
+            } else {
+                // Finished - go to analyzing screen
+                isTransitioning.current = false;
+                const finalAnswers = value ? { ...answers, [currentStep.id]: value } : answers;
+                console.log('[OnboardingQuestion] Navigating to Analyzing with answers:', finalAnswers);
+                navigation.navigate('Analyzing', { answers: finalAnswers });
+            }
+        });
     };
 
     const handleSkip = () => {
@@ -366,13 +396,20 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
             <View style={styles.topRow}>
                 <TouchableOpacity
                     onPress={() => {
+                        if (isTransitioning.current) return;
                         if (currentIndex === 0) {
-                            // First step - go back to ChooseVibe
                             navigation.goBack();
                         } else {
-                            // Other steps - go to previous question
-                            setCurrentIndex(currentIndex - 1);
-                            setSelectedOption(null);
+                            isTransitioning.current = true;
+                            Animated.timing(contentFadeAnim, {
+                                toValue: 0,
+                                duration: 150,
+                                easing: Easing.in(Easing.ease),
+                                useNativeDriver: true,
+                            }).start(() => {
+                                setCurrentIndex(currentIndex - 1);
+                                setSelectedOption(null);
+                            });
                         }
                     }}
                     style={styles.backArrow}
@@ -390,32 +427,34 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                 </View>
             </View>
 
-            <View style={styles.content}>
+            <Animated.View style={[styles.content, { opacity: contentFadeAnim }]}>
 
                 <View style={styles.stepContainer}>
 
                     {/* Premium Info Page Layout for Journaling */}
                     {currentStep.type === 'info' && currentStep.id === 'research_info' ? (
                         <View style={styles.premiumInfoContainer}>
-                            {/* Lottie Animation with slide-in */}
-                            <Animated.View
-                                style={{
-                                    opacity: infoLottieAnim,
-                                    transform: [{
-                                        translateY: infoLottieAnim.interpolate({
-                                            inputRange: [0, 1],
-                                            outputRange: [30, 0],
-                                        })
-                                    }],
-                                }}
-                            >
-                                <LottieView
-                                    source={stressManagementLottie}
-                                    autoPlay
-                                    loop
-                                    style={styles.premiumLottie}
-                                />
-                            </Animated.View>
+                            {/* Lottie Animation with slide-in - hidden until animation starts */}
+                            {showLottie && (
+                                <Animated.View
+                                    style={{
+                                        opacity: infoLottieAnim,
+                                        transform: [{
+                                            translateY: infoLottieAnim.interpolate({
+                                                inputRange: [0, 1],
+                                                outputRange: [30, 0],
+                                            })
+                                        }],
+                                    }}
+                                >
+                                    <LottieView
+                                        source={stressManagementLottie}
+                                        autoPlay
+                                        loop
+                                        style={styles.premiumLottie}
+                                    />
+                                </Animated.View>
+                            )}
 
                             {/* Glassmorphic Card with slide-in */}
                             <Animated.View
@@ -643,13 +682,27 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                             <ScrollView style={styles.optionsList} showsVerticalScrollIndicator={false}>
                                 <View style={styles.optionsContainer}>
                                     {currentStep.options.map((option, index) => (
-                                        <PillOption
+                                        <Animated.View
                                             key={option.value}
-                                            label={option.label}
-                                            icon={option.icon}
-                                            selected={selectedOption === option.value}
-                                            onPress={() => setSelectedOption(option.value)}
-                                        />
+                                            style={{
+                                                opacity: index < optionFadeAnims.length ? optionFadeAnims[index] : 1,
+                                                transform: [{
+                                                    translateY: index < optionFadeAnims.length
+                                                        ? optionFadeAnims[index].interpolate({
+                                                            inputRange: [0, 1],
+                                                            outputRange: [18, 0],
+                                                        })
+                                                        : 0,
+                                                }],
+                                            }}
+                                        >
+                                            <PillOption
+                                                label={option.label}
+                                                icon={option.icon}
+                                                selected={selectedOption === option.value}
+                                                onPress={() => setSelectedOption(option.value)}
+                                            />
+                                        </Animated.View>
                                     ))}
                                 </View>
 
@@ -766,7 +819,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                         </View>
                     )}
                 </View>
-            </View>
+            </Animated.View>
         </View>
     );
 }

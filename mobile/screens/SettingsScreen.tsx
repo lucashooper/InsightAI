@@ -14,6 +14,7 @@ import StandardContainer from '../components/shared/StandardContainer';
 import PageHeader from '../components/shared/PageHeader';
 import { isTablet, sf, ss, si, iPadContentStyle } from '../utils/responsive';
 import { printSubscriptionDebugReport, resetRevenueCatOnly, nukeAllSubscriptionState } from '../utils/subscriptionDebug';
+import Constants from 'expo-constants';
 
 interface UserProfile {
   id: string;
@@ -241,11 +242,17 @@ export default function SettingsScreen({ navigation }: any) {
         });
       } else if (data) {
         console.log('✅ Profile loaded successfully:', data.username, data.profile_picture_url);
-        // Only use profile picture if it's a valid URL (starts with http/https)
-        const validProfilePicture = data.profile_picture_url && 
-          (data.profile_picture_url.startsWith('http://') || data.profile_picture_url.startsWith('https://'))
-          ? data.profile_picture_url
-          : null;
+        // Accept full URLs or relative Supabase storage paths
+        let validProfilePicture: string | null = null;
+        if (data.profile_picture_url) {
+          if (data.profile_picture_url.startsWith('http://') || data.profile_picture_url.startsWith('https://')) {
+            validProfilePicture = data.profile_picture_url;
+          } else if (data.profile_picture_url.startsWith('/')) {
+            // Relative path from Supabase storage - construct full URL
+            const supabaseUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL || '';
+            validProfilePicture = `${supabaseUrl}/storage/v1/object/public/profile-pictures${data.profile_picture_url}`;
+          }
+        }
         // Cache the profile picture URL for persistence
         if (validProfilePicture) {
           await AsyncStorage.setItem('CACHED_PROFILE_PICTURE', validProfilePicture);
@@ -389,17 +396,11 @@ export default function SettingsScreen({ navigation }: any) {
           .from('profile-pictures')
           .getPublicUrl(filePath);
 
-        // Try to update user profile (match desktop by using user_id)
-        // Only update the picture URL so we don't overwrite existing username/email
+        // Update profile picture URL in existing profile row
         const { error: updateError } = await supabase
           .from('user_profiles')
-          .upsert(
-            {
-              user_id: user.id,
-              profile_picture_url: urlData.publicUrl,
-            },
-            { onConflict: 'user_id' }
-          );
+          .update({ profile_picture_url: urlData.publicUrl })
+          .eq('user_id', user.id);
 
         if (updateError) {
           console.log('Could not save to database, updating local state only:', updateError);
@@ -529,10 +530,14 @@ export default function SettingsScreen({ navigation }: any) {
                     <Image
                       source={{ uri: userProfile.profile_picture_url }}
                       style={styles.avatarImage}
+                      onError={() => {
+                        // Image failed to load (invalid URL) - clear it to show placeholder
+                        setUserProfile(prev => prev ? { ...prev, profile_picture_url: null } : prev);
+                      }}
                     />
                   ) : (
                     <View style={styles.avatarPlaceholder}>
-                      <Ionicons name="person-circle-outline" size={isTablet ? 80 : 60} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.6)' : '#6B6B6B'} />
+                      <Ionicons name="person" size={isTablet ? 36 : 28} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.5)' : '#8b5cf6'} />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -1264,6 +1269,9 @@ const styles = StyleSheet.create({
     borderRadius: isTablet ? 40 : 30,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(139, 92, 246, 0.2)',
   },
   avatarText: {
     fontSize: 24,

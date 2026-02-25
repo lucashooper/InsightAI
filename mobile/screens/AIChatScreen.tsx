@@ -485,7 +485,7 @@ export default function AIChatScreen({ navigation }: any) {
     </View>
   );
 
-  const isDark = theme.name !== 'light';
+  // Always use dark theme for Insight chat screen regardless of app theme
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
@@ -497,12 +497,12 @@ export default function AIChatScreen({ navigation }: any) {
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Ionicons name="chevron-down" size={28} color={isDark ? '#fff' : '#1a1a1a'} />
+          <Ionicons name="chevron-down" size={28} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.headerCenter} onPress={() => setShowPersonality(true)} activeOpacity={0.7}>
           <View style={styles.headerDot} />
-          <Text style={[styles.headerTitle, { color: isDark ? '#fff' : '#1a1a1a' }]}>Insight</Text>
-          <Ionicons name="chevron-down" size={14} color={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'} />
+          <Text style={[styles.headerTitle, { color: '#fff' }]}>Insight</Text>
+          <Ionicons name="chevron-down" size={14} color="rgba(255,255,255,0.4)" />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.headerBtn}
@@ -512,7 +512,7 @@ export default function AIChatScreen({ navigation }: any) {
           }}
           activeOpacity={0.7}
         >
-          <Ionicons name="chatbubbles-outline" size={22} color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.4)'} />
+          <Ionicons name="chatbubbles-outline" size={22} color="rgba(255,255,255,0.6)" />
         </TouchableOpacity>
       </View>
 
@@ -545,7 +545,7 @@ export default function AIChatScreen({ navigation }: any) {
         <View style={[
           styles.inputContainer,
           { paddingBottom: Math.max(insets.bottom, 12) },
-          { backgroundColor: isDark ? 'rgba(10,10,10,0.95)' : 'rgba(248,247,255,0.95)' },
+          { backgroundColor: 'rgba(10,10,10,0.95)' },
         ]}>
           {/* Usage indicator for free users */}
           {!isProUser && (
@@ -574,7 +574,7 @@ export default function AIChatScreen({ navigation }: any) {
           )}
           <View style={[
             styles.inputWrapper,
-            { backgroundColor: isDark ? '#1a1a2e' : '#f0ebff', borderColor: isDark ? '#2a2a3e' : '#e0d8ff' },
+            { backgroundColor: '#1a1a2e', borderColor: '#2a2a3e' },
           ]}>
             <TouchableOpacity
               style={styles.voiceButton}
@@ -584,13 +584,13 @@ export default function AIChatScreen({ navigation }: any) {
               }}
               activeOpacity={0.7}
             >
-              <Ionicons name="mic-outline" size={20} color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'} />
+              <Ionicons name="mic-outline" size={20} color="rgba(255,255,255,0.6)" />
             </TouchableOpacity>
             <TextInput
               ref={inputRef}
-              style={[styles.textInput, { color: isDark ? '#fff' : '#1a1a1a' }]}
+              style={[styles.textInput, { color: '#fff' }]}
               placeholder="Ask me anything..."
-              placeholderTextColor={isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)'}
+              placeholderTextColor="rgba(255,255,255,0.35)"
               value={inputText}
               onChangeText={setInputText}
               multiline
@@ -618,15 +618,15 @@ export default function AIChatScreen({ navigation }: any) {
       {/* Chat History Modal */}
       <Modal visible={showHistory} animationType="slide" transparent>
         <View style={[styles.modalOverlay, { paddingTop: insets.top }]}>
-          <View style={[styles.modalContent, { backgroundColor: isDark ? '#111' : '#fff' }]}>
+          <View style={[styles.modalContent, { backgroundColor: '#111' }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: isDark ? '#fff' : '#1a1a1a' }]}>Chats</Text>
+              <Text style={styles.modalTitle}>Chats</Text>
               <View style={{ flexDirection: 'row', gap: 12 }}>
                 <TouchableOpacity onPress={startNewChat} activeOpacity={0.7}>
                   <Ionicons name="add-circle" size={28} color="#8b5cf6" />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => setShowHistory(false)} activeOpacity={0.7}>
-                  <Ionicons name="close" size={28} color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.4)'} />
+                  <Ionicons name="close" size={28} color="rgba(255,255,255,0.6)" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -639,7 +639,7 @@ export default function AIChatScreen({ navigation }: any) {
                     key={chat.id}
                     style={[
                       styles.chatHistoryItem,
-                      { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' },
+                      { backgroundColor: 'rgba(255,255,255,0.05)' },
                       currentChatId === chat.id && { borderColor: '#8b5cf6', borderWidth: 1 },
                     ]}
                     onPress={() => loadChat(chat)}
@@ -652,7 +652,7 @@ export default function AIChatScreen({ navigation }: any) {
                     activeOpacity={0.7}
                   >
                     <View style={{ flex: 1 }}>
-                      <Text style={[styles.chatHistoryTitle, { color: isDark ? '#fff' : '#1a1a1a' }]} numberOfLines={1}>
+                      <Text style={[styles.chatHistoryTitle, { color: '#fff' }]} numberOfLines={1}>
                         {chat.title}
                       </Text>
                       <Text style={styles.chatHistoryDate}>
@@ -675,8 +675,8 @@ export default function AIChatScreen({ navigation }: any) {
           activeOpacity={1}
           onPress={() => setShowPersonality(false)}
         >
-          <View style={[styles.personalitySheet, { backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
-            <Text style={[styles.personalityTitle, { color: isDark ? '#fff' : '#1a1a1a' }]}>AI Personality</Text>
+          <View style={[styles.personalitySheet, { backgroundColor: '#1a1a1a' }]}>
+            <Text style={[styles.personalityTitle, { color: '#fff' }]}>AI Personality</Text>
             {PERSONALITIES.map(p => (
               <TouchableOpacity
                 key={p.key}
@@ -693,7 +693,7 @@ export default function AIChatScreen({ navigation }: any) {
               >
                 <Text style={{ fontSize: 20 }}>{p.emoji}</Text>
                 <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={[styles.personalityLabel, { color: isDark ? '#fff' : '#1a1a1a' }]}>{p.label}</Text>
+                  <Text style={[styles.personalityLabel, { color: '#fff' }]}>{p.label}</Text>
                   <Text style={styles.personalityDesc}>{p.desc}</Text>
                 </View>
                 {personality === p.key && <Ionicons name="checkmark-circle" size={22} color="#8b5cf6" />}

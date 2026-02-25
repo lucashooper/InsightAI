@@ -38,6 +38,8 @@ interface DiaryEntry {
   mood?: string;
   ai_structured_insights?: any;
   is_favorite?: boolean;
+  entry_type?: string;
+  prompt_text?: string;
 }
 
 interface StreakData {
@@ -61,7 +63,7 @@ export default function HomeScreen({ navigation, route }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [searchQuery, setSearchQuery] = useState(route?.params?.searchQuery || '');
-  const [filter, setFilter] = useState<'all' | 'analyzed' | 'unanalyzed' | 'favorites'>('all');
+  const [filter, setFilter] = useState<'all' | 'analyzed' | 'unanalyzed' | 'favorites' | 'prompts'>('all');
   const [hiddenEntryIds, setHiddenEntryIds] = useState<Set<string>>(new Set());
   const [dominantEmotions, setDominantEmotions] = useState<{ emotion: string; percentage: number }[]>([]);
   const [moodIndicatorsEnabled, setMoodIndicatorsEnabled] = useState(true);
@@ -140,6 +142,8 @@ export default function HomeScreen({ navigation, route }: any) {
         return !isAnalyzed;
       case 'favorites':
         return !!entry.is_favorite;
+      case 'prompts':
+        return entry.entry_type === 'prompt';
       default:
         return true;
     }
@@ -581,6 +585,12 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
             )}
           </View>
           <View style={styles.entryHeader}>
+            {item.entry_type === 'prompt' && (
+              <View style={[styles.insightBadge, { backgroundColor: 'rgba(139, 92, 246, 0.9)' }]}>
+                <Ionicons name="bulb" size={12} color="#ffffff" />
+                <Text style={styles.insightBadgeText}>Prompt</Text>
+              </View>
+            )}
             {hasInsights && (
               <View style={styles.insightBadge}>
                 <Ionicons name="sparkles" size={12} color="#ffffff" />
@@ -676,7 +686,8 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
           { key: 'all', label: 'All' },
           { key: 'analyzed', label: 'Analyzed' },
           { key: 'unanalyzed', label: 'Unanalyzed' },
-          { key: 'favorites', label: ' Favorites' },
+          { key: 'favorites', label: '⭐ Favorites' },
+          { key: 'prompts', label: '💡 Prompts' },
         ].map((chip) => (
           <TouchableOpacity
             key={chip.key}

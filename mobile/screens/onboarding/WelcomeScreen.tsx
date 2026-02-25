@@ -8,62 +8,13 @@ const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 export default function WelcomeScreen({ navigation }: any) {
     useEffect(() => {
-        let isMounted = true;
-        let timer: ReturnType<typeof setTimeout> | undefined;
-
-        (async () => {
-            try {
-                await Asset.fromModule(insightLogo).downloadAsync();
-            } catch {
-                // no-op
-            }
-
-            if (!isMounted) return;
-
-            timer = setTimeout(() => {
-                navigation.replace('ProductReveal');
-            }, 1700);
-        })();
-
-        return () => {
-            isMounted = false;
-            if (timer) clearTimeout(timer);
-        };
+        // Skip WelcomeScreen splash - App.tsx already shows splash
+        // Navigate immediately to ProductReveal
+        navigation.replace('ProductReveal');
     }, [navigation]);
 
-    const handleContinue = () => {
-        navigation.replace('ProductReveal');
-    };
-
-    return (
-        <TouchableWithoutFeedback onPress={handleContinue}>
-            <View style={styles.container}>
-                <SunoGradient />
-                <StatusBar barStyle="dark-content" />
-
-                <View style={styles.content}>
-                    {/* Logo + Heading - Text Centered, Logo Hanging Left */}
-                    <View style={styles.headerContainer}>
-                        <Image
-                            source={insightLogo}
-                            style={styles.splashLogo}
-                            resizeMode="cover"
-                        />
-                        <Text style={styles.brandNameTop}>Insight</Text>
-                    </View>
-
-                    {/* Big Phone Mockup */}
-                    {null}
-
-                    {/* Tagline Below */}
-                    {null}
-
-                    {/* CTA Button */}
-                    {null}
-                </View>
-            </View>
-        </TouchableWithoutFeedback>
-    );
+    // Return null while navigating - no splash needed
+    return null;
 }
 
 const styles = StyleSheet.create({

@@ -1,16 +1,20 @@
 import 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, Text, Image } from 'react-native';
+import React from 'react';
 import Purchases from 'react-native-purchases';
 import { Asset } from 'expo-asset';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { OnboardingProvider } from './contexts/OnboardingContext';
 import { AppLockProvider, useAppLock } from './contexts/AppLockContext';
 import AppNavigator from './navigation/AppNavigator';
 import LockScreen from './components/LockScreen';
 import { EncryptionService } from './services/encryptionService';
+import SunoGradient from './components/onboarding/SunoGradient';
+
+const insightLogo = require('./public/Insight-Logo-nobg.webp');
 
 // RevenueCat API Keys
 // Test Store: Bypasses Apple sandbox, works in simulator, instant testing
@@ -91,60 +95,6 @@ export default function App() {
           console.error('[REVENUECAT] Error details:', customerInfoError.message);
         }
 
-        // === SUPABASE FETCH DIAGNOSTIC ===
-        console.log('=== SUPABASE FETCH DIAGNOSTIC START ===');
-        const SUPA_URL = 'https://ptpqvghlaesyrzlljzkk.supabase.co';
-        const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0cHF2Z2hsYWVzeXJ6bGxqemtrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxMDc4MzEsImV4cCI6MjA2ODY4MzgzMX0.dmkb2_Hdf0vQwirOwJKX4ssfr0ltA1eIZ5_v1s5p6DE';
-        
-        // Test 1: Raw fetch to Supabase REST API
-        try {
-          console.log('[DIAG] Test 1: Raw fetch to Supabase REST API...');
-          const t1 = Date.now();
-          const resp = await fetch(`${SUPA_URL}/rest/v1/user_profiles?select=username&limit=1`, {
-            headers: {
-              'apikey': SUPA_KEY,
-              'Authorization': `Bearer ${SUPA_KEY}`,
-              'Content-Type': 'application/json',
-            },
-          });
-          console.log(`[DIAG] Test 1 completed in ${Date.now() - t1}ms - Status: ${resp.status}`);
-          const body = await resp.text();
-          console.log(`[DIAG] Test 1 response body: ${body.substring(0, 200)}`);
-        } catch (e: any) {
-          console.error(`[DIAG] Test 1 FAILED: ${e.message}`);
-        }
-
-        // Test 2: Supabase client query
-        try {
-          console.log('[DIAG] Test 2: Supabase client query...');
-          const { supabase: supa } = require('./lib/supabase');
-          const t2 = Date.now();
-          const { data, error } = await supa
-            .from('user_profiles')
-            .select('username')
-            .limit(1);
-          console.log(`[DIAG] Test 2 completed in ${Date.now() - t2}ms`);
-          console.log(`[DIAG] Test 2 result:`, data, error?.message || 'no error');
-        } catch (e: any) {
-          console.error(`[DIAG] Test 2 FAILED: ${e.message}`);
-        }
-
-        // Test 3: Supabase auth check
-        try {
-          console.log('[DIAG] Test 3: Supabase auth getSession...');
-          const { supabase: supa } = require('./lib/supabase');
-          const t3 = Date.now();
-          const { data: { session }, error } = await supa.auth.getSession();
-          console.log(`[DIAG] Test 3 completed in ${Date.now() - t3}ms`);
-          console.log(`[DIAG] Test 3 session:`, !!session, error?.message || 'no error');
-          if (session) {
-            console.log(`[DIAG] Test 3 user:`, session.user.id, session.user.email);
-          }
-        } catch (e: any) {
-          console.error(`[DIAG] Test 3 FAILED: ${e.message}`);
-        }
-        console.log('=== SUPABASE FETCH DIAGNOSTIC END ===');
-
         // Test encryption on startup
         console.log('=== ENCRYPTION TEST START ===');
         try {
@@ -175,30 +125,63 @@ export default function App() {
     loadResourcesAndDataAsync();
   }, []);
 
-  if (!assetsLoaded) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
-        <ActivityIndicator size="large" color="#a855f7" />
-      </View>
-    );
-  }
+  const [appReady, setAppReady] = useState(false);
+
+  console.log('[APP RENDER] assetsLoaded:', assetsLoaded, 'appReady:', appReady);
 
   return (
-    <ThemeProvider>
-      <AppLockProvider>
-        <AuthProvider>
-          <OnboardingProvider>
-            <AppContent />
-            <StatusBar style="light" />
-          </OnboardingProvider>
-        </AuthProvider>
-      </AppLockProvider>
-    </ThemeProvider>
+    <View style={{ flex: 1 }}>
+      {/* Providers and navigator render underneath from the start */}
+      {assetsLoaded ? (
+        <ThemeProvider>
+          <AppLockProvider>
+            <AuthProvider>
+              <OnboardingProvider>
+                <AppContent onReady={() => setAppReady(true)} />
+                <StatusBar style="light" />
+              </OnboardingProvider>
+            </AuthProvider>
+          </AppLockProvider>
+        </ThemeProvider>
+      ) : (
+        <View style={{ flex: 1 }} />
+      )}
+
+      {/* Single splash overlay - stays on top until app is fully ready */}
+      {!appReady && (() => {
+        console.log('[SPLASH OVERLAY] Rendering splash overlay');
+        return (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}>
+          <SunoGradient />
+          <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+            <Image
+              source={insightLogo}
+              style={{ width: 64, height: 64, borderRadius: 16, marginRight: 14 }}
+              resizeMode="cover"
+            />
+            <Text style={{ fontSize: 44, fontWeight: '700', color: '#1a1a2e', letterSpacing: -1.2 }}>
+              Insight
+            </Text>
+          </View>
+        </View>
+        );
+      })()}
+    </View>
   );
 }
 
-function AppContent() {
+function AppContent({ onReady }: { onReady: () => void }) {
   const { isLocked, isLockEnabled } = useAppLock();
+  const { loading: authLoading } = useAuth();
+
+  // Signal ready once auth has finished loading
+  useEffect(() => {
+    if (!authLoading) {
+      // Small delay to let navigator render its first frame
+      const timer = setTimeout(onReady, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [authLoading, onReady]);
 
   return (
     <View style={{ flex: 1 }}>

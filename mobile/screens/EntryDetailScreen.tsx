@@ -705,16 +705,57 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
             </View>
           )}
 
-          <TextInput
-            style={[styles.contentInput, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}
-            value={editableContent}
-            onChangeText={setEditableContent}
-            multiline
-            textAlignVertical="top"
-            placeholder="What's on your mind?"
-            placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'}
-            autoFocus={false}
-          />
+          {/* Beautiful Prompt Display for prompt entries */}
+          {(() => {
+            const promptMatch = editableContent.match(/\[Insight Prompt: ([^\]]+)\]/);
+            if (promptMatch && entry?.entry_type === 'prompt') {
+              const promptText = promptMatch[1];
+              const userResponse = editableContent.replace(/\[Insight Prompt: [^\]]+\]\n\n/, '');
+              return (
+                <>
+                  <View style={[styles.promptDisplayCard, { 
+                    backgroundColor: isDarkTheme(theme.name) ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.08)',
+                    borderColor: isDarkTheme(theme.name) ? 'rgba(139, 92, 246, 0.3)' : 'rgba(139, 92, 246, 0.2)'
+                  }]}>
+                    <View style={styles.promptBadgeRow}>
+                      <Ionicons name="bulb" size={18} color="#8b5cf6" />
+                      <Text style={[styles.promptBadgeLabel, { color: isDarkTheme(theme.name) ? 'rgba(139, 92, 246, 0.9)' : '#7c3aed' }]}>
+                        Today's Insight
+                      </Text>
+                    </View>
+                    <Text style={[styles.promptQuestionText, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>
+                      {promptText}
+                    </Text>
+                  </View>
+                  <Text style={[styles.responseLabel, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>
+                    Your Reflection
+                  </Text>
+                  <TextInput
+                    style={[styles.contentInput, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}
+                    value={userResponse}
+                    onChangeText={(text) => setEditableContent(`[Insight Prompt: ${promptText}]\n\n${text}`)}
+                    multiline
+                    textAlignVertical="top"
+                    placeholder="Your thoughts..."
+                    placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'}
+                    autoFocus={false}
+                  />
+                </>
+              );
+            }
+            return (
+              <TextInput
+                style={[styles.contentInput, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}
+                value={editableContent}
+                onChangeText={setEditableContent}
+                multiline
+                textAlignVertical="top"
+                placeholder="What's on your mind?"
+                placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'}
+                autoFocus={false}
+              />
+            );
+          })()}
           
           {structuredInsights && (
             <View style={styles.inlineInsightsSection}>
@@ -1631,5 +1672,34 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 8,
+  },
+  promptDisplayCard: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+  },
+  promptBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  promptBadgeLabel: {
+    fontSize: sf(13),
+    fontWeight: '600',
+    letterSpacing: -0.2,
+  },
+  promptQuestionText: {
+    fontSize: sf(18),
+    fontWeight: '600',
+    lineHeight: sf(26),
+    letterSpacing: -0.3,
+  },
+  responseLabel: {
+    fontSize: sf(14),
+    fontWeight: '600',
+    marginBottom: 12,
+    letterSpacing: -0.2,
   },
 });

@@ -255,23 +255,23 @@ export default function PaywallScreen({ navigation, route }: any) {
         console.log('[Paywall] User in onboarding flow - completing onboarding');
         
         try {
-          // Save username to profile and mark onboarding complete
-          await saveUsernameToProfile();
-          console.log('[Paywall] ✅ Username saved to profile');
-          
-          // Check if user has email (didn't skip email signup)
+          // Check if user has a Supabase account with email
           const hasEmail = user?.email && !user.email.includes('privaterelay');
-          console.log('[Paywall] User email:', user?.email);
-          console.log('[Paywall] Has valid email (not privaterelay):', hasEmail);
+          console.log('[Paywall] User:', user?.id || 'none');
+          console.log('[Paywall] Has valid email:', hasEmail);
           
-          if (!hasEmail) {
-            // User skipped email signup - show welcome screen then prompt to create account
+          if (!user || !hasEmail) {
+            // No Supabase account or no email - prompt to create account
+            // RevenueCat subscription is already active on their anonymous ID
+            // When they create an account, we'll link it via Purchases.logIn()
             await AsyncStorage.setItem('NEEDS_EMAIL_SIGNUP', 'true');
             console.log('[Paywall] ✅ Set NEEDS_EMAIL_SIGNUP flag');
             console.log('[Paywall] 🚀 Navigating to PostPurchaseWelcome');
             navigation.navigate('PostPurchaseWelcome');
           } else {
-            // User has email - mark onboarding complete and go to main app
+            // User has Supabase account with email - save profile and go to main app
+            await saveUsernameToProfile();
+            console.log('[Paywall] ✅ Username saved to profile');
             await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
             console.log('[Paywall] ✅ Set HAS_COMPLETED_ONBOARDING flag');
             console.log('[Paywall] 🚀 Navigating to MainTabs via reset');
@@ -282,13 +282,10 @@ export default function PaywallScreen({ navigation, route }: any) {
           }
         } catch (navError) {
           console.error('[Paywall] ❌ Error during post-purchase navigation:', navError);
-          // Fallback - still try to navigate to main app
-          console.log('[Paywall] 🔄 Attempting fallback navigation to MainTabs');
-          await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'MainTabs' }],
-          });
+          // Fallback - navigate to PostPurchaseWelcome to prompt account creation
+          console.log('[Paywall] 🔄 Attempting fallback navigation');
+          await AsyncStorage.setItem('NEEDS_EMAIL_SIGNUP', 'true');
+          navigation.navigate('PostPurchaseWelcome');
         }
       }
     } else {
@@ -304,39 +301,11 @@ export default function PaywallScreen({ navigation, route }: any) {
     console.log('[REVENUECAT] Selected plan:', selectedPlan);
     console.log('[REVENUECAT] Current user:', user?.id || 'none');
     
-    // If no user is signed in, create an anonymous account first
+    // If no user is signed in, proceed with RevenueCat's anonymous ID
+    // No Supabase account needed for purchasing - user will create account after
     if (!user) {
-      console.log('[Paywall] No user signed in, creating anonymous account...');
-      try {
-        // Create anonymous Supabase account
-        const { data: anonData, error: anonError } = await supabase.auth.signInAnonymously();
-        
-        if (anonError) {
-          console.error('[Paywall] Failed to create anonymous account:', anonError);
-          Alert.alert(
-            'Sign In Required',
-            'Please sign in to purchase a subscription. You can use "Continue with Google" or "Continue with Apple" for a quick sign-in.',
-            [{ text: 'OK' }]
-          );
-          return;
-        }
-        
-        console.log('[Paywall] ✅ Anonymous account created:', anonData.user?.id);
-        
-        // Link RevenueCat to the anonymous user
-        await Purchases.logIn(anonData.user!.id);
-        console.log('[Paywall] ✅ RevenueCat linked to anonymous account');
-        
-        // Set flag to prompt for email after purchase
-        await AsyncStorage.setItem('NEEDS_EMAIL_SIGNUP', 'true');
-        console.log('[Paywall] ✅ Set NEEDS_EMAIL_SIGNUP flag for anonymous user');
-        
-        // Continue with purchase flow (user will now be set via AuthContext)
-      } catch (err) {
-        console.error('[Paywall] Error creating anonymous account:', err);
-        Alert.alert('Error', 'Failed to prepare purchase. Please try again.');
-        return;
-      }
+      console.log('[Paywall] No Supabase user - proceeding with RevenueCat anonymous ID');
+      await AsyncStorage.setItem('NEEDS_EMAIL_SIGNUP', 'true');
     }
     
     const selectedPackage = getSelectedPackage();
@@ -355,25 +324,22 @@ export default function PaywallScreen({ navigation, route }: any) {
             onPress: async () => {
               console.log('[REVENUECAT] User continuing without purchase');
               
-              // Save username to profile and mark onboarding complete
-              await saveUsernameToProfile();
-              
-              // Check if user has email (didn't skip email signup)
               const hasEmail = user?.email && !user.email.includes('privaterelay');
-              console.log('[Paywall] User has email:', hasEmail);
               
-              if (!hasEmail) {
-                // User skipped email signup - store flag to show email prompt overlay
+              if (user && hasEmail) {
+                // User has account with email - save profile and go to main app
+                await saveUsernameToProfile();
+                await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'MainTabs' }],
+                });
+              } else {
+                // No account or no email - prompt to create account
                 await AsyncStorage.setItem('NEEDS_EMAIL_SIGNUP', 'true');
-                console.log('[Paywall] User needs email signup, flag set');
+                console.log('[Paywall] No account - navigating to PostPurchaseWelcome');
+                navigation.navigate('PostPurchaseWelcome');
               }
-              
-              // Navigate to main app
-              console.log('[Paywall] Navigating to MainTabs (no subscription)');
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'MainTabs' }],
-              });
             }
           }
         ]

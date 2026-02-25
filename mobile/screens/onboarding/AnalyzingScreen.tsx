@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, Animated } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
@@ -18,6 +18,7 @@ const STATUS_MESSAGES = [
 export default function AnalyzingScreen({ navigation }: Props) {
     const { theme } = useTheme();
     const [statusIndex, setStatusIndex] = useState(0);
+    const fadeAnim = useRef(new Animated.Value(1)).current;
 
     useEffect(() => {
         // Navigate after 9 seconds
@@ -25,9 +26,23 @@ export default function AnalyzingScreen({ navigation }: Props) {
             navigation.replace('OnboardingSummary');
         }, 9000);
 
-        // Cycle through status messages every 2.25 seconds (9s / 4 messages)
+        // Cycle through status messages with fade transition
         const interval = setInterval(() => {
-            setStatusIndex((prev) => (prev + 1) % STATUS_MESSAGES.length);
+            // Fade out
+            Animated.timing(fadeAnim, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+            }).start(() => {
+                // Change text while invisible
+                setStatusIndex((prev) => (prev + 1) % STATUS_MESSAGES.length);
+                // Fade in
+                Animated.timing(fadeAnim, {
+                    toValue: 1,
+                    duration: 400,
+                    useNativeDriver: true,
+                }).start();
+            });
         }, 2250);
 
         return () => {
@@ -45,10 +60,10 @@ export default function AnalyzingScreen({ navigation }: Props) {
             )}
             
             <View style={styles.content}>
-                {/* Status Text */}
-                <Text style={[styles.statusText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#374151' }]}>
+                {/* Status Text with fade transition */}
+                <Animated.Text style={[styles.statusText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#374151', opacity: fadeAnim }]}>
                     {STATUS_MESSAGES[statusIndex]}
-                </Text>
+                </Animated.Text>
 
                 {/* Simple Loading Circle */}
                 <ActivityIndicator 

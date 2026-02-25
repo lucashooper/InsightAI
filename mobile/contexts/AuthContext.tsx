@@ -180,6 +180,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (encError) {
         console.error('[Auth] Failed to initialize encryption key:', encError);
       }
+
+      // Check if user has a profile, create one if missing
+      try {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('id')
+          .eq('user_id', data.user.id)
+          .maybeSingle();
+
+        if (!profile) {
+          console.log('[Auth] No profile found, creating one for existing user');
+          const username = data.user.email?.split('@')[0] || 'User';
+          await supabase.from('user_profiles').insert({
+            user_id: data.user.id,
+            username: username,
+            onboarding_completed_at: new Date().toISOString(),
+            subscription_tier: 'free',
+          });
+          await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+          console.log('[Auth] Profile created for existing user');
+        }
+      } catch (profileError) {
+        console.error('[Auth] Failed to check/create profile:', profileError);
+      }
     }
     
     return { error };
@@ -495,6 +519,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await AsyncStorage.removeItem('NEEDS_EMAIL_SIGNUP');
       await AsyncStorage.removeItem('SKIP_NAME_STEP');
       await AsyncStorage.removeItem('CACHED_USERNAME');
+      await AsyncStorage.removeItem('CACHED_PROFILE_PICTURE');
       await AsyncStorage.removeItem('ONBOARDING_RESUME_SCREEN');
       await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
       console.log('[Auth] Cleared all onboarding/session flags on sign out');

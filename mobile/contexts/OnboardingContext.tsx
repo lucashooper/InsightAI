@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from './AuthContext';
 
 interface OnboardingContextType {
   userName: string;
@@ -12,8 +13,23 @@ interface OnboardingContextType {
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
 
 export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
+  const { user } = useAuth();
   const [userName, setUserName] = useState<string>('');
   const [onboardingAnswers, setOnboardingAnswers] = useState<Record<string, string>>({});
+  const prevUserIdRef = useRef<string | null>(null);
+
+  // CRITICAL: Reset all onboarding state when user signs out
+  // This ensures a completely blank slate on the onboarding page
+  useEffect(() => {
+    const currentUserId = user?.id || null;
+    if (prevUserIdRef.current !== null && currentUserId === null) {
+      // User just signed out - reset everything
+      console.log('[OnboardingContext] User signed out - resetting all state');
+      setUserName('');
+      setOnboardingAnswers({});
+    }
+    prevUserIdRef.current = currentUserId;
+  }, [user]);
 
   // Load cached username on mount (for Apple/Google Sign-In users)
   useEffect(() => {
