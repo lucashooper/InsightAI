@@ -104,10 +104,45 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
 
   return (
     <Animated.View style={[styles.overlay, { opacity }]}>
+      {/* Base dark background for orb glow */}
       <LinearGradient
-        colors={theme.colors.backgroundGradient as any}
+        colors={dark ? ['#0d0d1a', '#0f0a1a', '#0d0d1a'] : ['#f8f9fa', '#e9ecef', '#f1f3f5']}
         style={styles.background}
       />
+      
+      {/* Premium soft ambient orbs - Figma design */}
+      <View style={styles.orbsContainer}>
+        {/* Purple orb - top right */}
+        <View style={styles.purpleOrbWrapper}>
+          <LinearGradient
+            colors={['rgba(139, 92, 246, 0.5)', 'rgba(139, 92, 246, 0.3)', 'transparent']}
+            style={styles.purpleOrb}
+            start={{ x: 0.5, y: 0.5 }}
+            end={{ x: 1, y: 1 }}
+          />
+        </View>
+        
+        {/* Green/teal orb - bottom left */}
+        <View style={styles.greenOrbWrapper}>
+          <LinearGradient
+            colors={['rgba(16, 185, 129, 0.45)', 'rgba(16, 185, 129, 0.25)', 'transparent']}
+            style={styles.greenOrb}
+            start={{ x: 0.5, y: 0.5 }}
+            end={{ x: 1, y: 1 }}
+          />
+        </View>
+        
+        {/* Amber orb - bottom right for depth */}
+        <View style={styles.amberOrbWrapper}>
+          <LinearGradient
+            colors={['rgba(245, 158, 11, 0.4)', 'rgba(245, 158, 11, 0.2)', 'transparent']}
+            style={styles.amberOrb}
+            start={{ x: 0.5, y: 0.5 }}
+            end={{ x: 1, y: 1 }}
+          />
+        </View>
+      </View>
+      
       {dark && <View style={styles.scrim} />}
 
       {props.variant === 'loading' ? (
@@ -382,6 +417,55 @@ const styles = StyleSheet.create({
   background: {
     ...StyleSheet.absoluteFillObject,
   },
+  orbsContainer: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
+  },
+  // Purple orb - top right
+  purpleOrbWrapper: {
+    position: 'absolute',
+    top: -80,
+    right: -60,
+    width: 380,
+    height: 380,
+    opacity: 0.6,
+    transform: [{ scaleX: 1.4 }],
+  },
+  purpleOrb: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 190,
+  },
+  // Green orb - bottom left
+  greenOrbWrapper: {
+    position: 'absolute',
+    bottom: 40,
+    left: -80,
+    width: 340,
+    height: 340,
+    opacity: 0.5,
+    transform: [{ scaleY: 1.3 }],
+  },
+  greenOrb: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 170,
+  },
+  // Amber orb - bottom right for depth
+  amberOrbWrapper: {
+    position: 'absolute',
+    bottom: -60,
+    right: -40,
+    width: 300,
+    height: 300,
+    opacity: 0.45,
+    transform: [{ scaleX: 1.2 }, { scaleY: 1.1 }],
+  },
+  amberOrb: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 150,
+  },
   scrim: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.55)',
@@ -391,6 +475,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 28,
+    zIndex: 10,
   },
   loadingText: {
     fontSize: 18,
@@ -428,13 +513,13 @@ const styles = StyleSheet.create({
     paddingTop: 80,
     paddingHorizontal: 24,
     paddingBottom: 20,
+    zIndex: 10,
   },
   resultsTitle: {
-    fontSize: 26,
+    fontSize: 32,
     fontWeight: '700',
-    fontStyle: 'italic',
-    letterSpacing: -0.8,
-    marginBottom: 4,
+    letterSpacing: -1,
+    marginBottom: 8,
     textAlign: 'center',
     paddingHorizontal: 8,
   },
@@ -452,17 +537,18 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   resultsCard: {
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    backgroundColor: 'rgba(20, 20, 20, 0.85)',
-    padding: 20,
-    marginBottom: 14,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(30, 30, 45, 0.75)',
+    padding: 24,
+    marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
+    overflow: 'hidden',
   },
   accordionSection: {
     marginBottom: 14,
@@ -473,22 +559,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
+    padding: 18,
+    borderRadius: 20,
+    borderWidth: 1.5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
   },
   strengthsAccordion: {
-    backgroundColor: 'rgba(16, 185, 129, 0.08)',
-    borderColor: 'rgba(16, 185, 129, 0.25)',
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    borderColor: 'rgba(16, 185, 129, 0.35)',
   },
   growthAccordion: {
-    backgroundColor: 'rgba(245, 158, 11, 0.08)',
-    borderColor: 'rgba(245, 158, 11, 0.25)',
+    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+    borderColor: 'rgba(245, 158, 11, 0.35)',
   },
   accordionHeaderLeft: {
     flexDirection: 'row',
@@ -695,13 +781,20 @@ const styles = StyleSheet.create({
   },
   growthCard: {
     flexDirection: 'row',
-    borderRadius: 14,
-    backgroundColor: 'rgba(245, 158, 11, 0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.2)',
+    borderRadius: 16,
+    backgroundColor: 'rgba(30, 30, 45, 0.6)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(245, 158, 11, 0.25)',
     overflow: 'hidden',
-    marginTop: 10,
-    marginBottom: 2,
+    marginTop: 12,
+    marginBottom: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+    
+    
   },
   growthCardBorder: {
     width: 4,

@@ -49,6 +49,7 @@ export default function PaywallScreen({ navigation, route }: any) {
   const carouselRef = useRef<FlatList>(null);
 
   useEffect(() => {
+    console.log('[Paywall] 🔄 UPDATED VERSION LOADED - Subscription boxes now dark gray for dark theme compatibility');
     const loadOfferings = async () => {
       try {
         // NOTE: We don't invalidate cache here because:
@@ -766,7 +767,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: isTablet ? sf(38) : sf(36),
     fontWeight: '600',
-    color: '#1a1a2e',
+    color: '#ffffff',
     letterSpacing: -0.5,
     textAlign: 'center',
     lineHeight: isTablet ? sf(46) : sf(43),
@@ -820,17 +821,17 @@ const styles = StyleSheet.create({
   },
   compactPlan: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    backgroundColor: 'rgba(30, 30, 40, 0.85)', // CHANGED: was white, now dark gray
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 8,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(0, 0, 0, 0.12)',
+    borderColor: 'rgba(255, 255, 255, 0.15)', // CHANGED: was black border
     position: 'relative',
   },
   compactPlanSelected: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: 'rgba(139, 92, 246, 0.2)',
     borderColor: '#8b5cf6',
     borderWidth: 2.5,
     shadowColor: '#8b5cf6',
@@ -840,31 +841,31 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   compactPlanName: {
-    fontSize: sf(15),
+    fontSize: sf(14),
     fontWeight: '700',
-    color: '#1a1a2e',
+    color: '#ffffff',
     marginBottom: 4,
   },
   compactPlanNameSelected: {
-    color: '#1a1a2e',
+    color: '#ffffff',
     fontWeight: '700',
   },
   compactPlanDaily: {
-    fontSize: sf(14),
+    fontSize: sf(18),
     fontWeight: '800',
-    color: '#1a1a2e',
-    marginBottom: 3,
+    color: '#ffffff',
+    marginBottom: 2,
   },
   compactPlanDailySelected: {
-    color: '#1a1a2e',
+    color: '#ffffff',
   },
   compactPlanPrice: {
     fontSize: sf(10),
-    color: '#9ca3af',
+    color: '#ffffff',
     fontWeight: '500',
   },
   compactPlanPriceSelected: {
-    color: '#6b7280',
+    color: '#ffffff',
   },
   saveBadge: {
     position: 'absolute',
@@ -888,10 +889,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: isTablet ? 80 : 24,
   },
   whatYouGetTitle: {
-    fontSize: sf(20),
+    fontSize: sf(18),
     fontWeight: '700',
-    color: '#1a1a2e',
-    marginBottom: 16,
+    color: '#ffffff',
+    marginBottom: 12,
     textAlign: 'center',
   },
   whatYouGetList: {
@@ -904,7 +905,7 @@ const styles = StyleSheet.create({
   },
   whatYouGetText: {
     fontSize: sf(16),
-    color: '#1a1a2e',
+    color: '#ffffff',
     fontWeight: '600',
     flex: 1,
   },
@@ -927,7 +928,7 @@ const styles = StyleSheet.create({
   },
   testimonialText: {
     fontSize: sf(15),
-    color: '#1a1a2e',
+    color: '#ffffff',
     lineHeight: sf(22),
     fontWeight: '500',
     fontStyle: 'italic',
@@ -935,7 +936,7 @@ const styles = StyleSheet.create({
   },
   testimonialAuthor: {
     fontSize: sf(14),
-    color: '#374151',
+    color: 'rgba(255, 255, 255, 0.7)',
     fontWeight: '700',
   },
   // Sticky footer

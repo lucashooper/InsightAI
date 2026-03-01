@@ -128,6 +128,7 @@ export default function DashboardScreen() {
   const modalCard2TranslateY = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
+    console.log('[Dashboard] 🔄 UPDATED VERSION LOADED - Story page spacing fixed, patterns sections enhanced');
     if (user) {
       loadStats();
       loadUserProfile();
@@ -446,12 +447,14 @@ export default function DashboardScreen() {
       const strengthsMap: { [key: string]: { count: number; text: string; entries: string[] } } = {};
       const growthMap: { [key: string]: { count: number; text: string; entries: string[] } } = {};
 
-      notes.forEach(n => {
-        // Aggregate strengths
+      notes.forEach((n: any) => {
+        if (!n.ai_structured_insights) return;
+
+        // Aggregate strengths from multiple sources
         if (n.ai_structured_insights?.strengths_wins) {
           n.ai_structured_insights.strengths_wins.forEach((strength: any) => {
             const text = strength.win || strength;
-            const key = text.toLowerCase().substring(0, 30); // Simple clustering by prefix
+            const key = text.toLowerCase().substring(0, 30);
             
             if (!strengthsMap[key]) {
               strengthsMap[key] = { count: 0, text, entries: [] };
@@ -460,8 +463,24 @@ export default function DashboardScreen() {
             strengthsMap[key].entries.push(n.id);
           });
         }
+        
+        // Also check progress_indicators for positive patterns
+        if (n.ai_structured_insights?.progress_indicators) {
+          n.ai_structured_insights.progress_indicators.forEach((indicator: any) => {
+            if (indicator.type === 'positive' || indicator.direction === 'improving') {
+              const text = indicator.description || indicator.indicator || indicator;
+              const key = text.toLowerCase().substring(0, 30);
+              
+              if (!strengthsMap[key]) {
+                strengthsMap[key] = { count: 0, text, entries: [] };
+              }
+              strengthsMap[key].count++;
+              strengthsMap[key].entries.push(n.id);
+            }
+          });
+        }
 
-        // Aggregate growth recommendations
+        // Aggregate growth areas from multiple sources
         if (n.ai_structured_insights?.growth_recommendations) {
           n.ai_structured_insights.growth_recommendations.forEach((rec: any) => {
             const text = rec.recommendation || rec;
@@ -472,6 +491,22 @@ export default function DashboardScreen() {
             }
             growthMap[key].count++;
             growthMap[key].entries.push(n.id);
+          });
+        }
+        
+        // Also check coping_strategies that need work
+        if (n.ai_structured_insights?.coping_strategies) {
+          n.ai_structured_insights.coping_strategies.forEach((strategy: any) => {
+            if (strategy.effectiveness === 'low' || strategy.status === 'needs_improvement') {
+              const text = strategy.strategy || strategy.description || strategy;
+              const key = text.toLowerCase().substring(0, 30);
+              
+              if (!growthMap[key]) {
+                growthMap[key] = { count: 0, text, entries: [] };
+              }
+              growthMap[key].count++;
+              growthMap[key].entries.push(n.id);
+            }
           });
         }
       });
@@ -504,9 +539,9 @@ export default function DashboardScreen() {
       
       // Set monthly aggregated insights for new sections
       const monthlyStrengthsData = Object.values(strengthsMap)
-        .filter(s => s.count >= 3) // Only show patterns with 3+ mentions
+        .filter(s => s.count >= 2) // Show patterns with 2+ mentions
         .sort((a, b) => b.count - a.count)
-        .slice(0, 3)
+        .slice(0, 5)
         .map(s => ({
           summary: s.text,
           count: s.count,
@@ -514,9 +549,9 @@ export default function DashboardScreen() {
         }));
       
       const monthlyGrowthData = Object.values(growthMap)
-        .filter(g => g.count >= 3) // Only show patterns with 3+ mentions
+        .filter(g => g.count >= 2) // Show patterns with 2+ mentions
         .sort((a, b) => b.count - a.count)
-        .slice(0, 3)
+        .slice(0, 5)
         .map(g => ({
           summary: g.text,
           count: g.count,
@@ -2623,10 +2658,11 @@ const styles = StyleSheet.create({
   },
   modalHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start', // CHANGED: was 'center', now 'flex-start'
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 60, // CHANGED: was 70, now back to 60
+    zIndex: 1,
   },
   modalBackButton: {
     width: 40,
@@ -2644,6 +2680,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#D4AF37',
     letterSpacing: -0.5,
+    marginTop: 12, // ADDED: pushes title down slightly
   },
   modalCloseButton: {
     width: 40,

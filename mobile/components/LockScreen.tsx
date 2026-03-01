@@ -9,6 +9,7 @@ import {
   Dimensions,
   StatusBar,
   Alert,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -26,8 +27,11 @@ export default function LockScreen() {
 
   const PIN_LENGTH = 4;
 
-  // Try biometric on mount
+  // Dismiss keyboard and try biometric on mount
   useEffect(() => {
+    // CRITICAL: Dismiss any open keyboard when PIN screen appears
+    Keyboard.dismiss();
+    
     if (isBiometricEnabled && isBiometricAvailable) {
       setTimeout(() => {
         unlockWithBiometric();

@@ -770,7 +770,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(139,92,246,0.18)',
   },
   suggestionChipInner: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingVertical: 15,
   },
   suggestionText: {

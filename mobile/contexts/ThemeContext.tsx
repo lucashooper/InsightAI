@@ -184,34 +184,34 @@ const themes: Record<ThemeName, Theme> = {
   sunset: {
     name: 'sunset',
     colors: {
-      background: '#fff5f0',
-      backgroundGradient: ['#fff5f0', '#ffe8dc', '#ffd4c4'],
+      background: '#fff8f0', // CHANGED: More yellow/orange
+      backgroundGradient: ['#fff8f0', '#ffe9d6', '#ffd9b8'], // CHANGED: Warmer tones
       cardBackground: 'rgba(255, 255, 255, 0.95)',
       
       primaryText: '#2C2C2C',
       secondaryText: '#4A4A4A',
       tertiaryText: '#6B6B6B',
       
-      primary: '#ff6b4a',
-      primaryGradient: ['#ff6b4a', '#ff5733'],
-      secondary: '#ff8c69',
-      accent: '#ffb399',
+      primary: '#ff8c42',
+      primaryGradient: ['#ff8c42', '#ff6b35'],
+      secondary: '#ffa85c',
+      accent: '#ffc078',
       
-      orbPrimary: ['rgba(255, 107, 74, 0.95)', 'rgba(255, 87, 51, 0.85)', 'rgba(255, 69, 58, 0.75)'],
-      orbSecondary: ['rgba(255, 140, 105, 0.9)', 'rgba(255, 179, 153, 0.8)'],
-      orbAccent: ['rgba(255, 179, 153, 0.85)', 'rgba(255, 212, 196, 0.75)'],
+      orbPrimary: ['rgba(255, 140, 66, 0.95)', 'rgba(255, 107, 53, 0.85)', 'rgba(255, 165, 0, 0.75)'],
+      orbSecondary: ['rgba(255, 168, 92, 0.9)', 'rgba(255, 192, 120, 0.8)'],
+      orbAccent: ['rgba(255, 192, 120, 0.85)', 'rgba(255, 220, 180, 0.75)'],
       
       success: '#10b981',
       warning: '#fbbf24',
       error: '#dc2626',
       
-      border: 'rgba(255, 107, 74, 0.2)',
-      divider: 'rgba(255, 107, 74, 0.15)',
-      shadow: '#cc5540',
+      border: 'rgba(255, 140, 66, 0.2)',
+      divider: 'rgba(255, 140, 66, 0.15)',
+      shadow: '#d97035',
       
-      surface: 'rgba(255, 107, 74, 0.08)',
-      surfaceElevated: 'rgba(255, 107, 74, 0.12)',
-      surfaceHover: 'rgba(255, 107, 74, 0.15)',
+      surface: 'rgba(255, 140, 66, 0.08)',
+      surfaceElevated: 'rgba(255, 140, 66, 0.12)',
+      surfaceHover: 'rgba(255, 140, 66, 0.15)',
     },
   },
   

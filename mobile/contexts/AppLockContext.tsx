@@ -53,6 +53,7 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
   const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
   const appState = useRef(AppState.currentState);
   const hasInitialized = useRef(false);
+  const hasBackgrounded = useRef(false);
 
   // Check biometric availability and load settings on mount
   useEffect(() => {
@@ -86,14 +87,22 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
   // Lock when app goes to background and comes back
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      // Track when app goes to background
+      if (nextAppState === 'background') {
+        hasBackgrounded.current = true;
+      }
+      
+      // Only lock if app actually went to background and is now coming back to active
       if (
-        appState.current.match(/inactive|background/) &&
+        hasBackgrounded.current &&
         nextAppState === 'active' &&
         isLockEnabled &&
         hasInitialized.current
       ) {
         setIsLocked(true);
+        hasBackgrounded.current = false; // Reset flag
       }
+      
       appState.current = nextAppState;
     });
 

@@ -760,7 +760,25 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
           {structuredInsights && (
             <View style={styles.inlineInsightsSection}>
               <View style={styles.insightsDivider} />
-              <Text style={[styles.inlineInsightsTitle, { color: theme.colors.primary }]}>Insights</Text>
+              <View style={styles.insightsHeaderRow}>
+                <Text style={[styles.inlineInsightsTitle, { color: theme.colors.primary }]}>Insights</Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setAnalysisOverlayInsights(structuredInsights);
+                    setAnalysisOverlayMode('results');
+                    setAnalysisOverlayVisible(true);
+                  }}
+                  style={styles.reopenInsightsButton}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons 
+                    name="expand-outline" 
+                    size={20} 
+                    color={theme.colors.primary} 
+                  />
+                </TouchableOpacity>
+              </View>
               
               {/* Primary Emotion & Wellbeing Row */}
               {(moodAnalysis || structuredInsights?.wellbeingScore != null) && (
@@ -1203,7 +1221,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 100,
+    paddingBottom: isTablet ? 200 : 150,
+    flexGrow: 1,
   },
   entryContainer: {
     flex: 1,
@@ -1238,11 +1257,26 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(139, 92, 246, 0.15)',
     marginBottom: 20,
   },
+  insightsHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: isTablet ? 20 : 16,
+  },
   inlineInsightsTitle: {
     fontSize: sf(20),
     fontWeight: '600',
     color: 'rgba(139, 92, 246, 0.95)',
-    marginBottom: isTablet ? 20 : 16,
+  },
+  reopenInsightsButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(139, 92, 246, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.25)',
   },
   inlineBriefingCard: {
     backgroundColor: 'rgba(139, 92, 246, 0.12)',

@@ -21,9 +21,11 @@ interface Strategy {
   emoji: string;
   status: 'suggested' | 'active' | 'completed';
   source?: string;
+  suggestion_count?: number;
 }
 
 export default function PlaybookScreen() {
+  console.log('[Playbook] 🔄 UPDATED VERSION LOADED - Suggestion count badges added to strategies');
   const { user } = useAuth();
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState<TabType>('protocols');
@@ -426,6 +428,12 @@ export default function PlaybookScreen() {
                   <View style={styles.cardInfo}>
                     <View style={styles.titleRow}>
                       <Text style={[styles.cardTitle, { color: theme.colors.primaryText }]} numberOfLines={2} ellipsizeMode="tail">{strategy.title}</Text>
+                      {/* Show suggestion count for suggested strategies */}
+                      {strategy.status === 'suggested' && strategy.suggestion_count && strategy.suggestion_count > 1 && (
+                        <View style={styles.suggestionCountBadge}>
+                          <Text style={styles.suggestionCountText}>{strategy.suggestion_count}</Text>
+                        </View>
+                      )}
                       {/* Only show streaks for active protocols */}
                       {strategy.status === 'active' && protocolStats[strategy.id] && (
                         <View style={styles.inlineStreaks}>
@@ -992,6 +1000,19 @@ const styles = StyleSheet.create({
   streakText: {
     fontSize: 14,
     fontWeight: '600',
+    color: '#ffffff',
+  },
+  // Suggestion count badge (like desktop "2" indicator)
+  suggestionCountBadge: {
+    backgroundColor: '#8b5cf6',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginLeft: 8,
+  },
+  suggestionCountText: {
+    fontSize: 12,
+    fontWeight: '700',
     color: '#ffffff',
   },
   // Checkbox styles for daily protocols
