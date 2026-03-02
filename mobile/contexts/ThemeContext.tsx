@@ -48,9 +48,9 @@ const themes: Record<ThemeName, Theme> = {
   dark: {
     name: 'dark',
     colors: {
-      background: '#000000',
-      backgroundGradient: ['#0a0a0a', '#050505', '#000000'],
-      cardBackground: 'rgba(10, 10, 10, 0.95)',
+      background: '#0a0a0c',
+      backgroundGradient: ['#0e0e12', '#0a0a0c', '#060608'],
+      cardBackground: 'rgba(28, 28, 34, 0.85)',
       
       primaryText: '#ffffff',
       secondaryText: '#e5e7eb',
@@ -69,8 +69,8 @@ const themes: Record<ThemeName, Theme> = {
       warning: '#f59e0b',
       error: '#ef4444',
       
-      border: '#1a1a1a',
-      divider: 'rgba(255, 255, 255, 0.1)',
+      border: 'rgba(255, 255, 255, 0.08)',
+      divider: 'rgba(255, 255, 255, 0.06)',
       shadow: '#000000',
       
       surface: 'rgba(139, 92, 246, 0.08)',
@@ -84,7 +84,7 @@ const themes: Record<ThemeName, Theme> = {
     colors: {
       background: '#faf5ff',
       backgroundGradient: ['#faf5ff', '#f3e8ff', '#e9d5ff'],
-      cardBackground: 'rgba(255, 255, 255, 0.95)',
+      cardBackground: 'rgba(245, 244, 250, 0.75)',
       
       primaryText: '#2C2C2C',
       secondaryText: '#4A4A4A',
@@ -118,7 +118,7 @@ const themes: Record<ThemeName, Theme> = {
     colors: {
       background: '#eff6ff',
       backgroundGradient: ['#eff6ff', '#dbeafe', '#bfdbfe'],
-      cardBackground: 'rgba(255, 255, 255, 0.95)',
+      cardBackground: 'rgba(240, 245, 255, 0.75)',
       
       primaryText: '#2C2C2C',
       secondaryText: '#4A4A4A',
@@ -186,7 +186,7 @@ const themes: Record<ThemeName, Theme> = {
     colors: {
       background: '#fff8f0', // CHANGED: More yellow/orange
       backgroundGradient: ['#fff8f0', '#ffe9d6', '#ffd9b8'], // CHANGED: Warmer tones
-      cardBackground: 'rgba(255, 255, 255, 0.95)',
+      cardBackground: 'rgba(255, 250, 245, 0.75)',
       
       primaryText: '#2C2C2C',
       secondaryText: '#4A4A4A',
@@ -220,7 +220,7 @@ const themes: Record<ThemeName, Theme> = {
     colors: {
       background: '#0f0f23',
       backgroundGradient: ['#0f0f23', '#1a1a3e', '#252550'],
-      cardBackground: 'rgba(10, 10, 10, 0.95)',
+      cardBackground: 'rgba(24, 24, 48, 0.8)',
       
       primaryText: '#ffffff',
       secondaryText: '#e5e7eb',
@@ -239,8 +239,8 @@ const themes: Record<ThemeName, Theme> = {
       warning: '#f59e0b',
       error: '#ef4444',
       
-      border: '#1a1a1a',
-      divider: 'rgba(255, 255, 255, 0.1)',
+      border: 'rgba(255, 255, 255, 0.08)',
+      divider: 'rgba(255, 255, 255, 0.06)',
       shadow: '#000000',
       
       surface: 'rgba(99, 102, 241, 0.08)',
@@ -254,7 +254,7 @@ const themes: Record<ThemeName, Theme> = {
     colors: {
       background: '#fef7f2',
       backgroundGradient: ['#fef5f8', '#fef0f5', '#fef7f2'],
-      cardBackground: 'rgba(255, 255, 255, 0.8)',
+      cardBackground: 'rgba(248, 246, 252, 0.72)',
       
       primaryText: '#2C2C2C',
       secondaryText: '#4A4A4A',

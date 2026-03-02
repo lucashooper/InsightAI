@@ -388,8 +388,6 @@ export default function DashboardScreen() {
         newStrategy
       });
 
-      // Load patterns to address and what's working
-      await loadPatternsData(monthNotes);
     } catch (error) {
       console.error('[Dashboard] Error calculating monthly data:', error);
     }
@@ -397,17 +395,27 @@ export default function DashboardScreen() {
 
   const loadPatternsData = async (notes: any[]) => {
     try {
-      // Extract patterns to address from growth recommendations
       const patterns: any[] = [];
       const strengths: any[] = [];
 
+      console.log('[Dashboard:Patterns] Processing', notes.length, 'notes for patterns');
+
       notes.forEach(n => {
-        if (n.ai_structured_insights?.growth_recommendations) {
-          n.ai_structured_insights.growth_recommendations.forEach((rec: any) => {
+        if (!n.ai_structured_insights) return;
+        const insights = n.ai_structured_insights;
+
+        // Log what fields exist on this entry
+        const fields = Object.keys(insights).join(', ');
+        console.log('[Dashboard:Patterns] Entry', n.id, 'has fields:', fields);
+
+        // Growth recommendations → Patterns to Address
+        if (Array.isArray(insights.growth_recommendations)) {
+          insights.growth_recommendations.forEach((rec: any) => {
+            const text = typeof rec === 'string' ? rec : String(rec.recommendation || rec.description || rec.area || JSON.stringify(rec));
             patterns.push({
-              id: `${n.id}_${rec.area || 'general'}`,
+              id: `${n.id}_${patterns.length}`,
               priority: rec.priority || 'MEDIUM',
-              summary: (rec.recommendation || rec).substring(0, 60),
+              summary: text.substring(0, 120),
               date: new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
               category: rec.area || 'PERSONAL GROWTH',
               entryId: n.id
@@ -415,17 +423,21 @@ export default function DashboardScreen() {
           });
         }
 
-        if (n.ai_structured_insights?.strengths_wins) {
-          n.ai_structured_insights.strengths_wins.forEach((strength: any) => {
+        // Strengths/wins → What's Working
+        if (Array.isArray(insights.strengths_wins)) {
+          insights.strengths_wins.forEach((strength: any) => {
+            const text = typeof strength === 'string' ? strength : String(strength.win || strength.description || strength.strength || JSON.stringify(strength));
             strengths.push({
-              id: `${n.id}_strength`,
-              summary: (strength.win || strength).substring(0, 60),
+              id: `${n.id}_s_${strengths.length}`,
+              summary: text.substring(0, 120),
               frequency: 'Consistent pattern',
               entryId: n.id
             });
           });
         }
       });
+
+      console.log('[Dashboard:Patterns] Found', patterns.length, 'patterns and', strengths.length, 'strengths');
 
       // Sort patterns by priority
       const priorityOrder = { HIGH: 0, MEDIUM: 1, LOW: 2 };
@@ -434,10 +446,10 @@ export default function DashboardScreen() {
         (priorityOrder[b.priority as keyof typeof priorityOrder] || 2)
       );
 
-      setPatternsToAddress(patterns.slice(0, 10)); // Top 10
-      setWhatsWorking(strengths.slice(0, 5)); // Top 5
+      setPatternsToAddress(patterns.slice(0, 10));
+      setWhatsWorking(strengths.slice(0, 5));
     } catch (error) {
-      console.error('[Dashboard] Error loading patterns:', error);
+      console.error('[Dashboard:Patterns] Error:', error);
     }
   };
 
@@ -451,7 +463,7 @@ export default function DashboardScreen() {
         if (!n.ai_structured_insights) return;
 
         // Aggregate strengths from multiple sources
-        if (n.ai_structured_insights?.strengths_wins) {
+        if (Array.isArray(n.ai_structured_insights?.strengths_wins)) {
           n.ai_structured_insights.strengths_wins.forEach((strength: any) => {
             const text = strength.win || strength;
             const key = text.toLowerCase().substring(0, 30);
@@ -465,7 +477,7 @@ export default function DashboardScreen() {
         }
         
         // Also check progress_indicators for positive patterns
-        if (n.ai_structured_insights?.progress_indicators) {
+        if (Array.isArray(n.ai_structured_insights?.progress_indicators)) {
           n.ai_structured_insights.progress_indicators.forEach((indicator: any) => {
             if (indicator.type === 'positive' || indicator.direction === 'improving') {
               const text = indicator.description || indicator.indicator || indicator;
@@ -481,7 +493,7 @@ export default function DashboardScreen() {
         }
 
         // Aggregate growth areas from multiple sources
-        if (n.ai_structured_insights?.growth_recommendations) {
+        if (Array.isArray(n.ai_structured_insights?.growth_recommendations)) {
           n.ai_structured_insights.growth_recommendations.forEach((rec: any) => {
             const text = rec.recommendation || rec;
             const key = text.toLowerCase().substring(0, 30);
@@ -495,7 +507,7 @@ export default function DashboardScreen() {
         }
         
         // Also check coping_strategies that need work
-        if (n.ai_structured_insights?.coping_strategies) {
+        if (Array.isArray(n.ai_structured_insights?.coping_strategies)) {
           n.ai_structured_insights.coping_strategies.forEach((strategy: any) => {
             if (strategy.effectiveness === 'low' || strategy.status === 'needs_improvement') {
               const text = strategy.strategy || strategy.description || strategy;
@@ -715,6 +727,9 @@ export default function DashboardScreen() {
 
       // Check for "Remember When" patterns
       await checkRememberWhen(notes || []);
+
+      // Load patterns to address and what's working (ALL entries, not just this month)
+      await loadPatternsData(notes || []);
 
       // Aggregate insights for dashboard sections
       await aggregateInsights(notes || []);

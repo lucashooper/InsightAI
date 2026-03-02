@@ -61,6 +61,11 @@ export default function DashboardScreenNew() {
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [showIntroOverlay, setShowIntroOverlay] = useState(false);
   const [dailyPrompt] = useState<DailyPrompt>(getTodayPrompt());
+  const [patternsToAddress, setPatternsToAddress] = useState<any[]>([]);
+  const [whatsWorking, setWhatsWorking] = useState<any[]>([]);
+  const [patternsExpanded, setPatternsExpanded] = useState(false);
+  const [workingExpanded, setWorkingExpanded] = useState(false);
+  const [allNotes, setAllNotes] = useState<any[]>([]);
 
   // Reload username from cache when screen comes into focus (instant Settings updates)
   useFocusEffect(
@@ -215,9 +220,13 @@ export default function DashboardScreenNew() {
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(30);
 
       if (error) throw error;
+
+      if (notes) {
+        setAllNotes(notes);
+      }
 
       // Calculate emotional state from recent entries
       if (notes && notes.length > 0) {
@@ -250,6 +259,9 @@ export default function DashboardScreenNew() {
           }
         });
         setRecentPatterns(patterns.slice(0, 3));
+
+        // Load patterns to address and what's working
+        loadPatternsData(notes);
       }
 
       // Calculate streak
@@ -278,6 +290,72 @@ export default function DashboardScreenNew() {
       console.error('Error loading dashboard:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadPatternsData = (notes: any[]) => {
+    try {
+      const patterns: any[] = [];
+      const strengths: any[] = [];
+
+      console.log('[Home:Patterns] Processing', notes.length, 'notes for patterns');
+
+      notes.forEach(n => {
+        if (!n.ai_structured_insights) return;
+        const insights = n.ai_structured_insights;
+        const entryTitle = n.title || 'Untitled Entry';
+        const entryDate = new Date(n.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+
+        const fields = Object.keys(insights).join(', ');
+        console.log('[Home:Patterns] Entry', n.id, '→', fields);
+        console.log('[Home:Patterns]   growth_recommendations type:', typeof insights.growth_recommendations, Array.isArray(insights.growth_recommendations) ? `(array len=${insights.growth_recommendations.length})` : '');
+        console.log('[Home:Patterns]   strengths_wins type:', typeof insights.strengths_wins, Array.isArray(insights.strengths_wins) ? `(array len=${insights.strengths_wins.length})` : '');
+
+        if (Array.isArray(insights.growth_recommendations)) {
+          insights.growth_recommendations.forEach((rec: any) => {
+            const text = typeof rec === 'string' ? rec : String(rec.recommendation || rec.description || rec.area || JSON.stringify(rec));
+            if (!text || text === '{}') return;
+            patterns.push({
+              id: `${n.id}_${patterns.length}`,
+              priority: rec.priority || 'MEDIUM',
+              text: text,
+              category: rec.area || rec.type || 'GROWTH',
+              date: entryDate,
+              entryTitle: entryTitle,
+              entryId: n.id,
+            });
+          });
+        }
+
+        if (Array.isArray(insights.strengths_wins)) {
+          insights.strengths_wins.forEach((strength: any) => {
+            const text = typeof strength === 'string' ? strength : String(strength.win || strength.description || strength.strength || JSON.stringify(strength));
+            if (!text || text === '{}') return;
+            strengths.push({
+              id: `${n.id}_s_${strengths.length}`,
+              text: text,
+              category: strength.area || strength.type || 'STRENGTH',
+              date: entryDate,
+              entryTitle: entryTitle,
+              entryId: n.id,
+            });
+          });
+        }
+      });
+
+      console.log('[Home:Patterns] Final: patterns=' + patterns.length + ', strengths=' + strengths.length);
+      if (patterns.length > 0) console.log('[Home:Patterns] Sample pattern:', JSON.stringify(patterns[0]));
+      if (strengths.length > 0) console.log('[Home:Patterns] Sample strength:', JSON.stringify(strengths[0]));
+
+      const priorityOrder: Record<string, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+      patterns.sort((a, b) =>
+        (priorityOrder[a.priority?.toUpperCase()] ?? 2) - (priorityOrder[b.priority?.toUpperCase()] ?? 2)
+      );
+
+      setPatternsToAddress(patterns.slice(0, 10));
+      setWhatsWorking(strengths.slice(0, 8));
+    } catch (error) {
+      console.error('[Home:Patterns] Error:', error);
     }
   };
 
@@ -643,6 +721,148 @@ export default function DashboardScreenNew() {
             </View>
           )}
         </View>
+
+        {/* Patterns to Address */}
+        {patternsToAddress.length > 0 && (
+          <View style={styles.ptaSection}>
+            <TouchableOpacity 
+              style={styles.patternsSectionHeader}
+              onPress={() => setPatternsExpanded(!patternsExpanded)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.sectionTitle, { color: theme.colors.primaryText, marginBottom: 0 }]}>
+                🔥 Patterns to Address ({patternsToAddress.length})
+              </Text>
+              <Ionicons 
+                name={patternsExpanded ? "chevron-up" : "chevron-down"} 
+                size={20} 
+                color={theme.colors.tertiaryText} 
+              />
+            </TouchableOpacity>
+            <Text style={[styles.patternsSectionSub, { color: theme.colors.tertiaryText }]}>
+              Top priorities based on your recent entries
+            </Text>
+
+            {/* Always show first 2 */}
+            {patternsToAddress.slice(0, patternsExpanded ? patternsToAddress.length : 2).map((pattern) => (
+              <TouchableOpacity
+                key={pattern.id}
+                style={[styles.ptaCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
+                onPress={() => {
+                  const entry = allNotes.find(n => n.id === pattern.entryId);
+                  if (entry) navigation.navigate('EntryDetail', { entry });
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={styles.ptaHeader}>
+                  <View style={[
+                    styles.ptaPriorityBadge,
+                    pattern.priority?.toUpperCase() === 'HIGH' && { backgroundColor: 'rgba(239, 68, 68, 0.2)', borderColor: 'rgba(239, 68, 68, 0.4)' },
+                    pattern.priority?.toUpperCase() === 'MEDIUM' && { backgroundColor: 'rgba(251, 191, 36, 0.2)', borderColor: 'rgba(251, 191, 36, 0.4)' },
+                    pattern.priority?.toUpperCase() === 'LOW' && { backgroundColor: 'rgba(96, 165, 250, 0.2)', borderColor: 'rgba(96, 165, 250, 0.4)' },
+                  ]}>
+                    <Ionicons 
+                      name={pattern.priority?.toUpperCase() === 'HIGH' ? 'flame' : pattern.priority?.toUpperCase() === 'LOW' ? 'bulb' : 'person'} 
+                      size={12} 
+                      color={pattern.priority?.toUpperCase() === 'HIGH' ? '#ef4444' : pattern.priority?.toUpperCase() === 'LOW' ? '#60a5fa' : '#fbbf24'} 
+                    />
+                    <Text style={[styles.ptaPriorityText, {
+                      color: pattern.priority?.toUpperCase() === 'HIGH' ? '#ef4444' : pattern.priority?.toUpperCase() === 'LOW' ? '#60a5fa' : '#fbbf24'
+                    }]}>
+                      {(pattern.priority || 'MEDIUM').toUpperCase()}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={[styles.ptaText, { color: theme.colors.primaryText }]} numberOfLines={3}>
+                  {pattern.text}
+                </Text>
+                <View style={styles.ptaFooter}>
+                  <View style={[styles.ptaCategoryBadge, { backgroundColor: 'rgba(139, 92, 246, 0.15)' }]}>
+                    <Text style={[styles.ptaCategoryText, { color: theme.colors.primary }]}>
+                      {(pattern.category || 'GROWTH').toUpperCase()}
+                    </Text>
+                  </View>
+                  <Text style={[styles.ptaFrom, { color: theme.colors.tertiaryText }]} numberOfLines={1}>
+                    from "{pattern.entryTitle}"
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+
+            {!patternsExpanded && patternsToAddress.length > 2 && (
+              <TouchableOpacity
+                style={[styles.ptaViewAll, { borderColor: theme.colors.border }]}
+                onPress={() => setPatternsExpanded(true)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.ptaViewAllText, { color: theme.colors.primary }]}>
+                  View {patternsToAddress.length - 2} More Focus Areas →
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {/* What's Working */}
+        {whatsWorking.length > 0 && (
+          <View style={styles.wkSection}>
+            <TouchableOpacity 
+              style={styles.patternsSectionHeader}
+              onPress={() => setWorkingExpanded(!workingExpanded)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.sectionTitle, { color: theme.colors.primaryText, marginBottom: 0 }]}>
+                ✨ What's Working ({whatsWorking.length})
+              </Text>
+              <Ionicons 
+                name={workingExpanded ? "chevron-up" : "chevron-down"} 
+                size={20} 
+                color={theme.colors.tertiaryText} 
+              />
+            </TouchableOpacity>
+            <Text style={[styles.patternsSectionSub, { color: theme.colors.tertiaryText }]}>
+              Strategies that are helping you thrive
+            </Text>
+
+            {whatsWorking.slice(0, workingExpanded ? whatsWorking.length : 2).map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={[styles.workingCard, { backgroundColor: theme.colors.cardBackground, borderColor: 'rgba(34, 197, 94, 0.2)' }]}
+                onPress={() => {
+                  const entry = allNotes.find(n => n.id === item.entryId);
+                  if (entry) navigation.navigate('EntryDetail', { entry });
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.ptaText, { color: theme.colors.primaryText }]} numberOfLines={3}>
+                  {item.text}
+                </Text>
+                <View style={styles.ptaFooter}>
+                  <View style={[styles.ptaCategoryBadge, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
+                    <Text style={[styles.ptaCategoryText, { color: '#22c55e' }]}>
+                      {(item.category || 'STRENGTH').toUpperCase()}
+                    </Text>
+                  </View>
+                  <Text style={[styles.ptaFrom, { color: theme.colors.tertiaryText }]} numberOfLines={1}>
+                    from "{item.entryTitle}"
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+
+            {!workingExpanded && whatsWorking.length > 2 && (
+              <TouchableOpacity
+                style={[styles.ptaViewAll, { borderColor: 'rgba(34, 197, 94, 0.3)' }]}
+                onPress={() => setWorkingExpanded(true)}
+                activeOpacity={0.7}
+              >
+                <Text style={{ color: '#22c55e', fontSize: sf(14), fontWeight: '600' }}>
+                  View {whatsWorking.length - 2} More Strengths →
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
 
         {/* Daily Prompt */}
         <View style={styles.challengesSection}>
@@ -1343,5 +1563,94 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
+  },
+  // Patterns to Address & What's Working
+  ptaSection: {
+    paddingHorizontal: isTablet ? 32 : 20,
+    marginTop: 8,
+  },
+  wkSection: {
+    paddingHorizontal: isTablet ? 32 : 20,
+    marginTop: 8,
+  },
+  patternsSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  patternsSectionSub: {
+    fontSize: sf(13),
+    marginBottom: 12,
+  },
+  ptaCard: {
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+  },
+  ptaHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  ptaPriorityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(251, 191, 36, 0.4)',
+    backgroundColor: 'rgba(251, 191, 36, 0.2)',
+  },
+  ptaPriorityText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  ptaText: {
+    fontSize: sf(14),
+    lineHeight: sf(21),
+    marginBottom: 12,
+  },
+  ptaFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  ptaCategoryBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  ptaCategoryText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  ptaFrom: {
+    fontSize: sf(12),
+    flex: 1,
+  },
+  ptaViewAll: {
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  ptaViewAllText: {
+    fontSize: sf(14),
+    fontWeight: '600',
+  },
+  workingCard: {
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
   },
 });

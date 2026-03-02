@@ -15,12 +15,12 @@ export default function StandardContainer({ children, style }: Props) {
   // Dark and midnight themes use dark gradient, all other themes use white
   const isThemeDark = isDarkTheme(theme.name);
   const gradientColors = isThemeDark
-    ? ['rgba(20, 20, 20, 0.82)', 'rgba(12, 12, 12, 0.78)'] as const
-    : [theme.colors.cardBackground, theme.colors.cardBackground] as const;
+    ? ['rgba(32, 32, 38, 0.82)', 'rgba(24, 24, 30, 0.78)'] as const
+    : ['rgba(248, 248, 252, 0.72)', 'rgba(244, 244, 250, 0.68)'] as const;
   
   const borderColor = isThemeDark
-    ? 'rgba(255, 255, 255, 0.10)'
-    : theme.colors.border;
+    ? 'rgba(255, 255, 255, 0.08)'
+    : 'rgba(0, 0, 0, 0.06)';
   
   return (
     <View style={[styles.container, style, { borderColor }]}>
