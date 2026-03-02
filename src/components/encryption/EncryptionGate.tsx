@@ -59,23 +59,7 @@ const EncryptionGate: React.FC<EncryptionGateProps> = ({ children }) => {
         return;
       }
 
-      // Check if user has completed onboarding but hasn't set up encryption yet
-      // This catches users who just finished username selection
-      const hasCompletedOnboarding = profile.has_completed_welcome;
-      const hasEncryption = !!profile.encryption_enabled;
-      
-      // Show encryption setup for users who completed onboarding but don't have encryption
-      if (hasCompletedOnboarding && !hasEncryption) {
-        // Check if they explicitly skipped encryption (we'll add this flag)
-        const hasSkippedEncryption = localStorage.getItem(`insightai-skip-encryption-${user.id}`) === 'true';
-        
-        if (!hasSkippedEncryption) {
-          console.log('🆕 User completed onboarding, showing encryption setup');
-          setShowSetup(true);
-          setIsLoading(false);
-          return;
-        }
-      }
+      // Encryption is now handled automatically by default - no setup modal needed
       
       setIsLoading(false);
     } catch (error) {

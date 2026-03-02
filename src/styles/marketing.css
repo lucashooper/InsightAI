@@ -24,9 +24,7 @@
    ===================================================== */
 
 /* ===== FONT IMPORT ===== */
-/* Poppins for premium landing page typography */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 /* ===== CSS RESET ===== */
 * {
@@ -103,7 +101,7 @@
 /* Global Styles - Marketing Page Only */
 .marketing-page,
 .marketing-page * {
-  font-family: 'Poppins', 'Inter', sans-serif !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
 }
 
 body {
@@ -323,7 +321,7 @@ h1, h2, h3, h4, h5, h6 {
 /* ===== HERO TITLE STYLING =====
    Edit font-weight here to change "Discover yourself" weight */
 .hero-title {
-  font-family: 'Poppins', sans-serif !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
   font-size: clamp(3rem, 8vw, 6.5rem) !important;
   font-weight: 500 !important;  /* 👈 EDIT THIS: 100=thin, 300=light, 400=normal, 500=medium, 700=bold */
   margin-bottom: var(--space-3) !important;
@@ -1870,5 +1868,848 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .legal-content a:hover {
+  text-decoration: underline;
+}
+
+/* =====================================================
+   FLOATING NAV - Monk Style (centered, ~1/3 width)
+   ===================================================== */
+.floating-nav {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  width: auto;
+}
+
+.floating-nav-inner {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 10px 12px 10px 16px;
+  background: rgba(10, 10, 15, 0.7);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 100px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.floating-nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.floating-nav-logo img {
+  height: 36px;
+  width: auto;
+  border-radius: 6px;
+}
+
+.floating-nav-brand {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+.floating-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.floating-nav-link {
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 100px;
+  transition: all 0.2s ease;
+}
+
+.floating-nav-link:hover {
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.floating-nav-cta {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 20px;
+  background: #fff;
+  color: #000;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: 100px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.floating-nav-cta:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
+@media (max-width: 768px) {
+  .floating-nav-inner {
+    gap: 0.75rem;
+    padding: 8px 10px 8px 14px;
+  }
+  .floating-nav-links {
+    display: none;
+  }
+  .floating-nav-brand {
+    font-size: 0.8125rem;
+  }
+}
+
+/* =====================================================
+   HERO SECTION V2 - Cal AI Style (text left, phones right)
+   ===================================================== */
+.hero-section-v2 {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 120px 0 80px;
+  position: relative;
+  background: transparent;
+  overflow: hidden;
+}
+
+.hero-v2-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+}
+
+.hero-v2-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.hero-v2-title {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: #fff;
+}
+
+.hero-v2-gradient {
+  background: linear-gradient(135deg, #c4b5fd 0%, #a78bfa 50%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-v2-subtitle {
+  font-size: 1.125rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.7;
+  max-width: 480px;
+  font-weight: 400;
+}
+
+/* ===== DOWNLOAD BUTTONS - App Store / Google Play / Web ===== */
+.hero-v2-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+}
+
+.download-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.download-btn svg {
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.download-btn-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.download-btn-small {
+  font-size: 0.625rem;
+  font-weight: 400;
+  opacity: 0.7;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.download-btn-big {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ===== HERO PHONES (right side) ===== */
+.hero-v2-phones {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 500px;
+}
+
+.hero-phone-main {
+  width: 300px;
+  height: auto;
+  filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.5));
+  position: relative;
+  z-index: 2;
+}
+
+.hero-phone-secondary {
+  width: 260px;
+  height: auto;
+  filter: drop-shadow(0 20px 50px rgba(0, 0, 0, 0.4));
+  position: absolute;
+  right: -20px;
+  top: 60px;
+  z-index: 1;
+  opacity: 0.85;
+}
+
+@media (max-width: 1024px) {
+  .hero-v2-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 3rem;
+  }
+  .hero-v2-text {
+    align-items: center;
+  }
+  .hero-v2-subtitle {
+    max-width: 100%;
+  }
+  .hero-v2-buttons {
+    justify-content: center;
+  }
+  .hero-v2-phones {
+    min-height: 400px;
+  }
+  .hero-phone-main {
+    width: 240px;
+  }
+  .hero-phone-secondary {
+    width: 210px;
+    right: 10px;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-v2-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  .download-btn {
+    width: 100%;
+    max-width: 260px;
+    justify-content: center;
+  }
+  .hero-phone-main {
+    width: 200px;
+  }
+  .hero-phone-secondary {
+    width: 170px;
+  }
+}
+
+/* =====================================================
+   FEATURES SECTION V2 - Glassmorphic, no icons
+   ===================================================== */
+.features-section-v2 {
+  padding: 100px 0;
+  position: relative;
+  background: transparent;
+}
+
+.features-v2-title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  text-align: center;
+  color: #fff;
+  margin-bottom: 3.5rem;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.features-v2-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.feature-v2-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 28px 24px;
+  transition: all 0.25s ease;
+}
+
+.feature-v2-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.feature-v2-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+
+.feature-v2-desc {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+@media (max-width: 1024px) {
+  .features-v2-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .features-v2-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+/* =====================================================
+   FEATURE SHOWCASE - Cal AI Style (no outer container)
+   ===================================================== */
+.showcase-section {
+  padding: 120px 2rem;
+  position: relative;
+  background: transparent;
+}
+
+.showcase-title {
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  font-weight: 700;
+  text-align: center;
+  color: #fff;
+  margin-bottom: 5rem;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.showcase-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 6rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  align-items: flex-start;
+}
+
+.showcase-phone-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  position: sticky;
+  top: 80px;
+  margin-top: -1.5rem;
+}
+
+.showcase-phone {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.showcase-phone-img {
+  width: 420px;
+  height: auto;
+  filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.5));
+  animation: showcaseFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes showcaseFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.showcase-dots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.showcase-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.showcase-dot:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: scale(1.2);
+}
+
+.showcase-dot.active {
+  background: #fff;
+  width: 24px;
+  border-radius: 4px;
+}
+
+.showcase-features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.showcase-feature-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.015);
+  border: 2px solid rgba(255, 255, 255, 0.06);
+  padding: 28px 32px;
+  min-height: 140px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #fff;
+  font-family: inherit;
+  border-radius: 16px;
+  outline: none;
+  transform-origin: center;
+}
+
+.showcase-feature-item:focus {
+  outline: none;
+}
+
+.showcase-feature-item:hover {
+  background: rgba(255, 255, 255, 0.025);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.showcase-feature-item.active {
+  border-color: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.2);
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.showcase-feature-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.showcase-feature-desc {
+  font-size: 0.9375rem;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.65;
+  font-weight: 400;
+  margin: 0;
+}
+
+@media (max-width: 1024px) {
+  .showcase-layout {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+  .showcase-phone-container {
+    order: -1;
+    position: static;
+  }
+  .showcase-phone-img {
+    width: 320px;
+  }
+}
+
+/* =====================================================
+   FOOTER V2 - Cal AI Style (no container box)
+   ===================================================== */
+.footer-v2 {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 3.5rem 2rem 2rem;
+  background: transparent;
+}
+
+.footer-v2-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.footer-v2-grid {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr 1fr;
+  gap: 3rem;
+  margin-bottom: 2.5rem;
+}
+
+.footer-v2-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer-v2-logo-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.footer-v2-logo-img {
+  height: 32px;
+  width: auto;
+  border-radius: 8px;
+}
+
+.footer-v2-logo-text {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+.footer-v2-tagline {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0;
+}
+
+.footer-v2-downloads {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.footer-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: background 0.2s ease;
+}
+
+.footer-download-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.footer-v2-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer-v2-column-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.02em;
+  margin: 0 0 4px 0;
+}
+
+.footer-v2-link {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-v2-link:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.footer-v2-bottom {
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.footer-v2-bottom p {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.3);
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .footer-v2-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+/* =====================================================
+   PHONE IMAGE HOVER EFFECTS - REMOVED
+   ===================================================== */
+.phone-screenshot-direct {
+  transition: none !important;
+}
+
+.phone-screenshot-direct:hover {
+  transform: none !important;
+  filter: drop-shadow(0 20px 60px rgba(0, 0, 0, 0.5)) 
+          drop-shadow(0 0 40px rgba(139, 92, 246, 0.15)) !important;
+}
+
+/* =====================================================
+   GLOBAL HOVER FIX - Subtle lightness only, no blue text
+   Cursor-style: very subtle background brightness increase
+   ===================================================== */
+
+/* Kill the default blue link hover color globally on marketing pages */
+.marketing-page a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.marketing-page a:hover {
+  color: inherit;
+}
+
+/* Download badge wrappers with "Coming Soon" text below */
+.download-badge-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  text-decoration: none;
+}
+
+.download-badge-wrapper:hover {
+  opacity: 0.85;
+}
+
+.download-badge {
+  height: 52px;
+  width: auto;
+  display: block;
+}
+
+.coming-soon-text {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.03em;
+}
+
+/* Web App badge styling - match the image badge aesthetic */
+.download-badge-web {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+  background: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #fff;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  height: 52px;
+  min-width: 135px;
+}
+
+.download-badge-web:hover {
+  background: #1a1a1a;
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.download-badge-web svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  stroke: rgba(255, 255, 255, 0.9);
+  stroke-width: 2;
+}
+
+.download-badge-web-text {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+
+/* Footer badge styling */
+.footer-badge-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  text-decoration: none;
+}
+
+.footer-badge-wrapper:hover {
+  opacity: 0.85;
+}
+
+.footer-badge {
+  height: 40px;
+  width: auto;
+  display: block;
+}
+
+.footer-coming-soon-text {
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.03em;
+}
+
+/* Footer Web App badge */
+.footer-badge-web {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  background: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  height: 40px;
+  white-space: nowrap;
+}
+
+.footer-badge-web:hover {
+  background: #1a1a1a;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.footer-badge-web svg {
+  stroke: rgba(255, 255, 255, 0.9);
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+/* Download buttons - subtle bg only, NO text color change */
+.download-btn,
+.download-btn:link,
+.download-btn:visited,
+.download-btn:hover,
+.download-btn:active {
+  color: #fff !important;
+}
+
+.download-btn:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-1px);
+}
+
+/* Footer download buttons */
+.footer-download-btn,
+.footer-download-btn:link,
+.footer-download-btn:visited,
+.footer-download-btn:hover,
+.footer-download-btn:active {
+  color: #fff !important;
+}
+
+.footer-download-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Footer links */
+.footer-v2-link:link,
+.footer-v2-link:visited {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Floating nav links */
+.floating-nav-link:link,
+.floating-nav-link:visited {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.floating-nav-link:hover {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* CTA button */
+.floating-nav-cta,
+.floating-nav-cta:link,
+.floating-nav-cta:visited,
+.floating-nav-cta:hover,
+.floating-nav-cta:active {
+  color: #000 !important;
+}
+
+/* Legal page links should keep accent color */
+.legal-content a {
+  color: #8b5cf6 !important;
+}
+
+.legal-content a:hover {
+  color: #a78bfa !important;
   text-decoration: underline;
 }

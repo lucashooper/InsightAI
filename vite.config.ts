@@ -12,6 +12,14 @@ function copyMarketingDist() {
       const marketingDest = 'dist/marketing-dist'
       
       try {
+        // Check if marketing/dist exists before attempting to copy
+        try {
+          statSync(marketingSrc)
+        } catch {
+          // marketing/dist doesn't exist — marketing is part of the main app build
+          return
+        }
+
         // Create destination directory
         mkdirSync(marketingDest, { recursive: true })
         

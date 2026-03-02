@@ -1,16 +1,22 @@
 import React from 'react';
+import Footer from '../../components/marketing/Footer';
 import '../../styles/marketing.css';
 
 const TermsPage: React.FC = () => {
   return (
-    <div className="legal-page">
-      <nav className="main-nav">
-        <div className="nav-logo">
-          <img src="/Insight-Logo-nobg.webp" alt="Insight" style={{ height: '80px', width: 'auto' }} />
-        </div>
-        <div className="nav-links">
-          <a href="/" className="nav-link">Home</a>
-          <a href="/login" className="nav-link nav-login-btn">Login</a>
+    <div className="legal-page marketing-page">
+      <nav className="floating-nav">
+        <div className="floating-nav-inner">
+          <div className="floating-nav-logo">
+            <img src="/Insight-Logo-nobg.webp" alt="Insight" />
+            <span className="floating-nav-brand">Insight</span>
+          </div>
+          <div className="floating-nav-links">
+            <a href="/" className="floating-nav-link">Home</a>
+            <a href="/privacy" className="floating-nav-link">Privacy</a>
+            <a href="/support" className="floating-nav-link">Support</a>
+          </div>
+          <a href="/login" className="floating-nav-cta">Try for free</a>
         </div>
       </nav>
       
@@ -71,6 +77,7 @@ const TermsPage: React.FC = () => {
           <p>For questions about these Terms, please contact us at: <a href="mailto:support@myinsightai.app">support@myinsightai.app</a></p>
         </section>
       </div>
+      <Footer />
     </div>
   );
 };
