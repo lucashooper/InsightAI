@@ -374,12 +374,25 @@ export default function DashboardScreen() {
       // 3. New strategy from recent growth insights
       let newStrategy = null;
       const recentWithGrowth = monthNotes
-        .filter(n => n.ai_structured_insights?.growth_recommendations?.length > 0)
+        .filter(n => {
+          const suggested = n.ai_structured_insights?.coping_strategies?.suggested;
+          const areas = n.ai_structured_insights?.progress_indicators?.areas_for_growth;
+          return (Array.isArray(suggested) && suggested.length > 0) ||
+                 (Array.isArray(areas) && areas.length > 0);
+        })
         .slice(0, 3);
       
       if (recentWithGrowth.length > 0) {
-        const strategies = recentWithGrowth[0].ai_structured_insights.growth_recommendations[0];
-        newStrategy = strategies?.recommendation || strategies || null;
+        const insights = recentWithGrowth[0].ai_structured_insights;
+        const suggested = insights?.coping_strategies?.suggested;
+        const areas = insights?.progress_indicators?.areas_for_growth;
+        if (Array.isArray(suggested) && suggested.length > 0) {
+          const s = suggested[0];
+          newStrategy = typeof s === 'string' ? s : (s.strategy || s.description || null);
+        } else if (Array.isArray(areas) && areas.length > 0) {
+          const a = areas[0];
+          newStrategy = typeof a === 'string' ? a : (a.description || null);
+        }
       }
 
       setNarrativeHighlights({
@@ -393,61 +406,193 @@ export default function DashboardScreen() {
     }
   };
 
+  // Helper: capitalize first letter of a string
+  const capitalizeFirst = (str: string) => str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
+
+  // Helper: make text more personal (replace third-person references)
+  const personalizeText = (text: string) => {
+    return capitalizeFirst(
+      text
+        .replace(/The user/g, 'You')
+        .replace(/the user/g, 'you')
+        .replace(/their /g, 'your ')
+        .replace(/Their /g, 'Your ')
+        .replace(/they /g, 'you ')
+        .replace(/They /g, 'You ')
+        .replace(/them /g, 'you ')
+        .replace(/his\/her/g, 'your')
+    );
+  };
+
+  // Helper: get a short origin label from entry content
+  const getOriginLabel = (n: any) => {
+    const title = n.title || n.content || '';
+    const cleaned = title.replace(/^["']|["']$/g, '').trim();
+    return cleaned.length > 50 ? cleaned.substring(0, 47) + '...' : cleaned;
+  };
+
+  // Helper: normalize text for deduplication (lowercase, trim, remove punctuation)
+  const normalizeForDedup = (text: string) => {
+    return text.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().substring(0, 40);
+  };
+
   const loadPatternsData = async (notes: any[]) => {
     try {
-      const patterns: any[] = [];
-      const strengths: any[] = [];
+      // Raw collection with dedup tracking
+      const patternMap: { [key: string]: any } = {};
+      const strengthMap: { [key: string]: any } = {};
 
       console.log('[Dashboard:Patterns] Processing', notes.length, 'notes for patterns');
 
       notes.forEach(n => {
         if (!n.ai_structured_insights) return;
         const insights = n.ai_structured_insights;
+        const entryDate = new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const originLabel = getOriginLabel(n);
 
-        // Log what fields exist on this entry
-        const fields = Object.keys(insights).join(', ');
-        console.log('[Dashboard:Patterns] Entry', n.id, 'has fields:', fields);
+        // === AREAS TO IMPROVE / PATTERNS TO ADDRESS ===
 
-        // Growth recommendations → Patterns to Address
-        if (Array.isArray(insights.growth_recommendations)) {
-          insights.growth_recommendations.forEach((rec: any) => {
-            const text = typeof rec === 'string' ? rec : String(rec.recommendation || rec.description || rec.area || JSON.stringify(rec));
-            patterns.push({
-              id: `${n.id}_${patterns.length}`,
-              priority: rec.priority || 'MEDIUM',
-              summary: text.substring(0, 120),
-              date: new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-              category: rec.area || 'PERSONAL GROWTH',
-              entryId: n.id
-            });
+        const addPattern = (text: string, entryId: string) => {
+          if (!text || text === '{}') return;
+          const normalized = normalizeForDedup(text);
+          if (!normalized) return;
+          
+          if (patternMap[normalized]) {
+            patternMap[normalized].count += 1;
+            if (!patternMap[normalized].entryIds.includes(entryId)) {
+              patternMap[normalized].entryIds.push(entryId);
+            }
+            // Prefer longer, more descriptive text
+            if (text.length > patternMap[normalized].summary.length) {
+              patternMap[normalized].summary = personalizeText(text.substring(0, 200));
+            }
+          } else {
+            patternMap[normalized] = {
+              id: `pattern_${Object.keys(patternMap).length}`,
+              summary: personalizeText(text.substring(0, 200)),
+              date: entryDate,
+              entryId: entryId,
+              entryIds: [entryId],
+              originLabel: originLabel,
+              count: 1,
+            };
+          }
+        };
+
+        // 1. progress_indicators.areas_for_growth
+        if (insights.progress_indicators?.areas_for_growth) {
+          const areas = Array.isArray(insights.progress_indicators.areas_for_growth)
+            ? insights.progress_indicators.areas_for_growth : [];
+          areas.forEach((area: any) => {
+            const text = typeof area === 'string' ? area : String(area.description || area.area || JSON.stringify(area));
+            addPattern(text, n.id);
           });
         }
 
-        // Strengths/wins → What's Working
-        if (Array.isArray(insights.strengths_wins)) {
-          insights.strengths_wins.forEach((strength: any) => {
-            const text = typeof strength === 'string' ? strength : String(strength.win || strength.description || strength.strength || JSON.stringify(strength));
-            strengths.push({
-              id: `${n.id}_s_${strengths.length}`,
-              summary: text.substring(0, 120),
-              frequency: 'Consistent pattern',
-              entryId: n.id
-            });
+        // 2. coping_strategies.suggested
+        if (insights.coping_strategies?.suggested) {
+          const suggested = Array.isArray(insights.coping_strategies.suggested)
+            ? insights.coping_strategies.suggested : [];
+          suggested.forEach((s: any) => {
+            const text = typeof s === 'string' ? s : String(s.strategy || s.description || JSON.stringify(s));
+            addPattern(text, n.id);
+          });
+        }
+
+        // 3. insights_report.insightCards with type "growth" or "reflection"
+        if (insights.insights_report?.insightCards) {
+          const cards = Array.isArray(insights.insights_report.insightCards)
+            ? insights.insights_report.insightCards : [];
+          cards.forEach((card: any) => {
+            if (card.type === 'growth' || card.type === 'reflection') {
+              const text = typeof card === 'string' ? card : String(card.text || card.description || '');
+              addPattern(text, n.id);
+            }
+          });
+        }
+
+        // 4. thought_patterns
+        if (Array.isArray(insights.thought_patterns)) {
+          insights.thought_patterns.forEach((tp: any) => {
+            const text = typeof tp === 'string' ? tp : String(tp.pattern || tp.description || '');
+            addPattern(text, n.id);
+          });
+        }
+
+        // === WHAT'S WORKING / STRENGTHS ===
+
+        const addStrength = (text: string, entryId: string) => {
+          if (!text || text === '{}') return;
+          const normalized = normalizeForDedup(text);
+          if (!normalized) return;
+
+          if (strengthMap[normalized]) {
+            strengthMap[normalized].count += 1;
+            if (!strengthMap[normalized].entryIds.includes(entryId)) {
+              strengthMap[normalized].entryIds.push(entryId);
+            }
+            if (text.length > strengthMap[normalized].summary.length) {
+              strengthMap[normalized].summary = personalizeText(text.substring(0, 200));
+            }
+          } else {
+            strengthMap[normalized] = {
+              id: `strength_${Object.keys(strengthMap).length}`,
+              summary: personalizeText(text.substring(0, 200)),
+              date: entryDate,
+              entryId: entryId,
+              entryIds: [entryId],
+              originLabel: originLabel,
+              count: 1,
+            };
+          }
+        };
+
+        // 1. progress_indicators.positive_signals
+        if (insights.progress_indicators?.positive_signals) {
+          const signals = Array.isArray(insights.progress_indicators.positive_signals)
+            ? insights.progress_indicators.positive_signals : [];
+          signals.forEach((signal: any) => {
+            const text = typeof signal === 'string' ? signal : String(signal.description || JSON.stringify(signal));
+            addStrength(text, n.id);
+          });
+        }
+
+        // 2. insights_report.insightCards with type "strength" or "win"
+        if (insights.insights_report?.insightCards) {
+          const cards = Array.isArray(insights.insights_report.insightCards)
+            ? insights.insights_report.insightCards : [];
+          cards.forEach((card: any) => {
+            if (card.type === 'strength' || card.type === 'win') {
+              const text = typeof card === 'string' ? card : String(card.text || card.description || '');
+              addStrength(text, n.id);
+            }
+          });
+        }
+
+        // 3. coping_strategies.current
+        if (insights.coping_strategies?.current) {
+          const current = Array.isArray(insights.coping_strategies.current)
+            ? insights.coping_strategies.current : [];
+          current.forEach((c: any) => {
+            const text = typeof c === 'string' ? c : String(c.strategy || c.description || JSON.stringify(c));
+            addStrength(text, n.id);
           });
         }
       });
 
-      console.log('[Dashboard:Patterns] Found', patterns.length, 'patterns and', strengths.length, 'strengths');
+      // Convert maps to arrays and sort by frequency (most recurring first)
+      const patterns = Object.values(patternMap)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 20);
 
-      // Sort patterns by priority
-      const priorityOrder = { HIGH: 0, MEDIUM: 1, LOW: 2 };
-      patterns.sort((a, b) => 
-        (priorityOrder[a.priority as keyof typeof priorityOrder] || 2) - 
-        (priorityOrder[b.priority as keyof typeof priorityOrder] || 2)
-      );
+      const strengths = Object.values(strengthMap)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 15);
 
-      setPatternsToAddress(patterns.slice(0, 10));
-      setWhatsWorking(strengths.slice(0, 5));
+      console.log('[Dashboard:Patterns] Found', patterns.length, 'unique patterns and', strengths.length, 'unique strengths');
+
+      setPatternsToAddress(patterns);
+      setWhatsWorking(strengths);
     } catch (error) {
       console.error('[Dashboard:Patterns] Error:', error);
     }
@@ -461,61 +606,98 @@ export default function DashboardScreen() {
 
       notes.forEach((n: any) => {
         if (!n.ai_structured_insights) return;
+        const insights = n.ai_structured_insights;
 
-        // Aggregate strengths from multiple sources
-        if (Array.isArray(n.ai_structured_insights?.strengths_wins)) {
-          n.ai_structured_insights.strengths_wins.forEach((strength: any) => {
-            const text = strength.win || strength;
+        // === Aggregate strengths ===
+
+        // 1. progress_indicators.positive_signals
+        const posSignals = insights.progress_indicators?.positive_signals;
+        if (Array.isArray(posSignals)) {
+          posSignals.forEach((signal: any) => {
+            const text = typeof signal === 'string' ? signal : String(signal.description || JSON.stringify(signal));
             const key = text.toLowerCase().substring(0, 30);
-            
-            if (!strengthsMap[key]) {
-              strengthsMap[key] = { count: 0, text, entries: [] };
-            }
+            if (!strengthsMap[key]) strengthsMap[key] = { count: 0, text, entries: [] };
             strengthsMap[key].count++;
             strengthsMap[key].entries.push(n.id);
           });
         }
-        
-        // Also check progress_indicators for positive patterns
-        if (Array.isArray(n.ai_structured_insights?.progress_indicators)) {
-          n.ai_structured_insights.progress_indicators.forEach((indicator: any) => {
-            if (indicator.type === 'positive' || indicator.direction === 'improving') {
-              const text = indicator.description || indicator.indicator || indicator;
-              const key = text.toLowerCase().substring(0, 30);
-              
-              if (!strengthsMap[key]) {
-                strengthsMap[key] = { count: 0, text, entries: [] };
+
+        // 2. coping_strategies.current
+        const currentStrats = insights.coping_strategies?.current;
+        if (Array.isArray(currentStrats)) {
+          currentStrats.forEach((c: any) => {
+            const text = typeof c === 'string' ? c : String(c.strategy || c.description || JSON.stringify(c));
+            const key = text.toLowerCase().substring(0, 30);
+            if (!strengthsMap[key]) strengthsMap[key] = { count: 0, text, entries: [] };
+            strengthsMap[key].count++;
+            strengthsMap[key].entries.push(n.id);
+          });
+        }
+
+        // 3. insightCards with type strength/win
+        const insightCards = insights.insights_report?.insightCards;
+        if (Array.isArray(insightCards)) {
+          insightCards.forEach((card: any) => {
+            if (card.type === 'strength' || card.type === 'win') {
+              const text = typeof card === 'string' ? card : String(card.text || card.description || '');
+              if (text) {
+                const key = text.toLowerCase().substring(0, 30);
+                if (!strengthsMap[key]) strengthsMap[key] = { count: 0, text, entries: [] };
+                strengthsMap[key].count++;
+                strengthsMap[key].entries.push(n.id);
               }
-              strengthsMap[key].count++;
-              strengthsMap[key].entries.push(n.id);
             }
           });
         }
 
-        // Aggregate growth areas from multiple sources
-        if (Array.isArray(n.ai_structured_insights?.growth_recommendations)) {
-          n.ai_structured_insights.growth_recommendations.forEach((rec: any) => {
-            const text = rec.recommendation || rec;
+        // === Aggregate growth areas ===
+
+        // 1. progress_indicators.areas_for_growth
+        const areasForGrowth = insights.progress_indicators?.areas_for_growth;
+        if (Array.isArray(areasForGrowth)) {
+          areasForGrowth.forEach((area: any) => {
+            const text = typeof area === 'string' ? area : String(area.description || area.area || JSON.stringify(area));
             const key = text.toLowerCase().substring(0, 30);
-            
-            if (!growthMap[key]) {
-              growthMap[key] = { count: 0, text, entries: [] };
-            }
+            if (!growthMap[key]) growthMap[key] = { count: 0, text, entries: [] };
             growthMap[key].count++;
             growthMap[key].entries.push(n.id);
           });
         }
-        
-        // Also check coping_strategies that need work
-        if (Array.isArray(n.ai_structured_insights?.coping_strategies)) {
-          n.ai_structured_insights.coping_strategies.forEach((strategy: any) => {
-            if (strategy.effectiveness === 'low' || strategy.status === 'needs_improvement') {
-              const text = strategy.strategy || strategy.description || strategy;
-              const key = text.toLowerCase().substring(0, 30);
-              
-              if (!growthMap[key]) {
-                growthMap[key] = { count: 0, text, entries: [] };
+
+        // 2. coping_strategies.suggested
+        const suggestedStrats = insights.coping_strategies?.suggested;
+        if (Array.isArray(suggestedStrats)) {
+          suggestedStrats.forEach((s: any) => {
+            const text = typeof s === 'string' ? s : String(s.strategy || s.description || JSON.stringify(s));
+            const key = text.toLowerCase().substring(0, 30);
+            if (!growthMap[key]) growthMap[key] = { count: 0, text, entries: [] };
+            growthMap[key].count++;
+            growthMap[key].entries.push(n.id);
+          });
+        }
+
+        // 3. insightCards with type growth/reflection
+        if (Array.isArray(insightCards)) {
+          insightCards.forEach((card: any) => {
+            if (card.type === 'growth' || card.type === 'reflection') {
+              const text = typeof card === 'string' ? card : String(card.text || card.description || '');
+              if (text) {
+                const key = text.toLowerCase().substring(0, 30);
+                if (!growthMap[key]) growthMap[key] = { count: 0, text, entries: [] };
+                growthMap[key].count++;
+                growthMap[key].entries.push(n.id);
               }
+            }
+          });
+        }
+
+        // 4. thought_patterns
+        if (Array.isArray(insights.thought_patterns)) {
+          insights.thought_patterns.forEach((tp: any) => {
+            const text = typeof tp === 'string' ? tp : String(tp.pattern || tp.description || '');
+            if (text) {
+              const key = text.toLowerCase().substring(0, 30);
+              if (!growthMap[key]) growthMap[key] = { count: 0, text, entries: [] };
               growthMap[key].count++;
               growthMap[key].entries.push(n.id);
             }
@@ -847,109 +1029,6 @@ export default function DashboardScreen() {
           </View>
         ) : stats ? (
           <>
-            {/* Refined This Week Card - Horizontal Layout */}
-            <StandardContainer style={[styles.heroCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-              <Text style={[styles.heroTitle, { color: theme.colors.primaryText }]}>This week at a glance</Text>
-              
-              <View style={styles.metricsRow}>
-                <View style={styles.metricItem}>
-                  <View style={styles.metricIconValue}>
-                    <Text style={styles.metricEmoji}>🔥</Text>
-                    <Text style={[styles.metricValue, { color: theme.colors.primaryText }]}>
-                      {stats.currentStreak > 0 ? stats.currentStreak : '-'}
-                    </Text>
-                  </View>
-                  <Text style={[styles.metricLabel, { color: theme.colors.secondaryText }]}>DAY STREAK</Text>
-                </View>
-                
-                <View style={styles.metricItem}>
-                  <View style={styles.metricIconValue}>
-                    <Text style={styles.metricEmoji}>😊</Text>
-                    <Text style={[styles.metricValue, { color: theme.colors.primaryText }]}>
-                      {stats.avgWellbeingScore > 0 ? `${stats.avgWellbeingScore}/10` : '-'}
-                    </Text>
-                  </View>
-                  <Text style={[styles.metricLabel, { color: theme.colors.secondaryText }]}>AVG MOOD</Text>
-                </View>
-              </View>
-              
-              {/* Interpretive sentence */}
-              <Text style={[styles.interpretiveSentence, { color: theme.colors.secondaryText }]}> 
-                {stats.totalEntries === 0
-                  ? 'Start your journey by creating your first entry.'
-                  : stats.avgWellbeingScore >= 7 
-                  ? 'A steady week with consistent emotional balance.'
-                  : stats.avgWellbeingScore >= 5
-                  ? 'A steady week overall.'
-                  : stats.avgWellbeingScore > 0
-                  ? 'You\'ve been navigating some challenges this week.'
-                  : 'Begin tracking your mood to see insights here.'}
-              </Text>
-            </StandardContainer>
-
-            {/* Progress Story Card - Enhanced with Inline Highlights */}
-            {monthlyStory && (
-              <Animated.View style={{ opacity: cardAnimations[0], transform: [{ translateY: cardAnimations[0].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
-                <StandardContainer style={[styles.progressStoryCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-                  <Text style={[styles.progressStoryTitle, { color: theme.colors.primaryText }]}>Your {new Date().toLocaleDateString('en-US', { month: 'long' })} Story</Text>
-                  {storyLoading ? (
-                    <ActivityIndicator size="small" color="#D4AF37" style={{ marginVertical: 12 }} />
-                  ) : (
-                    <>
-                      <Text style={[styles.progressStoryText, { color: theme.colors.secondaryText }]} numberOfLines={2}>
-                        {monthlyStory}
-                      </Text>
-                      
-                      {/* Inline Highlights */}
-                      {narrativeHighlights && (
-                        <View style={styles.inlineHighlights}>
-                          {narrativeHighlights.strongestResilience && (
-                            <View style={styles.inlineHighlightRow}>
-                              <Text style={styles.inlineHighlightIcon}>✨</Text>
-                              <Text style={[styles.inlineHighlightText, { color: theme.colors.secondaryText }]}>
-                                Strongest day: <Text style={[styles.inlineHighlightValue, { color: theme.colors.primary }]}>{narrativeHighlights.strongestResilience.date}</Text>
-                              </Text>
-                            </View>
-                          )}
-                          {narrativeHighlights.keyTheme && (
-                            <View style={styles.inlineHighlightRow}>
-                              <Text style={styles.inlineHighlightIcon}>💭</Text>
-                              <Text style={[styles.inlineHighlightText, { color: theme.colors.secondaryText }]}>
-                                Key theme: <Text style={[styles.inlineHighlightValue, { color: theme.colors.primary }]}>{narrativeHighlights.keyTheme.theme}</Text> ({narrativeHighlights.keyTheme.count} entries)
-                              </Text>
-                            </View>
-                          )}
-                          {narrativeHighlights.newStrategy && (
-                            <View style={styles.inlineHighlightRow}>
-                              <Text style={styles.inlineHighlightIcon}>🌱</Text>
-                              <Text style={[styles.inlineHighlightText, { color: theme.colors.secondaryText }]}>
-                                Strategy: <Text style={[styles.inlineHighlightValue, { color: theme.colors.primary }]}>{narrativeHighlights.newStrategy}</Text>
-                              </Text>
-                            </View>
-                          )}
-                        </View>
-                      )}
-                      
-                      <TouchableOpacity 
-                        style={styles.readFullStoryButton}
-                        onPress={() => setShowFullStory(true)}
-                        activeOpacity={0.8}
-                      >
-                        <LinearGradient
-                          colors={['#8b5cf6', '#7c3aed']}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 1 }}
-                          style={styles.readFullStoryGradient}
-                        >
-                          <Text style={styles.readFullStoryText}>Read Full Story →</Text>
-                        </LinearGradient>
-                      </TouchableOpacity>
-                    </>
-                  )}
-                </StandardContainer>
-              </Animated.View>
-            )}
-
             {/* Emotion Bubble Map - Enhanced */}
             <Animated.View style={{ opacity: cardAnimations[1], transform: [{ translateY: cardAnimations[1].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
               <StandardContainer style={[styles.bubbleMapCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
@@ -1021,26 +1100,6 @@ export default function DashboardScreen() {
                       <Text style={styles.emotionPromptText}>
                         You've been {dominantEmotions[0].emotion.toLowerCase()} this week. Want to explore what brings you more {getOppositeEmotion(dominantEmotions[0].emotion)}?
                       </Text>
-                      <TouchableOpacity 
-                        style={styles.explorePatternsButton}
-                        onPress={() => {
-                          console.log('[Dashboard] Explore Patterns pressed - showing patterns section');
-                          setShowPatternsSection(true);
-                          setTimeout(() => {
-                            patternsScrollRef.current?.scrollToEnd({ animated: true });
-                          }, 100);
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <LinearGradient
-                          colors={['#8b5cf6', '#7c3aed']}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 1 }}
-                          style={styles.explorePatternsGradient}
-                        >
-                          <Text style={styles.explorePatternsText}>Explore Patterns →</Text>
-                        </LinearGradient>
-                      </TouchableOpacity>
                     </View>
                   </>
                 ) : (
@@ -1054,74 +1113,244 @@ export default function DashboardScreen() {
               </StandardContainer>
             </Animated.View>
 
-            {/* YOUR STRENGTHS THIS MONTH - New Aggregated Section */}
-            {monthlyStrengths.length > 0 && (
-              <Animated.View style={{ opacity: cardAnimations[2], transform: [{ translateY: cardAnimations[2].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
-                <StandardContainer style={[styles.aggregateCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-                  <TouchableOpacity 
-                    style={styles.aggregateHeader}
-                    onPress={() => setStrengthsSectionExpanded(!strengthsSectionExpanded)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.aggregateHeaderLeft}>
-                      <Text style={[styles.aggregateSectionTitle, { color: '#10b981' }]}>YOUR STRENGTHS THIS MONTH</Text>
-                      <Text style={[styles.aggregateCount, { color: theme.colors.secondaryText }]}>{monthlyStrengths.length} patterns identified</Text>
-                    </View>
-                    <Ionicons 
-                      name={strengthsSectionExpanded ? 'chevron-up' : 'chevron-down'} 
-                      size={20} 
-                      color={theme.colors.secondaryText} 
-                    />
-                  </TouchableOpacity>
-                  
-                  {strengthsSectionExpanded && (
-                    <View style={styles.aggregateContent}>
-                      {monthlyStrengths.map((strength, index) => (
-                        <View key={index} style={[styles.aggregateItem, { borderLeftColor: '#10b981' }]}>
-                          <Text style={[styles.aggregateItemText, { color: theme.colors.primaryText }]}>{strength.summary}</Text>
-                          <Text style={[styles.aggregateItemCount, { color: '#10b981' }]}>From {strength.count} entries</Text>
+            {/* Patterns to Address */}
+            {patternsToAddress.length > 0 && (
+              <StandardContainer style={[styles.patternsCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+                <TouchableOpacity 
+                  style={styles.patternsHeader}
+                  onPress={() => setPatternsExpanded(!patternsExpanded)}
+                  activeOpacity={0.7}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Ionicons name="leaf-outline" size={20} color="#10b981" />
+                    <Text style={[styles.patternsTitle, { color: theme.colors.primaryText }]}>Patterns to Address ({patternsToAddress.length})</Text>
+                  </View>
+                  <Ionicons 
+                    name={patternsExpanded ? "chevron-up" : "chevron-down"} 
+                    size={20} 
+                    color={theme.colors.secondaryText} 
+                  />
+                </TouchableOpacity>
+                <Text style={[styles.patternSubtitle, { color: theme.colors.tertiaryText }]}>Top priorities based on your recent entries</Text>
+                
+                <View style={styles.patternsContent}>
+                  {patternsToAddress.slice(0, patternsExpanded ? patternsToAddress.length : 2).map((pattern) => (
+                    <TouchableOpacity
+                      key={pattern.id}
+                      style={[styles.patternCard, { backgroundColor: 'rgba(217, 119, 6, 0.12)', borderColor: 'rgba(217, 119, 6, 0.3)' }]}
+                      onPress={() => {
+                        const entry = allNotes.find((n: any) => n.id === pattern.entryId);
+                        if (entry) {
+                          navigation.navigate('EntryDetail', { entry, highlightText: pattern.summary });
+                        }
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      {pattern.count > 1 && (
+                        <View style={styles.frequencyBadge}>
+                          <Ionicons name="flame" size={13} color="#ef4444" />
+                          <Text style={styles.frequencyText}>x{pattern.count}</Text>
                         </View>
-                      ))}
-                    </View>
+                      )}
+                      <Text style={[styles.patternSummary, { color: theme.colors.primaryText }]}>{pattern.summary}</Text>
+                      {pattern.originLabel ? (
+                        <Text style={[styles.patternOrigin, { color: theme.colors.tertiaryText }]} numberOfLines={1}>
+                          from "{pattern.originLabel}"
+                        </Text>
+                      ) : null}
+                    </TouchableOpacity>
+                  ))}
+                  
+                  {!patternsExpanded && patternsToAddress.length > 2 && (
+                    <TouchableOpacity
+                      style={[styles.viewAllButton, { borderColor: theme.colors.border }]}
+                      onPress={() => setPatternsExpanded(true)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.viewAllText, { color: theme.colors.primary }]}>View {patternsToAddress.length - 2} More Focus Areas →</Text>
+                    </TouchableOpacity>
                   )}
-                </StandardContainer>
-              </Animated.View>
+                  {patternsExpanded && patternsToAddress.length > 2 && (
+                    <TouchableOpacity
+                      style={[styles.viewAllButton, { borderColor: theme.colors.border }]}
+                      onPress={() => setPatternsExpanded(false)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.viewAllText, { color: theme.colors.primary }]}>Show Less</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </StandardContainer>
             )}
 
-            {/* AREAS TO EXPLORE - New Aggregated Section */}
-            {monthlyGrowthAreas.length > 0 && (
-              <Animated.View style={{ opacity: cardAnimations[2], transform: [{ translateY: cardAnimations[2].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
-                <StandardContainer style={[styles.aggregateCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-                  <TouchableOpacity 
-                    style={styles.aggregateHeader}
-                    onPress={() => setGrowthSectionExpanded(!growthSectionExpanded)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.aggregateHeaderLeft}>
-                      <Text style={[styles.aggregateSectionTitle, { color: '#D4AF37' }]}>AREAS TO EXPLORE</Text>
-                      <Text style={[styles.aggregateCount, { color: theme.colors.secondaryText }]}>{monthlyGrowthAreas.length} patterns identified</Text>
-                    </View>
-                    <Ionicons 
-                      name={growthSectionExpanded ? 'chevron-up' : 'chevron-down'} 
-                      size={20} 
-                      color={theme.colors.secondaryText} 
-                    />
-                  </TouchableOpacity>
-                  
-                  {growthSectionExpanded && (
-                    <View style={styles.aggregateContent}>
-                      {monthlyGrowthAreas.map((area, index) => (
-                        <View key={index} style={[styles.aggregateItem, { borderLeftColor: '#D4AF37' }]}>
-                          <Text style={[styles.aggregateItemText, { color: theme.colors.primaryText }]}>{area.summary}</Text>
-                          <View style={styles.aggregateItemFooter}>
-                            <Text style={[styles.aggregateItemCount, { color: '#D4AF37' }]}>Appeared in {area.count} entries</Text>
-                            <TouchableOpacity style={styles.addToPlaybookButton}>
-                              <Text style={styles.addToPlaybookText}>Add to Playbook →</Text>
-                            </TouchableOpacity>
-                          </View>
+            {/* What's Working */}
+            {whatsWorking.length > 0 && (
+              <StandardContainer style={[styles.workingCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+                <TouchableOpacity 
+                  style={styles.workingHeader}
+                  onPress={() => setWorkingExpanded(!workingExpanded)}
+                  activeOpacity={0.7}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Ionicons name="sparkles-outline" size={20} color="#f59e0b" />
+                    <Text style={[styles.workingTitle, { color: theme.colors.primaryText }]}>What's Working ({whatsWorking.length})</Text>
+                  </View>
+                  <Ionicons 
+                    name={workingExpanded ? "chevron-up" : "chevron-down"} 
+                    size={20} 
+                    color={theme.colors.secondaryText} 
+                  />
+                </TouchableOpacity>
+                <Text style={[styles.patternSubtitle, { color: theme.colors.tertiaryText }]}>Strategies that are helping you thrive</Text>
+                
+                <View style={styles.workingContent}>
+                  {whatsWorking.slice(0, workingExpanded ? whatsWorking.length : 2).map((item) => (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={[styles.workingItem, { backgroundColor: 'rgba(16, 185, 129, 0.10)', borderColor: 'rgba(16, 185, 129, 0.25)' }]}
+                      onPress={() => {
+                        const entry = allNotes.find((n: any) => n.id === item.entryId);
+                        if (entry) {
+                          navigation.navigate('EntryDetail', { entry, highlightText: item.summary });
+                        }
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      {item.count > 1 && (
+                        <View style={styles.frequencyBadge}>
+                          <Ionicons name="flame" size={13} color="#10b981" />
+                          <Text style={[styles.frequencyText, { color: '#10b981' }]}>x{item.count}</Text>
                         </View>
-                      ))}
-                    </View>
+                      )}
+                      <Text style={[styles.workingSummary, { color: theme.colors.primaryText }]}>{item.summary}</Text>
+                      {item.originLabel ? (
+                        <Text style={[styles.patternOrigin, { color: theme.colors.tertiaryText }]} numberOfLines={1}>
+                          from "{item.originLabel}"
+                        </Text>
+                      ) : null}
+                    </TouchableOpacity>
+                  ))}
+
+                  {!workingExpanded && whatsWorking.length > 2 && (
+                    <TouchableOpacity
+                      style={[styles.viewAllButton, { borderColor: theme.colors.border }]}
+                      onPress={() => setWorkingExpanded(true)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.viewAllText, { color: theme.colors.primary }]}>View {whatsWorking.length - 2} More Strengths →</Text>
+                    </TouchableOpacity>
+                  )}
+                  {workingExpanded && whatsWorking.length > 2 && (
+                    <TouchableOpacity
+                      style={[styles.viewAllButton, { borderColor: theme.colors.border }]}
+                      onPress={() => setWorkingExpanded(false)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.viewAllText, { color: theme.colors.primary }]}>Show Less</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </StandardContainer>
+            )}
+
+            {/* Refined This Week Card - Horizontal Layout */}
+            <StandardContainer style={[styles.heroCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+              <Text style={[styles.heroTitle, { color: theme.colors.primaryText }]}>This week at a glance</Text>
+              
+              <View style={styles.metricsRow}>
+                <View style={styles.metricItem}>
+                  <View style={styles.metricIconValue}>
+                    <Text style={styles.metricEmoji}>🔥</Text>
+                    <Text style={[styles.metricValue, { color: theme.colors.primaryText }]}>
+                      {stats.currentStreak > 0 ? stats.currentStreak : '-'}
+                    </Text>
+                  </View>
+                  <Text style={[styles.metricLabel, { color: theme.colors.secondaryText }]}>DAY STREAK</Text>
+                </View>
+                
+                <View style={styles.metricItem}>
+                  <View style={styles.metricIconValue}>
+                    <Text style={styles.metricEmoji}>😊</Text>
+                    <Text style={[styles.metricValue, { color: theme.colors.primaryText }]}>
+                      {stats.avgWellbeingScore > 0 ? `${stats.avgWellbeingScore}/10` : '-'}
+                    </Text>
+                  </View>
+                  <Text style={[styles.metricLabel, { color: theme.colors.secondaryText }]}>AVG MOOD</Text>
+                </View>
+              </View>
+              
+              {/* Interpretive sentence */}
+              <Text style={[styles.interpretiveSentence, { color: theme.colors.secondaryText }]}> 
+                {stats.totalEntries === 0
+                  ? 'Start your journey by creating your first entry.'
+                  : stats.avgWellbeingScore >= 7 
+                  ? 'A steady week with consistent emotional balance.'
+                  : stats.avgWellbeingScore >= 5
+                  ? 'A steady week overall.'
+                  : stats.avgWellbeingScore > 0
+                  ? 'You\'ve been navigating some challenges this week.'
+                  : 'Begin tracking your mood to see insights here.'}
+              </Text>
+            </StandardContainer>
+
+            {/* Progress Story Card - Enhanced with Inline Highlights */}
+            {monthlyStory && (
+              <Animated.View style={{ opacity: cardAnimations[0], transform: [{ translateY: cardAnimations[0].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
+                <StandardContainer style={[styles.progressStoryCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+                  <Text style={[styles.progressStoryTitle, { color: theme.colors.primaryText }]}>Your {new Date().toLocaleDateString('en-US', { month: 'long' })} Story</Text>
+                  {storyLoading ? (
+                    <ActivityIndicator size="small" color={theme.colors.primary} style={{ marginVertical: 12 }} />
+                  ) : (
+                    <>
+                      <Text style={[styles.progressStoryText, { color: theme.colors.secondaryText }]} numberOfLines={2}>
+                        {monthlyStory}
+                      </Text>
+                      
+                      {/* Inline Highlights */}
+                      {narrativeHighlights && (
+                        <View style={styles.inlineHighlights}>
+                          {narrativeHighlights.strongestResilience && (
+                            <View style={styles.inlineHighlightRow}>
+                              <Text style={styles.inlineHighlightIcon}>✨</Text>
+                              <Text style={[styles.inlineHighlightText, { color: theme.colors.secondaryText }]}>
+                                Strongest day: <Text style={[styles.inlineHighlightValue, { color: theme.colors.primary }]}>{narrativeHighlights.strongestResilience.date}</Text>
+                              </Text>
+                            </View>
+                          )}
+                          {narrativeHighlights.keyTheme && (
+                            <View style={styles.inlineHighlightRow}>
+                              <Text style={styles.inlineHighlightIcon}>💭</Text>
+                              <Text style={[styles.inlineHighlightText, { color: theme.colors.secondaryText }]}>
+                                Key theme: <Text style={[styles.inlineHighlightValue, { color: theme.colors.primary }]}>{narrativeHighlights.keyTheme.theme}</Text> ({narrativeHighlights.keyTheme.count} entries)
+                              </Text>
+                            </View>
+                          )}
+                          {narrativeHighlights.newStrategy && (
+                            <View style={styles.inlineHighlightRow}>
+                              <Text style={styles.inlineHighlightIcon}>🌱</Text>
+                              <Text style={[styles.inlineHighlightText, { color: theme.colors.secondaryText }]}>
+                                Strategy: <Text style={[styles.inlineHighlightValue, { color: theme.colors.primary }]}>{narrativeHighlights.newStrategy}</Text>
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      )}
+                      
+                      <TouchableOpacity 
+                        style={styles.readFullStoryButton}
+                        onPress={() => setShowFullStory(true)}
+                        activeOpacity={0.8}
+                      >
+                        <LinearGradient
+                          colors={['#8b5cf6', '#7c3aed']}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                          style={styles.readFullStoryGradient}
+                        >
+                          <Text style={styles.readFullStoryText}>Read Full Story →</Text>
+                        </LinearGradient>
+                      </TouchableOpacity>
+                    </>
                   )}
                 </StandardContainer>
               </Animated.View>
@@ -1170,287 +1399,6 @@ export default function DashboardScreen() {
               </Animated.View>
             )}
 
-            {/* Strengths & Wins - Aggregate Section */}
-            {aggregateStrengths.length > 0 && (
-              <Animated.View style={{ opacity: cardAnimations[4], transform: [{ translateY: cardAnimations[4].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
-                <StandardContainer style={[styles.aggregateCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-                  <TouchableOpacity 
-                    style={styles.aggregateHeader}
-                    onPress={() => setStrengthsExpanded(!strengthsExpanded)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.strengthsTitle, { color: theme.colors.primaryText }]}>✨ STRENGTHS & WINS {aggregateStrengths.length}</Text>
-                    <Ionicons 
-                      name={strengthsExpanded ? "chevron-up" : "chevron-down"} 
-                      size={20} 
-                      color="#10b981" 
-                    />
-                  </TouchableOpacity>
-                  
-                  {strengthsExpanded && (
-                    <View style={styles.aggregateContent}>
-                      {aggregateStrengths.map((strength, index) => (
-                        <LinearGradient
-                          key={strength.id}
-                          colors={['#1a0e13', '#2d1a22']}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 1 }}
-                          style={styles.aggregateItemCard}
-                        >
-                          <View style={styles.aggregateItemHeader}>
-                            <View style={styles.strengthBadge}>
-                              <Text style={styles.strengthBadgeText}>STRENGTH</Text>
-                            </View>
-                            <Text style={[styles.aggregateItemMeta, { color: theme.colors.tertiaryText }]}>{strength.frequency}</Text>
-                          </View>
-                          <Text style={[styles.aggregateItemText, { color: theme.colors.primaryText }]}>{strength.text}</Text>
-                          <Text style={[styles.aggregateItemCount, { color: theme.colors.secondaryText }]}>Appeared in {strength.count} {strength.count === 1 ? 'entry' : 'entries'}</Text>
-                        </LinearGradient>
-                      ))}
-                    </View>
-                  )}
-                </StandardContainer>
-              </Animated.View>
-            )}
-
-            {/* Growth & Reflections - Aggregate Section */}
-            {aggregateGrowth.length > 0 && (
-              <Animated.View style={{ opacity: cardAnimations[4], transform: [{ translateY: cardAnimations[4].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
-                <StandardContainer style={[styles.aggregateCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-                  <TouchableOpacity 
-                    style={styles.aggregateHeader}
-                    onPress={() => setGrowthExpanded(!growthExpanded)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.growthTitle, { color: theme.colors.primaryText }]}>🌱 GROWTH & REFLECTIONS {aggregateGrowth.length}</Text>
-                    <Ionicons 
-                      name={growthExpanded ? "chevron-up" : "chevron-down"} 
-                      size={20} 
-                      color="#D4AF37" 
-                    />
-                  </TouchableOpacity>
-                  
-                  {growthExpanded && (
-                    <View style={styles.aggregateContent}>
-                      {aggregateGrowth.map((growth, index) => (
-                        <LinearGradient
-                          key={growth.id}
-                          colors={['#1a0e13', '#2d1a22']}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 1 }}
-                          style={styles.aggregateItemCard}
-                        >
-                          <View style={styles.aggregateItemHeader}>
-                            <View style={styles.growthBadge}>
-                              <Text style={styles.growthBadgeText}>GROWTH</Text>
-                            </View>
-                            <Text style={[styles.aggregateItemMeta, { color: theme.colors.tertiaryText }]}>{growth.frequency}</Text>
-                          </View>
-                          <Text style={[styles.aggregateItemText, { color: theme.colors.primaryText }]}>{growth.text}</Text>
-                          <Text style={[styles.aggregateItemCount, { color: theme.colors.secondaryText }]}>Appeared in {growth.count} {growth.count === 1 ? 'entry' : 'entries'}</Text>
-                          <TouchableOpacity
-                            style={styles.addToPlaybookButton}
-                            onPress={() => {
-                              // Navigate to Playbook with this recommendation
-                              navigation.navigate('Playbook');
-                            }}
-                            activeOpacity={0.7}
-                          >
-                            <Text style={styles.addToPlaybookText}>Add to Playbook →</Text>
-                          </TouchableOpacity>
-                        </LinearGradient>
-                      ))}
-                    </View>
-                  )}
-                </StandardContainer>
-              </Animated.View>
-            )}
-
-            {/* Patterns to Address */}
-            {patternsToAddress.length > 0 && (
-              <Animated.View style={{ opacity: cardAnimations[4], transform: [{ translateY: cardAnimations[4].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
-                <StandardContainer style={[styles.patternsCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-                  <TouchableOpacity 
-                    style={styles.patternsHeader}
-                    onPress={() => setPatternsExpanded(!patternsExpanded)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.patternsTitle, { color: theme.colors.primaryText }]}>🔥 Patterns to Address ({patternsToAddress.length})</Text>
-                    <Ionicons 
-                      name={patternsExpanded ? "chevron-up" : "chevron-down"} 
-                      size={20} 
-                      color="#D4AF37" 
-                    />
-                  </TouchableOpacity>
-                  
-                  {patternsExpanded && (
-                    <View style={styles.patternsContent}>
-                      {patternsToAddress.slice(0, patternsExpanded ? patternsToAddress.length : 3).map((pattern, index) => (
-                        <TouchableOpacity
-                          key={pattern.id}
-                          style={styles.patternCard}
-                          onPress={() => {
-                            const entry = allNotes.find(n => n.id === pattern.entryId);
-                            if (entry) {
-                              navigation.navigate('EntryDetail', { entry });
-                            }
-                          }}
-                          activeOpacity={0.7}
-                        >
-                          <View style={styles.patternHeader}>
-                            <View style={[
-                              styles.priorityBadge,
-                              pattern.priority === 'HIGH' && styles.priorityHigh,
-                              pattern.priority === 'MEDIUM' && styles.priorityMedium,
-                              pattern.priority === 'LOW' && styles.priorityLow,
-                            ]}>
-                              <Text style={styles.priorityText}>{pattern.priority}</Text>
-                            </View>
-                            <Text style={[styles.patternDate, { color: theme.colors.tertiaryText }]}>{pattern.date}</Text>
-                          </View>
-                          <Text style={[styles.patternSummary, { color: theme.colors.primaryText }]}>{pattern.summary}</Text>
-                          <Text style={[styles.patternCategory, { color: theme.colors.secondaryText }]}>{pattern.category}</Text>
-                          <Text style={[styles.patternTap, { color: theme.colors.primary }]}>Tap to explore →</Text>
-                        </TouchableOpacity>
-                      ))}
-                      
-                      {!patternsExpanded && patternsToAddress.length > 3 && (
-                        <TouchableOpacity
-                          style={styles.viewAllButton}
-                          onPress={() => setPatternsExpanded(true)}
-                          activeOpacity={0.7}
-                        >
-                          <Text style={styles.viewAllText}>View All {patternsToAddress.length} Patterns →</Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  )}
-                </StandardContainer>
-              </Animated.View>
-            )}
-
-            {/* Recurring Themes & Pattern Recognition Section */}
-            {showPatternsSection && (
-              <Animated.View style={{ opacity: cardAnimations[5], transform: [{ translateY: cardAnimations[5].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
-                <StandardContainer style={[styles.patternsAnalysisCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-                  <View style={styles.patternsAnalysisHeader}>
-                    <Text style={[styles.patternsAnalysisTitle, { color: theme.colors.primaryText }]}>🔍 Pattern Recognition</Text>
-                    <TouchableOpacity onPress={() => setShowPatternsSection(false)} activeOpacity={0.7}>
-                      <Ionicons name="close" size={24} color={theme.colors.secondaryText} />
-                    </TouchableOpacity>
-                  </View>
-                  
-                  <Text style={[styles.patternsAnalysisSubtitle, { color: theme.colors.secondaryText }]}>
-                    I notice recurring themes across your entries. Here's what stands out:
-                  </Text>
-
-                  {/* Recurring Themes */}
-                  {aggregateGrowth.length > 0 && (
-                    <View style={styles.recurringThemesSection}>
-                      <Text style={[styles.sectionLabel, { color: theme.colors.primary }]}>Recurring Themes</Text>
-                      {aggregateGrowth.slice(0, 3).map((growth, idx) => (
-                        <LinearGradient
-                          key={growth.id}
-                          colors={['rgba(139, 92, 246, 0.1)', 'rgba(139, 92, 246, 0.05)']}
-                          style={styles.themeCard}
-                        >
-                          <View style={styles.themeHeader}>
-                            <Text style={[styles.themeText, { color: theme.colors.primaryText }]}>{growth.text}</Text>
-                            <View style={styles.themeBadge}>
-                              <Text style={styles.themeBadgeText}>{growth.count}x</Text>
-                            </View>
-                          </View>
-                          <Text style={[styles.themeFrequency, { color: theme.colors.secondaryText }]}>{growth.frequency}</Text>
-                        </LinearGradient>
-                      ))}
-                    </View>
-                  )}
-
-                  {/* Pattern Insights */}
-                  {patternsToAddress.length > 0 && (
-                    <View style={styles.patternInsightsSection}>
-                      <Text style={[styles.sectionLabel, { color: theme.colors.primary }]}>Patterns I Notice</Text>
-                      {patternsToAddress.slice(0, 2).map((pattern, idx) => (
-                        <View key={pattern.id} style={styles.patternInsightCard}>
-                          <Text style={[styles.patternInsightText, { color: theme.colors.primaryText }]}>
-                            "I notice you mention {pattern.category.toLowerCase()} often. {pattern.summary}"
-                          </Text>
-                          <TouchableOpacity
-                            style={styles.explorePatternButton}
-                            onPress={() => {
-                              const entry = allNotes.find(n => n.id === pattern.entryId);
-                              if (entry) {
-                                navigation.navigate('EntryDetail', { entry });
-                              }
-                            }}
-                            activeOpacity={0.7}
-                          >
-                            <Text style={[styles.explorePatternText, { color: theme.colors.primary }]}>Explore this →</Text>
-                          </TouchableOpacity>
-                        </View>
-                      ))}
-                    </View>
-                  )}
-
-                  {/* Emotional Patterns */}
-                  {dominantEmotions.length > 0 && (
-                    <View style={styles.emotionalPatternsSection}>
-                      <Text style={[styles.sectionLabel, { color: theme.colors.primary }]}>Emotional Patterns</Text>
-                      <Text style={[styles.emotionalPatternText, { color: theme.colors.primaryText }]}>
-                        You've been feeling <Text style={{ fontWeight: '600', color: theme.colors.primary }}>{dominantEmotions[0].emotion.toLowerCase()}</Text> in {dominantEmotions[0].percentage}% of your recent entries.
-                        {dominantEmotions.length > 1 && ` You also experience ${dominantEmotions[1].emotion.toLowerCase()} (${dominantEmotions[1].percentage}%) frequently.`}
-                      </Text>
-                      <Text style={[styles.emotionalPatternSuggestion, { color: theme.colors.secondaryText }]}>
-                        This pattern suggests you might benefit from exploring what triggers these feelings and what helps you move through them.
-                      </Text>
-                    </View>
-                  )}
-                </StandardContainer>
-              </Animated.View>
-            )}
-
-            {/* What's Working */}
-            {whatsWorking.length > 0 && (
-              <Animated.View style={{ opacity: cardAnimations[4], transform: [{ translateY: cardAnimations[4].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
-                <StandardContainer style={styles.workingCard}>
-                  <TouchableOpacity 
-                    style={styles.workingHeader}
-                    onPress={() => setWorkingExpanded(!workingExpanded)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.workingTitle}>✨ What's Working ({whatsWorking.length})</Text>
-                    <Ionicons 
-                      name={workingExpanded ? "chevron-up" : "chevron-down"} 
-                      size={20} 
-                      color="#D4AF37" 
-                    />
-                  </TouchableOpacity>
-                  
-                  {workingExpanded && (
-                    <View style={styles.workingContent}>
-                      {whatsWorking.slice(0, workingExpanded ? whatsWorking.length : 2).map((item, index) => (
-                        <View key={item.id} style={styles.workingItem}>
-                          <Text style={styles.workingSummary}>{item.summary}</Text>
-                          <Text style={styles.workingFrequency}>{item.frequency}</Text>
-                          <TouchableOpacity
-                            style={styles.keepGoingButton}
-                            onPress={() => {
-                              const entry = allNotes.find(n => n.id === item.entryId);
-                              if (entry) {
-                                navigation.navigate('EntryDetail', { entry });
-                              }
-                            }}
-                            activeOpacity={0.7}
-                          >
-                            <Text style={styles.keepGoingText}>Keep going →</Text>
-                          </TouchableOpacity>
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                </StandardContainer>
-              </Animated.View>
-            )}
           </>
         ) : (
           <View style={styles.emptyContainer}>
@@ -1602,7 +1550,7 @@ export default function DashboardScreen() {
                       >
                         <View style={styles.highlightIconContainer}>
                           <LinearGradient
-                            colors={['rgba(212, 175, 55, 0.3)', 'rgba(212, 175, 55, 0.1)']}
+                            colors={['rgba(139, 92, 246, 0.2)', 'rgba(139, 92, 246, 0.05)']}
                             style={styles.iconGlowCircle}
                           >
                             <Text style={styles.premiumHighlightIcon}>✨</Text>
@@ -1720,7 +1668,7 @@ export default function DashboardScreen() {
                       
                       <View style={styles.statCompactCard}>
                         <LinearGradient
-                          colors={['rgba(212, 175, 55, 0.3)', 'rgba(212, 175, 55, 0.1)']}
+                          colors={['rgba(139, 92, 246, 0.2)', 'rgba(139, 92, 246, 0.05)']}
                           style={styles.statIconGlow}
                         >
                           <Text style={styles.statIcon}>💪</Text>
@@ -2164,8 +2112,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: 'rgba(15, 23, 42, 0.96)',
     borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.7)',
-    shadowColor: '#D4AF37',
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    shadowColor: '#000',
     shadowOpacity: 0.4,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 6 },
@@ -2299,8 +2247,8 @@ const styles = StyleSheet.create({
     color: '#e5e7eb',
   },
   sheetCtaPrimary: {
-    backgroundColor: '#D4AF37',
-    shadowColor: '#D4AF37',
+    backgroundColor: '#8b5cf6',
+    shadowColor: '#8b5cf6',
     shadowOpacity: 0.45,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 6 },
@@ -2477,7 +2425,6 @@ const styles = StyleSheet.create({
   progressStoryTitle: {
     fontSize: sf(18),
     fontWeight: '700',
-    color: '#D4AF37',
     marginBottom: 12,
   },
   progressStoryText: {
@@ -2595,7 +2542,6 @@ const styles = StyleSheet.create({
   milestoneTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#D4AF37',
     textAlign: 'center',
     marginBottom: 12,
   },
@@ -2635,14 +2581,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 18,
     borderRadius: 12,
-    backgroundColor: 'rgba(212, 175, 55, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.4)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   viewEntryText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#D4AF37',
   },
   // Full Story Modal - Premium Glassmorphic Design
   modalContainer: {
@@ -2693,9 +2638,8 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#D4AF37',
     letterSpacing: -0.5,
-    marginTop: 12, // ADDED: pushes title down slightly
+    marginTop: 12,
   },
   modalCloseButton: {
     width: 40,
@@ -2703,9 +2647,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 20,
-    backgroundColor: 'rgba(212, 175, 55, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.2)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   modalContent: {
     flex: 1,
@@ -2740,7 +2684,7 @@ const styles = StyleSheet.create({
   premiumSectionTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: 'rgba(212, 175, 55, 0.7)',
+    color: 'rgba(255, 255, 255, 0.5)',
     letterSpacing: 1.5,
     marginBottom: 12,
     textTransform: 'uppercase',
@@ -2772,7 +2716,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: 'rgba(212, 175, 55, 0.6)',
+    shadowColor: 'rgba(139, 92, 246, 0.3)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.5,
     shadowRadius: 6,
@@ -2835,7 +2779,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: 'rgba(212, 175, 55, 0.4)',
+    shadowColor: 'rgba(255, 255, 255, 0.12)',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.5,
     shadowRadius: 6,
@@ -2915,7 +2859,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   themeBadge: {
-    backgroundColor: 'rgba(212, 175, 55, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -2923,7 +2867,6 @@ const styles = StyleSheet.create({
   themeBadgeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#D4AF37',
   },
   themeFrequency: {
     fontSize: 13,
@@ -2933,10 +2876,10 @@ const styles = StyleSheet.create({
   },
   patternInsightCard: {
     padding: 16,
-    backgroundColor: 'rgba(212, 175, 55, 0.05)',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     borderRadius: 12,
     borderLeftWidth: 3,
-    borderLeftColor: '#D4AF37',
+    borderLeftColor: 'rgba(128, 128, 128, 0.3)',
     marginBottom: 12,
   },
   patternInsightText: {
@@ -2969,7 +2912,6 @@ const styles = StyleSheet.create({
   modalSectionTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#D4AF37',
     letterSpacing: 1,
     marginTop: 32,
     marginBottom: 16,
@@ -2981,7 +2923,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.2)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   highlightIcon: {
     fontSize: 24,
@@ -3003,7 +2945,6 @@ const styles = StyleSheet.create({
   },
   highlightTap: {
     fontSize: 12,
-    color: '#D4AF37',
     fontStyle: 'italic',
     marginTop: 4,
   },
@@ -3035,7 +2976,6 @@ const styles = StyleSheet.create({
   modalStatValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#D4AF37',
     marginBottom: 4,
   },
   modalStatLabel: {
@@ -3062,19 +3002,23 @@ const styles = StyleSheet.create({
   patternsTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#D4AF37',
+  },
+  patternSubtitle: {
+    fontSize: 13,
+    fontWeight: '400',
+    paddingHorizontal: 20,
+    marginTop: -8,
+    marginBottom: 12,
   },
   patternsContent: {
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
   patternCard: {
-    backgroundColor: 'rgba(74, 31, 31, 0.3)',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.2)',
   },
   patternHeader: {
     flexDirection: 'row',
@@ -3083,6 +3027,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   priorityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 6,
@@ -3114,30 +3060,59 @@ const styles = StyleSheet.create({
   },
   patternSummary: {
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 21,
     color: 'rgba(255, 255, 255, 0.85)',
+    marginBottom: 6,
+  },
+  frequencyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 3,
     marginBottom: 8,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  frequencyText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#ef4444',
+  },
+  patternOrigin: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginTop: 2,
   },
   patternCategory: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#D4AF37',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 8,
   },
-  patternTap: {
-    fontSize: 12,
-    color: '#D4AF37',
-    fontStyle: 'italic',
+  patternFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  patternCategoryBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  patternCategoryText: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   viewAllButton: {
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 12,
-    backgroundColor: 'rgba(212, 175, 55, 0.15)',
     borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.3)',
     alignItems: 'center',
     marginTop: 8,
   },
@@ -3145,8 +3120,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,
-    color: 'rgba(255, 255, 255, 0.85)',
-    marginBottom: 8,
   },
   workingFrequency: {
     fontSize: 12,
@@ -3158,14 +3131,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 8,
-    backgroundColor: 'rgba(212, 175, 55, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.4)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   keepGoingText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#D4AF37',
   },
   // What's Working Section
   workingCard: {
@@ -3186,24 +3158,20 @@ const styles = StyleSheet.create({
   workingTitle: {
     fontSize: 17,
     fontWeight: '700',
-    color: '#D4AF37',
   },
   workingContent: {
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
   workingItem: {
-    backgroundColor: 'rgba(139, 92, 246, 0.1)',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.3)',
   },
   workingSummary: {
     fontSize: 14,
     lineHeight: 20,
-    color: 'rgba(255, 255, 255, 0.85)',
     marginBottom: 8,
   },
   workingFrequency: {
@@ -3270,23 +3238,20 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 8,
-    backgroundColor: 'rgba(212, 175, 55, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
   },
   addToPlaybookText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#D4AF37',
   },
   strengthsTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#10b981',
     letterSpacing: 0.5,
   },
   growthTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#D4AF37',
     letterSpacing: 0.5,
   },
   aggregateContent: {
@@ -3322,21 +3287,19 @@ const styles = StyleSheet.create({
   strengthBadgeText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#10b981',
     letterSpacing: 0.5,
   },
   growthBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 6,
-    backgroundColor: 'rgba(212, 175, 55, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.4)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   growthBadgeText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#D4AF37',
     letterSpacing: 0.5,
   },
   aggregateItemMeta: {
@@ -3360,14 +3323,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
-    backgroundColor: 'rgba(212, 175, 55, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.3)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     marginTop: 4,
   },
   addToPlaybookText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#D4AF37',
   },
 });

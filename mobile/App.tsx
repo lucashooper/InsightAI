@@ -5,8 +5,11 @@ import { View, Text, Image } from 'react-native';
 import React from 'react';
 import Purchases from 'react-native-purchases';
 import { Asset } from 'expo-asset';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { ThemeProvider } from './contexts/ThemeContext';
+import { ThemeProvider, isDarkTheme } from './contexts/ThemeContext';
+import type { ThemeName } from './contexts/ThemeContext';
 import { OnboardingProvider } from './contexts/OnboardingContext';
 import { AppLockProvider, useAppLock } from './contexts/AppLockContext';
 import AppNavigator from './navigation/AppNavigator';
@@ -25,8 +28,20 @@ const REVENUECAT_PRODUCTION_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API
 // Use Test Store in development for easier testing, Production for releases
 const REVENUECAT_API_KEY = __DEV__ ? REVENUECAT_TEST_STORE_API_KEY : REVENUECAT_PRODUCTION_API_KEY;
 
+// Theme background colors for splash screen (mirrors ThemeContext)
+const splashThemeColors: Record<string, { bg: string[], textColor: string, isDark: boolean }> = {
+  dark: { bg: ['#0e0e12', '#0a0a0c', '#060608'], textColor: '#ffffff', isDark: true },
+  midnight: { bg: ['#0f0f23', '#1a1a3e', '#252550'], textColor: '#ffffff', isDark: true },
+  forest: { bg: ['#0f2e1a', '#0a1f0f', '#051008'], textColor: '#ffffff', isDark: true },
+  light: { bg: ['#fef5f8', '#fef0f5', '#fef7f2'], textColor: '#1a1a2e', isDark: false },
+  vibrant: { bg: ['#faf5ff', '#f3e8ff', '#e9d5ff'], textColor: '#1a1a2e', isDark: false },
+  ocean: { bg: ['#eff6ff', '#dbeafe', '#bfdbfe'], textColor: '#1a1a2e', isDark: false },
+  sunset: { bg: ['#fff8f0', '#ffe9d6', '#ffd9b8'], textColor: '#1a1a2e', isDark: false },
+};
+
 export default function App() {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
+  const [savedTheme, setSavedTheme] = useState<string>('dark');
 
   useEffect(() => {
     async function loadResourcesAndDataAsync() {
@@ -95,6 +110,12 @@ export default function App() {
           console.error('[REVENUECAT] Error details:', customerInfoError.message);
         }
 
+        // Load saved theme for splash screen
+        try {
+          const storedTheme = await AsyncStorage.getItem('@insightai_theme');
+          if (storedTheme) setSavedTheme(storedTheme);
+        } catch (e) { /* fallback to dark */ }
+
         // Test encryption on startup
         console.log('=== ENCRYPTION TEST START ===');
         try {
@@ -149,17 +170,21 @@ export default function App() {
 
       {/* Single splash overlay - stays on top until app is fully ready */}
       {!appReady && (() => {
-        console.log('[SPLASH OVERLAY] Rendering splash overlay');
+        const themeConfig = splashThemeColors[savedTheme] || splashThemeColors.dark;
         return (
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}>
-          <SunoGradient />
+          {themeConfig.isDark ? (
+            <LinearGradient colors={themeConfig.bg} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+          ) : (
+            <SunoGradient />
+          )}
           <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
             <Image
               source={insightLogo}
               style={{ width: 64, height: 64, borderRadius: 16, marginRight: 14 }}
               resizeMode="cover"
             />
-            <Text style={{ fontSize: 44, fontWeight: '700', color: '#1a1a2e', letterSpacing: -1.2 }}>
+            <Text style={{ fontSize: 44, fontWeight: '700', color: themeConfig.textColor, letterSpacing: -1.2 }}>
               Insight
             </Text>
           </View>

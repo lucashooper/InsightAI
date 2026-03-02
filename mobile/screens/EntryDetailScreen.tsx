@@ -54,41 +54,18 @@ const getSentimentStyle = (emotion: string) => {
 };
 
 // Helper function to get styling for insight cards based on type
-const getInsightCardStyle = (type: string) => {
-  switch (type) {
-    case 'strength':
-    case 'win':
-      // Emerald/Green for positive insights
-      return {
-        container: { backgroundColor: 'rgba(16, 185, 129, 0.08)' },
-        border: { backgroundColor: '#10b981' },
-        badge: { backgroundColor: 'rgba(16, 185, 129, 0.15)' },
-        badgeText: { color: '#10b981' },
-        button: { borderColor: '#10b981' },
-        buttonColor: '#10b981',
-      };
-    case 'growth':
-    case 'reflection':
-      // Amber/Orange for growth opportunities
-      return {
-        container: { backgroundColor: 'rgba(245, 158, 11, 0.08)' },
-        border: { backgroundColor: '#f59e0b' },
-        badge: { backgroundColor: 'rgba(245, 158, 11, 0.15)' },
-        badgeText: { color: '#f59e0b' },
-        button: { borderColor: '#f59e0b' },
-        buttonColor: '#f59e0b',
-      };
-    default:
-      // Purple fallback
-      return {
-        container: { backgroundColor: 'rgba(139, 92, 246, 0.08)' },
-        border: { backgroundColor: '#8b5cf6' },
-        badge: { backgroundColor: 'rgba(139, 92, 246, 0.15)' },
-        badgeText: { color: '#8b5cf6' },
-        button: { borderColor: '#8b5cf6' },
-        buttonColor: '#8b5cf6',
-      };
-  }
+// Uses theme-consistent glassmorphic styling — no colored text
+const getInsightCardStyle = (_type: string) => {
+  // All card types use the same neutral glassmorphic style
+  // Differentiation comes from the badge label text, not colors
+  return {
+    container: {},
+    border: {},
+    badge: {},
+    badgeText: {},
+    button: {},
+    buttonColor: 'rgba(255, 255, 255, 0.7)',
+  };
 };
 
 // Enable LayoutAnimation on Android
@@ -97,7 +74,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 export default function EntryDetailScreenNew({ route, navigation }: any) {
-  const { entry: initialEntry, entryId, shouldAnalyze } = route.params || {};
+  const { entry: initialEntry, entryId, shouldAnalyze, highlightText } = route.params || {};
   const { theme } = useTheme();
   const { user } = useAuth();
   const [analyzing, setAnalyzing] = useState(false);
@@ -128,7 +105,26 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
   const controlsBottomAnim = useRef(new Animated.Value(20)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef<ScrollView>(null);
-  
+  const insightsSectionY = useRef<number>(0);
+  const [highlightedCardText, setHighlightedCardText] = useState<string | null>(highlightText || null);
+
+  // Auto-scroll to insights when navigating from Dashboard with highlightText
+  useEffect(() => {
+    if (highlightText && entry?.ai_structured_insights) {
+      // Ensure both accordions are expanded so user can see the highlighted card
+      setStrengthsExpanded(true);
+      setGrowthExpanded(true);
+      // Scroll to insights section after a short delay for layout
+      setTimeout(() => {
+        if (insightsSectionY.current > 0) {
+          scrollViewRef.current?.scrollTo({ y: insightsSectionY.current - 80, animated: true });
+        }
+      }, 500);
+      // Clear highlight after 3 seconds
+      setTimeout(() => setHighlightedCardText(null), 3000);
+    }
+  }, [highlightText, entry]);
+
   const toggleAccordion = (section: 'strengths' | 'growth') => {
     // Configure smooth animation
     LayoutAnimation.configureNext({
@@ -761,7 +757,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
             <View style={styles.inlineInsightsSection}>
               <View style={styles.insightsDivider} />
               <View style={styles.insightsHeaderRow}>
-                <Text style={[styles.inlineInsightsTitle, { color: theme.colors.primary }]}>Insights</Text>
+                <Text style={[styles.inlineInsightsTitle, { color: theme.colors.primaryText }]}>Insights</Text>
                 <TouchableOpacity
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -769,7 +765,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                     setAnalysisOverlayMode('results');
                     setAnalysisOverlayVisible(true);
                   }}
-                  style={styles.reopenInsightsButton}
+                  style={[styles.reopenInsightsButton, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
                   activeOpacity={0.7}
                 >
                   <Ionicons 
@@ -787,8 +783,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                     <View style={[
                       styles.inlineMoodCard,
                       styles.inlineMoodCardTop,
-                      getSentimentStyle(moodAnalysis.primary_emotion),
-                      { flex: 1 }
+                      { flex: 1, backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }
                     ]}>
                       <View style={styles.emotionBadge}>
                         <Text style={[styles.inlineMoodLabel, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.6)' : '#6B6B6B' }]}>PRIMARY EMOTION</Text>
@@ -797,9 +792,9 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                     </View>
                   )}
                   {structuredInsights?.wellbeingScore != null && (
-                    <View style={[styles.inlineWellbeingCard, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.08)', borderColor: isDarkTheme(theme.name) ? 'rgba(139, 92, 246, 0.3)' : 'rgba(139, 92, 246, 0.15)' }]}>
+                    <View style={[styles.inlineWellbeingCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
                       <Text style={[styles.inlineMoodLabel, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.6)' : '#6B6B6B' }]}>WELLBEING</Text>
-                      <Text style={[styles.inlineWellbeingScore, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.98)' : '#1a1a1a' }]}>{structuredInsights.wellbeingScore}<Text style={styles.inlineWellbeingMax}>/10</Text></Text>
+                      <Text style={[styles.inlineWellbeingScore, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.98)' : '#1a1a1a' }]}>{structuredInsights.wellbeingScore}<Text style={[styles.inlineWellbeingScore, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>/10</Text></Text>
                       <View style={styles.inlineWellbeingAdjust}>
                         <TouchableOpacity
                           onPress={async () => {
@@ -833,10 +828,10 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
               
               {/* Summary */}
               {structuredInsights?.insights_report?.conversationalSummary && (
-                <View style={styles.inlineBriefingCard}>
+                <View style={[styles.inlineBriefingCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
                   <View style={styles.insightHeader}>
-                    <Ionicons name="sparkles" size={20} color="#a855f7" />
-                    <Text style={styles.insightHeaderText}>Summary</Text>
+                    <Ionicons name="sparkles" size={20} color="#f59e0b" />
+                    <Text style={[styles.insightHeaderText, { color: theme.colors.secondaryText }]}>Summary</Text>
                   </View>
                   <Text style={[styles.inlineBriefingText, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.9)' : '#2C2C2C' }]}>
                     {structuredInsights.insights_report.conversationalSummary
@@ -858,27 +853,27 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                 );
                 
                 return (
-                  <View style={styles.insightCardsContainer}>
+                  <View style={styles.insightCardsContainer} onLayout={(e) => { insightsSectionY.current = e.nativeEvent.layout.y; }}>
                     {/* Strengths & Wins Accordion */}
                     {strengthCards.length > 0 && (
                       <View style={styles.accordionSection}>
                         <TouchableOpacity 
-                          style={styles.accordionHeader}
+                          style={[styles.accordionHeader, { backgroundColor: 'rgba(16, 185, 129, 0.08)', borderColor: 'rgba(16, 185, 129, 0.25)' }]}
                           onPress={() => toggleAccordion('strengths')}
                         >
                           <View style={styles.accordionHeaderLeft}>
-                            <Ionicons name="sparkles" size={20} color="#10b981" />
-                            <Text style={[styles.accordionHeaderText, { color: '#10b981' }]}>
-                              Strengths & Wins
+                            <Text style={{ fontSize: 18 }}>✨</Text>
+                            <Text style={[styles.accordionHeaderText, { color: theme.colors.primaryText }]}>
+                              What's Working
                             </Text>
-                            <View style={styles.accordionBadge}>
-                              <Text style={styles.accordionBadgeText}>{strengthCards.length}</Text>
+                            <View style={[styles.accordionBadge, { backgroundColor: theme.colors.surface }]}>
+                              <Text style={[styles.accordionBadgeText, { color: theme.colors.primaryText }]}>{strengthCards.length}</Text>
                             </View>
                           </View>
                           <Ionicons 
                             name={strengthsExpanded ? 'chevron-up' : 'chevron-down'} 
                             size={20} 
-                            color="#10b981" 
+                            color={theme.colors.tertiaryText} 
                           />
                         </TouchableOpacity>
                         
@@ -886,16 +881,17 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                           <View style={styles.accordionContent}>
                             {strengthCards.map((card: any, index: number) => {
                               const cardStyle = getInsightCardStyle(card.type);
+                              const isHighlighted = highlightedCardText && card.text?.toLowerCase().includes(highlightedCardText.toLowerCase().substring(0, 30));
                               return (
-                                <View key={index} style={[styles.insightCard, cardStyle.container]}>
-                                  <View style={[styles.insightCardBorder, cardStyle.border]} />
+                                <View key={index} style={[styles.insightCard, { backgroundColor: theme.colors.cardBackground, borderWidth: isHighlighted ? 2 : 1, borderColor: isHighlighted ? '#10b981' : theme.colors.border }]}>
+                                  <View style={[styles.insightCardBorder, { backgroundColor: theme.colors.primary }]} />
                                   <View style={styles.insightCardContent}>
-                                    <View style={[styles.insightBadge, cardStyle.badge]}>
-                                      <Text style={[styles.insightBadgeText, cardStyle.badgeText]}>
+                                    <View style={[styles.insightBadge, { backgroundColor: theme.colors.surface }]}>
+                                      <Text style={[styles.insightBadgeText, { color: theme.colors.secondaryText }]}>
                                         {card.short_label || card.type.toUpperCase()}
                                       </Text>
                                     </View>
-                                    <Text style={[styles.insightCardText, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.9)' : '#2C2C2C' }]}>
+                                    <Text style={[styles.insightCardText, { color: theme.colors.secondaryText }]}>
                                       {card.text
                                         .replace(/The user/g, 'You')
                                         .replace(/the user/g, 'you')
@@ -911,26 +907,26 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                       </View>
                     )}
                     
-                    {/* Growth & Reflections Accordion */}
+                    {/* Patterns to Address Accordion */}
                     {growthCards.length > 0 && (
                       <View style={styles.accordionSection}>
                         <TouchableOpacity 
-                          style={styles.accordionHeader}
+                          style={[styles.accordionHeader, { backgroundColor: 'rgba(217, 119, 6, 0.08)', borderColor: 'rgba(217, 119, 6, 0.25)' }]}
                           onPress={() => toggleAccordion('growth')}
                         >
                           <View style={styles.accordionHeaderLeft}>
-                            <Ionicons name="trending-up" size={20} color="#f59e0b" />
-                            <Text style={[styles.accordionHeaderText, { color: '#f59e0b' }]}>
-                              Growth & Reflections
+                            <Text style={{ fontSize: 18 }}>🌱</Text>
+                            <Text style={[styles.accordionHeaderText, { color: theme.colors.primaryText }]}>
+                              Patterns to Address
                             </Text>
-                            <View style={styles.accordionBadge}>
-                              <Text style={styles.accordionBadgeText}>{growthCards.length}</Text>
+                            <View style={[styles.accordionBadge, { backgroundColor: theme.colors.surface }]}>
+                              <Text style={[styles.accordionBadgeText, { color: theme.colors.primaryText }]}>{growthCards.length}</Text>
                             </View>
                           </View>
                           <Ionicons 
                             name={growthExpanded ? 'chevron-up' : 'chevron-down'} 
                             size={20} 
-                            color="#f59e0b" 
+                            color={theme.colors.tertiaryText} 
                           />
                         </TouchableOpacity>
                         
@@ -939,16 +935,17 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                             {growthCards.map((card: any, index: number) => {
                               const cardStyle = getInsightCardStyle(card.type);
                               const isGrowthOrReflection = card.type === 'growth' || card.type === 'reflection';
+                              const isHighlighted = highlightedCardText && card.text?.toLowerCase().includes(highlightedCardText.toLowerCase().substring(0, 30));
                               return (
-                                <View key={index} style={[styles.insightCard, cardStyle.container]}>
-                                  <View style={[styles.insightCardBorder, cardStyle.border]} />
+                                <View key={index} style={[styles.insightCard, { backgroundColor: isHighlighted ? 'rgba(217, 119, 6, 0.08)' : theme.colors.cardBackground, borderWidth: isHighlighted ? 2 : 1, borderColor: isHighlighted ? '#d97706' : theme.colors.border }]}>
+                                  <View style={[styles.insightCardBorder, { backgroundColor: theme.colors.primary }]} />
                                   <View style={styles.insightCardContent}>
-                                    <View style={[styles.insightBadge, cardStyle.badge]}>
-                                      <Text style={[styles.insightBadgeText, cardStyle.badgeText]}>
+                                    <View style={[styles.insightBadge, { backgroundColor: theme.colors.surface }]}>
+                                      <Text style={[styles.insightBadgeText, { color: theme.colors.secondaryText }]}>
                                         {card.short_label || card.type.toUpperCase()}
                                       </Text>
                                     </View>
-                                    <Text style={[styles.insightCardText, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.9)' : '#2C2C2C' }]}>
+                                    <Text style={[styles.insightCardText, { color: theme.colors.secondaryText }]}>
                                       {card.text
                                         .replace(/The user/g, 'You')
                                         .replace(/the user/g, 'you')
@@ -956,22 +953,30 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                                         .replace(/Their/g, 'Your')}
                                     </Text>
                                     {isGrowthOrReflection && (
-                                      <TouchableOpacity 
-                                        style={[styles.playbookButton, cardStyle.button]}
-                                        onPress={() => handleAddToPlaybook(card.text, index)}
-                                        disabled={addingToPlaybook === `growth-${index}`}
+                                      <LinearGradient
+                                        colors={['#8b5cf6', '#7c3aed']}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 0 }}
+                                        style={styles.playbookButton}
                                       >
-                                        {addingToPlaybook === `growth-${index}` ? (
-                                          <ActivityIndicator size="small" color={cardStyle.buttonColor} />
-                                        ) : (
-                                          <>
-                                            <Ionicons name="add-circle-outline" size={16} color={cardStyle.buttonColor} />
-                                            <Text style={[styles.playbookButtonText, { color: cardStyle.buttonColor }]}>
-                                              Add to Playbook
-                                            </Text>
-                                          </>
-                                        )}
-                                      </TouchableOpacity>
+                                        <TouchableOpacity 
+                                          style={styles.playbookButtonInner}
+                                          onPress={() => handleAddToPlaybook(card.text, index)}
+                                          disabled={addingToPlaybook === `growth-${index}`}
+                                          activeOpacity={0.8}
+                                        >
+                                          {addingToPlaybook === `growth-${index}` ? (
+                                            <ActivityIndicator size="small" color="#ffffff" />
+                                          ) : (
+                                            <>
+                                              <Ionicons name="add-circle-outline" size={16} color="#ffffff" />
+                                              <Text style={[styles.playbookButtonText, { color: '#ffffff' }]}>
+                                                Add to Playbook
+                                              </Text>
+                                            </>
+                                          )}
+                                        </TouchableOpacity>
+                                      </LinearGradient>
                                     )}
                                   </View>
                                 </View>
@@ -1266,25 +1271,20 @@ const styles = StyleSheet.create({
   inlineInsightsTitle: {
     fontSize: sf(20),
     fontWeight: '600',
-    color: 'rgba(139, 92, 246, 0.95)',
   },
   reopenInsightsButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(139, 92, 246, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.25)',
   },
   inlineBriefingCard: {
-    backgroundColor: 'rgba(139, 92, 246, 0.12)',
     borderRadius: isTablet ? 20 : 16,
     padding: isTablet ? 28 : 20,
     marginBottom: isTablet ? 20 : 16,
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.25)',
   },
   insightHeader: {
     flexDirection: 'row',
@@ -1293,12 +1293,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(139, 92, 246, 0.2)',
+    borderBottomColor: 'rgba(128, 128, 128, 0.15)',
   },
   insightHeaderText: {
     fontSize: sf(14),
     fontWeight: '700',
-    color: 'rgba(168, 85, 247, 0.95)',
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
@@ -1407,15 +1406,21 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.9)',
   },
   playbookButton: {
+    borderRadius: 20,
+    marginTop: sf(12),
+    alignSelf: 'flex-start',
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  playbookButtonInner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginTop: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignSelf: 'flex-start',
+    paddingVertical: sf(8),
+    paddingHorizontal: sf(14),
   },
   playbookButtonText: {
     fontSize: sf(13),

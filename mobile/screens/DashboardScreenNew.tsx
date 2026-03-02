@@ -306,39 +306,120 @@ export default function DashboardScreenNew() {
         const entryTitle = n.title || 'Untitled Entry';
         const entryDate = new Date(n.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
 
-        const fields = Object.keys(insights).join(', ');
-        console.log('[Home:Patterns] Entry', n.id, '→', fields);
-        console.log('[Home:Patterns]   growth_recommendations type:', typeof insights.growth_recommendations, Array.isArray(insights.growth_recommendations) ? `(array len=${insights.growth_recommendations.length})` : '');
-        console.log('[Home:Patterns]   strengths_wins type:', typeof insights.strengths_wins, Array.isArray(insights.strengths_wins) ? `(array len=${insights.strengths_wins.length})` : '');
+        // === AREAS TO IMPROVE / PATTERNS TO ADDRESS ===
 
-        if (Array.isArray(insights.growth_recommendations)) {
-          insights.growth_recommendations.forEach((rec: any) => {
-            const text = typeof rec === 'string' ? rec : String(rec.recommendation || rec.description || rec.area || JSON.stringify(rec));
-            if (!text || text === '{}') return;
-            patterns.push({
-              id: `${n.id}_${patterns.length}`,
-              priority: rec.priority || 'MEDIUM',
-              text: text,
-              category: rec.area || rec.type || 'GROWTH',
-              date: entryDate,
-              entryTitle: entryTitle,
-              entryId: n.id,
-            });
+        // 1. progress_indicators.areas_for_growth (array of strings)
+        if (insights.progress_indicators?.areas_for_growth) {
+          const areas = Array.isArray(insights.progress_indicators.areas_for_growth)
+            ? insights.progress_indicators.areas_for_growth : [];
+          areas.forEach((area: any) => {
+            const text = typeof area === 'string' ? area : String(area.description || area.area || JSON.stringify(area));
+            if (text && text !== '{}') {
+              patterns.push({
+                id: `${n.id}_afg_${patterns.length}`, priority: 'MEDIUM',
+                text, category: 'GROWTH', date: entryDate, entryTitle, entryId: n.id,
+              });
+            }
           });
         }
 
-        if (Array.isArray(insights.strengths_wins)) {
-          insights.strengths_wins.forEach((strength: any) => {
-            const text = typeof strength === 'string' ? strength : String(strength.win || strength.description || strength.strength || JSON.stringify(strength));
-            if (!text || text === '{}') return;
-            strengths.push({
-              id: `${n.id}_s_${strengths.length}`,
-              text: text,
-              category: strength.area || strength.type || 'STRENGTH',
-              date: entryDate,
-              entryTitle: entryTitle,
-              entryId: n.id,
-            });
+        // 2. coping_strategies.suggested (array of {strategy, why_helpful, difficulty})
+        if (insights.coping_strategies?.suggested) {
+          const suggested = Array.isArray(insights.coping_strategies.suggested)
+            ? insights.coping_strategies.suggested : [];
+          suggested.forEach((s: any) => {
+            const text = typeof s === 'string' ? s : String(s.strategy || s.description || JSON.stringify(s));
+            if (text && text !== '{}') {
+              patterns.push({
+                id: `${n.id}_cs_${patterns.length}`,
+                priority: s.difficulty === 'challenging' ? 'HIGH' : s.difficulty === 'easy' ? 'LOW' : 'MEDIUM',
+                text, category: 'SUGGESTED STRATEGY', date: entryDate, entryTitle, entryId: n.id,
+              });
+            }
+          });
+        }
+
+        // 3. insights_report.insightCards with type "growth" or "reflection"
+        if (insights.insights_report?.insightCards) {
+          const cards = Array.isArray(insights.insights_report.insightCards)
+            ? insights.insights_report.insightCards : [];
+          cards.forEach((card: any) => {
+            if (card.type === 'growth' || card.type === 'reflection') {
+              const text = typeof card === 'string' ? card : String(card.text || card.description || '');
+              if (text) {
+                patterns.push({
+                  id: `${n.id}_ic_${patterns.length}`,
+                  priority: card.type === 'growth' ? 'HIGH' : 'MEDIUM',
+                  text, category: (card.short_label || card.type || 'GROWTH').toUpperCase(),
+                  date: entryDate, entryTitle, entryId: n.id,
+                });
+              }
+            }
+          });
+        }
+
+        // 4. thought_patterns (negative thinking patterns to address)
+        if (Array.isArray(insights.thought_patterns)) {
+          insights.thought_patterns.forEach((tp: any) => {
+            const text = typeof tp === 'string' ? tp : String(tp.pattern || tp.description || '');
+            if (text) {
+              patterns.push({
+                id: `${n.id}_tp_${patterns.length}`,
+                priority: tp.frequency === 'persistent' ? 'HIGH' : tp.frequency === 'frequent' ? 'MEDIUM' : 'LOW',
+                text, category: (tp.type || 'THOUGHT PATTERN').toUpperCase().replace(/_/g, ' '),
+                date: entryDate, entryTitle, entryId: n.id,
+              });
+            }
+          });
+        }
+
+        // === WHAT'S WORKING / STRENGTHS ===
+
+        // 1. progress_indicators.positive_signals (array of strings)
+        if (insights.progress_indicators?.positive_signals) {
+          const signals = Array.isArray(insights.progress_indicators.positive_signals)
+            ? insights.progress_indicators.positive_signals : [];
+          signals.forEach((signal: any) => {
+            const text = typeof signal === 'string' ? signal : String(signal.description || JSON.stringify(signal));
+            if (text && text !== '{}') {
+              strengths.push({
+                id: `${n.id}_ps_${strengths.length}`, text,
+                category: 'POSITIVE SIGNAL', date: entryDate, entryTitle, entryId: n.id,
+              });
+            }
+          });
+        }
+
+        // 2. insights_report.insightCards with type "strength" or "win"
+        if (insights.insights_report?.insightCards) {
+          const cards = Array.isArray(insights.insights_report.insightCards)
+            ? insights.insights_report.insightCards : [];
+          cards.forEach((card: any) => {
+            if (card.type === 'strength' || card.type === 'win') {
+              const text = typeof card === 'string' ? card : String(card.text || card.description || '');
+              if (text) {
+                strengths.push({
+                  id: `${n.id}_sw_${strengths.length}`, text,
+                  category: card.type === 'win' ? 'WIN' : 'STRENGTH',
+                  date: entryDate, entryTitle, entryId: n.id,
+                });
+              }
+            }
+          });
+        }
+
+        // 3. coping_strategies.current (things user is already doing well)
+        if (insights.coping_strategies?.current) {
+          const current = Array.isArray(insights.coping_strategies.current)
+            ? insights.coping_strategies.current : [];
+          current.forEach((c: any) => {
+            const text = typeof c === 'string' ? c : String(c.strategy || c.description || JSON.stringify(c));
+            if (text && text !== '{}') {
+              strengths.push({
+                id: `${n.id}_cc_${strengths.length}`, text,
+                category: 'CURRENT STRATEGY', date: entryDate, entryTitle, entryId: n.id,
+              });
+            }
           });
         }
       });
@@ -721,148 +802,6 @@ export default function DashboardScreenNew() {
             </View>
           )}
         </View>
-
-        {/* Patterns to Address */}
-        {patternsToAddress.length > 0 && (
-          <View style={styles.ptaSection}>
-            <TouchableOpacity 
-              style={styles.patternsSectionHeader}
-              onPress={() => setPatternsExpanded(!patternsExpanded)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.sectionTitle, { color: theme.colors.primaryText, marginBottom: 0 }]}>
-                🔥 Patterns to Address ({patternsToAddress.length})
-              </Text>
-              <Ionicons 
-                name={patternsExpanded ? "chevron-up" : "chevron-down"} 
-                size={20} 
-                color={theme.colors.tertiaryText} 
-              />
-            </TouchableOpacity>
-            <Text style={[styles.patternsSectionSub, { color: theme.colors.tertiaryText }]}>
-              Top priorities based on your recent entries
-            </Text>
-
-            {/* Always show first 2 */}
-            {patternsToAddress.slice(0, patternsExpanded ? patternsToAddress.length : 2).map((pattern) => (
-              <TouchableOpacity
-                key={pattern.id}
-                style={[styles.ptaCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
-                onPress={() => {
-                  const entry = allNotes.find(n => n.id === pattern.entryId);
-                  if (entry) navigation.navigate('EntryDetail', { entry });
-                }}
-                activeOpacity={0.7}
-              >
-                <View style={styles.ptaHeader}>
-                  <View style={[
-                    styles.ptaPriorityBadge,
-                    pattern.priority?.toUpperCase() === 'HIGH' && { backgroundColor: 'rgba(239, 68, 68, 0.2)', borderColor: 'rgba(239, 68, 68, 0.4)' },
-                    pattern.priority?.toUpperCase() === 'MEDIUM' && { backgroundColor: 'rgba(251, 191, 36, 0.2)', borderColor: 'rgba(251, 191, 36, 0.4)' },
-                    pattern.priority?.toUpperCase() === 'LOW' && { backgroundColor: 'rgba(96, 165, 250, 0.2)', borderColor: 'rgba(96, 165, 250, 0.4)' },
-                  ]}>
-                    <Ionicons 
-                      name={pattern.priority?.toUpperCase() === 'HIGH' ? 'flame' : pattern.priority?.toUpperCase() === 'LOW' ? 'bulb' : 'person'} 
-                      size={12} 
-                      color={pattern.priority?.toUpperCase() === 'HIGH' ? '#ef4444' : pattern.priority?.toUpperCase() === 'LOW' ? '#60a5fa' : '#fbbf24'} 
-                    />
-                    <Text style={[styles.ptaPriorityText, {
-                      color: pattern.priority?.toUpperCase() === 'HIGH' ? '#ef4444' : pattern.priority?.toUpperCase() === 'LOW' ? '#60a5fa' : '#fbbf24'
-                    }]}>
-                      {(pattern.priority || 'MEDIUM').toUpperCase()}
-                    </Text>
-                  </View>
-                </View>
-                <Text style={[styles.ptaText, { color: theme.colors.primaryText }]} numberOfLines={3}>
-                  {pattern.text}
-                </Text>
-                <View style={styles.ptaFooter}>
-                  <View style={[styles.ptaCategoryBadge, { backgroundColor: 'rgba(139, 92, 246, 0.15)' }]}>
-                    <Text style={[styles.ptaCategoryText, { color: theme.colors.primary }]}>
-                      {(pattern.category || 'GROWTH').toUpperCase()}
-                    </Text>
-                  </View>
-                  <Text style={[styles.ptaFrom, { color: theme.colors.tertiaryText }]} numberOfLines={1}>
-                    from "{pattern.entryTitle}"
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-
-            {!patternsExpanded && patternsToAddress.length > 2 && (
-              <TouchableOpacity
-                style={[styles.ptaViewAll, { borderColor: theme.colors.border }]}
-                onPress={() => setPatternsExpanded(true)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.ptaViewAllText, { color: theme.colors.primary }]}>
-                  View {patternsToAddress.length - 2} More Focus Areas →
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-
-        {/* What's Working */}
-        {whatsWorking.length > 0 && (
-          <View style={styles.wkSection}>
-            <TouchableOpacity 
-              style={styles.patternsSectionHeader}
-              onPress={() => setWorkingExpanded(!workingExpanded)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.sectionTitle, { color: theme.colors.primaryText, marginBottom: 0 }]}>
-                ✨ What's Working ({whatsWorking.length})
-              </Text>
-              <Ionicons 
-                name={workingExpanded ? "chevron-up" : "chevron-down"} 
-                size={20} 
-                color={theme.colors.tertiaryText} 
-              />
-            </TouchableOpacity>
-            <Text style={[styles.patternsSectionSub, { color: theme.colors.tertiaryText }]}>
-              Strategies that are helping you thrive
-            </Text>
-
-            {whatsWorking.slice(0, workingExpanded ? whatsWorking.length : 2).map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={[styles.workingCard, { backgroundColor: theme.colors.cardBackground, borderColor: 'rgba(34, 197, 94, 0.2)' }]}
-                onPress={() => {
-                  const entry = allNotes.find(n => n.id === item.entryId);
-                  if (entry) navigation.navigate('EntryDetail', { entry });
-                }}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.ptaText, { color: theme.colors.primaryText }]} numberOfLines={3}>
-                  {item.text}
-                </Text>
-                <View style={styles.ptaFooter}>
-                  <View style={[styles.ptaCategoryBadge, { backgroundColor: 'rgba(34, 197, 94, 0.15)' }]}>
-                    <Text style={[styles.ptaCategoryText, { color: '#22c55e' }]}>
-                      {(item.category || 'STRENGTH').toUpperCase()}
-                    </Text>
-                  </View>
-                  <Text style={[styles.ptaFrom, { color: theme.colors.tertiaryText }]} numberOfLines={1}>
-                    from "{item.entryTitle}"
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-
-            {!workingExpanded && whatsWorking.length > 2 && (
-              <TouchableOpacity
-                style={[styles.ptaViewAll, { borderColor: 'rgba(34, 197, 94, 0.3)' }]}
-                onPress={() => setWorkingExpanded(true)}
-                activeOpacity={0.7}
-              >
-                <Text style={{ color: '#22c55e', fontSize: sf(14), fontWeight: '600' }}>
-                  View {whatsWorking.length - 2} More Strengths →
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
 
         {/* Daily Prompt */}
         <View style={styles.challengesSection}>
@@ -1265,8 +1204,8 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   actionLabel: {
-    fontSize: sf(11),
-    fontWeight: '500',
+    fontSize: sf(14),
+    fontWeight: '700',
     letterSpacing: 0.3,
   },
   patternsSection: {
