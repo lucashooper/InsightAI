@@ -431,16 +431,133 @@ export default function DashboardScreen() {
     return cleaned.length > 50 ? cleaned.substring(0, 47) + '...' : cleaned;
   };
 
-  // Helper: normalize text for deduplication (lowercase, trim, remove punctuation)
-  const normalizeForDedup = (text: string) => {
-    return text.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().substring(0, 40);
+  // --- Smart semantic grouping for patterns/strengths ---
+
+  // Stop words to ignore when extracting keywords
+  const STOP_WORDS = new Set([
+    'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+    'should', 'may', 'might', 'can', 'shall', 'to', 'of', 'in', 'for',
+    'on', 'with', 'at', 'by', 'from', 'as', 'into', 'about', 'between',
+    'through', 'during', 'before', 'after', 'and', 'but', 'or', 'not',
+    'no', 'so', 'if', 'then', 'than', 'too', 'very', 'just', 'also',
+    'more', 'most', 'some', 'any', 'all', 'each', 'every', 'this', 'that',
+    'these', 'those', 'it', 'its', 'you', 'your', 'yours', 'i', 'my',
+    'me', 'we', 'our', 'they', 'their', 'them', 'he', 'she', 'his', 'her',
+    'what', 'which', 'who', 'whom', 'how', 'when', 'where', 'why',
+    'up', 'out', 'off', 'over', 'under', 'again', 'further', 'once',
+    'here', 'there', 'both', 'few', 'own', 'same', 'other', 'such',
+    'only', 'still', 'get', 'got', 'make', 'made', 'take', 'try',
+    'need', 'want', 'like', 'know', 'think', 'feel', 'keep', 'let',
+    'begin', 'seem', 'help', 'show', 'tend', 'able', 'way', 'well',
+    'even', 'new', 'now', 'one', 'two', 'really', 'often', 'much',
+  ]);
+
+  // Extract meaningful keywords from text
+  const extractKeywords = (text: string): string[] => {
+    return text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .split(/\s+/)
+      .filter(w => w.length > 2 && !STOP_WORDS.has(w));
+  };
+
+  // Calculate similarity between two keyword sets (Jaccard-like)
+  const keywordSimilarity = (a: string[], b: string[]): number => {
+    if (a.length === 0 || b.length === 0) return 0;
+    const setA = new Set(a);
+    const setB = new Set(b);
+    let shared = 0;
+    setA.forEach(w => { if (setB.has(w)) shared++; });
+    const union = new Set([...a, ...b]).size;
+    return union > 0 ? shared / union : 0;
+  };
+
+  // Check if text is a short actionable title (vs a long descriptive paragraph)
+  const isShortTitle = (text: string): boolean => text.length < 60 && !text.includes('. ');
+
+  // Generate a clean title from a group of related texts
+  const pickBestTitle = (texts: string[]): string => {
+    // Prefer short, actionable titles
+    const shortOnes = texts.filter(isShortTitle);
+    if (shortOnes.length > 0) {
+      // Pick the most descriptive short one
+      return shortOnes.sort((a, b) => b.length - a.length)[0];
+    }
+    // Fallback: take first sentence of longest text
+    const longest = texts.sort((a, b) => b.length - a.length)[0];
+    const firstSentence = longest.split(/\.\s/)[0];
+    return firstSentence.length > 80 ? firstSentence.substring(0, 77) + '...' : firstSentence;
+  };
+
+  // Pick the best suggestion/description from a group
+  const pickBestDescription = (texts: string[]): string | null => {
+    // Find the longest text that reads like advice (has action words)
+    const actionWords = ['try', 'consider', 'practice', 'establish', 'set', 'create', 'build', 'develop', 'focus', 'start', 'work', 'take', 'make', 'explore', 'reflect'];
+    const descriptive = texts
+      .filter(t => t.length > 50)
+      .sort((a, b) => {
+        const aScore = actionWords.filter(w => a.toLowerCase().includes(w)).length;
+        const bScore = actionWords.filter(w => b.toLowerCase().includes(w)).length;
+        return bScore - aScore || b.length - a.length;
+      });
+    if (descriptive.length > 0) {
+      const best = descriptive[0];
+      // If the title is the same as description, skip
+      return best.length > 80 ? best.substring(0, 120) + '...' : best;
+    }
+    return null;
+  };
+
+  // Group raw items by semantic similarity
+  const groupBySimilarity = (items: Array<{ text: string; entryId: string; entryIds?: string[]; originLabel: string; date: string }>, threshold = 0.25) => {
+    const groups: Array<{
+      texts: string[];
+      entryIds: string[];
+      originLabels: string[];
+      dates: string[];
+      keywords: string[];
+    }> = [];
+
+    items.forEach(item => {
+      const keywords = extractKeywords(item.text);
+      let bestGroupIdx = -1;
+      let bestSim = 0;
+
+      for (let i = 0; i < groups.length; i++) {
+        const sim = keywordSimilarity(keywords, groups[i].keywords);
+        if (sim > bestSim && sim >= threshold) {
+          bestSim = sim;
+          bestGroupIdx = i;
+        }
+      }
+
+      if (bestGroupIdx >= 0) {
+        const g = groups[bestGroupIdx];
+        g.texts.push(personalizeText(item.text));
+        if (!g.entryIds.includes(item.entryId)) g.entryIds.push(item.entryId);
+        if (item.originLabel && !g.originLabels.includes(item.originLabel)) g.originLabels.push(item.originLabel);
+        g.dates.push(item.date);
+        // Merge keywords
+        keywords.forEach(k => { if (!g.keywords.includes(k)) g.keywords.push(k); });
+      } else {
+        groups.push({
+          texts: [personalizeText(item.text)],
+          entryIds: [item.entryId],
+          originLabels: item.originLabel ? [item.originLabel] : [],
+          dates: [item.date],
+          keywords,
+        });
+      }
+    });
+
+    return groups;
   };
 
   const loadPatternsData = async (notes: any[]) => {
     try {
-      // Raw collection with dedup tracking
-      const patternMap: { [key: string]: any } = {};
-      const strengthMap: { [key: string]: any } = {};
+      const rawPatterns: Array<{ text: string; entryId: string; originLabel: string; date: string }> = [];
+      const rawStrengths: Array<{ text: string; entryId: string; originLabel: string; date: string }> = [];
 
       console.log('[Dashboard:Patterns] Processing', notes.length, 'notes for patterns');
 
@@ -450,34 +567,16 @@ export default function DashboardScreen() {
         const entryDate = new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         const originLabel = getOriginLabel(n);
 
-        // === AREAS TO IMPROVE / PATTERNS TO ADDRESS ===
-
-        const addPattern = (text: string, entryId: string) => {
-          if (!text || text === '{}') return;
-          const normalized = normalizeForDedup(text);
-          if (!normalized) return;
-          
-          if (patternMap[normalized]) {
-            patternMap[normalized].count += 1;
-            if (!patternMap[normalized].entryIds.includes(entryId)) {
-              patternMap[normalized].entryIds.push(entryId);
-            }
-            // Prefer longer, more descriptive text
-            if (text.length > patternMap[normalized].summary.length) {
-              patternMap[normalized].summary = personalizeText(text.substring(0, 200));
-            }
-          } else {
-            patternMap[normalized] = {
-              id: `pattern_${Object.keys(patternMap).length}`,
-              summary: personalizeText(text.substring(0, 200)),
-              date: entryDate,
-              entryId: entryId,
-              entryIds: [entryId],
-              originLabel: originLabel,
-              count: 1,
-            };
-          }
+        const addRawPattern = (text: string) => {
+          if (!text || text === '{}' || text.length < 5) return;
+          rawPatterns.push({ text: text.substring(0, 300), entryId: n.id, originLabel, date: entryDate });
         };
+        const addRawStrength = (text: string) => {
+          if (!text || text === '{}' || text.length < 5) return;
+          rawStrengths.push({ text: text.substring(0, 300), entryId: n.id, originLabel, date: entryDate });
+        };
+
+        // === AREAS TO IMPROVE / PATTERNS TO ADDRESS ===
 
         // 1. progress_indicators.areas_for_growth
         if (insights.progress_indicators?.areas_for_growth) {
@@ -485,7 +584,7 @@ export default function DashboardScreen() {
             ? insights.progress_indicators.areas_for_growth : [];
           areas.forEach((area: any) => {
             const text = typeof area === 'string' ? area : String(area.description || area.area || JSON.stringify(area));
-            addPattern(text, n.id);
+            addRawPattern(text);
           });
         }
 
@@ -495,7 +594,7 @@ export default function DashboardScreen() {
             ? insights.coping_strategies.suggested : [];
           suggested.forEach((s: any) => {
             const text = typeof s === 'string' ? s : String(s.strategy || s.description || JSON.stringify(s));
-            addPattern(text, n.id);
+            addRawPattern(text);
           });
         }
 
@@ -506,7 +605,7 @@ export default function DashboardScreen() {
           cards.forEach((card: any) => {
             if (card.type === 'growth' || card.type === 'reflection') {
               const text = typeof card === 'string' ? card : String(card.text || card.description || '');
-              addPattern(text, n.id);
+              addRawPattern(text);
             }
           });
         }
@@ -515,37 +614,11 @@ export default function DashboardScreen() {
         if (Array.isArray(insights.thought_patterns)) {
           insights.thought_patterns.forEach((tp: any) => {
             const text = typeof tp === 'string' ? tp : String(tp.pattern || tp.description || '');
-            addPattern(text, n.id);
+            addRawPattern(text);
           });
         }
 
         // === WHAT'S WORKING / STRENGTHS ===
-
-        const addStrength = (text: string, entryId: string) => {
-          if (!text || text === '{}') return;
-          const normalized = normalizeForDedup(text);
-          if (!normalized) return;
-
-          if (strengthMap[normalized]) {
-            strengthMap[normalized].count += 1;
-            if (!strengthMap[normalized].entryIds.includes(entryId)) {
-              strengthMap[normalized].entryIds.push(entryId);
-            }
-            if (text.length > strengthMap[normalized].summary.length) {
-              strengthMap[normalized].summary = personalizeText(text.substring(0, 200));
-            }
-          } else {
-            strengthMap[normalized] = {
-              id: `strength_${Object.keys(strengthMap).length}`,
-              summary: personalizeText(text.substring(0, 200)),
-              date: entryDate,
-              entryId: entryId,
-              entryIds: [entryId],
-              originLabel: originLabel,
-              count: 1,
-            };
-          }
-        };
 
         // 1. progress_indicators.positive_signals
         if (insights.progress_indicators?.positive_signals) {
@@ -553,7 +626,7 @@ export default function DashboardScreen() {
             ? insights.progress_indicators.positive_signals : [];
           signals.forEach((signal: any) => {
             const text = typeof signal === 'string' ? signal : String(signal.description || JSON.stringify(signal));
-            addStrength(text, n.id);
+            addRawStrength(text);
           });
         }
 
@@ -564,7 +637,7 @@ export default function DashboardScreen() {
           cards.forEach((card: any) => {
             if (card.type === 'strength' || card.type === 'win') {
               const text = typeof card === 'string' ? card : String(card.text || card.description || '');
-              addStrength(text, n.id);
+              addRawStrength(text);
             }
           });
         }
@@ -575,21 +648,55 @@ export default function DashboardScreen() {
             ? insights.coping_strategies.current : [];
           current.forEach((c: any) => {
             const text = typeof c === 'string' ? c : String(c.strategy || c.description || JSON.stringify(c));
-            addStrength(text, n.id);
+            addRawStrength(text);
           });
         }
       });
 
-      // Convert maps to arrays and sort by frequency (most recurring first)
-      const patterns = Object.values(patternMap)
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 20);
+      // --- Smart grouping ---
+      const patternGroups = groupBySimilarity(rawPatterns, 0.2);
+      const strengthGroups = groupBySimilarity(rawStrengths, 0.2);
 
-      const strengths = Object.values(strengthMap)
-        .sort((a, b) => b.count - a.count)
+      // Convert groups to display items
+      const patterns = patternGroups
+        .map((g, i) => {
+          const title = pickBestTitle(g.texts);
+          const description = g.texts.length > 1 ? pickBestDescription(g.texts.filter(t => t !== title)) : null;
+          return {
+            id: `pattern_${i}`,
+            summary: title,
+            description: description && description !== title ? description : null,
+            date: g.dates[0],
+            entryId: g.entryIds[0],
+            entryIds: g.entryIds,
+            originLabel: g.originLabels[0] || '',
+            count: g.entryIds.length,
+            rawCount: g.texts.length,
+          };
+        })
+        .sort((a, b) => b.count - a.count || b.rawCount - a.rawCount)
         .slice(0, 15);
 
-      console.log('[Dashboard:Patterns] Found', patterns.length, 'unique patterns and', strengths.length, 'unique strengths');
+      const strengths = strengthGroups
+        .map((g, i) => {
+          const title = pickBestTitle(g.texts);
+          const description = g.texts.length > 1 ? pickBestDescription(g.texts.filter(t => t !== title)) : null;
+          return {
+            id: `strength_${i}`,
+            summary: title,
+            description: description && description !== title ? description : null,
+            date: g.dates[0],
+            entryId: g.entryIds[0],
+            entryIds: g.entryIds,
+            originLabel: g.originLabels[0] || '',
+            count: g.entryIds.length,
+            rawCount: g.texts.length,
+          };
+        })
+        .sort((a, b) => b.count - a.count || b.rawCount - a.rawCount)
+        .slice(0, 12);
+
+      console.log('[Dashboard:Patterns] Grouped:', patterns.length, 'pattern groups from', rawPatterns.length, 'raw items;', strengths.length, 'strength groups from', rawStrengths.length, 'raw items');
 
       setPatternsToAddress(patterns);
       setWhatsWorking(strengths);
@@ -1093,11 +1200,11 @@ export default function DashboardScreen() {
                     </View>
 
                     {/* Enhanced Insights Below Bubbles */}
-                    <View style={styles.emotionInsightSection}>
-                      <Text style={styles.emotionInsightText}>
-                        Most recurring: <Text style={styles.emotionInsightEmphasis}>{dominantEmotions[0].emotion}</Text> ({dominantEmotions[0].percentage}%)
+                    <View style={[styles.emotionInsightSection, { borderTopColor: theme.colors.divider }]}>
+                      <Text style={[styles.emotionInsightText, { color: theme.colors.secondaryText }]}>
+                        Most recurring: <Text style={[styles.emotionInsightEmphasis, { color: theme.colors.primaryText }]}>{dominantEmotions[0].emotion}</Text> ({dominantEmotions[0].percentage}%)
                       </Text>
-                      <Text style={styles.emotionPromptText}>
+                      <Text style={[styles.emotionPromptText, { color: theme.colors.tertiaryText }]}>
                         You've been {dominantEmotions[0].emotion.toLowerCase()} this week. Want to explore what brings you more {getOppositeEmotion(dominantEmotions[0].emotion)}?
                       </Text>
                     </View>
@@ -1137,7 +1244,7 @@ export default function DashboardScreen() {
                   {patternsToAddress.slice(0, patternsExpanded ? patternsToAddress.length : 2).map((pattern) => (
                     <TouchableOpacity
                       key={pattern.id}
-                      style={[styles.patternCard, { backgroundColor: 'rgba(217, 119, 6, 0.12)', borderColor: 'rgba(217, 119, 6, 0.3)' }]}
+                      style={[styles.patternCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
                       onPress={() => {
                         const entry = allNotes.find((n: any) => n.id === pattern.entryId);
                         if (entry) {
@@ -1153,6 +1260,11 @@ export default function DashboardScreen() {
                         </View>
                       )}
                       <Text style={[styles.patternSummary, { color: theme.colors.primaryText }]}>{pattern.summary}</Text>
+                      {pattern.description ? (
+                        <Text style={[styles.patternDescription, { color: theme.colors.secondaryText }]} numberOfLines={3}>
+                          {pattern.description}
+                        </Text>
+                      ) : null}
                       {pattern.originLabel ? (
                         <Text style={[styles.patternOrigin, { color: theme.colors.tertiaryText }]} numberOfLines={1}>
                           from "{pattern.originLabel}"
@@ -1207,7 +1319,7 @@ export default function DashboardScreen() {
                   {whatsWorking.slice(0, workingExpanded ? whatsWorking.length : 2).map((item) => (
                     <TouchableOpacity
                       key={item.id}
-                      style={[styles.workingItem, { backgroundColor: 'rgba(16, 185, 129, 0.10)', borderColor: 'rgba(16, 185, 129, 0.25)' }]}
+                      style={[styles.workingItem, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
                       onPress={() => {
                         const entry = allNotes.find((n: any) => n.id === item.entryId);
                         if (entry) {
@@ -1217,12 +1329,17 @@ export default function DashboardScreen() {
                       activeOpacity={0.7}
                     >
                       {item.count > 1 && (
-                        <View style={styles.frequencyBadge}>
+                        <View style={[styles.frequencyBadge, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
                           <Ionicons name="flame" size={13} color="#10b981" />
                           <Text style={[styles.frequencyText, { color: '#10b981' }]}>x{item.count}</Text>
                         </View>
                       )}
                       <Text style={[styles.workingSummary, { color: theme.colors.primaryText }]}>{item.summary}</Text>
+                      {item.description ? (
+                        <Text style={[styles.patternDescription, { color: theme.colors.secondaryText }]} numberOfLines={3}>
+                          {item.description}
+                        </Text>
+                      ) : null}
                       {item.originLabel ? (
                         <Text style={[styles.patternOrigin, { color: theme.colors.tertiaryText }]} numberOfLines={1}>
                           from "{item.originLabel}"
@@ -1379,12 +1496,12 @@ export default function DashboardScreen() {
               <Animated.View style={{ opacity: cardAnimations[3], transform: [{ translateY: cardAnimations[3].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
                 <StandardContainer style={styles.rememberWhenCard}>
                   <Text style={styles.rememberWhenIcon}>💭</Text>
-                  <Text style={styles.rememberWhenTitle}>You've been here before</Text>
-                  <Text style={styles.rememberWhenMessage}>
+                  <Text style={[styles.rememberWhenTitle, { color: theme.colors.primaryText }]}>You've been here before</Text>
+                  <Text style={[styles.rememberWhenMessage, { color: theme.colors.secondaryText }]}>
                     Last time you felt {rememberWhenCard.emotion.toLowerCase()} about {rememberWhenCard.topic} ({rememberWhenCard.date}), you found that {rememberWhenCard.strategy} helped. Worth trying again?
                   </Text>
                   <TouchableOpacity
-                    style={styles.viewEntryButton}
+                    style={[styles.viewEntryButton, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
                     onPress={() => {
                       const entry = allNotes.find(n => n.id === rememberWhenCard.entryId);
                       if (entry) {
@@ -1393,7 +1510,7 @@ export default function DashboardScreen() {
                     }}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.viewEntryText}>View That Entry →</Text>
+                    <Text style={[styles.viewEntryText, { color: theme.colors.primaryText }]}>View That Entry →</Text>
                   </TouchableOpacity>
                 </StandardContainer>
               </Animated.View>
@@ -3061,7 +3178,13 @@ const styles = StyleSheet.create({
   patternSummary: {
     fontSize: 14,
     lineHeight: 21,
+    fontWeight: '600',
     color: 'rgba(255, 255, 255, 0.85)',
+    marginBottom: 4,
+  },
+  patternDescription: {
+    fontSize: 13,
+    lineHeight: 19,
     marginBottom: 6,
   },
   frequencyBadge: {

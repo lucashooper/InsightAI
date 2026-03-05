@@ -293,10 +293,97 @@ export default function DashboardScreenNew() {
     }
   };
 
+  // --- Smart semantic grouping helpers ---
+  const STOP_WORDS_HOME = new Set([
+    'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+    'should', 'may', 'might', 'can', 'shall', 'to', 'of', 'in', 'for',
+    'on', 'with', 'at', 'by', 'from', 'as', 'into', 'about', 'between',
+    'through', 'during', 'before', 'after', 'and', 'but', 'or', 'not',
+    'no', 'so', 'if', 'then', 'than', 'too', 'very', 'just', 'also',
+    'more', 'most', 'some', 'any', 'all', 'each', 'every', 'this', 'that',
+    'these', 'those', 'it', 'its', 'you', 'your', 'yours', 'i', 'my',
+    'me', 'we', 'our', 'they', 'their', 'them', 'he', 'she', 'his', 'her',
+    'what', 'which', 'who', 'whom', 'how', 'when', 'where', 'why',
+    'up', 'out', 'off', 'over', 'under', 'again', 'further', 'once',
+    'here', 'there', 'both', 'few', 'own', 'same', 'other', 'such',
+    'only', 'still', 'get', 'got', 'make', 'made', 'take', 'try',
+    'need', 'want', 'like', 'know', 'think', 'feel', 'keep', 'let',
+    'begin', 'seem', 'help', 'show', 'tend', 'able', 'way', 'well',
+    'even', 'new', 'now', 'one', 'two', 'really', 'often', 'much',
+  ]);
+
+  const extractKw = (text: string): string[] =>
+    text.toLowerCase().replace(/[^a-z0-9\s-]/g, '').split(/\s+/).filter(w => w.length > 2 && !STOP_WORDS_HOME.has(w));
+
+  const kwSimilarity = (a: string[], b: string[]): number => {
+    if (a.length === 0 || b.length === 0) return 0;
+    const setA = new Set(a); const setB = new Set(b);
+    let shared = 0; setA.forEach(w => { if (setB.has(w)) shared++; });
+    const union = new Set([...a, ...b]).size;
+    return union > 0 ? shared / union : 0;
+  };
+
+  const personalizeText = (text: string) => {
+    const t = text
+      .replace(/The user/g, 'You').replace(/the user/g, 'you')
+      .replace(/their /g, 'your ').replace(/Their /g, 'Your ')
+      .replace(/they /g, 'you ').replace(/They /g, 'You ');
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  };
+
+  const groupBySimHome = (items: Array<{ text: string; entryId: string; originLabel: string; date: string }>, threshold = 0.2) => {
+    const groups: Array<{ texts: string[]; entryIds: string[]; originLabels: string[]; dates: string[]; keywords: string[] }> = [];
+    items.forEach(item => {
+      const keywords = extractKw(item.text);
+      let bestIdx = -1, bestSim = 0;
+      for (let i = 0; i < groups.length; i++) {
+        const sim = kwSimilarity(keywords, groups[i].keywords);
+        if (sim > bestSim && sim >= threshold) { bestSim = sim; bestIdx = i; }
+      }
+      if (bestIdx >= 0) {
+        const g = groups[bestIdx];
+        g.texts.push(personalizeText(item.text));
+        if (!g.entryIds.includes(item.entryId)) g.entryIds.push(item.entryId);
+        if (item.originLabel && !g.originLabels.includes(item.originLabel)) g.originLabels.push(item.originLabel);
+        g.dates.push(item.date);
+        keywords.forEach(k => { if (!g.keywords.includes(k)) g.keywords.push(k); });
+      } else {
+        groups.push({
+          texts: [personalizeText(item.text)],
+          entryIds: [item.entryId],
+          originLabels: item.originLabel ? [item.originLabel] : [],
+          dates: [item.date],
+          keywords,
+        });
+      }
+    });
+    return groups;
+  };
+
+  const pickTitle = (texts: string[]): string => {
+    const short = texts.filter(t => t.length < 60 && !t.includes('. '));
+    if (short.length > 0) return short.sort((a, b) => b.length - a.length)[0];
+    const longest = texts.sort((a, b) => b.length - a.length)[0];
+    const first = longest.split(/\.\s/)[0];
+    return first.length > 80 ? first.substring(0, 77) + '...' : first;
+  };
+
+  const pickDesc = (texts: string[]): string | null => {
+    const actionWords = ['try', 'consider', 'practice', 'establish', 'set', 'create', 'build', 'develop', 'focus', 'start', 'work', 'take', 'make', 'explore', 'reflect'];
+    const desc = texts.filter(t => t.length > 50).sort((a, b) => {
+      const aS = actionWords.filter(w => a.toLowerCase().includes(w)).length;
+      const bS = actionWords.filter(w => b.toLowerCase().includes(w)).length;
+      return bS - aS || b.length - a.length;
+    });
+    if (desc.length > 0) return desc[0].length > 120 ? desc[0].substring(0, 120) + '...' : desc[0];
+    return null;
+  };
+
   const loadPatternsData = (notes: any[]) => {
     try {
-      const patterns: any[] = [];
-      const strengths: any[] = [];
+      const rawPatterns: Array<{ text: string; entryId: string; originLabel: string; date: string }> = [];
+      const rawStrengths: Array<{ text: string; entryId: string; originLabel: string; date: string }> = [];
 
       console.log('[Home:Patterns] Processing', notes.length, 'notes for patterns');
 
@@ -305,136 +392,70 @@ export default function DashboardScreenNew() {
         const insights = n.ai_structured_insights;
         const entryTitle = n.title || 'Untitled Entry';
         const entryDate = new Date(n.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+        const originLabel = entryTitle.length > 50 ? entryTitle.substring(0, 47) + '...' : entryTitle;
+
+        const addP = (text: string) => { if (text && text !== '{}' && text.length >= 5) rawPatterns.push({ text: text.substring(0, 300), entryId: n.id, originLabel, date: entryDate }); };
+        const addS = (text: string) => { if (text && text !== '{}' && text.length >= 5) rawStrengths.push({ text: text.substring(0, 300), entryId: n.id, originLabel, date: entryDate }); };
 
         // === AREAS TO IMPROVE / PATTERNS TO ADDRESS ===
-
-        // 1. progress_indicators.areas_for_growth (array of strings)
         if (insights.progress_indicators?.areas_for_growth) {
-          const areas = Array.isArray(insights.progress_indicators.areas_for_growth)
-            ? insights.progress_indicators.areas_for_growth : [];
-          areas.forEach((area: any) => {
-            const text = typeof area === 'string' ? area : String(area.description || area.area || JSON.stringify(area));
-            if (text && text !== '{}') {
-              patterns.push({
-                id: `${n.id}_afg_${patterns.length}`, priority: 'MEDIUM',
-                text, category: 'GROWTH', date: entryDate, entryTitle, entryId: n.id,
-              });
-            }
-          });
+          (Array.isArray(insights.progress_indicators.areas_for_growth) ? insights.progress_indicators.areas_for_growth : []).forEach((a: any) => addP(typeof a === 'string' ? a : String(a.description || a.area || JSON.stringify(a))));
         }
-
-        // 2. coping_strategies.suggested (array of {strategy, why_helpful, difficulty})
         if (insights.coping_strategies?.suggested) {
-          const suggested = Array.isArray(insights.coping_strategies.suggested)
-            ? insights.coping_strategies.suggested : [];
-          suggested.forEach((s: any) => {
-            const text = typeof s === 'string' ? s : String(s.strategy || s.description || JSON.stringify(s));
-            if (text && text !== '{}') {
-              patterns.push({
-                id: `${n.id}_cs_${patterns.length}`,
-                priority: s.difficulty === 'challenging' ? 'HIGH' : s.difficulty === 'easy' ? 'LOW' : 'MEDIUM',
-                text, category: 'SUGGESTED STRATEGY', date: entryDate, entryTitle, entryId: n.id,
-              });
-            }
-          });
+          (Array.isArray(insights.coping_strategies.suggested) ? insights.coping_strategies.suggested : []).forEach((s: any) => addP(typeof s === 'string' ? s : String(s.strategy || s.description || JSON.stringify(s))));
         }
-
-        // 3. insights_report.insightCards with type "growth" or "reflection"
         if (insights.insights_report?.insightCards) {
-          const cards = Array.isArray(insights.insights_report.insightCards)
-            ? insights.insights_report.insightCards : [];
-          cards.forEach((card: any) => {
-            if (card.type === 'growth' || card.type === 'reflection') {
-              const text = typeof card === 'string' ? card : String(card.text || card.description || '');
-              if (text) {
-                patterns.push({
-                  id: `${n.id}_ic_${patterns.length}`,
-                  priority: card.type === 'growth' ? 'HIGH' : 'MEDIUM',
-                  text, category: (card.short_label || card.type || 'GROWTH').toUpperCase(),
-                  date: entryDate, entryTitle, entryId: n.id,
-                });
-              }
-            }
+          (Array.isArray(insights.insights_report.insightCards) ? insights.insights_report.insightCards : []).forEach((c: any) => {
+            if (c.type === 'growth' || c.type === 'reflection') addP(typeof c === 'string' ? c : String(c.text || c.description || ''));
           });
         }
-
-        // 4. thought_patterns (negative thinking patterns to address)
         if (Array.isArray(insights.thought_patterns)) {
-          insights.thought_patterns.forEach((tp: any) => {
-            const text = typeof tp === 'string' ? tp : String(tp.pattern || tp.description || '');
-            if (text) {
-              patterns.push({
-                id: `${n.id}_tp_${patterns.length}`,
-                priority: tp.frequency === 'persistent' ? 'HIGH' : tp.frequency === 'frequent' ? 'MEDIUM' : 'LOW',
-                text, category: (tp.type || 'THOUGHT PATTERN').toUpperCase().replace(/_/g, ' '),
-                date: entryDate, entryTitle, entryId: n.id,
-              });
-            }
-          });
+          insights.thought_patterns.forEach((tp: any) => addP(typeof tp === 'string' ? tp : String(tp.pattern || tp.description || '')));
         }
 
         // === WHAT'S WORKING / STRENGTHS ===
-
-        // 1. progress_indicators.positive_signals (array of strings)
         if (insights.progress_indicators?.positive_signals) {
-          const signals = Array.isArray(insights.progress_indicators.positive_signals)
-            ? insights.progress_indicators.positive_signals : [];
-          signals.forEach((signal: any) => {
-            const text = typeof signal === 'string' ? signal : String(signal.description || JSON.stringify(signal));
-            if (text && text !== '{}') {
-              strengths.push({
-                id: `${n.id}_ps_${strengths.length}`, text,
-                category: 'POSITIVE SIGNAL', date: entryDate, entryTitle, entryId: n.id,
-              });
-            }
-          });
+          (Array.isArray(insights.progress_indicators.positive_signals) ? insights.progress_indicators.positive_signals : []).forEach((s: any) => addS(typeof s === 'string' ? s : String(s.description || JSON.stringify(s))));
         }
-
-        // 2. insights_report.insightCards with type "strength" or "win"
         if (insights.insights_report?.insightCards) {
-          const cards = Array.isArray(insights.insights_report.insightCards)
-            ? insights.insights_report.insightCards : [];
-          cards.forEach((card: any) => {
-            if (card.type === 'strength' || card.type === 'win') {
-              const text = typeof card === 'string' ? card : String(card.text || card.description || '');
-              if (text) {
-                strengths.push({
-                  id: `${n.id}_sw_${strengths.length}`, text,
-                  category: card.type === 'win' ? 'WIN' : 'STRENGTH',
-                  date: entryDate, entryTitle, entryId: n.id,
-                });
-              }
-            }
+          (Array.isArray(insights.insights_report.insightCards) ? insights.insights_report.insightCards : []).forEach((c: any) => {
+            if (c.type === 'strength' || c.type === 'win') addS(typeof c === 'string' ? c : String(c.text || c.description || ''));
           });
         }
-
-        // 3. coping_strategies.current (things user is already doing well)
         if (insights.coping_strategies?.current) {
-          const current = Array.isArray(insights.coping_strategies.current)
-            ? insights.coping_strategies.current : [];
-          current.forEach((c: any) => {
-            const text = typeof c === 'string' ? c : String(c.strategy || c.description || JSON.stringify(c));
-            if (text && text !== '{}') {
-              strengths.push({
-                id: `${n.id}_cc_${strengths.length}`, text,
-                category: 'CURRENT STRATEGY', date: entryDate, entryTitle, entryId: n.id,
-              });
-            }
-          });
+          (Array.isArray(insights.coping_strategies.current) ? insights.coping_strategies.current : []).forEach((c: any) => addS(typeof c === 'string' ? c : String(c.strategy || c.description || JSON.stringify(c))));
         }
       });
 
-      console.log('[Home:Patterns] Final: patterns=' + patterns.length + ', strengths=' + strengths.length);
-      if (patterns.length > 0) console.log('[Home:Patterns] Sample pattern:', JSON.stringify(patterns[0]));
-      if (strengths.length > 0) console.log('[Home:Patterns] Sample strength:', JSON.stringify(strengths[0]));
+      // Smart grouping
+      const pGroups = groupBySimHome(rawPatterns, 0.2);
+      const sGroups = groupBySimHome(rawStrengths, 0.2);
 
-      const priorityOrder: Record<string, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 };
-      patterns.sort((a, b) =>
-        (priorityOrder[a.priority?.toUpperCase()] ?? 2) - (priorityOrder[b.priority?.toUpperCase()] ?? 2)
-      );
+      const patterns = pGroups.map((g, i) => {
+        const title = pickTitle(g.texts);
+        const description = g.texts.length > 1 ? pickDesc(g.texts.filter(t => t !== title)) : null;
+        return {
+          id: `pattern_${i}`, text: title, description: description && description !== title ? description : null,
+          priority: g.entryIds.length >= 3 ? 'HIGH' : g.entryIds.length >= 2 ? 'MEDIUM' : 'LOW',
+          category: 'GROWTH', date: g.dates[0], entryTitle: g.originLabels[0] || '', entryId: g.entryIds[0],
+          count: g.entryIds.length, rawCount: g.texts.length,
+        };
+      }).sort((a, b) => b.count - a.count || b.rawCount - a.rawCount).slice(0, 10);
 
-      setPatternsToAddress(patterns.slice(0, 10));
-      setWhatsWorking(strengths.slice(0, 8));
+      const strengths = sGroups.map((g, i) => {
+        const title = pickTitle(g.texts);
+        const description = g.texts.length > 1 ? pickDesc(g.texts.filter(t => t !== title)) : null;
+        return {
+          id: `strength_${i}`, text: title, description: description && description !== title ? description : null,
+          category: 'STRENGTH', date: g.dates[0], entryTitle: g.originLabels[0] || '', entryId: g.entryIds[0],
+          count: g.entryIds.length, rawCount: g.texts.length,
+        };
+      }).sort((a, b) => b.count - a.count || b.rawCount - a.rawCount).slice(0, 8);
+
+      console.log('[Home:Patterns] Grouped:', patterns.length, 'from', rawPatterns.length, 'raw;', strengths.length, 'from', rawStrengths.length, 'raw');
+
+      setPatternsToAddress(patterns);
+      setWhatsWorking(strengths);
     } catch (error) {
       console.error('[Home:Patterns] Error:', error);
     }
