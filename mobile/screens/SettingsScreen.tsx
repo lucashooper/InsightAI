@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme, ThemeName, isDarkTheme } from '../contexts/ThemeContext';
 import { useAppLock } from '../contexts/AppLockContext';
 import { supabase } from '../lib/supabase';
+import { checkAIConsent, updateAIConsent } from '../services/aiConsentService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import StandardContainer from '../components/shared/StandardContainer';
 import PageHeader from '../components/shared/PageHeader';
@@ -49,6 +50,8 @@ export default function SettingsScreen({ navigation }: any) {
   const [reminderTime, setReminderTime] = useState('20:00');
   const [subscriptionPlan, setSubscriptionPlan] = useState<string>('Free');
   const [isLoadingSubscription, setIsLoadingSubscription] = useState(true);
+  const [aiConsentGranted, setAiConsentGranted] = useState<boolean | null>(null);
+  const [loadingAiConsent, setLoadingAiConsent] = useState(true);
 
   const defaultThemes: { name: ThemeName; label: string; emoji: string }[] = [
     { name: 'dark', label: 'Dark', emoji: '' },
@@ -68,6 +71,7 @@ export default function SettingsScreen({ navigation }: any) {
       loadUsageStats();
       loadPersonalizationSettings();
       loadSubscriptionStatus();
+      loadAIConsent();
     }
   }, [user]);
 
@@ -81,6 +85,38 @@ export default function SettingsScreen({ navigation }: any) {
       }
     }, [user])
   );
+
+  const loadAIConsent = async () => {
+    try {
+      setLoadingAiConsent(true);
+      const status = await checkAIConsent();
+      setAiConsentGranted(status.granted);
+    } catch (error) {
+      console.error('Error loading AI consent:', error);
+    } finally {
+      setLoadingAiConsent(false);
+    }
+  };
+
+  const toggleAIConsent = async (newValue: boolean) => {
+    try {
+      const success = await updateAIConsent(newValue);
+      if (success) {
+        setAiConsentGranted(newValue);
+        Alert.alert(
+          newValue ? 'AI Analysis Enabled' : 'AI Analysis Disabled',
+          newValue 
+            ? 'You can now tap "Analyze" on journal entries to get AI-powered insights.'
+            : 'AI analysis has been disabled. You can re-enable it anytime in Settings.'
+        );
+      } else {
+        Alert.alert('Error', 'Failed to update AI consent. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error toggling AI consent:', error);
+      Alert.alert('Error', 'Failed to update AI consent. Please try again.');
+    }
+  };
 
   const loadPersonalizationSettings = async () => {
     try {
@@ -513,7 +549,7 @@ export default function SettingsScreen({ navigation }: any) {
       >
         {/* Profile Section */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>PROFILE</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.5)' }]}>Profile</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <View style={styles.cardGradient}>
               <View style={styles.profileSection}>
@@ -555,7 +591,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Default Themes */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>DEFAULT THEMES</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.5)' }]}>Appearance</Text>
           <View style={styles.themeGrid}>
             {defaultThemes.map((t) => (
               <TouchableOpacity
@@ -578,9 +614,7 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* Other Themes */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>OTHER THEMES</Text>
+        <View style={{ marginTop: -12 }}>
           <View style={styles.themeGrid}>
             {otherThemes.map((t) => (
               <TouchableOpacity
@@ -603,9 +637,9 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* Security */}
+        {/* Security Section */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>SECURITY</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.5)' }]}>Security</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <TouchableOpacity 
               style={styles.settingRow}
@@ -766,9 +800,43 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* Reminders */}
+        {/* Privacy & Data Section */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>REMINDERS</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.5)' }]}>Privacy & Data</Text>
+          <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+            <TouchableOpacity 
+              style={styles.settingRow}
+              onPress={() => {
+                Alert.alert(
+                  'Privacy Policy',
+                  'View our Privacy Policy to learn how we handle your data, including AI analysis.\n\nWould you like to open it in your browser?',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { 
+                      text: 'Open', 
+                      onPress: () => {
+                        // Open privacy policy URL
+                        const url = 'https://myinsightai.app/privacy';
+                        // You can use Linking.openURL(url) here
+                        console.log('Opening privacy policy:', url);
+                      }
+                    }
+                  ]
+                );
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={styles.settingLeft}>
+                <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Privacy Policy</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={theme.colors.secondaryText} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Personalize Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.5)' }]}>Personalize</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <TouchableOpacity 
               style={styles.settingRow}
@@ -803,9 +871,7 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* Personalization */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>PERSONALIZATION</Text>
+        <View style={{ marginTop: -12 }}>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <TouchableOpacity 
               style={styles.settingRow}
@@ -873,7 +939,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Subscription & Usage */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>SUBSCRIPTION & USAGE</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.5)' }]}>Account</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <View style={styles.cardGradient}>
               <View style={styles.usageRow}>
@@ -1152,9 +1218,9 @@ export default function SettingsScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        {/* App Info */}
+        {/* About Section */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>ABOUT</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.5)' }]}>About</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <View style={styles.cardGradient}>
               <Text style={[styles.infoText, { color: theme.colors.primaryText }]}>Insight Mobile v1.0.0</Text>
@@ -1205,13 +1271,12 @@ const styles = StyleSheet.create({
     marginBottom: isTablet ? 32 : 24,
   },
   sectionTitle: {
-    fontSize: isTablet ? sf(16) : sf(12),
-    fontWeight: '600',
+    fontSize: isTablet ? sf(18) : sf(16),
+    fontWeight: '400',
     color: '#666',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: isTablet ? 16 : 12,
-    paddingHorizontal: 4,
+    textAlign: 'center',
+    marginBottom: isTablet ? 20 : 16,
+    marginTop: isTablet ? 32 : 24,
   },
   card: {
     borderRadius: isTablet ? 20 : 16,

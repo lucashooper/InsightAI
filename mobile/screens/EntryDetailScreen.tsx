@@ -7,6 +7,7 @@ import Purchases from 'react-native-purchases';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
 import { mobileAiService } from '../services/mobileAiService';
+import { checkAIConsent } from '../services/aiConsentService';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import ImmersiveAnalysisOverlay from '../components/shared/ImmersiveAnalysisOverlay';

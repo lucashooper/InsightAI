@@ -22,7 +22,7 @@ const PrivacyPage: React.FC = () => {
       
       <div className="legal-content">
         <h1>Privacy Policy</h1>
-        <p className="last-updated">Last Updated: February 15, 2026</p>
+        <p className="last-updated">Last Updated: March 9, 2026</p>
 
         <section>
           <h2>1. Information We Collect</h2>
@@ -59,14 +59,38 @@ const PrivacyPage: React.FC = () => {
         </section>
 
         <section>
-          <h2>4. AI Processing</h2>
-          <p>Your journal entries are processed by AI to generate insights. This processing:</p>
+          <h2>4. AI-Powered Analysis</h2>
+          <p>Insight uses artificial intelligence to provide personalized insights and analysis of your journal entries.</p>
+          
+          <h3>AI Service Provider</h3>
+          <p>We use <strong>Groq</strong>, an AI infrastructure company, running the <strong>Llama 3</strong> language model to analyze your journal entries and generate insights.</p>
+          
+          <h3>What Data Is Shared</h3>
+          <p>When you use AI analysis features in Insight (such as tapping "Analyze" on a journal entry):</p>
           <ul>
-            <li>Happens securely on our servers</li>
-            <li>Uses encrypted data transmission</li>
-            <li>Does not share your personal data with AI providers</li>
-            <li>Can be disabled in your settings</li>
+            <li>We send the <strong>text content of your journal entry</strong> to Groq's servers</li>
+            <li>We do <strong>NOT</strong> send your name, email address, or any other personal identifiers</li>
+            <li>Only the journal entry text itself is transmitted for analysis</li>
           </ul>
+          
+          <h3>How Your Data Is Protected</h3>
+          <ul>
+            <li>All data is transmitted over <strong>encrypted connections (HTTPS/TLS)</strong></li>
+            <li>Groq processes your data according to their privacy policy</li>
+            <li><strong>Groq does not use your data to train AI models</strong></li>
+            <li>Your journal entries are not stored permanently by Groq after analysis</li>
+          </ul>
+          
+          <h3>Your Control</h3>
+          <ul>
+            <li>AI analysis features are <strong>optional</strong> - you can journal without using them</li>
+            <li>You can choose when to use AI analysis by tapping the "Analyze" button</li>
+            <li>All AI-generated insights are stored securely in your Insight account</li>
+            <li>You can delete your journal entries and AI insights at any time</li>
+          </ul>
+          
+          <h3>Third-Party Privacy Policy</h3>
+          <p>For more information about how Groq handles data, please review their privacy policy: <a href="https://groq.com/privacy-policy/" target="_blank" rel="noopener noreferrer">https://groq.com/privacy-policy/</a></p>
         </section>
 
         <section>
