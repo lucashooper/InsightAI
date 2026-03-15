@@ -19,6 +19,7 @@ import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { usePreloadedData } from '../contexts/PreloadContext';
 import StandardContainer from '../components/shared/StandardContainer';
 import FirstTimeIntroOverlay from '../components/FirstTimeIntroOverlay';
 import { isTablet, sf, ss, si, iPadContentStyle } from '../utils/responsive';
@@ -39,8 +40,9 @@ interface EmotionalState {
 export default function DashboardScreenNew() {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { data: preloaded, refreshNotes } = usePreloadedData();
   const rotateAnim = useRef(new Animated.Value(0)).current;
-  const [orbImageLoaded, setOrbImageLoaded] = useState(false);
+  const [orbImageLoaded, setOrbImageLoaded] = useState(true);
   const navigation = useNavigation<any>();
   const [loading, setLoading] = useState(true);
   const [emotionalState, setEmotionalState] = useState<EmotionalState>({
@@ -67,41 +69,52 @@ export default function DashboardScreenNew() {
   const [workingExpanded, setWorkingExpanded] = useState(false);
   const [allNotes, setAllNotes] = useState<any[]>([]);
 
+  // Use preloaded data immediately on mount — no network fetch needed
+  useEffect(() => {
+    if (preloaded.isLoaded) {
+      if (preloaded.userName) setUserName(preloaded.userName);
+      if (preloaded.profilePicture) setProfilePicture(preloaded.profilePicture);
+      if (preloaded.notes) {
+        processDashboardFromNotes(preloaded.notes);
+      }
+      setLoading(false);
+      loadTodayInsights();
+      checkFirstTimeUser();
+    }
+  }, [preloaded.isLoaded]);
+
   // Reload username from cache when screen comes into focus (instant Settings updates)
   useFocusEffect(
     React.useCallback(() => {
       const refreshName = async () => {
-        const cachedName = await AsyncStorage.getItem('CACHED_USERNAME');
+        if (!user?.id) return;
+        // Use user-specific cache key to match EditProfileScreen
+        const cachedName = await AsyncStorage.getItem(`CACHED_USERNAME_${user.id}`);
+        console.log('[DashboardNew] Refreshing username from cache:', cachedName);
         if (cachedName && cachedName !== userName) {
+          console.log('[DashboardNew] Updating userName from', userName, 'to', cachedName);
           setUserName(cachedName);
         }
       };
       refreshName();
+    }, [user?.id, userName])
+  );
+
+  // Also refresh notes in background on focus
+  useFocusEffect(
+    React.useCallback(() => {
+      if (user) {
+        refreshNotes(user.id);
+      }
     }, [])
   );
 
+  // When preloaded notes update (e.g. from background refresh), reprocess
   useEffect(() => {
-    loadDashboardData();
-    loadUserProfile();
-    loadRecentTopics();
-    loadTodayInsights();
-    checkFirstTimeUser();
-
-    // Check speech recognition availability (disabled for Expo Go)
-    // const checkPermissions = async () => {
-    //   try {
-    //     const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-    //     console.log('Speech recognition permissions:', result);
-    //   } catch (error) {
-    //     console.log('Speech recognition not available:', error);
-    //   }
-    // };
-    // checkPermissions();
-
-    return () => {
-      // Cleanup if needed
-    };
-  }, [user]);
+    if (preloaded.notes && preloaded.notes.length > 0) {
+      processDashboardFromNotes(preloaded.notes);
+    }
+  }, [preloaded.notes]);
 
   const checkFirstTimeUser = async () => {
     try {
@@ -211,32 +224,21 @@ export default function DashboardScreenNew() {
     }
   };
 
-  const loadDashboardData = async () => {
-    if (!user) return;
-
+  // Process notes into dashboard state (works with preloaded or refreshed notes)
+  const processDashboardFromNotes = (notes: any[]) => {
     try {
-      const { data: notes, error } = await supabase
-        .from('notes')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(30);
-
-      if (error) throw error;
-
-      if (notes) {
-        setAllNotes(notes);
-      }
+      const limited = notes.slice(0, 30);
+      setAllNotes(limited);
 
       // Calculate emotional state from recent entries
-      if (notes && notes.length > 0) {
-        const recentScores = notes
+      if (limited.length > 0) {
+        const recentScores = limited
           .filter(n => n.ai_structured_insights?.wellbeingScore)
           .slice(0, 5)
           .map(n => n.ai_structured_insights.wellbeingScore);
 
         if (recentScores.length > 0) {
-          const avgScore = recentScores.reduce((a, b) => a + b, 0) / recentScores.length;
+          const avgScore = recentScores.reduce((a: number, b: number) => a + b, 0) / recentScores.length;
           const trend = recentScores.length >= 2 
             ? recentScores[0] > recentScores[recentScores.length - 1] ? 'up' 
             : recentScores[0] < recentScores[recentScores.length - 1] ? 'down' 
@@ -253,7 +255,7 @@ export default function DashboardScreenNew() {
 
         // Extract recent patterns
         const patterns: string[] = [];
-        notes.slice(0, 5).forEach(note => {
+        limited.slice(0, 5).forEach(note => {
           if (note.ai_structured_insights?.key_insights) {
             patterns.push(...note.ai_structured_insights.key_insights.slice(0, 1));
           }
@@ -261,13 +263,13 @@ export default function DashboardScreenNew() {
         setRecentPatterns(patterns.slice(0, 3));
 
         // Load patterns to address and what's working
-        loadPatternsData(notes);
+        loadPatternsData(limited);
       }
 
       // Calculate streak
-      const sortedNotes = notes?.sort((a, b) => 
+      const sortedNotes = [...limited].sort((a, b) => 
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      ) || [];
+      );
       
       let streakCount = 0;
       const today = new Date();
@@ -287,9 +289,7 @@ export default function DashboardScreenNew() {
 
       setStreak(streakCount);
     } catch (error) {
-      console.error('Error loading dashboard:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error processing dashboard notes:', error);
     }
   };
 
@@ -683,19 +683,11 @@ export default function DashboardScreenNew() {
           onPress={() => navigation.navigate('AIChat')}
           activeOpacity={0.85}
         >
-          {!orbImageLoaded && (
-            <ActivityIndicator 
-              size="large" 
-              color="#a855f7" 
-              style={styles.orbLoader}
-            />
-          )}
           <Animated.Image 
             source={orbImage} 
             style={[
               styles.orbImage,
               {
-                opacity: orbImageLoaded ? 1 : 0,
                 transform: [{
                   rotate: rotateAnim.interpolate({
                     inputRange: [0, 1],
@@ -705,7 +697,6 @@ export default function DashboardScreenNew() {
               }
             ]}
             resizeMode="contain"
-            onLoad={() => setOrbImageLoaded(true)}
           />
           <View style={styles.greetingInOrb}>
             <Text style={[styles.greetingText, { 
@@ -848,8 +839,8 @@ export default function DashboardScreenNew() {
               >
                 <Text style={{ color: '#ffffff', fontSize: sf(13), fontWeight: '600' }}>Start writing →</Text>
               </LinearGradient>
-              <View style={{ marginLeft: 12, backgroundColor: 'rgba(255, 255, 255, 0.08)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' }}>
-                <Text style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: sf(11), fontWeight: '600', textTransform: 'capitalize' }}>{dailyPrompt.category.replace('-', ' ')}</Text>
+              <View style={{ marginLeft: 12, backgroundColor: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.08)' : 'rgba(139, 92, 246, 0.12)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.1)' : 'rgba(139, 92, 246, 0.2)' }}>
+                <Text style={{ color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : 'rgba(139, 92, 246, 0.9)', fontSize: sf(11), fontWeight: '600', textTransform: 'capitalize' }}>{dailyPrompt.category.replace('-', ' ')}</Text>
               </View>
             </View>
           </TouchableOpacity>
@@ -1035,9 +1026,9 @@ const styles = StyleSheet.create({
     height: 100,
   },
   headerTitle: {
-    fontSize: sf(24),
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    fontSize: sf(20),
+    fontWeight: '500',
+    letterSpacing: 0.3,
     marginLeft: -12,
   },
   logoIcon: {

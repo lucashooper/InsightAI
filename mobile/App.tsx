@@ -1,14 +1,18 @@
 import 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { View, Text, Image } from 'react-native';
+import { View, Text, Image, LogBox } from 'react-native';
 import React from 'react';
+
+// Suppress LinearGradient warnings that spam the console
+LogBox.ignoreLogs(['LinearGradient colors and locations props should be arrays of the same length']);
 import Purchases from 'react-native-purchases';
 import { Asset } from 'expo-asset';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, isDarkTheme } from './contexts/ThemeContext';
+import { PreloadProvider, usePreloadedData } from './contexts/PreloadContext';
 import type { ThemeName } from './contexts/ThemeContext';
 import { OnboardingProvider } from './contexts/OnboardingContext';
 import { AppLockProvider, useAppLock } from './contexts/AppLockContext';
@@ -42,10 +46,17 @@ const splashThemeColors: Record<string, { bg: string[], textColor: string, isDar
 export default function App() {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [savedTheme, setSavedTheme] = useState<string>('dark');
+  const [themeLoaded, setThemeLoaded] = useState(false);
 
   useEffect(() => {
     async function loadResourcesAndDataAsync() {
       try {
+        // CRITICAL: Load theme FIRST before anything else to prevent splash screen flash
+        const storedTheme = await AsyncStorage.getItem('@insightai_theme');
+        if (storedTheme) {
+          setSavedTheme(storedTheme);
+        }
+        setThemeLoaded(true);
         // STEP 1: Configure RevenueCat
         console.log('[REVENUECAT] 🚀 Configuring RevenueCat...');
         console.log('[REVENUECAT] Environment:', __DEV__ ? 'DEVELOPMENT (Test Store)' : 'PRODUCTION');
@@ -110,12 +121,6 @@ export default function App() {
           console.error('[REVENUECAT] Error details:', customerInfoError.message);
         }
 
-        // Load saved theme for splash screen
-        try {
-          const storedTheme = await AsyncStorage.getItem('@insightai_theme');
-          if (storedTheme) setSavedTheme(storedTheme);
-        } catch (e) { /* fallback to dark */ }
-
         // Test encryption on startup
         console.log('=== ENCRYPTION TEST START ===');
         try {
@@ -125,13 +130,34 @@ export default function App() {
         }
         console.log('=== ENCRYPTION TEST END ===');
 
-        // Preload critical assets to prevent loading delays
+        // Preload ALL critical assets to prevent loading delays / pop-in
         await Promise.all([
+          // App logos
           Asset.fromModule(require('./public/Insight-Logo-nobg.webp')).downloadAsync(),
           Asset.fromModule(require('./public/InsightAI-New-Logo.png')).downloadAsync(),
-          Asset.fromModule(require('./public/InsightAI-Onboarding-MAIN.png')).downloadAsync(),
           Asset.fromModule(require('./public/InsightAI-Orb.png')).downloadAsync(),
+          // Onboarding images
+          Asset.fromModule(require('./public/Onboarding-Main-Phone-Image.png')).downloadAsync(),
+          Asset.fromModule(require('./public/InsightAI-Onboarding-MAIN.png')).downloadAsync(),
+          Asset.fromModule(require('./public/noisy-image.webp')).downloadAsync(),
+          Asset.fromModule(require('./public/clarity-image.webp')).downloadAsync(),
+          // Onboarding icons
+          Asset.fromModule(require('./public/onboarding-icons/BellIcon.webp')).downloadAsync(),
+          Asset.fromModule(require('./public/onboarding-icons/Email-Icon2.webp')).downloadAsync(),
+          Asset.fromModule(require('./public/onboarding-icons/LockIcon2.webp')).downloadAsync(),
+          // Research institution logos
+          Asset.fromModule(require('./public/research-images/Cambridge-Logo-Frame.png')).downloadAsync(),
+          Asset.fromModule(require('./public/research-images/Liverpool-Logo.jpg')).downloadAsync(),
+          Asset.fromModule(require('./public/research-images/Smaller-Kaiser-Logo.png')).downloadAsync(),
+          Asset.fromModule(require('./public/research-images/APA-LOGO.png')).downloadAsync(),
+          // Cambridge logo (legacy)
           Asset.fromModule(require('./assets/Cambridge-logo.png')).downloadAsync(),
+          // Paywall phone carousel images
+          Asset.fromModule(require('./public/phone-images/Insight-Main-Page-Phone.png')).downloadAsync(),
+          Asset.fromModule(require('./public/phone-images/Insight-Dashboard-Page-Phone.png')).downloadAsync(),
+          Asset.fromModule(require('./public/phone-images/Insight-Journal-Page-Phone.png')).downloadAsync(),
+          Asset.fromModule(require('./public/phone-images/Insight-Insights-Page-Phone-Real.png')).downloadAsync(),
+          Asset.fromModule(require('./public/phone-images/Insight-Playbook-Page-Phone.png')).downloadAsync(),
         ]);
       } catch (e: any) {
         console.error('[APP] ❌ Error in loadResourcesAndDataAsync:', e);
@@ -157,10 +183,12 @@ export default function App() {
         <ThemeProvider>
           <AppLockProvider>
             <AuthProvider>
-              <OnboardingProvider>
-                <AppContent onReady={() => setAppReady(true)} />
-                <StatusBar style="light" />
-              </OnboardingProvider>
+              <PreloadProvider>
+                <OnboardingProvider>
+                  <AppContent onReady={() => setAppReady(true)} />
+                  <StatusBar style="light" />
+                </OnboardingProvider>
+              </PreloadProvider>
             </AuthProvider>
           </AppLockProvider>
         </ThemeProvider>
@@ -169,12 +197,12 @@ export default function App() {
       )}
 
       {/* Single splash overlay - stays on top until app is fully ready */}
-      {!appReady && (() => {
+      {!appReady && themeLoaded && (() => {
         const themeConfig = splashThemeColors[savedTheme] || splashThemeColors.dark;
         return (
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}>
           {themeConfig.isDark ? (
-            <LinearGradient colors={themeConfig.bg} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+            <LinearGradient colors={themeConfig.bg as any} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
           ) : (
             <SunoGradient />
           )}
@@ -197,16 +225,30 @@ export default function App() {
 
 function AppContent({ onReady }: { onReady: () => void }) {
   const { isLocked, isLockEnabled } = useAppLock();
-  const { loading: authLoading } = useAuth();
+  const { loading: authLoading, user } = useAuth();
+  const { data: preloadedData, preloadForUser } = usePreloadedData();
 
-  // Signal ready once auth has finished loading
+  // Preload all data once auth resolves and we have a user
+  useEffect(() => {
+    if (!authLoading && user) {
+      preloadForUser(user.id, user.email || '');
+    }
+  }, [authLoading, user]);
+
+  // Signal ready once auth is done AND data is preloaded (or no user)
   useEffect(() => {
     if (!authLoading) {
-      // Small delay to let navigator render its first frame
-      const timer = setTimeout(onReady, 100);
-      return () => clearTimeout(timer);
+      if (!user) {
+        // No user — show onboarding/login immediately
+        const timer = setTimeout(onReady, 50);
+        return () => clearTimeout(timer);
+      } else if (preloadedData.isLoaded) {
+        // User + data loaded — show app
+        const timer = setTimeout(onReady, 50);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [authLoading, onReady]);
+  }, [authLoading, user, preloadedData.isLoaded, onReady]);
 
   return (
     <View style={{ flex: 1 }}>

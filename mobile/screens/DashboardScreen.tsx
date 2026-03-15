@@ -20,6 +20,7 @@ import { supabase } from '../lib/supabase';
 import { useNavigation } from '@react-navigation/native';
 import { mobileAiService } from '../services/mobileAiService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { usePreloadedData } from '../contexts/PreloadContext';
 import StandardContainer from '../components/shared/StandardContainer';
 import PageHeader from '../components/shared/PageHeader';
 import { isTablet, sf, ss, iPadWideContentStyle } from '../utils/responsive';
@@ -45,6 +46,7 @@ interface ChartData {
 export default function DashboardScreen() {
   const { user } = useAuth();
   const { theme, themeName } = useTheme();
+  const { data: preloaded } = usePreloadedData();
   const navigation = useNavigation<any>();
   
   // Log dashboard load with theme
@@ -127,13 +129,14 @@ export default function DashboardScreen() {
   const modalCard1TranslateY = useRef(new Animated.Value(30)).current;
   const modalCard2TranslateY = useRef(new Animated.Value(30)).current;
 
+  // Use preloaded data on mount — no network fetch needed initially
   useEffect(() => {
-    console.log('[Dashboard] 🔄 UPDATED VERSION LOADED - Story page spacing fixed, patterns sections enhanced');
-    if (user) {
+    if (preloaded.isLoaded && user) {
+      if (preloaded.userName) setUserName(preloaded.userName);
+      // loadStats processes preloaded.notes if available, otherwise fetches
       loadStats();
-      loadUserProfile();
     }
-  }, [user]);
+  }, [preloaded.isLoaded, user]);
 
   // Trigger modal animations when modal opens
   useEffect(() => {
@@ -930,18 +933,10 @@ export default function DashboardScreen() {
     return opposites[emotion.toLowerCase()] || 'balance';
   };
 
-  // Animate cards in sequence
+  // Show cards instantly — no staggered animation to prevent janky load-in
   useEffect(() => {
     if (stats) {
-      cardAnimations.forEach((anim, index) => {
-        anim.setValue(0);
-        Animated.timing(anim, {
-          toValue: 1,
-          duration: 400,
-          delay: index * 100,
-          useNativeDriver: true,
-        }).start();
-      });
+      cardAnimations.forEach(anim => anim.setValue(1));
     }
   }, [stats]);
 
@@ -1131,9 +1126,7 @@ export default function DashboardScreen() {
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={theme.colors.primary} />
-          </View>
+          <View style={styles.loadingContainer} />
         ) : stats ? (
           <>
             {/* Emotion Bubble Map - Enhanced */}
@@ -1919,8 +1912,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '500',
     color: '#ffffff',
     letterSpacing: -0.5,
   },

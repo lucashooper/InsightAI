@@ -17,8 +17,11 @@ import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
 const cambridgeLogo = require('../../assets/Cambridge-logo.png');
 const stressManagementLottie = require('../../public/animations/Stress Management.json');
 
-// Preload Cambridge logo to prevent loading delay
-Asset.fromModule(cambridgeLogo).downloadAsync();
+// Research institution logos
+const cambridgeLogoFrame = require('../../public/research-images/Cambridge-Logo-Frame.png');
+const liverpoolLogo = require('../../public/research-images/Liverpool-Logo.jpg');
+const kaiserLogo = require('../../public/research-images/Smaller-Kaiser-Logo.png');
+const apaLogo = require('../../public/research-images/APA-LOGO.png');
 
 const { width } = Dimensions.get('window');
 
@@ -273,49 +276,15 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
             });
         }
 
-        // Staggered fade-in for question pill options (like CAL AI)
+        // Instant show for question pill options — no stagger to prevent gap glitch
         if (currentStep.type === 'question' && currentStep.options) {
-            optionFadeAnims.forEach((anim) => anim.setValue(0));
-            currentStep.options.forEach((_, index) => {
-                if (index < optionFadeAnims.length) {
-                    Animated.timing(optionFadeAnims[index], {
-                        toValue: 1,
-                        duration: 400,
-                        delay: 150 + index * 80,
-                        easing: Easing.out(Easing.ease),
-                        useNativeDriver: true,
-                    }).start();
-                }
-            });
+            optionFadeAnims.forEach((anim) => anim.setValue(1));
         }
 
-        // Slide-in animations for info pages (research/meditation)
+        // Simple fade-in for info pages (research) - same as other pages
         if (currentStep.type === 'info') {
-            // Hide LottieView until animation starts to prevent flash
             setShowLottie(false);
-            infoLottieAnim.stopAnimation();
-            infoCardAnim.stopAnimation();
-            infoLottieAnim.setValue(0);
-            infoCardAnim.setValue(0);
-            
-            // Delay to ensure opacity 0 is applied before LottieView mounts
-            setTimeout(() => {
-                setShowLottie(true);
-                Animated.sequence([
-                    Animated.timing(infoLottieAnim, {
-                        toValue: 1,
-                        duration: 600,
-                        easing: Easing.out(Easing.cubic),
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(infoCardAnim, {
-                        toValue: 1,
-                        duration: 450,
-                        easing: Easing.out(Easing.cubic),
-                        useNativeDriver: true,
-                    }),
-                ]).start();
-            }, 200);
+            infoCardAnim.setValue(1); // Just show immediately, no stagger
         } else {
             setShowLottie(false);
         }
@@ -434,74 +403,84 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                     {/* Premium Info Page Layout for Journaling */}
                     {currentStep.type === 'info' && currentStep.id === 'research_info' ? (
                         <View style={styles.premiumInfoContainer}>
-                            {/* Lottie Animation with slide-in - hidden until animation starts */}
-                            {showLottie && (
-                                <Animated.View
-                                    style={{
-                                        opacity: infoLottieAnim,
-                                        transform: [{
-                                            translateY: infoLottieAnim.interpolate({
-                                                inputRange: [0, 1],
-                                                outputRange: [30, 0],
-                                            })
-                                        }],
-                                    }}
-                                >
-                                    <LottieView
-                                        source={stressManagementLottie}
-                                        autoPlay
-                                        loop
-                                        style={styles.premiumLottie}
-                                    />
-                                </Animated.View>
-                            )}
+                            {/* Title - positioned at same height as quiz pages */}
+                            <Animated.View style={{ opacity: infoCardAnim, marginTop: 20 }}>
+                                <Text style={[styles.researchTitle, isDarkTheme(theme.name) && { color: '#ffffff' }]}>
+                                    Insight is grounded in psychology
+                                </Text>
+                            </Animated.View>
 
-                            {/* Glassmorphic Card with slide-in */}
+                            {/* Meditation Animation - 15% bigger than before */}
+                            <Animated.View style={{ opacity: infoCardAnim, alignItems: 'center', marginTop: 20, marginBottom: 16 }}>
+                                <LottieView
+                                    source={stressManagementLottie}
+                                    autoPlay
+                                    loop
+                                    style={{ width: 195, height: 195 }}
+                                />
+                            </Animated.View>
+
+                            {/* Glassmorphic Card with body text */}
                             <Animated.View
                                 style={{
                                     opacity: infoCardAnim,
                                     transform: [{
                                         translateY: infoCardAnim.interpolate({
                                             inputRange: [0, 1],
-                                            outputRange: [30, 0],
+                                            outputRange: [20, 0],
                                         })
                                     }],
+                                    width: '100%',
                                 }}
                             >
-                                <View style={styles.glassCard}>
-                                <LinearGradient
-                                    colors={['rgba(255, 255, 255, 0.6)', 'rgba(255, 255, 255, 0.35)']}
-                                    style={styles.glassCardGradient}
-                                >
-                                    {/* Title */}
-                                    <Text style={styles.glassCardTitle}>
-                                        {currentStep.title}
-                                    </Text>
-
-                                    {/* Body text */}
-                                    <Text style={styles.glassCardBody}>
-                                        {currentStep.subtitle}
-                                    </Text>
-
-                                    {/* Citation */}
-                                    <Text style={styles.glassCardCitation}>
-                                        Advances in Psychiatric Treatment, 2005
-                                    </Text>
-
-                                    {/* Learn more link */}
-                                    <TouchableOpacity 
-                                        style={styles.glassCardLearnMore}
-                                        onPress={() => {
-                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                            Linking.openURL('https://www.cambridge.org/core/journals/advances-in-psychiatric-treatment/article/emotional-and-physical-health-benefits-of-expressive-writing/ED2976A61F5DE56B46F07A1CE9EA9F9F');
-                                        }}
+                                <View style={[styles.glassCard, isDarkTheme(theme.name) && { borderColor: 'rgba(255, 255, 255, 0.1)' }]}>
+                                    <LinearGradient
+                                        colors={isDarkTheme(theme.name) ? ['rgba(255, 255, 255, 0.08)', 'rgba(255, 255, 255, 0.04)'] : ['rgba(255, 255, 255, 0.6)', 'rgba(255, 255, 255, 0.35)']}
+                                        style={styles.glassCardGradient}
                                     >
-                                        <Text style={styles.glassCardLearnMoreText}>
-                                            Learn more →
+                                        <Text style={[styles.glassCardBody, isDarkTheme(theme.name) && { color: 'rgba(255, 255, 255, 0.7)' }]}>
+                                            Research from leading institutions has shown that journaling improves mental wellbeing.
                                         </Text>
-                                    </TouchableOpacity>
-                                </LinearGradient>
-                            </View>
+                                    </LinearGradient>
+                                </View>
+                            </Animated.View>
+
+                            {/* Institution Logos Grid */}
+                            <Animated.View
+                                style={{
+                                    opacity: infoCardAnim,
+                                    transform: [{
+                                        translateY: infoCardAnim.interpolate({
+                                            inputRange: [0, 1],
+                                            outputRange: [20, 0],
+                                        })
+                                    }],
+                                    width: '100%',
+                                    marginTop: 20,
+                                }}
+                            >
+                                <View style={styles.logoGrid}>
+                                    <Image 
+                                        source={cambridgeLogoFrame} 
+                                        style={[styles.logoImage, styles.logoTopLeft, isDarkTheme(theme.name) && styles.logoImageDark]} 
+                                        resizeMode="cover" 
+                                    />
+                                    <Image 
+                                        source={liverpoolLogo} 
+                                        style={[styles.logoImage, styles.logoTopRight, isDarkTheme(theme.name) && styles.logoImageDark]} 
+                                        resizeMode="cover" 
+                                    />
+                                    <Image 
+                                        source={kaiserLogo} 
+                                        style={[styles.logoImage, styles.logoBottomLeft, isDarkTheme(theme.name) && styles.logoImageDark]} 
+                                        resizeMode="cover" 
+                                    />
+                                    <Image 
+                                        source={apaLogo} 
+                                        style={[styles.logoImage, styles.logoBottomRight, isDarkTheme(theme.name) && styles.logoImageDark]} 
+                                        resizeMode="cover" 
+                                    />
+                                </View>
                             </Animated.View>
                         </View>
                     ) : (
@@ -682,27 +661,13 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                             <ScrollView style={styles.optionsList} showsVerticalScrollIndicator={false}>
                                 <View style={styles.optionsContainer}>
                                     {currentStep.options.map((option, index) => (
-                                        <Animated.View
+                                        <PillOption
                                             key={option.value}
-                                            style={{
-                                                opacity: index < optionFadeAnims.length ? optionFadeAnims[index] : 1,
-                                                transform: [{
-                                                    translateY: index < optionFadeAnims.length
-                                                        ? optionFadeAnims[index].interpolate({
-                                                            inputRange: [0, 1],
-                                                            outputRange: [18, 0],
-                                                        })
-                                                        : 0,
-                                                }],
-                                            }}
-                                        >
-                                            <PillOption
-                                                label={option.label}
-                                                icon={option.icon}
-                                                selected={selectedOption === option.value}
-                                                onPress={() => setSelectedOption(option.value)}
-                                            />
-                                        </Animated.View>
+                                            label={option.label}
+                                            icon={option.icon}
+                                            selected={selectedOption === option.value}
+                                            onPress={() => setSelectedOption(option.value)}
+                                        />
                                     ))}
                                 </View>
 
@@ -741,8 +706,8 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                     {currentStep.type === 'slider' && (
                         <View style={styles.sliderContent}>
                             <View style={styles.sliderValueRow}>
-                                <Text style={styles.sliderValueText}>{Math.round(wellbeingValue)}/10</Text>
-                                <Text style={styles.sliderHintText}>TYPICAL DAY</Text>
+                                <Text style={[styles.sliderValueText, isDarkTheme(theme.name) && styles.sliderValueTextDark]}>{Math.round(wellbeingValue)}/10</Text>
+                                <Text style={[styles.sliderHintText, isDarkTheme(theme.name) && { color: 'rgba(255, 255, 255, 0.3)' }]}>TYPICAL DAY</Text>
                             </View>
 
                             <View style={styles.sliderTrackContainer}>
@@ -1044,7 +1009,6 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     optionsContainer: {
-        gap: 12,
         paddingBottom: 20,
     },
     optionButton: {
@@ -1186,6 +1150,10 @@ const styles = StyleSheet.create({
         textShadowOffset: { width: 0, height: 0 },
         textShadowRadius: 20,
     },
+    sliderValueTextDark: {
+        color: '#a78bfa',
+        textShadowColor: 'rgba(139, 92, 246, 0.4)',
+    },
     sliderHintText: {
         marginTop: 10,
         fontSize: 11,
@@ -1209,10 +1177,6 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.06)',
         borderWidth: 1,
         borderColor: 'rgba(0,0,0,0.04)',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
     },
     sliderTrackFillWrap: {
         position: 'absolute',
@@ -1301,6 +1265,39 @@ const styles = StyleSheet.create({
         height: 220,
         marginBottom: 48,
         opacity: 1, // Controlled by Animated.View wrapper
+    },
+    researchTitle: {
+        fontSize: 28,
+        fontWeight: '600',
+        color: '#1a1a2e',
+        textAlign: 'left',
+        letterSpacing: -0.3,
+        lineHeight: 36,
+        marginBottom: 20,
+    },
+    logoGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        width: '100%',
+        rowGap: 12,
+    },
+    logoImage: {
+        width: '47%',
+        height: 56,
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    logoImageDark: {
+        opacity: 0.85,
+    },
+    logoTopLeft: {
+    },
+    logoTopRight: {
+    },
+    logoBottomLeft: {
+    },
+    logoBottomRight: {
     },
     
     // Glassmorphic card styles

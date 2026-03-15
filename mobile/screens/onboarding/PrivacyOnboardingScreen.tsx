@@ -1,11 +1,16 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Asset } from 'expo-asset';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 const lockIcon = require('../../public/onboarding-icons/LockIcon2.webp');
+
+// Preload icons to prevent janky late-loading
+Asset.fromModule(insightLogo).downloadAsync();
+Asset.fromModule(lockIcon).downloadAsync();
 
 const { width } = Dimensions.get('window');
 
@@ -15,6 +20,23 @@ interface PrivacyOnboardingScreenProps {
 
 export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardingScreenProps) {
   const { theme } = useTheme();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 700,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 700,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
   
   const handleContinue = () => {
     navigation.navigate('NotificationsOnboarding');
@@ -52,6 +74,8 @@ export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardin
         />
       </View>
 
+      {/* Animated content below lock icon */}
+      <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }], width: '100%', alignItems: 'center' }}>
       {/* Title */}
       <Text style={[styles.title, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>Your notes are fully private</Text>
 
@@ -75,6 +99,7 @@ export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardin
           <Text style={[styles.featureText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>We can't read your entries</Text>
         </View>
       </View>
+      </Animated.View>
 
       {/* Continue Button */}
       <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
@@ -116,7 +141,7 @@ const styles = StyleSheet.create({
     top: 60,
   },
   iconContainer: {
-    marginBottom: 24,
+    marginBottom: 8,
     marginTop: 20,
   },
   lockIcon: {

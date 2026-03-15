@@ -7,18 +7,56 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import SunoGradient from '../../components/onboarding/SunoGradient';
+import { supabase } from '../../lib/supabase';
 
 export default function SignupEmailScreen({ navigation, route }: any) {
   const [email, setEmail] = useState('');
+  const [checking, setChecking] = useState(false);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!email.trim() || !email.includes('@')) {
       return;
     }
-    navigation.navigate('SignupPassword', { email: email.trim() });
+
+    setChecking(true);
+    
+    try {
+      // Check if email already exists in auth.users
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: 'dummy-password-check-12345', // Intentionally wrong password
+      });
+
+      // If no error, it means the email exists (wrong password error)
+      // If error contains "Invalid login credentials", email exists
+      // If error contains "Email not confirmed", email exists but not verified
+      if (error && (error.message.includes('Invalid login') || error.message.includes('Email not confirmed'))) {
+        setChecking(false);
+        Alert.alert(
+          'Account Already Exists',
+          'This email is already registered. Please log in instead or use a different email.',
+          [
+            { text: 'Go to Login', onPress: () => navigation.navigate('Login') },
+            { text: 'Try Different Email', style: 'cancel' }
+          ]
+        );
+        return;
+      }
+      
+      // Email doesn't exist, proceed to password screen
+      setChecking(false);
+      navigation.navigate('SignupPassword', { email: email.trim() });
+    } catch (err) {
+      console.error('[SignupEmail] Error checking email:', err);
+      setChecking(false);
+      // On error, proceed anyway - will catch duplicate on actual signup
+      navigation.navigate('SignupPassword', { email: email.trim() });
+    }
   };
 
   return (
@@ -59,11 +97,15 @@ export default function SignupEmailScreen({ navigation, route }: any) {
         {/* Continue Button at Bottom */}
         <View style={styles.bottomContainer}>
           <TouchableOpacity
-            style={[styles.continueButton, (!email.trim() || !email.includes('@')) && styles.continueButtonDisabled]}
+            style={[styles.continueButton, (!email.trim() || !email.includes('@') || checking) && styles.continueButtonDisabled]}
             onPress={handleContinue}
-            disabled={!email.trim() || !email.includes('@')}
+            disabled={!email.trim() || !email.includes('@') || checking}
           >
-            <Text style={styles.continueButtonText}>Continue</Text>
+            {checking ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.continueButtonText}>Continue</Text>
+            )}
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>

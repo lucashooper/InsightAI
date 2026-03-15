@@ -3,10 +3,13 @@ import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Animated, Image } 
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import SunoGradient from '../../components/onboarding/SunoGradient';
+import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 export default function PostPurchaseWelcomeScreen({ navigation }: any) {
+  const { theme } = useTheme();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
   const logoScale = useRef(new Animated.Value(0.8)).current;
@@ -38,8 +41,13 @@ export default function PostPurchaseWelcomeScreen({ navigation }: any) {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {isDarkTheme(theme.name) ? (
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
+      ) : (
+        <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+      )}
+      <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} />
       
       <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         {/* Logo */}
@@ -48,33 +56,33 @@ export default function PostPurchaseWelcomeScreen({ navigation }: any) {
         </Animated.View>
 
         {/* Welcome Text */}
-        <Text style={styles.title}>Welcome to Insight</Text>
+        <Text style={[styles.title, isDarkTheme(theme.name) && { color: '#ffffff' }]}>Welcome to Insight</Text>
         <Text style={styles.subtitle}>You're all set with Pro</Text>
 
         {/* Features */}
         <View style={styles.features}>
           <View style={styles.featureRow}>
-            <View style={styles.featureIcon}>
+            <View style={[styles.featureIcon, isDarkTheme(theme.name) && { backgroundColor: 'rgba(168, 85, 247, 0.25)' }]}>
               <Ionicons name="sparkles" size={20} color="#a855f7" />
             </View>
-            <Text style={styles.featureText}>AI-powered journal analysis</Text>
+            <Text style={[styles.featureText, isDarkTheme(theme.name) && { color: '#ffffff' }]}>AI-powered journal analysis</Text>
           </View>
           <View style={styles.featureRow}>
-            <View style={styles.featureIcon}>
+            <View style={[styles.featureIcon, isDarkTheme(theme.name) && { backgroundColor: 'rgba(168, 85, 247, 0.25)' }]}>
               <Ionicons name="shield-checkmark" size={20} color="#a855f7" />
             </View>
-            <Text style={styles.featureText}>Private & encrypted entries</Text>
+            <Text style={[styles.featureText, isDarkTheme(theme.name) && { color: '#ffffff' }]}>Private & encrypted entries</Text>
           </View>
           <View style={styles.featureRow}>
-            <View style={styles.featureIcon}>
+            <View style={[styles.featureIcon, isDarkTheme(theme.name) && { backgroundColor: 'rgba(168, 85, 247, 0.25)' }]}>
               <Ionicons name="trending-up" size={20} color="#a855f7" />
             </View>
-            <Text style={styles.featureText}>Track your growth over time</Text>
+            <Text style={[styles.featureText, isDarkTheme(theme.name) && { color: '#ffffff' }]}>Track your growth over time</Text>
           </View>
         </View>
 
         {/* Info text */}
-        <Text style={styles.infoText}>
+        <Text style={[styles.infoText, isDarkTheme(theme.name) && { color: 'rgba(255, 255, 255, 0.45)' }]}>
           Create an account to save your entries and access them across devices.
         </Text>
       </Animated.View>

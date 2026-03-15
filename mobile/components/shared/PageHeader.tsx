@@ -64,10 +64,10 @@ const styles = StyleSheet.create({
     height: 0,
   },
   title: {
-    fontSize: sf(30),
-    fontWeight: '700',
+    fontSize: sf(22),
+    fontWeight: '600',
     color: 'rgba(255, 255, 255, 0.95)',
-    letterSpacing: -0.6,
+    letterSpacing: -0.3,
   },
   right: {
     alignItems: 'flex-end',

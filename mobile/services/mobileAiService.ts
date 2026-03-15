@@ -649,22 +649,42 @@ Write in second person ("you"). Keep it under 60 words.`;
     await waitForRateLimit();
 
     // Fetch recent journal entries for context
-    console.log('[mobileAiService] Getting session...');
+    // CRITICAL: Use getUser() for fresh server-side auth check to prevent stale session leaking other user's data
+    console.log('[mobileAiService] Getting authenticated user...');
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       console.error('[mobileAiService] No session found');
       throw new Error('Not authenticated');
     }
-    console.log('[mobileAiService] Session found, user:', session.user.id);
+    
+    // Double-check with getUser() to ensure we have the correct, current user
+    const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+    if (userError || !currentUser) {
+      console.error('[mobileAiService] getUser() failed:', userError?.message);
+      throw new Error('Authentication verification failed');
+    }
+    
+    const userId = currentUser.id;
+    console.log('[mobileAiService] Verified user ID:', userId);
+    
+    // Sanity check: session user should match getUser() result
+    if (session.user.id !== userId) {
+      console.error('[mobileAiService] ⚠️ SESSION MISMATCH! session.user.id:', session.user.id, 'getUser().id:', userId);
+    }
 
-    const { data: entries } = await supabase
+    const { data: entries, error: entriesError } = await supabase
       .from('notes')
       .select('content, created_at, ai_structured_insights')
-      .eq('user_id', session.user.id)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(20);
+    
+    if (entriesError) {
+      console.error('[mobileAiService] Error fetching entries:', entriesError);
+    }
 
     // Build journal context summary
+    console.log('[mobileAiService] Entries found for user:', entries?.length ?? 0);
     let journalContext = '';
     if (entries && entries.length > 0) {
       const summaries = entries.map((e: any) => {
@@ -675,6 +695,8 @@ Write in second person ("you"). Keep it under 60 words.`;
         return `[${date}]${emotion ? ` (${emotion})` : ''}${themes ? ` Themes: ${themes}` : ''}\n${snippet}`;
       });
       journalContext = `\n\nHere are the user's recent journal entries (most recent first):\n\n${summaries.join('\n\n---\n\n')}`;
+    } else {
+      journalContext = '\n\nIMPORTANT: This user has NO journal entries yet. Do NOT reference, summarize, or pretend to have access to any journal entries. If they ask about entries, patterns, or their journal history, let them know they haven\'t written any entries yet and encourage them to start journaling. Do NOT make up or hallucinate any journal content.';
     }
 
     // Personality-specific tone instructions
@@ -700,7 +722,9 @@ ${tone}
 - Never be preachy or give unsolicited advice — ask before suggesting
 - If they seem distressed, be extra gentle and validating
 
-You are NOT a therapist. You're a supportive companion who helps them reflect and discover patterns in their own words.${journalContext}`;
+You are NOT a therapist. You're a supportive companion who helps them reflect and discover patterns in their own words.
+
+CRITICAL RULE: Only reference journal entries that are explicitly provided below. If no entries are provided, you MUST tell the user they have no entries yet. NEVER fabricate, imagine, or hallucinate journal content.${journalContext}`;
 
     try {
       console.log('[mobileAiService] Building API messages...');
@@ -733,13 +757,14 @@ You are NOT a therapist. You're a supportive companion who helps them reflect an
    * Generate suggested conversation starters based on recent journal entries.
    */
   async getChatSuggestions(): Promise<string[]> {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return defaultChatSuggestions;
+    const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+    if (userError || !currentUser) return defaultChatSuggestions;
 
+    console.log('[mobileAiService] getChatSuggestions for user:', currentUser.id);
     const { data: entries } = await supabase
       .from('notes')
       .select('content, created_at, ai_structured_insights')
-      .eq('user_id', session.user.id)
+      .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false })
       .limit(5);
 

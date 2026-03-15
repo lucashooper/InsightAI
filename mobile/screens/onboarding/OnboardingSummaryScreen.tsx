@@ -34,8 +34,8 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
 
     const handleFinish = async () => {
         try {
-            // Navigate to privacy onboarding screen
-            navigation.navigate('PrivacyOnboarding');
+            // Navigate to interactive showcase screen
+            navigation.navigate('InteractiveShowcase');
         } catch (e) {
             console.error('Failed to navigate to privacy onboarding', e);
         }

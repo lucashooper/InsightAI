@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Asset } from 'expo-asset';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import PlanCard from '../../components/onboarding/PlanCard';
 import Purchases, { PurchasesOffering, PurchasesPackage, CustomerInfo } from 'react-native-purchases';
@@ -46,6 +47,7 @@ export default function PaywallScreen({ navigation, route }: any) {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'weekly' | 'monthly' | 'yearly'>('yearly');
   const [activeCarouselIndex, setActiveCarouselIndex] = useState(0);
+  const [imagesLoaded, setImagesLoaded] = useState(true); // Images preloaded globally in App.tsx
   const carouselRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -532,6 +534,13 @@ export default function PaywallScreen({ navigation, route }: any) {
         </View>
       </TouchableOpacity>
 
+      {/* Show loading spinner until images are preloaded */}
+      {!imagesLoaded ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#8b5cf6" />
+        </View>
+      ) : (
+        <>
       {/* Scrollable top content */}
       <ScrollView
         style={styles.topContent}
@@ -546,7 +555,7 @@ export default function PaywallScreen({ navigation, route }: any) {
 
         {/* Dynamic heading that changes per slide */}
         <View style={styles.header}>
-          <Text style={styles.title}>{slideHeadings[activeCarouselIndex]}</Text>
+          <Text style={[styles.title, !isDarkTheme(theme.name) && styles.titleLight]}>{slideHeadings[activeCarouselIndex]}</Text>
         </View>
 
         {/* Phone Image Carousel - half phone with fade */}
@@ -567,6 +576,24 @@ export default function PaywallScreen({ navigation, route }: any) {
               </View>
             )}
             keyExtractor={(_, index) => index.toString()}
+          />
+          {/* Subtle fade at bottom of phone to soften cutoff */}
+          <LinearGradient
+            colors={(() => {
+              // Use rgba with matching hue to avoid black line from 'transparent' (which is rgba(0,0,0,0))
+              const bg = theme.colors.background;
+              // Parse hex to rgb
+              const r = parseInt(bg.slice(1, 3), 16) || 0;
+              const g = parseInt(bg.slice(3, 5), 16) || 0;
+              const b = parseInt(bg.slice(5, 7), 16) || 0;
+              return [
+                `rgba(${r},${g},${b},0)`,
+                `rgba(${r},${g},${b},0.2)`,
+                `rgba(${r},${g},${b},1)`,
+              ];
+            })()}
+            style={styles.phoneFade}
+            pointerEvents="none"
           />
         </View>
 
@@ -596,21 +623,24 @@ export default function PaywallScreen({ navigation, route }: any) {
         <View style={styles.plansRow}>
           {/* Weekly */}
           <TouchableOpacity
-            style={[styles.compactPlan, selectedPlan === 'weekly' && styles.compactPlanSelected]}
+            style={[styles.compactPlan, !isDarkTheme(theme.name) && { backgroundColor: 'rgba(0, 0, 0, 0.06)', borderColor: 'rgba(0, 0, 0, 0.1)' }, selectedPlan === 'weekly' && styles.compactPlanSelected]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setSelectedPlan('weekly');
             }}
             activeOpacity={0.8}
           >
-            <Text style={[styles.compactPlanName, selectedPlan === 'weekly' && styles.compactPlanNameSelected]}>Weekly</Text>
-            <Text style={[styles.compactPlanDaily, selectedPlan === 'weekly' && styles.compactPlanDailySelected]}>$0.71 / day</Text>
-            <Text style={[styles.compactPlanPrice, selectedPlan === 'weekly' && styles.compactPlanPriceSelected]}>$4.99 per week</Text>
+            <View style={styles.trialBadge}>
+              <Text style={styles.trialBadgeText}>3 day trial</Text>
+            </View>
+            <Text style={[styles.compactPlanName, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'weekly' && styles.compactPlanNameSelected]}>Weekly</Text>
+            <Text style={[styles.compactPlanDaily, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'weekly' && styles.compactPlanDailySelected]}>$0.71 / day</Text>
+            <Text style={[styles.compactPlanPrice, !isDarkTheme(theme.name) && { color: 'rgba(0,0,0,0.5)' }, selectedPlan === 'weekly' && styles.compactPlanPriceSelected]}>$4.99 per week</Text>
           </TouchableOpacity>
 
           {/* Yearly - Best Value */}
           <TouchableOpacity
-            style={[styles.compactPlan, selectedPlan === 'yearly' && styles.compactPlanSelected]}
+            style={[styles.compactPlan, !isDarkTheme(theme.name) && { backgroundColor: 'rgba(0, 0, 0, 0.06)', borderColor: 'rgba(0, 0, 0, 0.1)' }, selectedPlan === 'yearly' && styles.compactPlanSelected]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setSelectedPlan('yearly');
@@ -620,29 +650,29 @@ export default function PaywallScreen({ navigation, route }: any) {
             <View style={styles.saveBadge}>
               <Text style={styles.saveBadgeText}>Save 73%</Text>
             </View>
-            <Text style={[styles.compactPlanName, selectedPlan === 'yearly' && styles.compactPlanNameSelected]}>Yearly</Text>
-            <Text style={[styles.compactPlanDaily, selectedPlan === 'yearly' && styles.compactPlanDailySelected]}>$0.19 / day</Text>
-            <Text style={[styles.compactPlanPrice, selectedPlan === 'yearly' && styles.compactPlanPriceSelected]}>$69.99 per year</Text>
+            <Text style={[styles.compactPlanName, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'yearly' && styles.compactPlanNameSelected]}>Yearly</Text>
+            <Text style={[styles.compactPlanDaily, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'yearly' && styles.compactPlanDailySelected]}>$0.19 / day</Text>
+            <Text style={[styles.compactPlanPrice, !isDarkTheme(theme.name) && { color: 'rgba(0,0,0,0.5)' }, selectedPlan === 'yearly' && styles.compactPlanPriceSelected]}>$69.99 per year</Text>
           </TouchableOpacity>
 
           {/* Monthly */}
           <TouchableOpacity
-            style={[styles.compactPlan, selectedPlan === 'monthly' && styles.compactPlanSelected]}
+            style={[styles.compactPlan, !isDarkTheme(theme.name) && { backgroundColor: 'rgba(0, 0, 0, 0.06)', borderColor: 'rgba(0, 0, 0, 0.1)' }, selectedPlan === 'monthly' && styles.compactPlanSelected]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setSelectedPlan('monthly');
             }}
             activeOpacity={0.8}
           >
-            <Text style={[styles.compactPlanName, selectedPlan === 'monthly' && styles.compactPlanNameSelected]}>Monthly</Text>
-            <Text style={[styles.compactPlanDaily, selectedPlan === 'monthly' && styles.compactPlanDailySelected]}>$0.60 / day</Text>
-            <Text style={[styles.compactPlanPrice, selectedPlan === 'monthly' && styles.compactPlanPriceSelected]}>$17.99 per month</Text>
+            <Text style={[styles.compactPlanName, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'monthly' && styles.compactPlanNameSelected]}>Monthly</Text>
+            <Text style={[styles.compactPlanDaily, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'monthly' && styles.compactPlanDailySelected]}>$0.60 / day</Text>
+            <Text style={[styles.compactPlanPrice, !isDarkTheme(theme.name) && { color: 'rgba(0,0,0,0.5)' }, selectedPlan === 'monthly' && styles.compactPlanPriceSelected]}>$17.99 per month</Text>
           </TouchableOpacity>
         </View>
 
         {/* What you get */}
         <View style={styles.whatYouGetContainer}>
-          <Text style={styles.whatYouGetTitle}>What you get:</Text>
+          <Text style={[styles.whatYouGetTitle, !isDarkTheme(theme.name) && styles.whatYouGetTitleLight]}>What you get:</Text>
           <View style={styles.whatYouGetList}>
             {[
               'Unlimited AI-powered journal insights',
@@ -652,7 +682,7 @@ export default function PaywallScreen({ navigation, route }: any) {
             ].map((item, i) => (
               <View key={i} style={styles.whatYouGetItem}>
                 <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-                <Text style={styles.whatYouGetText}>{item}</Text>
+                <Text style={[styles.whatYouGetText, !isDarkTheme(theme.name) && styles.whatYouGetTextLight]}>{item}</Text>
               </View>
             ))}
           </View>
@@ -660,16 +690,21 @@ export default function PaywallScreen({ navigation, route }: any) {
 
         {/* Testimonial */}
         <View style={styles.testimonialContainer}>
-          <View style={styles.testimonialCard}>
+          <View style={[
+            styles.testimonialCard,
+            isDarkTheme(theme.name) 
+              ? styles.testimonialCardDark 
+              : styles.testimonialCardLight
+          ]}>
             <View style={styles.starsRow}>
               {[1, 2, 3, 4, 5].map((star) => (
-                <Ionicons key={star} name="star" size={14} color="#fbbf24" />
+                <Ionicons key={star} name="star" size={16} color="#fbbf24" />
               ))}
             </View>
-            <Text style={styles.testimonialText}>
+            <Text style={[styles.testimonialText, !isDarkTheme(theme.name) && styles.testimonialTextLight]}>
               "Insight has completely changed how I understand my emotions. The AI insights are incredibly accurate and helpful."
             </Text>
-            <Text style={styles.testimonialAuthor}>— Jessica M.</Text>
+            <Text style={[styles.testimonialAuthor, !isDarkTheme(theme.name) && styles.testimonialAuthorLight]}>— Jessica M.</Text>
           </View>
         </View>
       </ScrollView>
@@ -718,6 +753,8 @@ export default function PaywallScreen({ navigation, route }: any) {
           </TouchableOpacity>
         </View>
       </View>
+      </>
+      )}
     </View>
   );
 }
@@ -726,6 +763,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fef7f2',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   backButton: {
     position: 'absolute',
@@ -772,6 +814,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: isTablet ? sf(46) : sf(43),
   },
+  titleLight: {
+    color: '#1a1a2e',
+  },
   // Carousel
   carouselContainer: {
     height: PHONE_DISPLAY_HEIGHT,
@@ -793,7 +838,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 80,
+    height: 60,
   },
   dotsContainer: {
     flexDirection: 'row',
@@ -821,13 +866,13 @@ const styles = StyleSheet.create({
   },
   compactPlan: {
     flex: 1,
-    backgroundColor: 'rgba(30, 30, 40, 0.85)', // CHANGED: was white, now dark gray
+    backgroundColor: 'rgba(30, 30, 40, 0.85)',
     borderRadius: 16,
     paddingVertical: 16,
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.15)', // CHANGED: was black border
+    borderColor: 'rgba(255, 255, 255, 0.15)',
     position: 'relative',
   },
   compactPlanSelected: {
@@ -847,17 +892,17 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   compactPlanNameSelected: {
-    color: '#ffffff',
+    opacity: 0.9,
     fontWeight: '700',
   },
   compactPlanDaily: {
-    fontSize: sf(18),
+    fontSize: sf(15),
     fontWeight: '800',
     color: '#ffffff',
     marginBottom: 2,
   },
   compactPlanDailySelected: {
-    color: '#ffffff',
+    opacity: 0.85,
   },
   compactPlanPrice: {
     fontSize: sf(10),
@@ -865,7 +910,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   compactPlanPriceSelected: {
-    color: '#ffffff',
+    opacity: 0.8,
   },
   saveBadge: {
     position: 'absolute',
@@ -883,6 +928,22 @@ const styles = StyleSheet.create({
     color: '#fff',
     letterSpacing: 0.3,
   },
+  trialBadge: {
+    position: 'absolute',
+    top: -10,
+    alignSelf: 'center',
+    backgroundColor: '#8b5cf6',
+    borderRadius: 999,
+    paddingVertical: 3,
+    paddingHorizontal: 10,
+    zIndex: 10,
+  },
+  trialBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.3,
+  },
   // What you get
   whatYouGetContainer: {
     marginBottom: 8,
@@ -894,6 +955,9 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     marginBottom: 12,
     textAlign: 'center',
+  },
+  whatYouGetTitleLight: {
+    color: '#1a1a2e',
   },
   whatYouGetList: {
     gap: 10,
@@ -909,22 +973,34 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flex: 1,
   },
+  whatYouGetTextLight: {
+    color: '#1a1a2e',
+  },
   // Testimonial
   testimonialContainer: {
     paddingHorizontal: isTablet ? 80 : 24,
+    marginTop: 24,
     marginBottom: 16,
   },
   testimonialCard: {
-    backgroundColor: 'transparent',
     borderRadius: 16,
-    padding: 16,
-    borderWidth: 0,
-    borderColor: 'transparent',
+    padding: 20,
+    borderWidth: 1,
+  },
+  testimonialCardDark: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  testimonialCardLight: {
+    backgroundColor: 'rgba(0, 0, 0, 0.03)',
+    borderColor: 'rgba(0, 0, 0, 0.08)',
   },
   starsRow: {
     flexDirection: 'row',
     gap: 4,
-    marginBottom: 10,
+    marginBottom: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   testimonialText: {
     fontSize: sf(15),
@@ -934,10 +1010,16 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginBottom: 8,
   },
+  testimonialTextLight: {
+    color: '#374151',
+  },
   testimonialAuthor: {
     fontSize: sf(14),
     color: 'rgba(255, 255, 255, 0.7)',
     fontWeight: '700',
+  },
+  testimonialAuthorLight: {
+    color: 'rgba(0, 0, 0, 0.5)',
   },
   // Sticky footer
   stickyFooter: {

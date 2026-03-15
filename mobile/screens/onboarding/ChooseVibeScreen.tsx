@@ -6,6 +6,7 @@ import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeName, useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import SunoGradient from '../../components/onboarding/SunoGradient';
+import ProgressBarNeon from '../../components/onboarding/ProgressBarNeon';
 import { isTablet, sf } from '../../utils/responsive';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -138,22 +139,26 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
         <SunoGradient themeColors={backgroundColors} />
       )}
       
-      {/* Back Button - Circular style matching other onboarding pages */}
-      <TouchableOpacity 
-        style={styles.backButton}
-        onPress={() => {
-          if (navigation.canGoBack()) {
-            navigation.goBack();
-          } else {
-            // If no navigation history (e.g., after sign-out), go to Welcome
-            navigation.navigate('Welcome');
-          }
-        }}
-      >
-        <View style={[styles.backArrowCircle, { backgroundColor: isDarkTheme(selectedVibe || 'light') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-          <Ionicons name="arrow-back" size={20} color={textColor} />
+      {/* Top Row: Back Arrow + Progress Bar (matching OnboardingQuestion layout) */}
+      <View style={styles.topRow}>
+        <TouchableOpacity 
+          style={styles.backArrow}
+          onPress={() => {
+            if (navigation.canGoBack()) {
+              navigation.goBack();
+            } else {
+              navigation.navigate('Welcome');
+            }
+          }}
+        >
+          <View style={[styles.backArrowCircle, { backgroundColor: isDarkTheme(selectedVibe || 'light') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+            <Ionicons name="arrow-back" size={20} color={textColor} />
+          </View>
+        </TouchableOpacity>
+        <View style={styles.progressBarContainer}>
+          <ProgressBarNeon currentStep={1} totalSteps={9} />
         </View>
-      </TouchableOpacity>
+      </View>
       
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
         <View style={styles.header}>
@@ -300,12 +305,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fef7f2',
   },
-  backButton: {
-    position: 'absolute',
-    top: 60,
-    left: 20,
-    zIndex: 10,
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 10,
+    gap: 12,
+  },
+  backArrow: {
     padding: 4,
+  },
+  progressBarContainer: {
+    flex: 1,
   },
   backArrowCircle: {
     width: 36,
@@ -316,7 +328,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingTop: isTablet ? 80 : 60,
+    paddingTop: isTablet ? 20 : 10,
     paddingHorizontal: isTablet ? 60 : 24,
   },
   header: {

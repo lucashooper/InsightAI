@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import Purchases from 'react-native-purchases';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme, ThemeName, isDarkTheme } from '../contexts/ThemeContext';
+import { useTheme, ThemeName, isDarkTheme, ContainerStyle } from '../contexts/ThemeContext';
 import { useAppLock } from '../contexts/AppLockContext';
 import { supabase } from '../lib/supabase';
 import { checkAIConsent, updateAIConsent } from '../services/aiConsentService';
@@ -26,7 +26,7 @@ interface UserProfile {
 
 export default function SettingsScreen({ navigation }: any) {
   const { user, signOut } = useAuth();
-  const { theme, themeName, setTheme } = useTheme();
+  const { theme, themeName, setTheme, containerStyle, setContainerStyle } = useTheme();
   const { isLockEnabled, isBiometricEnabled, isBiometricAvailable, enableLock, disableLock, toggleBiometric } = useAppLock();
   const [showPinSetup, setShowPinSetup] = useState(false);
   const [pinInput, setPinInput] = useState('');
@@ -52,6 +52,11 @@ export default function SettingsScreen({ navigation }: any) {
   const [isLoadingSubscription, setIsLoadingSubscription] = useState(true);
   const [aiConsentGranted, setAiConsentGranted] = useState<boolean | null>(null);
   const [loadingAiConsent, setLoadingAiConsent] = useState(true);
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+
+  const toggleSection = (section: string) => {
+    setExpandedSection(prev => prev === section ? null : section);
+  };
 
   const defaultThemes: { name: ThemeName; label: string; emoji: string }[] = [
     { name: 'dark', label: 'Dark', emoji: '' },
@@ -549,7 +554,6 @@ export default function SettingsScreen({ navigation }: any) {
       >
         {/* Profile Section */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.5)' }]}>Profile</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <View style={styles.cardGradient}>
               <View style={styles.profileSection}>
@@ -589,220 +593,256 @@ export default function SettingsScreen({ navigation }: any) {
         </View>
 
 
-        {/* Default Themes */}
+        {/* Appearance - Collapsible */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.5)' }]}>Appearance</Text>
-          <View style={styles.themeGrid}>
-            {defaultThemes.map((t) => (
-              <TouchableOpacity
-                key={t.name}
-                style={[
-                  styles.themeOption,
-                  { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
-                  themeName === t.name && styles.themeOptionActive
-                ]}
-                onPress={() => setTheme(t.name)}
-              >
-                <Text style={[
-                  styles.themeLabel,
-                  { color: themeName === t.name ? '#8b5cf6' : theme.colors.secondaryText }
-                ]}>
-                  {t.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        <View style={{ marginTop: -12 }}>
-          <View style={styles.themeGrid}>
-            {otherThemes.map((t) => (
-              <TouchableOpacity
-                key={t.name}
-                style={[
-                  styles.themeOption,
-                  { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
-                  themeName === t.name && styles.themeOptionActive
-                ]}
-                onPress={() => setTheme(t.name)}
-              >
-                <Text style={[
-                  styles.themeLabel,
-                  { color: themeName === t.name ? '#8b5cf6' : theme.colors.secondaryText }
-                ]}>
-                  {t.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Security Section */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.5)' }]}>Security</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.settingRow}
-              onPress={() => {
-                if (isLockEnabled) {
-                  // Disable - ask for current PIN
-                  Alert.prompt(
-                    'Disable App Lock',
-                    'Enter your current PIN to disable the lock.',
-                    async (text) => {
-                      if (text && text.length === 4) {
-                        const success = await disableLock(text);
-                        if (!success) {
-                          Alert.alert('Incorrect PIN', 'The PIN you entered is incorrect.');
-                        }
-                      }
-                    },
-                    'secure-text',
-                    '',
-                    'number-pad'
-                  );
-                } else {
-                  // Enable - set up new PIN
-                  Alert.prompt(
-                    'Set App Lock PIN',
-                    'Choose a 4-digit PIN to lock your journal.',
-                    [
-                      { text: 'Cancel', style: 'cancel' },
-                      {
-                        text: 'Next',
-                        onPress: (pin) => {
-                          if (!pin || pin.length !== 4) {
-                            Alert.alert('Invalid PIN', 'Please enter exactly 4 digits.');
-                            return;
-                          }
-                          // Confirm PIN
-                          Alert.prompt(
-                            'Confirm PIN',
-                            'Re-enter your 4-digit PIN to confirm.',
-                            [
-                              { text: 'Cancel', style: 'cancel' },
-                              {
-                                text: 'Enable Lock',
-                                onPress: async (confirmPin) => {
-                                  if (confirmPin === pin) {
-                                    await enableLock(pin);
-                                    Alert.alert('App Lock Enabled', 'Your journal is now protected with a PIN.');
-                                  } else {
-                                    Alert.alert('PINs Don\'t Match', 'The PINs you entered don\'t match. Please try again.');
-                                  }
-                                },
-                              },
-                            ],
-                            'secure-text',
-                            '',
-                            'number-pad'
-                          );
-                        },
-                      },
-                    ],
-                    'secure-text',
-                    '',
-                    'number-pad'
-                  );
-                }
-              }}
+              onPress={() => toggleSection('appearance')}
               activeOpacity={0.7}
             >
-              <View style={styles.settingLeft}>
-                <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>App Lock</Text>
-                <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Require a PIN to open Insight</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.settingLabel, { color: theme.colors.primaryText, marginBottom: 0 }]}>Appearance</Text>
+                <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Theme: {themeName.charAt(0).toUpperCase() + themeName.slice(1)}</Text>
               </View>
-              <View style={[styles.toggle, isLockEnabled && styles.toggleActive]}>
-                <View style={[styles.toggleThumb, isLockEnabled && styles.toggleThumbActive]} />
-              </View>
+              <Ionicons name={expandedSection === 'appearance' ? 'chevron-up' : 'chevron-forward'} size={18} color={theme.colors.secondaryText} />
             </TouchableOpacity>
-
-            {isLockEnabled && (
-              <>
-                <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
+            {expandedSection === 'appearance' && (
+              <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+                <View style={[styles.settingDivider, { backgroundColor: theme.colors.border, marginHorizontal: 0, marginBottom: 16 }]} />
                 
-                {isBiometricAvailable && (
-                  <TouchableOpacity 
-                    style={styles.settingRow}
-                    onPress={() => toggleBiometric(!isBiometricEnabled)}
+                {/* Theme Selection */}
+                <Text style={[styles.subsectionLabel, { color: theme.colors.secondaryText }]}>Theme</Text>
+                <View style={styles.themeGrid}>
+                  {[...defaultThemes, ...otherThemes].map((t) => (
+                    <TouchableOpacity
+                      key={t.name}
+                      style={[
+                        styles.themeOption,
+                        { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+                        themeName === t.name && styles.themeOptionActive
+                      ]}
+                      onPress={() => setTheme(t.name)}
+                    >
+                      <Text style={[
+                        styles.themeLabel,
+                        { color: themeName === t.name ? '#8b5cf6' : theme.colors.secondaryText }
+                      ]}>
+                        {t.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                
+                {/* Container Style Selection */}
+                <Text style={[styles.subsectionLabel, { color: theme.colors.secondaryText, marginTop: 20 }]}>Container Style</Text>
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
+                  <TouchableOpacity
+                    style={[
+                      styles.accentModeOption,
+                      { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+                      containerStyle === 'modern-gray' && styles.accentModeOptionActive
+                    ]}
+                    onPress={() => setContainerStyle('modern-gray')}
                     activeOpacity={0.7}
                   >
-                    <View style={styles.settingLeft}>
-                      <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Face ID / Touch ID</Text>
-                      <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Unlock with biometrics instead of PIN</Text>
-                    </View>
-                    <View style={[styles.toggle, isBiometricEnabled && styles.toggleActive]}>
-                      <View style={[styles.toggleThumb, isBiometricEnabled && styles.toggleThumbActive]} />
-                    </View>
+                    <Text style={[styles.accentModeLabel, { color: containerStyle === 'modern-gray' ? '#8b5cf6' : theme.colors.secondaryText }]}>Modern Gray</Text>
+                    <Text style={[styles.accentModeDesc, { color: theme.colors.tertiaryText }]}>Sleek neutral containers</Text>
                   </TouchableOpacity>
-                )}
+                  <TouchableOpacity
+                    style={[
+                      styles.accentModeOption,
+                      { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+                      containerStyle === 'responsive' && styles.accentModeOptionActive
+                    ]}
+                    onPress={() => setContainerStyle('responsive')}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.accentModeLabel, { color: containerStyle === 'responsive' ? '#8b5cf6' : theme.colors.secondaryText }]}>Responsive</Text>
+                    <Text style={[styles.accentModeDesc, { color: theme.colors.tertiaryText }]}>Adapts to theme</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
+        </View>
 
+        {/* Security - Collapsible */}
+        <View style={styles.section}>
+          <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+            <TouchableOpacity
+              style={styles.settingRow}
+              onPress={() => toggleSection('security')}
+              activeOpacity={0.7}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.settingLabel, { color: theme.colors.primaryText, marginBottom: 0 }]}>Security</Text>
+                <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>{isLockEnabled ? 'App Lock enabled' : 'No lock set'}</Text>
+              </View>
+              <Ionicons name={expandedSection === 'security' ? 'chevron-up' : 'chevron-forward'} size={18} color={theme.colors.secondaryText} />
+            </TouchableOpacity>
+            {expandedSection === 'security' && (
+              <>
                 <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
-                
                 <TouchableOpacity 
                   style={styles.settingRow}
                   onPress={() => {
-                    Alert.prompt(
-                      'Change PIN',
-                      'Enter your current PIN first.',
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        {
-                          text: 'Next',
-                          onPress: async (currentPin) => {
-                            if (!currentPin) return;
-                            // Use the disableLock + enableLock flow
-                            const valid = await disableLock(currentPin);
-                            if (!valid) {
+                    if (isLockEnabled) {
+                      Alert.prompt(
+                        'Disable App Lock',
+                        'Enter your current PIN to disable the lock.',
+                        async (text: string) => {
+                          if (text && text.length === 4) {
+                            const success = await disableLock(text);
+                            if (!success) {
                               Alert.alert('Incorrect PIN', 'The PIN you entered is incorrect.');
-                              return;
                             }
-                            Alert.prompt(
-                              'New PIN',
-                              'Choose a new 4-digit PIN.',
-                              [
-                                { text: 'Cancel', style: 'cancel' },
-                                {
-                                  text: 'Set PIN',
-                                  onPress: async (newPin) => {
-                                    if (!newPin || newPin.length !== 4) {
-                                      Alert.alert('Invalid PIN', 'Please enter exactly 4 digits.');
-                                      await enableLock(currentPin); // Re-enable with old PIN
-                                      return;
-                                    }
-                                    await enableLock(newPin);
-                                    Alert.alert('PIN Changed', 'Your new PIN has been set.');
-                                  },
-                                },
-                              ],
-                              'secure-text',
-                              '',
-                              'number-pad'
-                            );
-                          },
+                          }
                         },
-                      ],
-                      'secure-text',
-                      '',
-                      'number-pad'
-                    );
+                        'secure-text',
+                        '',
+                        'number-pad'
+                      );
+                    } else {
+                      Alert.prompt(
+                        'Set App Lock PIN',
+                        'Choose a 4-digit PIN to lock your journal.',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          {
+                            text: 'Next',
+                            onPress: (pin?: string) => {
+                              if (!pin || pin.length !== 4) {
+                                Alert.alert('Invalid PIN', 'Please enter exactly 4 digits.');
+                                return;
+                              }
+                              Alert.prompt(
+                                'Confirm PIN',
+                                'Re-enter your 4-digit PIN to confirm.',
+                                [
+                                  { text: 'Cancel', style: 'cancel' },
+                                  {
+                                    text: 'Enable Lock',
+                                    onPress: async (confirmPin?: string) => {
+                                      if (confirmPin === pin) {
+                                        await enableLock(pin);
+                                        Alert.alert('App Lock Enabled', 'Your journal is now protected with a PIN.');
+                                      } else {
+                                        Alert.alert('PINs Don\'t Match', 'The PINs you entered don\'t match. Please try again.');
+                                      }
+                                    },
+                                  },
+                                ],
+                                'secure-text',
+                                '',
+                                'number-pad'
+                              );
+                            },
+                          },
+                        ],
+                        'secure-text',
+                        '',
+                        'number-pad'
+                      );
+                    }
                   }}
                   activeOpacity={0.7}
                 >
                   <View style={styles.settingLeft}>
-                    <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Change PIN</Text>
-                    <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Update your 4-digit lock PIN</Text>
+                    <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>App Lock</Text>
+                    <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Require a PIN to open Insight</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color={theme.colors.secondaryText} />
+                  <View style={[styles.toggle, isLockEnabled && styles.toggleActive]}>
+                    <View style={[styles.toggleThumb, isLockEnabled && styles.toggleThumbActive]} />
+                  </View>
                 </TouchableOpacity>
+
+                {isLockEnabled && isBiometricAvailable && (
+                  <>
+                    <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
+                    <TouchableOpacity 
+                      style={styles.settingRow}
+                      onPress={() => toggleBiometric(!isBiometricEnabled)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.settingLeft}>
+                        <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Face ID / Touch ID</Text>
+                        <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Unlock with biometrics instead of PIN</Text>
+                      </View>
+                      <View style={[styles.toggle, isBiometricEnabled && styles.toggleActive]}>
+                        <View style={[styles.toggleThumb, isBiometricEnabled && styles.toggleThumbActive]} />
+                      </View>
+                    </TouchableOpacity>
+                  </>
+                )}
+
+                {isLockEnabled && (
+                  <>
+                    <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
+                    <TouchableOpacity 
+                      style={styles.settingRow}
+                      onPress={() => {
+                        Alert.prompt(
+                          'Change PIN',
+                          'Enter your current PIN first.',
+                          [
+                            { text: 'Cancel', style: 'cancel' },
+                            {
+                              text: 'Next',
+                              onPress: async (currentPin?: string) => {
+                                if (!currentPin) return;
+                                const valid = await disableLock(currentPin);
+                                if (!valid) {
+                                  Alert.alert('Incorrect PIN', 'The PIN you entered is incorrect.');
+                                  return;
+                                }
+                                Alert.prompt(
+                                  'New PIN',
+                                  'Choose a new 4-digit PIN.',
+                                  [
+                                    { text: 'Cancel', style: 'cancel' },
+                                    {
+                                      text: 'Set PIN',
+                                      onPress: async (newPin?: string) => {
+                                        if (!newPin || newPin.length !== 4) {
+                                          Alert.alert('Invalid PIN', 'Please enter exactly 4 digits.');
+                                          await enableLock(currentPin);
+                                          return;
+                                        }
+                                        await enableLock(newPin);
+                                        Alert.alert('PIN Changed', 'Your new PIN has been set.');
+                                      },
+                                    },
+                                  ],
+                                  'secure-text',
+                                  '',
+                                  'number-pad'
+                                );
+                              },
+                            },
+                          ],
+                          'secure-text',
+                          '',
+                          'number-pad'
+                        );
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.settingLeft}>
+                        <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Change PIN</Text>
+                        <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Update your 4-digit lock PIN</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={18} color={theme.colors.secondaryText} />
+                    </TouchableOpacity>
+                  </>
+                )}
               </>
             )}
           </View>
         </View>
 
-        {/* Privacy & Data Section */}
+        {/* Privacy & Data - Simple row */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.5)' }]}>Privacy & Data</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <TouchableOpacity 
               style={styles.settingRow}
@@ -815,9 +855,7 @@ export default function SettingsScreen({ navigation }: any) {
                     { 
                       text: 'Open', 
                       onPress: () => {
-                        // Open privacy policy URL
                         const url = 'https://myinsightai.app/privacy';
-                        // You can use Linking.openURL(url) here
                         console.log('Opening privacy policy:', url);
                       }
                     }
@@ -826,120 +864,129 @@ export default function SettingsScreen({ navigation }: any) {
               }}
               activeOpacity={0.7}
             >
-              <View style={styles.settingLeft}>
-                <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Privacy Policy</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.settingLabel, { color: theme.colors.primaryText, marginBottom: 0 }]}>Privacy Policy</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={theme.colors.secondaryText} />
+              <Ionicons name="chevron-forward" size={18} color={theme.colors.secondaryText} />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Personalize Section */}
+        {/* Personalize - Collapsible */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.5)' }]}>Personalize</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.settingRow}
-              onPress={() => toggleReminder(!reminderEnabled)}
+              onPress={() => toggleSection('personalize')}
               activeOpacity={0.7}
             >
-              <View style={styles.settingLeft}>
-                <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Daily journal reminder</Text>
-                <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Receive a notification at {reminderTime}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.settingLabel, { color: theme.colors.primaryText, marginBottom: 0 }]}>Personalize</Text>
+                <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Reminders, prompts & preferences</Text>
               </View>
-              <View style={[styles.toggle, reminderEnabled && styles.toggleActive]}>
-                <View style={[styles.toggleThumb, reminderEnabled && styles.toggleThumbActive]} />
-              </View>
+              <Ionicons name={expandedSection === 'personalize' ? 'chevron-up' : 'chevron-forward'} size={18} color={theme.colors.secondaryText} />
             </TouchableOpacity>
-            
-            {reminderEnabled && (
+            {expandedSection === 'personalize' && (
               <>
                 <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
                 <TouchableOpacity 
                   style={styles.settingRow}
-                  onPress={handleSetReminderTime}
+                  onPress={() => toggleReminder(!reminderEnabled)}
                   activeOpacity={0.7}
                 >
                   <View style={styles.settingLeft}>
-                    <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Change time</Text>
-                    <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Currently set to {reminderTime}</Text>
+                    <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Daily journal reminder</Text>
+                    <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Receive a notification at {reminderTime}</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color={theme.colors.secondaryText} />
+                  <View style={[styles.toggle, reminderEnabled && styles.toggleActive]}>
+                    <View style={[styles.toggleThumb, reminderEnabled && styles.toggleThumbActive]} />
+                  </View>
+                </TouchableOpacity>
+                
+                {reminderEnabled && (
+                  <>
+                    <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
+                    <TouchableOpacity 
+                      style={styles.settingRow}
+                      onPress={handleSetReminderTime}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.settingLeft}>
+                        <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Change time</Text>
+                        <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Currently set to {reminderTime}</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={18} color={theme.colors.secondaryText} />
+                    </TouchableOpacity>
+                  </>
+                )}
+
+                <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
+                <TouchableOpacity 
+                  style={styles.settingRow}
+                  onPress={() => toggleDailyMoodCheckIn(!dailyMoodCheckInEnabled)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.settingLeft}>
+                    <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Daily mood check-in</Text>
+                    <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Get a quick check-in when you open the app</Text>
+                  </View>
+                  <View style={[styles.toggle, dailyMoodCheckInEnabled && styles.toggleActive]}>
+                    <View style={[styles.toggleThumb, dailyMoodCheckInEnabled && styles.toggleThumbActive]} />
+                  </View>
+                </TouchableOpacity>
+                
+                <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
+                <TouchableOpacity 
+                  style={styles.settingRow}
+                  onPress={() => toggleBreathingPrompts(!breathingPromptsEnabled)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.settingLeft}>
+                    <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Breathing prompts</Text>
+                    <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Take 3 deep breaths before reflecting</Text>
+                  </View>
+                  <View style={[styles.toggle, breathingPromptsEnabled && styles.toggleActive]}>
+                    <View style={[styles.toggleThumb, breathingPromptsEnabled && styles.toggleThumbActive]} />
+                  </View>
+                </TouchableOpacity>
+                
+                <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
+                <TouchableOpacity 
+                  style={styles.settingRow}
+                  onPress={() => toggleMonthlyStories(!monthlyStoriesEnabled)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.settingLeft}>
+                    <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Monthly progress stories</Text>
+                    <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Receive a narrative summary of your month</Text>
+                  </View>
+                  <View style={[styles.toggle, monthlyStoriesEnabled && styles.toggleActive]}>
+                    <View style={[styles.toggleThumb, monthlyStoriesEnabled && styles.toggleThumbActive]} />
+                  </View>
+                </TouchableOpacity>
+                
+                <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
+                <TouchableOpacity 
+                  style={styles.settingRow}
+                  onPress={() => toggleMoodIndicators(!moodIndicatorsEnabled)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.settingLeft}>
+                    <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Show entry mood indicators</Text>
+                    <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Display emoji and color on journal entries</Text>
+                  </View>
+                  <View style={[styles.toggle, moodIndicatorsEnabled && styles.toggleActive]}>
+                    <View style={[styles.toggleThumb, moodIndicatorsEnabled && styles.toggleThumbActive]} />
+                  </View>
                 </TouchableOpacity>
               </>
             )}
           </View>
         </View>
 
-        <View style={{ marginTop: -12 }}>
-          <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-            <TouchableOpacity 
-              style={styles.settingRow}
-              onPress={() => toggleDailyMoodCheckIn(!dailyMoodCheckInEnabled)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.settingLeft}>
-                <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Daily mood check-in</Text>
-                <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Get a quick check-in when you open the app</Text>
-              </View>
-              <View style={[styles.toggle, dailyMoodCheckInEnabled && styles.toggleActive]}>
-                <View style={[styles.toggleThumb, dailyMoodCheckInEnabled && styles.toggleThumbActive]} />
-              </View>
-            </TouchableOpacity>
-            
-            <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
-            
-            <TouchableOpacity 
-              style={styles.settingRow}
-              onPress={() => toggleBreathingPrompts(!breathingPromptsEnabled)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.settingLeft}>
-                <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Breathing prompts before journaling</Text>
-                <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Take 3 deep breaths before reflecting</Text>
-              </View>
-              <View style={[styles.toggle, breathingPromptsEnabled && styles.toggleActive]}>
-                <View style={[styles.toggleThumb, breathingPromptsEnabled && styles.toggleThumbActive]} />
-              </View>
-            </TouchableOpacity>
-            
-            <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
-            
-            <TouchableOpacity 
-              style={styles.settingRow}
-              onPress={() => toggleMonthlyStories(!monthlyStoriesEnabled)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.settingLeft}>
-                <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Monthly progress stories</Text>
-                <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Receive a narrative summary of your month</Text>
-              </View>
-              <View style={[styles.toggle, monthlyStoriesEnabled && styles.toggleActive]}>
-                <View style={[styles.toggleThumb, monthlyStoriesEnabled && styles.toggleThumbActive]} />
-              </View>
-            </TouchableOpacity>
-            
-            <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
-            
-            <TouchableOpacity 
-              style={styles.settingRow}
-              onPress={() => toggleMoodIndicators(!moodIndicatorsEnabled)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.settingLeft}>
-                <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Show entry mood indicators</Text>
-                <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Display emoji and color indicators on journal entries</Text>
-              </View>
-              <View style={[styles.toggle, moodIndicatorsEnabled && styles.toggleActive]}>
-                <View style={[styles.toggleThumb, moodIndicatorsEnabled && styles.toggleThumbActive]} />
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
-
         {/* Subscription & Usage */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.5)' }]}>Account</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>Account</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <View style={styles.cardGradient}>
               <View style={styles.usageRow}>
@@ -991,7 +1038,7 @@ export default function SettingsScreen({ navigation }: any) {
         {/* Developer Testing Tools - Only visible to admin account */}
         {__DEV__ && user?.email === 'edwardsjonny547@gmail.com' && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>DEVELOPER TOOLS</Text>
+            <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>Developer Tools</Text>
             <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
               <TouchableOpacity
                 style={styles.devToolButton}
@@ -1080,7 +1127,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Send Feedback */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>SEND FEEDBACK</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>Send Feedback</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <View style={styles.cardGradient}>
               <TextInput
@@ -1128,7 +1175,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Actions */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>ACTIONS</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>Actions</Text>
 
           <TouchableOpacity style={{}} onPress={handleSignOut} activeOpacity={0.85}>
             <StandardContainer style={styles.card}>
@@ -1220,7 +1267,7 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* About Section */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.5)' }]}>About</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>About</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <View style={styles.cardGradient}>
               <Text style={[styles.infoText, { color: theme.colors.primaryText }]}>Insight Mobile v1.0.0</Text>
@@ -1251,8 +1298,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '500',
     color: '#ffffff',
   },
   headerSubtitle: {
@@ -1271,12 +1318,13 @@ const styles = StyleSheet.create({
     marginBottom: isTablet ? 32 : 24,
   },
   sectionTitle: {
-    fontSize: isTablet ? sf(18) : sf(16),
-    fontWeight: '400',
+    fontSize: isTablet ? sf(22) : sf(20),
+    fontWeight: '600',
     color: '#666',
     textAlign: 'center',
-    marginBottom: isTablet ? 20 : 16,
-    marginTop: isTablet ? 32 : 24,
+    marginBottom: isTablet ? 16 : 12,
+    marginTop: isTablet ? 28 : 20,
+    letterSpacing: -0.3,
   },
   card: {
     borderRadius: isTablet ? 20 : 16,
@@ -1556,6 +1604,33 @@ const styles = StyleSheet.create({
     top: 8,
     right: 8,
   },
+  subsectionLabel: {
+    fontSize: sf(13),
+    fontWeight: '600',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  accentModeOption: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  accentModeOptionActive: {
+    borderColor: '#8b5cf6',
+    backgroundColor: 'rgba(139, 92, 246, 0.12)',
+  },
+  accentModeLabel: {
+    fontSize: sf(14),
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  accentModeDesc: {
+    fontSize: sf(11),
+    fontWeight: '400',
+  },
   devToolButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1567,5 +1642,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
     color: '#ffffff',
+  },
+  settingIconContainer: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
 });

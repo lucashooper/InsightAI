@@ -132,8 +132,8 @@ export default function PromptEntryScreen({ navigation, route }: any) {
         >
           {/* Prompt Badge */}
           <View style={styles.promptBadge}>
-            <Ionicons name="bulb" size={16} color="#ffffff" />
-            <Text style={styles.promptBadgeText}>Today's Insight</Text>
+            <Ionicons name="sparkles" size={16} color="#ffffff" />
+            <Text style={styles.promptBadgeText}>Today's Prompt</Text>
           </View>
 
           {/* Prompt Question */}

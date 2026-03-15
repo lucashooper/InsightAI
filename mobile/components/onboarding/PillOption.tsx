@@ -131,7 +131,6 @@ export default function PillOption({ label, icon, selected, onPress }: PillOptio
           color={selected ? '#ffffff' : '#9ca3af'}
         />
 
-        <View pointerEvents="none" style={styles.insetOverlay} />
       </LinearGradient>
     </TouchableOpacity>
   );
@@ -195,22 +194,12 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   pillSelected: {
-    borderWidth: 1.5,
-    borderColor: 'rgba(139, 92, 246, 0.3)',
+    borderWidth: 0,
     shadowColor: '#8b5cf6',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.25,
     shadowRadius: 16,
     elevation: 8,
-  },
-  insetOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    opacity: 0.5,
   },
   label: {
     flex: 1,

@@ -26,7 +26,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import Purchases from 'react-native-purchases';
 
-const CHAT_HISTORY_KEY = 'AI_CHAT_HISTORY';
+const CHAT_HISTORY_KEY_PREFIX = 'AI_CHAT_HISTORY_';
 const AI_PERSONALITY_KEY = 'AI_PERSONALITY';
 const FREE_USER_DAILY_LIMIT = 50;
 
@@ -60,6 +60,7 @@ const PERSONALITIES: { key: Personality; label: string; emoji: string; desc: str
 
 export default function AIChatScreen({ navigation }: any) {
   const { theme } = useTheme();
+  const isDark = theme.name === 'dark' || theme.name === 'midnight' || theme.name === 'forest';
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -87,21 +88,33 @@ export default function AIChatScreen({ navigation }: any) {
 
   useEffect(() => {
     const load = async () => {
-      const cached = await AsyncStorage.getItem('CACHED_PROFILE_PICTURE');
-      if (cached) setProfilePicture(cached);
+      if (user) {
+        // Use user-specific cache key to prevent cross-user contamination
+        const cached = await AsyncStorage.getItem(`CACHED_PROFILE_PICTURE_${user.id}`);
+        if (cached) setProfilePicture(cached);
+      }
       const savedPersonality = await AsyncStorage.getItem(AI_PERSONALITY_KEY);
       if (savedPersonality) setPersonality(savedPersonality as Personality);
     };
     load();
-  }, []);
+  }, [user]);
 
   useEffect(() => { loadSuggestions(); }, []);
 
+  // When user changes (account switch), reset all chat state to prevent data leak
   useEffect(() => {
     if (user) {
+      // Clear any in-memory messages from previous user
+      setMessages([]);
+      setCurrentChatId(null);
+      setShowSuggestions(true);
+      setSavedChats([]);
+      // Reload suggestions and chat history for the new user
+      loadSuggestions();
+      loadChatHistory();
       checkAndUpdateUsage();
     }
-  }, [user]);
+  }, [user?.id]);
 
   useEffect(() => {
     return () => {
@@ -130,9 +143,11 @@ export default function AIChatScreen({ navigation }: any) {
     }
   };
 
+  const getChatHistoryKey = () => `${CHAT_HISTORY_KEY_PREFIX}${user?.id || 'anonymous'}`;
+
   const loadChatHistory = async () => {
     try {
-      const raw = await AsyncStorage.getItem(CHAT_HISTORY_KEY);
+      const raw = await AsyncStorage.getItem(getChatHistoryKey());
       if (raw) {
         const chats: SavedChat[] = JSON.parse(raw);
         setSavedChats(chats.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
@@ -145,7 +160,7 @@ export default function AIChatScreen({ navigation }: any) {
   const saveChatToHistory = async () => {
     if (isTemporary || messages.length === 0) return;
     try {
-      const raw = await AsyncStorage.getItem(CHAT_HISTORY_KEY);
+      const raw = await AsyncStorage.getItem(getChatHistoryKey());
       let chats: SavedChat[] = raw ? JSON.parse(raw) : [];
 
       const firstUserMsg = messages.find(m => m.role === 'user');
@@ -171,7 +186,7 @@ export default function AIChatScreen({ navigation }: any) {
 
       // Keep max 30 chats
       if (chats.length > 30) chats = chats.slice(0, 30);
-      await AsyncStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(chats));
+      await AsyncStorage.setItem(getChatHistoryKey(), JSON.stringify(chats));
     } catch (e) {
       console.error('[AIChat] Error saving chat', e);
     }
@@ -191,11 +206,11 @@ export default function AIChatScreen({ navigation }: any) {
 
   const deleteChat = async (chatId: string) => {
     try {
-      const raw = await AsyncStorage.getItem(CHAT_HISTORY_KEY);
+      const raw = await AsyncStorage.getItem(getChatHistoryKey());
       if (raw) {
         let chats: SavedChat[] = JSON.parse(raw);
         chats = chats.filter(c => c.id !== chatId);
-        await AsyncStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(chats));
+        await AsyncStorage.setItem(getChatHistoryKey(), JSON.stringify(chats));
         setSavedChats(chats);
         if (currentChatId === chatId) {
           startNewChat();
@@ -343,6 +358,28 @@ export default function AIChatScreen({ navigation }: any) {
     const messageText = (text || inputText).trim();
     if (!messageText || isLoading) return;
 
+    // PREMIUM GATE: Only Pro users can use AI chat
+    if (!isProUser) {
+      try {
+        const customerInfo = await Purchases.getCustomerInfo();
+        const isPro = !!customerInfo.entitlements.active['InsightAI Pro'] || Object.keys(customerInfo.entitlements.active).length > 0;
+        if (!isPro) {
+          Alert.alert(
+            'Pro Feature',
+            'AI Chat is available exclusively for Insight Pro subscribers. Upgrade to unlock unlimited AI conversations about your journal.',
+            [
+              { text: 'Maybe Later', style: 'cancel' },
+              { text: 'Upgrade to Pro', onPress: () => navigation.navigate('Paywall') }
+            ]
+          );
+          return;
+        }
+        setIsProUser(true);
+      } catch (e) {
+        console.error('[AIChatScreen] Error checking pro status:', e);
+      }
+    }
+
     // CHECK RATE LIMIT BEFORE SENDING
     const canSend = await checkAndUpdateUsage();
     if (!canSend) return;
@@ -399,7 +436,7 @@ export default function AIChatScreen({ navigation }: any) {
     }
   }, [inputText, isLoading, messages, personality]);
 
-  const renderMessage = ({ item }: { item: ChatMessage }) => {
+  const MessageBubble = ({ item }: { item: ChatMessage }) => {
     const isUser = item.role === 'user';
     const displayText = isUser ? item.content : (item.displayedContent ?? item.content);
 
@@ -417,11 +454,11 @@ export default function AIChatScreen({ navigation }: any) {
         )}
         <View style={[
           styles.messageBubble,
-          isUser ? styles.userBubble : styles.assistantBubble,
+          isUser ? styles.userBubble : [styles.assistantBubble, { backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)' }],
         ]}>
           <Text style={[
             styles.messageText,
-            isUser ? styles.userMessageText : styles.assistantMessageText,
+            isUser ? styles.userMessageText : [styles.assistantMessageText, { color: isDark ? 'rgba(255,255,255,0.95)' : theme.colors.primaryText }],
           ]}>
             {displayText}
           </Text>
@@ -429,17 +466,17 @@ export default function AIChatScreen({ navigation }: any) {
         {isUser && (
           <View style={styles.userAvatarWrap}>
             {profilePicture ? (
-              <Image source={{ uri: profilePicture }} style={styles.userAvatarImage} />
+              <Image source={{ uri: profilePicture }} style={styles.userAvatarImageDirect} />
             ) : (
-              <View style={styles.userAvatarFallback}>
-                <Ionicons name="person-circle-outline" size={32} color="rgba(255, 255, 255, 0.6)" />
-              </View>
+              <Ionicons name="person-circle-outline" size={32} color={theme.colors.secondaryText} />
             )}
           </View>
         )}
       </View>
     );
   };
+
+  const renderMessage = ({ item }: { item: ChatMessage }) => <MessageBubble item={item} />;
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
@@ -455,7 +492,7 @@ export default function AIChatScreen({ navigation }: any) {
         </LinearGradient>
       </View>
 
-      <Text style={styles.emptySubtitle}>
+      <Text style={[styles.emptySubtitle, { color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)' }]}>
         I know your journal inside out.{'\n'}Ask me anything about your patterns, emotions, or growth.
       </Text>
 
@@ -475,8 +512,8 @@ export default function AIChatScreen({ navigation }: any) {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                <Text style={styles.suggestionText}>{suggestion}</Text>
-                <Ionicons name="arrow-forward" size={14} color="rgba(167,139,250,0.7)" style={{ marginLeft: 8 }} />
+                <Text style={[styles.suggestionText, { color: isDark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.7)' }]} numberOfLines={2}>{suggestion}</Text>
+                <Ionicons name="arrow-forward" size={14} color="rgba(167,139,250,0.7)" style={{ marginLeft: 12, flexShrink: 0 }} />
               </LinearGradient>
             </TouchableOpacity>
           ))}
@@ -485,24 +522,22 @@ export default function AIChatScreen({ navigation }: any) {
     </View>
   );
 
-  // Always use dark theme for Insight chat screen regardless of app theme
-
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+    <Animated.View style={[styles.container, { opacity: fadeAnim, backgroundColor: theme.colors.background }]}>
       <LinearGradient
-        colors={['#0a0a0a', '#0d0515', '#0a0a0a']}
+        colors={(theme.colors.backgroundGradient as [string, string, ...string[]]) || [theme.colors.background, theme.colors.background, theme.colors.background]}
         style={StyleSheet.absoluteFill}
       />
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-          <Ionicons name="chevron-down" size={28} color="#fff" />
+          <Ionicons name="chevron-down" size={28} color={isDark ? '#fff' : theme.colors.primaryText} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.headerCenter} onPress={() => setShowPersonality(true)} activeOpacity={0.7}>
           <View style={styles.headerDot} />
-          <Text style={[styles.headerTitle, { color: '#fff' }]}>Insight</Text>
-          <Ionicons name="chevron-down" size={14} color="rgba(255,255,255,0.4)" />
+          <Text style={[styles.headerTitle, { color: isDark ? '#fff' : theme.colors.primaryText }]}>Insight</Text>
+          <Ionicons name="chevron-down" size={14} color={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'} />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.headerBtn}
@@ -512,7 +547,7 @@ export default function AIChatScreen({ navigation }: any) {
           }}
           activeOpacity={0.7}
         >
-          <Ionicons name="chatbubbles-outline" size={22} color="rgba(255,255,255,0.6)" />
+          <Ionicons name="chatbubbles-outline" size={22} color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.4)'} />
         </TouchableOpacity>
       </View>
 
@@ -533,6 +568,10 @@ export default function AIChatScreen({ navigation }: any) {
           ]}
           ListEmptyComponent={renderEmptyState}
           showsVerticalScrollIndicator={false}
+          maintainVisibleContentPosition={{
+            minIndexForVisible: 0,
+            autoscrollToTopThreshold: 10,
+          }}
           onContentSizeChange={() => {
             if (messages.length > 0) {
               flatListRef.current?.scrollToEnd({ animated: true });
@@ -545,7 +584,7 @@ export default function AIChatScreen({ navigation }: any) {
         <View style={[
           styles.inputContainer,
           { paddingBottom: Math.max(insets.bottom, 12) },
-          { backgroundColor: 'rgba(10,10,10,0.95)' },
+          { backgroundColor: isDark ? `${theme.colors.background}F2` : `${theme.colors.background}F2` },
         ]}>
           {/* Usage indicator for free users */}
           {!isProUser && (
@@ -574,7 +613,7 @@ export default function AIChatScreen({ navigation }: any) {
           )}
           <View style={[
             styles.inputWrapper,
-            { backgroundColor: '#1a1a2e', borderColor: '#2a2a3e' },
+            { backgroundColor: isDark ? '#1a1a2e' : 'rgba(0,0,0,0.05)', borderColor: isDark ? '#2a2a3e' : 'rgba(0,0,0,0.1)' },
           ]}>
             <TouchableOpacity
               style={styles.voiceButton}
@@ -584,13 +623,13 @@ export default function AIChatScreen({ navigation }: any) {
               }}
               activeOpacity={0.7}
             >
-              <Ionicons name="mic-outline" size={20} color="rgba(255,255,255,0.6)" />
+              <Ionicons name="mic-outline" size={20} color={isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.4)'} />
             </TouchableOpacity>
             <TextInput
               ref={inputRef}
-              style={[styles.textInput, { color: '#fff' }]}
+              style={[styles.textInput, { color: isDark ? '#fff' : theme.colors.primaryText }]}
               placeholder="Ask me anything..."
-              placeholderTextColor="rgba(255,255,255,0.35)"
+              placeholderTextColor={isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)'}
               value={inputText}
               onChangeText={setInputText}
               multiline
@@ -745,7 +784,7 @@ const styles = StyleSheet.create({
   headerBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   headerDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#22c55e' },
-  headerTitle: { fontSize: sf(17), fontWeight: '700', letterSpacing: 0.2 },
+  headerTitle: { fontSize: sf(17), fontWeight: '500', letterSpacing: 0.2 },
   chatContainer: { flex: 1 },
   messagesList: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
   emptyMessagesList: { flexGrow: 1, justifyContent: 'center' },
@@ -774,7 +813,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, paddingVertical: 15,
   },
   suggestionText: {
-    fontSize: sf(14.5), color: 'rgba(255,255,255,0.8)', fontWeight: '500',
+    fontSize: sf(14.5), color: 'rgba(255,255,255,0.8)', fontWeight: '500', flex: 1,
   },
 
   // Messages
@@ -784,18 +823,24 @@ const styles = StyleSheet.create({
   avatarWrap: { marginRight: 8, marginBottom: 2 },
   avatarGradient: { width: 26, height: 26, borderRadius: 13, justifyContent: 'center', alignItems: 'center' },
   userAvatarWrap: { marginLeft: 8, marginBottom: 2 },
-  userAvatarImage: { width: 32, height: 32, borderRadius: 16 },
-  userAvatarFallback: {
+  userAvatarFrame: {
     width: 32, height: 32, borderRadius: 16,
-    backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1.5, borderColor: 'rgba(139, 92, 246, 0.4)',
+    overflow: 'hidden' as any,
+  },
+  userAvatarImage: { width: '100%' as any, height: '100%' as any, borderRadius: 15 },
+  userAvatarImageDirect: { width: 32, height: 32, borderRadius: 16 },
+  userAvatarFallback: {
+    width: '100%' as any, height: '100%' as any, borderRadius: 15,
+    backgroundColor: 'rgba(139, 92, 246, 0.25)', justifyContent: 'center', alignItems: 'center',
   },
   userAvatarInitial: { fontSize: 12, fontWeight: '700', color: '#a78bfa' },
   messageBubble: { maxWidth: '75%', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 12 },
   userBubble: { backgroundColor: '#8b5cf6', borderBottomRightRadius: 6, marginLeft: 'auto' },
-  assistantBubble: { backgroundColor: 'rgba(255,255,255,0.07)', borderBottomLeftRadius: 6 },
+  assistantBubble: { borderBottomLeftRadius: 6 },
   messageText: { fontSize: sf(15.5), lineHeight: sf(22), fontWeight: '400', letterSpacing: 0.2 },
   userMessageText: { color: '#fff', fontWeight: '500' },
-  assistantMessageText: { color: 'rgba(255,255,255,0.95)', fontWeight: '400' },
+  assistantMessageText: { fontWeight: '400' },
 
   // Typing
   typingIndicator: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 8 },
@@ -841,7 +886,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 20, marginBottom: 16,
   },
-  modalTitle: { fontSize: sf(22), fontWeight: '700' },
+  modalTitle: { fontSize: sf(22), fontWeight: '700', color: '#ffffff' },
   chatList: { paddingHorizontal: 20 },
   noChatText: { color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginTop: 40, fontSize: sf(15) },
   chatHistoryItem: {

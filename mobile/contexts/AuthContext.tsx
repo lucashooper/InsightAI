@@ -146,7 +146,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // CRITICAL: Do NOT await Supabase queries inside onAuthStateChange
       // Awaiting here blocks the auth listener and deadlocks all subsequent queries
       if (session?.user) {
-        // Fire-and-forget: RevenueCat + subscription sync
+        // Fire-and-forget: RevenueCat + subscription sync + profile preload
         (async () => {
           try {
             await Purchases.logIn(session.user.id);
@@ -156,6 +156,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             syncSubscriptionToSupabase(session.user.id, customerInfo).catch(err => 
               console.log('[AUTH] Subscription sync error (non-blocking):', err)
             );
+            
+            // Preload profile picture to prevent loading animation
+            const { data: profile } = await supabase
+              .from('user_profiles')
+              .select('profile_picture_url, username')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+            
+            if (profile?.profile_picture_url) {
+              await AsyncStorage.setItem('CACHED_PROFILE_PICTURE', profile.profile_picture_url);
+            }
+            if (profile?.username) {
+              await AsyncStorage.setItem('CACHED_USERNAME', profile.username);
+            }
           } catch (error) {
             console.log('RevenueCat user identification error:', error);
           }
@@ -513,16 +527,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     // Clear onboarding flow flags but NOT the intro overlay flag
-    // HAS_SEEN_DASHBOARD_INTRO should persist so the welcome overlay only shows once
     try {
       await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
-      await AsyncStorage.removeItem('NEEDS_EMAIL_SIGNUP');
-      await AsyncStorage.removeItem('SKIP_NAME_STEP');
-      await AsyncStorage.removeItem('CACHED_USERNAME');
-      await AsyncStorage.removeItem('CACHED_PROFILE_PICTURE');
       await AsyncStorage.removeItem('ONBOARDING_RESUME_SCREEN');
-      await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
-      console.log('[Auth] Cleared all onboarding/session flags on sign out');
+      await AsyncStorage.removeItem('NEEDS_EMAIL_SIGNUP');
+      // Clear old non-user-specific cache keys to prevent cross-user contamination
+      await AsyncStorage.removeItem('CACHED_PROFILE_PICTURE');
+      await AsyncStorage.removeItem('CACHED_USERNAME');
+      console.log('[Auth] Onboarding flags and cache cleared');
     } catch (error) {
       console.error('[Auth] Failed to clear onboarding flags:', error);
     }

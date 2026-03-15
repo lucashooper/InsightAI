@@ -671,7 +671,17 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
         </>
       )}
 
-      <ScrollView ref={scrollViewRef} style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        ref={scrollViewRef} 
+        style={styles.scrollView} 
+        contentContainerStyle={styles.scrollContent}
+        onContentSizeChange={(width, height) => {
+          // Force ScrollView to recognize full content height
+          if (scrollViewRef.current && height > 0) {
+            scrollViewRef.current.scrollTo({ y: 0, animated: false });
+          }
+        }}
+      >
         <View style={styles.entryContainer}>
           <TextInput
             style={[styles.titleInput, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}

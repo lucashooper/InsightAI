@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef, useFocusEffect } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 const navigationRef = createNavigationContainerRef();
@@ -9,6 +9,7 @@ import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { View, StyleSheet, TouchableOpacity, Pressable, Text, Image, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -27,7 +28,11 @@ import CreateEntryScreen from '../screens/CreateEntryScreen';
 import DashboardScreenNew from '../screens/DashboardScreenNew';
 import DashboardScreen from '../screens/DashboardScreen';
 import PlaybookScreen from '../screens/PlaybookScreen';
-import SettingsScreen from '../screens/SettingsScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
+import AppearanceScreen from '../screens/AppearanceScreen';
+import SecurityScreen from '../screens/SecurityScreen';
+import PersonalizeScreen from '../screens/PersonalizeScreen';
 import WelcomeScreen from '../screens/onboarding/WelcomeScreen';
 import ProductRevealScreen from '../screens/onboarding/ProductRevealScreen';
 import ValuePropScreen from '../screens/onboarding/ValuePropScreen';
@@ -40,6 +45,7 @@ import PrivacyOnboardingScreen from '../screens/onboarding/PrivacyOnboardingScre
 import NotificationsOnboardingScreen from '../screens/onboarding/NotificationsOnboardingScreen';
 import AnalyzingScreen from '../screens/onboarding/AnalyzingScreen';
 import AnalysisCompleteScreen from '../screens/onboarding/AnalysisCompleteScreen';
+import InteractiveShowcaseScreen from '../screens/onboarding/InteractiveShowcaseScreen';
 import PaywallScreen from '../screens/onboarding/PaywallScreen';
 import PostPurchaseWelcomeScreen from '../screens/onboarding/PostPurchaseWelcomeScreen';
 import MeditationScreen from '../screens/MeditationScreen';
@@ -116,7 +122,10 @@ function CenterFabButton() {
     <>
       <TouchableOpacity
         style={styles.centerFabButton}
-        onPress={() => setShowMenu(!showMenu)}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          setShowMenu(!showMenu);
+        }}
         activeOpacity={0.85}
         accessibilityLabel="Open quick actions menu"
         accessibilityRole="button"
@@ -149,6 +158,7 @@ function CenterFabButton() {
                   key={option.screen}
                   style={[styles.menuCard, { backgroundColor: theme.name === 'dark' || theme.name === 'midnight' ? '#1a1a1a' : '#FFFFFF' }]}
                   onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setShowMenu(false);
                     navigation.navigate(option.screen);
                   }}
@@ -182,20 +192,37 @@ function CenterFabButton() {
 // Bottom Tab Navigator for main app screens
 function MainTabs() {
   const { theme } = useTheme();
-  
+  const { user } = useAuth();
+  const [cachedPfp, setCachedPfp] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    const loadPfp = async () => {
+      if (!user) return;
+      // Use user-specific cache key to prevent cross-user contamination
+      const pfp = await AsyncStorage.getItem(`CACHED_PROFILE_PICTURE_${user.id}`);
+      if (pfp) setCachedPfp(pfp);
+    };
+    loadPfp();
+  }, [user]);
+
   return (
     <Tab.Navigator
       initialRouteName="Home"
       screenOptions={{
         headerShown: false,
-        tabBarShowLabel: false,
+        tabBarShowLabel: true,
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '500',
+          marginTop: 2,
+        },
         tabBarStyle: {
           backgroundColor: isDarkTheme(theme.name) ? '#0a0a0a' : '#FFFFFF',
           borderTopColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#E8E5DC',
           borderTopWidth: 1,
-          height: isTablet ? 90 : 70,
-          paddingBottom: isTablet ? 14 : 10,
-          paddingTop: isTablet ? 14 : 10,
+          height: isTablet ? 90 : 75,
+          paddingBottom: isTablet ? 14 : 12,
+          paddingTop: isTablet ? 14 : 8,
           paddingHorizontal: isTablet ? 40 : 0,
         },
         tabBarItemStyle: {
@@ -204,8 +231,8 @@ function MainTabs() {
           alignItems: 'center',
           marginHorizontal: isTablet ? 8 : 0,
         },
-        tabBarActiveTintColor: '#8b5cf6',
-        tabBarInactiveTintColor: isDarkTheme(theme.name) ? '#666' : '#6B6B6B',
+        tabBarActiveTintColor: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a',
+        tabBarInactiveTintColor: isDarkTheme(theme.name) ? '#888888' : '#8a8a8a',
       }}
     >
       {/* Tab 1: Home (Dashboard) */}
@@ -213,6 +240,7 @@ function MainTabs() {
         name="Home"
         component={DashboardScreenNew}
         options={{
+          tabBarLabel: 'Home',
           tabBarIcon: ({ color }) => (
             <Ionicons name="home" size={si(24)} color={color} />
           ),
@@ -220,6 +248,7 @@ function MainTabs() {
         }}
         listeners={{
           tabPress: () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             console.log('[TabBar] Home tab pressed');
           },
         }}
@@ -229,6 +258,7 @@ function MainTabs() {
         name="Journal"
         component={HomeScreen}
         options={{
+          tabBarLabel: 'Journal',
           tabBarIcon: ({ color }) => (
             <Ionicons name="journal" size={si(24)} color={color} />
           ),
@@ -236,6 +266,7 @@ function MainTabs() {
         }}
         listeners={{
           tabPress: () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             console.log('[TabBar] Journal tab pressed');
           },
         }}
@@ -253,6 +284,7 @@ function MainTabs() {
         name="Dashboard"
         component={DashboardScreen}
         options={{
+          tabBarLabel: 'Dashboard',
           tabBarIcon: ({ color }) => (
             <Ionicons name="analytics" size={si(24)} color={color} />
           ),
@@ -260,25 +292,44 @@ function MainTabs() {
         }}
         listeners={{
           tabPress: () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             console.log('[TabBar] Dashboard tab pressed');
           },
         }}
       />
-      {/* Tab 6: Profile (Settings) */}
+      {/* Tab 6: Profile */}
       <Tab.Screen
         name="Settings"
-        component={SettingsScreen}
+        component={ProfileScreen}
         options={{
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="person-circle-outline" size={si(26)} color={color} />
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({ color, focused }) => (
+            cachedPfp ? (
+              <View style={{ width: si(26), height: si(26), borderRadius: si(13), overflow: 'hidden', opacity: focused ? 1 : 0.6 }}>
+                <Image source={{ uri: cachedPfp }} style={{ width: '100%', height: '100%' }} />
+              </View>
+            ) : (
+              <Ionicons name="person-circle-outline" size={si(26)} color={color} />
+            )
           ),
           tabBarAccessibilityLabel: "Profile",
         }}
-        listeners={{
+        listeners={({ navigation }) => ({
           tabPress: () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             console.log('[TabBar] Profile tab pressed');
           },
-        }}
+          focus: async () => {
+            // Reload profile picture when Settings tab is focused
+            if (user?.id) {
+              const pfp = await AsyncStorage.getItem(`CACHED_PROFILE_PICTURE_${user.id}`);
+              console.log('[TabBar] Reloading profile picture on focus:', pfp);
+              if (pfp !== cachedPfp) {
+                setCachedPfp(pfp);
+              }
+            }
+          },
+        })}
       />
     </Tab.Navigator>
   );
@@ -337,6 +388,17 @@ export default function AppNavigator() {
           return;
         }
 
+        // CRITICAL: Check if user is in post-purchase signup flow
+        // The NEEDS_EMAIL_SIGNUP flag means user purchased first, then created account
+        // In this case, onboarding IS complete even if HAS_COMPLETED_ONBOARDING wasn't persisted yet
+        const needsEmailSignup = await AsyncStorage.getItem('NEEDS_EMAIL_SIGNUP');
+        if (needsEmailSignup === 'true' && user) {
+          console.log('[NAV] ✅ Post-purchase signup flow detected - marking onboarding complete');
+          await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+          setIsOnboardingCompleted(true);
+          return;
+        }
+
         // If user is logged in but no AsyncStorage flag
         if (user) {
           // If we have a resume screen, the user is mid-onboarding
@@ -366,17 +428,6 @@ export default function AppNavigator() {
               console.log('[NAV] ✅ User has profile, marking onboarding complete');
               await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
               setIsOnboardingCompleted(true);
-              return;
-            }
-            
-            // Removed legacy timestamp check since column doesn't exist
-            if (false) {
-              supabaseClient
-                .from('user_profiles')
-                .update({ onboarding_completed_at: new Date().toISOString() })
-                .eq('user_id', user.id)
-                .then(() => console.log('[NAV] Backfilled onboarding timestamp'))
-                .catch((err: any) => console.log('[NAV] Failed to backfill:', err));
               return;
             }
             
@@ -496,6 +547,7 @@ export default function AppNavigator() {
           <Stack.Screen name="Paywall" component={PaywallScreen} />
           <Stack.Screen name="PostPurchaseWelcome" component={PostPurchaseWelcomeScreen} />
           <Stack.Screen name="OnboardingSummary" component={OnboardingSummaryScreen} />
+          <Stack.Screen name="InteractiveShowcase" component={InteractiveShowcaseScreen} />
           <Stack.Screen name="PrivacyOnboarding" component={PrivacyOnboardingScreen} />
           <Stack.Screen name="NotificationsOnboarding" component={NotificationsOnboardingScreen} />
           
@@ -520,13 +572,21 @@ export default function AppNavigator() {
           <Stack.Screen name="EmotionDetail" component={EmotionDetailScreen} options={{ headerShown: false }} />
           <Stack.Screen name="AmbientSounds" component={AmbientSoundsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="AIChat" component={AIChatScreen} options={{ headerShown: false, animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
-          <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="Appearance" component={AppearanceScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="Security" component={SecurityScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="Personalize" component={PersonalizeScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
         </Stack.Navigator>
       ) : (
         // Unauthenticated - show Welcome first, then Login/Signup
         <Stack.Navigator 
           initialRouteName={isOnboardingCompleted ? 'Login' : 'Welcome'}
-          screenOptions={{ headerShown: false }}
+          screenOptions={{
+            headerShown: false,
+            animation: 'fade',
+            gestureEnabled: true,
+            animationDuration: 650,
+          }}
         >
           {/* Onboarding Flow for new users */}
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
@@ -539,6 +599,7 @@ export default function AppNavigator() {
           <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
           <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
           <Stack.Screen name="OnboardingSummary" component={OnboardingSummaryScreen} />
+          <Stack.Screen name="InteractiveShowcase" component={InteractiveShowcaseScreen} />
           <Stack.Screen name="PrivacyOnboarding" component={PrivacyOnboardingScreen} />
           <Stack.Screen name="NotificationsOnboarding" component={NotificationsOnboardingScreen} />
           <Stack.Screen name="ValueProp" component={ValuePropScreen} />

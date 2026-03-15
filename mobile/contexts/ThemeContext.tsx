@@ -50,7 +50,7 @@ const themes: Record<ThemeName, Theme> = {
     colors: {
       background: '#0a0a0c',
       backgroundGradient: ['#0e0e12', '#0a0a0c', '#060608'],
-      cardBackground: 'rgba(28, 28, 34, 0.85)',
+      cardBackground: 'rgba(30, 30, 35, 0.9)',
       
       primaryText: '#ffffff',
       secondaryText: '#e5e7eb',
@@ -84,7 +84,7 @@ const themes: Record<ThemeName, Theme> = {
     colors: {
       background: '#faf5ff',
       backgroundGradient: ['#faf5ff', '#f3e8ff', '#e9d5ff'],
-      cardBackground: 'rgba(245, 244, 250, 0.75)',
+      cardBackground: 'rgba(248, 248, 250, 0.85)',
       
       primaryText: '#2C2C2C',
       secondaryText: '#4A4A4A',
@@ -118,7 +118,7 @@ const themes: Record<ThemeName, Theme> = {
     colors: {
       background: '#eff6ff',
       backgroundGradient: ['#eff6ff', '#dbeafe', '#bfdbfe'],
-      cardBackground: 'rgba(240, 245, 255, 0.75)',
+      cardBackground: 'rgba(248, 248, 250, 0.85)',
       
       primaryText: '#2C2C2C',
       secondaryText: '#4A4A4A',
@@ -152,7 +152,7 @@ const themes: Record<ThemeName, Theme> = {
     colors: {
       background: '#0a1f0f',
       backgroundGradient: ['#0f2e1a', '#0a1f0f', '#051008'],
-      cardBackground: 'rgba(15, 46, 26, 0.95)',
+      cardBackground: 'rgba(25, 30, 28, 0.9)',
       
       primaryText: '#ffffff',
       secondaryText: '#d1fae5',
@@ -186,7 +186,7 @@ const themes: Record<ThemeName, Theme> = {
     colors: {
       background: '#fff8f0', // CHANGED: More yellow/orange
       backgroundGradient: ['#fff8f0', '#ffe9d6', '#ffd9b8'], // CHANGED: Warmer tones
-      cardBackground: 'rgba(255, 250, 245, 0.75)',
+      cardBackground: 'rgba(248, 248, 250, 0.85)',
       
       primaryText: '#2C2C2C',
       secondaryText: '#4A4A4A',
@@ -220,7 +220,7 @@ const themes: Record<ThemeName, Theme> = {
     colors: {
       background: '#0f0f23',
       backgroundGradient: ['#0f0f23', '#1a1a3e', '#252550'],
-      cardBackground: 'rgba(24, 24, 48, 0.8)',
+      cardBackground: 'rgba(28, 28, 38, 0.9)',
       
       primaryText: '#ffffff',
       secondaryText: '#e5e7eb',
@@ -254,7 +254,7 @@ const themes: Record<ThemeName, Theme> = {
     colors: {
       background: '#fef7f2',
       backgroundGradient: ['#fef5f8', '#fef0f5', '#fef7f2'],
-      cardBackground: 'rgba(248, 246, 252, 0.72)',
+      cardBackground: 'rgba(248, 248, 250, 0.85)',
       
       primaryText: '#2C2C2C',
       secondaryText: '#4A4A4A',
@@ -284,18 +284,24 @@ const themes: Record<ThemeName, Theme> = {
   },
 };
 
+export type ContainerStyle = 'modern-gray' | 'responsive';
+
 interface ThemeContextType {
   theme: Theme;
   themeName: ThemeName;
   setTheme: (name: ThemeName) => void;
+  containerStyle: ContainerStyle;
+  setContainerStyle: (style: ContainerStyle) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const THEME_STORAGE_KEY = '@insightai_theme';
+const CONTAINER_STYLE_KEY = '@insightai_container_style';
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [themeName, setThemeName] = useState<ThemeName>('dark');
+  const [containerStyle, setContainerStyleState] = useState<ContainerStyle>('modern-gray');
 
   useEffect(() => {
     loadTheme();
@@ -309,6 +315,10 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         console.log('[THEME] Active theme:', stored);
       } else {
         console.log('[THEME] Active theme:', 'dark (default)');
+      }
+      const storedContainer = await AsyncStorage.getItem(CONTAINER_STYLE_KEY);
+      if (storedContainer === 'modern-gray' || storedContainer === 'responsive') {
+        setContainerStyleState(storedContainer);
       }
     } catch (error) {
       console.error('Error loading theme:', error);
@@ -324,8 +334,17 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   };
 
+  const setContainerStyle = async (style: ContainerStyle) => {
+    try {
+      await AsyncStorage.setItem(CONTAINER_STYLE_KEY, style);
+      setContainerStyleState(style);
+    } catch (error) {
+      console.error('Error saving container style:', error);
+    }
+  };
+
   return (
-    <ThemeContext.Provider value={{ theme: themes[themeName], themeName, setTheme }}>
+    <ThemeContext.Provider value={{ theme: themes[themeName], themeName, setTheme, containerStyle, setContainerStyle }}>
       {children}
     </ThemeContext.Provider>
   );

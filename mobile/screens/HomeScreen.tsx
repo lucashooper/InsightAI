@@ -25,6 +25,7 @@ import { EncryptionService } from '../services/encryptionService';
 import PageHeader from '../components/shared/PageHeader';
 import StandardContainer from '../components/shared/StandardContainer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { usePreloadedData } from '../contexts/PreloadContext';
 import { getMoodIndicator, MoodIndicator } from '../utils/moodIndicators';
 import { isTablet, sf, ss, iPadWideContentStyle } from '../utils/responsive';
 
@@ -57,6 +58,7 @@ interface UserProfile {
 export default function HomeScreen({ navigation, route }: any) {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { data: preloaded, refreshNotes } = usePreloadedData();
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [streak, setStreak] = useState<StreakData>({ currentStreak: 0, longestStreak: 0 });
   const [loading, setLoading] = useState(true);
@@ -342,8 +344,9 @@ export default function HomeScreen({ navigation, route }: any) {
         const validPfp = data.profile_picture_url && 
           (data.profile_picture_url.startsWith('http://') || data.profile_picture_url.startsWith('https://'))
           ? data.profile_picture_url : null;
-        if (validPfp) AsyncStorage.setItem('CACHED_PROFILE_PICTURE', validPfp);
-        if (data.username) AsyncStorage.setItem('CACHED_USERNAME', data.username);
+        // Cache with user-specific key to prevent cross-user contamination
+        if (validPfp) AsyncStorage.setItem(`CACHED_PROFILE_PICTURE_${user.id}`, validPfp);
+        if (data.username) AsyncStorage.setItem(`CACHED_USERNAME_${user.id}`, data.username);
         setUserProfile({
           id: data.id,
           email: data.email,
@@ -351,9 +354,9 @@ export default function HomeScreen({ navigation, route }: any) {
           profile_picture_url: validPfp,
         });
       } else {
-        // Fallback to cached data
-        const cachedName = await AsyncStorage.getItem('CACHED_USERNAME');
-        const cachedPfp = await AsyncStorage.getItem('CACHED_PROFILE_PICTURE');
+        // Fallback to user-specific cached data
+        const cachedPfp = await AsyncStorage.getItem(`CACHED_PROFILE_PICTURE_${user.id}`);
+        const cachedName = await AsyncStorage.getItem(`CACHED_USERNAME_${user.id}`);
         setUserProfile({
           id: user.id,
           email: user.email || '',
@@ -451,14 +454,53 @@ export default function HomeScreen({ navigation, route }: any) {
     }
   };
 
+  // Process preloaded notes into entries state (no network calls needed)
+  const processEntriesFromNotes = (notes: any[]) => {
+    setEntries(notes as DiaryEntry[]);
+    setStreak(calculateStreak(notes as DiaryEntry[]));
+    // Calculate dominant emotions
+    const emotionCounts: Record<string, number> = {};
+    notes
+      .filter((n: any) => n.ai_structured_insights?.mood_analysis?.primary_emotion)
+      .forEach((n: any) => {
+        const key = String(n.ai_structured_insights.mood_analysis.primary_emotion).trim();
+        if (key) emotionCounts[key] = (emotionCounts[key] || 0) + 1;
+      });
+    const totalEmotionSamples = Object.values(emotionCounts).reduce((sum, c) => sum + c, 0);
+    const dominant = Object.entries(emotionCounts)
+      .map(([emotion, count]) => ({
+        emotion,
+        percentage: totalEmotionSamples ? Math.round((count / totalEmotionSamples) * 100) : 0,
+      }))
+      .sort((a, b) => b.percentage - a.percentage)
+      .slice(0, 2);
+    setDominantEmotions(dominant);
+  };
+
+  // Use preloaded data immediately on mount
   useEffect(() => {
-    loadEntries();
-    loadUserProfile();
-  }, [user]);
+    if (preloaded.isLoaded) {
+      if (preloaded.notes) {
+        processEntriesFromNotes(preloaded.notes);
+      }
+      if (preloaded.userProfile) {
+        setUserProfile(preloaded.userProfile);
+      }
+      setLoading(false);
+    }
+  }, [preloaded.isLoaded]);
+
+  // When preloaded notes update (background refresh), reprocess
+  useEffect(() => {
+    if (preloaded.notes) {
+      processEntriesFromNotes(preloaded.notes);
+    }
+  }, [preloaded.notes]);
 
   useFocusEffect(
     useCallback(() => {
-      loadEntries();
+      // Refresh notes in background on focus
+      if (user) refreshNotes(user.id);
       loadMoodIndicatorsSetting();
     }, [])
   );
@@ -635,14 +677,6 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
   );
   };
 
-  if (loading) {
-    return (
-      <View style={[styles.centerContainer, { backgroundColor: theme.colors.background }]}>
-        <ActivityIndicator size="large" color="#8b5cf6" />
-      </View>
-    );
-  }
-
   return (
   <View style={styles.container}>
     <LinearGradient
@@ -711,11 +745,13 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
     </View>
 
       {/* Entries List */}
-      {filteredEntries.length === 0 ? (
+      {loading ? (
+        <View style={styles.emptyContainer} />
+      ) : filteredEntries.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyIcon}>📝</Text>
-          <Text style={styles.emptyTitle}>No Entries Yet</Text>
-          <Text style={styles.emptyText}>
+          <Text style={[styles.emptyTitle, { color: isDarkTheme(theme.name) ? '#ffffff' : '#000000' }]}>No Entries Yet</Text>
+          <Text style={[styles.emptyText, { color: isDarkTheme(theme.name) ? '#9ca3af' : '#4b5563' }]}>
             Start your journaling journey by creating your first entry
           </Text>
           <TouchableOpacity
@@ -775,10 +811,10 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     flex: 1,
-    fontSize: 26,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '500',
     color: '#ffffff',
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
     marginLeft: 12,
   },
   headerRight: {
@@ -1430,13 +1466,11 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: sf(20),
     fontWeight: '600',
-    color: '#2C2C2C',
     marginBottom: 8,
     textAlign: 'center',
   },
   emptyText: {
     fontSize: sf(14),
-    color: '#6B6B6B',
     textAlign: 'center',
     marginBottom: 24,
   },

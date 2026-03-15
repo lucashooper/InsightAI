@@ -8,9 +8,9 @@ export default {
     userInterfaceStyle: "light",
     newArchEnabled: true,
     splash: {
-      image: "./assets/InsightAI-New-Logo.png",
+      image: "./assets/splash-icon.png",
       resizeMode: "contain",
-      backgroundColor: "#ffffff"
+      backgroundColor: "#0a0a0f"
     },
     ios: {
       supportsTablet: true,

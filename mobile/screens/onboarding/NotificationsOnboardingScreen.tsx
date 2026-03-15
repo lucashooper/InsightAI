@@ -23,18 +23,18 @@ export default function NotificationsOnboardingScreen({ navigation }: Notificati
       const { status } = await Notifications.requestPermissionsAsync();
       console.log('[Notifications] Permission status:', status);
       
-      // Navigate to value prop screen
-      navigation.navigate('ValueProp');
+      // Navigate to paywall screen
+      navigation.navigate('Paywall');
     } catch (error) {
       console.error('[Notifications] Error requesting permissions:', error);
-      // Still continue to value prop even if notification permission fails
-      navigation.navigate('ValueProp');
+      // Still continue to paywall even if notification permission fails
+      navigation.navigate('Paywall');
     }
   };
 
   const handleSkip = async () => {
-    // Navigate to value prop screen
-    navigation.navigate('ValueProp');
+    // Navigate to paywall screen
+    navigation.navigate('Paywall');
   };
 
   return (
