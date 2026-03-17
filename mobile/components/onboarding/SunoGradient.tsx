@@ -92,6 +92,6 @@ const styles = StyleSheet.create({
   },
   grainOverlay: {
     ...StyleSheet.absoluteFillObject,
-    opacity: 1,
+    opacity: 0.15,
   },
 });

@@ -18,6 +18,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { mobileAiService } from '../services/mobileAiService';
@@ -115,6 +116,32 @@ export default function AIChatScreen({ navigation }: any) {
       checkAndUpdateUsage();
     }
   }, [user?.id]);
+
+  // Reload current chat when screen comes into focus to prevent messages from disappearing
+  useFocusEffect(
+    useCallback(() => {
+      const reloadCurrentChat = async () => {
+        if (currentChatId && user) {
+          try {
+            const raw = await AsyncStorage.getItem(getChatHistoryKey());
+            if (raw) {
+              const chats: SavedChat[] = JSON.parse(raw);
+              const currentChat = chats.find(c => c.id === currentChatId);
+              if (currentChat && currentChat.messages.length > 0) {
+                // Only reload if messages are missing or different
+                if (messages.length === 0 || messages.length !== currentChat.messages.length) {
+                  setMessages(currentChat.messages.map(m => ({ ...m, timestamp: new Date(m.timestamp) })));
+                }
+              }
+            }
+          } catch (e) {
+            console.error('[AIChat] Error reloading chat on focus', e);
+          }
+        }
+      };
+      reloadCurrentChat();
+    }, [currentChatId, user, messages.length])
+  );
 
   useEffect(() => {
     return () => {

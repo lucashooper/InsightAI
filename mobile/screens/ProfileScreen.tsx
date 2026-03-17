@@ -232,15 +232,14 @@ export default function ProfileScreen({ navigation }: any) {
         >
           <View style={styles.profileContent}>
             {(() => {
-              console.log('[ProfileScreen] userProfile:', userProfile);
-              console.log('[ProfileScreen] profile_picture_url:', userProfile?.profile_picture_url);
-              console.log('[ProfileScreen] Has valid PFP:', userProfile?.profile_picture_url && userProfile.profile_picture_url.trim() !== '');
+              const pfpUrl = userProfile?.profile_picture_url?.trim();
+              // Only show image if it's a valid HTTP/HTTPS URL (not relative paths like "/Ocean-Swirl.webp")
+              const isValidUrl = pfpUrl && (pfpUrl.startsWith('http://') || pfpUrl.startsWith('https://'));
               
-              if (userProfile?.profile_picture_url && userProfile.profile_picture_url.trim() !== '') {
-                console.log('[ProfileScreen] Rendering Image with URI:', userProfile.profile_picture_url);
+              if (isValidUrl) {
                 return (
                   <Image 
-                    source={{ uri: userProfile.profile_picture_url }} 
+                    source={{ uri: pfpUrl }} 
                     style={styles.profilePicture}
                     onError={(e) => {
                       console.log('[ProfileScreen] Image failed to load:', e.nativeEvent.error);
@@ -248,10 +247,9 @@ export default function ProfileScreen({ navigation }: any) {
                   />
                 );
               } else {
-                console.log('[ProfileScreen] Rendering default icon - secondaryText color:', theme.colors.secondaryText);
                 return (
-                  <View style={styles.profilePicturePlaceholder}>
-                    <Ionicons name="person-circle-outline" size={56} color={theme.colors.secondaryText} />
+                  <View style={[styles.profilePicturePlaceholder, { width: 56, height: 56 }]}>
+                    <Ionicons name="person-circle-outline" size={56} color={theme.colors.primaryText} />
                   </View>
                 );
               }

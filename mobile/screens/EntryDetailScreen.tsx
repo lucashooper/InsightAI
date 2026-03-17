@@ -255,6 +255,9 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
     const targetEntry = entryData || entry;
     if (!targetEntry?.content || analyzing) return;
 
+    // Dismiss keyboard immediately when analysis starts
+    Keyboard.dismiss();
+
     // Check subscription status BEFORE starting animation
     try {
       const customerInfo = await Purchases.getCustomerInfo();

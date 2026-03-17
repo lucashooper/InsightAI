@@ -10,6 +10,12 @@ try {
 }
 import { supabase } from '../lib/supabase';
 
+// Helper to get user-specific keys
+const getUserKey = async (baseKey: string): Promise<string> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user ? `${baseKey}_${user.id}` : baseKey;
+};
+
 const APP_LOCK_PIN_KEY = 'APP_LOCK_PIN';
 const APP_LOCK_ENABLED_KEY = 'APP_LOCK_ENABLED';
 const APP_LOCK_BIOMETRIC_KEY = 'APP_LOCK_BIOMETRIC';
@@ -67,9 +73,11 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
         setIsBiometricAvailable(false);
       }
 
-      // Load saved settings
-      const enabled = await SecureStore.getItemAsync(APP_LOCK_ENABLED_KEY);
-      const biometric = await SecureStore.getItemAsync(APP_LOCK_BIOMETRIC_KEY);
+      // Load saved settings with user-specific keys
+      const enabledKey = await getUserKey(APP_LOCK_ENABLED_KEY);
+      const biometricKey = await getUserKey(APP_LOCK_BIOMETRIC_KEY);
+      const enabled = await SecureStore.getItemAsync(enabledKey);
+      const biometric = await SecureStore.getItemAsync(biometricKey);
       
       const lockEnabled = enabled === 'true';
       setIsLockEnabled(lockEnabled);
@@ -110,7 +118,8 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
   }, [isLockEnabled]);
 
   const verifyPin = useCallback(async (pin: string): Promise<boolean> => {
-    const storedPin = await SecureStore.getItemAsync(APP_LOCK_PIN_KEY);
+    const pinKey = await getUserKey(APP_LOCK_PIN_KEY);
+    const storedPin = await SecureStore.getItemAsync(pinKey);
     return storedPin === pin;
   }, []);
 
@@ -139,20 +148,25 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
   }, [isBiometricEnabled, isBiometricAvailable]);
 
   const setPin = useCallback(async (pin: string) => {
-    await SecureStore.setItemAsync(APP_LOCK_PIN_KEY, pin);
+    const pinKey = await getUserKey(APP_LOCK_PIN_KEY);
+    await SecureStore.setItemAsync(pinKey, pin);
   }, []);
 
   const enableLock = useCallback(async (pin: string) => {
-    await SecureStore.setItemAsync(APP_LOCK_PIN_KEY, pin);
-    await SecureStore.setItemAsync(APP_LOCK_ENABLED_KEY, 'true');
+    const pinKey = await getUserKey(APP_LOCK_PIN_KEY);
+    const enabledKey = await getUserKey(APP_LOCK_ENABLED_KEY);
+    await SecureStore.setItemAsync(pinKey, pin);
+    await SecureStore.setItemAsync(enabledKey, 'true');
     setIsLockEnabled(true);
   }, []);
 
   const disableLock = useCallback(async (pin: string): Promise<boolean> => {
     const valid = await verifyPin(pin);
     if (valid) {
-      await SecureStore.setItemAsync(APP_LOCK_ENABLED_KEY, 'false');
-      await SecureStore.setItemAsync(APP_LOCK_BIOMETRIC_KEY, 'false');
+      const enabledKey = await getUserKey(APP_LOCK_ENABLED_KEY);
+      const biometricKey = await getUserKey(APP_LOCK_BIOMETRIC_KEY);
+      await SecureStore.setItemAsync(enabledKey, 'false');
+      await SecureStore.setItemAsync(biometricKey, 'false');
       setIsLockEnabled(false);
       setIsBiometricEnabled(false);
       setIsLocked(false);
@@ -161,7 +175,8 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
   }, [verifyPin]);
 
   const toggleBiometric = useCallback(async (enabled: boolean) => {
-    await SecureStore.setItemAsync(APP_LOCK_BIOMETRIC_KEY, enabled.toString());
+    const biometricKey = await getUserKey(APP_LOCK_BIOMETRIC_KEY);
+    await SecureStore.setItemAsync(biometricKey, enabled.toString());
     setIsBiometricEnabled(enabled);
   }, []);
 
@@ -187,9 +202,12 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
 
       // Clear the PIN and unlock immediately
       // The email send itself is the verification that they have access to the account
-      await SecureStore.setItemAsync(APP_LOCK_ENABLED_KEY, 'false');
-      await SecureStore.setItemAsync(APP_LOCK_BIOMETRIC_KEY, 'false');
-      await SecureStore.deleteItemAsync(APP_LOCK_PIN_KEY);
+      const enabledKey = await getUserKey(APP_LOCK_ENABLED_KEY);
+      const biometricKey = await getUserKey(APP_LOCK_BIOMETRIC_KEY);
+      const pinKey = await getUserKey(APP_LOCK_PIN_KEY);
+      await SecureStore.setItemAsync(enabledKey, 'false');
+      await SecureStore.setItemAsync(biometricKey, 'false');
+      await SecureStore.deleteItemAsync(pinKey);
       setIsLockEnabled(false);
       setIsBiometricEnabled(false);
       setIsLocked(false);
