@@ -7,11 +7,6 @@ export default {
     icon: "./assets/InsightAI-New-Logo.png",
     userInterfaceStyle: "light",
     newArchEnabled: true,
-    splash: {
-      image: "./assets/splash-icon.png",
-      resizeMode: "contain",
-      backgroundColor: "#0a0a0f"
-    },
     ios: {
       supportsTablet: true,
       buildNumber: "69",
@@ -51,6 +46,14 @@ export default {
     },
     owner: "crupid2s-organization",
     plugins: [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0a0a0f",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200
+        }
+      ],
       "expo-speech-recognition",
       "expo-secure-store",
       [

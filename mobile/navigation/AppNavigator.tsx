@@ -303,15 +303,17 @@ function MainTabs() {
         component={ProfileScreen}
         options={{
           tabBarLabel: 'Profile',
-          tabBarIcon: ({ color, focused }) => (
-            cachedPfp ? (
+          tabBarIcon: ({ color, focused }) => {
+            // Only show image if it's a valid HTTP/HTTPS URL (not relative paths like "/Ocean-Swirl.webp")
+            const isValidUrl = cachedPfp && (cachedPfp.startsWith('http://') || cachedPfp.startsWith('https://'));
+            return isValidUrl ? (
               <View style={{ width: si(26), height: si(26), borderRadius: si(13), overflow: 'hidden', opacity: focused ? 1 : 0.6 }}>
                 <Image source={{ uri: cachedPfp }} style={{ width: '100%', height: '100%' }} />
               </View>
             ) : (
               <Ionicons name="person-circle-outline" size={si(26)} color={color} />
-            )
-          ),
+            );
+          },
           tabBarAccessibilityLabel: "Profile",
         }}
         listeners={({ navigation }) => ({
