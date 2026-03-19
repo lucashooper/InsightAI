@@ -42,11 +42,11 @@ const HomePage: React.FC = () => {
         <div
           className="floating-nav-inner"
           style={isMobile ? {
+            display: 'flex',
+            alignItems: 'center',
             width: '100%',
             maxWidth: '100%',
-            padding: '12px 20px',
-            justifyContent: 'space-between',
-            gap: '0.5rem',
+            padding: '10px 16px',
             borderRadius: 0,
             background: 'rgba(10, 10, 20, 0.95)',
             border: 'none',
@@ -54,25 +54,26 @@ const HomePage: React.FC = () => {
             boxShadow: 'none',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
+            gap: '0',
           } : undefined}
         >
-          <div className="floating-nav-logo" style={isMobile ? { marginRight: 'auto' } : undefined}>
-            <img src="/Insight-Logo-nobg.webp" alt="Insight" />
-            <span className="floating-nav-brand">Insight</span>
-          </div>
+          <a href="/" className="floating-nav-logo" style={isMobile ? { marginRight: 'auto', gap: '12px', textDecoration: 'none' } : { textDecoration: 'none' }}>
+            <img src="/Insight-Logo-nobg.webp" alt="Insight" style={isMobile ? { height: '48px', width: 'auto' } : undefined} />
+            <span className="floating-nav-brand" style={isMobile ? { fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.03em' } : undefined}>Insight</span>
+          </a>
           <div className="floating-nav-links" style={isMobile ? { display: 'none' } : undefined}>
             <a href="#features" className="floating-nav-link">Features</a>
             <a href="#showcase" className="floating-nav-link">App</a>
             <a href="/privacy" className="floating-nav-link">Privacy</a>
           </div>
-          <a href="/login" className="floating-nav-cta" style={isMobile ? { fontSize: '0.8rem', padding: '8px 16px', marginRight: '2px', flexShrink: 0 } : undefined}>Try for free</a>
+          <a href="https://apps.apple.com/us/app/insight-understand-yourself/id6755717396" className="floating-nav-cta" style={isMobile ? { fontSize: '0.75rem', padding: '6px 14px', marginLeft: 'auto', marginRight: '0px', flexShrink: 0, borderRadius: '100px', background: '#7c3aed', fontWeight: 600, textDecoration: 'none' } : undefined}><span style={isMobile ? { color: '#fff' } : undefined}>Try for free</span></a>
           <button 
             className="mobile-menu-toggle" 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle menu"
-            style={isMobile ? { display: 'block' } : undefined}
+            style={isMobile ? { display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', padding: '0', margin: '0', cursor: 'pointer', flexShrink: 0 } : undefined}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
               {mobileMenuOpen ? (
                 <>
                   <line x1="6" y1="6" x2="18" y2="18" />
@@ -91,7 +92,7 @@ const HomePage: React.FC = () => {
         {mobileMenuOpen && (
           <div className="mobile-menu" style={{
             display: 'block',
-            background: 'rgba(10, 10, 31, 0.98)',
+            background: 'rgba(10, 10, 20, 0.98)',
             backdropFilter: 'blur(20px)',
             padding: '12px',
             borderTop: '1px solid rgba(255, 255, 255, 0.08)',
@@ -115,17 +116,17 @@ const HomePage: React.FC = () => {
               AI-powered journaling that helps you discover patterns in your thoughts, track your emotional wellbeing, and build better habits.
             </p>
             <div className="hero-v2-buttons">
-              <div className="download-badge-wrapper">
-                <img src="/download-with-app-store-button.webp" alt="Download on the App Store" className="download-badge" />
-                <span className="coming-soon-text">Coming Soon</span>
+              <a href="https://apps.apple.com/us/app/insight-understand-yourself/id6755717396" className="download-btn-custom" target="_blank" rel="noopener noreferrer">
+                <img src="/White-Apple-Logo.png" alt="" className="download-btn-icon" />
+                <span className="download-btn-text">iPhone app</span>
+              </a>
+              <div className="download-btn-custom download-btn-disabled">
+                <img src="/Google-Play-Icon.png" alt="" className="download-btn-icon" />
+                <span className="download-btn-text">Android app</span>
               </div>
-              <div className="download-badge-wrapper">
-                <img src="/google-play-button.webp" alt="Get it on Google Play" className="download-badge" />
-                <span className="coming-soon-text">Coming Soon</span>
-              </div>
-              <a href="/login" className="download-badge-wrapper download-badge-web">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                <span className="download-badge-web-text">Web App</span>
+              <a href="/login" className="download-btn-custom">
+                <img src="/webapp-icons.svg" alt="" className="download-btn-icon" />
+                <span className="download-btn-text">Web app</span>
               </a>
             </div>
           </div>

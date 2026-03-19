@@ -1,24 +1,16 @@
 import React from 'react';
 import Footer from '../../components/marketing/Footer';
+import MarketingNav from '../../components/marketing/MarketingNav';
 import '../../styles/marketing.css';
 
 const PrivacyPage: React.FC = () => {
   return (
     <div className="legal-page marketing-page">
-      <nav className="floating-nav">
-        <div className="floating-nav-inner">
-          <div className="floating-nav-logo">
-            <img src="/Insight-Logo-nobg.webp" alt="Insight" />
-            <span className="floating-nav-brand">Insight</span>
-          </div>
-          <div className="floating-nav-links">
-            <a href="/" className="floating-nav-link">Home</a>
-            <a href="/terms" className="floating-nav-link">Terms</a>
-            <a href="/support" className="floating-nav-link">Support</a>
-          </div>
-          <a href="/login" className="floating-nav-cta">Try for free</a>
-        </div>
-      </nav>
+      <MarketingNav links={[
+        { href: '/', label: 'Home' },
+        { href: '/terms', label: 'Terms' },
+        { href: '/support', label: 'Support' },
+      ]} />
       
       <div className="legal-content">
         <h1>Privacy Policy</h1>

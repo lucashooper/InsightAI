@@ -1810,7 +1810,7 @@ h1, h2, h3, h4, h5, h6 {
 /* Legal pages styling */
 .legal-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  background: #0a0a0a;
   color: #fff;
 }
 
@@ -1823,10 +1823,9 @@ h1, h2, h3, h4, h5, h6 {
 .legal-content h1 {
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .legal-content .last-updated {
@@ -1863,12 +1862,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .legal-content a {
-  color: #667eea;
+  color: #a78bfa;
   text-decoration: none;
 }
 
 .legal-content a:hover {
   text-decoration: underline;
+  color: #c4b5fd;
 }
 
 /* =====================================================
@@ -1887,13 +1887,15 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   gap: 2rem;
-  padding: 10px 12px 10px 16px;
-  background: rgba(10, 10, 15, 0.7);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  padding: 12px 32px;
+  max-width: 800px;
+  min-height: fit-content;
+  background: rgba(10, 10, 31, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 100px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .floating-nav-logo {
@@ -1941,8 +1943,8 @@ h1, h2, h3, h4, h5, h6 {
   display: inline-flex;
   align-items: center;
   padding: 8px 20px;
-  background: #fff;
-  color: #000;
+  background: #7c3aed;
+  color: #fff;
   font-size: 0.8125rem;
   font-weight: 600;
   border-radius: 100px;
@@ -1974,10 +1976,12 @@ h1, h2, h3, h4, h5, h6 {
   }
   
   .floating-nav-inner {
-    gap: 0.5rem !important;
+    gap: 0.75rem !important;
     padding: 12px 20px !important;
     max-width: 100% !important;
     width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
     justify-content: space-between !important;
     border-radius: 0 !important;
     background: rgba(10, 10, 20, 0.95) !important;
@@ -2001,11 +2005,11 @@ h1, h2, h3, h4, h5, h6 {
   }
   
   .floating-nav-cta {
-    font-size: 0.875rem !important;
-    padding: 10px 20px !important;
-    font-weight: 600 !important;
-    margin-right: 4px !important;
-    margin-left: auto !important;
+    font-size: 0.875rem;
+    padding: 10px 20px;
+    font-weight: 600;
+    margin-right: 0;
+    margin-left: auto;
   }
 }
 
@@ -2039,7 +2043,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .hero-v2-title {
-  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-size: clamp(2.75rem, 5vw, 4rem);
   font-weight: 700;
   line-height: 1.1;
   letter-spacing: -0.03em;
@@ -2131,12 +2135,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .hero-phone-secondary {
-  width: 260px;
+  width: 86.67%;
+  max-width: 260px;
   height: auto;
   filter: drop-shadow(0 20px 50px rgba(0, 0, 0, 0.4));
   position: absolute;
-  right: -20px;
-  top: 60px;
+  left: 50%;
+  top: 20%;
+  transform: translateX(-10%);
   z-index: 1;
   opacity: 0.85;
 }
@@ -2163,8 +2169,11 @@ h1, h2, h3, h4, h5, h6 {
     width: 240px;
   }
   .hero-phone-secondary {
-    width: 210px;
-    right: 10px;
+    width: 87.5%;
+    max-width: 210px;
+    left: 50%;
+    top: 25%;
+    transform: translateX(-10%);
   }
 }
 
@@ -2263,6 +2272,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 120px 2rem;
   position: relative;
   background: transparent;
+  overflow-x: hidden;
 }
 
 .showcase-title {
@@ -2282,6 +2292,7 @@ h1, h2, h3, h4, h5, h6 {
   max-width: 1200px;
   margin: 0 auto;
   align-items: flex-start;
+  overflow: hidden;
 }
 
 .showcase-phone-container {
@@ -2352,6 +2363,8 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .showcase-feature-item {
@@ -2369,6 +2382,11 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 16px;
   outline: none;
   transform-origin: center;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .showcase-feature-item:focus {
@@ -2391,6 +2409,8 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 1.3rem;
   font-weight: 700;
   margin-bottom: 10px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
   letter-spacing: -0.02em;
   color: #fff;
 }
@@ -2399,6 +2419,9 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.9375rem;
   color: rgba(255, 255, 255, 0.5);
   line-height: 1.65;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
   font-weight: 400;
   margin: 0;
 }
@@ -2634,49 +2657,94 @@ h1, h2, h3, h4, h5, h6 {
   color: inherit;
 }
 
-/* Download badge wrappers with "Coming Soon" text below */
-.download-badge-wrapper {
-  display: flex;
-  flex-direction: column;
+/* Custom download buttons - QUITTR dark style */
+.download-btn-custom {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  transition: opacity 0.2s ease;
+  gap: 10px;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 100px;
+  color: #fff;
+  font-size: 0.9375rem;
+  font-weight: 500;
   text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  white-space: nowrap;
+  position: relative;
 }
 
-.download-badge-wrapper:hover {
-  opacity: 0.85;
+.download-btn-custom:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
 }
 
-.download-badge {
-  height: 52px;
-  width: auto;
-  display: block;
+.download-btn-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
-.coming-soon-text {
-  font-size: 0.6875rem;
+/* Android icon needs to be bigger */
+.download-btn-custom:nth-child(2) .download-btn-icon {
+  width: 40px;
+  height: 40px;
+}
+
+/* Web app icon slightly bigger */
+.download-btn-custom:nth-child(3) .download-btn-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.download-btn-text {
+  color: #fff;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.download-btn-disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.coming-soon-badge {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.625rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.4);
   letter-spacing: 0.03em;
+  white-space: nowrap;
 }
 
 /* Web App badge styling - match the image badge aesthetic */
 .download-badge-web {
-  display: inline-flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  padding: 0 20px;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 0 16px !important;
   background: #0a0a0a;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.25);
   border-radius: 8px;
   color: #fff;
   text-decoration: none;
   transition: all 0.2s ease;
-  height: 52px;
-  min-width: 135px;
+  height: 44px !important;
+  min-height: 44px !important;
+  max-height: 44px !important;
+  min-width: 120px;
+  white-space: nowrap;
+  box-sizing: border-box;
 }
 
 .download-badge-web:hover {
@@ -2686,15 +2754,15 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .download-badge-web svg {
-  width: 22px;
-  height: 22px;
+  width: 12px;
+  height: 12px;
   flex-shrink: 0;
   stroke: rgba(255, 255, 255, 0.9);
   stroke-width: 2;
 }
 
 .download-badge-web-text {
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: #fff;
@@ -2803,14 +2871,7 @@ h1, h2, h3, h4, h5, h6 {
   color: rgba(255, 255, 255, 0.95);
 }
 
-/* CTA button */
-.floating-nav-cta,
-.floating-nav-cta:link,
-.floating-nav-cta:visited,
-.floating-nav-cta:hover,
-.floating-nav-cta:active {
-  color: #000 !important;
-}
+/* CTA button - base color set in .floating-nav-cta rule above */
 
 /* Legal page links should keep accent color */
 .legal-content a {
@@ -2936,17 +2997,17 @@ h1, h2, h3, h4, h5, h6 {
   
   .download-badge {
     width: 100%;
-    height: 40px;
+    height: 44px;
     object-fit: contain;
   }
   
   .download-badge-web {
     flex: 1;
     justify-content: center;
-    padding: 0 8px;
-    height: 40px;
-    min-height: 40px;
-    max-height: 40px;
+    padding: 0 8px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
     white-space: nowrap;
     border: 2px solid rgba(255, 255, 255, 0.3);
   }
