@@ -57,9 +57,11 @@ export default function GratitudeScreen({ navigation }: any) {
 
     setSaving(true);
     try {
-      const gratitudeEntry = `Gratitude Practice\n\n${GRATITUDE_PROMPTS.map((prompt, i) => 
-        responses[i].trim() ? `${prompt}\n${responses[i]}\n` : ''
-      ).join('\n')}`;
+      // Format with better typography and structure
+      const gratitudeEntry = `🙏 Gratitude Practice\n\n${GRATITUDE_PROMPTS.map((prompt, i) => {
+        if (!responses[i].trim()) return '';
+        return `✨ Insight: ${prompt}\n\n${responses[i].trim()}\n\n---\n`;
+      }).filter(Boolean).join('\n')}`;
 
       const { error } = await supabase
         .from('notes')

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Starfield from '../../components/marketing/Starfield';
 import FeaturesSection from '../../components/marketing/FeaturesSection';
 import FeatureShowcase from '../../components/marketing/FeatureShowcase';
@@ -8,25 +8,99 @@ import '../../styles/marketing.css';
 
 const HomePage: React.FC = () => {
   useScrollReveal();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   return (
     <div className="App marketing-page">
       <Starfield />
 
-      {/* Floating Centered Nav - Monk Style */}
-      <nav className="floating-nav">
-        <div className="floating-nav-inner">
-          <div className="floating-nav-logo">
+      {/* Navigation */}
+      <nav
+        className="floating-nav"
+        style={isMobile ? {
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          width: '100%',
+          maxWidth: '100%',
+          transform: 'none',
+          borderRadius: 0,
+          background: 'transparent',
+          border: 'none',
+          padding: 0,
+          boxShadow: 'none',
+        } : undefined}
+      >
+        <div
+          className="floating-nav-inner"
+          style={isMobile ? {
+            width: '100%',
+            maxWidth: '100%',
+            padding: '12px 20px',
+            justifyContent: 'space-between',
+            gap: '0.5rem',
+            borderRadius: 0,
+            background: 'rgba(10, 10, 20, 0.95)',
+            border: 'none',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            boxShadow: 'none',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+          } : undefined}
+        >
+          <div className="floating-nav-logo" style={isMobile ? { marginRight: 'auto' } : undefined}>
             <img src="/Insight-Logo-nobg.webp" alt="Insight" />
             <span className="floating-nav-brand">Insight</span>
           </div>
-          <div className="floating-nav-links">
+          <div className="floating-nav-links" style={isMobile ? { display: 'none' } : undefined}>
             <a href="#features" className="floating-nav-link">Features</a>
             <a href="#showcase" className="floating-nav-link">App</a>
             <a href="/privacy" className="floating-nav-link">Privacy</a>
           </div>
-          <a href="/login" className="floating-nav-cta">Try for free</a>
+          <a href="/login" className="floating-nav-cta" style={isMobile ? { fontSize: '0.8rem', padding: '8px 16px', marginRight: '2px', flexShrink: 0 } : undefined}>Try for free</a>
+          <button 
+            className="mobile-menu-toggle" 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+            style={isMobile ? { display: 'block' } : undefined}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
+              {mobileMenuOpen ? (
+                <>
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                  <line x1="6" y1="18" x2="18" y2="6" />
+                </>
+              ) : (
+                <>
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </>
+              )}
+            </svg>
+          </button>
         </div>
+        {mobileMenuOpen && (
+          <div className="mobile-menu" style={{
+            display: 'block',
+            background: 'rgba(10, 10, 31, 0.98)',
+            backdropFilter: 'blur(20px)',
+            padding: '12px',
+            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          }}>
+            <a href="#features" className="mobile-menu-link" onClick={() => setMobileMenuOpen(false)}>Features</a>
+            <a href="#showcase" className="mobile-menu-link" onClick={() => setMobileMenuOpen(false)}>App</a>
+            <a href="/privacy" className="mobile-menu-link" onClick={() => setMobileMenuOpen(false)}>Privacy</a>
+          </div>
+        )}
       </nav>
 
       {/* Hero Section - Cal AI Style: text left, phones right */}

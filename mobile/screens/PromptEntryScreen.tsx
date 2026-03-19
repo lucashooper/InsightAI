@@ -98,9 +98,9 @@ export default function PromptEntryScreen({ navigation, route }: any) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={0}
     >
-      {/* Gradient Background */}
+      {/* Gradient Background - Theme Aware */}
       <LinearGradient
-        colors={['#8b5cf6', '#7c3aed', '#6d28d9']}
+        colors={theme.colors.backgroundGradient as any}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradientBackground}
@@ -109,7 +109,7 @@ export default function PromptEntryScreen({ navigation, route }: any) {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
-          <Ionicons name="close" size={28} color="#ffffff" />
+          <Ionicons name="close" size={28} color={isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a'} />
         </TouchableOpacity>
       </View>
 
@@ -132,23 +132,23 @@ export default function PromptEntryScreen({ navigation, route }: any) {
         >
           {/* Prompt Badge */}
           <View style={styles.promptBadge}>
-            <Ionicons name="sparkles" size={16} color="#ffffff" />
-            <Text style={styles.promptBadgeText}>Today's Prompt</Text>
+            <Ionicons name="sparkles" size={16} color={isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a'} />
+            <Text style={[styles.promptBadgeText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Today's Prompt</Text>
           </View>
 
           {/* Prompt Question */}
           <View style={styles.promptCard}>
-            <Ionicons name="chatbubble-ellipses" size={32} color="rgba(255, 255, 255, 0.9)" style={styles.quoteIcon} />
-            <Text style={styles.promptText}>{promptText}</Text>
+            <Ionicons name="chatbubble-ellipses" size={32} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.6)'} style={styles.quoteIcon} />
+            <Text style={[styles.promptText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{promptText}</Text>
           </View>
 
           {/* Writing Area */}
           <View style={styles.writingContainer}>
-            <Text style={styles.writingLabel}>Your Reflection</Text>
+            <Text style={[styles.writingLabel, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.7)' }]}>Your Reflection</Text>
             <TextInput
-              style={styles.textInput}
+              style={[styles.textInput, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}
               placeholder="Start writing your thoughts..."
-              placeholderTextColor="rgba(255, 255, 255, 0.4)"
+              placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)'}
               multiline
               value={content}
               onChangeText={setContent}
@@ -159,7 +159,7 @@ export default function PromptEntryScreen({ navigation, route }: any) {
 
           {/* Character Count */}
           {content.length > 0 && (
-            <Text style={styles.characterCount}>
+            <Text style={[styles.characterCount, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' }]}>
               {content.length} character{content.length !== 1 ? 's' : ''}
             </Text>
           )}

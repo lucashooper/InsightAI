@@ -1957,15 +1957,55 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @media (max-width: 768px) {
+  .floating-nav {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    transform: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+  
   .floating-nav-inner {
-    gap: 0.75rem;
-    padding: 8px 10px 8px 14px;
+    gap: 0.5rem !important;
+    padding: 12px 20px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+    border-radius: 0 !important;
+    background: rgba(10, 10, 20, 0.95) !important;
+    border: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: none !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
   }
+  
   .floating-nav-links {
-    display: none;
+    display: none !important;
   }
+  
+  .floating-nav-logo {
+    margin-right: auto !important;
+  }
+  
   .floating-nav-brand {
     font-size: 0.8125rem;
+  }
+  
+  .floating-nav-cta {
+    font-size: 0.875rem !important;
+    padding: 10px 20px !important;
+    font-weight: 600 !important;
+    margin-right: 4px !important;
+    margin-left: auto !important;
   }
 }
 
@@ -2377,6 +2417,74 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+@media (max-width: 768px) {
+  .showcase-section {
+    padding: 60px 1rem !important;
+    overflow: hidden !important;
+    max-width: 100vw !important;
+  }
+  
+  .showcase-title {
+    font-size: 1.75rem !important;
+    margin-bottom: 1.5rem !important;
+    padding: 0 !important;
+  }
+  
+  .showcase-layout {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+  }
+  
+  .showcase-phone-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+  
+  .showcase-phone {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+  }
+  
+  .showcase-phone-img {
+    width: 240px !important;
+    max-width: 70% !important;
+    height: auto !important;
+  }
+  
+  .showcase-features-list {
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .showcase-feature-item {
+    padding: 1.25rem !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    word-wrap: break-word !important;
+  }
+  
+  .showcase-feature-item.active {
+    transform: none !important;
+  }
+  
+  .showcase-feature-title {
+    font-size: 1.125rem !important;
+  }
+  
+  .showcase-feature-desc {
+    font-size: 0.875rem !important;
+  }
+}
+
 /* =====================================================
    FOOTER V2 - Cal AI Style (no container box)
    ===================================================== */
@@ -2628,7 +2736,7 @@ h1, h2, h3, h4, h5, h6 {
   gap: 6px;
   padding: 0 16px;
   background: #0a0a0a;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 8px;
   color: #fff;
   text-decoration: none;
@@ -2712,4 +2820,301 @@ h1, h2, h3, h4, h5, h6 {
 .legal-content a:hover {
   color: #a78bfa !important;
   text-decoration: underline;
+}
+
+/* =====================================================
+   MOBILE MENU & HAMBURGER
+   ===================================================== */
+.mobile-menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  margin-left: auto;
+}
+
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 24px;
+  height: 18px;
+  position: relative;
+}
+
+.hamburger::before,
+.hamburger::after,
+.hamburger span {
+  content: '';
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: #fff;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.hamburger span {
+  content: none;
+}
+
+.hamburger.open::before {
+  transform: rotate(45deg) translateY(8px);
+}
+
+.hamburger.open::after {
+  transform: rotate(-45deg) translateY(-8px);
+}
+
+.hamburger.open span {
+  opacity: 0;
+}
+
+.mobile-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: rgba(10, 10, 31, 0.98);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  margin-top: 8px;
+  padding: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.mobile-menu-link {
+  display: block;
+  padding: 12px 16px;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.mobile-menu-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+/* =====================================================
+   ENHANCED MOBILE RESPONSIVENESS
+   ===================================================== */
+
+/* Mobile: Show hamburger menu */
+@media (max-width: 768px) {
+  .mobile-menu-toggle {
+    display: block;
+  }
+  
+  .mobile-menu {
+    display: block;
+  }
+}
+
+/* Download buttons - make them fit in one row on mobile, ALL SAME SIZE */
+@media (max-width: 640px) {
+  .hero-v2-buttons {
+    flex-direction: row;
+    gap: 8px;
+    align-items: stretch;
+  }
+  
+  .download-badge-wrapper {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .download-badge {
+    width: 100%;
+    height: 40px;
+    object-fit: contain;
+  }
+  
+  .download-badge-web {
+    flex: 1;
+    justify-content: center;
+    padding: 0 8px;
+    height: 40px;
+    min-height: 40px;
+    max-height: 40px;
+    white-space: nowrap;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .download-badge-web-text {
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+  
+  .coming-soon-text {
+    font-size: 0.5rem;
+  }
+}
+
+/* Feature cards - stack vertically on mobile, prevent overflow */
+@media (max-width: 640px) {
+  .features-v2-section {
+    padding: 60px 0;
+    overflow-x: hidden;
+  }
+  
+  .container {
+    padding: 0 1.5rem;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  
+  .features-v2-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 0;
+    width: 100%;
+  }
+  
+  .feature-v2-card {
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  
+  .feature-v2-name {
+    font-size: 1.125rem;
+    word-wrap: break-word;
+  }
+  
+  .feature-v2-desc {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    word-wrap: break-word;
+  }
+}
+
+/* Footer - improve spacing and organization on mobile */
+@media (max-width: 768px) {
+  .footer-v2-grid {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+    text-align: left;
+  }
+  
+  .footer-v2-brand {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .footer-v2-downloads {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+  
+  .footer-badge-wrapper {
+    width: 100%;
+    max-width: 160px;
+  }
+  
+  .footer-badge {
+    width: 100%;
+    height: auto;
+  }
+  
+  .footer-badge-web {
+    width: 100%;
+    max-width: 160px;
+    height: 36px;
+    font-size: 0.8125rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .footer-v2-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .footer-v2-column-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 0.25rem;
+  }
+  
+  .footer-v2-link {
+    font-size: 0.875rem;
+    padding: 0.25rem 0;
+  }
+  
+  .footer-v2-bottom {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  
+  .footer-v2-bottom p {
+    font-size: 0.75rem;
+    text-align: center;
+  }
+}
+
+/* Very small screens - further optimize */
+@media (max-width: 480px) {
+  .hero-v2-title {
+    font-size: 2rem;
+  }
+  
+  .hero-v2-subtitle {
+    font-size: 1rem;
+  }
+  
+  .hero-v2-buttons {
+    gap: 6px;
+  }
+  
+  .download-badge {
+    height: 40px;
+  }
+  
+  .download-badge-web {
+    height: 40px;
+    min-height: 40px;
+    max-height: 40px;
+    font-size: 0.75rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .floating-nav-brand {
+    font-size: 0.875rem;
+  }
+  
+  .floating-nav-logo img {
+    height: 32px;
+  }
+  
+  .floating-nav-cta {
+    font-size: 0.8125rem;
+    padding: 8px 16px;
+  }
+  
+  .footer-badge-wrapper {
+    max-width: 140px;
+  }
+  
+  .footer-badge-web {
+    max-width: 140px;
+    font-size: 0.75rem;
+  }
 }
