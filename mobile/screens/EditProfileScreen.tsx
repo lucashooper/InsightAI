@@ -1,22 +1,51 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { usePreloadedData } from '../contexts/PreloadContext';
 import { supabase } from '../lib/supabase';
 import { isTablet, sf } from '../utils/responsive';
+
+// Inline base64 to ArrayBuffer decoder (avoids broken base64-arraybuffer package)
+function decodeBase64(base64: string): ArrayBuffer {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  const lookup = new Uint8Array(256);
+  for (let i = 0; i < chars.length; i++) lookup[chars.charCodeAt(i)] = i;
+  const len = base64.length;
+  let bufferLength = Math.floor(len * 3 / 4);
+  if (base64[len - 1] === '=') bufferLength--;
+  if (base64[len - 2] === '=') bufferLength--;
+  const arraybuffer = new ArrayBuffer(bufferLength);
+  const bytes = new Uint8Array(arraybuffer);
+  let p = 0;
+  for (let i = 0; i < len; i += 4) {
+    const e0 = lookup[base64.charCodeAt(i)];
+    const e1 = lookup[base64.charCodeAt(i + 1)];
+    const e2 = lookup[base64.charCodeAt(i + 2)];
+    const e3 = lookup[base64.charCodeAt(i + 3)];
+    bytes[p++] = (e0 << 2) | (e1 >> 4);
+    bytes[p++] = ((e1 & 15) << 4) | (e2 >> 2);
+    bytes[p++] = ((e2 & 3) << 6) | (e3 & 63);
+  }
+  return arraybuffer;
+}
 
 export default function EditProfileScreen({ navigation }: any) {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { refreshProfile } = usePreloadedData();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
+  const [loadedProfile, setLoadedProfile] = useState<{ username?: string; profile_picture_url?: string } | null>(null);
 
   useEffect(() => {
     loadProfile();
@@ -45,10 +74,14 @@ export default function EditProfileScreen({ navigation }: any) {
 
       if (data) {
         console.log('[EditProfile] Profile data found:', data);
+        setLoadedProfile(data); // Store for later reference
         const names = data.username?.split(' ') || [];
         setFirstName(names[0] || '');
         setLastName(names.slice(1).join(' ') || '');
-        setProfilePicture(data.profile_picture_url);
+        // Only use profile_picture_url if it's a valid HTTP(S) URL, not a relative path like '/Ocean-Swirl.webp'
+        const pfpUrl = data.profile_picture_url?.trim();
+        const isValidUrl = pfpUrl && (pfpUrl.startsWith('http://') || pfpUrl.startsWith('https://'));
+        setProfilePicture(isValidUrl ? pfpUrl : null);
       } else {
         console.log('[EditProfile] No profile data found, using fallback');
         // Fallback to user email
@@ -120,20 +153,26 @@ export default function EditProfileScreen({ navigation }: any) {
 
       setSaving(true);
 
-      console.log('[EditProfile] 📥 Fetching image from URI...');
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      console.log('[EditProfile] ✅ Blob created, size:', blob.size);
+      console.log('[EditProfile] 📥 Reading image file with FileSystem...');
+      // Read the file as base64 using legacy FileSystem API
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      console.log('[EditProfile] ✅ File read as base64, length:', base64.length);
       
-      const fileExt = uri.split('.').pop() || 'jpg';
+      // Convert base64 to ArrayBuffer
+      const arrayBuffer = decodeBase64(base64);
+      console.log('[EditProfile] ✅ ArrayBuffer created, byteLength:', arrayBuffer.byteLength);
+      
+      const fileExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
       const fileName = `${user.id}/${user.id}-${Date.now()}.${fileExt}`;
       console.log('[EditProfile] 📁 File name:', fileName);
 
       console.log('[EditProfile] ☁️ Uploading to Supabase storage...');
       const { error: uploadError } = await supabase.storage
         .from('profile-pictures')
-        .upload(fileName, blob, {
-          contentType: `image/${fileExt}`,
+        .upload(fileName, arrayBuffer, {
+          contentType: `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`,
           upsert: false,
         });
 
@@ -146,12 +185,36 @@ export default function EditProfileScreen({ navigation }: any) {
       const { data: { publicUrl } } = supabase.storage
         .from('profile-pictures')
         .getPublicUrl(fileName);
+      
       console.log('[EditProfile] 🔗 Public URL:', publicUrl);
 
+      // Verify the file is actually accessible
+      console.log('[EditProfile] 🔍 Verifying file is accessible...');
+      try {
+        const testResponse = await fetch(publicUrl, { method: 'HEAD' });
+        console.log('[EditProfile] ✅ File accessibility check - Status:', testResponse.status);
+        if (!testResponse.ok) {
+          console.error('[EditProfile] ⚠️ File not accessible, status:', testResponse.status);
+          throw new Error(`File uploaded but not accessible (HTTP ${testResponse.status})`);
+        }
+      } catch (verifyError: any) {
+        console.error('[EditProfile] ❌ File verification failed:', verifyError);
+        throw new Error('File uploaded but cannot be accessed. Please check bucket permissions.');
+      }
+
       console.log('[EditProfile] 💾 Upserting to user_profiles table...');
-      // Build upsert data - only include fields we're updating
+      // Build upsert data - include username to avoid NOT NULL constraint violation
+      // Use current form values if valid, otherwise use existing profile username, or email fallback
+      let currentUsername = `${firstName.trim()} ${lastName.trim()}`.trim();
+      if (!currentUsername || currentUsername === 'First Last') {
+        // If form fields are empty or default, use existing profile username or email
+        currentUsername = loadedProfile?.username || user.email?.split('@')[0] || 'User';
+      }
+      console.log('[EditProfile] Using username for upsert:', currentUsername);
+      
       const upsertData: any = {
         user_id: user.id,
+        username: currentUsername,
         profile_picture_url: publicUrl,
         updated_at: new Date().toISOString()
       };
@@ -178,9 +241,9 @@ export default function EditProfileScreen({ navigation }: any) {
       console.log('[EditProfile] 🎨 Setting local state to:', publicUrl);
       setProfilePicture(publicUrl);
       
-      console.log('[EditProfile] 💾 Updating AsyncStorage cache...');
       await AsyncStorage.setItem(`CACHED_PROFILE_PICTURE_${user.id}`, publicUrl);
-      console.log('[EditProfile] ✅ Cache updated');
+      await AsyncStorage.setItem('CACHED_PROFILE_PICTURE', publicUrl);
+      await refreshProfile(user.id);
       
       console.log('[EditProfile] 🎉 Profile picture upload complete!');
       Alert.alert('Success', 'Profile picture updated!');
@@ -229,8 +292,9 @@ export default function EditProfileScreen({ navigation }: any) {
       }
 
       console.log('[EditProfile] Username upserted successfully');
-      // Update user-specific cache immediately so UI reflects change
       await AsyncStorage.setItem(`CACHED_USERNAME_${user.id}`, username);
+      await AsyncStorage.setItem('CACHED_USERNAME', username);
+      await refreshProfile(user.id);
       Alert.alert('Success', 'Profile updated!');
       navigation.goBack();
     } catch (error: any) {
@@ -270,31 +334,18 @@ export default function EditProfileScreen({ navigation }: any) {
             disabled={saving}
             activeOpacity={0.7}
           >
-            {(() => {
-              console.log('[EditProfile] profilePicture state:', profilePicture);
-              console.log('[EditProfile] Has valid PFP:', profilePicture && profilePicture.trim() !== '');
-              console.log('[EditProfile] secondaryText color:', theme.colors.secondaryText);
-              
-              if (profilePicture && profilePicture.trim() !== '') {
-                console.log('[EditProfile] Rendering Image with URI:', profilePicture);
-                return (
-                  <Image 
-                    source={{ uri: profilePicture }} 
-                    style={styles.profilePicture}
-                    onError={(e) => {
-                      console.log('[EditProfile] Image failed to load:', e.nativeEvent.error);
-                    }}
-                  />
-                );
-              } else {
-                console.log('[EditProfile] Rendering default icon');
-                return (
-                  <View style={styles.profilePicturePlaceholder}>
-                    <Ionicons name="person-circle-outline" size={100} color={theme.colors.secondaryText} />
-                  </View>
-                );
-              }
-            })()}
+            {profilePicture && profilePicture.trim() !== '' ? (
+              <Image
+                source={{ uri: profilePicture }}
+                style={styles.profileImage}
+                contentFit="cover"
+                transition={200}
+              />
+            ) : (
+              <View style={styles.profilePicturePlaceholder}>
+                <Ionicons name="person-circle-outline" size={100} color={theme.colors.secondaryText} />
+              </View>
+            )}
             <View 
               style={[styles.editPhotoButton, { backgroundColor: theme.colors.background }]}
             >
@@ -398,6 +449,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   profilePicture: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+  },
+  profileImage: {
     width: 120,
     height: 120,
     borderRadius: 60,

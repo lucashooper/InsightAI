@@ -13,6 +13,7 @@ const { width } = Dimensions.get('window');
 
 type Props = {
     navigation: NativeStackNavigationProp<any>;
+    route?: any;
 };
 
 const TOTAL_DURATION = 11000;
@@ -24,8 +25,10 @@ const CHECKLIST_ITEMS = [
     { label: 'Building your personal plan', pct: 80 },
 ];
 
-export default function AnalyzingScreen({ navigation }: Props) {
+export default function AnalyzingScreen({ navigation, route }: Props) {
     const { theme } = useTheme();
+    const answers = route?.params?.answers ?? {};
+    const skipPersonality = route?.params?.skipPersonality ?? false;
     const [percentage, setPercentage] = useState(0);
     const [completedItems, setCompletedItems] = useState<number[]>([]);
     const [activeItem, setActiveItem] = useState(0);
@@ -178,7 +181,15 @@ export default function AnalyzingScreen({ navigation }: Props) {
                     disabled={!isComplete}
                     onPress={() => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        navigation.replace('OnboardingSummary');
+                        const answers = route?.params?.answers || {};
+                        const skipPersonality = route?.params?.skipPersonality || false;
+                        
+                        // If user skipped personality questions, go straight to summary
+                        if (skipPersonality) {
+                            navigation.replace('OnboardingSummary');
+                        } else {
+                            navigation.replace('PersonalityResult', { answers });
+                        }
                     }}
                 >
                     <LinearGradient

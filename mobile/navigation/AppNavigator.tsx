@@ -6,12 +6,13 @@ const navigationRef = createNavigationContainerRef();
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
-import { View, StyleSheet, TouchableOpacity, Pressable, Text, Image, Modal } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Pressable, Text, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
 
 // Screens
 import LoginScreen from '../screens/LoginScreen';
@@ -48,6 +49,8 @@ import AnalysisCompleteScreen from '../screens/onboarding/AnalysisCompleteScreen
 import InteractiveShowcaseScreen from '../screens/onboarding/InteractiveShowcaseScreen';
 import PaywallScreen from '../screens/onboarding/PaywallScreen';
 import PostPurchaseWelcomeScreen from '../screens/onboarding/PostPurchaseWelcomeScreen';
+import PersonalityResultScreen from '../screens/onboarding/PersonalityResultScreen';
+import PersonalityQuizIntroScreen from '../screens/onboarding/PersonalityQuizIntroScreen';
 import MeditationScreen from '../screens/MeditationScreen';
 import GratitudeScreen from '../screens/GratitudeScreen';
 import GratitudeHistoryScreen from '../screens/GratitudeHistoryScreen';
@@ -55,6 +58,8 @@ import EmotionDetailScreen from '../screens/EmotionDetailScreen';
 import AmbientSoundsScreen from '../screens/AmbientSoundsScreen';
 import AIChatScreen from '../screens/AIChatScreen';
 import PromptEntryScreen from '../screens/PromptEntryScreen';
+import ExploreScreen from '../screens/ExploreScreen';
+import TodoScreen from '../screens/TodoScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isTablet, sf, si } from '../utils/responsive';
 import DailyMoodCheckIn from '../components/DailyMoodCheckIn';
@@ -194,13 +199,17 @@ function MainTabs() {
   const { theme } = useTheme();
   const { user } = useAuth();
   const [cachedPfp, setCachedPfp] = React.useState<string | null>(null);
+  const [pfpLoadError, setPfpLoadError] = React.useState(false);
 
   React.useEffect(() => {
     const loadPfp = async () => {
       if (!user) return;
       // Use user-specific cache key to prevent cross-user contamination
       const pfp = await AsyncStorage.getItem(`CACHED_PROFILE_PICTURE_${user.id}`);
-      if (pfp) setCachedPfp(pfp);
+      if (pfp) {
+        setCachedPfp(pfp);
+        setPfpLoadError(false); // Reset error state when new pfp loads
+      }
     };
     loadPfp();
   }, [user]);
@@ -304,11 +313,17 @@ function MainTabs() {
         options={{
           tabBarLabel: 'Profile',
           tabBarIcon: ({ color, focused }) => {
-            // Only show image if it's a valid HTTP/HTTPS URL (not relative paths like "/Ocean-Swirl.webp")
+            // Only show image if it's a valid HTTP/HTTPS URL and hasn't failed to load
             const isValidUrl = cachedPfp && (cachedPfp.startsWith('http://') || cachedPfp.startsWith('https://'));
-            return isValidUrl ? (
+            return isValidUrl && !pfpLoadError ? (
               <View style={{ width: si(26), height: si(26), borderRadius: si(13), overflow: 'hidden', opacity: focused ? 1 : 0.6 }}>
-                <Image source={{ uri: cachedPfp }} style={{ width: '100%', height: '100%' }} />
+                <Image 
+                  source={{ uri: cachedPfp }} 
+                  style={{ width: '100%', height: '100%' }}
+                  contentFit="cover"
+                  transition={200}
+                  onError={() => setPfpLoadError(true)}
+                />
               </View>
             ) : (
               <Ionicons name="person-circle-outline" size={si(26)} color={color} />
@@ -322,11 +337,10 @@ function MainTabs() {
             console.log('[TabBar] Profile tab pressed');
           },
           focus: async () => {
-            // Reload profile picture when Settings tab is focused
             if (user?.id) {
               const pfp = await AsyncStorage.getItem(`CACHED_PROFILE_PICTURE_${user.id}`);
-              console.log('[TabBar] Reloading profile picture on focus:', pfp);
-              if (pfp !== cachedPfp) {
+              if (pfp && pfp !== cachedPfp) {
+                setPfpLoadError(false);
                 setCachedPfp(pfp);
               }
             }
@@ -543,7 +557,9 @@ export default function AppNavigator() {
           <Stack.Screen name="OnboardingQuestion" component={OnboardingQuestionScreen} />
           <Stack.Screen name="EmailVerified" component={EmailVerifiedScreen} />
           <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
+          <Stack.Screen name="PersonalityQuizIntro" component={PersonalityQuizIntroScreen} />
           <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
+          <Stack.Screen name="PersonalityResult" component={PersonalityResultScreen} />
           <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
           <Stack.Screen name="ValueProp" component={ValuePropScreen} />
           <Stack.Screen name="Paywall" component={PaywallScreen} />
@@ -574,6 +590,8 @@ export default function AppNavigator() {
           <Stack.Screen name="EmotionDetail" component={EmotionDetailScreen} options={{ headerShown: false }} />
           <Stack.Screen name="AmbientSounds" component={AmbientSoundsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="AIChat" component={AIChatScreen} options={{ headerShown: false, animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
+          <Stack.Screen name="Explore" component={ExploreScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="Todo" component={TodoScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="Appearance" component={AppearanceScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="Security" component={SecurityScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
@@ -598,7 +616,9 @@ export default function AppNavigator() {
           <Stack.Screen name="EmailVerified" component={EmailVerifiedScreen} />
           <Stack.Screen name="OnboardingQuestion" component={OnboardingQuestionScreen} />
           <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
+          <Stack.Screen name="PersonalityQuizIntro" component={PersonalityQuizIntroScreen} />
           <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
+          <Stack.Screen name="PersonalityResult" component={PersonalityResultScreen} />
           <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
           <Stack.Screen name="OnboardingSummary" component={OnboardingSummaryScreen} />
           <Stack.Screen name="InteractiveShowcase" component={InteractiveShowcaseScreen} />

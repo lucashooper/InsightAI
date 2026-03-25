@@ -1,0 +1,383 @@
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Animated, Dimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import * as Haptics from 'expo-haptics';
+import SunoGradient from '../../components/onboarding/SunoGradient';
+import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
+import { isTablet, sf } from '../../utils/responsive';
+import Svg, { Circle } from 'react-native-svg';
+
+const bookIcon = require('../../public/Book-Icon-Insight.webp');
+
+const { width } = Dimensions.get('window');
+
+// Decorative floating blossoms (similar to Liven design)
+const DecorativeBlossoms = ({ dark }: { dark: boolean }) => {
+  const blossom1Anim = useRef(new Animated.Value(0)).current;
+  const blossom2Anim = useRef(new Animated.Value(0)).current;
+  const blossom3Anim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Floating animation for blossoms
+    const createFloatAnimation = (anim: Animated.Value, duration: number, delay: number) => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(anim, {
+            toValue: 1,
+            duration,
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 0,
+            duration,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+    };
+
+    Animated.parallel([
+      createFloatAnimation(blossom1Anim, 3000, 0),
+      createFloatAnimation(blossom2Anim, 4000, 500),
+      createFloatAnimation(blossom3Anim, 3500, 1000),
+    ]).start();
+  }, []);
+
+  const translateY1 = blossom1Anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -15],
+  });
+
+  const translateY2 = blossom2Anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -12],
+  });
+
+  const translateY3 = blossom3Anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -18],
+  });
+
+  const blossomColor = dark ? 'rgba(255,255,255,0.15)' : 'rgba(139,92,246,0.2)';
+
+  return (
+    <Svg width={width} height={400} style={styles.blossomsContainer}>
+      {/* Top right cluster */}
+      <Animated.View style={{ transform: [{ translateY: translateY1 }] }}>
+        <Circle cx={width * 0.85} cy={50} r={6} fill={blossomColor} />
+        <Circle cx={width * 0.9} cy={45} r={5} fill={blossomColor} />
+        <Circle cx={width * 0.88} cy={60} r={4} fill={blossomColor} />
+        <Circle cx={width * 0.93} cy={55} r={5} fill={blossomColor} />
+        <Circle cx={width * 0.95} cy={70} r={6} fill={blossomColor} />
+      </Animated.View>
+
+      {/* Top left cluster */}
+      <Animated.View style={{ transform: [{ translateY: translateY2 }] }}>
+        <Circle cx={width * 0.1} cy={80} r={5} fill={blossomColor} />
+        <Circle cx={width * 0.08} cy={95} r={4} fill={blossomColor} />
+        <Circle cx={width * 0.15} cy={90} r={5} fill={blossomColor} />
+      </Animated.View>
+
+      {/* Right side cluster */}
+      <Animated.View style={{ transform: [{ translateY: translateY3 }] }}>
+        <Circle cx={width * 0.92} cy={150} r={5} fill={blossomColor} />
+        <Circle cx={width * 0.88} cy={165} r={6} fill={blossomColor} />
+        <Circle cx={width * 0.95} cy={160} r={4} fill={blossomColor} />
+      </Animated.View>
+    </Svg>
+  );
+};
+
+export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
+  const { theme } = useTheme();
+  const dark = isDarkTheme(theme.name);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+  const answers = route?.params?.answers || {};
+  const returnIndex = route?.params?.returnIndex || 0;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const handleContinue = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Continue to psychology questions at the returnIndex
+    navigation.navigate('OnboardingQuestion', { answers, startIndex: returnIndex });
+  };
+
+  const handleSkip = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Skip psychology questions, go straight to analysis without personality result
+    navigation.navigate('Analyzing', { answers, skipPersonality: true });
+  };
+
+  return (
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent={false} />
+      {dark ? (
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
+      ) : (
+        <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+      )}
+
+      {/* Decorative Blossoms */}
+      <DecorativeBlossoms dark={dark} />
+
+      {/* Back Button */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          navigation.goBack();
+        }}
+      >
+        <View style={[styles.backArrowCircle, { backgroundColor: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+          <Ionicons name="arrow-back" size={20} color={dark ? '#fff' : '#1a1a2e'} />
+        </View>
+      </TouchableOpacity>
+
+      <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
+        {/* Icon - No container, just the book icon */}
+        <View style={styles.iconContainer}>
+          <Image source={bookIcon} style={styles.bookIconLarge} contentFit="contain" />
+        </View>
+
+        {/* Title */}
+        <Text style={[styles.title, { color: dark ? '#fff' : '#1a1a2e' }]}>
+          Help us understand your habits
+        </Text>
+
+        {/* Description */}
+        <Text style={[styles.description, { color: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)' }]}>
+          Optional questions to personalize your experience
+        </Text>
+
+        {/* Info Cards - Glassmorphic style */}
+        <View style={styles.cardsContainer}>
+          <View style={[styles.card, { backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)', borderColor: dark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.4)' }]}>
+            <View style={styles.cardContent}>
+              <Text style={[styles.cardNumber, { color: dark ? '#a855f7' : '#8b5cf6' }]}>10</Text>
+              <Text style={[styles.cardLabel, { color: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)' }]}>questions</Text>
+            </View>
+          </View>
+
+          <View style={[styles.card, { backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)', borderColor: dark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.4)' }]}>
+            <View style={styles.cardContent}>
+              <Text style={[styles.cardNumber, { color: dark ? '#a855f7' : '#8b5cf6' }]}>2</Text>
+              <Text style={[styles.cardLabel, { color: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)' }]}>minutes</Text>
+            </View>
+          </View>
+
+          <View style={[styles.card, { backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)', borderColor: dark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.4)' }]}>
+            <View style={styles.cardContent}>
+              <Ionicons name="lock-closed" size={28} color={dark ? '#a855f7' : '#8b5cf6'} />
+              <Text style={[styles.cardLabel, { color: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)' }]}>private</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Benefits */}
+        <View style={styles.benefitsContainer}>
+          <View style={styles.benefitRow}>
+            <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+            <Text style={[styles.benefitText, { color: dark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.7)' }]}>
+              More accurate insights
+            </Text>
+          </View>
+          <View style={styles.benefitRow}>
+            <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+            <Text style={[styles.benefitText, { color: dark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.7)' }]}>
+              Personalized recommendations
+            </Text>
+          </View>
+          <View style={styles.benefitRow}>
+            <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+            <Text style={[styles.benefitText, { color: dark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.7)' }]}>
+              Better pattern tracking
+            </Text>
+          </View>
+        </View>
+      </Animated.View>
+
+      {/* Bottom Buttons */}
+      <View style={styles.buttonsContainer}>
+        {/* Continue Button */}
+        <TouchableOpacity
+          style={styles.continueButton}
+          activeOpacity={0.9}
+          onPress={handleContinue}
+        >
+          <LinearGradient
+            colors={['#a855f7', '#8b5cf6']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.continueGradient}
+          >
+            <Text style={styles.continueText}>Continue</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {/* Skip Button */}
+        <TouchableOpacity
+          style={styles.skipButton}
+          activeOpacity={0.7}
+          onPress={handleSkip}
+        >
+          <Text style={[styles.skipText, { color: dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)' }]}>
+            Skip for now
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  blossomsContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  backButton: {
+    position: 'absolute',
+    top: isTablet ? 60 : 50,
+    left: 20,
+    zIndex: 10,
+    padding: 4,
+  },
+  backArrowCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: isTablet ? 48 : 32,
+    paddingTop: isTablet ? 100 : 80,
+  },
+  iconContainer: {
+    marginBottom: 0,
+  },
+  bookIconLarge: {
+    width: 240,
+    height: 240,
+  },
+  title: {
+    fontSize: sf(28),
+    fontWeight: '700',
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 16,
+    letterSpacing: -0.5,
+  },
+  description: {
+    fontSize: sf(16),
+    textAlign: 'center',
+    lineHeight: sf(24),
+    marginBottom: 24,
+    paddingHorizontal: isTablet ? 40 : 16,
+  },
+  cardsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 40,
+    width: '100%',
+    justifyContent: 'center',
+  },
+  card: {
+    width: 100,
+    paddingVertical: 20,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  cardContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  cardNumber: {
+    fontSize: sf(28),
+    fontWeight: '800',
+    lineHeight: sf(32),
+  },
+  cardLabel: {
+    fontSize: sf(13),
+    fontWeight: '500',
+    lineHeight: sf(16),
+  },
+  benefitsContainer: {
+    alignItems: 'flex-start',
+    width: '100%',
+    gap: 12,
+  },
+  benefitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  benefitText: {
+    fontSize: sf(15),
+    fontWeight: '500',
+  },
+  buttonsContainer: {
+    paddingHorizontal: isTablet ? 48 : 24,
+    paddingBottom: isTablet ? 60 : 50,
+    width: '100%',
+  },
+  continueButton: {
+    width: '100%',
+    borderRadius: 999,
+    shadowColor: '#a855f7',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+    marginBottom: 16,
+  },
+  continueGradient: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 18,
+    borderRadius: 999,
+  },
+  continueText: {
+    fontSize: sf(17),
+    fontWeight: '600',
+    color: '#fff',
+    letterSpacing: 0.2,
+  },
+  skipButton: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  skipText: {
+    fontSize: sf(15),
+    fontWeight: '500',
+  },
+});

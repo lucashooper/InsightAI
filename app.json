@@ -4,7 +4,18 @@
       "bundleIdentifier": "com.crupid.mobile",
       "deploymentTarget": "15.1",
       "infoPlist": {
-        "NSSpeechRecognitionUsageDescription": "InsightAI uses speech recognition to convert your voice into text for taking notes and searching your content."
+        "NSSpeechRecognitionUsageDescription": "InsightAI uses speech recognition to convert your voice into text for taking notes and searching your content.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSExceptionDomains": {
+            "ptpqvghlaesyrzlljzkk.supabase.co": {
+              "NSExceptionAllowsInsecureHTTPLoads": false,
+              "NSExceptionRequiresForwardSecrecy": true,
+              "NSExceptionMinimumTLSVersion": "TLSv1.2",
+              "NSIncludesSubdomains": true
+            }
+          }
+        }
       }
     },
     "extra": {

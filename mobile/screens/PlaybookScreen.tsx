@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { useFocusEffect } from '@react-navigation/native';
@@ -22,6 +23,7 @@ interface Strategy {
   status: 'suggested' | 'active' | 'completed';
   source?: string;
   suggestion_count?: number;
+  tasks?: string[];
 }
 
 export default function PlaybookScreen() {
@@ -34,15 +36,17 @@ export default function PlaybookScreen() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingStrategy, setEditingStrategy] = useState<Strategy | null>(null);
-  const [editDraft, setEditDraft] = useState({ title: '', description: '', emoji: '✨', category: 'general' });
+  const [editDraft, setEditDraft] = useState({ title: '', description: '', emoji: '✨', category: 'general', tasks: [] as string[] });
   const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   const [newStrategy, setNewStrategy] = useState({
     title: '',
     description: '',
     category: 'general',
     difficulty: 'moderate',
-    emoji: '✨'
+    emoji: '✨',
+    tasks: [] as string[],
   });
+  const [newTask, setNewTask] = useState('');
   const [protocolProgress, setProtocolProgress] = useState({
     completed: 0,
     total: 1,
@@ -50,9 +54,11 @@ export default function PlaybookScreen() {
   });
   const [completedToday, setCompletedToday] = useState<string[]>([]);
   const [protocolStats, setProtocolStats] = useState<Record<string, { currentStreak: number; longestStreak: number }>>({});
+  const [pinnedProtocolId, setPinnedProtocolId] = useState<string | null>(null);
 
   useEffect(() => {
     loadStrategies();
+    loadPinnedProtocol();
   }, [user]);
 
   useFocusEffect(
@@ -136,7 +142,9 @@ export default function PlaybookScreen() {
     if (!newStrategy.title.trim() || !user) return;
 
     try {
-      const { data, error } = await supabase
+      console.log('[Playbook] Creating strategy with tasks:', newStrategy.tasks);
+      
+      const { error } = await supabase
         .from('actionable_insights')
         .insert({
           user_id: user.id,
@@ -147,6 +155,7 @@ export default function PlaybookScreen() {
           emoji: newStrategy.emoji,
           status: 'active',
           source: 'user_created',
+          tasks: newStrategy.tasks,
         })
         .select()
         .single();
@@ -155,6 +164,8 @@ export default function PlaybookScreen() {
         console.error('[Mobile Playbook] Error creating strategy:', error);
         return;
       }
+      
+      console.log('[Playbook] Strategy created successfully with tasks');
 
       // Reload strategies to get the new one
       await loadStrategies();
@@ -168,8 +179,10 @@ export default function PlaybookScreen() {
       description: '',
       category: 'general',
       difficulty: 'moderate',
-      emoji: '✨'
+      emoji: '✨',
+      tasks: [],
     });
+    setNewTask('');
     setShowCreateModal(false);
   };
 
@@ -201,7 +214,8 @@ export default function PlaybookScreen() {
       title: strategy.title,
       description: strategy.description || '',
       emoji: strategy.emoji || '✨',
-      category: strategy.category || 'general',
+      category: strategy.category,
+      tasks: strategy.tasks || [],
     });
     setShowEditModal(true);
   };
@@ -217,6 +231,7 @@ export default function PlaybookScreen() {
           description: editDraft.description.trim(),
           emoji: editDraft.emoji,
           category: editDraft.category,
+          tasks: editDraft.tasks,
         })
         .eq('id', editingStrategy.id)
         .eq('user_id', user.id);
@@ -235,22 +250,79 @@ export default function PlaybookScreen() {
     }
   };
 
+  const loadPinnedProtocol = async () => {
+    if (!user) return;
+    try {
+      const pinned = await AsyncStorage.getItem(`PINNED_PROTOCOL_${user.id}`);
+      if (pinned) {
+        setPinnedProtocolId(pinned);
+      }
+    } catch (error) {
+      console.error('[Playbook] Error loading pinned protocol:', error);
+    }
+  };
+
+  const handlePinProtocol = async (strategyId: string) => {
+    if (!user) return;
+    try {
+      await AsyncStorage.setItem(`PINNED_PROTOCOL_${user.id}`, strategyId);
+      setPinnedProtocolId(strategyId);
+      Alert.alert('Success', 'Protocol pinned to Home');
+    } catch (error) {
+      console.error('[Playbook] Error pinning protocol:', error);
+      Alert.alert('Error', 'Failed to pin protocol');
+    }
+  };
+
+  const handleUnpinProtocol = async () => {
+    if (!user) return;
+    try {
+      await AsyncStorage.removeItem(`PINNED_PROTOCOL_${user.id}`);
+      setPinnedProtocolId(null);
+      Alert.alert('Success', 'Protocol unpinned from Home');
+    } catch (error) {
+      console.error('[Playbook] Error unpinning protocol:', error);
+      Alert.alert('Error', 'Failed to unpin protocol');
+    }
+  };
+
   const handleStrategyLongPress = (strategy: Strategy) => {
+    const isPinned = pinnedProtocolId === strategy.id;
+    const isActiveProtocol = strategy.status === 'active';
+    
+    const options: any[] = [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Edit',
+        onPress: () => handleStrategyTap(strategy),
+      },
+    ];
+    
+    // Add pin/unpin option for active protocols
+    if (isActiveProtocol) {
+      if (isPinned) {
+        options.push({
+          text: 'Unpin from Home',
+          onPress: () => handleUnpinProtocol(),
+        });
+      } else {
+        options.push({
+          text: 'Pin to Home',
+          onPress: () => handlePinProtocol(strategy.id),
+        });
+      }
+    }
+    
+    options.push({
+      text: 'Delete strategy',
+      style: 'destructive',
+      onPress: () => deleteStrategy(strategy.id),
+    });
+    
     Alert.alert(
       'Strategy options',
       `"${strategy.title}"`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Edit',
-          onPress: () => handleStrategyTap(strategy),
-        },
-        {
-          text: 'Delete strategy',
-          style: 'destructive',
-          onPress: () => deleteStrategy(strategy.id),
-        },
-      ],
+      options,
     );
   };
 
@@ -451,6 +523,24 @@ export default function PlaybookScreen() {
                     {strategy.description ? (
                       <Text style={[styles.cardDescription, { color: theme.colors.secondaryText }]} numberOfLines={2}>{strategy.description}</Text>
                     ) : null}
+                    {/* Display tasks if they exist */}
+                    {strategy.tasks && strategy.tasks.length > 0 && (
+                      <View style={styles.taskPreview}>
+                        {strategy.tasks.slice(0, 2).map((task, index) => (
+                          <View key={index} style={styles.taskPreviewItem}>
+                            <Ionicons name="checkbox-outline" size={14} color={theme.colors.tertiaryText} />
+                            <Text style={[styles.taskPreviewText, { color: theme.colors.secondaryText }]} numberOfLines={1}>
+                              {task}
+                            </Text>
+                          </View>
+                        ))}
+                        {strategy.tasks.length > 2 && (
+                          <Text style={[styles.taskPreviewMore, { color: theme.colors.tertiaryText }]}>
+                            +{strategy.tasks.length - 2} more
+                          </Text>
+                        )}
+                      </View>
+                    )}
                   </View>
                 </View>
                 
@@ -556,7 +646,7 @@ export default function PlaybookScreen() {
                 placeholderTextColor={isDarkTheme(theme.name) ? '#666' : '#999'}
               />
 
-              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Description</Text>
+              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Description (optional)</Text>
               <TextInput
                 style={[styles.input, styles.textArea, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', borderColor: isDarkTheme(theme.name) ? '#2a2a2a' : '#e0e0e0', color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}
                 value={newStrategy.description}
@@ -566,6 +656,52 @@ export default function PlaybookScreen() {
                 multiline
                 numberOfLines={4}
               />
+
+              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Tasks (optional)</Text>
+              <View style={styles.taskInputContainer}>
+                <TextInput
+                  style={[styles.taskInput, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', borderColor: isDarkTheme(theme.name) ? '#2a2a2a' : '#e0e0e0', color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}
+                  value={newTask}
+                  onChangeText={setNewTask}
+                  placeholder="Add a task..."
+                  placeholderTextColor={isDarkTheme(theme.name) ? '#666' : '#999'}
+                  onSubmitEditing={() => {
+                    if (newTask.trim()) {
+                      setNewStrategy({ ...newStrategy, tasks: [...newStrategy.tasks, newTask.trim()] });
+                      setNewTask('');
+                    }
+                  }}
+                />
+                <TouchableOpacity
+                  style={[styles.addTaskButton, { opacity: newTask.trim() ? 1 : 0.5 }]}
+                  onPress={() => {
+                    if (newTask.trim()) {
+                      setNewStrategy({ ...newStrategy, tasks: [...newStrategy.tasks, newTask.trim()] });
+                      setNewTask('');
+                    }
+                  }}
+                  disabled={!newTask.trim()}
+                >
+                  <Ionicons name="add-circle" size={24} color="#8b5cf6" />
+                </TouchableOpacity>
+              </View>
+
+              {newStrategy.tasks.length > 0 && (
+                <View style={styles.taskList}>
+                  {newStrategy.tasks.map((task, index) => (
+                    <View key={index} style={[styles.taskItem, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.05)', borderColor: isDarkTheme(theme.name) ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.15)' }]}>
+                      <Text style={[styles.taskItemText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{index + 1}. {task}</Text>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setNewStrategy({ ...newStrategy, tasks: newStrategy.tasks.filter((_, i) => i !== index) });
+                        }}
+                      >
+                        <Ionicons name="close-circle" size={20} color={isDarkTheme(theme.name) ? '#999' : '#666'} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
 
               <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Emoji</Text>
               <View style={styles.emojiGrid}>
@@ -632,7 +768,10 @@ export default function PlaybookScreen() {
         transparent={true}
         onRequestClose={() => { setShowEditModal(false); setEditingStrategy(null); }}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
           <View style={[styles.modalContent, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a2e' : '#ffffff' }]}>
             <View style={[styles.modalHeader, { borderBottomColor: isDarkTheme(theme.name) ? '#2a2a3e' : '#e5e5e5' }]}>
               <Text style={[styles.modalTitle, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Edit Strategy</Text>
@@ -641,7 +780,11 @@ export default function PlaybookScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled">
+            <ScrollView 
+              style={styles.modalBody} 
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingBottom: 40 }}
+            >
               <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Emoji</Text>
               <View style={styles.emojiGrid}>
                 {['✨', '💪', '🏃', '👥', '🧘', '😴', '🥗', '🎯', '🌟', '💡', '🔥', '🌈', '🎨', '📚', '🎵', '🌱', '☕', '🍃', '💝', '🌸', '📈', '💭'].map((emoji) => (
@@ -701,6 +844,51 @@ export default function PlaybookScreen() {
                 ))}
               </View>
 
+              {/* Tasks Section */}
+              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Tasks (Optional)</Text>
+              <View style={styles.taskInputContainer}>
+                <TextInput
+                  style={[styles.taskInput, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', borderColor: isDarkTheme(theme.name) ? '#2a2a2a' : '#e0e0e0', color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}
+                  value={newTask}
+                  onChangeText={setNewTask}
+                  placeholder="Add a task..."
+                  placeholderTextColor={isDarkTheme(theme.name) ? '#666' : '#999'}
+                  onSubmitEditing={() => {
+                    if (newTask.trim()) {
+                      setEditDraft({ ...editDraft, tasks: [...editDraft.tasks, newTask.trim()] });
+                      setNewTask('');
+                    }
+                  }}
+                />
+                <TouchableOpacity
+                  style={styles.addTaskButton}
+                  onPress={() => {
+                    if (newTask.trim()) {
+                      setEditDraft({ ...editDraft, tasks: [...editDraft.tasks, newTask.trim()] });
+                      setNewTask('');
+                    }
+                  }}
+                >
+                  <Ionicons name="add-circle" size={24} color="#8b5cf6" />
+                </TouchableOpacity>
+              </View>
+              {editDraft.tasks.length > 0 && (
+                <View style={styles.taskList}>
+                  {editDraft.tasks.map((task, index) => (
+                    <View key={index} style={[styles.taskItem, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5' }]}>
+                      <Text style={[styles.taskItemText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{task}</Text>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setEditDraft({ ...editDraft, tasks: editDraft.tasks.filter((_, i) => i !== index) });
+                        }}
+                      >
+                        <Ionicons name="close-circle" size={20} color={isDarkTheme(theme.name) ? '#999' : '#666'} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+
               <TouchableOpacity
                 style={styles.modalPrimaryButton}
                 onPress={handleUpdateStrategy}
@@ -730,7 +918,7 @@ export default function PlaybookScreen() {
               )}
             </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -1000,7 +1188,7 @@ const styles = StyleSheet.create({
   streakText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#ffffff',
+    color: '#1a1a2e',
   },
   // Suggestion count badge (like desktop "2" indicator)
   suggestionCountBadge: {
@@ -1211,6 +1399,40 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
+  taskInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  taskInput: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    fontSize: 14,
+  },
+  addTaskButton: {
+    padding: 4,
+  },
+  taskList: {
+    gap: 8,
+    marginBottom: 16,
+  },
+  taskItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  taskItemText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+  },
   actionButtons: {
     flexDirection: 'row',
     gap: 12,
@@ -1243,6 +1465,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#8b5cf6',
+  },
+  taskPreview: {
+    marginTop: 8,
+    gap: 6,
+  },
+  taskPreviewItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  taskPreviewText: {
+    fontSize: 12,
+    fontWeight: '500',
+    flex: 1,
+  },
+  taskPreviewMore: {
+    fontSize: 11,
+    fontWeight: '500',
+    marginTop: 2,
   },
   editDeleteButton: {
     flexDirection: 'row',

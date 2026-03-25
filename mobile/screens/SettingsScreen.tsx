@@ -368,14 +368,26 @@ export default function SettingsScreen({ navigation }: any) {
       console.log('[Settings] Is Pro Active:', isProActive);
       console.log('[Settings] Has any active entitlement:', hasAnyActiveEntitlement);
       
-      if (isProActive || hasAnyActiveEntitlement) {
+      let isPro = isProActive || hasAnyActiveEntitlement;
+      
+      // CRITICAL: Verify subscription belongs to THIS user, not another account on same device
+      if (isPro && user) {
+        const originalOwner = customerInfo.originalAppUserId;
+        const isOwnSubscription = originalOwner === user.id || originalOwner?.startsWith('$RCAnonymousID:');
+        if (!isOwnSubscription) {
+          console.log('[Settings] ⚠️ Subscription belongs to different user:', originalOwner, 'current:', user.id);
+          isPro = false;
+        }
+      }
+      
+      if (isPro) {
         setSubscriptionPlan('Pro');
         setUsageLimit(2);
         console.log('[Settings] ✅ Subscription is active - setting plan to Pro');
       } else {
         setSubscriptionPlan('Free');
         setUsageLimit(0);
-        console.log('[Settings] ℹ️ No active subscription - setting plan to Free');
+        console.log('[Settings] ⚠️ No active subscription - setting plan to Free');
       }
     } catch (error: any) {
       console.error('[Settings] ❌ Error loading subscription status:', error);
@@ -1001,7 +1013,7 @@ export default function SettingsScreen({ navigation }: any) {
               {subscriptionPlan === 'Pro' && (
                 <View style={styles.usageProgress}>
                   <View style={styles.usageProgressRow}>
-                    <Text style={[styles.usageProgressLabel, { color: theme.colors.secondaryText }]}>Entries today</Text>
+                    <Text style={[styles.usageProgressLabel, { color: theme.colors.secondaryText }]}>Analysed today</Text>
                     <Text style={[styles.usageProgressValue, { color: theme.colors.primaryText }]}>{usageCount} / {usageLimit}</Text>
                   </View>
                   <View style={styles.progressBarContainer}>

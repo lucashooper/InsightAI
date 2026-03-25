@@ -1,12 +1,33 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Image, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking } from 'react-native';
+import { Image } from 'expo-image';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import Purchases from 'react-native-purchases';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
+import { usePreloadedData } from '../contexts/PreloadContext';
 import { supabase } from '../lib/supabase';
 import { sf } from '../utils/responsive';
+
+function resolveProfilePictureUrl(raw: string | null | undefined): string | null {
+  if (!raw || typeof raw !== 'string') return null;
+  const t = raw.trim();
+  if (!t) return null;
+  if (t.startsWith('http://') || t.startsWith('https://')) return t;
+  if (t.startsWith('/')) {
+    const base =
+      Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL ||
+      process.env.EXPO_PUBLIC_SUPABASE_URL ||
+      '';
+    if (!base) return null;
+    return `${base.replace(/\/$/, '')}/storage/v1/object/public/profile-pictures${t}`;
+  }
+  return null;
+}
 
 interface UserProfile {
   id: string;
@@ -17,28 +38,72 @@ interface UserProfile {
 
 export default function ProfileScreen({ navigation }: any) {
   const { user, signOut } = useAuth();
-  const { theme } = useTheme();
+  const { theme, themeName } = useTheme();
+  const { data: preloaded, refreshProfile } = usePreloadedData();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [subscriptionPlan, setSubscriptionPlan] = useState<string>('Free');
   const [entriesCount, setEntriesCount] = useState(0);
   const [entriesLimit, setEntriesLimit] = useState(2);
+  const [imageLoadError, setImageLoadError] = useState(false);
 
+  // Preload + user-scoped AsyncStorage (tab bar / Edit Profile); cache wins over stale preload for pfp
   useEffect(() => {
-    if (user) {
-      loadUserProfile();
-      loadSubscriptionStatus();
-      loadEntriesCount();
-    }
-  }, [user]);
+    if (!user) return;
+    loadSubscriptionStatus();
+    loadEntriesCount();
 
+    if (!preloaded.isLoaded) {
+      loadUserProfile();
+      return;
+    }
+
+    if (preloaded.userName) {
+      (async () => {
+        const cachedRaw = await AsyncStorage.getItem(`CACHED_PROFILE_PICTURE_${user.id}`);
+        const cached = resolveProfilePictureUrl(cachedRaw);
+        const preloadedPfp = resolveProfilePictureUrl(preloaded.profilePicture ?? null);
+        const pfp = cached || preloadedPfp || null;
+        setUserProfile({
+          id: '',
+          username: preloaded.userName!,
+          email: user.email || '',
+          profile_picture_url: pfp,
+        });
+        if (pfp) setImageLoadError(false);
+      })();
+    } else {
+      loadUserProfile();
+    }
+  }, [user?.id, preloaded.isLoaded, preloaded.userName, preloaded.profilePicture]);
+
+  // Refresh on focus — sync pfp from cache and Supabase (handles return from Edit Profile)
   useFocusEffect(
     React.useCallback(() => {
-      if (user) {
-        loadUserProfile();
-        loadSubscriptionStatus();
-        loadEntriesCount();
-      }
-    }, [user])
+      if (!user?.id) return;
+      loadSubscriptionStatus();
+      loadEntriesCount();
+      refreshProfile(user.id);
+
+      const syncPfp = async () => {
+        const cachedRaw = await AsyncStorage.getItem(`CACHED_PROFILE_PICTURE_${user.id}`);
+        const cached = resolveProfilePictureUrl(cachedRaw);
+        setUserProfile(prev => {
+          if (!prev) {
+            if (!cached) return prev;
+            return {
+              id: user.id,
+              username: preloaded.userName || user.email?.split('@')[0] || 'User',
+              email: user.email || '',
+              profile_picture_url: cached,
+            };
+          }
+          if (!cached || prev.profile_picture_url === cached) return prev;
+          return { ...prev, profile_picture_url: cached };
+        });
+        if (cached) setImageLoadError(false);
+      };
+      syncPfp();
+    }, [user?.id, refreshProfile, preloaded.userName])
   );
 
   const loadUserProfile = async () => {
@@ -48,7 +113,7 @@ export default function ProfileScreen({ navigation }: any) {
     }
     
     try {
-      console.log('[ProfileScreen] Loading profile for user:', user.id);
+      console.log('[ProfileScreen] Fetching profile from network for user:', user.id);
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -64,12 +129,20 @@ export default function ProfileScreen({ navigation }: any) {
 
       if (data) {
         console.log('[ProfileScreen] Profile data found:', data);
+        const resolved = resolveProfilePictureUrl(data.profile_picture_url);
+        const cachedRaw = await AsyncStorage.getItem(`CACHED_PROFILE_PICTURE_${user.id}`);
+        const cached = resolveProfilePictureUrl(cachedRaw);
+        const profilePictureUrl = cached || resolved;
+        if (profilePictureUrl) {
+          await AsyncStorage.setItem(`CACHED_PROFILE_PICTURE_${user.id}`, profilePictureUrl);
+        }
         setUserProfile({
           id: data.id,
           username: data.username || '',
           email: user.email || '',
-          profile_picture_url: data.profile_picture_url,
+          profile_picture_url: profilePictureUrl,
         });
+        setImageLoadError(false);
       } else {
         console.log('[ProfileScreen] No profile data found, using fallback');
         // Fallback to user data if no profile exists
@@ -94,29 +167,19 @@ export default function ProfileScreen({ navigation }: any) {
 
   const loadSubscriptionStatus = async () => {
     try {
-      console.log('[Settings] Loading subscription status...');
       const customerInfo = await Purchases.getCustomerInfo();
-      console.log('[Settings] Customer info loaded');
-      console.log('[Settings] Active entitlements:', Object.keys(customerInfo.entitlements.active));
-      console.log('[Settings] Active subscriptions:', customerInfo.activeSubscriptions);
 
       const hasProEntitlement = customerInfo.entitlements.active['InsightAI Pro'] !== undefined;
       const hasAnyActiveEntitlement = Object.keys(customerInfo.entitlements.active).length > 0;
 
-      console.log('[Settings] Is Pro Active:', hasProEntitlement);
-      console.log('[Settings] Has any active entitlement:', hasAnyActiveEntitlement);
-
       if (hasAnyActiveEntitlement) {
-        console.log('[Settings] ✅ Subscription is active - setting plan to Pro');
         setSubscriptionPlan('Insight Pro');
-        setEntriesLimit(2); // Pro users get 2 AI analyses per day
+        setEntriesLimit(2);
       } else {
-        console.log('[Settings] ⚠️ No active subscription - setting plan to Free');
         setSubscriptionPlan('Free');
-        setEntriesLimit(0); // Free users get 0 AI analyses
+        setEntriesLimit(0);
       }
     } catch (error) {
-      console.error('[Settings] Error loading subscription:', error);
       setSubscriptionPlan('Free');
       setEntriesLimit(0);
     }
@@ -125,17 +188,19 @@ export default function ProfileScreen({ navigation }: any) {
   const loadEntriesCount = async () => {
     if (!user) return;
     try {
+      const today = new Date().toISOString().split('T')[0];
       const { count, error } = await supabase
-        .from('notes')
+        .from('usage_tracking')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
-        .gte('created_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString());
+        .eq('action_type', 'ai_analysis')
+        .gte('created_at', today);
 
       if (!error && count !== null) {
         setEntriesCount(count);
       }
     } catch (error) {
-      console.error('Error loading entries count:', error);
+      console.error('Error loading analysis count:', error);
     }
   };
 
@@ -221,6 +286,10 @@ export default function ProfileScreen({ navigation }: any) {
 
   return (
     <View style={[styles.wrapper, { backgroundColor: theme.colors.background }]}>
+      <LinearGradient
+        colors={theme.colors.backgroundGradient as any}
+        style={styles.backgroundGradient}
+      />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <Text style={[styles.title, { color: theme.colors.primaryText }]}>Profile</Text>
 
@@ -231,29 +300,25 @@ export default function ProfileScreen({ navigation }: any) {
           activeOpacity={0.7}
         >
           <View style={styles.profileContent}>
-            {(() => {
-              const pfpUrl = userProfile?.profile_picture_url?.trim();
-              // Only show image if it's a valid HTTP/HTTPS URL (not relative paths like "/Ocean-Swirl.webp")
-              const isValidUrl = pfpUrl && (pfpUrl.startsWith('http://') || pfpUrl.startsWith('https://'));
-              
-              if (isValidUrl) {
-                return (
-                  <Image 
-                    source={{ uri: pfpUrl }} 
-                    style={styles.profilePicture}
-                    onError={(e) => {
-                      console.log('[ProfileScreen] Image failed to load:', e.nativeEvent.error);
-                    }}
-                  />
-                );
-              } else {
-                return (
-                  <View style={[styles.profilePicturePlaceholder, { width: 56, height: 56 }]}>
-                    <Ionicons name="person-circle-outline" size={56} color={theme.colors.primaryText} />
-                  </View>
-                );
-              }
-            })()}
+            {userProfile?.profile_picture_url && !imageLoadError ? (
+              <Image
+                key={userProfile.profile_picture_url}
+                source={{ uri: userProfile.profile_picture_url }}
+                style={styles.profilePicture}
+                contentFit="cover"
+                transition={200}
+                onLoad={() => {
+                  setImageLoadError(false);
+                }}
+                onError={() => {
+                  setImageLoadError(true);
+                }}
+              />
+            ) : (
+              <View style={[styles.profilePicturePlaceholder, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
+                <Ionicons name="person" size={22} color={theme.colors.secondaryText} />
+              </View>
+            )}
             <View style={styles.profileInfo}>
               <Text style={[styles.profileName, { color: theme.colors.primaryText }]}>
                 {userProfile?.username || user?.email?.split('@')[0] || 'User'}
@@ -270,13 +335,13 @@ export default function ProfileScreen({ navigation }: any) {
         {renderSectionHeader('Account')}
         <View style={styles.menuSection}>
           {renderMenuItem('card-outline', 'Current Plan', subscriptionPlan, () => navigation.navigate('Paywall'))}
-          {renderMenuItem('calendar-outline', 'Entries today', `${entriesCount} / ${entriesLimit}`, undefined, false)}
+          {renderMenuItem('calendar-outline', 'Analysed today', `${entriesCount} / ${entriesLimit}`, undefined, false)}
         </View>
 
         {/* Preferences Section */}
         {renderSectionHeader('Preferences')}
         <View style={styles.menuSection}>
-          {renderMenuItem('color-palette-outline', 'Appearance', 'Theme: Dark', () => navigation.navigate('Appearance'))}
+          {renderMenuItem('color-palette-outline', 'Appearance', `Theme: ${themeName.charAt(0).toUpperCase() + themeName.slice(1)}`, () => navigation.navigate('Appearance'))}
           {renderMenuItem('lock-closed-outline', 'Security', 'No lock set', () => navigation.navigate('Security'))}
           {renderMenuItem('options-outline', 'Personalize', 'Reminders, prompts & preferences', () => navigation.navigate('Personalize'))}
         </View>
@@ -304,6 +369,13 @@ const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
   },
+  backgroundGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
   container: {
     flex: 1,
     paddingHorizontal: 20,
@@ -326,14 +398,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   profilePicture: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
   },
   profilePicturePlaceholder: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -1,7 +1,7 @@
 import 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
-import { View, Text, Image, LogBox } from 'react-native';
+import { useEffect, useState, useRef } from 'react';
+import { View, Text, Image, LogBox, Animated } from 'react-native';
 import React from 'react';
 
 // Suppress LinearGradient warnings that spam the console
@@ -173,8 +173,25 @@ export default function App() {
   }, []);
 
   const [appReady, setAppReady] = useState(false);
+  const [splashVisible, setSplashVisible] = useState(true);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
 
-  console.log('[APP RENDER] assetsLoaded:', assetsLoaded, 'appReady:', appReady);
+  // Fade out splash when app is ready
+  useEffect(() => {
+    if (appReady) {
+      console.log('[APP] App ready, fading out splash...');
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }).start(() => {
+        console.log('[APP] Splash fade complete, hiding splash');
+        setSplashVisible(false);
+      });
+    }
+  }, [appReady]);
+
+  console.log('[APP RENDER] assetsLoaded:', assetsLoaded, 'appReady:', appReady, 'splashVisible:', splashVisible);
 
   return (
     <View style={{ flex: 1 }}>
@@ -196,11 +213,11 @@ export default function App() {
         <View style={{ flex: 1 }} />
       )}
 
-      {/* Single splash overlay - stays on top until app is fully ready */}
-      {!appReady && themeLoaded && (() => {
+      {/* Single splash overlay - stays on top until app is fully ready, then fades out */}
+      {splashVisible && themeLoaded && (() => {
         const themeConfig = splashThemeColors[savedTheme] || splashThemeColors.dark;
         return (
-        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}>
+        <Animated.View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, opacity: fadeAnim }}>
           {themeConfig.isDark ? (
             <LinearGradient colors={themeConfig.bg as any} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
           ) : (
@@ -216,7 +233,7 @@ export default function App() {
               Insight
             </Text>
           </View>
-        </View>
+        </Animated.View>
         );
       })()}
     </View>
@@ -240,11 +257,13 @@ function AppContent({ onReady }: { onReady: () => void }) {
     if (!authLoading) {
       if (!user) {
         // No user — show onboarding/login immediately
-        const timer = setTimeout(onReady, 50);
+        console.log('[AppContent] No user, showing onboarding');
+        const timer = setTimeout(onReady, 100);
         return () => clearTimeout(timer);
       } else if (preloadedData.isLoaded) {
         // User + data loaded — show app
-        const timer = setTimeout(onReady, 50);
+        console.log('[AppContent] User + data loaded, showing app');
+        const timer = setTimeout(onReady, 100);
         return () => clearTimeout(timer);
       }
     }

@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar, Animated, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ConfettiCannon from 'react-native-confetti-cannon';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 
@@ -15,6 +16,7 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
     const { theme } = useTheme();
     const fadeAnim = new Animated.Value(0);
     const scaleAnim = new Animated.Value(0.9);
+    const confettiRef = useRef<any>(null);
 
     useEffect(() => {
         Animated.parallel([
@@ -30,6 +32,11 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
                 useNativeDriver: true,
             })
         ]).start();
+        
+        // Trigger confetti after a short delay
+        setTimeout(() => {
+            confettiRef.current?.start();
+        }, 400);
     }, []);
 
     const handleFinish = async () => {
@@ -81,6 +88,16 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
 
             {/* Logo */}
             <Image source={insightLogo} style={styles.logo} />
+            
+            {/* Confetti */}
+            <ConfettiCannon
+                ref={confettiRef}
+                count={150}
+                origin={{ x: width / 2, y: -10 }}
+                autoStart={false}
+                fadeOut={true}
+                fallSpeed={2500}
+            />
 
             <View style={styles.content}>
                 <Animated.View style={[styles.centerContent, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>

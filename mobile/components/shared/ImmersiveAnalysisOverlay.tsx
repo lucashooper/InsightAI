@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 
@@ -324,17 +325,17 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
                           </Text>
                           {addToPlaybook && (
                             <TouchableOpacity
-                              style={[styles.overlayPlaybookBtn, { borderColor: cardBorder }]}
+                              style={styles.overlayPlaybookBtn}
                               onPress={() => addToPlaybook(card.text, idx)}
                               disabled={addingId === `growth-${idx}`}
                               activeOpacity={0.7}
                             >
                               {addingId === `growth-${idx}` ? (
-                                <ActivityIndicator size="small" color={textSecondary} />
+                                <ActivityIndicator size="small" color="#ffffff" />
                               ) : (
                                 <>
-                                  <Text style={{ fontSize: 14, color: textSecondary }}>⊕</Text>
-                                  <Text style={[styles.overlayPlaybookText, { color: textSecondary }]}>Add to Playbook</Text>
+                                  <Ionicons name="add-circle-outline" size={16} color="#ffffff" />
+                                  <Text style={styles.overlayPlaybookText}>Add to Playbook</Text>
                                 </>
                               )}
                             </TouchableOpacity>
@@ -781,12 +782,12 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingVertical: 8,
     paddingHorizontal: 14,
-    borderRadius: 8,
-    borderWidth: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    borderRadius: 20,
+    backgroundColor: '#8b5cf6',
   },
   overlayPlaybookText: {
     fontSize: 13,
     fontWeight: '600',
+    color: '#ffffff',
   },
 });

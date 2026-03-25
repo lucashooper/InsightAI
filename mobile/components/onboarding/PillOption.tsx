@@ -194,7 +194,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   pillSelected: {
-    borderWidth: 0,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
     shadowColor: '#8b5cf6',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.25,

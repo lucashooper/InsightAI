@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -22,6 +22,7 @@ interface GratitudeEntry {
 
 export default function GratitudeHistoryScreen({ navigation }: any) {
   const { theme } = useTheme();
+  const dark = isDarkTheme(theme.name);
   const { user } = useAuth();
   const [entries, setEntries] = useState<GratitudeEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,14 +67,14 @@ export default function GratitudeHistoryScreen({ navigation }: any) {
       activeOpacity={0.7}
     >
       <View style={[styles.cardContent, { 
-        backgroundColor: 'rgba(40, 40, 45, 0.7)',
-        borderColor: 'rgba(255, 255, 255, 0.08)',
+        backgroundColor: dark ? 'rgba(40, 40, 45, 0.7)' : theme.colors.cardBackground,
+        borderColor: dark ? 'rgba(255, 255, 255, 0.08)' : theme.colors.border,
       }]}>
         <View style={styles.entryHeader}>
           <Ionicons name="heart" size={20} color="#f472b6" />
-          <Text style={styles.entryDate}>{formatDate(item.created_at)}</Text>
+          <Text style={[styles.entryDate, { color: dark ? 'rgba(255, 255, 255, 0.8)' : theme.colors.primaryText }]}>{formatDate(item.created_at)}</Text>
         </View>
-        <Text style={styles.entryContent} numberOfLines={3}>
+        <Text style={[styles.entryContent, { color: dark ? 'rgba(255, 255, 255, 0.9)' : theme.colors.primaryText }]} numberOfLines={3}>
           {item.content}
         </Text>
       </View>
@@ -89,9 +90,9 @@ export default function GratitudeHistoryScreen({ navigation }: any) {
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="rgba(255, 255, 255, 0.7)" />
+          <Ionicons name="arrow-back" size={24} color={dark ? 'rgba(255, 255, 255, 0.7)' : theme.colors.primaryText} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Gratitude History</Text>
+        <Text style={[styles.headerTitle, { color: dark ? '#ffffff' : theme.colors.primaryText }]}>Gratitude History</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -101,9 +102,9 @@ export default function GratitudeHistoryScreen({ navigation }: any) {
         </View>
       ) : entries.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="heart-outline" size={64} color="rgba(255, 255, 255, 0.3)" />
-          <Text style={styles.emptyTitle}>No Gratitude Entries Yet</Text>
-          <Text style={styles.emptyText}>
+          <Ionicons name="heart-outline" size={64} color={dark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)'} />
+          <Text style={[styles.emptyTitle, { color: dark ? '#ffffff' : theme.colors.primaryText }]}>No Gratitude Entries Yet</Text>
+          <Text style={[styles.emptyText, { color: dark ? 'rgba(255, 255, 255, 0.6)' : theme.colors.secondaryText }]}>
             Start your gratitude practice to see your entries here
           </Text>
         </View>
@@ -147,7 +148,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#ffffff',
     flex: 1,
     textAlign: 'center',
   },
@@ -168,13 +168,11 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#ffffff',
     marginTop: 20,
     marginBottom: 8,
   },
   emptyText: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.6)',
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -199,11 +197,9 @@ const styles = StyleSheet.create({
   entryDate: {
     fontSize: 14,
     fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.8)',
   },
   entryContent: {
     fontSize: 15,
-    color: 'rgba(255, 255, 255, 0.9)',
     lineHeight: 22,
   },
 });

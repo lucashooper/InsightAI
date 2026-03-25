@@ -22,6 +22,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePreloadedData } from '../contexts/PreloadContext';
 import StandardContainer from '../components/shared/StandardContainer';
 import FirstTimeIntroOverlay from '../components/FirstTimeIntroOverlay';
+import PinnedRoutineCard from '../components/dashboard/PinnedRoutineCard';
+import PlaybookQuickAccessCard from '../components/dashboard/PlaybookQuickAccessCard';
 import { isTablet, sf, ss, si, iPadContentStyle } from '../utils/responsive';
 import { getTodayPrompt, DailyPrompt } from '../data/dailyPrompts';
 // Temporarily disabled for Expo Go testing
@@ -774,6 +776,13 @@ export default function DashboardScreenNew() {
           </View>
         </View>
 
+        {/* Pinned Protocol from Playbook */}
+        {user?.id && (
+          <View style={styles.insightsSection}>
+            <PinnedRoutineCard userId={user.id} />
+          </View>
+        )}
+
         {/* Recent Topics - REMOVED: Not working correctly, will be reimplemented properly */}
 
         {/* Today's Insights - Data-driven */}
@@ -889,6 +898,34 @@ export default function DashboardScreenNew() {
               <View style={styles.challengeInfo}>
                 <Text style={[styles.challengeTitle, { color: theme.colors.primaryText }]}>Ambient sounds</Text>
                 <Text style={[styles.challengeSubtext, { color: theme.colors.tertiaryText }]}>Relax with calming nature sounds</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.challengeCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
+            onPress={() => navigation.navigate('Explore')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.challengeContent}>
+              <Text style={styles.challengeEmoji}>🔍</Text>
+              <View style={styles.challengeInfo}>
+                <Text style={[styles.challengeTitle, { color: theme.colors.primaryText }]}>Explore articles</Text>
+                <Text style={[styles.challengeSubtext, { color: theme.colors.tertiaryText }]}>Psychology insights & research</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.challengeCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
+            onPress={() => navigation.navigate('Todo')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.challengeContent}>
+              <Text style={styles.challengeEmoji}>✅</Text>
+              <View style={styles.challengeInfo}>
+                <Text style={[styles.challengeTitle, { color: theme.colors.primaryText }]}>Daily to-do</Text>
+                <Text style={[styles.challengeSubtext, { color: theme.colors.tertiaryText }]}>Set helping routines & tasks</Text>
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />

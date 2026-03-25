@@ -14,7 +14,9 @@ import {
   Share,
   ActionSheetIOS,
   Platform,
+  Modal,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
@@ -69,6 +71,9 @@ export default function HomeScreen({ navigation, route }: any) {
   const [hiddenEntryIds, setHiddenEntryIds] = useState<Set<string>>(new Set());
   const [dominantEmotions, setDominantEmotions] = useState<{ emotion: string; percentage: number }[]>([]);
   const [moodIndicatorsEnabled, setMoodIndicatorsEnabled] = useState(true);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [datePickerEntryId, setDatePickerEntryId] = useState<string | null>(null);
 
   const calculateStreak = (notes: DiaryEntry[]) => {
     if (!notes || notes.length === 0) return { currentStreak: 0, longestStreak: 0 };
@@ -271,51 +276,40 @@ export default function HomeScreen({ navigation, route }: any) {
     );
   };
 
+  const handleDateChange = async (event: any, date?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+
+    if (date && datePickerEntryId) {
+      try {
+        const { error } = await supabase
+          .from('notes')
+          .update({ created_at: date.toISOString() })
+          .eq('id', datePickerEntryId);
+
+        if (!error) {
+          loadEntries();
+          Alert.alert('Success', 'Entry date updated');
+          if (Platform.OS === 'ios') {
+            setShowDatePicker(false);
+          }
+        } else {
+          console.error('[Home] Error changing date:', error);
+          Alert.alert('Error', 'Failed to change entry date');
+        }
+      } catch (err) {
+        console.error('[Home] Error changing entry date:', err);
+        Alert.alert('Error', 'Failed to change entry date');
+      }
+    }
+  };
+
   const handleChangeDateEntry = (entry: DiaryEntry) => {
     const currentDate = new Date(entry.created_at);
-    const formattedDate = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD
-    
-    Alert.prompt(
-      'Change Entry Date',
-      'Enter new date (YYYY-MM-DD format)',
-      async (newDate) => {
-        if (newDate && newDate.trim()) {
-          // Validate date format
-          const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-          if (!dateRegex.test(newDate.trim())) {
-            Alert.alert('Invalid Format', 'Please use YYYY-MM-DD format (e.g., 2026-02-17)');
-            return;
-          }
-
-          try {
-            const parsedDate = new Date(newDate.trim());
-            if (isNaN(parsedDate.getTime())) {
-              Alert.alert('Invalid Date', 'Please enter a valid date');
-              return;
-            }
-
-            // Update the created_at timestamp
-            const { error } = await supabase
-              .from('notes')
-              .update({ created_at: parsedDate.toISOString() })
-              .eq('id', entry.id);
-
-            if (!error) {
-              loadEntries();
-              Alert.alert('Success', 'Entry date updated');
-            } else {
-              console.error('[Home] Error changing date:', error);
-              Alert.alert('Error', 'Failed to change entry date');
-            }
-          } catch (err) {
-            console.error('[Home] Error changing entry date:', err);
-            Alert.alert('Error', 'Failed to change entry date');
-          }
-        }
-      },
-      'plain-text',
-      formattedDate
-    );
+    setSelectedDate(currentDate);
+    setDatePickerEntryId(entry.id);
+    setShowDatePicker(true);
   };
 
   const toggleHidden = (id: string) => {
@@ -775,6 +769,66 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
             />
           }
         />
+      )}
+
+      {/* Modern Date Picker Modal */}
+      {showDatePicker && (
+        <Modal
+          visible={showDatePicker}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowDatePicker(false)}
+        >
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+            activeOpacity={1}
+            onPress={() => setShowDatePicker(false)}
+          >
+            <View
+              style={{
+                backgroundColor: theme.colors.cardBackground,
+                borderRadius: 20,
+                padding: 20,
+                width: '85%',
+                maxWidth: 400,
+              }}
+              onStartShouldSetResponder={() => true}
+            >
+              <Text style={{ fontSize: 18, fontWeight: '600', color: theme.colors.primaryText, marginBottom: 16 }}>
+                Change Entry Date
+              </Text>
+              <DateTimePicker
+                value={selectedDate}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={handleDateChange}
+                textColor={theme.colors.primaryText}
+                themeVariant={isDarkTheme(theme.name) ? 'dark' : 'light'}
+              />
+              {Platform.OS === 'ios' && (
+                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 16, gap: 12 }}>
+                  <TouchableOpacity
+                    onPress={() => setShowDatePicker(false)}
+                    style={{ paddingHorizontal: 20, paddingVertical: 10 }}
+                  >
+                    <Text style={{ color: theme.colors.secondaryText, fontSize: 16, fontWeight: '600' }}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => handleDateChange(null, selectedDate)}
+                    style={{ paddingHorizontal: 20, paddingVertical: 10, backgroundColor: '#8b5cf6', borderRadius: 10 }}
+                  >
+                    <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>OK</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </TouchableOpacity>
+        </Modal>
       )}
     </View>
   );

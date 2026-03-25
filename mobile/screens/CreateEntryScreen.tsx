@@ -91,17 +91,33 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // Set new timeout for auto-save (2 seconds after user stops typing)
+    // Set new timeout for auto-save (500ms after user stops typing)
     saveTimeoutRef.current = setTimeout(() => {
       handleAutoSave();
-    }, 2000);
+    }, 500);
 
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [content]);
+  }, [content, title]);
+
+  // Force save when navigating away (beforeRemove)
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', () => {
+      // Cancel any pending debounce timer
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+      // Force immediate save if there are unsaved changes
+      if (hasUnsavedChanges.current && content.trim()) {
+        handleAutoSave();
+      }
+    });
+    return unsubscribe;
+  }, [navigation, content, title]);
 
   const handleAutoSave = async () => {
     if (!content.trim()) return;

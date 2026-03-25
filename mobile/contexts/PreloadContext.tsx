@@ -84,9 +84,15 @@ export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children })
         profile_picture_url: profile?.profile_picture_url || null,
       };
 
-      // Cache profile picture and username in AsyncStorage for tab bar etc
-      if (userProfile.profile_picture_url) {
-        await AsyncStorage.setItem('CACHED_PROFILE_PICTURE', userProfile.profile_picture_url).catch(() => {});
+      const resolvedPfp =
+        userProfile.profile_picture_url &&
+        (userProfile.profile_picture_url.startsWith('http://') ||
+          userProfile.profile_picture_url.startsWith('https://'))
+          ? userProfile.profile_picture_url
+          : null;
+      if (resolvedPfp) {
+        await AsyncStorage.setItem('CACHED_PROFILE_PICTURE', resolvedPfp).catch(() => {});
+        await AsyncStorage.setItem(`CACHED_PROFILE_PICTURE_${userId}`, resolvedPfp).catch(() => {});
       }
       if (userProfile.username) {
         await AsyncStorage.setItem('CACHED_USERNAME', userProfile.username).catch(() => {});
@@ -154,8 +160,15 @@ export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children })
           email: data.userProfile?.email || '',
           profile_picture_url: profile.profile_picture_url || null,
         };
-        if (userProfile.profile_picture_url) {
-          await AsyncStorage.setItem('CACHED_PROFILE_PICTURE', userProfile.profile_picture_url).catch(() => {});
+        const rp =
+          userProfile.profile_picture_url &&
+          (userProfile.profile_picture_url.startsWith('http://') ||
+            userProfile.profile_picture_url.startsWith('https://'))
+            ? userProfile.profile_picture_url
+            : null;
+        if (rp) {
+          await AsyncStorage.setItem('CACHED_PROFILE_PICTURE', rp).catch(() => {});
+          await AsyncStorage.setItem(`CACHED_PROFILE_PICTURE_${userId}`, rp).catch(() => {});
         }
         if (userProfile.username) {
           await AsyncStorage.setItem('CACHED_USERNAME', userProfile.username).catch(() => {});

@@ -10,11 +10,18 @@ import {
   Platform,
   Animated,
   Keyboard,
-  Image,
   Modal,
   ScrollView,
   Alert,
+  LayoutAnimation,
+  UIManager,
 } from 'react-native';
+
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -70,6 +77,7 @@ export default function AIChatScreen({ navigation }: any) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
+  const [profilePictureError, setProfilePictureError] = useState(false);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [savedChats, setSavedChats] = useState<SavedChat[]>([]);
@@ -80,12 +88,7 @@ export default function AIChatScreen({ navigation }: any) {
   const [isProUser, setIsProUser] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
   const typingRef = useRef<{ timer: NodeJS.Timeout | null; cancelled: boolean }>({ timer: null, cancelled: false });
-
-  useEffect(() => {
-    Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
-  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -117,21 +120,18 @@ export default function AIChatScreen({ navigation }: any) {
     }
   }, [user?.id]);
 
-  // Reload current chat when screen comes into focus to prevent messages from disappearing
+  // Reload current chat when screen comes into focus - only if messages are empty
   useFocusEffect(
-    useCallback(() => {
+    React.useCallback(() => {
       const reloadCurrentChat = async () => {
-        if (currentChatId && user) {
+        if (currentChatId && user && messages.length === 0) {
           try {
             const raw = await AsyncStorage.getItem(getChatHistoryKey());
             if (raw) {
               const chats: SavedChat[] = JSON.parse(raw);
               const currentChat = chats.find(c => c.id === currentChatId);
               if (currentChat && currentChat.messages.length > 0) {
-                // Only reload if messages are missing or different
-                if (messages.length === 0 || messages.length !== currentChat.messages.length) {
-                  setMessages(currentChat.messages.map(m => ({ ...m, timestamp: new Date(m.timestamp) })));
-                }
+                setMessages(currentChat.messages.map(m => ({ ...m, timestamp: new Date(m.timestamp) })));
               }
             }
           } catch (e) {
@@ -140,7 +140,15 @@ export default function AIChatScreen({ navigation }: any) {
         }
       };
       reloadCurrentChat();
-    }, [currentChatId, user, messages.length])
+      if (user?.id) {
+        AsyncStorage.getItem(`CACHED_PROFILE_PICTURE_${user.id}`).then((p) => {
+          if (p) {
+            setProfilePicture(p);
+            setProfilePictureError(false);
+          }
+        });
+      }
+    }, [currentChatId, user])
   );
 
   useEffect(() => {
@@ -149,7 +157,7 @@ export default function AIChatScreen({ navigation }: any) {
     };
   }, []);
 
-  // Auto-save chat when messages change
+  // Auto-save chat when messages change (only when typing is complete)
   useEffect(() => {
     if (messages.length > 0 && !isTemporary) {
       saveChatToHistory();
@@ -261,41 +269,45 @@ export default function AIChatScreen({ navigation }: any) {
     loadSuggestions();
   };
 
+  const typingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup typing interval on unmount
+  useEffect(() => {
+    return () => {
+      if (typingIntervalRef.current) {
+        clearInterval(typingIntervalRef.current);
+      }
+    };
+  }, []);
+
   const startTypingEffect = (messageId: string, fullContent: string) => {
-    let idx = 0;
-    if (typingRef.current.timer) clearInterval(typingRef.current.timer);
-    typingRef.current.cancelled = false;
+    if (typingIntervalRef.current) {
+      clearInterval(typingIntervalRef.current);
+    }
 
-    typingRef.current.timer = setInterval(() => {
-      if (typingRef.current.cancelled) {
-        if (typingRef.current.timer) clearInterval(typingRef.current.timer);
-        typingRef.current.timer = null;
-        return;
+    // Character chunks preserve spacing and newlines (word-splitting caused a visible jump at the end)
+    let charIndex = 0;
+    const CHARS_PER_TICK = 4;
+    const TICK_MS = 26;
+
+    typingIntervalRef.current = setInterval(() => {
+      charIndex = Math.min(fullContent.length, charIndex + CHARS_PER_TICK);
+      const currentText = fullContent.slice(0, charIndex);
+
+      if (charIndex >= fullContent.length) {
+        if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+        typingIntervalRef.current = null;
+        setMessages(prev => prev.map(m =>
+          m.id === messageId ? { ...m, displayedContent: fullContent, isTyping: false } : m
+        ));
+      } else {
+        setMessages(prev => prev.map(m =>
+          m.id === messageId ? { ...m, displayedContent: currentText } : m
+        ));
       }
 
-      // Variable speed: faster for spaces/punctuation, slower for new words
-      const char = fullContent[idx];
-      const step = (char === ' ' || char === ',' || char === '.') ? 2 : 1;
-      idx = Math.min(idx + step, fullContent.length);
-
-      const displayed = fullContent.substring(0, idx);
-      const done = idx >= fullContent.length;
-
-      setMessages(prev => prev.map(m =>
-        m.id === messageId
-          ? { ...m, displayedContent: displayed, isTyping: !done }
-          : m
-      ));
-
-      if (idx % 20 === 0 || done) {
-        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 10);
-      }
-
-      if (done) {
-        if (typingRef.current.timer) clearInterval(typingRef.current.timer);
-        typingRef.current.timer = null;
-      }
-    }, 30);
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, TICK_MS);
   };
 
   // Rate limiting check function
@@ -310,7 +322,18 @@ export default function AIChatScreen({ navigation }: any) {
       // Check if user is Pro
       console.log('[AIChatScreen] Checking Pro status...');
       const customerInfo = await Purchases.getCustomerInfo();
-      const isPro = !!customerInfo.entitlements.active['InsightAI Pro'] || Object.keys(customerInfo.entitlements.active).length > 0;
+      let isPro = !!customerInfo.entitlements.active['InsightAI Pro'] || Object.keys(customerInfo.entitlements.active).length > 0;
+      
+      // CRITICAL: Verify subscription belongs to THIS user, not another account on same device
+      if (isPro) {
+        const originalOwner = customerInfo.originalAppUserId;
+        const isOwnSubscription = originalOwner === user.id || originalOwner?.startsWith('$RCAnonymousID:');
+        if (!isOwnSubscription) {
+          console.log('[AIChatScreen] ⚠️ Subscription belongs to different user:', originalOwner, 'current:', user.id);
+          isPro = false;
+        }
+      }
+      
       setIsProUser(isPro);
       console.log('[AIChatScreen] Is Pro:', isPro);
       
@@ -465,7 +488,15 @@ export default function AIChatScreen({ navigation }: any) {
 
   const MessageBubble = ({ item }: { item: ChatMessage }) => {
     const isUser = item.role === 'user';
-    const displayText = isUser ? item.content : (item.displayedContent ?? item.content);
+    const displayText = isUser
+      ? item.content
+      : item.isTyping
+        ? (item.displayedContent ?? '')
+        : item.content;
+    const fullLen = item.content.length;
+    const shown = item.isTyping ? (item.displayedContent?.length ?? 0) : fullLen;
+    const typeProgress = fullLen > 0 ? shown / fullLen : 1;
+    const bubbleOpacity = isUser ? 1 : item.isTyping ? 0.38 + 0.62 * typeProgress : 1;
 
     return (
       <View style={[
@@ -479,9 +510,10 @@ export default function AIChatScreen({ navigation }: any) {
             </LinearGradient>
           </View>
         )}
-        <View style={[
+        <Animated.View style={[
           styles.messageBubble,
           isUser ? styles.userBubble : [styles.assistantBubble, { backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)' }],
+          { opacity: bubbleOpacity },
         ]}>
           <Text style={[
             styles.messageText,
@@ -489,11 +521,17 @@ export default function AIChatScreen({ navigation }: any) {
           ]}>
             {displayText}
           </Text>
-        </View>
+        </Animated.View>
         {isUser && (
           <View style={styles.userAvatarWrap}>
-            {profilePicture ? (
-              <Image source={{ uri: profilePicture }} style={styles.userAvatarImageDirect} />
+            {profilePicture && !profilePictureError ? (
+              <Image 
+                source={{ uri: profilePicture }} 
+                style={styles.userAvatarImageDirect}
+                contentFit="cover"
+                transition={200}
+                onError={() => setProfilePictureError(true)}
+              />
             ) : (
               <Ionicons name="person-circle-outline" size={32} color={theme.colors.secondaryText} />
             )}
@@ -550,7 +588,7 @@ export default function AIChatScreen({ navigation }: any) {
   );
 
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim, backgroundColor: theme.colors.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <LinearGradient
         colors={(theme.colors.backgroundGradient as [string, string, ...string[]]) || [theme.colors.background, theme.colors.background, theme.colors.background]}
         style={StyleSheet.absoluteFill}
@@ -589,16 +627,13 @@ export default function AIChatScreen({ navigation }: any) {
           data={messages}
           renderItem={renderMessage}
           keyExtractor={item => item.id}
+          extraData={messages}
           contentContainerStyle={[
             styles.messagesList,
             messages.length === 0 && styles.emptyMessagesList,
           ]}
           ListEmptyComponent={renderEmptyState}
           showsVerticalScrollIndicator={false}
-          maintainVisibleContentPosition={{
-            minIndexForVisible: 0,
-            autoscrollToTopThreshold: 10,
-          }}
           onContentSizeChange={() => {
             if (messages.length > 0) {
               flatListRef.current?.scrollToEnd({ animated: true });
@@ -768,7 +803,7 @@ export default function AIChatScreen({ navigation }: any) {
           </View>
         </TouchableOpacity>
       </Modal>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -844,10 +879,10 @@ const styles = StyleSheet.create({
   },
 
   // Messages
-  messageBubbleContainer: { flexDirection: 'row', marginBottom: 16, alignItems: 'flex-end' },
-  userBubbleContainer: { justifyContent: 'flex-end' },
-  assistantBubbleContainer: { justifyContent: 'flex-start' },
-  avatarWrap: { marginRight: 8, marginBottom: 2 },
+  messageBubbleContainer: { flexDirection: 'row', marginBottom: 16, alignItems: 'flex-start' },
+  userBubbleContainer: { justifyContent: 'flex-end', alignItems: 'flex-end' },
+  assistantBubbleContainer: { justifyContent: 'flex-start', alignItems: 'flex-start' },
+  avatarWrap: { marginRight: 8, marginTop: 4 },
   avatarGradient: { width: 26, height: 26, borderRadius: 13, justifyContent: 'center', alignItems: 'center' },
   userAvatarWrap: { marginLeft: 8, marginBottom: 2 },
   userAvatarFrame: {

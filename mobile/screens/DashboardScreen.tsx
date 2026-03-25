@@ -944,13 +944,20 @@ export default function DashboardScreen() {
     if (!user) return;
 
     try {
-      const { data: notes, error } = await supabase
-        .from('notes')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      // Use preloaded notes if available (instant), otherwise fetch from network
+      let notes = preloaded.notes;
+      if (!notes) {
+        console.log('[Dashboard] No preloaded notes, fetching from network...');
+        const { data, error } = await supabase
+          .from('notes')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        notes = data || [];
+      } else {
+        console.log('[Dashboard] Using preloaded notes:', notes.length);
+      }
 
       const totalEntries = notes?.length || 0;
       const analyzedEntries = notes?.filter(n => n.ai_structured_insights).length || 0;
@@ -1000,25 +1007,7 @@ export default function DashboardScreen() {
       // Store all notes for other features
       setAllNotes(notes || []);
 
-      // Check for milestone streaks
-      const milestones = [7, 14, 30, 60, 90, 180, 365];
-      if (milestones.includes(streak)) {
-        setMilestoneStreak(streak);
-      }
-
-      // Load monthly story and data
-      await loadMonthlyStory(notes || []);
-
-      // Check for "Remember When" patterns
-      await checkRememberWhen(notes || []);
-
-      // Load patterns to address and what's working (ALL entries, not just this month)
-      await loadPatternsData(notes || []);
-
-      // Aggregate insights for dashboard sections
-      await aggregateInsights(notes || []);
-
-      // Build dominant emotions from existing ai_structured_insights.mood_analysis
+      // Build dominant emotions synchronously (fast) so UI shows immediately
       const emotionCounts: Record<string, number> = {};
       const entriesByEmotion: Record<string, any[]> = {};
       notes
@@ -1051,19 +1040,15 @@ export default function DashboardScreen() {
       setDominantEmotions(dominant);
       setEmotionEntriesByEmotion(entriesByEmotion);
 
-      // Prepare chart data using ai_insights (wellbeing + resilience)
+      // Prepare chart data synchronously (fast)
       const sentimentNotes =
         notes?.filter((n: any) => n.ai_insights && (n.ai_insights.wellbeingScore || n.ai_insights.resilienceScore)) || [];
 
-      console.log('[Mobile Dashboard] sentimentNotes', sentimentNotes);
-
       if (sentimentNotes.length > 0) {
-        // Use last 8 points for mobile (cleaner, less crowded)
         const recent = sentimentNotes
           .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
           .slice(-8);
 
-        // Create labels: first, middle, last only to avoid overlap
         const labels = recent.map((n: any, index: number) => {
           const isFirst = index === 0;
           const isLast = index === recent.length - 1;
@@ -1090,11 +1075,11 @@ export default function DashboardScreen() {
           datasets: [
             {
               data: wellbeingSeries,
-              color: (opacity = 1) => `rgba(56, 189, 248, ${opacity})`, // cyan
+              color: (opacity = 1) => `rgba(56, 189, 248, ${opacity})`,
             },
             {
               data: resilienceSeries,
-              color: (opacity = 1) => `rgba(249, 115, 22, ${opacity})`, // orange
+              color: (opacity = 1) => `rgba(249, 115, 22, ${opacity})`,
             },
           ],
         };
@@ -1103,12 +1088,26 @@ export default function DashboardScreen() {
         setChartData(chartPayload);
         setTrendPoints(trendPointsPayload);
       } else {
-        console.warn('[Mobile Dashboard] Not enough analyzed entries for trend chart');
         setChartData(null);
       }
+
+      // Clear loading IMMEDIATELY so UI renders with stats + emotions + chart
+      setLoading(false);
+
+      // Check for milestone streaks
+      const milestones = [7, 14, 30, 60, 90, 180, 365];
+      if (milestones.includes(streak)) {
+        setMilestoneStreak(streak);
+      }
+
+      // Run heavy async operations in background (UI already visible)
+      loadMonthlyStory(notes || []).catch(e => console.error('[Dashboard] Monthly story error:', e));
+      checkRememberWhen(notes || []).catch(e => console.error('[Dashboard] Remember when error:', e));
+      loadPatternsData(notes || []).catch(e => console.error('[Dashboard] Patterns error:', e));
+      aggregateInsights(notes || []).catch(e => console.error('[Dashboard] Aggregate error:', e));
+
     } catch (error) {
       console.error('Error loading stats:', error);
-    } finally {
       setLoading(false);
     }
   };
@@ -1272,7 +1271,7 @@ export default function DashboardScreen() {
                       onPress={() => setPatternsExpanded(true)}
                       activeOpacity={0.7}
                     >
-                      <Text style={[styles.viewAllText, { color: theme.colors.primary }]}>View {patternsToAddress.length - 2} More Focus Areas →</Text>
+                      <Text style={[styles.viewAllText, { color: isDarkTheme(theme.name) ? theme.colors.primary : '#8b5cf6' }]}>View {patternsToAddress.length - 2} More Focus Areas →</Text>
                     </TouchableOpacity>
                   )}
                   {patternsExpanded && patternsToAddress.length > 2 && (
@@ -1281,7 +1280,7 @@ export default function DashboardScreen() {
                       onPress={() => setPatternsExpanded(false)}
                       activeOpacity={0.7}
                     >
-                      <Text style={[styles.viewAllText, { color: theme.colors.primary }]}>Show Less</Text>
+                      <Text style={[styles.viewAllText, { color: isDarkTheme(theme.name) ? theme.colors.primary : '#8b5cf6' }]}>Show Less</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -1347,7 +1346,7 @@ export default function DashboardScreen() {
                       onPress={() => setWorkingExpanded(true)}
                       activeOpacity={0.7}
                     >
-                      <Text style={[styles.viewAllText, { color: theme.colors.primary }]}>View {whatsWorking.length - 2} More Strengths →</Text>
+                      <Text style={[styles.viewAllText, { color: isDarkTheme(theme.name) ? theme.colors.primary : '#8b5cf6' }]}>View {whatsWorking.length - 2} More Strengths →</Text>
                     </TouchableOpacity>
                   )}
                   {workingExpanded && whatsWorking.length > 2 && (
@@ -1356,7 +1355,7 @@ export default function DashboardScreen() {
                       onPress={() => setWorkingExpanded(false)}
                       activeOpacity={0.7}
                     >
-                      <Text style={[styles.viewAllText, { color: theme.colors.primary }]}>Show Less</Text>
+                      <Text style={[styles.viewAllText, { color: isDarkTheme(theme.name) ? theme.colors.primary : '#8b5cf6' }]}>Show Less</Text>
                     </TouchableOpacity>
                   )}
                 </View>

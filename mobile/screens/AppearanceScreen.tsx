@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
 import PageHeader from '../components/shared/PageHeader';
@@ -25,6 +26,10 @@ export default function AppearanceScreen({ navigation }: any) {
 
   return (
     <View style={[styles.wrapper, { backgroundColor: theme.colors.background }]}>
+      <LinearGradient
+        colors={theme.colors.backgroundGradient as any}
+        style={styles.backgroundGradient}
+      />
       <PageHeader title="Appearance" onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
@@ -70,6 +75,13 @@ export default function AppearanceScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
+  },
+  backgroundGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
   },
   content: {
     flex: 1,

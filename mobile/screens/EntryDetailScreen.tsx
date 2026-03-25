@@ -201,6 +201,28 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
     setIsModified(hasChanged);
   }, [editableContent, editableTitle, entry]);
 
+  const saveEntry = async () => {
+    if (!entry) return;
+    try {
+      const { error } = await supabase
+        .from('notes')
+        .update({
+          title: editableTitle.trim() || 'Untitled Entry',
+          content: editableContent.trim(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', entry.id);
+
+      if (!error) {
+        entry.title = editableTitle.trim() || 'Untitled Entry';
+        entry.content = editableContent.trim();
+        setIsModified(false);
+      }
+    } catch (error) {
+      console.error('Auto-save error:', error);
+    }
+  };
+
   useEffect(() => {
     if (!isModified || !entry) return;
 
@@ -208,26 +230,9 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    saveTimeoutRef.current = setTimeout(async () => {
-      try {
-        const { error } = await supabase
-          .from('notes')
-          .update({
-            title: editableTitle.trim() || 'Untitled Entry',
-            content: editableContent.trim(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', entry.id);
-
-        if (!error) {
-          entry.title = editableTitle.trim() || 'Untitled Entry';
-          entry.content = editableContent.trim();
-          setIsModified(false);
-        }
-      } catch (error) {
-        console.error('Auto-save error:', error);
-      }
-    }, 1500);
+    saveTimeoutRef.current = setTimeout(() => {
+      saveEntry();
+    }, 500);
 
     return () => {
       if (saveTimeoutRef.current) {
@@ -235,6 +240,20 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
       }
     };
   }, [editableContent, editableTitle, isModified]);
+
+  // Force save when navigating away
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+      if (isModified && entry) {
+        saveEntry();
+      }
+    });
+    return unsubscribe;
+  }, [navigation, editableContent, editableTitle, isModified, entry]);
 
   const handleCancelAnalysis = () => {
     if (analysisMessageIntervalRef.current) {
@@ -271,6 +290,15 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
         setPremiumUpsellVisible(true);
         return;
       }
+      
+      // CRITICAL: Verify subscription belongs to THIS user, not another account on same device
+      const originalOwner = customerInfo.originalAppUserId;
+      const currentUserId = user?.id;
+      if (currentUserId && originalOwner && originalOwner !== currentUserId && !originalOwner.startsWith('$RCAnonymousID:')) {
+        console.log('[EntryDetail] Subscription belongs to different user:', originalOwner, 'current:', currentUserId);
+        setPremiumUpsellVisible(true);
+        return;
+      }
     } catch (error) {
       console.error('[EntryDetail] Error checking subscription:', error);
       // If we can't check subscription, show premium overlay to be safe
@@ -278,10 +306,16 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
       return;
     }
 
-    // Check daily usage limit (2 per day for ALL users)
-    // Exception: unlimited for developer/tester accounts
+    // Check daily usage limit
+    // Default: 2 per day for regular users
+    // Admin accounts get 10 per day
+    // Developer/tester accounts get unlimited
     const UNLIMITED_EMAILS = ['edwardsjonny547@gmail.com'];
-    const isUnlimited = UNLIMITED_EMAILS.includes(user?.email?.toLowerCase() || '') || __DEV__;
+    const ADMIN_EMAILS = ['orwellmax24@gmail.com'];
+    const userEmail = user?.email?.toLowerCase() || '';
+    const isUnlimited = UNLIMITED_EMAILS.includes(userEmail) || __DEV__;
+    const isAdmin = ADMIN_EMAILS.includes(userEmail);
+    const dailyLimit = isAdmin ? 10 : 2;
     
     if (!isUnlimited) {
       try {
@@ -293,11 +327,11 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
           .eq('action_type', 'ai_analysis')
           .gte('created_at', today);
 
-        if (!countError && (count || 0) >= 2) {
-          console.log('[EntryDetail] Daily usage limit reached:', count);
+        if (!countError && (count || 0) >= dailyLimit) {
+          console.log('[EntryDetail] Daily usage limit reached:', count, '/', dailyLimit);
           Alert.alert(
             'Daily Limit Reached',
-            'You\'ve used your 2 AI analyses for today. Come back tomorrow for more insights!',
+            `You've used your ${dailyLimit} AI analyses for today. Come back tomorrow for more insights!`,
             [{ text: 'OK' }]
           );
           return;
@@ -678,12 +712,9 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
         ref={scrollViewRef} 
         style={styles.scrollView} 
         contentContainerStyle={styles.scrollContent}
-        onContentSizeChange={(width, height) => {
-          // Force ScrollView to recognize full content height
-          if (scrollViewRef.current && height > 0) {
-            scrollViewRef.current.scrollTo({ y: 0, animated: false });
-          }
-        }}
+        showsVerticalScrollIndicator={true}
+        scrollEventThrottle={16}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.entryContainer}>
           <TextInput
@@ -779,13 +810,13 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                     setAnalysisOverlayMode('results');
                     setAnalysisOverlayVisible(true);
                   }}
-                  style={[styles.reopenInsightsButton, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+                  style={[styles.reopenInsightsButton, { backgroundColor: isDarkTheme(theme.name) ? theme.colors.surface : 'rgba(0,0,0,0.05)', borderColor: theme.colors.border }]}
                   activeOpacity={0.7}
                 >
                   <Ionicons 
                     name="expand-outline" 
                     size={20} 
-                    color={theme.colors.primary} 
+                    color={isDarkTheme(theme.name) ? 'rgba(255,255,255,0.7)' : '#1a1a1a'} 
                   />
                 </TouchableOpacity>
               </View>
@@ -801,7 +832,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                     ]}>
                       <View style={styles.emotionBadge}>
                         <Text style={[styles.inlineMoodLabel, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.6)' : '#6B6B6B' }]}>PRIMARY EMOTION</Text>
-                        <Text style={[styles.inlineMoodEmotion, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.98)' : '#1a1a1a' }]}>{moodAnalysis.primary_emotion}</Text>
+                        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[styles.inlineMoodEmotion, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.98)' : '#1a1a1a' }]}>{moodAnalysis.primary_emotion}</Text>
                       </View>
                     </View>
                   )}
@@ -1240,8 +1271,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: isTablet ? 200 : 150,
+    paddingBottom: isTablet ? 250 : 200,
     flexGrow: 1,
+    minHeight: '100%',
   },
   entryContainer: {
     flex: 1,

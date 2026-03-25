@@ -124,7 +124,7 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
       onVibeSelected(selectedVibe);
     }
     
-    // Navigate to OnboardingQuestion (keep ChooseVibe in stack for back navigation)
+    // Navigate to OnboardingQuestion (PersonalityQuizIntro will appear after wellbeing question)
     navigation.navigate('OnboardingQuestion');
   };
 

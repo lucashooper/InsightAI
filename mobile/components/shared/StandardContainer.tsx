@@ -13,24 +13,14 @@ export default function StandardContainer({ children, style }: Props) {
   
   const isThemeDark = isDarkTheme(theme.name);
   
-  let gradientColors: readonly [string, string];
-  let borderColor: string;
+  // Modern Gray: neutral glassmorphic containers (Liven-style) - DEFAULT for all themes
+  const gradientColors = isThemeDark
+    ? ['rgba(32, 32, 38, 0.85)', 'rgba(24, 24, 30, 0.80)'] as const
+    : ['rgba(248, 248, 250, 0.90)', 'rgba(242, 242, 246, 0.85)'] as const;
   
-  if (containerStyle === 'responsive') {
-    // Responsive: containers tint toward the theme's accent/surface colors
-    gradientColors = isThemeDark
-      ? [theme.colors.surfaceElevated, theme.colors.surface] as const
-      : [theme.colors.cardBackground, theme.colors.surface] as const;
-    borderColor = theme.colors.border;
-  } else {
-    // Modern Gray: neutral glassmorphic containers (Mindersa-style)
-    gradientColors = isThemeDark
-      ? ['rgba(32, 32, 38, 0.82)', 'rgba(24, 24, 30, 0.78)'] as const
-      : ['rgba(245, 245, 248, 0.85)', 'rgba(240, 240, 244, 0.80)'] as const;
-    borderColor = isThemeDark
-      ? 'rgba(255, 255, 255, 0.08)'
-      : 'rgba(0, 0, 0, 0.06)';
-  }
+  const borderColor = isThemeDark
+    ? 'rgba(255, 255, 255, 0.08)'
+    : 'rgba(0, 0, 0, 0.06)';
   
   return (
     <View style={[styles.container, style, { borderColor }]}>

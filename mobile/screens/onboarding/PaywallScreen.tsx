@@ -47,6 +47,7 @@ export default function PaywallScreen({ navigation, route }: any) {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'weekly' | 'monthly' | 'yearly'>('yearly');
   const [activeCarouselIndex, setActiveCarouselIndex] = useState(0);
+  const [activeReviewIndex, setActiveReviewIndex] = useState(0);
   const [imagesLoaded, setImagesLoaded] = useState(true); // Images preloaded globally in App.tsx
   const carouselRef = useRef<FlatList>(null);
 
@@ -222,13 +223,29 @@ export default function PaywallScreen({ navigation, route }: any) {
     console.log('[Paywall] 🔍 All active entitlements:', Object.keys(customerInfo.entitlements.active));
     console.log('[Paywall] 🔍 Looking for entitlement ID:', ENTITLEMENT_ID);
     console.log('[Paywall] 🔍 All entitlements (active and inactive):', Object.keys(customerInfo.entitlements.all));
+    console.log('[Paywall] 🔍 Original App User ID:', customerInfo.originalAppUserId);
+    console.log('[Paywall] 🔍 Current User ID:', user?.id);
     
     const isProActive = !!customerInfo.entitlements.active[ENTITLEMENT_ID];
     console.log('[Paywall] Checking subscription status:', isProActive);
     
-    // TEMPORARY FIX: If we have ANY active entitlement, consider it valid
     const hasAnyActiveEntitlement = Object.keys(customerInfo.entitlements.active).length > 0;
     console.log('[Paywall] Has any active entitlement:', hasAnyActiveEntitlement);
+    
+    // CRITICAL: Verify subscription ownership before granting Pro access
+    if (hasAnyActiveEntitlement && user?.id) {
+      const originalOwner = customerInfo.originalAppUserId;
+      const isOwnSubscription = originalOwner === user.id || originalOwner?.startsWith('$RCAnonymousID:');
+      if (!isOwnSubscription) {
+        console.log('[Paywall] ❌ Subscription belongs to different user:', originalOwner);
+        Alert.alert(
+          'Subscription Found on Another Account',
+          'This subscription belongs to a different account on this device. Please log in to that account to use Pro features.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+    }
     
     if (isProActive || hasAnyActiveEntitlement) {
       console.log('[Paywall] ✅ Subscription is active');
@@ -364,19 +381,40 @@ export default function PaywallScreen({ navigation, route }: any) {
                                 Object.keys(existingInfo.entitlements.active).length > 0;
       
       if (alreadySubscribed) {
-        console.log('[REVENUECAT] User already has active subscription - skipping purchase');
-        Alert.alert(
-          'Already Subscribed',
-          'You already have an active Pro subscription. Enjoy your premium features!',
-          [{ text: 'OK', onPress: () => {
-            const fromSettings = route?.params?.fromSettings === true;
-            if (fromSettings) {
-              navigation.goBack();
-            } else {
-              handleCustomerInfo(existingInfo);
-            }
-          }}]
-        );
+        // CRITICAL: Verify the subscription belongs to THIS user, not a different account on the same device
+        const originalOwner = existingInfo.originalAppUserId;
+        const currentUserId = user?.id;
+        const isOwnSubscription = !currentUserId || originalOwner === currentUserId || 
+          originalOwner?.startsWith('$RCAnonymousID:');
+        
+        console.log('[REVENUECAT] Subscription detected - originalOwner:', originalOwner, 'currentUser:', currentUserId, 'isOwn:', isOwnSubscription);
+        
+        if (isOwnSubscription) {
+          // Subscription belongs to this user - grant access
+          console.log('[REVENUECAT] User owns this subscription - granting access');
+          Alert.alert(
+            'Already Subscribed',
+            'You already have an active Pro subscription. Enjoy your premium features!',
+            [{ text: 'OK', onPress: () => {
+              const fromSettings = route?.params?.fromSettings === true;
+              if (fromSettings) {
+                navigation.goBack();
+              } else {
+                handleCustomerInfo(existingInfo);
+              }
+            }}]
+          );
+        } else {
+          // Subscription belongs to ANOTHER user on this device
+          console.log('[REVENUECAT] Subscription belongs to different user:', originalOwner);
+          Alert.alert(
+            'Subscription Found on Another Account',
+            'A Pro subscription is active on a different account on this device. Please log in to that account to use Pro features, or purchase a new subscription for this account.',
+            [
+              { text: 'OK', style: 'cancel' },
+            ]
+          );
+        }
         setIsPurchasing(false);
         return;
       }
@@ -426,23 +464,20 @@ export default function PaywallScreen({ navigation, route }: any) {
       const isAlreadySubscribed = errorMsg.includes('already') || errorMsg.includes('subscribed') || error.code === 'PRODUCT_ALREADY_PURCHASED_ERROR';
       
       if (isAlreadySubscribed) {
+        // CRITICAL: Do NOT grant Pro access here - this receipt likely belongs to another account
         Alert.alert(
-          'Sandbox Cache Issue',
-          'Apple\'s StoreKit has a cached subscription receipt on this device.\n\n✅ Server Status: No active subscription\n❌ Device Cache: Old receipt blocking purchase\n\n🔧 SOLUTIONS:\n\n1. App Store Connect → Sandbox → Clear Purchase History (RECOMMENDED)\n\n2. Device Settings → App Store → Sign out → Sign in with different sandbox account\n\n3. Use a different sandbox tester account\n\nThis is an Apple sandbox limitation, not an app bug. Production works correctly.',
+          'Subscription Already Exists',
+          'A subscription was previously purchased on this device with a different account. To use Pro features, please log in to the account that originally purchased the subscription.\n\nIf you believe this is an error, try restoring purchases or contact support.',
           [
-            { text: 'Try Force Refresh', onPress: async () => {
+            { text: 'Try Restore', onPress: async () => {
               try {
-                console.log('[REVENUECAT] Force invalidating cache and retrying...');
+                console.log('[REVENUECAT] Attempting restore to verify ownership...');
                 await Purchases.invalidateCustomerInfoCache();
                 await new Promise(resolve => setTimeout(resolve, 1000));
-                handleStartJourney();
+                handleRestorePurchases();
               } catch (error) {
-                console.error('[REVENUECAT] Force refresh failed:', error);
+                console.error('[REVENUECAT] Restore failed:', error);
               }
-            }},
-            { text: 'Continue to App', onPress: async () => {
-              await saveUsernameToProfile();
-              navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
             }},
             { text: 'OK', style: 'cancel' }
           ]
@@ -513,12 +548,12 @@ export default function PaywallScreen({ navigation, route }: any) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent={false} />
       {isDarkTheme(theme.name) ? (
         <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
       ) : (
         <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
       )}
-      <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} />
 
       {/* Back Button - Circular style matching other onboarding pages */}
       <TouchableOpacity 
@@ -688,23 +723,61 @@ export default function PaywallScreen({ navigation, route }: any) {
           </View>
         </View>
 
-        {/* Testimonial */}
+        {/* Testimonials Carousel */}
         <View style={styles.testimonialContainer}>
-          <View style={[
-            styles.testimonialCard,
-            isDarkTheme(theme.name) 
-              ? styles.testimonialCardDark 
-              : styles.testimonialCardLight
-          ]}>
-            <View style={styles.starsRow}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Ionicons key={star} name="star" size={16} color="#fbbf24" />
-              ))}
-            </View>
-            <Text style={[styles.testimonialText, !isDarkTheme(theme.name) && styles.testimonialTextLight]}>
-              "Insight has completely changed how I understand my emotions. The AI insights are incredibly accurate and helpful."
-            </Text>
-            <Text style={[styles.testimonialAuthor, !isDarkTheme(theme.name) && styles.testimonialAuthorLight]}>— Jessica M.</Text>
+          <FlatList
+            data={[
+              { id: '1', text: "Insight has completely changed how I understand my emotions. The AI insights are incredibly accurate and helpful.", author: "Jessica M." },
+              { id: '2', text: "The journaling prompts are thoughtful and the pattern tracking helps me see my growth over time.", author: "Michael R." },
+              { id: '3', text: "Best mental health app I've used. The AI feels like talking to a therapist who really gets me.", author: "Sarah K." },
+              { id: '4', text: "I love how it connects my daily habits to my mood patterns. Eye-opening insights every week.", author: "David L." },
+              { id: '5', text: "The playbook feature with personalized strategies has been a game-changer for my anxiety.", author: "Emma T." },
+            ]}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            snapToInterval={SCREEN_WIDTH}
+            decelerationRate="fast"
+            onScroll={(e) => {
+              const index = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+              setActiveReviewIndex(index);
+            }}
+            scrollEventThrottle={16}
+            renderItem={({ item }) => (
+              <View style={styles.testimonialSlide}>
+                <View style={[
+                  styles.testimonialCard, 
+                  isDarkTheme(theme.name) 
+                    ? styles.testimonialCardDark 
+                    : styles.testimonialCardLight
+                ]}>
+                  <View style={styles.starsRow}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Ionicons key={star} name="star" size={16} color="#fbbf24" />
+                    ))}
+                  </View>
+                  <Text style={[styles.testimonialText, !isDarkTheme(theme.name) && styles.testimonialTextLight]}>
+                    "{item.text}"
+                  </Text>
+                  <Text style={[styles.testimonialAuthor, !isDarkTheme(theme.name) && styles.testimonialAuthorLight]}>— {item.author}</Text>
+                </View>
+              </View>
+            )}
+            keyExtractor={(item) => item.id}
+          />
+          {/* Review Pagination Dots */}
+          <View style={styles.reviewDotsContainer}>
+            {[0, 1, 2, 3, 4].map((index) => (
+              <View
+                key={index}
+                style={[
+                  styles.reviewDot,
+                  activeReviewIndex === index && styles.reviewDotActive,
+                  !isDarkTheme(theme.name) && styles.reviewDotLight,
+                  !isDarkTheme(theme.name) && activeReviewIndex === index && styles.reviewDotActiveLight,
+                ]}
+              />
+            ))}
           </View>
         </View>
       </ScrollView>
@@ -829,8 +902,8 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   carouselImage: {
-    width: isTablet ? SCREEN_WIDTH * 0.45 : SCREEN_WIDTH * 0.72,
-    height: isTablet ? SCREEN_WIDTH * 0.45 * 2.1 : SCREEN_WIDTH * 0.72 * 2.1,
+    width: isTablet ? SCREEN_WIDTH * 0.50 : SCREEN_WIDTH * 0.85,
+    height: isTablet ? SCREEN_WIDTH * 0.50 * 2.1 : SCREEN_WIDTH * 0.85 * 2.1,
     borderRadius: 28,
   },
   phoneFade: {
@@ -916,7 +989,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -10,
     alignSelf: 'center',
-    backgroundColor: '#34d399',
+    backgroundColor: '#8b5cf6',
     borderRadius: 999,
     paddingVertical: 3,
     paddingHorizontal: 10,
@@ -978,13 +1051,19 @@ const styles = StyleSheet.create({
   },
   // Testimonial
   testimonialContainer: {
-    paddingHorizontal: isTablet ? 80 : 24,
     marginTop: 24,
     marginBottom: 16,
   },
+  testimonialSlide: {
+    width: SCREEN_WIDTH,
+    paddingHorizontal: isTablet ? 80 : 24,
+    alignItems: 'center',
+  },
   testimonialCard: {
-    borderRadius: 16,
+    width: SCREEN_WIDTH - (isTablet ? 160 : 48),
     padding: 20,
+    borderRadius: 16,
+    alignItems: 'center',
     borderWidth: 1,
   },
   testimonialCardDark: {
@@ -1020,6 +1099,28 @@ const styles = StyleSheet.create({
   },
   testimonialAuthorLight: {
     color: 'rgba(0, 0, 0, 0.5)',
+  },
+  reviewDotsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 16,
+  },
+  reviewDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  reviewDotActive: {
+    backgroundColor: '#8b5cf6',
+    width: 20,
+  },
+  reviewDotLight: {
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+  },
+  reviewDotActiveLight: {
+    backgroundColor: '#8b5cf6',
   },
   // Sticky footer
   stickyFooter: {

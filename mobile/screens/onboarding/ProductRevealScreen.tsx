@@ -15,8 +15,8 @@ export default function ProductRevealScreen({ navigation }: any) {
 
     return (
         <View style={styles.container}>
+            <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={false} />
             <SunoGradient />
-            <StatusBar barStyle="dark-content" />
 
             <View style={styles.phoneSection}>
                 <Image
@@ -85,11 +85,22 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
+        width: '100%',
     },
-    phoneMockup: {
+    riveContainer: {
         width: isTablet ? width * 0.65 : width * 0.85,
         height: isTablet ? height * 0.62 : height * 0.58,
         maxHeight: isTablet ? 900 : 600,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    riveAnimation: {
+        width: '100%',
+        height: '100%',
+    },
+    phoneMockup: {
+        width: '100%',
+        height: '100%',
     },
     taglineContainer: {
         alignItems: 'center',

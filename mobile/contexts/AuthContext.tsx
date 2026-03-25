@@ -63,10 +63,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       let tier = 'free';
       
       console.log('[SUBSCRIPTION SYNC] 🔍 Checking entitlements:', customerInfo.entitlements.active);
+      console.log('[SUBSCRIPTION SYNC] 🔍 Original App User ID:', customerInfo.originalAppUserId);
+      console.log('[SUBSCRIPTION SYNC] 🔍 Current Supabase User ID:', userId);
       
-      if (customerInfo.entitlements.active['InsightAI Pro'] || customerInfo.entitlements.active['pro'] || Object.keys(customerInfo.entitlements.active).length > 0) {
-        tier = 'pro';
-        console.log('[SUBSCRIPTION SYNC] ✨ Pro entitlement detected');
+      const hasActiveEntitlement = customerInfo.entitlements.active['InsightAI Pro'] || 
+        customerInfo.entitlements.active['pro'] || 
+        Object.keys(customerInfo.entitlements.active).length > 0;
+      
+      if (hasActiveEntitlement) {
+        // CRITICAL: Verify the subscription belongs to THIS user
+        // RevenueCat's originalAppUserId tells us who originally purchased
+        // If it's an anonymous ID ($RCAnonymousID:...) or doesn't match, the receipt
+        // may be from a different account on the same device
+        const originalOwner = customerInfo.originalAppUserId;
+        const isOwnSubscription = originalOwner === userId || 
+          originalOwner?.startsWith('$RCAnonymousID:');
+        
+        if (isOwnSubscription) {
+          tier = 'pro';
+          console.log('[SUBSCRIPTION SYNC] ✨ Pro entitlement detected - owned by this user');
+        } else {
+          console.log('[SUBSCRIPTION SYNC] ⚠️ Pro entitlement detected but belongs to different user:', originalOwner);
+          console.log('[SUBSCRIPTION SYNC] ⚠️ NOT granting Pro to current user:', userId);
+        }
       }
       
       console.log('[SUBSCRIPTION SYNC] 📤 Updating Supabase with tier:', tier);
@@ -164,8 +183,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               .eq('user_id', session.user.id)
               .maybeSingle();
             
-            if (profile?.profile_picture_url) {
-              await AsyncStorage.setItem('CACHED_PROFILE_PICTURE', profile.profile_picture_url);
+            if (
+              profile?.profile_picture_url &&
+              (profile.profile_picture_url.startsWith('http://') ||
+                profile.profile_picture_url.startsWith('https://'))
+            ) {
+              const u = profile.profile_picture_url;
+              await AsyncStorage.setItem('CACHED_PROFILE_PICTURE', u);
+              await AsyncStorage.setItem(`CACHED_PROFILE_PICTURE_${session.user.id}`, u);
             }
             if (profile?.username) {
               await AsyncStorage.setItem('CACHED_USERNAME', profile.username);

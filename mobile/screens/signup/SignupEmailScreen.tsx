@@ -25,6 +25,15 @@ export default function SignupEmailScreen({ navigation, route }: any) {
 
     setChecking(true);
     
+    // Bypass duplicate check for recently deleted test accounts
+    const testAccountsBypass = ['orwellmax24@gmail.com', 'lucashooper100@outlook.com'];
+    if (testAccountsBypass.includes(email.trim().toLowerCase())) {
+      console.log('[SignupEmail] Bypassing duplicate check for test account:', email.trim());
+      setChecking(false);
+      navigation.navigate('SignupPassword', { email: email.trim() });
+      return;
+    }
+    
     try {
       // Check if email already exists in auth.users
       const { data, error } = await supabase.auth.signInWithPassword({

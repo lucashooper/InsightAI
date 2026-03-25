@@ -137,6 +137,145 @@ const STEPS: Step[] = [
         max: 10,
         defaultValue: 7,
     },
+    {
+        id: 'stressResponse',
+        type: 'question',
+        title: "When you're under pressure, what do you tend to do?",
+        options: [
+            { label: 'Ruminate or spiral', value: 'ruminate', icon: 'sync-outline' },
+            { label: 'Blame myself', value: 'self_blame', icon: 'person-outline' },
+            { label: 'Fixate on getting it perfect', value: 'fixate', icon: 'create-outline' },
+            { label: 'Pause and regroup', value: 'step_back', icon: 'leaf-outline' },
+        ]
+    },
+    {
+        id: 'selfTalk',
+        type: 'question',
+        title: "How would you describe your inner voice?",
+        options: [
+            { label: 'Often harsh or judging', value: 'critical', icon: 'thunderstorm-outline' },
+            { label: 'Depends on the day', value: 'mixed', icon: 'cloud-outline' },
+            { label: 'Mostly supportive', value: 'supportive', icon: 'heart-outline' },
+        ]
+    },
+    {
+        id: 'copingStyle',
+        type: 'question',
+        title: "When emotions feel overwhelming, what helps you most?",
+        options: [
+            { label: 'Talking it through', value: 'social', icon: 'chatbubbles-outline' },
+            { label: 'Moving my body', value: 'physical', icon: 'fitness-outline' },
+            { label: 'Journaling or creative work', value: 'expressive', icon: 'brush-outline' },
+            { label: 'Time alone to recharge', value: 'solitude', icon: 'moon-outline' },
+        ]
+    },
+    {
+        id: 'changeResponse',
+        type: 'question',
+        title: "How do you typically respond to big changes?",
+        options: [
+            { label: 'Resist at first, then adapt', value: 'resistant', icon: 'shield-outline' },
+            { label: 'Feel anxious but push through', value: 'anxious_persevere', icon: 'trending-up-outline' },
+            { label: 'Embrace the challenge', value: 'embrace', icon: 'rocket-outline' },
+            { label: 'Need lots of support', value: 'support_seeking', icon: 'people-outline' },
+        ]
+    },
+    {
+        id: 'motivationDriver',
+        type: 'question',
+        title: "What drives you to keep going when things get hard?",
+        options: [
+            { label: 'Fear of failure or letting others down', value: 'fear_based', icon: 'alert-circle-outline' },
+            { label: 'External rewards or recognition', value: 'external', icon: 'trophy-outline' },
+            { label: 'Internal values and purpose', value: 'values_driven', icon: 'compass-outline' },
+            { label: 'Love for what I do', value: 'passion', icon: 'flame-outline' },
+        ]
+    },
+    // Optional deeper questions start here
+    {
+        id: 'relationshipPatterns',
+        type: 'question',
+        title: "In close relationships, what pattern shows up for you?",
+        options: [
+            { label: 'I need a lot of reassurance', value: 'anxious_attachment', icon: 'heart-dislike-outline' },
+            { label: 'I pull away when things get intense', value: 'avoidant', icon: 'shield-outline' },
+            { label: 'I alternate between pushing away and clinging', value: 'fearful_avoidant', icon: 'swap-horizontal-outline' },
+            { label: 'I feel secure and comfortable', value: 'secure', icon: 'heart-circle-outline' },
+        ],
+        skippable: true,
+    },
+    {
+        id: 'conflictStyle',
+        type: 'question',
+        title: "When there's tension or conflict, you usually...",
+        options: [
+            { label: 'Avoid it at all costs', value: 'avoid', icon: 'close-circle-outline' },
+            { label: 'Try to smooth it over or please', value: 'accommodate', icon: 'happy-outline' },
+            { label: 'Push to win or prove my point', value: 'compete', icon: 'medal-outline' },
+            { label: 'Address it calmly and directly', value: 'collaborate', icon: 'chatbubbles-outline' },
+        ],
+        skippable: true,
+    },
+    {
+        id: 'restStyle',
+        type: 'question',
+        title: "What does rest look like for you?",
+        options: [
+            { label: 'I struggle to rest—I feel guilty', value: 'guilt_rest', icon: 'time-outline' },
+            { label: 'I need total solitude', value: 'solitude_rest', icon: 'moon-outline' },
+            { label: 'I recharge through social connection', value: 'social_rest', icon: 'people-outline' },
+            { label: 'I rest by doing calming activities', value: 'active_rest', icon: 'leaf-outline' },
+        ],
+        skippable: true,
+    },
+    {
+        id: 'identitySource',
+        type: 'question',
+        title: "Where do you most derive your sense of identity?",
+        options: [
+            { label: 'My achievements and success', value: 'achievement', icon: 'trophy-outline' },
+            { label: 'My relationships and connections', value: 'relationships', icon: 'people-outline' },
+            { label: 'My values and beliefs', value: 'values', icon: 'book-outline' },
+            { label: 'My creativity or self-expression', value: 'expression', icon: 'brush-outline' },
+        ],
+        skippable: true,
+    },
+    {
+        id: 'failureResponse',
+        type: 'question',
+        title: "When you fail or make a mistake, what's your first reaction?",
+        options: [
+            { label: "I feel like I'm not good enough", value: 'shame', icon: 'sad-outline' },
+            { label: 'I get defensive or blame external factors', value: 'defensive', icon: 'shield-checkmark-outline' },
+            { label: 'I analyze what went wrong', value: 'analytical', icon: 'search-outline' },
+            { label: 'I see it as a learning opportunity', value: 'growth', icon: 'trending-up-outline' },
+        ],
+        skippable: true,
+    },
+    {
+        id: 'emotionalAwareness',
+        type: 'question',
+        title: "How aware are you of your emotions in the moment?",
+        options: [
+            { label: "I often don't notice until later", value: 'low_awareness', icon: 'eye-off-outline' },
+            { label: "I feel them but can't always name them", value: 'moderate_awareness', icon: 'help-circle-outline' },
+            { label: 'I can identify most emotions as they happen', value: 'high_awareness', icon: 'eye-outline' },
+            { label: "I'm very attuned to subtle shifts", value: 'very_high_awareness', icon: 'glasses-outline' },
+        ],
+        skippable: true,
+    },
+    {
+        id: 'decisionMaking',
+        type: 'question',
+        title: "When making important decisions, you tend to...",
+        options: [
+            { label: 'Overthink and get stuck in analysis paralysis', value: 'overthink', icon: 'infinite-outline' },
+            { label: 'Go with my gut instinct', value: 'intuitive', icon: 'flash-outline' },
+            { label: 'Seek lots of advice from others', value: 'external_validation', icon: 'people-circle-outline' },
+            { label: 'Weigh pros/cons systematically', value: 'systematic', icon: 'list-outline' },
+        ],
+        skippable: true,
+    },
     // 7. Identity
     {
         id: 'genderIdentity',
@@ -156,8 +295,9 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
     const { userName, setUserName, setOnboardingAnswers } = useOnboarding();
     const { theme } = useTheme();
     const startIndex = route?.params?.startIndex ?? 0;
+    const incomingAnswers = route?.params?.answers || {};
     const [currentIndex, setCurrentIndex] = useState(startIndex);
-    const [answers, setAnswers] = useState<Record<string, string>>({});
+    const [answers, setAnswers] = useState<Record<string, string>>(incomingAnswers);
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
     const [textInputValue, setTextInputValue] = useState('');
     const [wellbeingValue, setWellbeingValue] = useState(7);
@@ -250,8 +390,8 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
         contentFadeAnim.setValue(0);
         Animated.timing(contentFadeAnim, {
             toValue: 1,
-            duration: 250,
-            easing: Easing.out(Easing.ease),
+            duration: 600,
+            easing: Easing.out(Easing.quad),
             useNativeDriver: true,
         }).start(() => {
             isTransitioning.current = false;
@@ -316,11 +456,17 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
             easing: Easing.in(Easing.ease),
             useNativeDriver: true,
         }).start(() => {
-            if (currentIndex < STEPS.length - 1) {
+            // After wellbeing question (index 5), go to PersonalityQuizIntro
+            if (currentIndex === 5) {
+                isTransitioning.current = false;
+                const currentAnswers = value ? { ...answers, [currentStep.id]: value } : answers;
+                console.log('[OnboardingQuestion] After wellbeing, navigating to PersonalityQuizIntro');
+                navigation.navigate('PersonalityQuizIntro', { answers: currentAnswers, returnIndex: 6 });
+            } else if (currentIndex < STEPS.length - 1) {
                 setCurrentIndex(currentIndex + 1);
                 setSelectedOption(null);
             } else {
-                // Finished - go to analyzing screen
+                // Finished all questions - go to analyzing
                 isTransitioning.current = false;
                 const finalAnswers = value ? { ...answers, [currentStep.id]: value } : answers;
                 console.log('[OnboardingQuestion] Navigating to Analyzing with answers:', finalAnswers);
@@ -352,7 +498,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} />
+            <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent={true} />
 
             {/* Use solid background for dark themes, gradient for others */}
             {isDarkTheme(theme.name) ? (
