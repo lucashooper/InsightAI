@@ -17,9 +17,9 @@ import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 const phoneImages = [
-  require('../../public/phone-images/Insight-Main-Page-Phone.png'),
+  require('../../public/phone-images/Insight-Main-Page-Phone copy.png'),
   require('../../public/phone-images/Insight-Dashboard-Page-Phone.png'),
-  require('../../public/phone-images/Insight-Journal-Page-Phone.png'),
+  require('../../public/phone-images/Insight-Journal-Page-Phone copy.png'),
   require('../../public/phone-images/Insight-Insights-Page-Phone-Real.png'),
   require('../../public/phone-images/Insight-Playbook-Page-Phone.png'),
 ];

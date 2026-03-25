@@ -12,17 +12,17 @@ const Footer: React.FC = () => {
               <span className="footer-v2-logo-text">Insight</span>
             </div>
             <div className="footer-v2-downloads">
-              <div className="footer-badge-wrapper">
-                <img src="/download-with-app-store-button.webp" alt="Download on the App Store" className="footer-badge" />
-                <span className="footer-coming-soon-text">Coming Soon</span>
+              <a href="https://apps.apple.com/us/app/insight-understand-yourself/id6755717396" target="_blank" rel="noopener noreferrer" className="download-btn-custom">
+                <img src="/White-Apple-Logo.png" alt="" className="download-btn-icon" />
+                <span className="download-btn-text">iPhone app</span>
+              </a>
+              <div className="download-btn-custom download-btn-disabled">
+                <img src="/Google-Play-Icon.png" alt="" className="download-btn-icon" />
+                <span className="download-btn-text">Android app</span>
               </div>
-              <div className="footer-badge-wrapper">
-                <img src="/google-play-button.webp" alt="Get it on Google Play" className="footer-badge" />
-                <span className="footer-coming-soon-text">Coming Soon</span>
-              </div>
-              <a href="/login" className="footer-badge-wrapper footer-badge-web">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                <span>Web App</span>
+              <a href="/login" className="download-btn-custom">
+                <img src="/webapp-icons.svg" alt="" className="download-btn-icon" />
+                <span className="download-btn-text">Web app</span>
               </a>
             </div>
           </div>
@@ -39,6 +39,13 @@ const Footer: React.FC = () => {
             <h4 className="footer-v2-column-title">Company</h4>
             <a href="/support" className="footer-v2-link">Support</a>
             <a href="mailto:support@myinsightai.app?subject=Insight%20Support%20Request" className="footer-v2-link">Contact</a>
+          </div>
+
+          {/* Socials */}
+          <div className="footer-v2-column">
+            <h4 className="footer-v2-column-title">Socials</h4>
+            <a href="https://www.instagram.com/insightaiapp/" target="_blank" rel="noopener noreferrer" className="footer-v2-link">Instagram</a>
+            <a href="https://x.com/insightaiapp" target="_blank" rel="noopener noreferrer" className="footer-v2-link">X (Twitter)</a>
           </div>
         </div>
 

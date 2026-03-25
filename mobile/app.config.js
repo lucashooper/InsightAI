@@ -2,7 +2,7 @@ export default {
   expo: {
     name: "Insight",
     slug: "insight-app",
-    version: "1.0.0",
+    version: "1.0.2",
     orientation: "portrait",
     icon: "./assets/InsightAI-New-Logo.png",
     userInterfaceStyle: "light",

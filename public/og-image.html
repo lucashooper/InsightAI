@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1200px;
+  height: 630px;
+  background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #0a0a1a 100%);
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+.content {
+  display: flex;
+  align-items: center;
+  gap: 80px;
+  padding: 0 80px;
+  width: 100%;
+}
+.text {
+  flex: 1;
+}
+h1 {
+  font-size: 52px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin-bottom: 20px;
+}
+h1 span { color: #a78bfa; }
+p {
+  font-size: 20px;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.5;
+  max-width: 440px;
+}
+.phones {
+  display: flex;
+  gap: -20px;
+  flex-shrink: 0;
+}
+.phones img {
+  width: 220px;
+  height: auto;
+  border-radius: 24px;
+  filter: drop-shadow(0 20px 40px rgba(0,0,0,0.5));
+}
+.phones img:last-child {
+  margin-left: -40px;
+  margin-top: 40px;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.logo img { width: 44px; height: 44px; }
+.logo span { font-size: 24px; font-weight: 700; color: #fff; }
+</style>
+</head>
+<body>
+<div class="content">
+  <div class="text">
+    <div class="logo">
+      <img src="/Insight-Logo-nobg.webp" />
+      <span>Insight</span>
+    </div>
+    <h1>Understand yourself<br/>with <span>Insight</span>.</h1>
+    <p>AI-powered journaling that helps you discover patterns, track wellbeing, and build better habits.</p>
+  </div>
+  <div class="phones">
+    <img src="/phone-images/Insight-Main-Page-Phone.png" />
+    <img src="/phone-images/Insight-Dashboard-Page-Phone.png" />
+  </div>
+</div>
+</body>
+</html>
