@@ -8,6 +8,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import { analytics } from '../services/analytics';
 
 // Conditionally import Google Sign-In to avoid Expo Go errors
 let GoogleSignin: any = null;
@@ -213,6 +214,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Initialize encryption key on successful login
     if (!error && data.user) {
+      // Track sign in
+      analytics.identify(data.user.id, { email: data.user.email });
+      analytics.trackSignIn('email');
+      
       try {
         await EncryptionService.initializeKey(password, data.user.id);
         console.log('[Auth] Encryption key initialized on login');
@@ -268,6 +273,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Initialize encryption key on successful signup
     if (data.user) {
+      // Track sign up
+      analytics.identify(data.user.id, { email: data.user.email, username });
+      analytics.trackSignUp('email');
+      
       try {
         await EncryptionService.initializeKey(password, data.user.id);
         console.log('[Auth] Encryption key initialized on signup');
@@ -348,6 +357,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
           
           console.log('[AUTH] Google Sign-In successful, user:', data.user?.email);
+          
+          // Track Google sign in
+          if (data?.user) {
+            analytics.identify(data.user.id, { email: data.user.email });
+            analytics.trackSignIn('google');
+          }
           
           // Handle Google Sign-In profile setup (similar to Apple)
           if (data?.user) {
@@ -453,6 +468,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (!error && data?.user) {
+        // Track Apple sign in
+        analytics.identify(data.user.id, { email: data.user.email });
+        analytics.trackSignIn('apple');
+        
         // APPLE COMPLIANCE: Skip email/name input screens for Apple Sign-In
         // Apple provides name/email via Authentication Services framework
         // We must NOT ask users for this information again
@@ -532,6 +551,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    // Track sign out
+    analytics.trackSignOut();
+    analytics.reset();
+    
     // Clear encryption key from keychain on logout
     try {
       await EncryptionService.clearKey();
@@ -559,6 +582,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Clear old non-user-specific cache keys to prevent cross-user contamination
       await AsyncStorage.removeItem('CACHED_PROFILE_PICTURE');
       await AsyncStorage.removeItem('CACHED_USERNAME');
+      
+      // Clear user-specific cache keys if we have the user ID
+      if (user?.id) {
+        await AsyncStorage.removeItem(`CACHED_PROFILE_PICTURE_${user.id}`);
+        await AsyncStorage.removeItem(`CACHED_USERNAME_${user.id}`);
+      }
+      
       console.log('[Auth] Onboarding flags and cache cleared');
     } catch (error) {
       console.error('[Auth] Failed to clear onboarding flags:', error);

@@ -6,6 +6,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
+import { analytics } from '../../services/analytics';
+import { useOnboarding } from '../../contexts/OnboardingContext';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
@@ -14,6 +16,7 @@ const { width } = Dimensions.get('window');
 export default function OnboardingSummaryScreen({ navigation, route }: any) {
     const { answers } = route.params || {};
     const { theme } = useTheme();
+    const { userName } = useOnboarding();
     const fadeAnim = new Animated.Value(0);
     const scaleAnim = new Animated.Value(0.9);
     const confettiRef = useRef<any>(null);
@@ -37,10 +40,13 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
         setTimeout(() => {
             confettiRef.current?.start();
         }, 400);
+
+        analytics.trackOnboardingScreen('onboarding_summary', 'viewed', userName || undefined);
     }, []);
 
     const handleFinish = async () => {
         try {
+            analytics.trackOnboardingScreen('onboarding_summary', 'completed', userName || undefined);
             // Navigate to interactive showcase screen
             navigation.navigate('InteractiveShowcase');
         } catch (e) {

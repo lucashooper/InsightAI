@@ -7,6 +7,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { isTablet, sf } from '../../utils/responsive';
+import { analytics } from '../../services/analytics';
+import { useOnboarding } from '../../contexts/OnboardingContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -37,6 +39,7 @@ const getLocalAIResponse = (entry: string): string => {
 
 export default function InteractiveShowcaseScreen({ navigation }: Props) {
     const { theme } = useTheme();
+    const { userName } = useOnboarding();
     const [entryText, setEntryText] = useState('');
     const [showPromptPicker, setShowPromptPicker] = useState(true);
     const [showAIBubble, setShowAIBubble] = useState(false);
@@ -60,6 +63,7 @@ export default function InteractiveShowcaseScreen({ navigation }: Props) {
     const cardBorder = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
 
     useEffect(() => {
+        analytics.trackOnboardingScreen('interactive_showcase', 'viewed', userName || undefined);
         Animated.timing(containerFade, {
             toValue: 1,
             duration: 600,

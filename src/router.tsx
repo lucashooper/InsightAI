@@ -15,6 +15,8 @@ import LoginPage from './pages/auth/LoginPage';
 
 // App pages (authenticated)
 import AppHome from './pages/app/AppHome';
+import AdminDashboard from './pages/app/AdminDashboard';
+import AnalyticsDashboard from './pages/app/AnalyticsDashboard';
 
 export const router = createBrowserRouter([
   // Marketing routes
@@ -63,6 +65,14 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <AppHome />,
+      },
+      {
+        path: 'admin',
+        element: <AdminDashboard />,
+      },
+      {
+        path: 'admin/analytics',
+        element: <AnalyticsDashboard />,
       },
       // Add more app routes here as needed
       // { path: 'playbook', element: <PlaybookPage /> },

@@ -8,6 +8,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { isTablet } from '../../utils/responsive';
+import { analytics } from '../../services/analytics';
+import { useOnboarding } from '../../contexts/OnboardingContext';
 
 const { width } = Dimensions.get('window');
 
@@ -27,6 +29,7 @@ const CHECKLIST_ITEMS = [
 
 export default function AnalyzingScreen({ navigation, route }: Props) {
     const { theme } = useTheme();
+    const { userName } = useOnboarding();
     const answers = route?.params?.answers ?? {};
     const skipPersonality = route?.params?.skipPersonality ?? false;
     const [percentage, setPercentage] = useState(0);
@@ -40,6 +43,7 @@ export default function AnalyzingScreen({ navigation, route }: Props) {
     const activeItemRef = useRef(0);
 
     useEffect(() => {
+        analytics.trackOnboardingScreen('analyzing', 'viewed', userName || undefined);
         // Always run animation on mount - simpler and more reliable
         const listenerId = progressAnim.addListener(({ value }) => {
             const pct = Math.round(value);
@@ -181,6 +185,7 @@ export default function AnalyzingScreen({ navigation, route }: Props) {
                     disabled={!isComplete}
                     onPress={() => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        analytics.trackOnboardingScreen('analyzing', 'completed', userName || undefined);
                         const answers = route?.params?.answers || {};
                         const skipPersonality = route?.params?.skipPersonality || false;
                         

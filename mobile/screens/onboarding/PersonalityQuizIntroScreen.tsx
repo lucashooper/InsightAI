@@ -1,13 +1,14 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Animated, Dimensions, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { isTablet, sf } from '../../utils/responsive';
 import Svg, { Circle } from 'react-native-svg';
+import { analytics } from '../../services/analytics';
+import { useOnboarding } from '../../contexts/OnboardingContext';
 
 const bookIcon = require('../../public/Book-Icon-Insight.webp');
 
@@ -93,6 +94,7 @@ const DecorativeBlossoms = ({ dark }: { dark: boolean }) => {
 
 export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
   const { theme } = useTheme();
+  const { userName } = useOnboarding();
   const dark = isDarkTheme(theme.name);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
@@ -100,6 +102,7 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
   const returnIndex = route?.params?.returnIndex || 0;
 
   useEffect(() => {
+    analytics.trackOnboardingScreen('personality_quiz_intro', 'viewed', userName || undefined);
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -117,12 +120,14 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
 
   const handleContinue = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    analytics.trackOnboardingScreen('personality_quiz_intro', 'completed', userName || undefined);
     // Continue to psychology questions at the returnIndex
     navigation.navigate('OnboardingQuestion', { answers, startIndex: returnIndex });
   };
 
   const handleSkip = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    analytics.trackOnboardingScreen('personality_quiz_intro', 'skipped', userName || undefined);
     // Skip psychology questions, go straight to analysis without personality result
     navigation.navigate('Analyzing', { answers, skipPersonality: true });
   };
@@ -155,7 +160,7 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
       <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
         {/* Icon - No container, just the book icon */}
         <View style={styles.iconContainer}>
-          <Image source={bookIcon} style={styles.bookIconLarge} contentFit="contain" />
+          <Image source={bookIcon} style={styles.bookIconLarge} resizeMode="contain" />
         </View>
 
         {/* Title */}

@@ -2,7 +2,7 @@ export default {
   expo: {
     name: "Insight",
     slug: "insight-app",
-    version: "1.0.2",
+    version: "1.0.3",
     orientation: "portrait",
     icon: "./assets/InsightAI-New-Logo.png",
     userInterfaceStyle: "light",
@@ -46,14 +46,6 @@ export default {
     },
     owner: "crupid2s-organization",
     plugins: [
-      [
-        "expo-splash-screen",
-        {
-          "backgroundColor": "#0a0a0f",
-          "image": "./assets/splash-icon.png",
-          "imageWidth": 200
-        }
-      ],
       "expo-speech-recognition",
       "expo-secure-store",
       [

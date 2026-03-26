@@ -290,10 +290,10 @@ function RadarChart({ dimensions, dark }: { dimensions: { label: string; score: 
             <SvgText
               key={`label-${i}-${lineIdx}`}
               x={labelPoint.x}
-              y={labelPoint.y + (lineIdx * 13)}
+              y={labelPoint.y + (lineIdx * 16)}
               textAnchor={anchor}
               alignmentBaseline="middle"
-              fontSize={9}
+              fontSize={12}
               fontWeight="500"
               fill={labelColor}
             >

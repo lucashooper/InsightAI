@@ -40,6 +40,7 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
       // Post-purchase: mark onboarding complete so navigator routes to MainTabs
       await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
       await AsyncStorage.removeItem('NEEDS_EMAIL_SIGNUP');
+      await AsyncStorage.removeItem('REVENUECAT_ANONYMOUS_ID');
     } else {
       // Normal onboarding: set resume flag so navigator continues at ChooseVibe
       await AsyncStorage.setItem('ONBOARDING_RESUME_SCREEN', 'ChooseVibe');
@@ -65,6 +66,7 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
       // Post-purchase: mark onboarding complete so navigator routes to MainTabs
       await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
       await AsyncStorage.removeItem('NEEDS_EMAIL_SIGNUP');
+      await AsyncStorage.removeItem('REVENUECAT_ANONYMOUS_ID');
     } else {
       // Normal onboarding: set resume flag so navigator continues at ChooseVibe
       await AsyncStorage.setItem('ONBOARDING_RESUME_SCREEN', 'ChooseVibe');

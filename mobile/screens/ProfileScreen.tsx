@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking } from 'react-native';
-import { Image } from 'expo-image';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,6 +18,10 @@ function resolveProfilePictureUrl(raw: string | null | undefined): string | null
   if (!t) return null;
   if (t.startsWith('http://') || t.startsWith('https://')) return t;
   if (t.startsWith('/')) {
+    // Ignore desktop default profile pictures (Ocean-Swirl, Sunset-Swirl, etc.)
+    const desktopDefaults = ['Ocean-Swirl', 'Sunset-Swirl', 'Vibrant-Swirl', 'Midnight-Swirl', 'Forest-Swirl'];
+    if (desktopDefaults.some(def => t.includes(def))) return null;
+    
     const base =
       Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL ||
       process.env.EXPO_PUBLIC_SUPABASE_URL ||
@@ -305,8 +308,7 @@ export default function ProfileScreen({ navigation }: any) {
                 key={userProfile.profile_picture_url}
                 source={{ uri: userProfile.profile_picture_url }}
                 style={styles.profilePicture}
-                contentFit="cover"
-                transition={200}
+                resizeMode="cover"
                 onLoad={() => {
                   setImageLoadError(false);
                 }}

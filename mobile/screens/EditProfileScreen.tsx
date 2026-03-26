@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
-import { Image } from 'expo-image';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -338,8 +337,7 @@ export default function EditProfileScreen({ navigation }: any) {
               <Image
                 source={{ uri: profilePicture }}
                 style={styles.profileImage}
-                contentFit="cover"
-                transition={200}
+                resizeMode="cover"
               />
             ) : (
               <View style={styles.profilePicturePlaceholder}>

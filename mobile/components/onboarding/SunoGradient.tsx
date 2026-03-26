@@ -29,12 +29,18 @@ export default function SunoGradient({ themeColors, themeBlobColors }: SunoGradi
     blue: '#bfdbfe',
   };
 
+  // Dynamically generate evenly-spaced locations to always match the colors array length
+  const rawLocations = baseColors.map((_, i) =>
+    baseColors.length === 1 ? 0 : i / (baseColors.length - 1)
+  );
+  const locations = rawLocations as unknown as readonly [number, number, ...number[]];
+
   return (
     <View style={styles.container}>
       {/* Base warm cream gradient - enhanced for more vibrant pastel tones */}
       <LinearGradient
-        colors={baseColors}
-        locations={[0, 0.25, 0.5, 0.75, 1]}
+        colors={baseColors as [string, string, ...string[]]}
+        locations={locations}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFillObject}

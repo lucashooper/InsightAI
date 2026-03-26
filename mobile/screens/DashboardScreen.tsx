@@ -1523,7 +1523,6 @@ export default function DashboardScreen() {
         animationType="fade"
         presentationStyle="pageSheet"
         onRequestClose={() => setShowFullStory(false)}
-        transparent={true}
       >
         <Animated.View style={[styles.modalContainer, { opacity: modalBackgroundOpacity }]}>
           <LinearGradient

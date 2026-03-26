@@ -13,6 +13,7 @@ import AnimatedSlider from '../../components/onboarding/AnimatedSlider';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
+import { analytics } from '../../services/analytics';
 
 const cambridgeLogo = require('../../assets/Cambridge-logo.png');
 const stressManagementLottie = require('../../public/animations/Stress Management.json');
@@ -334,21 +335,29 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
     useEffect(() => {
         const prefillNameFromSocialSignIn = async () => {
             if (currentStep.id === 'name') {
-                // Read cached username from AsyncStorage (set by Google/Apple sign-in)
-                const cachedUsername = await AsyncStorage.getItem('CACHED_USERNAME');
+                // Only prefill if user came from social sign-in (SKIP_NAME_STEP flag is set)
+                const skipNameStep = await AsyncStorage.getItem('SKIP_NAME_STEP');
                 
-                if (cachedUsername && !textInputValue) {
-                    console.log('[OnboardingQuestion] Prefilling name from social sign-in:', cachedUsername);
-                    // Prefill the name field so user can confirm or edit
-                    setUserName(cachedUsername);
-                    setTextInputValue(cachedUsername); // Update the actual input field value
-                    setAnswers(prev => ({ ...prev, name: cachedUsername }));
-                } else if (!cachedUsername) {
-                    console.log('[OnboardingQuestion] No cached username to prefill, showing empty name step');
+                if (skipNameStep === 'true' && !textInputValue) {
+                    // Read cached username from AsyncStorage (set by Google/Apple sign-in)
+                    const cachedUsername = await AsyncStorage.getItem('CACHED_USERNAME');
+                    
+                    if (cachedUsername) {
+                        console.log('[OnboardingQuestion] Prefilling name from social sign-in:', cachedUsername);
+                        // Prefill the name field so user can confirm or edit
+                        setUserName(cachedUsername);
+                        setTextInputValue(cachedUsername); // Update the actual input field value
+                        setAnswers(prev => ({ ...prev, name: cachedUsername }));
+                    }
+                } else {
+                    console.log('[OnboardingQuestion] No social sign-in detected, showing empty name step');
                 }
             }
         };
         prefillNameFromSocialSignIn();
+        
+        // Track onboarding step viewed
+        analytics.trackOnboardingStep(currentStep.id, currentIndex, userName || undefined);
     }, [currentStep.id]);
 
     useEffect(() => {
@@ -436,6 +445,11 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
         
         console.log('[OnboardingQuestion] handleNext called with value:', value);
         console.log('[OnboardingQuestion] Current step:', currentStep.type, currentStep.id);
+        
+        // Track step completion - use value directly for name step since userName state is async
+        const isSkipped = currentStep.skippable && !value;
+        const trackName = currentStep.id === 'name' && value ? value : (userName || undefined);
+        analytics.trackOnboardingStepCompleted(currentStep.id, currentIndex, trackName, isSkipped);
         
         if (value && (currentStep.type === 'question' || currentStep.type === 'slider')) {
             setAnswers(prev => ({ ...prev, [currentStep.id]: value }));

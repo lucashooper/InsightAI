@@ -15,13 +15,13 @@ import {
   Alert,
   LayoutAnimation,
   UIManager,
+  Image,
 } from 'react-native';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
-import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -528,8 +528,7 @@ export default function AIChatScreen({ navigation }: any) {
               <Image 
                 source={{ uri: profilePicture }} 
                 style={styles.userAvatarImageDirect}
-                contentFit="cover"
-                transition={200}
+                resizeMode="cover"
                 onError={() => setProfilePictureError(true)}
               />
             ) : (

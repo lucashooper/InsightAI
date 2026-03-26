@@ -6,13 +6,12 @@ const navigationRef = createNavigationContainerRef();
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
-import { View, StyleSheet, TouchableOpacity, Pressable, Text, Modal } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Pressable, Text, Modal, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
 
 // Screens
 import LoginScreen from '../screens/LoginScreen';
@@ -207,6 +206,12 @@ function MainTabs() {
       // Use user-specific cache key to prevent cross-user contamination
       const pfp = await AsyncStorage.getItem(`CACHED_PROFILE_PICTURE_${user.id}`);
       if (pfp) {
+        // Ignore desktop default profile pictures
+        const desktopDefaults = ['Ocean-Swirl', 'Sunset-Swirl', 'Vibrant-Swirl', 'Midnight-Swirl', 'Forest-Swirl'];
+        if (desktopDefaults.some(def => pfp.includes(def))) {
+          setCachedPfp(null);
+          return;
+        }
         setCachedPfp(pfp);
         setPfpLoadError(false); // Reset error state when new pfp loads
       }
@@ -320,8 +325,7 @@ function MainTabs() {
                 <Image 
                   source={{ uri: cachedPfp }} 
                   style={{ width: '100%', height: '100%' }}
-                  contentFit="cover"
-                  transition={200}
+                  resizeMode="cover"
                   onError={() => setPfpLoadError(true)}
                 />
               </View>
@@ -340,6 +344,12 @@ function MainTabs() {
             if (user?.id) {
               const pfp = await AsyncStorage.getItem(`CACHED_PROFILE_PICTURE_${user.id}`);
               if (pfp && pfp !== cachedPfp) {
+                // Ignore desktop default profile pictures
+                const desktopDefaults = ['Ocean-Swirl', 'Sunset-Swirl', 'Vibrant-Swirl', 'Midnight-Swirl', 'Forest-Swirl'];
+                if (desktopDefaults.some(def => pfp.includes(def))) {
+                  setCachedPfp(null);
+                  return;
+                }
                 setPfpLoadError(false);
                 setCachedPfp(pfp);
               }
@@ -355,6 +365,7 @@ export default function AppNavigator() {
   const { user, loading } = useAuth();
   const [isOnboardingCompleted, setIsOnboardingCompleted] = React.useState<boolean | null>(null);
   const [onboardingResumeScreen, setOnboardingResumeScreen] = React.useState<string | null>(null);
+  const [needsPostPurchaseSignup, setNeedsPostPurchaseSignup] = React.useState(false);
   const prevUserIdRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
@@ -404,10 +415,19 @@ export default function AppNavigator() {
           return;
         }
 
-        // CRITICAL: Check if user is in post-purchase signup flow
+        // Check if user purchased anonymously and still needs to create an account
+        // This handles the case where user closes app after purchase but before signup
+        const needsEmailSignup = await AsyncStorage.getItem('NEEDS_EMAIL_SIGNUP');
+        if (needsEmailSignup === 'true' && !user) {
+          console.log('[NAV] ✅ Anonymous post-purchase detected - resuming at PostPurchaseWelcome');
+          setNeedsPostPurchaseSignup(true);
+          setIsOnboardingCompleted(false);
+          return;
+        }
+
+        // CRITICAL: Check if user is in post-purchase signup flow with an account
         // The NEEDS_EMAIL_SIGNUP flag means user purchased first, then created account
         // In this case, onboarding IS complete even if HAS_COMPLETED_ONBOARDING wasn't persisted yet
-        const needsEmailSignup = await AsyncStorage.getItem('NEEDS_EMAIL_SIGNUP');
         if (needsEmailSignup === 'true' && user) {
           console.log('[NAV] ✅ Post-purchase signup flow detected - marking onboarding complete');
           await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
@@ -600,7 +620,7 @@ export default function AppNavigator() {
       ) : (
         // Unauthenticated - show Welcome first, then Login/Signup
         <Stack.Navigator 
-          initialRouteName={isOnboardingCompleted ? 'Login' : 'Welcome'}
+          initialRouteName={isOnboardingCompleted ? 'Login' : needsPostPurchaseSignup ? 'PostPurchaseWelcome' : 'Welcome'}
           screenOptions={{
             headerShown: false,
             animation: 'fade',

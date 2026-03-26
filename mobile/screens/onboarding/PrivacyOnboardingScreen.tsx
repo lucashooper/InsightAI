@@ -4,6 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Asset } from 'expo-asset';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
+import { analytics } from '../../services/analytics';
+import { useOnboarding } from '../../contexts/OnboardingContext';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 const lockIcon = require('../../public/onboarding-icons/LockIcon2.webp');
@@ -20,10 +22,12 @@ interface PrivacyOnboardingScreenProps {
 
 export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardingScreenProps) {
   const { theme } = useTheme();
+  const { userName } = useOnboarding();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
+    analytics.trackOnboardingScreen('privacy', 'viewed', userName || undefined);
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -39,6 +43,7 @@ export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardin
   }, []);
   
   const handleContinue = () => {
+    analytics.trackOnboardingScreen('privacy', 'completed', userName || undefined);
     navigation.navigate('NotificationsOnboarding');
   };
 

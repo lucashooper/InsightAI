@@ -5,6 +5,8 @@ import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
+import { analytics } from '../../services/analytics';
+import { useOnboarding } from '../../contexts/OnboardingContext';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 const bellIcon = require('../../public/onboarding-icons/BellIcon.webp');
@@ -17,22 +19,30 @@ interface NotificationsOnboardingScreenProps {
 
 export default function NotificationsOnboardingScreen({ navigation }: NotificationsOnboardingScreenProps) {
   const { theme } = useTheme();
+  const { userName } = useOnboarding();
+
+  React.useEffect(() => {
+    analytics.trackOnboardingScreen('notifications', 'viewed', userName || undefined);
+  }, []);
   
   const handleAllowNotifications = async () => {
     try {
       const { status } = await Notifications.requestPermissionsAsync();
       console.log('[Notifications] Permission status:', status);
+      analytics.trackOnboardingScreen('notifications', 'completed', userName || undefined);
       
       // Navigate to paywall screen
       navigation.navigate('Paywall');
     } catch (error) {
       console.error('[Notifications] Error requesting permissions:', error);
+      analytics.trackOnboardingScreen('notifications', 'completed', userName || undefined);
       // Still continue to paywall even if notification permission fails
       navigation.navigate('Paywall');
     }
   };
 
   const handleSkip = async () => {
+    analytics.trackOnboardingScreen('notifications', 'skipped', userName || undefined);
     // Navigate to paywall screen
     navigation.navigate('Paywall');
   };

@@ -16,7 +16,6 @@ import {
   Platform,
   Modal,
 } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
@@ -328,6 +327,20 @@ export default function HomeScreen({ navigation, route }: any) {
     if (!user) return;
 
     try {
+      // First, immediately set cached username so greeting shows right away
+      const cachedName = await AsyncStorage.getItem('CACHED_USERNAME');
+      const cachedPfp = await AsyncStorage.getItem('CACHED_PROFILE_PICTURE');
+      
+      if (cachedName) {
+        setUserProfile({
+          id: user.id,
+          email: user.email || '',
+          username: cachedName,
+          profile_picture_url: cachedPfp || null,
+        });
+      }
+
+      // Then fetch from database to update with latest data
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -347,8 +360,8 @@ export default function HomeScreen({ navigation, route }: any) {
           username: data.username,
           profile_picture_url: validPfp,
         });
-      } else {
-        // Fallback to user-specific cached data
+      } else if (!cachedName) {
+        // Only use fallback if we didn't already set cached data above
         const cachedPfp = await AsyncStorage.getItem(`CACHED_PROFILE_PICTURE_${user.id}`);
         const cachedName = await AsyncStorage.getItem(`CACHED_USERNAME_${user.id}`);
         setUserProfile({
@@ -802,14 +815,14 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
               <Text style={{ fontSize: 18, fontWeight: '600', color: theme.colors.primaryText, marginBottom: 16 }}>
                 Change Entry Date
               </Text>
-              <DateTimePicker
-                value={selectedDate}
-                mode="date"
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={handleDateChange}
-                textColor={theme.colors.primaryText}
-                themeVariant={isDarkTheme(theme.name) ? 'dark' : 'light'}
-              />
+              <View style={{ padding: 20, backgroundColor: theme.colors.background, borderRadius: 12, alignItems: 'center' }}>
+                <Text style={{ fontSize: 16, color: theme.colors.primaryText }}>
+                  {selectedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </Text>
+                <Text style={{ fontSize: 12, color: theme.colors.secondaryText, marginTop: 8 }}>
+                  Date picker requires @react-native-community/datetimepicker
+                </Text>
+              </View>
               {Platform.OS === 'ios' && (
                 <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 16, gap: 12 }}>
                   <TouchableOpacity

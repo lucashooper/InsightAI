@@ -20,6 +20,7 @@ import AppNavigator from './navigation/AppNavigator';
 import LockScreen from './components/LockScreen';
 import { EncryptionService } from './services/encryptionService';
 import SunoGradient from './components/onboarding/SunoGradient';
+import { analytics } from './services/analytics';
 
 const insightLogo = require('./public/Insight-Logo-nobg.webp');
 
@@ -70,24 +71,49 @@ export default function App() {
         Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
         console.log('[REVENUECAT] Debug logging enabled');
         
-        // STEP 2: CRITICAL - Logout to clear any persisted anonymous user from Keychain
-        // iOS Keychain persists across app deletions, so old subscription data remains
-        // We MUST logout immediately after configure to clear stale data
-        console.log('[REVENUECAT] 🔄 Logging out to clear any persisted anonymous user from Keychain...');
-        try {
-          await Purchases.logOut();
-          console.log('[REVENUECAT] ✅ Logged out - Keychain cleared');
-        } catch (logoutError: any) {
-          console.log('[REVENUECAT] ℹ️ Logout completed (no previous user):', logoutError.message);
-        }
+        // STEP 2: Check if user has pending anonymous purchase (NEEDS_EMAIL_SIGNUP flag)
+        // If they do, we MUST preserve their anonymous RevenueCat ID to keep their subscription
+        const needsEmailSignup = await AsyncStorage.getItem('NEEDS_EMAIL_SIGNUP');
+        const savedAnonymousId = await AsyncStorage.getItem('REVENUECAT_ANONYMOUS_ID');
         
-        // STEP 3: Invalidate cache to force fresh validation against Apple servers
-        console.log('[REVENUECAT] 🔄 Invalidating cache to force fresh validation...');
-        try {
-          await Purchases.invalidateCustomerInfoCache();
-          console.log('[REVENUECAT] ✅ Cache invalidated');
-        } catch (cacheError: any) {
-          console.log('[REVENUECAT] ℹ️ Cache invalidation completed:', cacheError.message);
+        if (needsEmailSignup === 'true') {
+          console.log('[REVENUECAT] 🔒 Anonymous purchaser detected - preserving RevenueCat ID to keep subscription');
+          
+          // Restore the saved anonymous ID if we have one (critical for Expo Go where Keychain is cleared on reload)
+          if (savedAnonymousId) {
+            console.log('[REVENUECAT] 🔄 Restoring saved anonymous ID:', savedAnonymousId);
+            try {
+              await Purchases.logIn(savedAnonymousId);
+              console.log('[REVENUECAT] ✅ Anonymous ID restored successfully');
+            } catch (loginError: any) {
+              console.error('[REVENUECAT] ❌ Failed to restore anonymous ID:', loginError.message);
+            }
+          } else {
+            console.log('[REVENUECAT] ⚠️ No saved anonymous ID found - subscription may be lost');
+          }
+        } else {
+          // STEP 2: CRITICAL - Logout to clear any persisted anonymous user from Keychain
+          // iOS Keychain persists across app deletions, so old subscription data remains
+          // We MUST logout immediately after configure to clear stale data
+          console.log('[REVENUECAT] 🔄 Logging out to clear any persisted anonymous user from Keychain...');
+          try {
+            await Purchases.logOut();
+            console.log('[REVENUECAT] ✅ Logged out - Keychain cleared');
+          } catch (logoutError: any) {
+            console.log('[REVENUECAT] ℹ️ Logout completed (no previous user):', logoutError.message);
+          }
+          
+          // Clear saved anonymous ID since we're starting fresh
+          await AsyncStorage.removeItem('REVENUECAT_ANONYMOUS_ID');
+          
+          // STEP 3: Invalidate cache to force fresh validation against Apple servers
+          console.log('[REVENUECAT] 🔄 Invalidating cache to force fresh validation...');
+          try {
+            await Purchases.invalidateCustomerInfoCache();
+            console.log('[REVENUECAT] ✅ Cache invalidated');
+          } catch (cacheError: any) {
+            console.log('[REVENUECAT] ℹ️ Cache invalidation completed:', cacheError.message);
+          }
         }
         
         // STEP 4: Get fresh customer info from Apple servers
@@ -121,6 +147,10 @@ export default function App() {
           console.error('[REVENUECAT] Error details:', customerInfoError.message);
         }
 
+        // Initialize analytics
+        console.log('[ANALYTICS] Initializing PostHog...');
+        await analytics.initialize();
+
         // Test encryption on startup
         console.log('=== ENCRYPTION TEST START ===');
         try {
@@ -145,6 +175,7 @@ export default function App() {
           Asset.fromModule(require('./public/onboarding-icons/BellIcon.webp')).downloadAsync(),
           Asset.fromModule(require('./public/onboarding-icons/Email-Icon2.webp')).downloadAsync(),
           Asset.fromModule(require('./public/onboarding-icons/LockIcon2.webp')).downloadAsync(),
+          Asset.fromModule(require('./public/Book-Icon-Insight.webp')).downloadAsync(),
           // Research institution logos
           Asset.fromModule(require('./public/research-images/Cambridge-Logo-Frame.png')).downloadAsync(),
           Asset.fromModule(require('./public/research-images/Liverpool-Logo.jpg')).downloadAsync(),
@@ -153,9 +184,8 @@ export default function App() {
           // Cambridge logo (legacy)
           Asset.fromModule(require('./assets/Cambridge-logo.png')).downloadAsync(),
           // Paywall phone carousel images
-          Asset.fromModule(require('./public/phone-images/Insight-Main-Page-Phone.png')).downloadAsync(),
+          Asset.fromModule(require('./public/phone-images/Insight-Main-Page-Phone copy.png')).downloadAsync(),
           Asset.fromModule(require('./public/phone-images/Insight-Dashboard-Page-Phone.png')).downloadAsync(),
-          Asset.fromModule(require('./public/phone-images/Insight-Journal-Page-Phone.png')).downloadAsync(),
           Asset.fromModule(require('./public/phone-images/Insight-Insights-Page-Phone-Real.png')).downloadAsync(),
           Asset.fromModule(require('./public/phone-images/Insight-Playbook-Page-Phone.png')).downloadAsync(),
         ]);

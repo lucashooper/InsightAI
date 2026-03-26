@@ -13,6 +13,7 @@ import { useOnboarding } from '../../contexts/OnboardingContext';
 import { supabase } from '../../lib/supabase';
 import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
+import { analytics } from '../../services/analytics';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
@@ -53,6 +54,12 @@ export default function PaywallScreen({ navigation, route }: any) {
 
   useEffect(() => {
     console.log('[Paywall] 🔄 UPDATED VERSION LOADED - Subscription boxes now dark gray for dark theme compatibility');
+    
+    // Track paywall viewed
+    const source = route?.params?.source || 'onboarding';
+    analytics.trackPaywallViewed(source);
+    analytics.trackOnboardingScreen('paywall', 'viewed', userName || undefined);
+    
     const loadOfferings = async () => {
       try {
         // NOTE: We don't invalidate cache here because:
@@ -231,6 +238,13 @@ export default function PaywallScreen({ navigation, route }: any) {
     
     const hasAnyActiveEntitlement = Object.keys(customerInfo.entitlements.active).length > 0;
     console.log('[Paywall] Has any active entitlement:', hasAnyActiveEntitlement);
+    
+    // CRITICAL: Save anonymous ID to AsyncStorage for Expo Go persistence
+    // Expo Go clears iOS Keychain on reload, so we must manually persist the ID
+    if (hasAnyActiveEntitlement && customerInfo.originalAppUserId.startsWith('$RCAnonymousID:')) {
+      await AsyncStorage.setItem('REVENUECAT_ANONYMOUS_ID', customerInfo.originalAppUserId);
+      console.log('[Paywall] 💾 Saved anonymous RevenueCat ID for persistence:', customerInfo.originalAppUserId);
+    }
     
     // CRITICAL: Verify subscription ownership before granting Pro access
     if (hasAnyActiveEntitlement && user?.id) {
@@ -424,6 +438,12 @@ export default function PaywallScreen({ navigation, route }: any) {
       const { customerInfo } = await Purchases.purchasePackage(selectedPackage);
       
       console.log('[REVENUECAT] ✅ Purchase successful!');
+      
+      // Track subscription purchase
+      const tier = selectedPlan === 'yearly' ? 'pro_yearly' : selectedPlan === 'monthly' ? 'pro_monthly' : 'pro_weekly';
+      const price = selectedPackage.product.priceString;
+      analytics.trackSubscriptionStarted(tier, price, userName || undefined);
+      analytics.trackOnboardingScreen('paywall', 'completed', userName || undefined);
       
       // Comprehensive debug logging
       console.log('=== REVENUECAT PURCHASE DEBUG ===');

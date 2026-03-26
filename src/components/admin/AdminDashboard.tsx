@@ -133,6 +133,25 @@ const AdminDashboard: React.FC = () => {
         </div>
       )}
 
+      {/* Analytics Link */}
+      <div style={{ marginBottom: '24px' }}>
+        <a 
+          href="/app/admin/analytics"
+          style={{
+            display: 'inline-block',
+            background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+            color: '#fff',
+            padding: '12px 24px',
+            borderRadius: '8px',
+            textDecoration: 'none',
+            fontWeight: '600',
+            fontSize: '14px',
+          }}
+        >
+          📊 View Onboarding Analytics
+        </a>
+      </div>
+
       <div className="admin-content">
         <div className="limits-card">
           <div className="card-header">
@@ -282,6 +301,31 @@ const AdminDashboard: React.FC = () => {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Onboarding Analytics Section */}
+        <div className="feedback-section" style={{ marginTop: '24px' }}>
+          <div className="section-header">
+            <h2>📊 Onboarding Analytics</h2>
+          </div>
+          <div className="no-data">
+            <p style={{ marginBottom: '16px' }}>View detailed onboarding funnel and user journey analytics</p>
+            <a 
+              href="/app/admin/analytics"
+              style={{
+                display: 'inline-block',
+                background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                color: '#fff',
+                padding: '12px 24px',
+                borderRadius: '8px',
+                textDecoration: 'none',
+                fontWeight: '600',
+                fontSize: '14px',
+              }}
+            >
+              📊 View Detailed Analytics
+            </a>
+          </div>
         </div>
       </div>
     </div>

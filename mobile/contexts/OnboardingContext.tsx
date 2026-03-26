@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from './AuthContext';
+import { analytics } from '../services/analytics';
 
 interface OnboardingContextType {
   userName: string;
@@ -31,10 +32,17 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
     prevUserIdRef.current = currentUserId;
   }, [user]);
 
-  // Load cached username on mount (for Apple/Google Sign-In users)
+  // Load cached username on mount ONLY if user is authenticated (from social sign-in)
+  // Don't load it if user just signed out - that's handled by the reset effect above
   useEffect(() => {
     const loadCachedUsername = async () => {
       try {
+        // Only load cached username if we have a user (social sign-in flow)
+        if (!user) {
+          console.log('[OnboardingContext] No user, skipping cached username load');
+          return;
+        }
+        
         const cached = await AsyncStorage.getItem('CACHED_USERNAME');
         if (cached) {
           // Don't use cached username if it looks like a random hash (e.g., "dxysfs9kj2")
@@ -54,7 +62,7 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
       }
     };
     loadCachedUsername();
-  }, []);
+  }, [user]);
 
   const setUserNameWithLogging = (name: string) => {
     console.log('[OnboardingContext] setUserName called with:', name);
