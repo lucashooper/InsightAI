@@ -9,7 +9,7 @@ import MaskedView from '@react-native-masked-view/masked-view';
 
 const { width, height } = Dimensions.get('window');
 
-const phoneMockup = require('../../public/Onboarding-Main-Phone-Image.png');
+const phoneMockup = require('../../public/Modern-Iphone-Insight-LANDING.png');
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 export default function ProductRevealScreen({ navigation }: any) {

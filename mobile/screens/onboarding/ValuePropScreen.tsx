@@ -161,17 +161,12 @@ export default function ValuePropScreen({ navigation }: any) {
           activeOpacity={0.9}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            navigation.navigate('Paywall');
+            navigation.navigate('RateUs');
           }}
         >
-          <LinearGradient
-            colors={['#a855f7', '#8b5cf6']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.buttonGradient}
-          >
+          <View style={styles.buttonInner}>
             <Text style={styles.buttonText}>Continue</Text>
-          </LinearGradient>
+          </View>
         </TouchableOpacity>
       </View>
     </View>
@@ -296,17 +291,21 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '100%',
-    borderRadius: 999,
-    shadowColor: '#a855f7',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
+    borderRadius: 28,
+    backgroundColor: '#1a1a1a',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
     elevation: 8,
   },
-  buttonGradient: {
-    paddingVertical: 18,
-    borderRadius: 999,
+  buttonInner: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 22,
+    borderRadius: 28,
+    gap: 10,
   },
   buttonText: {
     fontSize: 17,

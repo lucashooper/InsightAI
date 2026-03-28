@@ -47,6 +47,7 @@ import AnalyzingScreen from '../screens/onboarding/AnalyzingScreen';
 import AnalysisCompleteScreen from '../screens/onboarding/AnalysisCompleteScreen';
 import InteractiveShowcaseScreen from '../screens/onboarding/InteractiveShowcaseScreen';
 import PaywallScreen from '../screens/onboarding/PaywallScreen';
+import RateUsScreen from '../screens/onboarding/RateUsScreen';
 import PostPurchaseWelcomeScreen from '../screens/onboarding/PostPurchaseWelcomeScreen';
 import PersonalityResultScreen from '../screens/onboarding/PersonalityResultScreen';
 import PersonalityQuizIntroScreen from '../screens/onboarding/PersonalityQuizIntroScreen';
@@ -592,6 +593,7 @@ export default function AppNavigator() {
           <Stack.Screen name="PersonalityResult" component={PersonalityResultScreen} />
           <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
           <Stack.Screen name="ValueProp" component={ValuePropScreen} />
+          <Stack.Screen name="RateUs" component={RateUsScreen} />
           <Stack.Screen name="Paywall" component={PaywallScreen} />
           <Stack.Screen name="PostPurchaseWelcome" component={PostPurchaseWelcomeScreen} />
           <Stack.Screen name="OnboardingSummary" component={OnboardingSummaryScreen} />
@@ -655,6 +657,7 @@ export default function AppNavigator() {
           <Stack.Screen name="PrivacyOnboarding" component={PrivacyOnboardingScreen} />
           <Stack.Screen name="NotificationsOnboarding" component={NotificationsOnboardingScreen} />
           <Stack.Screen name="ValueProp" component={ValuePropScreen} />
+          <Stack.Screen name="RateUs" component={RateUsScreen} />
           <Stack.Screen name="Paywall" component={PaywallScreen} />
           <Stack.Screen name="PostPurchaseWelcome" component={PostPurchaseWelcomeScreen} />
           
