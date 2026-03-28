@@ -19,14 +19,21 @@ export default function ProductRevealScreen({ navigation }: any) {
             <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={false} />
             <SunoGradient />
 
-            {/* Logo and brand name at top */}
+            {/* Logo and brand name at top - centered with logo to left */}
             <View style={styles.brandContainer}>
                 <Image
                     source={insightLogo}
                     style={styles.logo}
                     resizeMode="contain"
                 />
-                <Text style={styles.brandName}>Insight</Text>
+                <LinearGradient
+                    colors={['#8b5cf6', '#a855f7']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.brandGradient}
+                >
+                    <Text style={styles.brandName}>Insight</Text>
+                </LinearGradient>
             </View>
 
             {/* Welcome text */}
@@ -63,14 +70,9 @@ export default function ProductRevealScreen({ navigation }: any) {
                         navigation.navigate('AuthSelection');
                     }}
                 >
-                    <LinearGradient
-                        colors={['#a855f7', '#8b5cf6']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.buttonGradient}
-                    >
+                    <View style={styles.buttonInner}>
                         <Text style={styles.buttonText}>Get Started</Text>
-                    </LinearGradient>
+                    </View>
                 </TouchableOpacity>
                 
                 <TouchableOpacity
@@ -100,17 +102,22 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginTop: isTablet ? 20 : 10,
         marginBottom: isTablet ? 60 : 50,
-        gap: 8,
+        gap: 10,
     },
     logo: {
-        width: isTablet ? 50 : 40,
-        height: isTablet ? 50 : 40,
+        width: isTablet ? 60 : 48,
+        height: isTablet ? 60 : 48,
+    },
+    brandGradient: {
+        borderRadius: 8,
+        paddingHorizontal: 2,
+        paddingVertical: 2,
     },
     brandName: {
-        fontSize: sf(20),
-        fontWeight: '500',
+        fontSize: sf(22),
+        fontWeight: '600',
         color: '#1a1a2e',
-        letterSpacing: -0.3,
+        letterSpacing: -0.5,
     },
     welcomeContainer: {
         alignItems: 'center',
@@ -129,17 +136,18 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
         width: '100%',
         overflow: 'hidden',
-        marginBottom: -80,
+        marginBottom: -100,
     },
     maskedContainer: {
         width: '85%',
-        height: '120%',
+        height: '130%',
         alignItems: 'center',
         justifyContent: 'flex-end',
     },
     phoneMockup: {
         width: '100%',
         height: '100%',
+        marginBottom: -60,
     },
     footer: {
         width: '100%',
@@ -148,26 +156,27 @@ const styles = StyleSheet.create({
     },
     button: {
         width: '100%',
-        borderRadius: 16,
+        borderRadius: 28,
+        backgroundColor: '#1a1a1a',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
+        shadowOpacity: 0.2,
         shadowRadius: 12,
         elevation: 8,
     },
-    buttonGradient: {
+    buttonInner: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 20,
-        borderRadius: 16,
+        paddingVertical: 22,
+        borderRadius: 28,
         gap: 10,
     },
     buttonText: {
         fontSize: sf(17),
-        fontWeight: '700',
+        fontWeight: '600',
         color: '#fff',
-        letterSpacing: 0.3,
+        letterSpacing: 0.2,
     },
     signInLink: {
         marginTop: isTablet ? 28 : 20,

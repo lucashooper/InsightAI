@@ -235,7 +235,7 @@ export default function App() {
               <PreloadProvider>
                 <OnboardingProvider>
                   <AppContent onReady={() => setAppReady(true)} />
-                  <StatusBar style="light" />
+                  <StatusBar style="auto" />
                 </OnboardingProvider>
               </PreloadProvider>
             </AuthProvider>
