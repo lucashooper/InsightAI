@@ -105,7 +105,7 @@ export default function ValuePropWinsScreen({ navigation }: any) {
           activeOpacity={0.9}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            navigation.navigate('RateUs');
+            navigation.navigate('NotificationsOnboarding');
           }}
         >
           <View style={styles.buttonInner}>

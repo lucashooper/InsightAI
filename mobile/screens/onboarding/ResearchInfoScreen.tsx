@@ -96,14 +96,9 @@ export default function ResearchInfoScreen({ navigation }: any) {
             navigation.navigate('OnboardingQuestion');
           }}
         >
-          <LinearGradient
-            colors={['#a855f7', '#8b5cf6']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.buttonGradient}
-          >
-            <Text style={styles.buttonText}>Next</Text>
-          </LinearGradient>
+          <View style={styles.buttonGradient}>
+            <Text style={styles.buttonText}>Continue</Text>
+          </View>
         </TouchableOpacity>
       </View>
     </View>
@@ -183,16 +178,17 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '100%',
-    borderRadius: 16,
-    shadowColor: '#a855f7',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
+    borderRadius: 28,
+    backgroundColor: '#1a1a1a',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
     elevation: 8,
   },
   buttonGradient: {
-    paddingVertical: 18,
-    borderRadius: 16,
+    paddingVertical: 22,
+    borderRadius: 28,
     alignItems: 'center',
   },
   buttonText: {

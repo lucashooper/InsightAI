@@ -44,7 +44,7 @@ export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardin
   
   const handleContinue = () => {
     analytics.trackOnboardingScreen('privacy', 'completed', userName || undefined);
-    navigation.navigate('NotificationsOnboarding');
+    navigation.navigate('ValueProp');
   };
 
   return (

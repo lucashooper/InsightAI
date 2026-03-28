@@ -103,7 +103,7 @@ const STEPS: Step[] = [
         badges: ['Cambridge University'],
         animationType: 'journaling',
         learnMoreLink: true,
-        buttonText: "Next"
+        buttonText: "Continue"
     },
     // 3. Frequency
     {

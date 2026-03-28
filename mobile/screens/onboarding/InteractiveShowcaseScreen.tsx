@@ -266,14 +266,9 @@ export default function InteractiveShowcaseScreen({ navigation }: Props) {
                             activeOpacity={0.9}
                             onPress={() => navigation.navigate('PrivacyOnboarding')}
                         >
-                            <LinearGradient
-                                colors={['#a855f7', '#8b5cf6']}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 1 }}
-                                style={styles.ctaGradient}
-                            >
+                            <View style={styles.ctaGradient}>
                                 <Text style={styles.ctaText}>Continue</Text>
-                            </LinearGradient>
+                            </View>
                         </TouchableOpacity>
                         <TouchableOpacity
                             onPress={() => navigation.navigate('PrivacyOnboarding')}
@@ -465,17 +460,18 @@ const styles = StyleSheet.create({
     },
     ctaButton: {
         borderRadius: 28,
-        overflow: 'hidden',
-        shadowColor: '#a855f7',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
-        shadowRadius: 16,
+        backgroundColor: '#1a1a1a',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
         elevation: 8,
     },
     ctaGradient: {
-        paddingVertical: 18,
+        paddingVertical: 22,
         alignItems: 'center',
         justifyContent: 'center',
+        borderRadius: 28,
     },
     ctaText: {
         fontSize: 17,

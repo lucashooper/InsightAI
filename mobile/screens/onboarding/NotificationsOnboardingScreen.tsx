@@ -32,19 +32,17 @@ export default function NotificationsOnboardingScreen({ navigation }: Notificati
       analytics.trackOnboardingScreen('notifications', 'completed', userName || undefined);
       
       // Navigate to paywall screen
-      navigation.navigate('Paywall');
+      navigation.navigate('RateUs');
     } catch (error) {
       console.error('[Notifications] Error requesting permissions:', error);
       analytics.trackOnboardingScreen('notifications', 'completed', userName || undefined);
-      // Still continue to paywall even if notification permission fails
-      navigation.navigate('Paywall');
+      navigation.navigate('RateUs');
     }
   };
 
   const handleSkip = async () => {
     analytics.trackOnboardingScreen('notifications', 'skipped', userName || undefined);
-    // Navigate to paywall screen
-    navigation.navigate('Paywall');
+    navigation.navigate('RateUs');
   };
 
   return (
