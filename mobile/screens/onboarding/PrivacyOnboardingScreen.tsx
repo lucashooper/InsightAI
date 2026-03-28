@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, Animated } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Asset } from 'expo-asset';
 import SunoGradient from '../../components/onboarding/SunoGradient';
@@ -23,23 +23,9 @@ interface PrivacyOnboardingScreenProps {
 export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardingScreenProps) {
   const { theme } = useTheme();
   const { userName } = useOnboarding();
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
     analytics.trackOnboardingScreen('privacy', 'viewed', userName || undefined);
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 700,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 700,
-        useNativeDriver: true,
-      }),
-    ]).start();
   }, []);
   
   const handleContinue = () => {
@@ -79,8 +65,8 @@ export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardin
         />
       </View>
 
-      {/* Animated content below lock icon */}
-      <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }], width: '100%', alignItems: 'center' }}>
+      {/* Content below lock icon */}
+      <View style={styles.content}>
       {/* Title */}
       <Text style={[styles.title, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>Your notes are fully private</Text>
 
@@ -104,7 +90,7 @@ export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardin
           <Text style={[styles.featureText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>We can't read your entries</Text>
         </View>
       </View>
-      </Animated.View>
+      </View>
 
       {/* Continue Button */}
       <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
@@ -152,6 +138,10 @@ const styles = StyleSheet.create({
   lockIcon: {
     width: 220,
     height: 220,
+  },
+  content: {
+    width: '100%',
+    alignItems: 'center',
   },
   title: {
     fontSize: 32,

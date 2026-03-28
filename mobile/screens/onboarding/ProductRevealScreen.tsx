@@ -24,24 +24,12 @@ export default function ProductRevealScreen({ navigation }: any) {
                     style={styles.logo}
                     resizeMode="contain"
                 />
-                <MaskedView
-                    maskElement={
-                        <Text style={[styles.brandName, { backgroundColor: 'transparent' }]}>Insight</Text>
-                    }
-                >
-                    <LinearGradient
-                        colors={['#1a1a3a', '#3b3b8a', '#6d4fc4']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                    >
-                        <Text style={[styles.brandName, { opacity: 0 }]}>Insight</Text>
-                    </LinearGradient>
-                </MaskedView>
+                <Text style={styles.brandName}>Insight</Text>
                 {/* Mirror spacer so text stays centered */}
                 <View style={styles.logoPlaceholder} />
             </View>
 
-            {/* Welcome text — slightly lower */}
+            {/* Welcome text */}
             <View style={styles.welcomeContainer}>
                 <Text style={styles.welcomeText}>Welcome to Insight</Text>
             </View>
@@ -96,8 +84,8 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fef7f2',
-        paddingTop: isTablet ? 70 : 56,
-        paddingBottom: isTablet ? 60 : 44,
+        paddingTop: isTablet ? 80 : 60,
+        paddingBottom: isTablet ? 70 : 50,
     },
 
     /* ── Brand row ─────────────────────────────────────────────── */
@@ -105,37 +93,38 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: isTablet ? 20 : 12,
-        gap: 8,
+        marginTop: isTablet ? 20 : 0,
+        marginBottom: isTablet ? 32 : 24,
+        gap: 10,
     },
     logo: {
-        width: isTablet ? 30 : 26,
-        height: isTablet ? 30 : 26,
+        width: isTablet ? 60 : 48,
+        height: isTablet ? 60 : 48,
     },
     /* Mirror spacer so text stays optically centered */
     logoPlaceholder: {
-        width: isTablet ? 30 : 26,
-        height: isTablet ? 30 : 26,
+        width: isTablet ? 60 : 48,
+        height: isTablet ? 60 : 48,
     },
     brandName: {
-        fontSize: sf(20),
+        fontSize: sf(22),
         fontWeight: '600',
-        color: '#1a1a3a',
-        letterSpacing: 0.2,
+        color: '#1a1a2e',
+        letterSpacing: -0.3,
     },
 
     /* ── Welcome ───────────────────────────────────────────────── */
     welcomeContainer: {
         alignItems: 'center',
-        marginBottom: isTablet ? 20 : 14,
+        marginBottom: isTablet ? 24 : 16,
         paddingHorizontal: 24,
     },
     welcomeText: {
-        fontSize: sf(32),
-        fontWeight: '700',
+        fontSize: sf(30),
+        fontWeight: '600',
         color: '#1a1a2e',
         textAlign: 'center',
-        letterSpacing: -1,
+        letterSpacing: -0.8,
     },
 
     /* ── Phone image ───────────────────────────────────────────── */
@@ -146,8 +135,8 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     maskedContainer: {
-        width: SCREEN_WIDTH * (isTablet ? 0.70 : 0.88),
-        height: SCREEN_HEIGHT * (isTablet ? 0.58 : 0.56),
+        width: SCREEN_WIDTH * (isTablet ? 0.75 : 0.95),
+        height: SCREEN_HEIGHT * (isTablet ? 0.60 : 0.58),
     },
     phoneMockup: {
         width: '100%',
