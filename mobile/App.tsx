@@ -1,11 +1,13 @@
 import 'react-native-gesture-handler';
+import { LogBox } from 'react-native';
+
+// CRITICAL: Suppress all warnings BEFORE any other imports to prevent yellow warning bar
+LogBox.ignoreAllLogs();
+
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState, useRef } from 'react';
-import { View, Text, Image, LogBox, Animated } from 'react-native';
+import { View, Text, Image, Animated } from 'react-native';
 import React from 'react';
-
-// Suppress LinearGradient warnings that spam the console
-LogBox.ignoreLogs(['LinearGradient colors and locations props should be arrays of the same length']);
 import Purchases from 'react-native-purchases';
 import { Asset } from 'expo-asset';
 import AsyncStorage from '@react-native-async-storage/async-storage';

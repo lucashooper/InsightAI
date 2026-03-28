@@ -579,6 +579,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
       await AsyncStorage.removeItem('ONBOARDING_RESUME_SCREEN');
       await AsyncStorage.removeItem('NEEDS_EMAIL_SIGNUP');
+      await AsyncStorage.removeItem('REVENUECAT_ANONYMOUS_ID');
       // Clear old non-user-specific cache keys to prevent cross-user contamination
       await AsyncStorage.removeItem('CACHED_PROFILE_PICTURE');
       await AsyncStorage.removeItem('CACHED_USERNAME');

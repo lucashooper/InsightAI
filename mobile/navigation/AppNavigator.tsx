@@ -6,7 +6,7 @@ const navigationRef = createNavigationContainerRef();
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
-import { View, StyleSheet, TouchableOpacity, Pressable, Text, Modal, Image } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Pressable, Text, Modal, Image, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -549,6 +549,16 @@ export default function AppNavigator() {
       },
     },
   };
+
+  // Don't render navigator until onboarding check completes
+  // This prevents initialRouteName from being stale
+  if (loading || isOnboardingCompleted === null) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#8b5cf6" />
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer ref={navigationRef} theme={darkTheme}>

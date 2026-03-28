@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
 import SunoGradient from '../../components/onboarding/SunoGradient';
+import MaskedView from '@react-native-masked-view/masked-view';
 
 const { width, height } = Dimensions.get('window');
 
@@ -18,17 +19,39 @@ export default function ProductRevealScreen({ navigation }: any) {
             <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={false} />
             <SunoGradient />
 
-            <View style={styles.phoneSection}>
+            {/* Logo and brand name at top */}
+            <View style={styles.brandContainer}>
                 <Image
-                    source={phoneMockup}
-                    style={styles.phoneMockup}
+                    source={insightLogo}
+                    style={styles.logo}
                     resizeMode="contain"
                 />
+                <Text style={styles.brandName}>Insight</Text>
             </View>
 
-            <View style={styles.taglineContainer}>
-                <Text style={styles.taglineMain}>Your mind.</Text>
-                <Text style={styles.taglineMain}>Made clearer.</Text>
+            {/* Welcome text */}
+            <View style={styles.welcomeContainer}>
+                <Text style={styles.welcomeText}>Welcome to Insight</Text>
+            </View>
+
+            {/* Phone image with fade effect at bottom */}
+            <View style={styles.phoneSection}>
+                <MaskedView
+                    style={styles.maskedContainer}
+                    maskElement={
+                        <LinearGradient
+                            colors={['#000', '#000', '#000', 'transparent']}
+                            locations={[0, 0.7, 0.85, 1]}
+                            style={{ flex: 1 }}
+                        />
+                    }
+                >
+                    <Image
+                        source={phoneMockup}
+                        style={styles.phoneMockup}
+                        resizeMode="contain"
+                    />
+                </MaskedView>
             </View>
 
             <View style={styles.footer}>
@@ -46,7 +69,7 @@ export default function ProductRevealScreen({ navigation }: any) {
                         end={{ x: 1, y: 1 }}
                         style={styles.buttonGradient}
                     >
-                        <Text style={styles.buttonText}>Begin Journey</Text>
+                        <Text style={styles.buttonText}>Get Started</Text>
                     </LinearGradient>
                 </TouchableOpacity>
                 
@@ -55,7 +78,7 @@ export default function ProductRevealScreen({ navigation }: any) {
                     style={styles.signInLink}
                 >
                     <Text style={styles.signInText}>
-                        Already have an account? <Text style={styles.signInTextBold}>Sign In</Text>
+                        Already have an account?
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -71,47 +94,52 @@ const styles = StyleSheet.create({
         paddingTop: isTablet ? 80 : 60,
         paddingBottom: isTablet ? 70 : 50,
     },
-    backButton: {
-        position: 'absolute',
-        top: 60,
-        left: 24,
-        zIndex: 10,
-        width: 40,
-        height: 40,
+    brandContainer: {
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
+        marginTop: isTablet ? 20 : 10,
+        marginBottom: isTablet ? 60 : 50,
+        gap: 8,
+    },
+    logo: {
+        width: isTablet ? 50 : 40,
+        height: isTablet ? 50 : 40,
+    },
+    brandName: {
+        fontSize: sf(20),
+        fontWeight: '500',
+        color: '#1a1a2e',
+        letterSpacing: -0.3,
+    },
+    welcomeContainer: {
+        alignItems: 'center',
+        marginBottom: isTablet ? 50 : 40,
+    },
+    welcomeText: {
+        fontSize: sf(28),
+        fontWeight: '500',
+        color: '#1a1a2e',
+        textAlign: 'center',
+        letterSpacing: -0.5,
     },
     phoneSection: {
         flex: 1,
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-end',
         width: '100%',
+        overflow: 'hidden',
+        marginBottom: -80,
     },
-    riveContainer: {
-        width: isTablet ? width * 0.65 : width * 0.85,
-        height: isTablet ? height * 0.62 : height * 0.58,
-        maxHeight: isTablet ? 900 : 600,
+    maskedContainer: {
+        width: '85%',
+        height: '120%',
         alignItems: 'center',
-        justifyContent: 'center',
-    },
-    riveAnimation: {
-        width: '100%',
-        height: '100%',
+        justifyContent: 'flex-end',
     },
     phoneMockup: {
         width: '100%',
         height: '100%',
-    },
-    taglineContainer: {
-        alignItems: 'center',
-        marginBottom: isTablet ? 48 : 32,
-    },
-    taglineMain: {
-        fontSize: sf(34),
-        fontWeight: '600',
-        color: '#1a1a2e',
-        textAlign: 'center',
-        marginBottom: 4,
     },
     footer: {
         width: '100%',
@@ -120,23 +148,23 @@ const styles = StyleSheet.create({
     },
     button: {
         width: '100%',
-        borderRadius: 999,
-        shadowColor: '#a855f7',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.6,
-        shadowRadius: 24,
-        elevation: 12,
+        borderRadius: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 8,
     },
     buttonGradient: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 20,
-        borderRadius: 999,
+        borderRadius: 16,
         gap: 10,
     },
     buttonText: {
-        fontSize: sf(19),
+        fontSize: sf(17),
         fontWeight: '700',
         color: '#fff',
         letterSpacing: 0.3,
@@ -149,22 +177,5 @@ const styles = StyleSheet.create({
         fontSize: sf(15),
         color: 'rgba(0, 0, 0, 0.45)',
         textAlign: 'center',
-    },
-    signInTextBold: {
-        color: '#1a1a2e',
-        fontWeight: '600',
-    },
-    loginLink: {
-        marginTop: 20,
-        paddingVertical: 8,
-    },
-    loginLinkText: {
-        fontSize: 15,
-        color: 'rgba(0, 0, 0, 0.5)',
-        textAlign: 'center',
-    },
-    loginLinkBold: {
-        fontWeight: '700',
-        color: '#1a1a2e',
     },
 });

@@ -396,7 +396,7 @@ export default function EditProfileScreen({ navigation }: any) {
         <TouchableOpacity
           style={[styles.saveButton, { backgroundColor: theme.colors.primary }]}
           onPress={handleSave}
-          disabled={saving || !firstName.trim()}
+          disabled={saving}
         >
           {saving ? (
             <ActivityIndicator color="#fff" />
