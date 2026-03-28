@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Image } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Image, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -14,6 +14,21 @@ const { width } = Dimensions.get('window');
 
 export default function ValuePropScreen({ navigation }: any) {
   const { theme } = useTheme();
+  const noisyAnim = useRef(new Animated.Value(0)).current;
+  const arrowAnim = useRef(new Animated.Value(0)).current;
+  const clarityAnim = useRef(new Animated.Value(0)).current;
+  const bulletAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(noisyAnim, { toValue: 1, duration: 280, useNativeDriver: true }),
+      ]),
+      Animated.timing(arrowAnim, { toValue: 1, duration: 220, useNativeDriver: true }),
+      Animated.timing(clarityAnim, { toValue: 1, duration: 280, useNativeDriver: true }),
+      Animated.timing(bulletAnim, { toValue: 1, duration: 260, useNativeDriver: true }),
+    ]).start();
+  }, [arrowAnim, bulletAnim, clarityAnim, noisyAnim]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -41,13 +56,23 @@ export default function ValuePropScreen({ navigation }: any) {
       <View style={styles.content}>
         <View style={styles.mainContent}>
           {/* Headline */}
-          <Text style={[styles.headline, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>
+          <Text style={[styles.headline, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e', fontSize: 28 }]}>
             Insight turns thoughts{' '}into clarity
           </Text>
 
-          {/* Visual Contrast */}
           <View style={styles.contrastContainer}>
-            <View style={styles.contrastColumn}>
+            <Animated.View style={[
+              styles.contrastColumn,
+              {
+                opacity: noisyAnim,
+                transform: [{
+                  translateY: noisyAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [12, 0],
+                  }),
+                }],
+              },
+            ]}>
               <View style={styles.imageContainer}>
                 <Image 
                   source={noisyImage} 
@@ -56,11 +81,34 @@ export default function ValuePropScreen({ navigation }: any) {
                 />
               </View>
               <Text style={[styles.contrastLabel, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}>Mental noise</Text>
-            </View>
+            </Animated.View>
 
-            <Text style={[styles.arrow, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)' }]}>→</Text>
+            <Animated.Text style={[
+              styles.arrow,
+              {
+                color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
+                opacity: arrowAnim,
+                transform: [{
+                  scale: arrowAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.92, 1],
+                  }),
+                }],
+              },
+            ]}>→</Animated.Text>
 
-            <View style={styles.contrastColumn}>
+            <Animated.View style={[
+              styles.contrastColumn,
+              {
+                opacity: clarityAnim,
+                transform: [{
+                  translateY: clarityAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [12, 0],
+                  }),
+                }],
+              },
+            ]}>
               <View style={styles.imageContainer}>
                 <Image 
                   source={clarityImage} 
@@ -69,14 +117,23 @@ export default function ValuePropScreen({ navigation }: any) {
                 />
               </View>
               <Text style={[styles.contrastLabel, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}>Understanding</Text>
-            </View>
+            </Animated.View>
           </View>
 
-          {/* Supporting text */}
+          <Animated.View style={{
+            width: '100%',
+            opacity: bulletAnim,
+            transform: [{
+              translateY: bulletAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [12, 0],
+              }),
+            }],
+          }}>
           <View style={styles.bulletContainer}>
             <View style={styles.bulletRow}>
               <Text style={styles.bulletDot}>•</Text>
-              <Text style={[styles.bulletText, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.7)' : '#4a4a4a' }]}>
+              <Text style={[styles.bulletText, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.7)' : '#4a4a4a' }]}> 
                 Capture how you feel
               </Text>
             </View>
@@ -95,6 +152,7 @@ export default function ValuePropScreen({ navigation }: any) {
               </Text>
             </View>
           </View>
+          </Animated.View>
         </View>
       </View>
 
@@ -155,19 +213,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headline: {
-    fontSize: 44,
+    fontSize: sf(32),
     fontWeight: '600',
     color: '#1a1a2e',
     textAlign: 'center',
-    lineHeight: 54,
-    letterSpacing: -0.5,
-    marginBottom: 56,
+    lineHeight: sf(40),
+    letterSpacing: -0.6,
+    marginBottom: 44,
   },
   contrastContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 64,
+    marginBottom: 56,
     gap: 32,
   },
   contrastColumn: {

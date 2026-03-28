@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, StatusBar } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import SunoGradient from '../../components/onboarding/SunoGradient';
@@ -18,8 +19,6 @@ export default function ValuePropWinsScreen({ navigation }: any) {
   const { theme } = useTheme();
   const dark = isDarkTheme(theme.name);
 
-  const titleFade = useRef(new Animated.Value(0)).current;
-  const titleSlide = useRef(new Animated.Value(20)).current;
   const pillAnims = useRef(WINS.map(() => ({
     opacity: new Animated.Value(0),
     translateY: new Animated.Value(16),
@@ -27,24 +26,19 @@ export default function ValuePropWinsScreen({ navigation }: any) {
   const footerFade = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(titleFade, { toValue: 1, duration: 500, useNativeDriver: true }),
-      Animated.timing(titleSlide, { toValue: 0, duration: 500, useNativeDriver: true }),
-    ]).start();
-
     WINS.forEach((_, i) => {
       Animated.sequence([
-        Animated.delay(300 + i * 180),
+        Animated.delay(120 + i * 140),
         Animated.parallel([
-          Animated.timing(pillAnims[i].opacity, { toValue: 1, duration: 350, useNativeDriver: true }),
-          Animated.timing(pillAnims[i].translateY, { toValue: 0, duration: 350, useNativeDriver: true }),
+          Animated.timing(pillAnims[i].opacity, { toValue: 1, duration: 320, useNativeDriver: true }),
+          Animated.timing(pillAnims[i].translateY, { toValue: 0, duration: 320, useNativeDriver: true }),
         ]),
       ]).start();
     });
 
     Animated.sequence([
-      Animated.delay(300 + WINS.length * 180 + 200),
-      Animated.timing(footerFade, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.delay(160 + WINS.length * 140 + 80),
+      Animated.timing(footerFade, { toValue: 1, duration: 280, useNativeDriver: true }),
     ]).start();
   }, []);
 
@@ -59,22 +53,22 @@ export default function ValuePropWinsScreen({ navigation }: any) {
 
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <View style={[styles.backArrowCircle, { backgroundColor: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-          <Text style={[styles.backArrow, { color: dark ? '#fff' : '#1a1a2e' }]}>←</Text>
+          <Ionicons name="arrow-back" size={20} color={dark ? '#fff' : '#1a1a2e'} />
         </View>
       </TouchableOpacity>
 
       <View style={styles.content}>
-        <Animated.View style={{ opacity: titleFade, transform: [{ translateY: titleSlide }] }}>
-          <Text style={[styles.eyebrow, { color: dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}>
+        <View>
+          <Text style={[styles.eyebrow, { color: dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}> 
             Celebrate growth
           </Text>
-          <Text style={[styles.title, { color: dark ? '#ffffff' : '#1a1a2e' }]}>
+          <Text style={[styles.title, { color: dark ? '#ffffff' : '#1a1a2e' }]}> 
             Celebrate your{'\n'}wins too
           </Text>
-          <Text style={[styles.subtitle, { color: dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }]}>
+          <Text style={[styles.subtitle, { color: dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }]}> 
             Insight also spots what's going well so you can build on your strengths.
           </Text>
-        </Animated.View>
+        </View>
 
         <View style={styles.pillsContainer}>
           {WINS.map((item, i) => (
@@ -99,7 +93,15 @@ export default function ValuePropWinsScreen({ navigation }: any) {
         </View>
       </View>
 
-      <Animated.View style={[styles.footer, { opacity: footerFade }, iPadContentStyle as any]}>
+      <Animated.View style={[styles.footer, {
+        opacity: footerFade,
+        transform: [{
+          translateY: footerFade.interpolate({
+            inputRange: [0, 1],
+            outputRange: [10, 0],
+          }),
+        }],
+      }, iPadContentStyle as any]}>
         <TouchableOpacity
           style={styles.button}
           activeOpacity={0.9}
@@ -135,10 +137,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backArrow: {
-    fontSize: 18,
-    fontWeight: '500',
-  },
   content: {
     flex: 1,
     paddingHorizontal: isTablet ? 48 : 28,
@@ -153,9 +151,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   title: {
-    fontSize: sf(34),
-    fontWeight: '700',
-    letterSpacing: -0.8,
+    fontSize: sf(32),
+    fontWeight: '600',
+    letterSpacing: -0.6,
     lineHeight: sf(40),
     marginBottom: 14,
   },
