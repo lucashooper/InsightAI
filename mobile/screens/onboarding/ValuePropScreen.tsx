@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions, Image } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -14,48 +14,6 @@ const { width } = Dimensions.get('window');
 
 export default function ValuePropScreen({ navigation }: any) {
   const { theme } = useTheme();
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
-  
-  const bullet1Anim = useRef(new Animated.Value(0)).current;
-  const bullet2Anim = useRef(new Animated.Value(0)).current;
-  const bullet3Anim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    Animated.sequence([
-      Animated.delay(600),
-      Animated.timing(bullet1Anim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.delay(200),
-      Animated.timing(bullet2Anim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.delay(200),
-      Animated.timing(bullet3Anim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -81,15 +39,7 @@ export default function ValuePropScreen({ navigation }: any) {
       <Image source={insightLogo} style={styles.logo} />
 
       <View style={styles.content}>
-        <Animated.View
-          style={[
-            styles.mainContent,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
+        <View style={styles.mainContent}>
           {/* Headline */}
           <Text style={[styles.headline, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>
             Insight turns thoughts{' '}into clarity
@@ -122,36 +72,30 @@ export default function ValuePropScreen({ navigation }: any) {
             </View>
           </View>
 
-          {/* Supporting text with staggered animations */}
+          {/* Supporting text */}
           <View style={styles.bulletContainer}>
-            <Animated.View style={{ opacity: bullet1Anim, transform: [{ translateY: bullet1Anim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }}>
-              <View style={styles.bulletRow}>
-                <Text style={styles.bulletDot}>•</Text>
-                <Text style={[styles.bulletText, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.7)' : '#4a4a4a' }]}>
-                  Capture how you feel
-                </Text>
-              </View>
-            </Animated.View>
+            <View style={styles.bulletRow}>
+              <Text style={styles.bulletDot}>•</Text>
+              <Text style={[styles.bulletText, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.7)' : '#4a4a4a' }]}>
+                Capture how you feel
+              </Text>
+            </View>
 
-            <Animated.View style={{ opacity: bullet2Anim, transform: [{ translateY: bullet2Anim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }}>
-              <View style={styles.bulletRow}>
-                <Text style={styles.bulletDot}>•</Text>
-                <Text style={[styles.bulletText, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.7)' : '#4a4a4a' }]}>
-                  Understand patterns over time
-                </Text>
-              </View>
-            </Animated.View>
+            <View style={styles.bulletRow}>
+              <Text style={styles.bulletDot}>•</Text>
+              <Text style={[styles.bulletText, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.7)' : '#4a4a4a' }]}>
+                Understand patterns over time
+              </Text>
+            </View>
 
-            <Animated.View style={{ opacity: bullet3Anim, transform: [{ translateY: bullet3Anim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }}>
-              <View style={styles.bulletRow}>
-                <Text style={styles.bulletDot}>•</Text>
-                <Text style={[styles.bulletText, styles.bulletTextPurple]}>
-                  Gain clarity — not clutter
-                </Text>
-              </View>
-            </Animated.View>
+            <View style={styles.bulletRow}>
+              <Text style={styles.bulletDot}>•</Text>
+              <Text style={[styles.bulletText, styles.bulletTextPurple]}>
+                Gain clarity — not clutter
+              </Text>
+            </View>
           </View>
-        </Animated.View>
+        </View>
       </View>
 
       {/* Continue Button */}
