@@ -6,12 +6,12 @@ import SunoGradient from '../../components/onboarding/SunoGradient';
 import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
 
 const PATTERNS = [
-  { emoji: '😴', text: 'Adjust sleep schedule 8x' },
-  { emoji: '🧘', text: 'Practice self-compassion more' },
-  { emoji: '📵', text: 'Reduce screen time before bed' },
-  { emoji: '🍃', text: 'Manage stress proactively' },
-  { emoji: '🗣️', text: 'Set clearer boundaries' },
-  { emoji: '💭', text: 'Challenge negative self-talk' },
+  { emoji: '😴', text: 'Adjust sleep schedule', frequency: 8 },
+  { emoji: '🧘', text: 'Practice self-compassion more', frequency: 6 },
+  { emoji: '📵', text: 'Reduce screen time before bed', frequency: 5 },
+  { emoji: '🍃', text: 'Manage stress proactively', frequency: 4 },
+  { emoji: '🗣️', text: 'Set clearer boundaries', frequency: 3 },
+  { emoji: '💭', text: 'Challenge negative self-talk', frequency: 2 },
 ];
 
 export default function ValuePropPatternsScreen({ navigation }: any) {
@@ -100,6 +100,9 @@ export default function ValuePropPatternsScreen({ navigation }: any) {
                 },
               ]}
             >
+              <View style={styles.frequencyBadge}>
+                <Text style={styles.frequencyText}>x{item.frequency}</Text>
+              </View>
               <Text style={styles.pillEmoji}>{item.emoji}</Text>
               <Text style={[styles.pillText, { color: dark ? 'rgba(255,255,255,0.85)' : '#1a1a2e' }]}>
                 {item.text}
@@ -187,12 +190,28 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 12,
   },
+  frequencyBadge: {
+    backgroundColor: '#ef4444',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    marginRight: 'auto',
+  },
+  frequencyText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.3,
+  },
   pillEmoji: {
     fontSize: 22,
+    marginLeft: 12,
   },
   pillText: {
     fontSize: sf(15),
     fontWeight: '500',
+    flex: 1,
+    marginLeft: 12,
   },
   footer: {
     paddingHorizontal: isTablet ? 48 : 28,

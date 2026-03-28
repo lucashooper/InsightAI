@@ -69,13 +69,11 @@ export default function RateUsScreen({ navigation }: any) {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Star Icon */}
-        <View style={styles.iconContainer}>
-          <Text style={styles.starIcon}>⭐</Text>
+        {/* Title Row with Star */}
+        <View style={styles.titleRow}>
+          <Text style={styles.starIconSmall}>⭐</Text>
+          <Text style={[styles.title, dark && styles.titleDark]}>Rate us 5 Stars</Text>
         </View>
-
-        {/* Title */}
-        <Text style={[styles.title, dark && styles.titleDark]}>Rate us 5 Stars</Text>
         <Text style={[styles.subtitle, dark && styles.subtitleDark]}>
           Help us spread the message of mindful living and personal growth
         </Text>
@@ -159,18 +157,20 @@ const styles = StyleSheet.create({
     paddingBottom: isTablet ? 40 : 20,
     alignItems: 'center',
   },
-  iconContainer: {
-    marginBottom: isTablet ? 24 : 20,
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 12,
   },
-  starIcon: {
-    fontSize: isTablet ? 64 : 56,
+  starIconSmall: {
+    fontSize: isTablet ? 28 : 24,
   },
   title: {
-    fontSize: sf(32),
+    fontSize: sf(28),
     fontWeight: '700',
     color: '#1a1a2e',
-    textAlign: 'center',
-    marginBottom: 12,
   },
   titleDark: {
     color: '#ffffff',
