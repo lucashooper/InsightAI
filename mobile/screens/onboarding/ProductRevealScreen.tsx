@@ -89,38 +89,39 @@ const styles = StyleSheet.create({
     brandRow: {
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: isTablet ? 20 : 0,
-        marginBottom: isTablet ? 28 : 20,
+        marginTop: isTablet ? 10 : 0,
+        marginBottom: isTablet ? 10 : 2,
     },
     logo: {
-        width: isTablet ? 100 : 80,
-        height: isTablet ? 100 : 80,
+        width: isTablet ? 160 : 130,
+        height: isTablet ? 160 : 130,
     },
 
     /* ── Welcome ───────────────────────────────────────────────── */
     welcomeContainer: {
         alignItems: 'center',
-        marginBottom: isTablet ? 24 : 16,
+        marginBottom: isTablet ? 4 : 0,
         paddingHorizontal: 24,
     },
     welcomeText: {
-        fontSize: sf(30),
+        fontSize: sf(32),
         fontWeight: '600',
         color: '#1a1a2e',
         textAlign: 'center',
-        letterSpacing: -0.8,
+        letterSpacing: -0.6,
     },
 
     /* ── Phone image ───────────────────────────────────────────── */
     phoneSection: {
         flex: 1,
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         overflow: 'hidden',
     },
     maskedContainer: {
-        width: SCREEN_WIDTH * (isTablet ? 0.75 : 0.95),
-        height: SCREEN_HEIGHT * (isTablet ? 0.60 : 0.58),
+        width: SCREEN_WIDTH * (isTablet ? 0.84 : 1.08),
+        height: SCREEN_HEIGHT * (isTablet ? 0.70 : 0.69),
+        marginTop: isTablet ? -8 : -18,
     },
     phoneMockup: {
         width: '100%',

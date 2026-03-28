@@ -1,7 +1,6 @@
-import React, { useEffect, useRef } from 'react';
-import { TouchableOpacity, Text, StyleSheet, Animated, View } from 'react-native';
+import React from 'react';
+import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { SvgXml } from 'react-native-svg';
 
@@ -23,25 +22,9 @@ interface PillOptionProps {
   onPress: () => void;
 }
 
-/**
- * Premium pill option with Pushscroll-style selection:
- * - Default: subtle dark background with border
- * - Selected: bright cyan gradient fill, no text color change
- * - Smooth transition animations
- */
 export default function PillOption({ label, icon, selected, onPress }: PillOptionProps) {
-  const checkAnim = useRef(new Animated.Value(selected ? 1 : 0)).current;
+  const isSocialMedia = ['Instagram', 'Facebook', 'TikTok', 'YouTube', 'Google'].includes(label);
 
-  useEffect(() => {
-    Animated.spring(checkAnim, {
-      toValue: selected ? 1 : 0,
-      useNativeDriver: true,
-      tension: 120,
-      friction: 14,
-    }).start();
-  }, [selected, checkAnim]);
-
-  // Get SVG logo source for social media platforms
   const getSvgLogo = () => {
     switch (label) {
       case 'Instagram': return InstagramSvg;
@@ -53,19 +36,7 @@ export default function PillOption({ label, icon, selected, onPress }: PillOptio
     }
   };
 
-  const getIconBackgroundColor = () => {
-    // Soft neutral background for social media icons on light theme
-    if (['Instagram', 'Facebook', 'TikTok', 'YouTube', 'Google'].includes(label)) {
-      return 'rgba(0, 0, 0, 0.04)';
-    }
-    return 'rgba(139, 92, 246, 0.08)';
-  };
-
-  const isSocialMedia = ['Instagram', 'Facebook', 'TikTok', 'YouTube', 'Google'].includes(label);
   const svgLogo = getSvgLogo();
-
-  const selectedColors = ['#a855f7', '#8b5cf6'] as const;
-  const defaultColors = ['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.9)'] as const;
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -74,64 +45,28 @@ export default function PillOption({ label, icon, selected, onPress }: PillOptio
 
   return (
     <TouchableOpacity
-      activeOpacity={0.7}
+      activeOpacity={0.75}
       onPress={handlePress}
       style={styles.container}
     >
-      <LinearGradient
-        colors={selected ? selectedColors : defaultColors}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.pill, selected ? styles.pillSelected : styles.pillDefault]}
-      >
+      <View style={[styles.pill, selected ? styles.pillSelected : styles.pillDefault]}>
         <View style={styles.leftGroup}>
-          <Animated.View
-            style={[
-              styles.checkWrapper,
-              {
-                opacity: checkAnim,
-                transform: [
-                  {
-                    scale: checkAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.7, 1],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          >
-            <View style={styles.checkChip}>
-              <Ionicons name="checkmark" size={14} color="#0b1220" />
+          {icon || isSocialMedia ? (
+            <View style={[styles.iconChip, selected && styles.iconChipSelected]}>
+              {isSocialMedia && svgLogo ? (
+                <SvgXml xml={svgLogo} width={20} height={20} />
+              ) : icon ? (
+                <Ionicons
+                  name={icon as any}
+                  size={18}
+                  color={selected ? '#ffffff' : '#6b7280'}
+                />
+              ) : null}
             </View>
-          </Animated.View>
-
-          <View style={[styles.iconChip, { backgroundColor: getIconBackgroundColor() }]}>
-            {isSocialMedia && svgLogo ? (
-              <SvgXml 
-                xml={svgLogo} 
-                width={22}
-                height={22}
-              />
-            ) : icon ? (
-              <Ionicons
-                name={icon as any}
-                size={18}
-                color={selected ? '#ffffff' : '#6b7280'}
-              />
-            ) : null}
-          </View>
-
+          ) : null}
           <Text style={[styles.label, selected && styles.labelSelected]}>{label}</Text>
         </View>
-
-        <Ionicons
-          name="chevron-forward"
-          size={18}
-          color={selected ? '#ffffff' : '#9ca3af'}
-        />
-
-      </LinearGradient>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -144,69 +79,52 @@ const styles = StyleSheet.create({
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 18,
-    paddingHorizontal: 18,
-    borderRadius: 18,
-    overflow: 'hidden',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    borderRadius: 16,
   },
   leftGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
     flex: 1,
   },
-  checkWrapper: {
-    width: 22,
-    height: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkChip: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.85)',
-  },
   iconChip: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.06)',
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
   },
   iconChipSelected: {
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    borderColor: 'rgba(255,255,255,0.35)',
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
   },
   pillDefault: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.06)',
+    borderColor: 'rgba(0, 0, 0, 0.07)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   pillSelected: {
+    backgroundColor: '#1a1a1a',
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.3)',
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 8,
+    borderColor: '#1a1a1a',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 6,
   },
   label: {
     flex: 1,
     fontSize: 17,
     fontWeight: '600',
-    color: '#374151',
+    color: '#1a1a2e',
     letterSpacing: -0.2,
   },
   labelSelected: {

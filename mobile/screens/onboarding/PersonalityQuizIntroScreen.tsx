@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Animated, Dimensions, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar, Animated, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -96,26 +96,11 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
   const { theme } = useTheme();
   const { userName } = useOnboarding();
   const dark = isDarkTheme(theme.name);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.9)).current;
   const answers = route?.params?.answers || {};
   const returnIndex = route?.params?.returnIndex || 0;
 
   useEffect(() => {
     analytics.trackOnboardingScreen('personality_quiz_intro', 'viewed', userName || undefined);
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        tension: 50,
-        friction: 8,
-        useNativeDriver: true,
-      }),
-    ]).start();
   }, []);
 
   const handleContinue = () => {
@@ -157,7 +142,7 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
         </View>
       </TouchableOpacity>
 
-      <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
+      <View style={styles.content}>
         {/* Icon - No container, just the book icon */}
         <View style={styles.iconContainer}>
           <Image source={bookIcon} style={styles.bookIconLarge} resizeMode="contain" />
@@ -218,7 +203,7 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
             </Text>
           </View>
         </View>
-      </Animated.View>
+      </View>
 
       {/* Bottom Buttons */}
       <View style={styles.buttonsContainer}>
@@ -274,36 +259,36 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingHorizontal: isTablet ? 48 : 32,
-    paddingTop: isTablet ? 100 : 80,
+    paddingTop: isTablet ? 92 : 72,
   },
   iconContainer: {
-    marginBottom: 0,
+    marginBottom: -4,
   },
   bookIconLarge: {
-    width: 240,
-    height: 240,
+    width: 220,
+    height: 220,
   },
   title: {
-    fontSize: sf(28),
-    fontWeight: '700',
+    fontSize: sf(32),
+    fontWeight: '600',
     textAlign: 'center',
     marginTop: 4,
-    marginBottom: 16,
-    letterSpacing: -0.5,
+    marginBottom: 14,
+    letterSpacing: -0.6,
   },
   description: {
     fontSize: sf(16),
     textAlign: 'center',
     lineHeight: sf(24),
-    marginBottom: 24,
+    marginBottom: 20,
     paddingHorizontal: isTablet ? 40 : 16,
   },
   cardsContainer: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 40,
+    marginBottom: 28,
     width: '100%',
     justifyContent: 'center',
   },
@@ -335,6 +320,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     width: '100%',
     gap: 12,
+    marginBottom: 28,
   },
   benefitRow: {
     flexDirection: 'row',
@@ -347,6 +333,7 @@ const styles = StyleSheet.create({
   },
   buttonsContainer: {
     paddingHorizontal: isTablet ? 48 : 24,
+    paddingTop: 8,
     paddingBottom: isTablet ? 60 : 50,
     width: '100%',
   },

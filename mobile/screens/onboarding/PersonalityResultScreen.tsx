@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions, ScrollView, StatusBar } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar, ScrollView } from 'react-native';
 import Svg, { Polygon, Circle, Line, Text as SvgText } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -177,7 +177,7 @@ function computePersonality(answers: Record<string, string>): PersonalityProfile
 // ── Radar Chart Component ─────────────────────────────────────
 function RadarChart({ dimensions, dark }: { dimensions: { label: string; score: number }[]; dark: boolean }) {
   const chartSize = Math.min(width - 80, 300);
-  const size = chartSize + 100; // Extra space for labels
+  const size = chartSize + 160; // Extra space for labels
   const center = size / 2;
   const radius = chartSize / 2 - 40;
   const n = dimensions.length;
@@ -264,17 +264,18 @@ function RadarChart({ dimensions, dark }: { dimensions: { label: string; score: 
 
         {/* Labels */}
         {dimensions.map((d, i) => {
-          const labelPoint = getPoint(i, 1.55);
+          const labelPoint = getPoint(i, 1.62);
           const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
           let anchor: 'start' | 'middle' | 'end' = 'middle';
           if (Math.cos(angle) > 0.3) anchor = 'start';
           if (Math.cos(angle) < -0.3) anchor = 'end';
+          const xOffset = anchor === 'end' ? 18 : anchor === 'start' ? -18 : 0;
 
           // Split long labels into multiple lines
           const words = d.label.split(' ');
           const lines: string[] = [];
           let currentLine = '';
-          const maxCharsPerLine = 12;
+          const maxCharsPerLine = 10;
           words.forEach(word => {
             const testLine = currentLine ? `${currentLine} ${word}` : word;
             if (testLine.length > maxCharsPerLine && currentLine) {
@@ -289,11 +290,11 @@ function RadarChart({ dimensions, dark }: { dimensions: { label: string; score: 
           return lines.map((line, lineIdx) => (
             <SvgText
               key={`label-${i}-${lineIdx}`}
-              x={labelPoint.x}
-              y={labelPoint.y + (lineIdx * 16)}
+              x={labelPoint.x + xOffset}
+              y={labelPoint.y + (lineIdx * 15) - ((lines.length - 1) * 7)}
               textAnchor={anchor}
               alignmentBaseline="middle"
-              fontSize={12}
+              fontSize={11.5}
               fontWeight="500"
               fill={labelColor}
             >
@@ -310,26 +311,10 @@ export default function PersonalityResultScreen({ navigation, route }: any) {
   const { theme } = useTheme();
   const dark = isDarkTheme(theme.name);
   const answers = route?.params?.answers || {};
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const chartScale = useRef(new Animated.Value(0.8)).current;
-
   const profile = computePersonality(answers);
 
   useEffect(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.spring(chartScale, {
-        toValue: 1,
-        tension: 50,
-        friction: 8,
-        useNativeDriver: true,
-      }),
-    ]).start();
   }, []);
 
     return (
@@ -357,7 +342,7 @@ export default function PersonalityResultScreen({ navigation, route }: any) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View style={{ opacity: fadeAnim }}>
+        <View>
           {/* Header text */}
           <Text style={[styles.subtitle, { color: dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }]}>
             Your primary pattern
@@ -368,9 +353,7 @@ export default function PersonalityResultScreen({ navigation, route }: any) {
           </Text>
 
           {/* Radar Chart */}
-          <Animated.View style={{ transform: [{ scale: chartScale }] }}>
-            <RadarChart dimensions={profile.dimensions} dark={dark} />
-          </Animated.View>
+          <RadarChart dimensions={profile.dimensions} dark={dark} />
 
           {/* Description */}
           <Text style={[styles.description, { color: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)' }]}>
@@ -387,7 +370,7 @@ export default function PersonalityResultScreen({ navigation, route }: any) {
               We'll track how this evolves and help you work through it.
             </Text>
           </View>
-        </Animated.View>
+        </View>
       </ScrollView>
 
       {/* Continue button */}
@@ -437,9 +420,9 @@ const styles = StyleSheet.create({
   },
   primaryPattern: {
     fontSize: sf(32),
-    fontWeight: '800',
+    fontWeight: '600',
     textAlign: 'center',
-    letterSpacing: -0.5,
+    letterSpacing: -0.6,
     marginBottom: 8,
   },
   description: {

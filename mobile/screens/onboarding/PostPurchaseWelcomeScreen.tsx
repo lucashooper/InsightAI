@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Animated, Image } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -10,30 +10,6 @@ const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 export default function PostPurchaseWelcomeScreen({ navigation }: any) {
   const { theme } = useTheme();
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
-  const logoScale = useRef(new Animated.Value(0.8)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.spring(logoScale, {
-        toValue: 1,
-        friction: 8,
-        tension: 40,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
 
   const handleContinue = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -49,11 +25,11 @@ export default function PostPurchaseWelcomeScreen({ navigation }: any) {
       )}
       <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} />
       
-      <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+      <View style={styles.content}>
         {/* Logo */}
-        <Animated.View style={[styles.logoContainer, { transform: [{ scale: logoScale }] }]}>
+        <View style={styles.logoContainer}>
           <Image source={insightLogo} style={styles.logo} resizeMode="contain" />
-        </Animated.View>
+        </View>
 
         {/* Welcome Text */}
         <Text style={[styles.title, isDarkTheme(theme.name) && { color: '#ffffff' }]}>Welcome to Insight</Text>
@@ -85,7 +61,7 @@ export default function PostPurchaseWelcomeScreen({ navigation }: any) {
         <Text style={[styles.infoText, isDarkTheme(theme.name) && { color: 'rgba(255, 255, 255, 0.45)' }]}>
           Create an account to save your entries and access them across devices.
         </Text>
-      </Animated.View>
+      </View>
 
       {/* Continue Button */}
       <View style={styles.footer}>

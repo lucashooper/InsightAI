@@ -205,9 +205,6 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
           </TouchableOpacity>
 
           <View style={styles.content}>
-          {/* Logo */}
-          <Image source={require('../public/Insight-Logo-nobg.webp')} style={styles.logo} />
-        
           <View style={styles.iconContainer}>
             <Image
               source={require('../public/onboarding-icons/Email-Icon2.webp')}
@@ -298,34 +295,29 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 40,
     alignItems: 'center',
-  },
-  logo: {
-    width: 100,
-    height: 100,
-    opacity: 0.9,
-    position: 'absolute',
-    top: 16,
+    justifyContent: 'center',
   },
   iconContainer: {
-    marginBottom: 12,
+    marginBottom: 8,
   },
   emailIcon: {
-    width: 280,
-    height: 280,
+    width: 180,
+    height: 180,
   },
   title: {
     fontSize: 32,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#1a1a2e',
-    marginBottom: 12,
+    marginBottom: 10,
     textAlign: 'center',
+    letterSpacing: -0.6,
   },
   subtitle: {
     fontSize: 15,
     color: 'rgba(0, 0, 0, 0.5)',
-    marginBottom: 40,
+    marginBottom: 28,
     textAlign: 'center',
     lineHeight: 22,
   },

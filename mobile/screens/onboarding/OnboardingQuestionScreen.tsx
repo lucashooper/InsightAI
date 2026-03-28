@@ -302,7 +302,6 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
     const [textInputValue, setTextInputValue] = useState('');
     const [wellbeingValue, setWellbeingValue] = useState(7);
-    const [contentFadeAnim] = useState(new Animated.Value(1));
     const isTransitioning = useRef(false);
     const [showLottie, setShowLottie] = useState(false);
     const [featureFadeAnims] = useState([
@@ -395,16 +394,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
     }, [floatAnim, pulseAnim]);
 
     useEffect(() => {
-        // Smooth fade-in for all step transitions
-        contentFadeAnim.setValue(0);
-        Animated.timing(contentFadeAnim, {
-            toValue: 1,
-            duration: 600,
-            easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
-        }).start(() => {
-            isTransitioning.current = false;
-        });
+        isTransitioning.current = false;
 
         // Reset wellbeing default when entering slider step
         if (currentStep.type === 'slider') {
@@ -425,9 +415,20 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
             });
         }
 
-        // Instant show for question pill options — no stagger to prevent gap glitch
+        // Staggered pill fade-in for question options only
         if (currentStep.type === 'question' && currentStep.options) {
-            optionFadeAnims.forEach((anim) => anim.setValue(1));
+            optionFadeAnims.forEach((anim) => anim.setValue(0));
+            currentStep.options.forEach((_, index) => {
+                if (optionFadeAnims[index]) {
+                    Animated.timing(optionFadeAnims[index], {
+                        toValue: 1,
+                        duration: 320,
+                        delay: index * 45,
+                        easing: Easing.out(Easing.cubic),
+                        useNativeDriver: true,
+                    }).start();
+                }
+            });
         }
 
         // Simple fade-in for info pages (research) - same as other pages
@@ -437,7 +438,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
         } else {
             setShowLottie(false);
         }
-    }, [currentIndex, currentStep.type, currentStep.defaultValue, currentStep.features, currentStep.options, featureFadeAnims, optionFadeAnims, infoLottieAnim, infoCardAnim, contentFadeAnim]);
+    }, [currentIndex, currentStep.type, currentStep.defaultValue, currentStep.features, currentStep.options, featureFadeAnims, optionFadeAnims, infoLottieAnim, infoCardAnim]);
 
     const handleNext = (value?: string) => {
         if (isTransitioning.current) return; // Prevent double-taps during transition
@@ -463,30 +464,22 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
             console.log('[OnboardingQuestion] Username saved to context');
         }
 
-        // Fade out current content, then swap to next step
-        Animated.timing(contentFadeAnim, {
-            toValue: 0,
-            duration: 150,
-            easing: Easing.in(Easing.ease),
-            useNativeDriver: true,
-        }).start(() => {
-            // After wellbeing question (index 5), go to PersonalityQuizIntro
-            if (currentIndex === 5) {
-                isTransitioning.current = false;
-                const currentAnswers = value ? { ...answers, [currentStep.id]: value } : answers;
-                console.log('[OnboardingQuestion] After wellbeing, navigating to PersonalityQuizIntro');
-                navigation.navigate('PersonalityQuizIntro', { answers: currentAnswers, returnIndex: 6 });
-            } else if (currentIndex < STEPS.length - 1) {
-                setCurrentIndex(currentIndex + 1);
-                setSelectedOption(null);
-            } else {
-                // Finished all questions - go to analyzing
-                isTransitioning.current = false;
-                const finalAnswers = value ? { ...answers, [currentStep.id]: value } : answers;
-                console.log('[OnboardingQuestion] Navigating to Analyzing with answers:', finalAnswers);
-                navigation.navigate('Analyzing', { answers: finalAnswers });
-            }
-        });
+        // After wellbeing question (index 5), go to PersonalityQuizIntro
+        if (currentIndex === 5) {
+            isTransitioning.current = false;
+            const currentAnswers = value ? { ...answers, [currentStep.id]: value } : answers;
+            console.log('[OnboardingQuestion] After wellbeing, navigating to PersonalityQuizIntro');
+            navigation.navigate('PersonalityQuizIntro', { answers: currentAnswers, returnIndex: 6 });
+        } else if (currentIndex < STEPS.length - 1) {
+            setCurrentIndex(currentIndex + 1);
+            setSelectedOption(null);
+        } else {
+            // Finished all questions - go to analyzing
+            isTransitioning.current = false;
+            const finalAnswers = value ? { ...answers, [currentStep.id]: value } : answers;
+            console.log('[OnboardingQuestion] Navigating to Analyzing with answers:', finalAnswers);
+            navigation.navigate('Analyzing', { answers: finalAnswers });
+        }
     };
 
     const handleSkip = () => {
@@ -530,15 +523,8 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                             navigation.goBack();
                         } else {
                             isTransitioning.current = true;
-                            Animated.timing(contentFadeAnim, {
-                                toValue: 0,
-                                duration: 150,
-                                easing: Easing.in(Easing.ease),
-                                useNativeDriver: true,
-                            }).start(() => {
-                                setCurrentIndex(currentIndex - 1);
-                                setSelectedOption(null);
-                            });
+                            setCurrentIndex(currentIndex - 1);
+                            setSelectedOption(null);
                         }
                     }}
                     style={styles.backArrow}
@@ -556,7 +542,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                 </View>
             </View>
 
-            <Animated.View style={[styles.content, { opacity: contentFadeAnim }]}>
+            <View style={styles.content}>
 
                 <View style={styles.stepContainer}>
 
@@ -645,18 +631,19 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                         </View>
                     ) : (
                         <>
+
                             {/* Standard Layout for Other Pages */}
                             {renderAnimationPlaceholder()}
 
-                            {/* Title - softer typography */}
+                            {/* Title */}
                             <Text style={{
-                                fontSize: currentStep.type === 'info' ? 26 : 28,
-                                fontWeight: currentStep.type === 'info' ? '500' : '600',
+                                fontSize: 32,
+                                fontWeight: '600',
                                 color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e',
                                 textAlign: 'left',
-                                lineHeight: currentStep.type === 'info' ? 34 : 36,
-                                letterSpacing: -0.3,
-                                marginBottom: 16,
+                                lineHeight: 40,
+                                letterSpacing: -0.6,
+                                marginBottom: 20,
                             }}>
                                 {currentStep.title}
                             </Text>
@@ -816,13 +803,25 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                             <ScrollView style={styles.optionsList} showsVerticalScrollIndicator={false}>
                                 <View style={styles.optionsContainer}>
                                     {currentStep.options.map((option, index) => (
-                                        <PillOption
+                                        <Animated.View
                                             key={option.value}
-                                            label={option.label}
-                                            icon={option.icon}
-                                            selected={selectedOption === option.value}
-                                            onPress={() => setSelectedOption(option.value)}
-                                        />
+                                            style={{
+                                                opacity: optionFadeAnims[index],
+                                                transform: [{
+                                                    translateY: optionFadeAnims[index].interpolate({
+                                                        inputRange: [0, 1],
+                                                        outputRange: [8, 0],
+                                                    })
+                                                }]
+                                            }}
+                                        >
+                                            <PillOption
+                                                label={option.label}
+                                                icon={option.icon}
+                                                selected={selectedOption === option.value}
+                                                onPress={() => setSelectedOption(option.value)}
+                                            />
+                                        </Animated.View>
                                     ))}
                                 </View>
 
@@ -924,7 +923,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                         </View>
                     )}
                 </View>
-            </Animated.View>
+            </View>
         </View>
     );
 }
@@ -1339,26 +1338,26 @@ const styles = StyleSheet.create({
     },
     sliderContinueButton: {
         width: '100%',
-        borderRadius: 999,
+        borderRadius: 28,
+        backgroundColor: '#1a1a1a',
         marginTop: 24,
-        marginBottom: 24,
-        shadowColor: '#8b5cf6',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.3,
-        shadowRadius: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
         elevation: 8,
     },
     sliderContinueGradient: {
-        paddingVertical: 18,
-        borderRadius: 999,
         alignItems: 'center',
         justifyContent: 'center',
+        paddingVertical: 22,
+        borderRadius: 28,
     },
     sliderContinueText: {
-        fontSize: 18,
-        fontWeight: '700',
+        fontSize: sf(17),
+        fontWeight: '600',
         color: '#fff',
-        letterSpacing: 0.3,
+        letterSpacing: 0.2,
     },
     
     // ========================================
@@ -1407,12 +1406,12 @@ const styles = StyleSheet.create({
         opacity: 1, // Controlled by Animated.View wrapper
     },
     researchTitle: {
-        fontSize: 28,
+        fontSize: 32,
         fontWeight: '600',
         color: '#1a1a2e',
         textAlign: 'left',
-        letterSpacing: -0.3,
-        lineHeight: 36,
+        letterSpacing: -0.6,
+        lineHeight: 40,
         marginBottom: 20,
     },
     logoGrid: {
@@ -1559,28 +1558,5 @@ const styles = StyleSheet.create({
         color: '#1a1a2e',
         fontWeight: '500',
         marginBottom: 24,
-    },
-    sliderContinueButton: {
-        width: '100%',
-        borderRadius: 28,
-        backgroundColor: '#1a1a1a',
-        marginTop: 24,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
-        elevation: 8,
-    },
-    sliderContinueGradient: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 22,
-        borderRadius: 28,
-    },
-    sliderContinueText: {
-        fontSize: sf(17),
-        fontWeight: '600',
-        color: '#fff',
-        letterSpacing: 0.2,
     },
 });

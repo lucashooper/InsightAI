@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions, StatusB
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeName, useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import ProgressBarNeon from '../../components/onboarding/ProgressBarNeon';
@@ -90,17 +89,7 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
     }
   };
   const [backgroundColors, setBackgroundColors] = useState<string[]>(getThemeBackgroundColors('light'));
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const bgTransitionAnim = useRef(new Animated.Value(0)).current;
   const { setTheme } = useTheme();
-
-  useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 600,
-      useNativeDriver: true,
-    }).start();
-  }, []);
 
   const handleVibeSelect = (vibe: ThemeName) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -163,7 +152,7 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
         </View>
       </View>
       
-      <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+      <View style={styles.content}>
         <View style={styles.header}>
           <Text style={[styles.title, { color: textColor }]}>Choose your vibe</Text>
         </View>
@@ -182,16 +171,20 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
         </View>
 
         <TouchableOpacity
-          style={[styles.continueButton, !selectedVibe && styles.continueButtonDisabled]}
+          style={[
+            styles.continueButton,
+            isDark && styles.continueButtonDark,
+            !selectedVibe && styles.continueButtonDisabled,
+          ]}
           onPress={handleContinue}
           disabled={!selectedVibe}
           activeOpacity={0.8}
         >
-          <View style={[styles.continueGradient, !selectedVibe && { opacity: 0.4 }]}>
-            <Text style={styles.continueText}>Continue</Text>
+          <View style={[styles.continueGradient, !selectedVibe && { opacity: 0.4 }]}> 
+            <Text style={[styles.continueText, isDark && styles.continueTextDark]}>Continue</Text>
           </View>
         </TouchableOpacity>
-      </Animated.View>
+      </View>
     </View>
   );
 }
@@ -334,10 +327,10 @@ const styles = StyleSheet.create({
     marginBottom: isTablet ? 48 : 40,
   },
   title: {
-    fontSize: isTablet ? sf(42) : sf(36),
+    fontSize: sf(32),
     fontWeight: '600',
     color: '#1a1a2e',
-    letterSpacing: -0.5,
+    letterSpacing: -0.6,
     marginBottom: 12,
     textAlign: 'center',
   },
@@ -437,6 +430,10 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 8,
   },
+  continueButtonDark: {
+    backgroundColor: '#ffffff',
+    shadowOpacity: 0.14,
+  },
   continueButtonDisabled: {
     opacity: 0.4,
   },
@@ -451,5 +448,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#ffffff',
     letterSpacing: 0.2,
+  },
+  continueTextDark: {
+    color: '#111111',
   },
 });

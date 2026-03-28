@@ -571,7 +571,7 @@ export default function AppNavigator() {
           initialRouteName={isOnboardingCompleted ? 'MainTabs' : (onboardingResumeScreen || 'Welcome')}
           screenOptions={{
             headerShown: false,
-            animation: 'fade',
+            animation: 'none',
             gestureEnabled: true,
             animationDuration: 650,
           }}
@@ -639,7 +639,7 @@ export default function AppNavigator() {
           initialRouteName={isOnboardingCompleted ? 'Login' : needsPostPurchaseSignup ? 'PostPurchaseWelcome' : 'Welcome'}
           screenOptions={{
             headerShown: false,
-            animation: 'fade',
+            animation: 'none',
             gestureEnabled: true,
             animationDuration: 650,
           }}
