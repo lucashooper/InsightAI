@@ -123,14 +123,9 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
                         activeOpacity={0.9}
                         onPress={handleFinish}
                     >
-                        <LinearGradient
-                            colors={['#8b5cf6', '#6d28d9']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.buttonGradient}
-                        >
+                        <View style={styles.buttonGradient}>
                             <Text style={styles.buttonText}>Continue</Text>
-                        </LinearGradient>
+                        </View>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -204,10 +199,11 @@ const styles = StyleSheet.create({
     },
     button: {
         width: '100%',
-        borderRadius: 999,
-        shadowColor: '#8b5cf6',
+        borderRadius: 28,
+        backgroundColor: '#1a1a1a',
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
+        shadowOpacity: 0.2,
         shadowRadius: 12,
         elevation: 8,
     },
@@ -215,16 +211,14 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 18,
-        borderRadius: 999,
+        paddingVertical: 22,
+        borderRadius: 28,
         gap: 8,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
     },
     buttonText: {
-        fontSize: 18,
+        fontSize: 17,
         fontWeight: '600',
         color: '#fff',
-        letterSpacing: 0.5,
+        letterSpacing: 0.2,
     },
 });

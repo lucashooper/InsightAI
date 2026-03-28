@@ -184,14 +184,9 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
           disabled={!selectedVibe}
           activeOpacity={0.8}
         >
-          <LinearGradient
-            colors={selectedVibe ? ['#8b5cf6', '#7c3aed'] : ['#4b5563', '#374151']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.continueGradient}
-          >
+          <View style={[styles.continueGradient, !selectedVibe && { opacity: 0.4 }]}>
             <Text style={styles.continueText}>Continue</Text>
-          </LinearGradient>
+          </View>
         </TouchableOpacity>
       </Animated.View>
     </View>
@@ -431,27 +426,27 @@ const styles = StyleSheet.create({
   continueButton: {
     marginTop: 'auto',
     marginBottom: isTablet ? 40 : 30,
-    borderRadius: 999,
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 10,
+    borderRadius: 28,
+    backgroundColor: '#1a1a1a',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
   },
   continueButtonDisabled: {
-    shadowOpacity: 0,
-    elevation: 0,
+    opacity: 0.4,
   },
   continueGradient: {
-    paddingVertical: isTablet ? 20 : 18,
-    borderRadius: 999,
+    paddingVertical: 22,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
   continueText: {
-    fontSize: isTablet ? sf(18) : sf(16),
-    fontWeight: '700',
+    fontSize: sf(17),
+    fontWeight: '600',
     color: '#ffffff',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
 });

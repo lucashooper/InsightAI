@@ -94,14 +94,9 @@ export default function PostPurchaseWelcomeScreen({ navigation }: any) {
           onPress={handleContinue}
           activeOpacity={0.9}
         >
-          <LinearGradient
-            colors={['#a855f7', '#8b5cf6']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.continueGradient}
-          >
+          <View style={styles.continueGradient}>
             <Text style={styles.continueText}>Continue</Text>
-          </LinearGradient>
+          </View>
         </TouchableOpacity>
       </View>
     </View>
@@ -179,18 +174,24 @@ const styles = StyleSheet.create({
     paddingBottom: 50,
   },
   continueButton: {
-    borderRadius: 16,
-    overflow: 'hidden',
+    borderRadius: 28,
+    backgroundColor: '#1a1a1a',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
   },
   continueGradient: {
-    paddingVertical: 18,
+    paddingVertical: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 16,
+    borderRadius: 28,
   },
   continueText: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 17,
+    fontWeight: '600',
     color: '#fff',
+    letterSpacing: 0.2,
   },
 });

@@ -400,14 +400,9 @@ export default function PersonalityResultScreen({ navigation, route }: any) {
             navigation.navigate('OnboardingSummary', { answers });
           }}
         >
-          <LinearGradient
-            colors={['#a855f7', '#8b5cf6']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.ctaGradient}
-          >
+          <View style={styles.ctaGradient}>
             <Text style={styles.ctaText}>Continue</Text>
-          </LinearGradient>
+          </View>
         </TouchableOpacity>
       </View>
     </View>
@@ -472,18 +467,19 @@ const styles = StyleSheet.create({
   },
   ctaButton: {
     width: '100%',
-    borderRadius: 999,
-    shadowColor: '#a855f7',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
+    borderRadius: 28,
+    backgroundColor: '#1a1a1a',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
     shadowRadius: 12,
     elevation: 8,
   },
   ctaGradient: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 18,
-    borderRadius: 999,
+    paddingVertical: 22,
+    borderRadius: 28,
   },
   ctaText: {
     fontSize: 17,

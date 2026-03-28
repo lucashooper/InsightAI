@@ -48,6 +48,8 @@ import AnalysisCompleteScreen from '../screens/onboarding/AnalysisCompleteScreen
 import InteractiveShowcaseScreen from '../screens/onboarding/InteractiveShowcaseScreen';
 import PaywallScreen from '../screens/onboarding/PaywallScreen';
 import RateUsScreen from '../screens/onboarding/RateUsScreen';
+import ValuePropPatternsScreen from '../screens/onboarding/ValuePropPatternsScreen';
+import ValuePropWinsScreen from '../screens/onboarding/ValuePropWinsScreen';
 import PostPurchaseWelcomeScreen from '../screens/onboarding/PostPurchaseWelcomeScreen';
 import PersonalityResultScreen from '../screens/onboarding/PersonalityResultScreen';
 import PersonalityQuizIntroScreen from '../screens/onboarding/PersonalityQuizIntroScreen';
@@ -593,6 +595,8 @@ export default function AppNavigator() {
           <Stack.Screen name="PersonalityResult" component={PersonalityResultScreen} />
           <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
           <Stack.Screen name="ValueProp" component={ValuePropScreen} />
+          <Stack.Screen name="ValuePropPatterns" component={ValuePropPatternsScreen} />
+          <Stack.Screen name="ValuePropWins" component={ValuePropWinsScreen} />
           <Stack.Screen name="RateUs" component={RateUsScreen} />
           <Stack.Screen name="Paywall" component={PaywallScreen} />
           <Stack.Screen name="PostPurchaseWelcome" component={PostPurchaseWelcomeScreen} />
@@ -657,6 +661,8 @@ export default function AppNavigator() {
           <Stack.Screen name="PrivacyOnboarding" component={PrivacyOnboardingScreen} />
           <Stack.Screen name="NotificationsOnboarding" component={NotificationsOnboardingScreen} />
           <Stack.Screen name="ValueProp" component={ValuePropScreen} />
+          <Stack.Screen name="ValuePropPatterns" component={ValuePropPatternsScreen} />
+          <Stack.Screen name="ValuePropWins" component={ValuePropWinsScreen} />
           <Stack.Screen name="RateUs" component={RateUsScreen} />
           <Stack.Screen name="Paywall" component={PaywallScreen} />
           <Stack.Screen name="PostPurchaseWelcome" component={PostPurchaseWelcomeScreen} />

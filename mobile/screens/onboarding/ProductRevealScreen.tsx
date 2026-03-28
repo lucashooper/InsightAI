@@ -7,7 +7,7 @@ import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 
-const { width, height } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const phoneMockup = require('../../public/Modern-Iphone-Insight-LANDING.png');
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
@@ -19,21 +19,14 @@ export default function ProductRevealScreen({ navigation }: any) {
             <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={false} />
             <SunoGradient />
 
-            {/* Logo and brand name at top - centered with logo to left */}
+            {/* Logo and brand name at top - centered */}
             <View style={styles.brandContainer}>
                 <Image
                     source={insightLogo}
                     style={styles.logo}
                     resizeMode="contain"
                 />
-                <LinearGradient
-                    colors={['#8b5cf6', '#a855f7']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.brandGradient}
-                >
-                    <Text style={styles.brandName}>Insight</Text>
-                </LinearGradient>
+                <Text style={styles.brandName}>Insight</Text>
             </View>
 
             {/* Welcome text */}
@@ -47,8 +40,8 @@ export default function ProductRevealScreen({ navigation }: any) {
                     style={styles.maskedContainer}
                     maskElement={
                         <LinearGradient
-                            colors={['#000', '#000', '#000', 'transparent']}
-                            locations={[0, 0.7, 0.85, 1]}
+                            colors={['#000', '#000', '#000', '#000', 'transparent']}
+                            locations={[0, 0.4, 0.65, 0.78, 1]}
                             style={{ flex: 1 }}
                         />
                     }
@@ -92,7 +85,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fef7f2',
-        paddingHorizontal: isTablet ? 48 : 24,
         paddingTop: isTablet ? 80 : 60,
         paddingBottom: isTablet ? 70 : 50,
     },
@@ -100,58 +92,53 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: isTablet ? 20 : 10,
-        marginBottom: isTablet ? 60 : 50,
+        marginTop: isTablet ? 20 : 0,
+        marginBottom: isTablet ? 32 : 24,
         gap: 10,
     },
     logo: {
         width: isTablet ? 60 : 48,
         height: isTablet ? 60 : 48,
     },
-    brandGradient: {
-        borderRadius: 8,
-        paddingHorizontal: 2,
-        paddingVertical: 2,
-    },
     brandName: {
         fontSize: sf(22),
         fontWeight: '600',
         color: '#1a1a2e',
-        letterSpacing: -0.5,
+        letterSpacing: -0.3,
     },
     welcomeContainer: {
         alignItems: 'center',
-        marginBottom: isTablet ? 50 : 40,
+        marginBottom: isTablet ? 24 : 16,
+        paddingHorizontal: 24,
     },
     welcomeText: {
-        fontSize: sf(28),
-        fontWeight: '500',
+        fontSize: sf(30),
+        fontWeight: '600',
         color: '#1a1a2e',
         textAlign: 'center',
-        letterSpacing: -0.5,
+        letterSpacing: -0.8,
     },
     phoneSection: {
         flex: 1,
         alignItems: 'center',
-        justifyContent: 'flex-end',
+        justifyContent: 'center',
         width: '100%',
         overflow: 'hidden',
-        marginBottom: -100,
     },
     maskedContainer: {
-        width: '85%',
-        height: '130%',
+        width: SCREEN_WIDTH * (isTablet ? 0.65 : 0.9),
+        height: SCREEN_HEIGHT * (isTablet ? 0.55 : 0.62),
         alignItems: 'center',
-        justifyContent: 'flex-end',
+        justifyContent: 'center',
     },
     phoneMockup: {
         width: '100%',
         height: '100%',
-        marginBottom: -60,
     },
     footer: {
         width: '100%',
         alignItems: 'center',
+        paddingHorizontal: isTablet ? 48 : 24,
         ...(iPadContentStyle as any),
     },
     button: {
