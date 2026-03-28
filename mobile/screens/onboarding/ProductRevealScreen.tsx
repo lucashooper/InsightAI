@@ -17,16 +17,13 @@ export default function ProductRevealScreen({ navigation }: any) {
             <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={false} />
             <SunoGradient />
 
-            {/* Brand row — logo left, text centered via spacer mirror trick */}
+            {/* Centered logo */}
             <View style={styles.brandRow}>
                 <Image
                     source={insightLogo}
                     style={styles.logo}
                     resizeMode="contain"
                 />
-                <Text style={styles.brandName}>Insight</Text>
-                {/* Mirror spacer so text stays centered */}
-                <View style={styles.logoPlaceholder} />
             </View>
 
             {/* Welcome text */}
@@ -90,27 +87,14 @@ const styles = StyleSheet.create({
 
     /* ── Brand row ─────────────────────────────────────────────── */
     brandRow: {
-        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: isTablet ? 20 : 0,
-        marginBottom: isTablet ? 32 : 24,
-        gap: 10,
+        marginBottom: isTablet ? 28 : 20,
     },
     logo: {
-        width: isTablet ? 60 : 48,
-        height: isTablet ? 60 : 48,
-    },
-    /* Mirror spacer so text stays optically centered */
-    logoPlaceholder: {
-        width: isTablet ? 60 : 48,
-        height: isTablet ? 60 : 48,
-    },
-    brandName: {
-        fontSize: sf(22),
-        fontWeight: '600',
-        color: '#1a1a2e',
-        letterSpacing: -0.3,
+        width: isTablet ? 100 : 80,
+        height: isTablet ? 100 : 80,
     },
 
     /* ── Welcome ───────────────────────────────────────────────── */

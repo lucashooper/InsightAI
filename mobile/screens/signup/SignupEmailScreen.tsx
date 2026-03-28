@@ -42,7 +42,9 @@ export default function SignupEmailScreen({ navigation, route }: any) {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <View style={styles.backArrowCircle}>
+            <Ionicons name="arrow-back" size={20} color="#1a1a2e" />
+          </View>
         </TouchableOpacity>
 
         <View style={styles.content}>
@@ -98,8 +100,13 @@ const styles = StyleSheet.create({
     top: 16,
     left: 20,
     zIndex: 10,
-    width: 40,
-    height: 40,
+    padding: 4,
+  },
+  backArrowCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.05)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -151,17 +158,23 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   continueButton: {
-    backgroundColor: '#8b5cf6',
-    borderRadius: 12,
-    padding: 18,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 28,
+    paddingVertical: 22,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
   },
   continueButtonDisabled: {
     opacity: 0.5,
   },
   continueButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
+    letterSpacing: 0.2,
   },
 });

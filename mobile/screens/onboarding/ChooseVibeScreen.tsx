@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions, StatusBar } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -128,12 +128,15 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
     navigation.navigate('OnboardingQuestion');
   };
 
-  const textColor = isDarkTheme(selectedVibe || 'light') ? '#ffffff' : '#1a1a2e';
-  
+  const isDark = isDarkTheme(selectedVibe || 'light');
+  const textColor = isDark ? '#ffffff' : '#1a1a2e';
+
   return (
     <View style={styles.container}>
+      {/* StatusBar updates instantly with theme selection */}
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor="transparent" />
       {/* Use solid background for dark themes, gradient for others */}
-      {isDarkTheme(selectedVibe || 'light') ? (
+      {isDark ? (
         <View style={[StyleSheet.absoluteFillObject, { backgroundColor: selectedVibe === 'midnight' ? '#0f0f23' : '#000000' }]} />
       ) : (
         <SunoGradient themeColors={backgroundColors} />

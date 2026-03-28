@@ -206,7 +206,7 @@ function RadarChart({ dimensions, dark }: { dimensions: { label: string; score: 
 
   return (
     <View style={{ alignItems: 'center', marginVertical: 16 }}>
-      <Svg width={chartSize} height={chartSize} viewBox={`0 0 ${size} ${size}`}>
+      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         {/* Grid rings */}
         {rings.map((r, ri) => {
           const pts = Array.from({ length: n }, (_, i) => getPoint(i, r));

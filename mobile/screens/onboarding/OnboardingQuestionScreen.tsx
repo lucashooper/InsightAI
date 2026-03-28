@@ -803,14 +803,9 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                 }}
                                 disabled={!textInputValue.trim()}
                             >
-                                <LinearGradient
-                                    colors={textInputValue.trim() ? ['#a855f7', '#8b5cf6'] : ['#d1d5db', '#c4c8cf']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 1 }}
-                                    style={styles.continueGradient}
-                                >
-                                    <Text style={[styles.continueText, !textInputValue.trim() && styles.continueTextDisabled]}>Continue</Text>
-                                </LinearGradient>
+                                <View style={styles.continueGradient}>
+                                    <Text style={styles.continueText}>Continue</Text>
+                                </View>
                             </TouchableOpacity>
                         </View>
                     )}
@@ -850,14 +845,9 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                 }}
                                 disabled={!selectedOption}
                             >
-                                <LinearGradient
-                                    colors={selectedOption ? ['#a855f7', '#8b5cf6'] : ['#d1d5db', '#c4c8cf']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 1 }}
-                                    style={styles.continueGradient}
-                                >
-                                    <Text style={[styles.continueText, !selectedOption && styles.continueTextDisabled]}>Continue</Text>
-                                </LinearGradient>
+                                <View style={styles.continueGradient}>
+                                    <Text style={styles.continueText}>Continue</Text>
+                                </View>
                             </TouchableOpacity>
                         </View>
                     )}
@@ -909,14 +899,9 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                     handleNext(String(Math.round(wellbeingValue)));
                                 }}
                             >
-                                <LinearGradient
-                                    colors={['#a855f7', '#8b5cf6']}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 1 }}
-                                    style={styles.sliderContinueGradient}
-                                >
+                                <View style={styles.sliderContinueGradient}>
                                     <Text style={styles.sliderContinueText}>Continue</Text>
-                                </LinearGradient>
+                                </View>
                             </TouchableOpacity>
                         </View>
                     )}
@@ -1209,36 +1194,35 @@ const styles = StyleSheet.create({
     },
     continueButton: {
         width: '100%',
-        borderRadius: 999,
+        borderRadius: 28,
         marginTop: 16,
         marginBottom: 24,
-        shadowColor: '#8b5cf6',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.3,
-        shadowRadius: 16,
+        backgroundColor: '#1a1a1a',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
         elevation: 8,
     },
     continueButtonDisabled: {
-        shadowOpacity: 0,
-        elevation: 0,
-        opacity: 0.5,
+        opacity: 0.4,
     },
     continueGradient: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: isTablet ? 22 : 18,
-        borderRadius: 999,
+        paddingVertical: 22,
+        borderRadius: 28,
         gap: 10,
     },
     continueText: {
-        fontSize: sf(18),
-        fontWeight: '700',
+        fontSize: sf(17),
+        fontWeight: '600',
         color: '#fff',
-        letterSpacing: 0.3,
+        letterSpacing: 0.2,
     },
     continueTextDisabled: {
-        color: '#9ca3af',
+        color: 'rgba(255,255,255,0.5)',
     },
     
     // ========================================
@@ -1575,5 +1559,28 @@ const styles = StyleSheet.create({
         color: '#1a1a2e',
         fontWeight: '500',
         marginBottom: 24,
+    },
+    sliderContinueButton: {
+        width: '100%',
+        borderRadius: 28,
+        backgroundColor: '#1a1a1a',
+        marginTop: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+        elevation: 8,
+    },
+    sliderContinueGradient: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 22,
+        borderRadius: 28,
+    },
+    sliderContinueText: {
+        fontSize: sf(17),
+        fontWeight: '600',
+        color: '#fff',
+        letterSpacing: 0.2,
     },
 });

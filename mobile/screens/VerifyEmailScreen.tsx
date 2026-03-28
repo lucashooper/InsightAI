@@ -199,7 +199,9 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+            <View style={styles.backArrowCircle}>
+              <Ionicons name="arrow-back" size={20} color="#1a1a2e" />
+            </View>
           </TouchableOpacity>
 
           <View style={styles.content}>
@@ -233,7 +235,7 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
           </View>
 
           {loading && (
-            <ActivityIndicator size="small" color="#8b5cf6" style={styles.loader} />
+            <ActivityIndicator size="small" color="#1a1a1a" style={styles.loader} />
           )}
 
           {/* Resend Button */}
@@ -283,8 +285,13 @@ const styles = StyleSheet.create({
     top: 16,
     left: 20,
     zIndex: 10,
-    width: 40,
-    height: 40,
+    padding: 4,
+  },
+  backArrowCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.05)',
     alignItems: 'center',
     justifyContent: 'center',
   },

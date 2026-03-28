@@ -88,6 +88,8 @@ export default function OTPInput({ length = 6, onComplete, error = false }: OTPI
           keyboardType="number-pad"
           maxLength={1}
           selectTextOnFocus
+          autoFocus={index === 0}
+          caretHidden
         />
       ))}
     </View>
@@ -113,8 +115,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   inputFilled: {
-    borderColor: '#8b5cf6',
-    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    borderColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(255,255,255,0.9)',
   },
   inputError: {
     borderColor: '#ef4444',
