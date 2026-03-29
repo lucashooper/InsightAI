@@ -36,9 +36,7 @@ async function testPasswordReset() {
   try {
     console.log(`Sending password reset email to: ${TEST_EMAIL}`);
     
-    const { data, error } = await supabase.auth.resetPasswordForEmail(TEST_EMAIL, {
-      redirectTo: 'myinsightai://reset-password',
-    });
+    const { data, error } = await supabase.auth.resetPasswordForEmail(TEST_EMAIL);
     
     if (error) {
       console.error('❌ ERROR:', error.message);
@@ -75,6 +73,7 @@ async function testPasswordReset() {
     
     console.log('✅ SUCCESS: Password reset email sent!');
     console.log('   Check your inbox and spam folder');
+    console.log('   Verify the email contains a 6-digit recovery code');
     console.log('   Data:', JSON.stringify(data, null, 2));
     return true;
     

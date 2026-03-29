@@ -18,23 +18,21 @@ import { analytics } from '../../services/analytics';
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 const phoneImages = [
-  require('../../public/phone-images/Insight-Main-Page-Phone copy.png'),
-  require('../../public/phone-images/Insight-Dashboard-Page-Phone.png'),
-  require('../../public/phone-images/Insight-Journal-Page-Phone copy.png'),
-  require('../../public/phone-images/Insight-Insights-Page-Phone-Real.png'),
-  require('../../public/phone-images/Insight-Playbook-Page-Phone.png'),
+  require('../../public/new-paywall-phones/Insight-Light-Main-Phone.png'),
+  require('../../public/new-paywall-phones/Insight-Light-Dashboard-Phone.png'),
+  require('../../public/new-paywall-phones/Insight-Light-Journal-Phone.png'),
+  require('../../public/new-paywall-phones/Insight-Light-Insights-Phone.png'),
 ];
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CAROUSEL_IMAGE_WIDTH = SCREEN_WIDTH;
-const PHONE_DISPLAY_HEIGHT = isTablet ? SCREEN_HEIGHT * 0.50 : SCREEN_HEIGHT * 0.42;
+const PHONE_DISPLAY_HEIGHT = isTablet ? SCREEN_HEIGHT * 0.52 : SCREEN_HEIGHT * 0.46;
 
 const slideHeadings = [
   'Understand Yourself\nwith Insight',
   'Track Your Growth\n& Progress',
   'Reflect Deeper,\nLive Better',
   'Unlock AI-Powered\nInsights',
-  'Your Personal\nPlaybook',
 ];
 
 const ENTITLEMENT_ID = 'Insight Pro';
@@ -652,6 +650,7 @@ export default function PaywallScreen({ navigation, route }: any) {
           />
         </View>
 
+        <View style={styles.pricingSection}>
         {/* Pagination Dots - Now Clickable */}
         <View style={styles.dotsContainer}>
           {phoneImages.map((_, index) => (
@@ -723,6 +722,7 @@ export default function PaywallScreen({ navigation, route }: any) {
             <Text style={[styles.compactPlanDaily, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'monthly' && styles.compactPlanDailySelected]}>$0.60 / day</Text>
             <Text style={[styles.compactPlanPrice, !isDarkTheme(theme.name) && { color: 'rgba(0,0,0,0.5)' }, selectedPlan === 'monthly' && styles.compactPlanPriceSelected]}>$17.99 per month</Text>
           </TouchableOpacity>
+        </View>
         </View>
 
         {/* What you get */}
@@ -910,6 +910,8 @@ const styles = StyleSheet.create({
     height: PHONE_DISPLAY_HEIGHT,
     overflow: 'hidden',
     position: 'relative',
+    marginTop: isTablet ? -80 : -100,
+    marginBottom: isTablet ? -20 : -14,
   },
   carouselSlide: {
     width: SCREEN_WIDTH,
@@ -917,9 +919,10 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   carouselImage: {
-    width: isTablet ? SCREEN_WIDTH * 0.50 : SCREEN_WIDTH * 0.85,
-    height: isTablet ? SCREEN_WIDTH * 0.50 * 2.1 : SCREEN_WIDTH * 0.85 * 2.1,
+    width: isTablet ? SCREEN_WIDTH * 0.70 : SCREEN_WIDTH * 1.12,
+    height: isTablet ? SCREEN_WIDTH * 0.70 * 2.1 : SCREEN_WIDTH * 1.12 * 2.1,
     borderRadius: 28,
+    transform: [{ translateY: isTablet ? -470 : -322 }],
   },
   phoneFade: {
     position: 'absolute',
@@ -932,8 +935,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 8,
-    marginTop: 8,
-    marginBottom: 16,
+    marginTop: 0,
+    marginBottom: 12,
   },
   dot: {
     width: 8,
@@ -946,6 +949,9 @@ const styles = StyleSheet.create({
     width: 20,
   },
   // Compact pricing
+  pricingSection: {
+    marginTop: isTablet ? 10 : 18,
+  },
   plansRow: {
     flexDirection: 'row',
     gap: 10,

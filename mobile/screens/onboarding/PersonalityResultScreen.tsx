@@ -160,11 +160,11 @@ function computePersonality(answers: Record<string, string>): PersonalityProfile
   const primary = scores.reduce((a, b) => a.score > b.score ? a : b);
 
   const DESCRIPTIONS: Record<string, string> = {
-    perfectionism: 'Perfectionism can keep you tense, stuck, and never quite satisfied. It pushes you to chase certainty instead of feeling finished.',
-    anxiety: 'Anxiety often comes from a mind that scans for danger too often. It is trying to protect you, but it can leave you tense even when you are safe.',
-    selfCompassion: 'Low self-compassion means you speak to yourself more harshly than you would to someone you love. That keeps growth feeling heavier than it needs to.',
-    boundaries: 'Weak boundaries often come from fearing conflict or disappointing people. Over time, that can leave you drained and disconnected from your own needs.',
-    selfEsteem: 'Low self-esteem can make your mind downplay the good and fixate on what feels lacking. That keeps a distorted self-image in place.',
+    perfectionism: 'Perfectionism can keep you tense and stuck. It pushes you to chase certainty instead of feeling finished.',
+    anxiety: 'Anxiety often comes from a mind that scans for danger too often. It can leave you tense even when you are safe.',
+    selfCompassion: 'Low self-compassion means being harder on yourself than you would be on someone you love. That makes growth feel heavier than it needs to.',
+    boundaries: 'Weak boundaries can come from fearing conflict or disappointing people. Over time, that leaves you drained and pulled away from your own needs.',
+    selfEsteem: 'Low self-esteem can make your mind fixate on what feels lacking. That keeps a distorted self-image in place.',
   };
 
   return {
@@ -176,10 +176,10 @@ function computePersonality(answers: Record<string, string>): PersonalityProfile
 
 // ── Radar Chart Component ─────────────────────────────────────
 function RadarChart({ dimensions, dark }: { dimensions: { label: string; score: number }[]; dark: boolean }) {
-  const chartSize = Math.min(width - 80, 300);
-  const size = chartSize + 176; // Extra space for labels
+  const chartSize = Math.min(width - (isTablet ? 180 : 80), isTablet ? 420 : 300);
+  const size = chartSize + (isTablet ? 280 : 208); // Extra space for labels, especially on the left edge
   const center = size / 2;
-  const radius = chartSize / 2 - 40;
+  const radius = chartSize / 2 - (isTablet ? 28 : 40);
   const n = dimensions.length;
 
   // Calculate points for each dimension
@@ -252,7 +252,7 @@ function RadarChart({ dimensions, dark }: { dimensions: { label: string; score: 
             key={`dot-${i}`}
             cx={p.x}
             cy={p.y}
-            r={4}
+            r={isTablet ? 5 : 4}
             fill={dotColor}
             stroke="#fff"
             strokeWidth={1.5}
@@ -260,16 +260,16 @@ function RadarChart({ dimensions, dark }: { dimensions: { label: string; score: 
         ))}
 
         {/* Center icon circle */}
-        <Circle cx={center} cy={center} r={14} fill={dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)'} />
+        <Circle cx={center} cy={center} r={isTablet ? 18 : 14} fill={dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)'} />
 
         {/* Labels */}
         {dimensions.map((d, i) => {
-          const labelPoint = getPoint(i, 1.58);
+          const labelPoint = getPoint(i, isTablet ? 1.68 : 1.58);
           const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
           let anchor: 'start' | 'middle' | 'end' = 'middle';
           if (Math.cos(angle) > 0.3) anchor = 'start';
           if (Math.cos(angle) < -0.3) anchor = 'end';
-          const xOffset = anchor === 'end' ? 34 : anchor === 'start' ? -34 : 0;
+          const xOffset = anchor === 'end' ? (isTablet ? 68 : 54) : anchor === 'start' ? (isTablet ? -68 : -54) : 0;
 
           // Split long labels into multiple lines
           const words = d.label.split(' ');
@@ -294,7 +294,7 @@ function RadarChart({ dimensions, dark }: { dimensions: { label: string; score: 
               y={labelPoint.y + (lineIdx * 15) - ((lines.length - 1) * 7)}
               textAnchor={anchor}
               alignmentBaseline="middle"
-              fontSize={11}
+              fontSize={isTablet ? 13 : 11}
               fontWeight="500"
               fill={labelColor}
             >
@@ -402,18 +402,18 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: 'absolute',
-    top: isTablet ? 60 : 50,
+    top: 60,
     left: 20,
     zIndex: 10,
-    padding: 8,
+    padding: 4,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: isTablet ? 48 : 28,
-    paddingTop: isTablet ? 110 : 100,
-    paddingBottom: 144,
+    paddingTop: isTablet ? 112 : 104,
+    paddingBottom: 136,
   },
   subtitle: {
     fontSize: sf(16),
@@ -427,14 +427,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
     letterSpacing: -0.6,
-    marginBottom: 8,
+    marginBottom: isTablet ? 16 : 8,
   },
   description: {
     fontSize: sf(16),
     lineHeight: sf(24),
     textAlign: 'left',
-    marginTop: 6,
-    marginBottom: 32,
+    marginTop: 8,
+    marginBottom: 40,
   },
   insightCard: {
     flexDirection: 'row',
@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     alignItems: 'flex-start',
-    marginBottom: 8,
+    marginBottom: 16,
   },
   insightText: {
     flex: 1,
@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
   ctaContainer: {
     paddingHorizontal: 24,
     paddingBottom: 50,
-    paddingTop: 8,
+    paddingTop: 18,
   },
   backArrowCircle: {
     width: 36,

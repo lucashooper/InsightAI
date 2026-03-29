@@ -32,10 +32,55 @@ interface VerifyEmailScreenProps {
 
 export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScreenProps) {
   const { email, type, username } = route.params;
-  const { setUserName } = useOnboarding();
+  const { userName, setUserName } = useOnboarding();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+
+  const resolvePreferredUsername = async () => {
+    const pendingName = await AsyncStorage.getItem('PENDING_ONBOARDING_NAME');
+    return username || userName || pendingName || '';
+  };
+
+  const persistVerifiedUserProfile = async (verifiedUser: any) => {
+    const preferredUsername = (await resolvePreferredUsername()).trim();
+    if (!verifiedUser?.id || !preferredUsername) {
+      return;
+    }
+
+    try {
+      const { data: existingProfile } = await supabase
+        .from('user_profiles')
+        .select('id, username')
+        .eq('user_id', verifiedUser.id)
+        .maybeSingle();
+
+      if (existingProfile) {
+        await supabase
+          .from('user_profiles')
+          .update({
+            username: preferredUsername,
+            email: verifiedUser.email,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', verifiedUser.id);
+      } else {
+        await supabase
+          .from('user_profiles')
+          .insert({
+            user_id: verifiedUser.id,
+            username: preferredUsername,
+            email: verifiedUser.email,
+          });
+      }
+
+      await AsyncStorage.setItem('CACHED_USERNAME', preferredUsername);
+      await AsyncStorage.removeItem('PENDING_ONBOARDING_NAME');
+      console.log('[OTP VERIFY] ✅ Persisted verified user profile name:', preferredUsername);
+    } catch (profileError) {
+      console.error('[OTP VERIFY] Failed to persist verified profile name:', profileError);
+    }
+  };
 
   useEffect(() => {
     if (resendCooldown > 0) {
@@ -119,11 +164,13 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
         console.log('[OTP VERIFY] User:', data.user?.id);
         console.log('[OTP VERIFY] Session:', data.session ? 'Created' : 'None');
         
-        // Pre-populate username from signup if available
-        if (username) {
-          console.log('[OTP VERIFY] Setting username from signup:', username);
-          setUserName(username);
+        const preferredUsername = await resolvePreferredUsername();
+        if (preferredUsername) {
+          console.log('[OTP VERIFY] Setting username after verification:', preferredUsername);
+          setUserName(preferredUsername);
         }
+
+        await persistVerifiedUserProfile(data.user);
         
         if (isPostPurchase) {
           // Post-purchase flow: onboarding is already complete

@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,6 +13,8 @@ import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { isTablet, sf } from '../utils/responsive';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+
+const noiseTexture = require('../public/noisy-image.webp');
 
 // ── Article Data ──────────────────────────────────────────────
 // Curated psychology articles based on real research
@@ -32,7 +35,7 @@ interface Article {
   category: string;
   readTime: string;
   emoji: string;
-  gradient: [string, string];
+  gradient: string[];
   content: string[];
   source: string;
   isTrending?: boolean;
@@ -46,7 +49,7 @@ const ARTICLES: Article[] = [
     category: 'thinking',
     readTime: '5 mins',
     emoji: '🧠',
-    gradient: ['#6366f1', '#8b5cf6'],
+    gradient: ['#3949ab', '#7b5cff', '#f1c27d'],
     source: 'Based on research by Nolen-Hoeksema (2000)',
     content: [
       'Overthinking — or rumination — is one of the most common mental health challenges. Research shows that rumination amplifies negative emotions and makes problems feel bigger than they are.',
@@ -69,7 +72,7 @@ const ARTICLES: Article[] = [
     category: 'anxiety',
     readTime: '5 mins',
     emoji: '🫧',
-    gradient: ['#ec4899', '#f43f5e'],
+    gradient: ['#2f4f9f', '#8b5cf6', '#f0c987'],
     source: 'Based on research by Yerkes & Dodson (1908)',
     content: [
       'Your comfort zone isn\'t really about comfort — it\'s about familiarity. Even if your current situation makes you unhappy, your brain prefers it over the unknown because it can predict what happens next.',
@@ -90,7 +93,7 @@ const ARTICLES: Article[] = [
     category: 'resilience',
     readTime: '4 mins',
     emoji: '🌙',
-    gradient: ['#0ea5e9', '#6366f1'],
+    gradient: ['#4251a8', '#7367f0', '#f3d18f'],
     source: 'Based on research by Saundra Dalton-Smith, MD',
     content: [
       'There\'s a difference between being lazy and being depleted. In a culture that glorifies productivity, we often mistake exhaustion for moral failure.',
@@ -111,7 +114,7 @@ const ARTICLES: Article[] = [
     category: 'thinking',
     readTime: '4 mins',
     emoji: '⚡',
-    gradient: ['#f59e0b', '#ef4444'],
+    gradient: ['#4d3f96', '#7e5bef', '#f2bf7a'],
     source: 'Based on research by Baumeister et al. (2001)',
     content: [
       'Bad experiences stick like Velcro. Good ones slide off like Teflon. This isn\'t a character flaw — it\'s evolution.',
@@ -132,7 +135,7 @@ const ARTICLES: Article[] = [
     category: 'habits',
     readTime: '3 mins',
     emoji: '🎯',
-    gradient: ['#10b981', '#059669'],
+    gradient: ['#2f5f96', '#6f60d9', '#efc782'],
     source: 'Based on research by James Clear (Atomic Habits)',
     content: [
       'Most people fail at building habits because they start too big. The secret? Make it so easy you can\'t say no.',
@@ -153,7 +156,7 @@ const ARTICLES: Article[] = [
     category: 'sleep',
     readTime: '5 mins',
     emoji: '😴',
-    gradient: ['#7c3aed', '#4f46e5'],
+    gradient: ['#3c468f', '#7754db', '#efd09a'],
     source: 'Based on research by Walker (2017), "Why We Sleep"',
     content: [
       'The cruel irony of stress and sleep: you need sleep to manage stress, but stress prevents sleep. Here\'s how to break the cycle.',
@@ -176,7 +179,7 @@ const ARTICLES: Article[] = [
     category: 'relationships',
     readTime: '6 mins',
     emoji: '🦋',
-    gradient: ['#ec4899', '#a855f7'],
+    gradient: ['#3450a5', '#8b5cf6', '#f1bf77'],
     isTrending: true,
     source: 'Based on research by John Gottman, PhD',
     content: [
@@ -202,7 +205,7 @@ const ARTICLES: Article[] = [
     category: 'anxiety',
     readTime: '5 mins',
     emoji: '🌊',
-    gradient: ['#14b8a6', '#0ea5e9'],
+    gradient: ['#2e5b92', '#7060d8', '#f1cb86'],
     source: 'Based on ACT therapy by Steven Hayes, PhD',
     content: [
       'Most anxiety management advice tells you to reduce anxiety. But research shows the more you fight anxiety, the stronger it gets. The alternative? Learn to carry it.',
@@ -248,14 +251,23 @@ function ArticleDetail({ article, onClose, dark }: { article: Article; onClose: 
           end={{ x: 1, y: 1 }}
           style={styles.articleDetailHero}
         >
-          <Text style={styles.articleDetailEmoji}>{article.emoji}</Text>
+          <Image source={noiseTexture} style={styles.heroNoise} resizeMode="cover" />
+          <View style={styles.articleDetailBadge}>
+            <Text style={styles.articleDetailBadgeText}>{article.category}</Text>
+          </View>
+          <Text style={styles.articleDetailHeroTitle}>{article.title}</Text>
         </LinearGradient>
 
-        <Text style={[styles.articleDetailTitle, { color: theme.colors.primaryText }]}>{article.title}</Text>
         <View style={styles.articleDetailMeta}>
           <Text style={[styles.articleDetailReadTime, { color: theme.colors.secondaryText }]}>
-            📖 {article.readTime} read
+            Article
           </Text>
+          <Text style={[styles.articleMetaDivider, { color: theme.colors.secondaryText }]}>•</Text>
+          <Text style={[styles.articleDetailReadTime, { color: theme.colors.secondaryText }]}>
+            {article.readTime} read
+          </Text>
+        </View>
+        <View style={styles.articleDetailSourceWrap}>
           <Text style={[styles.articleDetailSource, { color: theme.colors.secondaryText }]}>
             {article.source}
           </Text>
@@ -330,12 +342,15 @@ export default function ExploreScreen({ navigation }: any) {
             end={{ x: 1, y: 1 }}
             style={styles.trendingCard}
           >
+          <Image source={noiseTexture} style={styles.heroNoise} resizeMode="cover" />
             <View style={styles.trendingBadge}>
               <Ionicons name="flash" size={12} color="#f59e0b" />
               <Text style={styles.trendingBadgeText}>TRENDING</Text>
             </View>
-            <Text style={styles.trendingEmoji}>{trendingArticle.emoji}</Text>
+          <Text style={styles.trendingEmoji}>{trendingArticle.emoji}</Text>
+          <View style={styles.trendingTextWrap}>
             <Text style={styles.trendingTitle}>{trendingArticle.title}</Text>
+            <Text style={styles.trendingSubtitle}>{trendingArticle.subtitle}</Text>
             <TouchableOpacity
               style={styles.trendingButton}
               onPress={() => {
@@ -345,6 +360,7 @@ export default function ExploreScreen({ navigation }: any) {
             >
               <Text style={styles.trendingButtonText}>Explore now</Text>
             </TouchableOpacity>
+          </View>
           </LinearGradient>
         </TouchableOpacity>
 
@@ -414,12 +430,22 @@ export default function ExploreScreen({ navigation }: any) {
             ]}
           >
             <View style={styles.articleCardContent}>
+              <View style={styles.articleCardTopRow}>
+                <View style={[styles.articleCategoryPill, { backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
+                  <Text style={[styles.articleCategoryPillText, { color: theme.colors.secondaryText }]}>
+                    {article.category}
+                  </Text>
+                </View>
+              </View>
               <Text style={[styles.articleCardTitle, { color: theme.colors.primaryText }]} numberOfLines={2}>
                 {article.title}
               </Text>
+              <Text style={[styles.articleCardSubtitle, { color: theme.colors.secondaryText }]} numberOfLines={1}>
+                {article.subtitle}
+              </Text>
               <View style={styles.articleCardMeta}>
                 <Text style={[styles.articleCardType, { color: theme.colors.secondaryText }]}>
-                  📖 Article
+                  Article
                 </Text>
                 <Text style={[styles.articleCardDot, { color: theme.colors.secondaryText }]}>•</Text>
                 <Text style={[styles.articleCardTime, { color: theme.colors.secondaryText }]}>
@@ -427,14 +453,9 @@ export default function ExploreScreen({ navigation }: any) {
                 </Text>
               </View>
             </View>
-            <LinearGradient
-              colors={article.gradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.articleCardEmoji}
-            >
-              <Text style={{ fontSize: 24 }}>{article.emoji}</Text>
-            </LinearGradient>
+            <View style={[styles.articleCardEmoji, { backgroundColor: dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.9)' }]}>
+              <Text style={styles.articleCardEmojiText}>{article.emoji}</Text>
+            </View>
           </TouchableOpacity>
         ))}
 
@@ -477,40 +498,68 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     minHeight: 200,
     justifyContent: 'flex-end',
+    overflow: 'hidden',
+  },
+  heroNoise: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+    opacity: 0.03,
   },
   trendingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(20, 18, 48, 0.26)',
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
     gap: 4,
-    marginBottom: 12,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
   },
   trendingBadgeText: {
-    color: '#f59e0b',
+    color: '#ffd166',
     fontSize: sf(11),
     fontWeight: '700',
     letterSpacing: 0.5,
   },
+  trendingTextWrap: {
+    width: '78%',
+  },
   trendingEmoji: {
-    fontSize: 48,
-    marginBottom: 12,
+    position: 'absolute',
+    right: 22,
+    top: 52,
+    fontSize: 34,
   },
   trendingTitle: {
-    fontSize: sf(20),
+    fontSize: sf(24),
     fontWeight: '700',
     color: '#fff',
+    marginBottom: 8,
+    lineHeight: sf(30),
+    letterSpacing: -0.35,
+  },
+  trendingSubtitle: {
+    fontSize: sf(14),
+    color: 'rgba(255,255,255,0.88)',
     marginBottom: 16,
+    lineHeight: sf(19),
   },
   trendingButton: {
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: 'rgba(255,255,255,0.22)',
     alignSelf: 'flex-start',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   trendingButtonText: {
     color: '#fff',
@@ -550,19 +599,39 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderRadius: 16,
-    marginBottom: 12,
+    borderRadius: 20,
+    marginBottom: 14,
     borderWidth: 1,
   },
   articleCardContent: {
     flex: 1,
-    marginRight: 12,
+    marginRight: 14,
+  },
+  articleCardTopRow: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  articleCategoryPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  articleCategoryPillText: {
+    fontSize: sf(11),
+    fontWeight: '700',
+    textTransform: 'capitalize',
+    letterSpacing: 0.3,
   },
   articleCardTitle: {
-    fontSize: sf(15),
-    fontWeight: '600',
-    lineHeight: sf(20),
-    marginBottom: 8,
+    fontSize: sf(16),
+    fontWeight: '700',
+    lineHeight: sf(21),
+    marginBottom: 6,
+  },
+  articleCardSubtitle: {
+    fontSize: sf(13),
+    lineHeight: sf(18),
+    marginBottom: 10,
   },
   articleCardMeta: {
     flexDirection: 'row',
@@ -584,6 +653,11 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+  },
+  articleCardEmojiText: {
+    fontSize: 24,
   },
 
   // Article Detail
@@ -611,28 +685,54 @@ const styles = StyleSheet.create({
     paddingHorizontal: isTablet ? 48 : 24,
   },
   articleDetailHero: {
-    height: 160,
+    minHeight: 180,
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+    padding: 24,
+    paddingTop: 22,
     marginBottom: 24,
+    overflow: 'hidden',
   },
-  articleDetailEmoji: {
-    fontSize: 64,
+  articleDetailBadge: {
+    marginBottom: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(0,0,0,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.16)',
   },
-  articleDetailTitle: {
-    fontSize: sf(26),
+  articleDetailBadgeText: {
+    color: '#fff',
+    fontSize: sf(11),
     fontWeight: '700',
-    lineHeight: sf(32),
-    marginBottom: 12,
-    letterSpacing: -0.3,
+    textTransform: 'capitalize',
+    letterSpacing: 0.4,
+  },
+  articleDetailHeroTitle: {
+    fontSize: sf(24),
+    fontWeight: '700',
+    lineHeight: sf(30),
+    color: '#fff',
+    letterSpacing: -0.35,
   },
   articleDetailMeta: {
-    marginBottom: 28,
-    gap: 4,
+    marginBottom: 8,
+    gap: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
   },
   articleDetailReadTime: {
     fontSize: sf(13),
+    fontWeight: '600',
+  },
+  articleMetaDivider: {
+    fontSize: sf(13),
+  },
+  articleDetailSourceWrap: {
+    marginBottom: 28,
   },
   articleDetailSource: {
     fontSize: sf(12),

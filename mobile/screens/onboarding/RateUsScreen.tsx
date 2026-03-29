@@ -168,9 +168,11 @@ const styles = StyleSheet.create({
     fontSize: isTablet ? 28 : 24,
   },
   title: {
-    fontSize: sf(28),
-    fontWeight: '700',
+    fontSize: sf(32),
+    fontWeight: '600',
     color: '#1a1a2e',
+    letterSpacing: -0.6,
+    lineHeight: sf(40),
   },
   titleDark: {
     color: '#ffffff',

@@ -235,13 +235,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (!profile) {
           console.log('[Auth] No profile found, creating one for existing user');
-          const username = data.user.email?.split('@')[0] || 'User';
+          const cachedUsername = await AsyncStorage.getItem('CACHED_USERNAME');
+          const pendingOnboardingName = await AsyncStorage.getItem('PENDING_ONBOARDING_NAME');
+          const metadataUsername =
+            typeof data.user.user_metadata?.username === 'string'
+              ? data.user.user_metadata.username
+              : '';
+          const username =
+            cachedUsername ||
+            pendingOnboardingName ||
+            metadataUsername ||
+            data.user.email?.split('@')[0] ||
+            'User';
           await supabase.from('user_profiles').insert({
             user_id: data.user.id,
             username: username,
             onboarding_completed_at: new Date().toISOString(),
             subscription_tier: 'free',
           });
+          await AsyncStorage.setItem('CACHED_USERNAME', username);
           await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
           console.log('[Auth] Profile created for existing user');
         }
@@ -583,6 +595,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Clear old non-user-specific cache keys to prevent cross-user contamination
       await AsyncStorage.removeItem('CACHED_PROFILE_PICTURE');
       await AsyncStorage.removeItem('CACHED_USERNAME');
+      await AsyncStorage.removeItem('PENDING_ONBOARDING_NAME');
+      await AsyncStorage.removeItem('PENDING_ONBOARDING_ANSWERS');
       
       // Clear user-specific cache keys if we have the user ID
       if (user?.id) {

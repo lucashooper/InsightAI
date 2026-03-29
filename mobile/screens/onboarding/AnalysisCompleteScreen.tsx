@@ -177,13 +177,13 @@ const styles = StyleSheet.create({
         shadowRadius: 16,
     },
     headline: {
-        fontSize: 36,
-        fontWeight: '700',
+        fontSize: 32,
+        fontWeight: '600',
         color: '#1a1a2e',
         textAlign: 'center',
         marginBottom: 20,
-        letterSpacing: -0.5,
-        lineHeight: 44,
+        letterSpacing: -0.6,
+        lineHeight: 40,
     },
     reassurance: {
         fontSize: 19,

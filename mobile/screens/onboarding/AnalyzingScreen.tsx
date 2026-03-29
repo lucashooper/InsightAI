@@ -191,9 +191,9 @@ export default function AnalyzingScreen({ navigation, route }: Props) {
                         
                         // If user skipped personality questions, go straight to summary
                         if (skipPersonality) {
-                            navigation.replace('OnboardingSummary');
+                            navigation.navigate('OnboardingSummary', { answers });
                         } else {
-                            navigation.replace('PersonalityResult', { answers });
+                            navigation.navigate('PersonalityResult', { answers });
                         }
                     }}
                 >

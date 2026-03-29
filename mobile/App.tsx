@@ -187,10 +187,13 @@ export default function App() {
           // Cambridge logo (legacy)
           Asset.fromModule(require('./assets/Cambridge-logo.png')).downloadAsync(),
           // Paywall phone carousel images
-          Asset.fromModule(require('./public/phone-images/Insight-Main-Page-Phone copy.png')).downloadAsync(),
-          Asset.fromModule(require('./public/phone-images/Insight-Dashboard-Page-Phone.png')).downloadAsync(),
-          Asset.fromModule(require('./public/phone-images/Insight-Insights-Page-Phone-Real.png')).downloadAsync(),
-          Asset.fromModule(require('./public/phone-images/Insight-Playbook-Page-Phone.png')).downloadAsync(),
+          Asset.fromModule(require('./public/new-paywall-phones/Insight-Light-Main-Phone.png')).downloadAsync(),
+          Asset.fromModule(require('./public/new-paywall-phones/Insight-Light-Dashboard-Phone.png')).downloadAsync(),
+          Asset.fromModule(require('./public/new-paywall-phones/Insight-Light-Journal-Phone.png')).downloadAsync(),
+          Asset.fromModule(require('./public/new-paywall-phones/Insight-Light-Insights-Phone.png')).downloadAsync(),
+          // Ambient sounds artwork
+          Asset.fromModule(require('./public/ambient-stuff/rain-image.jpg')).downloadAsync(),
+          Asset.fromModule(require('./public/ambient-stuff/campfire-image.jpg')).downloadAsync(),
         ]);
       } catch (e: any) {
         console.error('[APP] ❌ Error in loadResourcesAndDataAsync:', e);
@@ -276,14 +279,20 @@ export default function App() {
 function AppContent({ onReady }: { onReady: () => void }) {
   const { isLocked, isLockEnabled } = useAppLock();
   const { loading: authLoading, user } = useAuth();
-  const { data: preloadedData, preloadForUser } = usePreloadedData();
+  const { data: preloadedData, preloadForUser, resetData } = usePreloadedData();
 
   // Preload all data once auth resolves and we have a user
   useEffect(() => {
     if (!authLoading && user) {
       preloadForUser(user.id, user.email || '');
     }
-  }, [authLoading, user]);
+  }, [authLoading, user, preloadForUser]);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      resetData();
+    }
+  }, [authLoading, user, resetData]);
 
   // Signal ready once auth is done AND data is preloaded (or no user)
   useEffect(() => {

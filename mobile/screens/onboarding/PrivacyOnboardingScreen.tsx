@@ -6,6 +6,7 @@ import SunoGradient from '../../components/onboarding/SunoGradient';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
+import { isTablet, iPadContentStyle, sf } from '../../utils/responsive';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 const lockIcon = require('../../public/onboarding-icons/LockIcon2.webp');
@@ -56,38 +57,40 @@ export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardin
       {/* Logo */}
       <Image source={insightLogo} style={styles.logo} />
       
-      {/* Lock Icon */}
-      <View style={styles.iconContainer}>
-        <Image
-          source={lockIcon}
-          style={styles.lockIcon}
-          resizeMode="contain"
-        />
-      </View>
-
-      {/* Content below lock icon */}
-      <View style={styles.content}>
-      {/* Title */}
-      <Text style={[styles.title, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>Your notes are fully private</Text>
-
-      {/* Subtitle */}
-      <Text style={[styles.subtitle, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>
-        We use end-to-end encryption to keep your journal entries secure. Only you can read them.
-      </Text>
-
-      {/* Features */}
-      <View style={styles.featuresContainer}>
-        <View style={[styles.feature, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.05)' : 'rgba(255, 255, 255, 0.5)', borderColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0, 0, 0, 0.06)' }]}>
-          <Ionicons name="shield-checkmark" size={24} color="#8b5cf6" />
-          <Text style={[styles.featureText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>AES-256 encryption</Text>
+      <View style={styles.mainContent}>
+        {/* Lock Icon */}
+        <View style={styles.iconContainer}>
+          <Image
+            source={lockIcon}
+            style={styles.lockIcon}
+            resizeMode="contain"
+          />
         </View>
-        <View style={[styles.feature, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.05)' : 'rgba(255, 255, 255, 0.5)', borderColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0, 0, 0, 0.06)' }]}>
-          <Ionicons name="key" size={24} color="#8b5cf6" />
-          <Text style={[styles.featureText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>Your password is the key</Text>
-        </View>
-        <View style={[styles.feature, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.05)' : 'rgba(255, 255, 255, 0.5)', borderColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0, 0, 0, 0.06)' }]}>
-          <Ionicons name="eye-off" size={24} color="#8b5cf6" />
-          <Text style={[styles.featureText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>We can't read your entries</Text>
+
+        {/* Content below lock icon */}
+        <View style={styles.content}>
+        {/* Title */}
+        <Text style={[styles.title, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>Your notes are fully private</Text>
+
+        {/* Subtitle */}
+        <Text style={[styles.subtitle, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>
+          We use end-to-end encryption to keep your journal entries secure. Only you can read them.
+        </Text>
+
+        {/* Features */}
+        <View style={styles.featuresContainer}>
+          <View style={[styles.feature, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.05)' : 'rgba(255, 255, 255, 0.5)', borderColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0, 0, 0, 0.06)' }]}>
+            <Ionicons name="shield-checkmark" size={24} color="#8b5cf6" />
+            <Text style={[styles.featureText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>AES-256 encryption</Text>
+          </View>
+          <View style={[styles.feature, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.05)' : 'rgba(255, 255, 255, 0.5)', borderColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0, 0, 0, 0.06)' }]}>
+            <Ionicons name="key" size={24} color="#8b5cf6" />
+            <Text style={[styles.featureText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>Your password is the key</Text>
+          </View>
+          <View style={[styles.feature, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.05)' : 'rgba(255, 255, 255, 0.5)', borderColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0, 0, 0, 0.06)' }]}>
+            <Ionicons name="eye-off" size={24} color="#8b5cf6" />
+            <Text style={[styles.featureText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>We can't read your entries</Text>
+          </View>
         </View>
       </View>
       </View>
@@ -104,10 +107,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fef7f2',
-    paddingHorizontal: 24,
-    paddingTop: 140,
+    paddingHorizontal: isTablet ? 40 : 24,
+    paddingTop: isTablet ? 116 : 140,
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingBottom: 60,
   },
   backButton: {
@@ -125,62 +127,74 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: isTablet ? 110 : 100,
+    height: isTablet ? 110 : 100,
     opacity: 0.9,
     position: 'absolute',
     top: 60,
   },
+  mainContent: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: isTablet ? 6 : 18,
+    ...iPadContentStyle,
+  },
   iconContainer: {
-    marginBottom: 8,
-    marginTop: 20,
+    marginBottom: isTablet ? 10 : -8,
+    marginTop: 0,
   },
   lockIcon: {
-    width: 220,
-    height: 220,
+    width: isTablet ? 250 : 196,
+    height: isTablet ? 250 : 196,
   },
   content: {
     width: '100%',
     alignItems: 'center',
   },
   title: {
-    fontSize: 32,
-    fontWeight: '700',
+    fontSize: sf(32),
+    fontWeight: '600',
     color: '#1a1a2e',
     marginBottom: 12,
     textAlign: 'center',
+    letterSpacing: -0.6,
+    lineHeight: isTablet ? sf(32) + 8 : 40,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: sf(16),
     color: 'rgba(0, 0, 0, 0.5)',
-    marginBottom: 32,
+    marginBottom: isTablet ? 40 : 32,
     textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: 20,
+    lineHeight: isTablet ? sf(18) + 8 : 24,
+    paddingHorizontal: isTablet ? 36 : 20,
   },
   featuresContainer: {
     width: '100%',
-    marginBottom: 'auto',
+    marginBottom: isTablet ? 36 : 28,
   },
   feature: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingVertical: isTablet ? 18 : 12,
+    paddingHorizontal: isTablet ? 24 : 20,
     backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 12,
-    marginBottom: 12,
+    borderRadius: isTablet ? 16 : 12,
+    marginBottom: isTablet ? 14 : 12,
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.06)',
+    minHeight: isTablet ? 76 : undefined,
   },
   featureText: {
-    fontSize: 16,
+    fontSize: sf(16),
     color: '#1a1a2e',
     marginLeft: 16,
     fontWeight: '500',
   },
   continueButton: {
     width: '100%',
+    maxWidth: isTablet ? 820 : undefined,
     paddingVertical: 22,
     backgroundColor: '#1a1a1a',
     borderRadius: 28,

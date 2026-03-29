@@ -3,6 +3,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from './AuthContext';
 import { analytics } from '../services/analytics';
 
+const PENDING_ONBOARDING_NAME_KEY = 'PENDING_ONBOARDING_NAME';
+const PENDING_ONBOARDING_ANSWERS_KEY = 'PENDING_ONBOARDING_ANSWERS';
+
 interface OnboardingContextType {
   userName: string;
   setUserName: (name: string) => void;
@@ -37,12 +40,17 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const loadCachedUsername = async () => {
       try {
-        // Only load cached username if we have a user (social sign-in flow)
+        const pendingName = await AsyncStorage.getItem(PENDING_ONBOARDING_NAME_KEY);
         if (!user) {
-          console.log('[OnboardingContext] No user, skipping cached username load');
+          if (pendingName) {
+            console.log('[OnboardingContext] Loaded pending onboarding name:', pendingName);
+            setUserName(pendingName);
+          } else {
+            console.log('[OnboardingContext] No user, skipping cached username load');
+          }
           return;
         }
-        
+
         const cached = await AsyncStorage.getItem('CACHED_USERNAME');
         if (cached) {
           // Don't use cached username if it looks like a random hash (e.g., "dxysfs9kj2")
@@ -56,6 +64,9 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
           }
           console.log('[OnboardingContext] Loaded cached username:', cached);
           setUserName(cached);
+        } else if (pendingName) {
+          console.log('[OnboardingContext] Falling back to pending onboarding name:', pendingName);
+          setUserName(pendingName);
         }
       } catch (error) {
         console.error('[OnboardingContext] Error loading cached username:', error);
@@ -63,6 +74,28 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
     };
     loadCachedUsername();
   }, [user]);
+
+  useEffect(() => {
+    const persistPendingState = async () => {
+      try {
+        if (userName.trim()) {
+          await AsyncStorage.setItem(PENDING_ONBOARDING_NAME_KEY, userName.trim());
+        } else {
+          await AsyncStorage.removeItem(PENDING_ONBOARDING_NAME_KEY);
+        }
+
+        if (Object.keys(onboardingAnswers).length > 0) {
+          await AsyncStorage.setItem(PENDING_ONBOARDING_ANSWERS_KEY, JSON.stringify(onboardingAnswers));
+        } else {
+          await AsyncStorage.removeItem(PENDING_ONBOARDING_ANSWERS_KEY);
+        }
+      } catch (error) {
+        console.error('[OnboardingContext] Error persisting pending onboarding state:', error);
+      }
+    };
+
+    persistPendingState();
+  }, [userName, onboardingAnswers]);
 
   const setUserNameWithLogging = (name: string) => {
     console.log('[OnboardingContext] setUserName called with:', name);
@@ -78,6 +111,8 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
     try {
       await AsyncStorage.removeItem('CACHED_USERNAME');
       await AsyncStorage.removeItem('SKIP_NAME_STEP');
+      await AsyncStorage.removeItem(PENDING_ONBOARDING_NAME_KEY);
+      await AsyncStorage.removeItem(PENDING_ONBOARDING_ANSWERS_KEY);
     } catch (error) {
       console.error('[OnboardingContext] Error clearing cached data:', error);
     }

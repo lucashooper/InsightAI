@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
-import { isTablet, sf } from '../../utils/responsive';
+import { isTablet, sf, iPadWideContentStyle } from '../../utils/responsive';
 import Svg, { Circle } from 'react-native-svg';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
@@ -96,6 +96,8 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
   const { theme } = useTheme();
   const { userName } = useOnboarding();
   const dark = isDarkTheme(theme.name);
+  const neutralAccent = dark ? 'rgba(255,255,255,0.94)' : '#1a1a2e';
+  const neutralSubtle = dark ? 'rgba(255,255,255,0.72)' : 'rgba(0,0,0,0.6)';
   const answers = route?.params?.answers || {};
   const returnIndex = route?.params?.returnIndex || 0;
 
@@ -162,22 +164,22 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
         <View style={styles.cardsContainer}>
           <View style={[styles.card, { backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)', borderColor: dark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.4)' }]}>
             <View style={styles.cardContent}>
-              <Text style={[styles.cardNumber, { color: dark ? '#a855f7' : '#8b5cf6' }]}>10</Text>
-              <Text style={[styles.cardLabel, { color: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)' }]}>questions</Text>
+              <Text style={[styles.cardNumber, { color: neutralAccent }]}>10</Text>
+              <Text style={[styles.cardLabel, { color: neutralSubtle }]}>questions</Text>
             </View>
           </View>
 
           <View style={[styles.card, { backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)', borderColor: dark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.4)' }]}>
             <View style={styles.cardContent}>
-              <Text style={[styles.cardNumber, { color: dark ? '#a855f7' : '#8b5cf6' }]}>2</Text>
-              <Text style={[styles.cardLabel, { color: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)' }]}>minutes</Text>
+              <Text style={[styles.cardNumber, { color: neutralAccent }]}>2</Text>
+              <Text style={[styles.cardLabel, { color: neutralSubtle }]}>minutes</Text>
             </View>
           </View>
 
           <View style={[styles.card, { backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)', borderColor: dark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.4)' }]}>
             <View style={styles.cardContent}>
-              <Ionicons name="lock-closed" size={28} color={dark ? '#a855f7' : '#8b5cf6'} />
-              <Text style={[styles.cardLabel, { color: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)' }]}>private</Text>
+              <Ionicons name="lock-closed" size={28} color={neutralAccent} />
+              <Text style={[styles.cardLabel, { color: neutralSubtle }]}>private</Text>
             </View>
           </View>
         </View>
@@ -185,20 +187,20 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
         {/* Benefits */}
         <View style={styles.benefitsContainer}>
           <View style={styles.benefitRow}>
-            <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-            <Text style={[styles.benefitText, { color: dark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.7)' }]}>
+            <Ionicons name="checkmark-circle" size={20} color={neutralAccent} />
+            <Text style={[styles.benefitText, { color: dark ? 'rgba(255,255,255,0.82)' : 'rgba(0,0,0,0.72)' }]}>
               More accurate insights
             </Text>
           </View>
           <View style={styles.benefitRow}>
-            <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-            <Text style={[styles.benefitText, { color: dark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.7)' }]}>
+            <Ionicons name="checkmark-circle" size={20} color={neutralAccent} />
+            <Text style={[styles.benefitText, { color: dark ? 'rgba(255,255,255,0.82)' : 'rgba(0,0,0,0.72)' }]}>
               Personalized recommendations
             </Text>
           </View>
           <View style={styles.benefitRow}>
-            <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-            <Text style={[styles.benefitText, { color: dark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.7)' }]}>
+            <Ionicons name="checkmark-circle" size={20} color={neutralAccent} />
+            <Text style={[styles.benefitText, { color: dark ? 'rgba(255,255,255,0.82)' : 'rgba(0,0,0,0.72)' }]}>
               Better pattern tracking
             </Text>
           </View>
@@ -262,13 +264,14 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     paddingHorizontal: isTablet ? 48 : 32,
     paddingTop: isTablet ? 92 : 72,
+    ...iPadWideContentStyle,
   },
   iconContainer: {
-    marginBottom: -4,
+    marginBottom: isTablet ? 8 : -4,
   },
   bookIconLarge: {
-    width: 220,
-    height: 220,
+    width: isTablet ? 280 : 220,
+    height: isTablet ? 280 : 220,
   },
   title: {
     fontSize: sf(32),
@@ -282,20 +285,22 @@ const styles = StyleSheet.create({
     fontSize: sf(16),
     textAlign: 'center',
     lineHeight: sf(24),
-    marginBottom: 20,
-    paddingHorizontal: isTablet ? 40 : 16,
+    marginBottom: isTablet ? 28 : 20,
+    paddingHorizontal: isTablet ? 56 : 16,
   },
   cardsContainer: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 28,
+    gap: isTablet ? 18 : 12,
+    marginBottom: isTablet ? 36 : 28,
     width: '100%',
     justifyContent: 'center',
+    maxWidth: isTablet ? 560 : undefined,
   },
   card: {
-    width: 100,
-    paddingVertical: 20,
-    paddingHorizontal: 12,
+    width: isTablet ? 160 : 100,
+    minHeight: isTablet ? 154 : undefined,
+    paddingVertical: isTablet ? 24 : 20,
+    paddingHorizontal: isTablet ? 16 : 12,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
@@ -304,7 +309,9 @@ const styles = StyleSheet.create({
   cardContent: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: isTablet ? 8 : 4,
+    width: '100%',
+    minHeight: isTablet ? 100 : undefined,
   },
   cardNumber: {
     fontSize: sf(28),
@@ -315,12 +322,14 @@ const styles = StyleSheet.create({
     fontSize: sf(13),
     fontWeight: '500',
     lineHeight: sf(16),
+    textAlign: 'center',
   },
   benefitsContainer: {
     alignItems: 'flex-start',
     width: '100%',
     gap: 12,
     marginBottom: 28,
+    maxWidth: isTablet ? 420 : undefined,
   },
   benefitRow: {
     flexDirection: 'row',

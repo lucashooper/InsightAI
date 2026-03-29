@@ -12,7 +12,7 @@ import PillOption from '../../components/onboarding/PillOption';
 import AnimatedSlider from '../../components/onboarding/AnimatedSlider';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
-import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
+import { isTablet, sf, ss, iPadContentStyle, iPadWideContentStyle } from '../../utils/responsive';
 import { analytics } from '../../services/analytics';
 
 const cambridgeLogo = require('../../assets/Cambridge-logo.png');
@@ -329,6 +329,9 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
 
     const currentStep = STEPS[currentIndex];
     const totalQuestionSteps = STEPS.length;
+    const useDarkOnboardingAccent = theme.name === 'dark' || theme.name === 'midnight';
+    const primaryButtonColor = useDarkOnboardingAccent ? theme.colors.primary : '#1a1a1a';
+    const primaryButtonShadow = useDarkOnboardingAccent ? theme.colors.primary : '#000';
 
     // CRITICAL: Skip name step ONLY if user explicitly used Apple/Google Sign-In
     useEffect(() => {
@@ -422,8 +425,8 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                 if (optionFadeAnims[index]) {
                     Animated.timing(optionFadeAnims[index], {
                         toValue: 1,
-                        duration: 320,
-                        delay: index * 45,
+                        duration: 420,
+                        delay: index * 60,
                         easing: Easing.out(Easing.cubic),
                         useNativeDriver: true,
                     }).start();
@@ -550,19 +553,18 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                     {currentStep.type === 'info' && currentStep.id === 'research_info' ? (
                         <View style={styles.premiumInfoContainer}>
                             {/* Title - positioned at same height as quiz pages */}
-                            <Animated.View style={{ opacity: infoCardAnim, marginTop: 20 }}>
+                            <Animated.View style={{ opacity: infoCardAnim, width: '100%' }}>
                                 <Text style={[styles.researchTitle, isDarkTheme(theme.name) && { color: '#ffffff' }]}>
                                     Insight is grounded in psychology
                                 </Text>
                             </Animated.View>
 
-                            {/* Meditation Animation - 15% bigger than before */}
-                            <Animated.View style={{ opacity: infoCardAnim, alignItems: 'center', marginTop: 20, marginBottom: 16 }}>
+                            <Animated.View style={{ opacity: infoCardAnim, alignItems: 'center', marginTop: isTablet ? 20 : 12, marginBottom: isTablet ? 24 : 18 }}>
                                 <LottieView
                                     source={stressManagementLottie}
                                     autoPlay
                                     loop
-                                    style={{ width: 195, height: 195 }}
+                                    style={styles.researchLottie}
                                 />
                             </Animated.View>
 
@@ -585,7 +587,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                         style={styles.glassCardGradient}
                                     >
                                         <Text style={[styles.glassCardBody, isDarkTheme(theme.name) && { color: 'rgba(255, 255, 255, 0.7)' }]}>
-                                            Research from leading institutions has shown that journaling improves mental wellbeing.
+                                            Journaling is linked to better emotional awareness and mental wellbeing.
                                         </Text>
                                     </LinearGradient>
                                 </View>
@@ -602,7 +604,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                         })
                                     }],
                                     width: '100%',
-                                    marginTop: 20,
+                                    marginTop: 22,
                                 }}
                             >
                                 <View style={styles.logoGrid}>
@@ -773,6 +775,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                 autoFocus
                                 autoCapitalize="words"
                                 returnKeyType="done"
+                                multiline={false}
                                 onSubmitEditing={() => {
                                     // Just dismiss the keyboard - user should press Continue button to advance
                                     Keyboard.dismiss();
@@ -780,7 +783,11 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                             />
                             
                             <TouchableOpacity
-                                style={[styles.continueButton, !textInputValue.trim() && styles.continueButtonDisabled]}
+                                style={[
+                                    styles.continueButton,
+                                    { backgroundColor: primaryButtonColor, shadowColor: primaryButtonShadow },
+                                    !textInputValue.trim() && styles.continueButtonDisabled
+                                ]}
                                 activeOpacity={0.9}
                                 onPress={() => {
                                     if (textInputValue.trim()) {
@@ -810,7 +817,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                                 transform: [{
                                                     translateY: optionFadeAnims[index].interpolate({
                                                         inputRange: [0, 1],
-                                                        outputRange: [8, 0],
+                                                        outputRange: [6, 0],
                                                     })
                                                 }]
                                             }}
@@ -834,7 +841,11 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
 
                             {/* Continue Button - only enabled when option selected */}
                             <TouchableOpacity
-                                style={[styles.continueButton, !selectedOption && styles.continueButtonDisabled]}
+                                style={[
+                                    styles.continueButton,
+                                    { backgroundColor: primaryButtonColor, shadowColor: primaryButtonShadow },
+                                    !selectedOption && styles.continueButtonDisabled
+                                ]}
                                 activeOpacity={0.9}
                                 onPress={() => {
                                     if (selectedOption) {
@@ -891,7 +902,10 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                             </View>
 
                             <TouchableOpacity
-                                style={styles.sliderContinueButton}
+                                style={[
+                                    styles.sliderContinueButton,
+                                    { backgroundColor: primaryButtonColor, shadowColor: primaryButtonShadow }
+                                ]}
                                 activeOpacity={0.9}
                                 onPress={() => {
                                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -910,7 +924,10 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                         <View style={styles.infoFooter}>
                             {/* Privacy badge removed as requested */}
                             <TouchableOpacity
-                                style={styles.primaryButton}
+                                style={[
+                                    styles.primaryButton,
+                                    { backgroundColor: primaryButtonColor, shadowColor: primaryButtonShadow }
+                                ]}
                                 activeOpacity={0.9}
                                 onPress={() => handleNext()}
                             >
@@ -1143,6 +1160,8 @@ const styles = StyleSheet.create({
     questionContent: {
         flex: 1,
         justifyContent: 'space-between',
+        width: '100%',
+        ...iPadContentStyle,
     },
     optionsList: {
         flex: 1,
@@ -1274,14 +1293,16 @@ const styles = StyleSheet.create({
     sliderContent: {
         flex: 1,
         justifyContent: 'center',
-        paddingTop: 20,
+        paddingTop: isTablet ? 0 : 20,
+        width: '100%',
+        ...iPadContentStyle,
     },
     sliderValueRow: {
         alignItems: 'center',
-        marginBottom: 40,
+        marginBottom: isTablet ? 56 : 40,
     },
     sliderValueText: {
-        fontSize: 72,
+        fontSize: isTablet ? 132 : 72,
         fontWeight: '800',
         color: '#1a1a2e',
         letterSpacing: -2,
@@ -1303,7 +1324,7 @@ const styles = StyleSheet.create({
     },
     sliderTrackContainer: {
         marginTop: 0,
-        marginBottom: 60,
+        marginBottom: isTablet ? 76 : 60,
         justifyContent: 'center',
         paddingHorizontal: 4,
     },
@@ -1366,8 +1387,15 @@ const styles = StyleSheet.create({
     premiumInfoContainer: {
         flex: 1,
         alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 24,
+        justifyContent: 'flex-start',
+        width: '100%',
+        paddingHorizontal: 0,
+        paddingTop: isTablet ? 12 : 4,
+        ...iPadWideContentStyle,
+    },
+    researchLottie: {
+        width: isTablet ? 290 : 195,
+        height: isTablet ? 290 : 195,
     },
     lottieGlowContainer: {
         position: 'relative',
@@ -1406,25 +1434,27 @@ const styles = StyleSheet.create({
         opacity: 1, // Controlled by Animated.View wrapper
     },
     researchTitle: {
-        fontSize: 32,
+        fontSize: isTablet ? 40 : 32,
         fontWeight: '600',
         color: '#1a1a2e',
         textAlign: 'left',
+        width: '100%',
         letterSpacing: -0.6,
-        lineHeight: 40,
-        marginBottom: 20,
+        lineHeight: isTablet ? 48 : 40,
+        marginBottom: isTablet ? 24 : 20,
     },
     logoGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
         width: '100%',
-        rowGap: 12,
+        rowGap: isTablet ? 16 : 12,
+        marginBottom: isTablet ? 8 : 18,
     },
     logoImage: {
-        width: '47%',
-        height: 56,
-        borderRadius: 12,
+        width: isTablet ? '48.5%' : '47%',
+        height: isTablet ? 68 : 56,
+        borderRadius: isTablet ? 16 : 12,
         overflow: 'hidden',
     },
     logoImageDark: {
@@ -1453,7 +1483,7 @@ const styles = StyleSheet.create({
         elevation: 10,
     },
     glassCardGradient: {
-        padding: 28,
+        padding: isTablet ? 34 : 28,
         gap: 16,
     },
     glassCardTitle: {
@@ -1464,9 +1494,9 @@ const styles = StyleSheet.create({
         lineHeight: 32,
     },
     glassCardBody: {
-        fontSize: 15,
+        fontSize: isTablet ? 19 : 15,
         color: 'rgba(0, 0, 0, 0.65)',
-        lineHeight: 23,
+        lineHeight: isTablet ? 30 : 23,
         fontWeight: '400',
         letterSpacing: 0.1,
     },
@@ -1545,16 +1575,20 @@ const styles = StyleSheet.create({
     textInputContent: {
         flex: 1,
         justifyContent: 'space-between',
-        paddingTop: 40,
+        paddingTop: isTablet ? 24 : 40,
+        width: '100%',
+        ...iPadContentStyle,
     },
     nameInput: {
         backgroundColor: 'rgba(255, 255, 255, 0.5)',
         borderRadius: isTablet ? 20 : 16,
         borderWidth: 1.5,
         borderColor: 'rgba(168, 85, 247, 0.3)',
-        paddingVertical: isTablet ? 22 : 18,
+        height: isTablet ? 78 : undefined,
+        paddingVertical: isTablet ? 0 : 18,
         paddingHorizontal: isTablet ? 24 : 20,
         fontSize: sf(18),
+        lineHeight: isTablet ? sf(18) : undefined,
         color: '#1a1a2e',
         fontWeight: '500',
         marginBottom: 24,

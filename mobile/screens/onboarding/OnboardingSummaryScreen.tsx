@@ -182,11 +182,13 @@ const styles = StyleSheet.create({
         elevation: 10,
     },
     title: {
-        fontSize: 36,
-        fontWeight: '700',
+        fontSize: 32,
+        fontWeight: '600',
         color: '#1a1a2e',
         marginBottom: 16,
         textAlign: 'center',
+        letterSpacing: -0.6,
+        lineHeight: 40,
     },
     subtitle: {
         fontSize: 18,

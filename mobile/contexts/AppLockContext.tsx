@@ -189,11 +189,8 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
 
-      // Send a password reset email as verification
-      // This proves the user owns the account
-      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-        redirectTo: 'com.crupid.mobile://reset-pin',
-      });
+      // Send a recovery email as a security notification before clearing the local PIN.
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email);
 
       if (error) {
         console.error('[AppLock] Failed to send reset email:', error);

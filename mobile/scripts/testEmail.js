@@ -33,13 +33,11 @@ async function testPasswordReset() {
   
   try {
     console.log(`Sending password reset email to: ${TEST_EMAIL}`);
-    console.log('Redirect URL: myinsightai://reset-password');
+    console.log('Expected email content: 6-digit recovery code');
     console.log('');
     
     const startTime = Date.now();
-    const { data, error } = await supabase.auth.resetPasswordForEmail(TEST_EMAIL, {
-      redirectTo: 'myinsightai://reset-password',
-    });
+    const { data, error } = await supabase.auth.resetPasswordForEmail(TEST_EMAIL);
     const duration = Date.now() - startTime;
     
     console.log(`Request completed in ${duration}ms`);
@@ -210,13 +208,13 @@ async function checkAuthSettings() {
   console.log('   - Confirm signup template is enabled');
   console.log('   - Reset password template is enabled');
   console.log('');
-  console.log('2. Authentication → Providers:');
-  console.log('   - Email provider is enabled');
-  console.log('   - Confirm email is enabled (if you want email verification)');
+    console.log('2. Authentication → Providers:');
+    console.log('   - Email provider is enabled');
+    console.log('   - Confirm email is enabled');
   console.log('');
   console.log('3. Authentication → URL Configuration:');
-  console.log('   - Site URL: https://myinsight.app (or your production URL)');
-  console.log('   - Redirect URLs: Include myinsightai://reset-password');
+    console.log('   - Site URL is set correctly for your environment');
+    console.log('   - Reset Password template uses {{ .Token }} for code-based recovery');
   console.log('');
 }
 
@@ -281,6 +279,7 @@ async function runTests() {
   } else {
     console.log('🎉 ALL TESTS PASSED!');
     console.log('Your email configuration is working correctly.');
+    console.log('Verify the email contains a recovery code rather than a reset link.');
     console.log('');
     console.log('If users still report not receiving emails:');
     console.log('- Check their spam/junk folders');

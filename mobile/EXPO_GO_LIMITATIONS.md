@@ -29,11 +29,14 @@ Development builds don't have Expo Go's network restrictions:
 ```bash
 cd mobile
 
-# Build for iOS
-eas build --profile development --platform ios
+# Install the local iOS dev client
+npm run ios
 
-# Install on device and run
-npx expo start --dev-client
+# Start Metro in dev-client mode
+npm run start
+
+# Re-open simulator with the dev client
+npm run ios:dev
 ```
 
 **Benefits:**
@@ -109,8 +112,8 @@ Before submitting to App Store, test in a **development build** or **TestFlight*
 ## For Development
 
 **During development:**
-- Use Expo Go for UI changes (fast refresh)
-- Use development build for auth testing
+- Use the dev client as the default workflow
+- Use Expo Go only for very lightweight UI checks
 - Use TestFlight for final testing
 
 **For production:**
@@ -142,8 +145,8 @@ Before submitting to App Store, test in a **development build** or **TestFlight*
 
 ## Next Steps
 
-1. **For quick UI testing:** Continue using Expo Go
-2. **For auth testing:** Create a development build
+1. **For day-to-day simulator work:** Use the dev client workflow
+2. **For quick UI-only checks:** Expo Go is optional
 3. **For final testing:** Use TestFlight
 4. **For submission:** Ensure all auth flows work in TestFlight
 

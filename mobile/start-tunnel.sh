@@ -29,10 +29,10 @@ echo "✅ Ngrok tunnel running at: $NGROK_URL"
 NGROK_HOST=$(echo $NGROK_URL | sed 's|https://||')
 
 echo "🎯 Starting Expo with tunnel URL..."
-echo "📱 Open Expo Go app and scan the QR code"
+echo "📱 Open the development build and connect to Metro"
 
-# Start Expo with ngrok hostname so QR code uses tunnel URL
-REACT_NATIVE_PACKAGER_HOSTNAME=$NGROK_HOST npx expo start --port 8082
+# Start Expo with ngrok hostname so the dev client uses the tunnel URL
+REACT_NATIVE_PACKAGER_HOSTNAME=$NGROK_HOST npx expo start --dev-client --port 8082
 
 # Cleanup on exit
 trap "kill $NGROK_PID" EXIT

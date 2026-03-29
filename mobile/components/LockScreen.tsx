@@ -209,7 +209,7 @@ export default function LockScreen() {
           onPress={() => {
             Alert.alert(
               'Forgot PIN?',
-              'We\'ll send a verification email to your account. Once verified, your PIN will be reset.',
+              'We\'ll send a security email to your account and reset the PIN on this device.',
               [
                 { text: 'Cancel', style: 'cancel' },
                 {
@@ -217,7 +217,7 @@ export default function LockScreen() {
                   onPress: async () => {
                     const success = await forgotPin();
                     if (success) {
-                      Alert.alert('Email Sent', 'Check your inbox for a verification link. Once you verify, your PIN will be cleared and the app will unlock.');
+                      Alert.alert('PIN Reset', 'Your PIN has been reset on this device. We also sent an email to your account for security.');
                     } else {
                       Alert.alert('Error', 'Could not send reset email. Please try again later.');
                     }

@@ -119,6 +119,8 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
 
   const isDark = isDarkTheme(selectedVibe || 'light');
   const textColor = isDark ? '#ffffff' : '#1a1a2e';
+  const usePremiumDarkAccent = selectedVibe === 'dark' || selectedVibe === 'midnight';
+  const darkAccentColor = selectedVibe === 'midnight' ? '#6366f1' : '#8b5cf6';
 
   return (
     <View style={styles.container}>
@@ -173,7 +175,7 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
         <TouchableOpacity
           style={[
             styles.continueButton,
-            isDark && styles.continueButtonDark,
+            usePremiumDarkAccent && { backgroundColor: darkAccentColor, shadowColor: darkAccentColor, shadowOpacity: 0.22 },
             !selectedVibe && styles.continueButtonDisabled,
           ]}
           onPress={handleContinue}
@@ -181,7 +183,7 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
           activeOpacity={0.8}
         >
           <View style={[styles.continueGradient, !selectedVibe && { opacity: 0.4 }]}> 
-            <Text style={[styles.continueText, isDark && styles.continueTextDark]}>Continue</Text>
+            <Text style={styles.continueText}>Continue</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -430,10 +432,6 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 8,
   },
-  continueButtonDark: {
-    backgroundColor: '#ffffff',
-    shadowOpacity: 0.14,
-  },
   continueButtonDisabled: {
     opacity: 0.4,
   },
@@ -448,8 +446,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#ffffff',
     letterSpacing: 0.2,
-  },
-  continueTextDark: {
-    color: '#111111',
   },
 });

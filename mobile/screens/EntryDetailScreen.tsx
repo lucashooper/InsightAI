@@ -14,6 +14,7 @@ import ImmersiveAnalysisOverlay from '../components/shared/ImmersiveAnalysisOver
 import PremiumUpsellOverlay from '../components/PremiumUpsellOverlay';
 import * as Haptics from 'expo-haptics';
 import { isTablet, sf, ss, si } from '../utils/responsive';
+import SunoGradient from '../components/onboarding/SunoGradient';
 
 // Helper function to get color styling based on emotion sentiment
 const getSentimentStyle = (emotion: string) => {
@@ -621,6 +622,11 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
   if (!entry) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        {isDarkTheme(theme.name) ? (
+          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
+        ) : (
+          <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+        )}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : '#1a1a1a'} />
@@ -636,6 +642,11 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {isDarkTheme(theme.name) ? (
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
+      ) : (
+        <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+      )}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : '#1a1a1a'} />

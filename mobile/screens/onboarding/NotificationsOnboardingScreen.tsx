@@ -86,8 +86,8 @@ export default function NotificationsOnboardingScreen({ navigation }: Notificati
       </Text>
 
       {/* Allow Button */}
-      <TouchableOpacity style={[styles.allowButton, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : '#fff', borderColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)' }]} onPress={handleAllowNotifications}>
-        <Text style={[styles.allowButtonText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#000' }]}>Allow notifications</Text>
+      <TouchableOpacity style={styles.allowButton} onPress={handleAllowNotifications} activeOpacity={0.9}>
+        <Text style={styles.allowButtonText}>Allow notifications</Text>
       </TouchableOpacity>
 
       {/* Skip */}
@@ -139,10 +139,12 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#1a1a2e',
     marginBottom: 16,
     textAlign: 'center',
+    letterSpacing: -0.6,
+    lineHeight: 40,
   },
   subtitle: {
     fontSize: 16,
@@ -154,17 +156,22 @@ const styles = StyleSheet.create({
   },
   allowButton: {
     width: '100%',
-    paddingVertical: 18,
-    backgroundColor: '#fff',
-    borderRadius: 999,
+    paddingVertical: 22,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 28,
     alignItems: 'center',
     marginBottom: 16,
-    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
   },
   allowButtonText: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#000',
+    color: '#fff',
+    letterSpacing: 0.2,
   },
   skipButton: {
     paddingVertical: 12,

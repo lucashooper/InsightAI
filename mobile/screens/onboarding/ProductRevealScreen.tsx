@@ -31,14 +31,14 @@ export default function ProductRevealScreen({ navigation }: any) {
                 <Text style={styles.welcomeText}>Welcome to Insight</Text>
             </View>
 
-            {/* Phone image — fills remaining space, fades at bottom */}
+            {/* Phone image - centered and slightly larger, with soft bottom fade */}
             <View style={styles.phoneSection}>
                 <MaskedView
                     style={styles.maskedContainer}
                     maskElement={
                         <LinearGradient
                             colors={['#000', '#000', '#000', 'transparent']}
-                            locations={[0, 0.55, 0.80, 1]}
+                            locations={[0, 0.62, 0.82, 1]}
                             style={{ flex: 1 }}
                         />
                     }
@@ -49,6 +49,12 @@ export default function ProductRevealScreen({ navigation }: any) {
                         resizeMode="contain"
                     />
                 </MaskedView>
+                <LinearGradient
+                    colors={['rgba(254,247,242,0)', 'rgba(254,247,242,0.75)', '#fef7f2']}
+                    locations={[0, 0.55, 1]}
+                    pointerEvents="none"
+                    style={styles.phoneFadeOverlay}
+                />
             </View>
 
             {/* Footer */}
@@ -115,17 +121,25 @@ const styles = StyleSheet.create({
     phoneSection: {
         flex: 1,
         alignItems: 'center',
-        justifyContent: 'flex-start',
+        justifyContent: 'center',
         overflow: 'hidden',
+        marginTop: isTablet ? 0 : -6,
     },
     maskedContainer: {
-        width: SCREEN_WIDTH * (isTablet ? 0.84 : 1.08),
-        height: SCREEN_HEIGHT * (isTablet ? 0.70 : 0.69),
-        marginTop: isTablet ? -8 : -18,
+        width: SCREEN_WIDTH * (isTablet ? 0.9 : 1.16),
+        height: SCREEN_HEIGHT * (isTablet ? 0.74 : 0.74),
+        marginTop: isTablet ? -14 : -8,
     },
     phoneMockup: {
         width: '100%',
         height: '100%',
+    },
+    phoneFadeOverlay: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: isTablet ? 120 : 110,
     },
 
     /* ── Footer ────────────────────────────────────────────────── */

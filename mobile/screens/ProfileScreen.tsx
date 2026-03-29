@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking, I
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import Purchases from 'react-native-purchases';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { useAuth } from '../contexts/AuthContext';
@@ -42,7 +41,7 @@ interface UserProfile {
 export default function ProfileScreen({ navigation }: any) {
   const { user, signOut } = useAuth();
   const { theme, themeName } = useTheme();
-  const { data: preloaded, refreshProfile } = usePreloadedData();
+  const { data: preloaded, refreshProfile, refreshAccountStats } = usePreloadedData();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [subscriptionPlan, setSubscriptionPlan] = useState<string>('Free');
   const [entriesCount, setEntriesCount] = useState(0);
@@ -52,13 +51,15 @@ export default function ProfileScreen({ navigation }: any) {
   // Preload + user-scoped AsyncStorage (tab bar / Edit Profile); cache wins over stale preload for pfp
   useEffect(() => {
     if (!user) return;
-    loadSubscriptionStatus();
-    loadEntriesCount();
 
     if (!preloaded.isLoaded) {
       loadUserProfile();
       return;
     }
+
+    setSubscriptionPlan(preloaded.subscriptionPlan || 'Free');
+    setEntriesCount(preloaded.entriesCount ?? 0);
+    setEntriesLimit(preloaded.entriesLimit ?? 2);
 
     if (preloaded.userName) {
       (async () => {
@@ -83,9 +84,8 @@ export default function ProfileScreen({ navigation }: any) {
   useFocusEffect(
     React.useCallback(() => {
       if (!user?.id) return;
-      loadSubscriptionStatus();
-      loadEntriesCount();
       refreshProfile(user.id);
+      refreshAccountStats(user.id);
 
       const syncPfp = async () => {
         const cachedRaw = await AsyncStorage.getItem(`CACHED_PROFILE_PICTURE_${user.id}`);
@@ -106,7 +106,7 @@ export default function ProfileScreen({ navigation }: any) {
         if (cached) setImageLoadError(false);
       };
       syncPfp();
-    }, [user?.id, refreshProfile, preloaded.userName])
+    }, [user?.id, refreshProfile, refreshAccountStats, preloaded.userName])
   );
 
   const loadUserProfile = async () => {
@@ -148,62 +148,33 @@ export default function ProfileScreen({ navigation }: any) {
         setImageLoadError(false);
       } else {
         console.log('[ProfileScreen] No profile data found, using fallback');
+        const cachedUsername = await AsyncStorage.getItem('CACHED_USERNAME');
+        const metadataUsername =
+          typeof user.user_metadata?.username === 'string'
+            ? user.user_metadata.username
+            : '';
         // Fallback to user data if no profile exists
         setUserProfile({
           id: user.id,
-          username: user.email?.split('@')[0] || 'User',
+          username: cachedUsername || metadataUsername || user.email?.split('@')[0] || 'User',
           email: user.email || '',
           profile_picture_url: null,
         });
       }
     } catch (error) {
       console.error('[ProfileScreen] Error loading profile:', error);
+      const cachedUsername = await AsyncStorage.getItem('CACHED_USERNAME');
+      const metadataUsername =
+        typeof user.user_metadata?.username === 'string'
+          ? user.user_metadata.username
+          : '';
       // Set fallback profile on error
       setUserProfile({
         id: user.id,
-        username: user.email?.split('@')[0] || 'User',
+        username: cachedUsername || metadataUsername || user.email?.split('@')[0] || 'User',
         email: user.email || '',
         profile_picture_url: null,
       });
-    }
-  };
-
-  const loadSubscriptionStatus = async () => {
-    try {
-      const customerInfo = await Purchases.getCustomerInfo();
-
-      const hasProEntitlement = customerInfo.entitlements.active['InsightAI Pro'] !== undefined;
-      const hasAnyActiveEntitlement = Object.keys(customerInfo.entitlements.active).length > 0;
-
-      if (hasAnyActiveEntitlement) {
-        setSubscriptionPlan('Insight Pro');
-        setEntriesLimit(2);
-      } else {
-        setSubscriptionPlan('Free');
-        setEntriesLimit(0);
-      }
-    } catch (error) {
-      setSubscriptionPlan('Free');
-      setEntriesLimit(0);
-    }
-  };
-
-  const loadEntriesCount = async () => {
-    if (!user) return;
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const { count, error } = await supabase
-        .from('usage_tracking')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('action_type', 'ai_analysis')
-        .gte('created_at', today);
-
-      if (!error && count !== null) {
-        setEntriesCount(count);
-      }
-    } catch (error) {
-      console.error('Error loading analysis count:', error);
     }
   };
 

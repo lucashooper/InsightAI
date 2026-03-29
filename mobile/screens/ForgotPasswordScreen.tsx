@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,277 +9,652 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
-  SafeAreaView,
+  Image,
+  TouchableWithoutFeedback,
+  Keyboard,
+  StatusBar,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import SunoGradient from '../components/onboarding/SunoGradient';
+import OTPInput from '../components/OTPInput';
 import { supabase } from '../lib/supabase';
 
-export default function ForgotPasswordScreen({ navigation }: any) {
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
+type RecoveryStep = 'email' | 'code' | 'password' | 'success';
+const PASSWORD_RECOVERY_ACTIVE_KEY = 'PASSWORD_RECOVERY_ACTIVE';
+const PASSWORD_RECOVERY_STAGE_KEY = 'PASSWORD_RECOVERY_STAGE';
+const PASSWORD_RECOVERY_EMAIL_KEY = 'PASSWORD_RECOVERY_EMAIL';
 
-  const handleSendResetEmail = async () => {
-    if (!email) {
-      Alert.alert('Enter Email', 'Please enter your email address');
+export default function ForgotPasswordScreen({ navigation }: any) {
+  const [step, setStep] = useState<RecoveryStep>('email');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [codeError, setCodeError] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [recoveryVerified, setRecoveryVerified] = useState(false);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) {
       return;
     }
 
-    if (!email.includes('@')) {
-      Alert.alert('Invalid Email', 'Please enter a valid email address');
-      return;
+    const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
+
+  const normalizedEmail = email.trim().toLowerCase();
+
+  useEffect(() => {
+    const restoreRecoveryState = async () => {
+      try {
+        const [active, storedStage, storedEmail] = await Promise.all([
+          AsyncStorage.getItem(PASSWORD_RECOVERY_ACTIVE_KEY),
+          AsyncStorage.getItem(PASSWORD_RECOVERY_STAGE_KEY),
+          AsyncStorage.getItem(PASSWORD_RECOVERY_EMAIL_KEY),
+        ]);
+
+        if (storedEmail) {
+          setEmail(storedEmail);
+        }
+
+        if (active === 'true' && storedStage === 'password' && storedEmail) {
+          setRecoveryVerified(true);
+          setStep('password');
+        }
+      } catch (err) {
+        console.error('[PASSWORD RESET] Failed to restore recovery state:', err);
+      }
+    };
+
+    restoreRecoveryState();
+  }, []);
+
+  const sendRecoveryCode = async () => {
+    if (!normalizedEmail) {
+      Alert.alert('Enter Email', 'Please enter your email address.');
+      return false;
+    }
+
+    if (!normalizedEmail.includes('@')) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address.');
+      return false;
     }
 
     setLoading(true);
-    console.log('[PASSWORD RESET] Sending reset email to:', email);
+    setCodeError(false);
+    console.log('[PASSWORD RESET] Sending recovery code to:', normalizedEmail);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'myinsightai://reset-password',
+      const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail);
+      if (error) {
+        console.error('[PASSWORD RESET] Error sending recovery code:', error);
+        Alert.alert('Error', 'Failed to send your recovery code. Please try again.');
+        return false;
+      }
+
+      setStep('code');
+      setRecoveryVerified(false);
+      setResendCooldown(60);
+      await AsyncStorage.setItem(PASSWORD_RECOVERY_EMAIL_KEY, normalizedEmail);
+      return true;
+    } catch (err: any) {
+      console.error('[PASSWORD RESET] Exception sending recovery code:', err);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearRecoverySession = async () => {
+    try {
+      await AsyncStorage.removeItem(PASSWORD_RECOVERY_ACTIVE_KEY);
+      await AsyncStorage.removeItem(PASSWORD_RECOVERY_STAGE_KEY);
+      await AsyncStorage.removeItem(PASSWORD_RECOVERY_EMAIL_KEY);
+      if (recoveryVerified) {
+        await supabase.auth.signOut();
+      }
+    } catch (err) {
+      console.error('[PASSWORD RESET] Failed to clear recovery session:', err);
+    } finally {
+      setRecoveryVerified(false);
+    }
+  };
+
+  const finishRecoveryAndReturnToLogin = async () => {
+    setLoading(true);
+    await clearRecoverySession();
+    setLoading(false);
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
+  };
+
+  const handleVerifyCode = async (code: string) => {
+    setLoading(true);
+    setCodeError(false);
+
+    try {
+      await AsyncStorage.setItem(PASSWORD_RECOVERY_ACTIVE_KEY, 'true');
+      await AsyncStorage.setItem(PASSWORD_RECOVERY_EMAIL_KEY, normalizedEmail);
+      const { error } = await supabase.auth.verifyOtp({
+        email: normalizedEmail,
+        token: code,
+        type: 'recovery',
       });
 
       if (error) {
-        console.error('[PASSWORD RESET] Error:', error);
-        Alert.alert(
-          'Error',
-          'Failed to send reset email. Please check your email address and try again.'
-        );
-      } else {
-        console.log('[PASSWORD RESET] Success! Email sent');
-        setEmailSent(true);
+        console.error('[PASSWORD RESET] Recovery code verification failed:', error);
+        await AsyncStorage.removeItem(PASSWORD_RECOVERY_ACTIVE_KEY);
+        setCodeError(true);
+        Alert.alert('Invalid Code', 'That recovery code is invalid or has expired.');
+        return;
       }
+
+      setRecoveryVerified(true);
+      await AsyncStorage.setItem(PASSWORD_RECOVERY_STAGE_KEY, 'password');
+      setStep('password');
     } catch (err: any) {
-      console.error('[PASSWORD RESET] Exception:', err);
+      console.error('[PASSWORD RESET] Exception verifying recovery code:', err);
+      await AsyncStorage.removeItem(PASSWORD_RECOVERY_ACTIVE_KEY);
+      setCodeError(true);
       Alert.alert('Error', 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleResendEmail = () => {
-    setEmailSent(false);
-    handleSendResetEmail();
+  const handleUpdatePassword = async () => {
+    if (!password || password.length < 8) {
+      Alert.alert('Password Too Short', 'Please use at least 8 characters.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Passwords Do Not Match', 'Please make sure both passwords match.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) {
+        console.error('[PASSWORD RESET] Failed to update password:', error);
+        Alert.alert('Error', error.message || 'Failed to update your password.');
+        return;
+      }
+
+      setStep('success');
+      await AsyncStorage.setItem(PASSWORD_RECOVERY_STAGE_KEY, 'success');
+    } catch (err: any) {
+      console.error('[PASSWORD RESET] Exception updating password:', err);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (emailSent) {
+  const handleBack = () => {
+    if (step === 'success') {
+      finishRecoveryAndReturnToLogin();
+      return;
+    }
+
+    if (step === 'password') {
+      setPassword('');
+      setConfirmPassword('');
+      setStep('code');
+      return;
+    }
+
+    if (step === 'code') {
+      setCodeError(false);
+      if (recoveryVerified) {
+        clearRecoverySession().finally(() => {
+          setStep('email');
+        });
+      } else {
+        setStep('email');
+      }
+      return;
+    }
+
+    navigation.goBack();
+  };
+
+  const renderIcon = () => {
+    if (step === 'password') {
+      return (
+        <View style={styles.inlineIconCircle}>
+          <Ionicons name="key-outline" size={34} color="#1a1a2e" />
+        </View>
+      );
+    }
+
+    if (step === 'success') {
+      return (
+        <View style={styles.inlineIconCircle}>
+          <Ionicons name="checkmark" size={34} color="#1a1a2e" />
+        </View>
+      );
+    }
+
     return (
-      <SafeAreaView style={styles.container}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
-        >
-          {/* Back Button */}
+      <Image
+        source={require('../public/onboarding-icons/Email-Icon2.webp')}
+        style={styles.emailIcon}
+        resizeMode="contain"
+      />
+    );
+  };
+
+  const renderTitle = () => {
+    switch (step) {
+      case 'code':
+        return 'Check your email';
+      case 'password':
+        return 'Create a new password';
+      case 'success':
+        return 'Password updated';
+      default:
+        return 'Reset Password';
+    }
+  };
+
+  const renderSubtitle = () => {
+    switch (step) {
+      case 'code':
+        return (
+          <Text style={styles.subtitle}>
+            Enter the 6-digit recovery code we sent to{' '}
+            <Text style={styles.emailInline}>{normalizedEmail}</Text>
+          </Text>
+        );
+      case 'password':
+        return (
+          <Text style={styles.subtitle}>
+            Choose a new password for your account.
+          </Text>
+        );
+      case 'success':
+        return (
+          <Text style={styles.subtitle}>
+            Your password has been reset. Sign back in with your new details.
+          </Text>
+        );
+      default:
+        return (
+          <Text style={styles.subtitle}>
+            Enter your email address and we&apos;ll send you a recovery code.
+          </Text>
+        );
+    }
+  };
+
+  const renderBody = () => {
+    if (step === 'code') {
+      return (
+        <>
+          <View style={styles.otpContainer}>
+            <OTPInput length={6} onComplete={handleVerifyCode} error={codeError} />
+          </View>
+          {loading && <ActivityIndicator size="small" color="#1a1a1a" style={styles.loader} />}
           <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
+            style={[styles.secondaryButton, resendCooldown > 0 && styles.secondaryButtonDisabled]}
+            onPress={sendRecoveryCode}
+            disabled={loading || resendCooldown > 0}
           >
-            <Ionicons name="arrow-back" size={24} color="#fff" />
+            <Ionicons
+              name="refresh-outline"
+              size={18}
+              color={resendCooldown > 0 ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.6)'}
+              style={styles.secondaryButtonIcon}
+            />
+            <Text style={[styles.secondaryButtonText, resendCooldown > 0 && styles.secondaryButtonTextDisabled]}>
+              {resendCooldown > 0 ? `Resend code (${resendCooldown}s)` : 'Resend code'}
+            </Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.linkButton}
+            onPress={() => {
+              if (recoveryVerified) {
+                clearRecoverySession().finally(() => setStep('email'));
+              } else {
+                setStep('email');
+              }
+            }}
+          >
+            <Text style={styles.linkButtonText}>Change email address</Text>
+          </TouchableOpacity>
+        </>
+      );
+    }
 
-          <View style={styles.content}>
-            {/* Success Icon */}
-            <View style={styles.iconContainer}>
-              <Ionicons name="mail-outline" size={64} color="#8b5cf6" />
-            </View>
-
-            {/* Title */}
-            <Text style={styles.title}>Check Your Email</Text>
-
-            {/* Message */}
-            <Text style={styles.message}>
-              We've sent a password reset link to:
-            </Text>
-            <Text style={styles.emailText}>{email}</Text>
-
-            <Text style={styles.instructions}>
-              Click the link in the email to reset your password. The link will expire in 1 hour.
-            </Text>
-
-            {/* Resend Button */}
-            <TouchableOpacity
-              style={styles.resendButton}
-              onPress={handleResendEmail}
-              disabled={loading}
-            >
-              <Text style={styles.resendButtonText}>
-                Didn't receive the email? Resend
-              </Text>
-            </TouchableOpacity>
-
-            {/* Back to Login */}
-            <TouchableOpacity
-              style={styles.backToLoginButton}
-              onPress={() => navigation.navigate('Login')}
-            >
-              <Text style={styles.backToLoginText}>Back to Sign In</Text>
+    if (step === 'password') {
+      return (
+        <>
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="New password"
+              placeholderTextColor="rgba(0, 0, 0, 0.4)"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              textContentType="newPassword"
+            />
+            <TouchableOpacity style={styles.eyeButton} onPress={() => setShowPassword(!showPassword)}>
+              <Ionicons
+                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                size={20}
+                color="rgba(0, 0, 0, 0.6)"
+              />
             </TouchableOpacity>
           </View>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="Confirm new password"
+              placeholderTextColor="rgba(0, 0, 0, 0.4)"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={!showConfirmPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              textContentType="newPassword"
+              onSubmitEditing={handleUpdatePassword}
+            />
+            <TouchableOpacity
+              style={styles.eyeButton}
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              <Ionicons
+                name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
+                size={20}
+                color="rgba(0, 0, 0, 0.6)"
+              />
+            </TouchableOpacity>
+          </View>
+        </>
+      );
+    }
+
+    if (step === 'success') {
+      return null;
+    }
+
+    return (
+      <TextInput
+        style={styles.input}
+        placeholder="Email"
+        placeholderTextColor="rgba(0, 0, 0, 0.4)"
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        autoCorrect={false}
+        keyboardType="email-address"
+        autoFocus
+        returnKeyType="done"
+        onSubmitEditing={sendRecoveryCode}
+      />
     );
-  }
+  };
+
+  const renderPrimaryButton = () => {
+    const buttonText =
+      step === 'code'
+        ? 'Enter code above'
+        : step === 'password'
+          ? 'Update password'
+          : step === 'success'
+            ? 'Back to Sign In'
+            : 'Send recovery code';
+
+    const onPress =
+      step === 'password'
+        ? handleUpdatePassword
+        : step === 'success'
+          ? finishRecoveryAndReturnToLogin
+          : sendRecoveryCode;
+
+    const disabled = loading || step === 'code';
+
+    return (
+        <TouchableOpacity
+        style={[styles.continueButton, disabled && styles.continueButtonDisabled]}
+        onPress={onPress}
+        disabled={disabled}
+      >
+        {loading && step !== 'code' ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={styles.continueButtonText}>{buttonText}</Text>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        {/* Back Button */}
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={false} />
+        <SunoGradient />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
+          style={styles.keyboardView}
         >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-
-        <View style={styles.content}>
-          {/* Icon */}
-          <View style={styles.iconContainer}>
-            <Ionicons name="lock-closed-outline" size={64} color="#8b5cf6" />
-          </View>
-
-          {/* Title */}
-          <Text style={styles.title}>Reset Password</Text>
-
-          {/* Subtitle */}
-          <Text style={styles.subtitle}>
-            Enter your email address and we'll send you a link to reset your password.
-          </Text>
-
-          {/* Email Input */}
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="rgba(255, 255, 255, 0.5)"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            autoFocus
-          />
-        </View>
-
-        {/* Continue Button at Bottom */}
-        <View style={styles.bottomContainer}>
-          <TouchableOpacity
-            style={styles.continueButton}
-            onPress={handleSendResetEmail}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.continueButtonText}>Send Reset Link</Text>
-            )}
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <View style={styles.backArrowCircle}>
+              <Ionicons name="arrow-back" size={20} color="#1a1a2e" />
+            </View>
           </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.content}>
+              <View style={styles.iconContainer}>{renderIcon()}</View>
+              <Text style={styles.title}>{renderTitle()}</Text>
+              {renderSubtitle()}
+              {renderBody()}
+              {step === 'password' && <View style={styles.inlineButtonWrap}>{renderPrimaryButton()}</View>}
+            </View>
+          </ScrollView>
+
+          {step !== 'password' && <View style={styles.bottomContainer}>{renderPrimaryButton()}</View>}
+        </KeyboardAvoidingView>
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#fef7f2',
   },
   keyboardView: {
     flex: 1,
   },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
   backButton: {
     position: 'absolute',
-    top: 16,
+    top: 60,
     left: 20,
     zIndex: 10,
-    width: 40,
-    height: 40,
+    padding: 4,
+  },
+  backArrowCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.05)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 80,
+    paddingTop: 120,
+    alignItems: 'center',
+    paddingBottom: 24,
   },
   iconContainer: {
+    marginBottom: 12,
+    minHeight: 180,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 32,
+  },
+  emailIcon: {
+    width: 180,
+    height: 180,
+  },
+  inlineIconCircle: {
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     fontSize: 32,
-    fontWeight: '700',
-    color: '#fff',
-    marginBottom: 12,
+    fontWeight: '600',
+    color: '#1a1a2e',
+    marginBottom: 10,
     textAlign: 'center',
+    letterSpacing: -0.6,
   },
   subtitle: {
     fontSize: 15,
-    color: 'rgba(255, 255, 255, 0.7)',
-    marginBottom: 32,
+    color: 'rgba(0, 0, 0, 0.5)',
+    marginBottom: 28,
     textAlign: 'center',
     lineHeight: 22,
+    maxWidth: 320,
   },
-  message: {
-    fontSize: 15,
-    color: 'rgba(255, 255, 255, 0.7)',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emailText: {
-    fontSize: 16,
-    color: '#8b5cf6',
-    fontWeight: '600',
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  instructions: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.6)',
-    marginBottom: 32,
-    textAlign: 'center',
-    lineHeight: 20,
+  emailInline: {
+    color: '#1a1a2e',
+    fontWeight: '500',
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(0, 0, 0, 0.15)',
     borderRadius: 12,
     padding: 16,
-    marginBottom: 16,
     fontSize: 16,
-    color: '#fff',
+    color: '#1a1a2e',
+  },
+  otpContainer: {
+    marginBottom: 24,
+  },
+  loader: {
+    marginBottom: 16,
+  },
+  secondaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.15)',
+  },
+  secondaryButtonDisabled: {
+    opacity: 0.5,
+  },
+  secondaryButtonIcon: {
+    marginRight: 8,
+  },
+  secondaryButtonText: {
+    color: 'rgba(0, 0, 0, 0.6)',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  secondaryButtonTextDisabled: {
+    color: 'rgba(0, 0, 0, 0.3)',
+  },
+  linkButton: {
+    paddingVertical: 12,
+  },
+  linkButtonText: {
+    color: 'rgba(0, 0, 0, 0.5)',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  passwordContainer: {
+    width: '100%',
+    position: 'relative',
+    marginBottom: 16,
+  },
+  passwordInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.15)',
+    borderRadius: 12,
+    padding: 16,
+    paddingRight: 50,
+    fontSize: 16,
+    color: '#1a1a2e',
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: 16,
+    top: 16,
+    padding: 4,
+  },
+  inlineButtonWrap: {
+    width: '100%',
+    marginTop: 12,
   },
   bottomContainer: {
     paddingHorizontal: 24,
     paddingBottom: 40,
   },
   continueButton: {
-    backgroundColor: '#8b5cf6',
-    borderRadius: 12,
-    padding: 18,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 28,
+    paddingVertical: 22,
     alignItems: 'center',
-    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  continueButtonDisabled: {
+    opacity: 0.45,
   },
   continueButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
-  },
-  resendButton: {
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  resendButtonText: {
-    color: '#8b5cf6',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  backToLoginButton: {
-    alignItems: 'center',
-  },
-  backToLoginText: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
+    letterSpacing: 0.2,
   },
 });

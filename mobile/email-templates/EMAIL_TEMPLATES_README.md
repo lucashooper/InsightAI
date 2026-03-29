@@ -1,166 +1,42 @@
-# Email Templates - Updated (Discord Style)
+# Email Templates
 
-Clean, simple email templates inspired by Discord's design with white background and minimal styling.
+These templates power the Supabase auth emails used by the mobile app.
 
-## New Templates (v2)
+## Active templates
 
-### 1. OTP Verification Email (`otp-verification-v2.html`)
-- **Use for:** Email verification during signup
-- **Features:**
-  - Clean white background
-  - Logo at top (64px)
-  - Large 6-digit code display
-  - Simple, readable typography
-  - Mobile responsive
+### `otp-verification-v2.html`
+- Use for `Confirm signup`
+- Shows a 6-digit verification code with `{{ .Token }}`
 
-### 2. Password Reset Email (`password-reset-v2.html`)
-- **Use for:** Password reset requests
-- **Features:**
-  - Clean white background
-  - Logo at top (64px)
-  - Blue CTA button
-  - Alternative link option
-  - Mobile responsive
+### `password-reset-v2.html`
+- Use for `Reset Password`
+- Shows a 6-digit recovery code with `{{ .Token }}`
+- Matches the in-app password recovery flow in `ForgotPasswordScreen`
 
-## Logo URL
+## Supabase setup
 
-**Working URL:** `https://i.imgur.com/etlu4ls.png`
+1. Open Supabase Dashboard for the project.
+2. Go to `Authentication` -> `Email Templates`.
+3. Paste `otp-verification-v2.html` into `Confirm signup`.
+4. Paste `password-reset-v2.html` into `Reset Password`.
+5. Save both templates.
 
-This is a public Imgur link that will load correctly in all email clients.
+## Important variables
 
-## How to Update in Supabase
+- Signup verification: `{{ .Token }}`
+- Password recovery: `{{ .Token }}`
 
-### Step 1: Go to Email Templates
-
-1. Open Supabase Dashboard: https://supabase.com/dashboard/project/ptpqvghlaesyrzlljzkk
-2. Navigate to **Authentication** → **Email Templates**
-
-### Step 2: Update Signup Confirmation (OTP)
-
-1. Find **"Confirm signup"** template
-2. Copy contents of `otp-verification-v2.html`
-3. Paste into template editor
-4. Click **Save**
-
-### Step 3: Update Password Reset
-
-1. Find **"Reset Password"** template
-2. Copy contents of `password-reset-v2.html`
-3. Paste into template editor
-4. Click **Save**
-
-## Design Changes from Previous Version
-
-### Before (Dark Theme)
-- ❌ Dark purple gradient background
-- ❌ "Insight" heading below logo
-- ❌ Fancy typography
-- ❌ Logo not loading (wrong URL)
-
-### After (Discord Style)
-- ✅ Clean white background
-- ✅ Logo only (no text heading)
-- ✅ Simple, readable typography
-- ✅ Working logo URL (Imgur)
-- ✅ Light gray footer section
-- ✅ Professional and clean
-
-## Typography
-
-**Fonts:**
-- System fonts: `-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif`
-- Code font (for OTP): `'Courier New', Courier, monospace`
-
-**Colors:**
-- Background: `#f6f6f6` (light gray)
-- Card: `#ffffff` (white)
-- Primary text: `#060607` (almost black)
-- Secondary text: `#4e5058` (gray)
-- Tertiary text: `#747f8d` (light gray)
-- Accent: `#5865f2` (Discord blue)
-- Code background: `#f2f3f5` (very light gray)
-
-## Email Client Compatibility
-
-These templates are tested and work in:
-- ✅ Gmail (web, iOS, Android)
-- ✅ Apple Mail (macOS, iOS)
-- ✅ Outlook (web, desktop)
-- ✅ Yahoo Mail
-- ✅ ProtonMail
-- ✅ All major mobile email apps
+The mobile app now uses in-app code entry for both signup verification and password reset. Do not document or rely on `{{ .ConfirmationURL }}` for password recovery anymore.
 
 ## Testing
 
-After updating templates in Supabase:
+1. Run `node scripts/testEmail.js`.
+2. Trigger a signup email and confirm a 6-digit code arrives.
+3. Trigger a password reset from `Forgot Password` and confirm a 6-digit recovery code arrives.
+4. Verify the copy tells users to enter the code inside the app.
 
-```bash
-# Test signup with OTP
-1. Open app
-2. Go to Sign Up
-3. Enter username → email → password
-4. Check email for 6-digit code
-5. Verify logo loads correctly
-6. Verify clean white design
+## Notes
 
-# Test password reset
-1. Go to Login
-2. Click "Forgot Password?"
-3. Enter email
-4. Check email for reset link
-5. Verify logo loads correctly
-6. Verify clean white design
-```
-
-## Template Variables
-
-### OTP Verification
-- `{{ .Token }}` - The 6-digit verification code
-
-### Password Reset
-- `{{ .ConfirmationURL }}` - The password reset link
-
-## Mobile Responsive
-
-Both templates automatically adjust for mobile:
-- Smaller logo (56px on mobile)
-- Adjusted padding
-- Smaller font sizes
-- Optimized for small screens
-
-## Comparison with Discord
-
-Our templates follow Discord's email design principles:
-- ✅ White background
-- ✅ Minimal branding (logo only)
-- ✅ Clear hierarchy
-- ✅ Simple typography
-- ✅ Clean footer
-- ✅ Professional appearance
-
-## Old Templates (Deprecated)
-
-The following templates are now deprecated:
-- `otp-verification.html` (dark theme)
-- `password-reset.html` (dark theme)
-- `signup-confirmation.html` (dark theme)
-
-Keep these for reference but use the v2 templates going forward.
-
-## Support
-
-If emails are not sending:
-1. Check Supabase Auth logs
-2. Verify SMTP settings (Resend)
-3. Check spam folder
-4. Verify domain is verified in Resend
-5. Run test script: `node scripts/testEmail.js`
-
-## Summary
-
-✅ **Clean Discord-style design**  
-✅ **Working logo URL (Imgur)**  
-✅ **Simple, professional typography**  
-✅ **Mobile responsive**  
-✅ **Email client compatible**  
-✅ **Easy to read and understand**
+- `password-reset.html` and `password-reset-v2.html` now both use the same recovery-code approach.
+- The templates use a public Insight logo URL that works in email clients.
+- If delivery fails, check Supabase auth logs, SMTP settings, and Resend logs.

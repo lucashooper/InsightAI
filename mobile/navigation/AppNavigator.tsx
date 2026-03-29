@@ -369,6 +369,7 @@ export default function AppNavigator() {
   const [isOnboardingCompleted, setIsOnboardingCompleted] = React.useState<boolean | null>(null);
   const [onboardingResumeScreen, setOnboardingResumeScreen] = React.useState<string | null>(null);
   const [needsPostPurchaseSignup, setNeedsPostPurchaseSignup] = React.useState(false);
+  const [passwordRecoveryActive, setPasswordRecoveryActive] = React.useState(false);
   const prevUserIdRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
@@ -380,6 +381,8 @@ export default function AppNavigator() {
       console.log('[NAV] User changed:', prevUserIdRef.current, '->', currentUserId);
       setIsOnboardingCompleted(null);
       setOnboardingResumeScreen(null);
+      setNeedsPostPurchaseSignup(false);
+      setPasswordRecoveryActive(false);
       
       // Clear cached username to prevent wrong names appearing for different accounts
       AsyncStorage.removeItem('CACHED_USERNAME').catch(err => 
@@ -398,6 +401,10 @@ export default function AppNavigator() {
       }, 4000);
 
       try {
+        setNeedsPostPurchaseSignup(false);
+        const recoveryMode = await AsyncStorage.getItem('PASSWORD_RECOVERY_ACTIVE');
+        setPasswordRecoveryActive(recoveryMode === 'true');
+
         // Check if we need to resume onboarding at a specific screen
         // (set by AuthSelectionScreen before Google/Apple sign-in)
         const resumeScreen = await AsyncStorage.getItem('ONBOARDING_RESUME_SCREEN');
@@ -434,6 +441,7 @@ export default function AppNavigator() {
         if (needsEmailSignup === 'true' && user) {
           console.log('[NAV] ✅ Post-purchase signup flow detected - marking onboarding complete');
           await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+          setNeedsPostPurchaseSignup(false);
           setIsOnboardingCompleted(true);
           return;
         }
@@ -479,6 +487,7 @@ export default function AppNavigator() {
             setIsOnboardingCompleted(false);
           }
         } else {
+          setNeedsPostPurchaseSignup(false);
           setIsOnboardingCompleted(false);
         }
       } catch (e) {
@@ -489,6 +498,7 @@ export default function AppNavigator() {
           console.log('[NAV] ✅ Found onboarding flag despite error');
           setIsOnboardingCompleted(true);
         } else {
+          setNeedsPostPurchaseSignup(false);
           setIsOnboardingCompleted(false);
         }
       } finally {
@@ -511,7 +521,7 @@ export default function AppNavigator() {
   // This handles the case where user signs in from LoginScreen and isOnboardingCompleted
   // changes from false/null to true after the authenticated stack has already rendered
   React.useEffect(() => {
-    if (user && isOnboardingCompleted === true && navigationRef.isReady()) {
+    if (user && isOnboardingCompleted === true && navigationRef.isReady() && !passwordRecoveryActive) {
       const currentRoute = navigationRef.getCurrentRoute();
       if (currentRoute && currentRoute.name !== 'MainTabs' && currentRoute.name !== 'Settings' && currentRoute.name !== 'EntryDetail' && currentRoute.name !== 'CreateEntry' && currentRoute.name !== 'AIChat') {
         console.log('[NAV] Force navigating to MainTabs from:', currentRoute.name);
@@ -521,7 +531,7 @@ export default function AppNavigator() {
         });
       }
     }
-  }, [user, isOnboardingCompleted]);
+  }, [user, isOnboardingCompleted, passwordRecoveryActive]);
 
   const darkTheme = {
     dark: true,
@@ -568,7 +578,7 @@ export default function AppNavigator() {
       {user ? (
         // Authenticated screens - user is already signed in
         <Stack.Navigator
-          initialRouteName={isOnboardingCompleted ? 'MainTabs' : (onboardingResumeScreen || 'Welcome')}
+          initialRouteName={passwordRecoveryActive ? 'ForgotPassword' : isOnboardingCompleted ? 'MainTabs' : (onboardingResumeScreen || 'Welcome')}
           screenOptions={{
             headerShown: false,
             animation: 'none',
@@ -636,7 +646,7 @@ export default function AppNavigator() {
       ) : (
         // Unauthenticated - show Welcome first, then Login/Signup
         <Stack.Navigator 
-          initialRouteName={isOnboardingCompleted ? 'Login' : needsPostPurchaseSignup ? 'PostPurchaseWelcome' : 'Welcome'}
+          initialRouteName={passwordRecoveryActive ? 'ForgotPassword' : isOnboardingCompleted ? 'Login' : needsPostPurchaseSignup ? 'PostPurchaseWelcome' : 'Welcome'}
           screenOptions={{
             headerShown: false,
             animation: 'none',

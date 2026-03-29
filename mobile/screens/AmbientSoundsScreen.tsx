@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { Asset } from 'expo-asset';
 
 const { width, height } = Dimensions.get('window');
 
@@ -31,6 +32,10 @@ const AMBIENT_SOUNDS: AmbientSound[] = [
     color: '#d97706',
   },
 ];
+
+AMBIENT_SOUNDS.forEach((sound) => {
+  Asset.fromModule(sound.image).downloadAsync();
+});
 
 export default function AmbientSoundsScreen({ navigation }: any) {
   const [selectedSound, setSelectedSound] = useState<AmbientSound | null>(null);

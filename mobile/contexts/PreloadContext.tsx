@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Purchases from 'react-native-purchases';
 import { EncryptionService } from '../services/encryptionService';
 
 interface UserProfile {
@@ -15,6 +16,9 @@ interface PreloadedData {
   userProfile: UserProfile | null;
   profilePicture: string | null;
   userName: string | null;
+  subscriptionPlan: string;
+  entriesCount: number;
+  entriesLimit: number;
   isLoaded: boolean;
 }
 
@@ -23,24 +27,53 @@ interface PreloadContextType {
   preloadForUser: (userId: string, email: string) => Promise<void>;
   refreshNotes: (userId: string) => Promise<void>;
   refreshProfile: (userId: string) => Promise<void>;
+  refreshAccountStats: (userId: string) => Promise<void>;
+  resetData: () => void;
 }
 
 const PreloadContext = createContext<PreloadContextType | undefined>(undefined);
 
-export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [data, setData] = useState<PreloadedData>({
-    notes: null,
-    userProfile: null,
-    profilePicture: null,
-    userName: null,
-    isLoaded: false,
-  });
+const EMPTY_PRELOADED_DATA: PreloadedData = {
+  notes: null,
+  userProfile: null,
+  profilePicture: null,
+  userName: null,
+  subscriptionPlan: 'Free',
+  entriesCount: 0,
+  entriesLimit: 2,
+  isLoaded: false,
+};
 
-  const preloadForUser = async (userId: string, email: string) => {
+export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [data, setData] = useState<PreloadedData>(EMPTY_PRELOADED_DATA);
+
+  const loadAccountStats = useCallback(async (userId: string) => {
+    const today = new Date().toISOString().split('T')[0];
+
+    const [customerInfo, usageResult] = await Promise.all([
+      Purchases.getCustomerInfo(),
+      supabase
+        .from('usage_tracking')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('action_type', 'ai_analysis')
+        .gte('created_at', today),
+    ]);
+
+    const hasAnyActiveEntitlement = Object.keys(customerInfo.entitlements.active).length > 0;
+
+    return {
+      subscriptionPlan: hasAnyActiveEntitlement ? 'Insight Pro' : 'Free',
+      entriesLimit: hasAnyActiveEntitlement ? 2 : 0,
+      entriesCount: usageResult.error || usageResult.count === null ? 0 : usageResult.count,
+    };
+  }, []);
+
+  const preloadForUser = useCallback(async (userId: string, email: string) => {
     console.log('[PRELOAD] Starting full data preload for user:', userId);
     try {
-      // Fetch notes and profile in parallel
-      const [notesResult, profileResult] = await Promise.all([
+      // Fetch notes, profile, and profile account summary in parallel
+      const [notesResult, profileResult, accountStats] = await Promise.all([
         supabase
           .from('notes')
           .select('*')
@@ -51,6 +84,7 @@ export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children })
           .select('*')
           .eq('user_id', userId)
           .maybeSingle(),
+        loadAccountStats(userId),
       ]);
 
       let notes = notesResult.data || [];
@@ -105,6 +139,9 @@ export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children })
         userProfile,
         profilePicture: userProfile.profile_picture_url,
         userName: userProfile.username,
+        subscriptionPlan: accountStats.subscriptionPlan,
+        entriesCount: accountStats.entriesCount,
+        entriesLimit: accountStats.entriesLimit,
         isLoaded: true,
       });
     } catch (error) {
@@ -112,9 +149,9 @@ export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children })
       // Still mark as loaded so app doesn't hang
       setData(prev => ({ ...prev, isLoaded: true }));
     }
-  };
+  }, [loadAccountStats]);
 
-  const refreshNotes = async (userId: string) => {
+  const refreshNotes = useCallback(async (userId: string) => {
     try {
       const { data: notes, error } = await supabase
         .from('notes')
@@ -142,9 +179,9 @@ export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children })
     } catch (error) {
       console.error('[PRELOAD] Refresh notes error:', error);
     }
-  };
+  }, []);
 
-  const refreshProfile = async (userId: string) => {
+  const refreshProfile = useCallback(async (userId: string) => {
     try {
       const { data: profile, error } = await supabase
         .from('user_profiles')
@@ -183,10 +220,33 @@ export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children })
     } catch (error) {
       console.error('[PRELOAD] Refresh profile error:', error);
     }
-  };
+  }, [data.userProfile?.email]);
+
+  const refreshAccountStats = useCallback(async (userId: string) => {
+    try {
+      const accountStats = await loadAccountStats(userId);
+      setData(prev => ({
+        ...prev,
+        subscriptionPlan: accountStats.subscriptionPlan,
+        entriesCount: accountStats.entriesCount,
+        entriesLimit: accountStats.entriesLimit,
+      }));
+    } catch (error) {
+      console.error('[PRELOAD] Refresh account stats error:', error);
+    }
+  }, [loadAccountStats]);
+
+  const resetData = useCallback(() => {
+    setData(EMPTY_PRELOADED_DATA);
+  }, []);
+
+  const value = useMemo(
+    () => ({ data, preloadForUser, refreshNotes, refreshProfile, refreshAccountStats, resetData }),
+    [data, preloadForUser, refreshNotes, refreshProfile, refreshAccountStats, resetData]
+  );
 
   return (
-    <PreloadContext.Provider value={{ data, preloadForUser, refreshNotes, refreshProfile }}>
+    <PreloadContext.Provider value={value}>
       {children}
     </PreloadContext.Provider>
   );

@@ -1,16 +1,14 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Image, Animated } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
+import { sf } from '../../utils/responsive';
 
 const noisyImage = require('../../public/noisy-image.webp');
 const clarityImage = require('../../public/clarity-image.webp');
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
-
-const { width } = Dimensions.get('window');
 
 export default function ValuePropScreen({ navigation }: any) {
   const { theme } = useTheme();
@@ -18,17 +16,17 @@ export default function ValuePropScreen({ navigation }: any) {
   const arrowAnim = useRef(new Animated.Value(0)).current;
   const clarityAnim = useRef(new Animated.Value(0)).current;
   const bulletAnim = useRef(new Animated.Value(0)).current;
+  const footerAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.sequence([
-      Animated.parallel([
-        Animated.timing(noisyAnim, { toValue: 1, duration: 280, useNativeDriver: true }),
-      ]),
+      Animated.timing(noisyAnim, { toValue: 1, duration: 280, useNativeDriver: true }),
       Animated.timing(arrowAnim, { toValue: 1, duration: 220, useNativeDriver: true }),
       Animated.timing(clarityAnim, { toValue: 1, duration: 280, useNativeDriver: true }),
       Animated.timing(bulletAnim, { toValue: 1, duration: 260, useNativeDriver: true }),
+      Animated.timing(footerAnim, { toValue: 1, duration: 240, useNativeDriver: true }),
     ]).start();
-  }, [arrowAnim, bulletAnim, clarityAnim, noisyAnim]);
+  }, [arrowAnim, bulletAnim, clarityAnim, footerAnim, noisyAnim]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -56,7 +54,7 @@ export default function ValuePropScreen({ navigation }: any) {
       <View style={styles.content}>
         <View style={styles.mainContent}>
           {/* Headline */}
-          <Text style={[styles.headline, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e', fontSize: 28 }]}>
+          <Text style={[styles.headline, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>
             Insight turns thoughts{' '}into clarity
           </Text>
 
@@ -157,7 +155,20 @@ export default function ValuePropScreen({ navigation }: any) {
       </View>
 
       {/* Continue Button */}
-      <View style={styles.footer}>
+      <Animated.View
+        style={[
+          styles.footer,
+          {
+            opacity: footerAnim,
+            transform: [{
+              translateY: footerAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [12, 0],
+              }),
+            }],
+          },
+        ]}
+      >
         <TouchableOpacity
           style={styles.button}
           activeOpacity={0.9}
@@ -170,7 +181,7 @@ export default function ValuePropScreen({ navigation }: any) {
             <Text style={styles.buttonText}>Continue</Text>
           </View>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     </View>
   );
 }

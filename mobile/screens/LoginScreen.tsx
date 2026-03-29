@@ -9,8 +9,6 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
-  SafeAreaView,
-  ScrollView,
   StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -104,7 +102,7 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={false} />
       <SunoGradient />
       <KeyboardAvoidingView
@@ -122,73 +120,59 @@ export default function LoginScreen({ navigation }: any) {
             }
           }}
         >
-          <Ionicons name="arrow-back" size={24} color="#1a1a2e" />
+          <View style={styles.backArrowCircle}>
+            <Ionicons name="arrow-back" size={20} color="#1a1a2e" />
+          </View>
         </TouchableOpacity>
 
-        <ScrollView 
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.content}>
-            {/* Title */}
-            <Text style={styles.title}>Sign In</Text>
+        <View style={styles.content}>
+          <Text style={styles.title}>Sign In</Text>
 
-            {/* Email Input */}
+          <TextInput
+            style={styles.input}
+            placeholder="Email or username"
+            placeholderTextColor="rgba(0, 0, 0, 0.4)"
+            value={emailOrUsername}
+            onChangeText={setEmailOrUsername}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="email-address"
+            returnKeyType="next"
+          />
+
+          <View style={styles.passwordContainer}>
             <TextInput
-              style={styles.input}
-              placeholder="Email"
+              style={styles.passwordInput}
+              placeholder="Password"
               placeholderTextColor="rgba(0, 0, 0, 0.4)"
-              value={emailOrUsername}
-              onChangeText={setEmailOrUsername}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
               autoCapitalize="none"
-              keyboardType="email-address"
+              autoCorrect={false}
+              returnKeyType="done"
+              onSubmitEditing={handleLogin}
             />
-
-            {/* Password Input */}
-            <View style={styles.passwordContainer}>
-              <TextInput
-                style={styles.passwordInput}
-                placeholder="Password"
-                placeholderTextColor="rgba(0, 0, 0, 0.4)"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
+            <TouchableOpacity
+              style={styles.eyeButton}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <Ionicons
+                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                size={20}
+                color="rgba(0, 0, 0, 0.6)"
               />
-              <TouchableOpacity
-                style={styles.eyeButton}
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                <Ionicons
-                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                  size={20}
-                  color="rgba(0, 0, 0, 0.6)"
-                />
-              </TouchableOpacity>
-            </View>
-
-            {/* Forgot Password */}
-            <TouchableOpacity
-              style={styles.forgotPasswordButton}
-              onPress={handleForgotPassword}
-            >
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
             </TouchableOpacity>
+          </View>
 
-            {/* Continue Button */}
-            <TouchableOpacity
-              style={styles.continueButton}
-              onPress={handleLogin}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.continueButtonText}>Continue</Text>
-              )}
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.forgotPasswordButton}
+            onPress={handleForgotPassword}
+          >
+            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+          </TouchableOpacity>
 
+          <View style={styles.socialSection}>
             <View style={styles.dividerContainer}>
               <View style={styles.divider} />
               <Text style={styles.dividerText}>or</Text>
@@ -222,9 +206,23 @@ export default function LoginScreen({ navigation }: any) {
               </Text>
             </TouchableOpacity>
           </View>
-        </ScrollView>
+        </View>
+
+        <View style={styles.bottomContainer}>
+          <TouchableOpacity
+            style={styles.continueButton}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.continueButtonText}>Continue</Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -236,32 +234,32 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: 40,
-  },
   backButton: {
     position: 'absolute',
-    top: 16,
+    top: 60,
     left: 20,
     zIndex: 10,
-    width: 40,
-    height: 40,
+    padding: 4,
+  },
+  backArrowCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.05)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   content: {
+    flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 80,
+    paddingTop: 120,
   },
   title: {
     fontSize: 32,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#1a1a2e',
     marginBottom: 32,
+    letterSpacing: -0.6,
   },
   input: {
     backgroundColor: 'rgba(255, 255, 255, 0.6)',
@@ -302,34 +300,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  continueButton: {
-    backgroundColor: '#8b5cf6',
-    borderRadius: 12,
-    padding: 18,
-    alignItems: 'center',
+  socialSection: {
     marginTop: 24,
-  },
-  continueButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  signupButton: {
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  signupText: {
-    color: 'rgba(0, 0, 0, 0.5)',
-    fontSize: 14,
-  },
-  signupTextBold: {
-    color: '#1a1a2e',
-    fontWeight: '600',
   },
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 24,
+    marginBottom: 24,
   },
   divider: {
     flex: 1,
@@ -373,5 +350,38 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 16,
     fontWeight: '600',
+  },
+  signupButton: {
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  signupText: {
+    color: 'rgba(0, 0, 0, 0.5)',
+    fontSize: 14,
+  },
+  signupTextBold: {
+    color: '#1a1a2e',
+    fontWeight: '600',
+  },
+  bottomContainer: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  continueButton: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 28,
+    paddingVertical: 22,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  continueButtonText: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
 });
