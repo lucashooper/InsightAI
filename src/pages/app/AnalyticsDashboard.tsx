@@ -57,6 +57,7 @@ interface ContextMenu {
   x: number;
   y: number;
   sessionId: string;
+  userId: string | null;
   username: string;
 }
 
@@ -68,6 +69,7 @@ export default function AnalyticsDashboard() {
   const [loading, setLoading] = useState(true);
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
   const contextMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -83,24 +85,125 @@ export default function AnalyticsDashboard() {
     return () => document.removeEventListener('click', handleClick);
   }, []);
 
-  const deleteJourney = useCallback(async (sessionId: string) => {
+  const deleteJourney = useCallback(async (sessionId: string, userId: string | null, username: string) => {
     setDeletingId(sessionId);
     setContextMenu(null);
+    
+    // Confirm deletion
+    const confirmMsg = userId 
+      ? `Delete ALL analytics data for user "${username}"?\n\nThis will remove all sessions and events for this user, not just this one session.`
+      : `Delete this anonymous session for "${username}"?`;
+    
+    if (!confirm(confirmMsg)) {
+      setDeletingId(null);
+      return;
+    }
+    
+    console.log('[Analytics] 🗑️ Attempting to delete:', { sessionId, userId, username });
+    
     try {
-      const { error } = await supabase
+      let data, error, count;
+      
+      if (userId) {
+        // Delete ALL events for this user (all sessions)
+        const result = await supabase
+          .from('analytics_events')
+          .delete()
+          .eq('user_id', userId)
+          .select();
+        data = result.data;
+        error = result.error;
+        count = result.count;
+        
+        if (!error) {
+          // Remove all journeys for this user
+          setUserJourneys(prev => prev.filter(j => j.user_id !== userId));
+        }
+      } else {
+        // Delete only this anonymous session
+        const result = await supabase
+          .from('analytics_events')
+          .delete()
+          .eq('session_id', sessionId)
+          .select();
+        data = result.data;
+        error = result.error;
+        count = result.count;
+        
+        if (!error) {
+          setUserJourneys(prev => prev.filter(j => j.session_id !== sessionId));
+        }
+      }
+      
+      console.log('[Analytics] Delete response:', { data, error, count });
+      
+      if (error) {
+        console.error('[Analytics] ❌ Delete failed with error:', error);
+        console.error('[Analytics] Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        alert(`Failed to delete: ${error.message}\n\nThis is likely due to missing database permissions. Please run the SQL fix in FIX_ANALYTICS_DELETE_POLICY.sql`);
+      } else {
+        console.log('[Analytics] ✅ Successfully deleted', data?.length || 0, 'events for', userId ? 'user' : 'session');
+      }
+    } catch (err: any) {
+      console.error('[Analytics] ❌ Exception during delete:', err);
+      console.error('[Analytics] Exception details:', {
+        message: err?.message,
+        stack: err?.stack
+      });
+      alert(`Error deleting: ${err?.message || 'Unknown error'}`);
+    } finally {
+      setDeletingId(null);
+    }
+  }, []);
+
+  const deleteAllJourneys = useCallback(async () => {
+    const confirmMsg = `⚠️ DELETE ALL ONBOARDING ANALYTICS?\n\nThis will permanently delete ALL ${userJourneys.length} user journeys and their analytics events.\n\nThis action CANNOT be undone.\n\nType 'DELETE' to confirm:`;
+    
+    const userInput = prompt(confirmMsg);
+    
+    if (userInput !== 'DELETE') {
+      console.log('[Analytics] Delete all cancelled');
+      return;
+    }
+    
+    setIsDeletingAll(true);
+    console.log('[Analytics] 🗑️ Deleting ALL analytics events...');
+    
+    try {
+      const { data, error } = await supabase
         .from('analytics_events')
         .delete()
-        .eq('session_id', sessionId);
-      if (!error) {
-        setUserJourneys(prev => prev.filter(j => j.session_id !== sessionId));
+        .in('event_name', ['onboarding_step_viewed', 'onboarding_step_completed', 'onboarding_screen', 'subscription_started'])
+        .select();
+      
+      console.log('[Analytics] Delete all response:', { data, error, count: data?.length });
+      
+      if (error) {
+        console.error('[Analytics] ❌ Delete all failed:', error);
+        alert(`Failed to delete all journeys: ${error.message}`);
       } else {
-        console.error('Failed to delete journey:', error);
+        console.log('[Analytics] ✅ Successfully deleted', data?.length || 0, 'events');
+        setUserJourneys([]);
+        setMetrics({
+          totalSessions: 0,
+          completedOnboarding: 0,
+          completionRate: 0,
+          dropOffStep: null,
+        });
+        alert(`Successfully deleted ${data?.length || 0} analytics events!`);
       }
-    } catch (err) {
-      console.error('Error deleting journey:', err);
+    } catch (err: any) {
+      console.error('[Analytics] ❌ Exception during delete all:', err);
+      alert(`Error deleting all journeys: ${err?.message || 'Unknown error'}`);
+    } finally {
+      setIsDeletingAll(false);
     }
-    setDeletingId(null);
-  }, []);
+  }, [userJourneys.length]);
 
   const loadAnalytics = async () => {
     try {
@@ -390,23 +493,43 @@ export default function AnalyticsDashboard() {
             <h2 style={{ fontSize: '16px', fontWeight: '600', margin: 0, color: 'rgba(255, 255, 255, 0.9)' }}>
               User Journeys ({userJourneys.length})
             </h2>
-            <button
-              onClick={loadAnalytics}
-              disabled={loading}
-              style={{
-                background: loading ? 'rgba(139, 92, 246, 0.3)' : 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '8px 14px',
-                fontSize: '12px',
-                fontWeight: '600',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s',
-              }}
-            >
-              {loading ? '⟳ Loading...' : '↻ Refresh'}
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={deleteAllJourneys}
+                disabled={loading || isDeletingAll || userJourneys.length === 0}
+                style={{
+                  background: (loading || isDeletingAll || userJourneys.length === 0) ? 'rgba(239, 68, 68, 0.3)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '8px 14px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  cursor: (loading || isDeletingAll || userJourneys.length === 0) ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s',
+                  opacity: userJourneys.length === 0 ? 0.5 : 1,
+                }}
+              >
+                {isDeletingAll ? '🗑 Deleting...' : '🗑 Delete All'}
+              </button>
+              <button
+                onClick={loadAnalytics}
+                disabled={loading}
+                style={{
+                  background: loading ? 'rgba(139, 92, 246, 0.3)' : 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '8px 14px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {loading ? '⟳ Loading...' : '↻ Refresh'}
+              </button>
+            </div>
           </div>
 
           {/* Legend */}
@@ -455,7 +578,13 @@ export default function AnalyticsDashboard() {
                   key={journey.session_id}
                   onContextMenu={(e) => {
                     e.preventDefault();
-                    setContextMenu({ x: e.clientX, y: e.clientY, sessionId: journey.session_id, username: journey.username });
+                    setContextMenu({ 
+                      x: e.clientX, 
+                      y: e.clientY, 
+                      sessionId: journey.session_id, 
+                      userId: journey.user_id,
+                      username: journey.username 
+                    });
                   }}
                   style={{
                     background: isDeleting ? 'rgba(239, 68, 68, 0.08)' : 'rgba(255, 255, 255, 0.02)',
@@ -581,7 +710,7 @@ export default function AnalyticsDashboard() {
             {contextMenu.username}
           </div>
           <button
-            onClick={() => deleteJourney(contextMenu.sessionId)}
+            onClick={() => deleteJourney(contextMenu.sessionId, contextMenu.userId, contextMenu.username)}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -599,7 +728,7 @@ export default function AnalyticsDashboard() {
             onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.12)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
           >
-            🗑 Delete journey
+            🗑 {contextMenu.userId ? 'Delete all user data' : 'Delete session'}
           </button>
         </div>
       )}
