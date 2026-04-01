@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Starfield from '../../components/marketing/Starfield';
 import FeaturesSection from '../../components/marketing/FeaturesSection';
 import FeatureShowcase from '../../components/marketing/FeatureShowcase';
+import FAQSection from '../../components/marketing/FAQSection';
 import Footer from '../../components/marketing/Footer';
 import { useScrollReveal } from '../../hooks/marketing/useScrollReveal';
 import '../../styles/marketing.css';
@@ -116,28 +117,22 @@ const HomePage: React.FC = () => {
               AI-powered journaling that helps you discover patterns in your thoughts, track your emotional wellbeing, and build better habits.
             </p>
             <div className="hero-v2-buttons">
-              <a href="https://apps.apple.com/us/app/insight-understand-yourself/id6755717396" className="download-btn-custom" target="_blank" rel="noopener noreferrer">
-                <img src="/White-Apple-Logo.png" alt="" className="download-btn-icon" />
-                <span className="download-btn-text">iPhone app</span>
+              <a href="https://apps.apple.com/us/app/insight-understand-yourself/id6755717396" target="_blank" rel="noopener noreferrer">
+                <img src="/app-store-download-button.avif" alt="Download on the App Store" className="download-badge" />
               </a>
-              <div className="download-btn-custom download-btn-disabled">
-                <img src="/Google-Play-Icon.png" alt="" className="download-btn-icon" />
-                <span className="download-btn-text">Android app</span>
+              <div className="download-badge-wrapper">
+                <img src="/google-play-button-new.avif" alt="Get it on Google Play" className="download-badge" style={{ opacity: 0.5, cursor: 'not-allowed' }} />
               </div>
-              <a href="/login" className="download-btn-custom">
-                <img src="/webapp-icons.svg" alt="" className="download-btn-icon" />
-                <span className="download-btn-text">Web app</span>
-              </a>
             </div>
           </div>
           <div className="hero-v2-phones">
             <img 
-              src="/phone-images/Insight-Main-Page-Phone.png" 
+              src="/new-phone-images/Main-Insight.png" 
               alt="Insight App" 
               className="hero-phone-main"
             />
             <img 
-              src="/phone-images/Insight-Dashboard-Page-Phone.png" 
+              src="/new-phone-images/Insight-Dashboard.png" 
               alt="Insight Dashboard" 
               className="hero-phone-secondary"
             />
@@ -151,6 +146,10 @@ const HomePage: React.FC = () => {
 
       <div className="fade-up" id="showcase">
         <FeatureShowcase />
+      </div>
+
+      <div className="fade-up">
+        <FAQSection />
       </div>
 
       <Footer />

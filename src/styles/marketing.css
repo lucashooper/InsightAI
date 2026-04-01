@@ -2312,7 +2312,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .showcase-phone-img {
-  width: 420px;
+  width: 525px;
   height: auto;
   filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.5));
   animation: showcaseFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
@@ -3177,5 +3177,381 @@ h1, h2, h3, h4, h5, h6 {
   .footer-badge-web {
     max-width: 140px;
     font-size: 0.75rem;
+  }
+}
+
+/* =====================================================
+   ENHANCED NAVBAR - QUITTR STYLE (Bigger & Bolder)
+   ===================================================== */
+.floating-nav-inner {
+  padding: 16px 48px !important;
+  min-height: 72px !important;
+  gap: 3rem !important;
+}
+
+.floating-nav-logo img {
+  height: 56px !important;
+  width: auto;
+}
+
+.floating-nav-brand {
+  font-size: 1.25rem !important;
+  font-weight: 800 !important;
+}
+
+.floating-nav-link {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  padding: 10px 18px !important;
+}
+
+.floating-nav-cta {
+  padding: 12px 28px !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+}
+
+/* =====================================================
+   ENHANCED HERO - Brighter Subtext & Larger Phones
+   ===================================================== */
+.hero-v2-subtitle {
+  color: rgba(255, 255, 255, 0.75) !important;
+  font-size: 1.25rem !important;
+  font-weight: 500 !important;
+}
+
+.hero-phone-main {
+  width: 475px !important;
+  max-width: none !important;
+}
+
+.hero-phone-secondary {
+  width: 410px !important;
+  max-width: none !important;
+}
+
+/* Download badge styling */
+.download-badge {
+  height: 56px;
+  width: auto;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.download-badge:hover {
+  transform: translateY(-2px);
+}
+
+.download-badge-wrapper {
+  display: inline-block;
+}
+
+@media (max-width: 1024px) {
+  .hero-phone-main {
+    width: 375px !important;
+  }
+  .hero-phone-secondary {
+    width: 325px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-v2-subtitle {
+    font-size: 1.0625rem !important;
+  }
+  .hero-phone-main {
+    width: 240px !important;
+  }
+  .hero-phone-secondary {
+    width: 200px !important;
+  }
+  .download-badge {
+    height: 48px;
+  }
+}
+
+/* =====================================================
+   FAQ SECTION - Arise Style
+   ===================================================== */
+.faq-section {
+  padding: 100px 0;
+  background: transparent;
+  position: relative;
+}
+
+.faq-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.faq-title {
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-weight: 700;
+  text-align: center;
+  color: #fff;
+  margin-bottom: 3rem;
+  letter-spacing: -0.03em;
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.faq-item {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.faq-question {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem 0;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 1.125rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.faq-question:focus {
+  outline: none;
+}
+
+.faq-question:active {
+  background: transparent;
+}
+
+.faq-question:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.faq-chevron {
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.faq-item-open .faq-question {
+  color: #fff;
+}
+
+.faq-item-open .faq-chevron {
+  color: #fff;
+}
+
+.faq-answer {
+  padding: 0 0 2rem 0;
+  animation: fadeIn 0.3s ease;
+}
+
+.faq-answer p {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 1rem;
+  line-height: 1.7;
+  margin: 0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .faq-question {
+    font-size: 1rem;
+    padding: 1.5rem 0;
+  }
+  .faq-answer {
+    padding: 0 0 1.5rem 0;
+  }
+  .faq-answer p {
+    font-size: 0.9375rem;
+  }
+}
+
+/* =====================================================
+   FOOTER - ARISE STYLE (Sleek & Bold)
+   ===================================================== */
+.footer-arise {
+  background: transparent;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0;
+  margin-top: 100px;
+}
+
+.footer-arise-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* CTA Section */
+.footer-cta-section {
+  padding: 80px 0 60px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.footer-cta-icon {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  padding: 2px;
+}
+
+.footer-cta-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 16px;
+}
+
+.footer-cta-title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.footer-cta-buttons {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.footer-download-badge {
+  height: 56px;
+  width: auto;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.footer-download-badge:hover {
+  transform: translateY(-2px);
+}
+
+/* Links Grid */
+.footer-links-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr;
+  gap: 3rem;
+  padding: 40px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.footer-brand-col {
+  display: flex;
+  align-items: flex-start;
+}
+
+.footer-brand-name {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+.footer-link-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.footer-link-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.footer-link {
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  display: block;
+}
+
+.footer-link:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Bottom Bar */
+.footer-bottom-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.875rem;
+}
+
+.footer-bottom-bar p {
+  margin: 0;
+}
+
+.footer-location {
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .footer-cta-section {
+    padding: 60px 0 40px;
+  }
+  
+  .footer-cta-buttons {
+    flex-direction: column;
+    width: 100%;
+    max-width: 300px;
+  }
+  
+  .footer-download-badge {
+    width: 100%;
+    max-width: 200px;
+  }
+  
+  .footer-links-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    text-align: left;
+  }
+  
+  .footer-bottom-bar {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
   }
 }

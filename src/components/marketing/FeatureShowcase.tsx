@@ -14,22 +14,22 @@ const showcaseFeatures = [
   {
     title: 'AI-Powered Analysis',
     description: 'Get deep insights into your emotional patterns. Our AI reads between the lines and surfaces what matters most to your wellbeing.',
-    image: '/phone-images/Insight-Main-Page-Phone.png',
+    image: '/new-phone-images/Main-Insight.png',
   },
   {
     title: 'Beautiful Dashboard',
     description: 'Track your emotional health over time with interactive charts, mood trends, and pattern recognition — all in one view.',
-    image: '/phone-images/Insight-Dashboard-Page-Phone.png',
+    image: '/new-phone-images/Insight-Dashboard.png',
   },
   {
-    title: 'Smart Journaling',
-    description: 'Write freely with a distraction-free editor. Insight highlights key themes and emotions as you type.',
-    image: '/phone-images/Insight-Journal-Page-Phone.png',
+    title: 'Deep Insights',
+    description: 'Discover meaningful patterns in your thoughts and emotions with AI-powered analysis that helps you understand yourself better.',
+    image: '/new-phone-images/Insight-Insights.png',
   },
   {
     title: 'Personal Playbook',
     description: 'Build a library of strategies and coping techniques suggested by AI based on your unique patterns and growth areas.',
-    image: '/phone-images/Insight-Playbook-Page-Phone.png',
+    image: '/new-phone-images/Playbook.png',
   },
 ];
 
