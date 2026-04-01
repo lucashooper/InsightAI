@@ -10,10 +10,9 @@ try {
 }
 import { supabase } from '../lib/supabase';
 
-// Helper to get user-specific keys
-const getUserKey = async (baseKey: string): Promise<string> => {
-  const { data: { user } } = await supabase.auth.getUser();
-  return user ? `${baseKey}_${user.id}` : baseKey;
+// Helper to get user-specific keys - REQUIRES a userId, never falls back to bare key
+const getUserKey = (baseKey: string, userId: string): string => {
+  return `${baseKey}_${userId}`;
 };
 
 const APP_LOCK_PIN_KEY = 'APP_LOCK_PIN';
@@ -61,36 +60,64 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
   const hasInitialized = useRef(false);
   const hasBackgrounded = useRef(false);
 
-  // Check biometric availability and load settings on mount
-  useEffect(() => {
-    const init = async () => {
-      // Check biometric hardware
-      if (LocalAuthentication) {
-        const compatible = await LocalAuthentication.hasHardwareAsync();
-        const enrolled = await LocalAuthentication.isEnrolledAsync();
-        setIsBiometricAvailable(compatible && enrolled);
-      } else {
-        setIsBiometricAvailable(false);
-      }
+  // Load lock settings for a specific user
+  const loadSettingsForUser = useCallback(async (userId: string) => {
+    // Check biometric hardware
+    if (LocalAuthentication) {
+      const compatible = await LocalAuthentication.hasHardwareAsync();
+      const enrolled = await LocalAuthentication.isEnrolledAsync();
+      setIsBiometricAvailable(compatible && enrolled);
+    } else {
+      setIsBiometricAvailable(false);
+    }
 
-      // Load saved settings with user-specific keys
-      const enabledKey = await getUserKey(APP_LOCK_ENABLED_KEY);
-      const biometricKey = await getUserKey(APP_LOCK_BIOMETRIC_KEY);
-      const enabled = await SecureStore.getItemAsync(enabledKey);
-      const biometric = await SecureStore.getItemAsync(biometricKey);
-      
-      const lockEnabled = enabled === 'true';
-      setIsLockEnabled(lockEnabled);
-      setIsBiometricEnabled(biometric === 'true');
+    // Load saved settings with user-specific keys
+    const enabledKey = getUserKey(APP_LOCK_ENABLED_KEY, userId);
+    const biometricKey = getUserKey(APP_LOCK_BIOMETRIC_KEY, userId);
+    const enabled = await SecureStore.getItemAsync(enabledKey);
+    const biometric = await SecureStore.getItemAsync(biometricKey);
 
-      // Lock on first launch if enabled
-      if (lockEnabled) {
-        setIsLocked(true);
-      }
-      hasInitialized.current = true;
-    };
-    init();
+    const lockEnabled = enabled === 'true';
+    setIsLockEnabled(lockEnabled);
+    setIsBiometricEnabled(biometric === 'true');
+
+    // Lock on first launch if enabled
+    if (lockEnabled) {
+      setIsLocked(true);
+    }
+    hasInitialized.current = true;
   }, []);
+
+  // Listen to Supabase auth state - load or clear lock based on sign-in/out
+  useEffect(() => {
+    // Check current session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        loadSettingsForUser(session.user.id);
+      } else {
+        // No user - ensure lock is never shown
+        setIsLocked(false);
+        setIsLockEnabled(false);
+        setIsBiometricEnabled(false);
+        hasInitialized.current = true;
+      }
+    });
+
+    // Subscribe to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        loadSettingsForUser(session.user.id);
+      } else if (event === 'SIGNED_OUT') {
+        // Always clear lock on sign out
+        setIsLocked(false);
+        setIsLockEnabled(false);
+        setIsBiometricEnabled(false);
+        hasInitialized.current = false;
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [loadSettingsForUser]);
 
   // Lock when app goes to background and comes back
   useEffect(() => {
@@ -118,7 +145,9 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
   }, [isLockEnabled]);
 
   const verifyPin = useCallback(async (pin: string): Promise<boolean> => {
-    const pinKey = await getUserKey(APP_LOCK_PIN_KEY);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return false;
+    const pinKey = getUserKey(APP_LOCK_PIN_KEY, session.user.id);
     const storedPin = await SecureStore.getItemAsync(pinKey);
     return storedPin === pin;
   }, []);
@@ -148,13 +177,17 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
   }, [isBiometricEnabled, isBiometricAvailable]);
 
   const setPin = useCallback(async (pin: string) => {
-    const pinKey = await getUserKey(APP_LOCK_PIN_KEY);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+    const pinKey = getUserKey(APP_LOCK_PIN_KEY, session.user.id);
     await SecureStore.setItemAsync(pinKey, pin);
   }, []);
 
   const enableLock = useCallback(async (pin: string) => {
-    const pinKey = await getUserKey(APP_LOCK_PIN_KEY);
-    const enabledKey = await getUserKey(APP_LOCK_ENABLED_KEY);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+    const pinKey = getUserKey(APP_LOCK_PIN_KEY, session.user.id);
+    const enabledKey = getUserKey(APP_LOCK_ENABLED_KEY, session.user.id);
     await SecureStore.setItemAsync(pinKey, pin);
     await SecureStore.setItemAsync(enabledKey, 'true');
     setIsLockEnabled(true);
@@ -163,8 +196,10 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
   const disableLock = useCallback(async (pin: string): Promise<boolean> => {
     const valid = await verifyPin(pin);
     if (valid) {
-      const enabledKey = await getUserKey(APP_LOCK_ENABLED_KEY);
-      const biometricKey = await getUserKey(APP_LOCK_BIOMETRIC_KEY);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return false;
+      const enabledKey = getUserKey(APP_LOCK_ENABLED_KEY, session.user.id);
+      const biometricKey = getUserKey(APP_LOCK_BIOMETRIC_KEY, session.user.id);
       await SecureStore.setItemAsync(enabledKey, 'false');
       await SecureStore.setItemAsync(biometricKey, 'false');
       setIsLockEnabled(false);
@@ -175,7 +210,9 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
   }, [verifyPin]);
 
   const toggleBiometric = useCallback(async (enabled: boolean) => {
-    const biometricKey = await getUserKey(APP_LOCK_BIOMETRIC_KEY);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+    const biometricKey = getUserKey(APP_LOCK_BIOMETRIC_KEY, session.user.id);
     await SecureStore.setItemAsync(biometricKey, enabled.toString());
     setIsBiometricEnabled(enabled);
   }, []);
@@ -199,9 +236,9 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
 
       // Clear the PIN and unlock immediately
       // The email send itself is the verification that they have access to the account
-      const enabledKey = await getUserKey(APP_LOCK_ENABLED_KEY);
-      const biometricKey = await getUserKey(APP_LOCK_BIOMETRIC_KEY);
-      const pinKey = await getUserKey(APP_LOCK_PIN_KEY);
+      const enabledKey = getUserKey(APP_LOCK_ENABLED_KEY, user.id);
+      const biometricKey = getUserKey(APP_LOCK_BIOMETRIC_KEY, user.id);
+      const pinKey = getUserKey(APP_LOCK_PIN_KEY, user.id);
       await SecureStore.setItemAsync(enabledKey, 'false');
       await SecureStore.setItemAsync(biometricKey, 'false');
       await SecureStore.deleteItemAsync(pinKey);
