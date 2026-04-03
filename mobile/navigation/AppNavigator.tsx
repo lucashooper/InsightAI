@@ -448,7 +448,18 @@ export default function AppNavigator() {
 
         // If user is logged in but no AsyncStorage flag
         if (user) {
-          // If we have a resume screen, the user is mid-onboarding
+          // CRITICAL: Re-read resume screen from AsyncStorage (not just state)
+          // EmailVerifiedScreen sets this AFTER auth state changes, so state may be stale
+          const freshResumeScreen = await AsyncStorage.getItem('ONBOARDING_RESUME_SCREEN');
+          if (freshResumeScreen) {
+            console.log('[NAV] Resume screen found in AsyncStorage:', freshResumeScreen);
+            setOnboardingResumeScreen(freshResumeScreen);
+            setIsOnboardingCompleted(false);
+            await AsyncStorage.removeItem('ONBOARDING_RESUME_SCREEN');
+            return;
+          }
+          
+          // If we have a resume screen in state, the user is mid-onboarding
           if (onboardingResumeScreen) {
             console.log('[NAV] Resume screen set - showing onboarding at:', onboardingResumeScreen);
             setIsOnboardingCompleted(false);

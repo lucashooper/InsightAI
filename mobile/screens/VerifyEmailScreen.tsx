@@ -115,7 +115,11 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
           console.log('[OTP VERIFY] New signup - clearing AsyncStorage flags BEFORE verification');
           await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
           await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
-          console.log('[OTP VERIFY] AsyncStorage flags cleared');
+          // CRITICAL: Set resume screen BEFORE verifyOtp fires onAuthStateChange
+          // The navigator checks this key the moment the user changes, so it must
+          // already be set or the profile check (which finds nothing) will default to Welcome
+          await AsyncStorage.setItem('ONBOARDING_RESUME_SCREEN', 'EmailVerified');
+          console.log('[OTP VERIFY] Set ONBOARDING_RESUME_SCREEN=EmailVerified before auth fires');
         }
       }
 
