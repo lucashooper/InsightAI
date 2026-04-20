@@ -168,6 +168,7 @@ export default function App() {
           Asset.fromModule(require('./public/Insight-Logo-nobg.webp')).downloadAsync(),
           Asset.fromModule(require('./public/InsightAI-New-Logo.png')).downloadAsync(),
           Asset.fromModule(require('./public/InsightAI-Orb.png')).downloadAsync(),
+          Asset.fromModule(require('./public/cool-gradient-bg.png')).downloadAsync(),
           // Onboarding images
           Asset.fromModule(require('./public/Onboarding-Main-Phone-Image.png')).downloadAsync(),
           Asset.fromModule(require('./public/Modern-Iphone-Insight-LANDING.png')).downloadAsync(),

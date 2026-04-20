@@ -848,8 +848,8 @@ export default function DashboardScreenNew() {
               >
                 <Text style={{ color: '#ffffff', fontSize: sf(13), fontWeight: '600' }}>Start writing →</Text>
               </LinearGradient>
-              <View style={{ marginLeft: 12, backgroundColor: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.08)' : 'rgba(139, 92, 246, 0.12)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.1)' : 'rgba(139, 92, 246, 0.2)' }}>
-                <Text style={{ color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : 'rgba(139, 92, 246, 0.9)', fontSize: sf(11), fontWeight: '600', textTransform: 'capitalize' }}>{dailyPrompt.category.replace('-', ' ')}</Text>
+              <View style={{ marginLeft: 12, backgroundColor: 'rgba(255, 255, 255, 0.15)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.2)' }}>
+                <Text style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: sf(11), fontWeight: '700', textTransform: 'capitalize', letterSpacing: 0.5 }}>{dailyPrompt.category.replace('-', ' ')}</Text>
               </View>
             </View>
           </TouchableOpacity>

@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Animated,
   Dimensions,
+  ImageBackground,
   ScrollView,
   StyleSheet,
   Text,
@@ -54,6 +55,8 @@ type Props = {
 
 const { width } = Dimensions.get('window');
 
+const gradientBg = require('../../public/cool-gradient-bg.png');
+
 export default function ImmersiveAnalysisOverlay(props: Props) {
   const { theme } = useTheme();
   const opacity = useRef(new Animated.Value(0)).current;
@@ -103,17 +106,20 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
   const subtleBg = dark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)';
   const ringTrack = dark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)';
 
+  if (!props.visible) return null;
+
   return (
     <Animated.View style={[styles.overlay, { opacity }]}>
-      {/* Theme-following background */}
-      <LinearGradient
-        colors={theme.colors.backgroundGradient as any}
+      {/* Cool gradient background */}
+      <ImageBackground
+        source={gradientBg}
         style={styles.background}
-      />
-
-      {props.variant === 'loading' ? (
+        resizeMode="cover"
+        imageStyle={styles.backgroundImage}
+      >
+        {props.variant === 'loading' ? (
         <View style={styles.center}>
-          <Text style={[styles.loadingText, { color: textPrimary }]}>{props.message}</Text>
+          <Text style={[styles.loadingText, { color: 'rgba(255, 255, 255, 0.95)' }]}>{props.message}</Text>
           <View style={styles.progressTrack}>
             <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
           </View>
@@ -123,11 +129,11 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
         </View>
       ) : (
         <View style={styles.resultsContainer}>
-          <Text style={[styles.resultsTitle, { color: textPrimary }]} numberOfLines={2}>
+          <Text style={[styles.resultsTitle, { color: 'rgba(255, 255, 255, 0.98)' }]} numberOfLines={2}>
             {props.entryTitle ? `"${props.entryTitle}"` : 'New Insights'}
           </Text>
           {props.entryTitle && (
-            <Text style={[styles.resultsSubtitle, { color: textTertiary }]}>Your personal insights</Text>
+            <Text style={[styles.resultsSubtitle, { color: 'rgba(255, 255, 255, 0.6)' }]}>Your personal insights</Text>
           )}
           
           <ScrollView 
@@ -137,23 +143,23 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
           >
             {/* Summary */}
             {props.insights?.insights_report?.conversationalSummary && (
-              <View style={[styles.resultsCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+              <View style={styles.glassmorphicCard}>
                 <View style={styles.cardHeader}>
                   <Text style={styles.cardHeaderIcon}>📝</Text>
-                  <Text style={[styles.cardHeaderTitle, { color: textPrimary }]}>Summary</Text>
+                  <Text style={[styles.cardHeaderTitle, { color: 'rgba(255, 255, 255, 0.95)' }]}>Summary</Text>
                 </View>
-                <Text style={[styles.summaryText, { color: textSecondary }]}>
+                <Text style={[styles.summaryText, { color: 'rgba(255, 255, 255, 0.85)' }]}>
                   {props.insights.insights_report.conversationalSummary}
                 </Text>
               </View>
             )}
 
             {/* Primary Emotion & Wellbeing Score */}
-            <View style={[styles.resultsCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+            <View style={styles.glassmorphicCard}>
               <View style={styles.emotionWellbeingRow}>
                 <View style={styles.emotionSection}>
-                  <Text style={[styles.resultsLabel, { color: textTertiary }]}>PRIMARY EMOTION</Text>
-                  <Text style={[styles.resultsValue, { color: textPrimary }]}>
+                  <Text style={[styles.resultsLabel, { color: 'rgba(255, 255, 255, 0.6)' }]}>PRIMARY EMOTION</Text>
+                  <Text style={[styles.resultsValue, { color: 'rgba(255, 255, 255, 0.98)' }]}>
                     {props.insights?.mood_analysis?.primary_emotion || '—'}
                   </Text>
                 </View>
@@ -183,7 +189,7 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
 
                   return (
                     <View style={styles.scoreSection}>
-                      <Text style={[styles.resultsLabel, { color: textTertiary }]}>WELLBEING</Text>
+                      <Text style={[styles.resultsLabel, { color: 'rgba(255, 255, 255, 0.6)' }]}>WELLBEING</Text>
                       <View style={styles.scoreRingContainer}>
                         <Svg width={ringSize} height={ringSize} style={styles.scoreRingSvg}>
                           <Circle
@@ -209,16 +215,16 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
                         </Svg>
                         <View style={styles.scoreRingInner}>
                           <Text style={[styles.scoreText, { color: ringColor }]}>{score}</Text>
-                          <Text style={[styles.scoreMax, { color: textTertiary }]}>/10</Text>
+                          <Text style={[styles.scoreMax, { color: 'rgba(255, 255, 255, 0.6)' }]}>/10</Text>
                         </View>
                       </View>
                       <View style={styles.scoreAdjustRow}>
-                        <TouchableOpacity onPress={handleDecrement} style={[styles.scoreAdjustBtn, { backgroundColor: subtleBg }]} activeOpacity={0.7}>
-                          <Text style={[styles.scoreAdjustText, { color: textSecondary }]}>−</Text>
+                        <TouchableOpacity onPress={handleDecrement} style={styles.scoreAdjustBtn} activeOpacity={0.7}>
+                          <Text style={[styles.scoreAdjustText, { color: 'rgba(255, 255, 255, 0.7)' }]}>−</Text>
                         </TouchableOpacity>
-                        <Text style={[styles.scoreAdjustLabel, { color: textTertiary }]}>Adjust</Text>
-                        <TouchableOpacity onPress={handleIncrement} style={[styles.scoreAdjustBtn, { backgroundColor: subtleBg }]} activeOpacity={0.7}>
-                          <Text style={[styles.scoreAdjustText, { color: textSecondary }]}>+</Text>
+                        <Text style={[styles.scoreAdjustLabel, { color: 'rgba(255, 255, 255, 0.6)' }]}>Adjust</Text>
+                        <TouchableOpacity onPress={handleIncrement} style={styles.scoreAdjustBtn} activeOpacity={0.7}>
+                          <Text style={[styles.scoreAdjustText, { color: 'rgba(255, 255, 255, 0.7)' }]}>+</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -238,31 +244,30 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
               return (
                 <View style={styles.accordionSection}>
                   <TouchableOpacity 
-                    style={[styles.accordionHeader, styles.strengthsAccordion]}
+                    style={styles.glassmorphicAccordionHeader}
                     onPress={() => setStrengthsExpanded(!strengthsExpanded)}
                     activeOpacity={0.7}
                   >
                     <View style={styles.accordionHeaderLeft}>
                       <Text style={styles.accordionIcon}>✨</Text>
-                      <Text style={[styles.accordionTitle, { color: textPrimary }]}>What's Working</Text>
-                      <View style={[styles.accordionBadge, { backgroundColor: subtleBg }]}>
-                        <Text style={[styles.accordionBadgeText, { color: textSecondary }]}>{strengthCards.length}</Text>
+                      <Text style={[styles.accordionTitle, { color: 'rgba(255, 255, 255, 0.95)' }]}>What's Working</Text>
+                      <View style={styles.accordionBadge}>
+                        <Text style={[styles.accordionBadgeText, { color: 'rgba(255, 255, 255, 0.8)' }]}>{strengthCards.length}</Text>
                       </View>
                     </View>
-                    <Text style={[styles.accordionChevron, { color: textTertiary }]}>{strengthsExpanded ? '▼' : '▶'}</Text>
+                    <Text style={[styles.accordionChevron, { color: 'rgba(255, 255, 255, 0.6)' }]}>{strengthsExpanded ? '▼' : '▶'}</Text>
                   </TouchableOpacity>
                   
                   {strengthsExpanded && strengthCards.map((card: any, idx: number) => {
                     return (
-                      <View key={idx} style={[styles.growthCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-                        <View style={[styles.growthCardBorder, { backgroundColor: theme.colors.primary }]} />
+                      <View key={idx} style={styles.glassmorphicInsightCard}>
                         <View style={styles.growthCardInner}>
-                          <View style={[styles.growthBadge, { backgroundColor: subtleBg, borderColor: cardBorder }]}>
-                            <Text style={[styles.growthBadgeText, { color: textSecondary }]}>
+                          <View style={styles.growthBadge}>
+                            <Text style={[styles.growthBadgeText, { color: 'rgba(255, 255, 255, 0.7)' }]}>
                               {card.short_label || card.type.toUpperCase()}
                             </Text>
                           </View>
-                          <Text style={[styles.insightDescription, { color: textSecondary }]}>
+                          <Text style={[styles.insightDescription, { color: 'rgba(255, 255, 255, 0.85)' }]}>
                             {card.text
                               .replace(/The user/g, 'You')
                               .replace(/the user/g, 'you')
@@ -291,32 +296,31 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
               return (
                 <View style={styles.accordionSection}>
                   <TouchableOpacity 
-                    style={[styles.accordionHeader, styles.growthAccordion]}
+                    style={styles.glassmorphicAccordionHeader}
                     onPress={() => setGrowthExpanded(!growthExpanded)}
                     activeOpacity={0.7}
                   >
                     <View style={styles.accordionHeaderLeft}>
                       <Text style={styles.accordionIcon}>🌱</Text>
-                      <Text style={[styles.accordionTitle, { color: textPrimary }]}>Patterns to Address</Text>
-                      <View style={[styles.accordionBadge, { backgroundColor: subtleBg }]}>
-                        <Text style={[styles.accordionBadgeText, { color: textSecondary }]}>{growthCards.length}</Text>
+                      <Text style={[styles.accordionTitle, { color: 'rgba(255, 255, 255, 0.95)' }]}>Patterns to Address</Text>
+                      <View style={styles.accordionBadge}>
+                        <Text style={[styles.accordionBadgeText, { color: 'rgba(255, 255, 255, 0.8)' }]}>{growthCards.length}</Text>
                       </View>
                     </View>
-                    <Text style={[styles.accordionChevron, { color: textTertiary }]}>{growthExpanded ? '▼' : '▶'}</Text>
+                    <Text style={[styles.accordionChevron, { color: 'rgba(255, 255, 255, 0.6)' }]}>{growthExpanded ? '▼' : '▶'}</Text>
                   </TouchableOpacity>
                   
                   {growthExpanded && growthCards.map((card: any, idx: number) => {
                     const isGrowth = card.type === 'growth';
                     return (
-                      <View key={idx} style={[styles.growthCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-                        <View style={[styles.growthCardBorder, { backgroundColor: theme.colors.primary }]} />
+                      <View key={idx} style={styles.glassmorphicInsightCard}>
                         <View style={styles.growthCardInner}>
-                          <View style={[styles.growthBadge, { backgroundColor: subtleBg, borderColor: cardBorder }]}>
-                            <Text style={[styles.growthBadgeText, { color: textSecondary }]}>
+                          <View style={styles.growthBadge}>
+                            <Text style={[styles.growthBadgeText, { color: 'rgba(255, 255, 255, 0.7)' }]}>
                               {card.short_label || card.type.toUpperCase()}
                             </Text>
                           </View>
-                          <Text style={[styles.insightDescription, { color: textSecondary }]}>
+                          <Text style={[styles.insightDescription, { color: 'rgba(255, 255, 255, 0.85)' }]}>
                             {card.text
                               .replace(/The user/g, 'You')
                               .replace(/the user/g, 'you')
@@ -350,10 +354,10 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
 
             {/* Key Themes */}
             {props.insights?.key_themes && props.insights.key_themes.length > 0 && (
-              <View style={[styles.resultsCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+              <View style={styles.glassmorphicCard}>
                 <View style={styles.cardHeader}>
                   <Text style={styles.cardHeaderIcon}>💭</Text>
-                  <Text style={[styles.cardHeaderTitle, { color: textPrimary }]}>Key Themes</Text>
+                  <Text style={[styles.cardHeaderTitle, { color: 'rgba(255, 255, 255, 0.95)' }]}>Key Themes</Text>
                 </View>
                 {props.insights.key_themes.slice(0, 3).map((t, idx) => (
                   <View key={idx} style={styles.themeChip}>
@@ -368,7 +372,8 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
             <Text style={styles.doneText}>Done</Text>
           </TouchableOpacity>
         </View>
-      )}
+        )}
+      </ImageBackground>
     </Animated.View>
   );
 }
@@ -377,9 +382,14 @@ const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 999,
+    backgroundColor: '#000000',
   },
   background: {
     ...StyleSheet.absoluteFillObject,
+  },
+  backgroundImage: {
+    width: '100%',
+    height: '100%',
   },
   orbsContainer: {
     ...StyleSheet.absoluteFillObject,
@@ -511,6 +521,46 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
     overflow: 'hidden',
+  },
+  glassmorphicCard: {
+    backgroundColor: 'rgba(88, 50, 150, 0.4)',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 0,
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 32,
+    elevation: 8,
+    overflow: 'hidden',
+  },
+  glassmorphicAccordionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 18,
+    borderRadius: 16,
+    backgroundColor: 'rgba(88, 50, 150, 0.4)',
+    borderWidth: 0,
+    marginBottom: 12,
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  glassmorphicInsightCard: {
+    backgroundColor: 'rgba(88, 50, 150, 0.35)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 0,
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 4,
   },
   accordionSection: {
     marginBottom: 14,
@@ -764,15 +814,18 @@ const styles = StyleSheet.create({
   growthBadge: {
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
+    paddingVertical: 5,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   growthBadgeText: {
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.5,
+    color: 'rgba(255, 255, 255, 0.9)',
   },
   overlayPlaybookBtn: {
     flexDirection: 'row',

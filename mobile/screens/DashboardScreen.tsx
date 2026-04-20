@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Animated,
   Modal,
+  ImageBackground,
 } from 'react-native';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { Ionicons } from '@expo/vector-icons';
@@ -1524,71 +1525,20 @@ export default function DashboardScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowFullStory(false)}
       >
-        <Animated.View style={[styles.modalContainer, { opacity: modalBackgroundOpacity }]}>
-          <LinearGradient
-            colors={[
-              '#1a0f2e',
-              '#2d1a4a',
-              '#1a1535',
-              '#0f0a1a',
-              '#050208'
-            ]}
-            locations={[0, 0.25, 0.5, 0.75, 1]}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1 }}
-            style={styles.modalBackgroundGradient}
-          >
-            {/* Starscape overlay */}
-            <View style={styles.starscapeContainer}>
-              {[...Array(40)].map((_, i) => {
-                const twinkleAnim = useRef(new Animated.Value(0.2 + Math.random() * 0.3)).current;
-                const size = 0.5 + Math.random() * 2.5;
-                const duration = 2000 + Math.random() * 3000;
-                
-                React.useEffect(() => {
-                  const twinkle = Animated.loop(
-                    Animated.sequence([
-                      Animated.timing(twinkleAnim, {
-                        toValue: 0.8 + Math.random() * 0.2,
-                        duration: duration,
-                        useNativeDriver: true,
-                      }),
-                      Animated.timing(twinkleAnim, {
-                        toValue: 0.2 + Math.random() * 0.3,
-                        duration: duration,
-                        useNativeDriver: true,
-                      }),
-                    ])
-                  );
-                  twinkle.start();
-                  return () => twinkle.stop();
-                }, []);
-                
-                return (
-                  <Animated.View
-                    key={i}
-                    style={[
-                      styles.star,
-                      {
-                        top: `${Math.random() * 100}%`,
-                        left: `${Math.random() * 100}%`,
-                        opacity: twinkleAnim,
-                        width: size,
-                        height: size,
-                      },
-                    ]}
-                  />
-                );
-              })}
-            </View>
+        <ImageBackground
+          source={require('../public/cool-gradient-bg.png')}
+          style={styles.modalBackgroundGradient}
+          resizeMode="cover"
+        >
+          <Animated.View style={[styles.modalContainer, { opacity: modalBackgroundOpacity }]}>
           <View style={styles.premiumModalBackground}>
               <Animated.View style={[styles.modalHeader, { transform: [{ translateY: modalTitleTranslateY }] }]}>
                 <TouchableOpacity 
                   onPress={() => setShowFullStory(false)} 
                   style={styles.modalBackButton}
-                  activeOpacity={0.6}
+                  activeOpacity={0.7}
                 >
-                  <Ionicons name="arrow-back" size={24} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.8)' : '#1a1a1a'} />
+                  <Ionicons name="chevron-back" size={28} color="rgba(255, 255, 255, 0.9)" />
                 </TouchableOpacity>
                 <MaskedView
                   maskElement={
@@ -1611,9 +1561,8 @@ export default function DashboardScreen() {
                 <View style={styles.modalHeaderSpacer} />
               </Animated.View>
               <Animated.ScrollView 
-                style={styles.modalContent} 
+                style={[styles.modalContent, { opacity: modalContentOpacity }]} 
                 contentContainerStyle={styles.modalScrollContent}
-                opacity={modalContentOpacity}
               >
                 {/* Opening Narrative - Personalized */}
                 <Text style={styles.modalStoryText}>
@@ -1791,18 +1740,25 @@ export default function DashboardScreen() {
                 </Animated.View>
               )}
 
-              <View style={styles.modalDivider} />
-              <Text style={styles.modalReflectionPrompt}>
-                Take a moment to reflect on this journey. What stands out to you?
-              </Text>
+                {/* Closing reflection prompt */}
+                <View style={styles.modalDivider} />
+                <Text style={styles.modalReflectionPrompt}>
+                  Take a moment to reflect on this journey. What patterns do you notice? What might you want to explore further?
+                </Text>
               </Animated.ScrollView>
-          </View>
-          </LinearGradient>
-        </Animated.View>
+            </View>
+          </Animated.View>
+        </ImageBackground>
       </Modal>
 
+      {/* Emotion Detail Bottom Sheet */}
       {emotionDetail && (
         <View style={styles.sheetOverlay}>
+          <TouchableOpacity
+            style={styles.sheetBackdrop}
+            activeOpacity={1}
+            onPress={() => setEmotionDetail(null)}
+          />
           <LinearGradient
             colors={['#111827', '#020617', '#000000']}
             start={{ x: 0, y: 0 }}
@@ -2261,6 +2217,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'flex-end',
   },
+  sheetBackdrop: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
   sheetContainer: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
@@ -2447,6 +2410,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#ffffff',
     textAlign: 'center',
+    paddingHorizontal: 8,
+    lineHeight: 16,
   },
   bubblePercentageText: {
     fontSize: 11,
@@ -2700,10 +2665,11 @@ const styles = StyleSheet.create({
   // Full Story Modal - Premium Glassmorphic Design
   modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.95)',
   },
   modalBackgroundGradient: {
     flex: 1,
+    width: '100%',
+    height: '100%',
   },
   starscapeContainer: {
     position: 'absolute',
@@ -2721,33 +2687,33 @@ const styles = StyleSheet.create({
   premiumModalBackground: {
     flex: 1,
     backgroundColor: 'transparent',
-    paddingTop: 60,
+    paddingTop: 0,
     zIndex: 1,
   },
   modalHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start', // CHANGED: was 'center', now 'flex-start'
+    alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 60, // CHANGED: was 70, now back to 60
+    paddingTop: sf(60),
+    paddingBottom: 16,
     zIndex: 1,
   },
   modalBackButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 22,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
   modalHeaderSpacer: {
-    width: 40,
+    width: 44,
   },
   modalTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     letterSpacing: -0.5,
-    marginTop: 12,
   },
   modalCloseButton: {
     width: 40,
