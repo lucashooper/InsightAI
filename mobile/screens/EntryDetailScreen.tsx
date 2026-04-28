@@ -278,45 +278,48 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
     // Dismiss keyboard immediately when analysis starts
     Keyboard.dismiss();
 
-    // Check subscription status BEFORE starting animation
-    try {
-      const customerInfo = await Purchases.getCustomerInfo();
-      const ENTITLEMENT_ID = 'Insight Pro';
-      const isProActive = !!customerInfo.entitlements.active[ENTITLEMENT_ID];
-      const hasAnyActiveEntitlement = Object.keys(customerInfo.entitlements.active).length > 0;
-      
-      // If user doesn't have subscription, show premium overlay immediately
-      if (!isProActive && !hasAnyActiveEntitlement) {
-        console.log('[EntryDetail] User has no subscription - showing premium overlay');
-        setPremiumUpsellVisible(true);
-        return;
-      }
-      
-      // CRITICAL: Verify subscription belongs to THIS user, not another account on same device
-      const originalOwner = customerInfo.originalAppUserId;
-      const currentUserId = user?.id;
-      if (currentUserId && originalOwner && originalOwner !== currentUserId && !originalOwner.startsWith('$RCAnonymousID:')) {
-        console.log('[EntryDetail] Subscription belongs to different user:', originalOwner, 'current:', currentUserId);
-        setPremiumUpsellVisible(true);
-        return;
-      }
-    } catch (error) {
-      console.error('[EntryDetail] Error checking subscription:', error);
-      // If we can't check subscription, show premium overlay to be safe
-      setPremiumUpsellVisible(true);
-      return;
-    }
-
-    // Check daily usage limit
-    // Default: 2 per day for regular users
-    // Admin accounts get 10 per day
-    // Developer/tester accounts get unlimited
+    // Check admin/unlimited emails FIRST (before subscription check)
     const UNLIMITED_EMAILS = ['edwardsjonny547@gmail.com'];
     const ADMIN_EMAILS = ['orwellmax24@gmail.com'];
+    const DEMO_EMAILS: string[] = ['insight@gmail.com']; // Jonas demo account
     const userEmail = user?.email?.toLowerCase() || '';
     const isUnlimited = UNLIMITED_EMAILS.includes(userEmail) || __DEV__;
     const isAdmin = ADMIN_EMAILS.includes(userEmail);
-    const dailyLimit = isAdmin ? 10 : 2;
+    const isDemoUser = DEMO_EMAILS.includes(userEmail);
+
+    // Check subscription status (skip for admin/unlimited/demo users)
+    if (!isUnlimited && !isAdmin && !isDemoUser) {
+      try {
+        const customerInfo = await Purchases.getCustomerInfo();
+        const ENTITLEMENT_ID = 'Insight Pro';
+        const isProActive = !!customerInfo.entitlements.active[ENTITLEMENT_ID];
+        const hasAnyActiveEntitlement = Object.keys(customerInfo.entitlements.active).length > 0;
+        
+        // If user doesn't have subscription, show premium overlay immediately
+        if (!isProActive && !hasAnyActiveEntitlement) {
+          console.log('[EntryDetail] User has no subscription - showing premium overlay');
+          setPremiumUpsellVisible(true);
+          return;
+        }
+        
+        // CRITICAL: Verify subscription belongs to THIS user, not another account on same device
+        const originalOwner = customerInfo.originalAppUserId;
+        const currentUserId = user?.id;
+        if (currentUserId && originalOwner && originalOwner !== currentUserId && !originalOwner.startsWith('$RCAnonymousID:')) {
+          console.log('[EntryDetail] Subscription belongs to different user:', originalOwner, 'current:', currentUserId);
+          setPremiumUpsellVisible(true);
+          return;
+        }
+      } catch (error) {
+        console.error('[EntryDetail] Error checking subscription:', error);
+        // If we can't check subscription, show premium overlay to be safe
+        setPremiumUpsellVisible(true);
+        return;
+      }
+    } else {
+      console.log('[EntryDetail] ✅ Admin/Unlimited/Demo user - bypassing subscription check');
+    }
+    const dailyLimit = isDemoUser ? 3 : (isAdmin ? 10 : 2);
     
     if (!isUnlimited) {
       try {
