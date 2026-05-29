@@ -5,7 +5,7 @@
 ### **1. Updated Your Groq API Key** ✅
 ```bash
 # In .env.local:
-VITE_GROQ_API_KEY=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
+VITE_GROQ_API_KEY=your_groq_api_key_here
 ```
 
 ### **2. Fixed Settings View** ✅

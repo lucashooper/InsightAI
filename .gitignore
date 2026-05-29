@@ -7,27 +7,65 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies & build output
 node_modules
 dist
 dist-ssr
+build
+*.tsbuildinfo
 
-# Environment variables
+# Environment variables & secrets (never commit real values)
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+!**/.env.example
 
-# Editor directories and files
+# Certificates & platform secrets
+*.pem
+*.p12
+*.key
+*.mobileprovision
+google-services.json
+GoogleService-Info.plist
+credentials.json
+service-account*.json
+
+# Expo / React Native local
+.expo/
+.expo-shared/
+mobile/.env
+mobile/.env.local
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/
+
+# Editor & OS
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-# Exclude nested git repositories
+# Local databases & exports (user data must never be in git)
+*.sqlite
+*.sqlite3
+*.db
+**/backups/
+**/user-export*/
+
+# Cursor / IDE-uploaded assets (often contain screenshots with PII)
+assets/c__Users*/
+
+# Nested git repos
 REAL-nayl/
+
+# Optional: internal session notes (uncomment if you don't want these public)
+# *_SESSION*.md
+# URGENT_FIXES*.md
+# GOOGLE_SIGNIN_FIX.md
