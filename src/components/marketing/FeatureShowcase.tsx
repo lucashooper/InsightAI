@@ -91,7 +91,7 @@ const FeatureShowcase: React.FC = () => {
 
   return (
     <section className="showcase-section" style={isMobile ? mobileSection : undefined}>
-      <h2 className="showcase-title" style={isMobile ? { fontSize: '1.75rem', marginBottom: '1.5rem', textAlign: 'center' } : undefined}>What does Insight include?</h2>
+      <h2 className="showcase-title showcase-premium-title" style={isMobile ? { fontSize: '1.75rem', marginBottom: '1.5rem', textAlign: 'center' } : undefined}>What does Insight include?</h2>
       
       <div className={isMobile ? undefined : "showcase-layout"} style={isMobile ? mobileLayout : undefined}>
         <div className="showcase-phone-container" style={isMobile ? mobilePhoneContainer : undefined}>
@@ -120,7 +120,7 @@ const FeatureShowcase: React.FC = () => {
           {showcaseFeatures.map((feature, index) => (
             <button
               key={index}
-              className={`showcase-feature-item ${index === activeIndex ? 'active' : ''}`}
+              className={`showcase-feature-item depth-card ${index === activeIndex ? 'active' : ''}`}
               onClick={() => handleFeatureChange(index)}
               style={isMobile ? { ...mobileFeatureItem, transform: 'none' } : undefined}
             >

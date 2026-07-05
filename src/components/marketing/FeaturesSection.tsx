@@ -29,22 +29,27 @@ const features = [
 
 const FeaturesSection: React.FC = () => {
   return (
-    <section className="features-section-v2">
+    <section className="features-section-v2 features-premium">
       <div className="container">
-        <h2 className="features-v2-title">
-          Everything you need to<br />understand yourself.
+        <h2 className="features-v2-title features-premium-title">
+          Everything you need to
+          <br />
+          understand yourself.
         </h2>
-        
-        <div className="features-v2-grid">
-          {features.map((feature, index) => (
-            <div key={index} className="feature-v2-card">
-              <h3 className="feature-v2-name">{feature.title}</h3>
-              <p className="feature-v2-desc">{feature.description}</p>
-            </div>
-          ))}
+
+        <div className="depth-panel">
+          <div className="features-v2-grid reveal-stagger">
+            {features.map((feature, index) => (
+              <div key={index} className="feature-v2-card depth-card" style={{ '--reveal-index': index } as React.CSSProperties}>
+                <h3 className="feature-v2-name">{feature.title}</h3>
+                <p className="feature-v2-desc">{feature.description}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
   );
 };
+
 export default FeaturesSection;

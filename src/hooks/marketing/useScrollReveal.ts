@@ -3,8 +3,8 @@ import { useEffect } from 'react';
 export const useScrollReveal = () => {
   useEffect(() => {
     const observerOptions = {
-      threshold: 0.1,
-      rootMargin: '0px 0px -50px 0px'
+      threshold: 0.08,
+      rootMargin: '0px 0px -40px 0px',
     };
 
     const observer = new IntersectionObserver((entries) => {
@@ -15,8 +15,7 @@ export const useScrollReveal = () => {
       });
     }, observerOptions);
 
-    // Observe all elements with fade-up class
-    const elements = document.querySelectorAll('.fade-up');
+    const elements = document.querySelectorAll('.fade-up, .reveal-stagger > *');
     elements.forEach((el) => observer.observe(el));
 
     return () => {
