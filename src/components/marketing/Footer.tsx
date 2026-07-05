@@ -2,23 +2,25 @@ import React from 'react';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="footer-arise">
+    <footer className="footer-arise footer-premium-visible">
       <div className="footer-arise-inner">
-        {/* CTA Section */}
         <div className="footer-cta-section">
           <div className="footer-cta-icon">
             <img src="/Insight-Logo-1.png" alt="Insight" />
           </div>
           <h2 className="footer-cta-title">Start understanding yourself today.</h2>
           <div className="footer-cta-buttons">
-            <a href="https://apps.apple.com/us/app/insight-understand-yourself/id6755717396" target="_blank" rel="noopener noreferrer">
+            <a
+              href="https://apps.apple.com/us/app/insight-understand-yourself/id6755717396"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               <img src="/app-store-download-button.avif" alt="Download on the App Store" className="footer-download-badge" />
             </a>
-            <img src="/google-play-button-new.avif" alt="Get it on Google Play" className="footer-download-badge" style={{ opacity: 0.5, cursor: 'not-allowed' }} />
+            <img src="/google-play-button-new.avif" alt="Get it on Google Play" className="footer-download-badge footer-download-badge--disabled" />
           </div>
         </div>
 
-        {/* Links Grid */}
         <div className="footer-links-grid">
           <div className="footer-brand-col">
             <div className="footer-brand-name">Insight</div>
@@ -45,10 +47,8 @@ const Footer: React.FC = () => {
           </div>
         </div>
 
-        {/* Bottom Bar */}
         <div className="footer-bottom-bar">
           <p>&copy; 2026 Insight Company LLC. All rights reserved.</p>
-          <p className="footer-location">Handmade in San Francisco, CA</p>
         </div>
       </div>
     </footer>

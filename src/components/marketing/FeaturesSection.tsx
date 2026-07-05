@@ -37,15 +37,13 @@ const FeaturesSection: React.FC = () => {
           understand yourself.
         </h2>
 
-        <div className="depth-panel">
-          <div className="features-v2-grid reveal-stagger">
-            {features.map((feature, index) => (
-              <div key={index} className="feature-v2-card depth-card" style={{ '--reveal-index': index } as React.CSSProperties}>
-                <h3 className="feature-v2-name">{feature.title}</h3>
-                <p className="feature-v2-desc">{feature.description}</p>
-              </div>
-            ))}
-          </div>
+        <div className="features-v2-grid reveal-stagger">
+          {features.map((feature, index) => (
+            <div key={index} className="feature-v2-card depth-card" style={{ '--reveal-index': index } as React.CSSProperties}>
+              <h3 className="feature-v2-name">{feature.title}</h3>
+              <p className="feature-v2-desc">{feature.description}</p>
+            </div>
+          ))}
         </div>
       </div>
     </section>

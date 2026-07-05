@@ -42,7 +42,7 @@ const HomePage: React.FC = () => {
                 <img src="/app-store-download-button.avif" alt="Download on the App Store" className="download-badge" />
               </a>
               <div className="download-badge-wrapper">
-                <img src="/google-play-button-new.avif" alt="Get it on Google Play" className="download-badge" style={{ opacity: 0.5, cursor: 'not-allowed' }} />
+                <img src="/google-play-button-new.avif" alt="Get it on Google Play" className="download-badge download-badge--disabled" />
               </div>
             </div>
           </div>
