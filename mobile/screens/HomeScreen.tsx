@@ -22,7 +22,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { useFocusEffect } from '@react-navigation/native';
-import { EncryptionService } from '../services/encryptionService';
+import { decryptEntries } from '../utils/entryDecryption';
 import PageHeader from '../components/shared/PageHeader';
 import StandardContainer from '../components/shared/StandardContainer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -397,41 +397,7 @@ export default function HomeScreen({ navigation, route }: any) {
 
       if (error) throw error;
 
-      // Smart decryption: handles both encrypted and legacy plain text entries
-      const encryptionKey = await EncryptionService.getKey();
-      console.log('[HomeScreen] Encryption key available:', !!encryptionKey);
-      console.log('[HomeScreen] Processing', (data || []).length, 'entries');
-      
-      const processedEntries = await Promise.all((data || []).map(async (entry, index) => {
-        console.log(`[HomeScreen] Entry ${index + 1}:`, {
-          id: entry.id,
-          contentPreview: entry.content?.substring(0, 50) + '...',
-          isEncrypted: entry.is_encrypted,
-          looksEncrypted: entry.content?.includes(':') && entry.content.length > 32
-        });
-
-        // If no key, return as-is (legacy entries will display, encrypted ones won't)
-        if (!encryptionKey) {
-          console.log('[HomeScreen] No encryption key, returning entry as-is');
-          return entry;
-        }
-
-        // If entry is marked as encrypted or looks encrypted, try to decrypt
-        if (entry.is_encrypted || (entry.content?.includes(':') && entry.content.length > 32)) {
-          try {
-            const decryptedContent = await EncryptionService.decrypt(entry.content, encryptionKey);
-            console.log('[HomeScreen] Decrypted entry', entry.id);
-            return { ...entry, content: decryptedContent };
-          } catch (decryptError) {
-            console.error('[HomeScreen] Failed to decrypt entry:', entry.id, decryptError);
-            return { ...entry, content: '[Encrypted - Unable to decrypt]' };
-          }
-        }
-
-        // Legacy plain text entry
-        console.log('[HomeScreen] Legacy plain text entry:', entry.id);
-        return entry;
-      }));
+      const processedEntries = await decryptEntries(data || []);
 
       setEntries(processedEntries);
       setStreak(calculateStreak(processedEntries));
@@ -613,7 +579,7 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
       onLongPress={() => handleEntryLongPress(item)}
       activeOpacity={0.7}
     >
-      <StandardContainer style={[styles.premiumCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+      <StandardContainer style={[styles.premiumCard, { borderColor: theme.colors.border }]}>
         <View style={styles.cardGradient}>
           <View style={styles.entryTitleRow}>
             <View style={styles.entryTitleWithIndicator}>

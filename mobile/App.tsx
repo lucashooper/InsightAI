@@ -1,4 +1,5 @@
 import 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { LogBox } from 'react-native';
 
 // CRITICAL: Suppress all warnings BEFORE any other imports to prevent yellow warning bar
@@ -13,7 +14,7 @@ import { Asset } from 'expo-asset';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { ThemeProvider, isDarkTheme } from './contexts/ThemeContext';
+import { ThemeProvider, normalizeThemeName } from './contexts/ThemeContext';
 import { PreloadProvider, usePreloadedData } from './contexts/PreloadContext';
 import type { ThemeName } from './contexts/ThemeContext';
 import { OnboardingProvider } from './contexts/OnboardingContext';
@@ -35,15 +36,10 @@ const REVENUECAT_PRODUCTION_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API
 // Use Test Store in development for easier testing, Production for releases
 const REVENUECAT_API_KEY = __DEV__ ? REVENUECAT_TEST_STORE_API_KEY : REVENUECAT_PRODUCTION_API_KEY;
 
-// Theme background colors for splash screen (mirrors ThemeContext)
+// Theme background colors for splash screen (light + dark only)
 const splashThemeColors: Record<string, { bg: string[], textColor: string, isDark: boolean }> = {
   dark: { bg: ['#0e0e12', '#0a0a0c', '#060608'], textColor: '#ffffff', isDark: true },
-  midnight: { bg: ['#0f0f23', '#1a1a3e', '#252550'], textColor: '#ffffff', isDark: true },
-  forest: { bg: ['#0f2e1a', '#0a1f0f', '#051008'], textColor: '#ffffff', isDark: true },
   light: { bg: ['#fef5f8', '#fef0f5', '#fef7f2'], textColor: '#1a1a2e', isDark: false },
-  vibrant: { bg: ['#faf5ff', '#f3e8ff', '#e9d5ff'], textColor: '#1a1a2e', isDark: false },
-  ocean: { bg: ['#eff6ff', '#dbeafe', '#bfdbfe'], textColor: '#1a1a2e', isDark: false },
-  sunset: { bg: ['#fff8f0', '#ffe9d6', '#ffd9b8'], textColor: '#1a1a2e', isDark: false },
 };
 
 export default function App() {
@@ -57,7 +53,7 @@ export default function App() {
         // CRITICAL: Load theme FIRST before anything else to prevent splash screen flash
         const storedTheme = await AsyncStorage.getItem('@insightai_theme');
         if (storedTheme) {
-          setSavedTheme(storedTheme);
+          setSavedTheme(normalizeThemeName(storedTheme));
         }
         setThemeLoaded(true);
         // STEP 1: Configure RevenueCat
@@ -153,49 +149,40 @@ export default function App() {
         console.log('[ANALYTICS] Initializing PostHog...');
         await analytics.initialize();
 
-        // Test encryption on startup
-        console.log('=== ENCRYPTION TEST START ===');
-        try {
-          await EncryptionService.testEncryption();
-        } catch (testError) {
-          console.error('=== ENCRYPTION TEST FAILED ===', testError);
-        }
-        console.log('=== ENCRYPTION TEST END ===');
-
-        // Preload ALL critical assets to prevent loading delays / pop-in
+        // Critical assets only — defer the rest so splash clears faster
         await Promise.all([
-          // App logos
           Asset.fromModule(require('./public/Insight-Logo-nobg.webp')).downloadAsync(),
-          Asset.fromModule(require('./public/InsightAI-New-Logo.png')).downloadAsync(),
           Asset.fromModule(require('./public/InsightAI-Orb.png')).downloadAsync(),
+        ]);
+
+        // Non-blocking background preload
+        Promise.all([
+          Asset.fromModule(require('./public/InsightAI-New-Logo.png')).downloadAsync(),
           Asset.fromModule(require('./public/cool-gradient-bg.png')).downloadAsync(),
-          // Onboarding images
           Asset.fromModule(require('./public/Onboarding-Main-Phone-Image.png')).downloadAsync(),
           Asset.fromModule(require('./public/Modern-Iphone-Insight-LANDING.png')).downloadAsync(),
           Asset.fromModule(require('./public/InsightAI-Onboarding-MAIN.png')).downloadAsync(),
           Asset.fromModule(require('./public/noisy-image.webp')).downloadAsync(),
           Asset.fromModule(require('./public/clarity-image.webp')).downloadAsync(),
-          // Onboarding icons
           Asset.fromModule(require('./public/onboarding-icons/BellIcon.webp')).downloadAsync(),
           Asset.fromModule(require('./public/onboarding-icons/Email-Icon2.webp')).downloadAsync(),
           Asset.fromModule(require('./public/onboarding-icons/LockIcon2.webp')).downloadAsync(),
           Asset.fromModule(require('./public/Book-Icon-Insight.webp')).downloadAsync(),
-          // Research institution logos
           Asset.fromModule(require('./public/research-images/Cambridge-Logo-Frame.png')).downloadAsync(),
           Asset.fromModule(require('./public/research-images/Liverpool-Logo.jpg')).downloadAsync(),
           Asset.fromModule(require('./public/research-images/Smaller-Kaiser-Logo.png')).downloadAsync(),
           Asset.fromModule(require('./public/research-images/APA-LOGO.png')).downloadAsync(),
-          // Cambridge logo (legacy)
           Asset.fromModule(require('./assets/Cambridge-logo.png')).downloadAsync(),
-          // Paywall phone carousel images
           Asset.fromModule(require('./public/new-paywall-phones/Insight-Light-Main-Phone.png')).downloadAsync(),
           Asset.fromModule(require('./public/new-paywall-phones/Insight-Light-Dashboard-Phone.png')).downloadAsync(),
           Asset.fromModule(require('./public/new-paywall-phones/Insight-Light-Journal-Phone.png')).downloadAsync(),
           Asset.fromModule(require('./public/new-paywall-phones/Insight-Light-Insights-Phone.png')).downloadAsync(),
-          // Ambient sounds artwork
           Asset.fromModule(require('./public/ambient-stuff/rain-image.jpg')).downloadAsync(),
           Asset.fromModule(require('./public/ambient-stuff/campfire-image.jpg')).downloadAsync(),
-        ]);
+        ]).catch(() => {});
+
+        // Encryption test — background only
+        EncryptionService.testEncryption().catch(() => {});
       } catch (e: any) {
         console.error('[APP] ❌ Error in loadResourcesAndDataAsync:', e);
         console.error('[APP] Error message:', e.message);
@@ -231,7 +218,7 @@ export default function App() {
   console.log('[APP RENDER] assetsLoaded:', assetsLoaded, 'appReady:', appReady, 'splashVisible:', splashVisible);
 
   return (
-    <View style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       {/* Providers and navigator render underneath from the start */}
       {assetsLoaded ? (
         <ThemeProvider>
@@ -273,21 +260,31 @@ export default function App() {
         </Animated.View>
         );
       })()}
-    </View>
+    </GestureHandlerRootView>
   );
 }
 
 function AppContent({ onReady }: { onReady: () => void }) {
-  const { isLocked, isLockEnabled } = useAppLock();
+  const { isLocked, isLockEnabled, isLockReady } = useAppLock();
   const { loading: authLoading, user } = useAuth();
   const { data: preloadedData, preloadForUser, resetData } = usePreloadedData();
+  const preloadStartedRef = useRef(false);
+  const hasSignaledReadyRef = useRef(false);
 
-  // Preload all data once auth resolves and we have a user
+  // Preload during splash — even when locked — so PIN screen stays responsive after reveal
   useEffect(() => {
-    if (!authLoading && user) {
-      preloadForUser(user.id, user.email || '');
+    if (!isLockReady || authLoading || !user) return;
+    if (preloadStartedRef.current) return;
+
+    preloadStartedRef.current = true;
+    preloadForUser(user.id, user.email || '');
+  }, [isLockReady, authLoading, user, preloadForUser]);
+
+  useEffect(() => {
+    if (!user) {
+      preloadStartedRef.current = false;
     }
-  }, [authLoading, user, preloadForUser]);
+  }, [user]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -295,27 +292,23 @@ function AppContent({ onReady }: { onReady: () => void }) {
     }
   }, [authLoading, user, resetData]);
 
-  // Signal ready once auth is done AND data is preloaded (or no user)
+  const isStartupReady =
+    !authLoading &&
+    isLockReady &&
+    (!user || preloadedData.isStartupReady);
+
+  // Keep splash visible until auth, lock state, and initial data are all ready
   useEffect(() => {
-    if (!authLoading) {
-      if (!user) {
-        // No user — show onboarding/login immediately
-        console.log('[AppContent] No user, showing onboarding');
-        const timer = setTimeout(onReady, 100);
-        return () => clearTimeout(timer);
-      } else if (preloadedData.isLoaded) {
-        // User + data loaded — show app
-        console.log('[AppContent] User + data loaded, showing app');
-        const timer = setTimeout(onReady, 100);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [authLoading, user, preloadedData.isLoaded, onReady]);
+    if (!isStartupReady || hasSignaledReadyRef.current) return;
+    hasSignaledReadyRef.current = true;
+    const timer = setTimeout(onReady, 120);
+    return () => clearTimeout(timer);
+  }, [isStartupReady, onReady]);
 
   return (
     <View style={{ flex: 1 }}>
       <AppNavigator />
-      {isLocked && isLockEnabled && (
+      {isLocked && isLockEnabled && isStartupReady && (
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}>
           <LockScreen />
         </View>

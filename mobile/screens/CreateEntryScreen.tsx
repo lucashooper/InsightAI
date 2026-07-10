@@ -26,6 +26,10 @@ import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { mobileAiService } from '../services/mobileAiService';
 import { EncryptionService } from '../services/encryptionService';
+import { CheckInDraft } from '../components/checkin/types';
+import { saveCheckIn } from '../services/checkInService';
+import StandardContainer from '../components/shared/StandardContainer';
+import MoodIcon from '../components/checkin/MoodIcon';
 // Conditionally import speech recognition (crashes in Expo Go where native module isn't available)
 let ExpoSpeechRecognitionModule: any = null;
 let useSpeechRecognitionEvent: any = (_event: string, _handler: any) => {};
@@ -40,7 +44,8 @@ try {
 export default function CreateEntryScreen({ navigation, route }: any) {
   const { user } = useAuth();
   const { theme } = useTheme();
-  const { initialContent, voiceMode, prefillPrompt } = route?.params || {};
+  const { initialContent, voiceMode, prefillPrompt, checkInDraft } = route?.params || {};
+  const checkInSavedRef = useRef(false);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState(initialContent || '');
   const [promptText] = useState<string | null>(prefillPrompt || null);
@@ -164,6 +169,14 @@ export default function CreateEntryScreen({ navigation, route }: any) {
         if (!error) {
           hasUnsavedChanges.current = false;
           console.log('[CreateEntry] Entry updated successfully (id:', savedEntryIdRef.current, ')');
+          if (checkInDraft && !checkInSavedRef.current && user?.id && savedEntryIdRef.current) {
+            checkInSavedRef.current = true;
+            saveCheckIn(user.id, checkInDraft as CheckInDraft, {
+              journalTitle: title.trim() || content.trim().split('\n')[0].substring(0, 50) || 'Journal Entry',
+              journalBody: content.trim(),
+              journalNoteId: savedEntryIdRef.current,
+            }).catch((e) => console.warn('[CreateEntry] Check-in save failed:', e));
+          }
         }
       } else {
         const { data, error } = await supabase
@@ -183,6 +196,14 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           savedEntryIdRef.current = data.id;
           hasUnsavedChanges.current = false;
           console.log('[CreateEntry] Entry saved successfully (id:', data.id, ', encrypted:', isEncrypted, ')');
+          if (checkInDraft && !checkInSavedRef.current && user?.id) {
+            checkInSavedRef.current = true;
+            saveCheckIn(user.id, checkInDraft as CheckInDraft, {
+              journalTitle: title.trim() || 'Journal Entry',
+              journalBody: content.trim(),
+              journalNoteId: data.id,
+            }).catch((e) => console.warn('[CreateEntry] Check-in save failed:', e));
+          }
         }
       }
     } catch (error) {
@@ -607,6 +628,22 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           </TouchableOpacity>
         </View>
       </View>
+
+      {checkInDraft && (
+        <View style={styles.checkInChipWrap}>
+          <StandardContainer variant="nested" style={styles.checkInChip}>
+            <View style={styles.checkInChipRow}>
+              <MoodIcon tier={checkInDraft.moodTier} size={28} />
+              <Text style={[styles.checkInChipText, { color: theme.colors.primaryText }]}>
+                Feeling — {checkInDraft.moodLabel}
+                {checkInDraft.feelings.length > 0
+                  ? `, ${checkInDraft.feelings.slice(0, 2).join(', ')}`
+                  : ''}
+              </Text>
+            </View>
+          </StandardContainer>
+        </View>
+      )}
 
       {/* Glassmorphic Mood Picker Overlay */}
       {showMoodPicker && (
@@ -1393,5 +1430,22 @@ const styles = StyleSheet.create({
   personalityDesc: {
     fontSize: 12,
     marginTop: 2,
+  },
+  checkInChipWrap: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  checkInChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  checkInChipRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  checkInChipText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

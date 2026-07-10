@@ -4,6 +4,8 @@ import * as SecureStore from 'expo-secure-store';
 
 const SECURE_STORE_KEY = 'insight_encryption_key';
 
+let cachedKey: string | null | undefined;
+
 export class EncryptionService {
   /**
    * Generate encryption key from user password
@@ -25,6 +27,7 @@ export class EncryptionService {
   static async storeKey(key: string): Promise<void> {
     try {
       await SecureStore.setItemAsync(SECURE_STORE_KEY, key);
+      cachedKey = key;
       console.log('[Encryption] Key stored in secure storage');
     } catch (error) {
       console.error('[Encryption] Failed to store key:', error);
@@ -36,16 +39,17 @@ export class EncryptionService {
    * Retrieve encryption key from secure storage
    */
   static async getKey(): Promise<string | null> {
+    if (cachedKey !== undefined) return cachedKey;
     try {
       const key = await SecureStore.getItemAsync(SECURE_STORE_KEY);
-      if (key) {
-        console.log('[Encryption] Key retrieved from secure storage');
-        return key;
+      cachedKey = key;
+      if (!key) {
+        console.warn('[Encryption] No key found in secure storage');
       }
-      console.warn('[Encryption] No key found in secure storage');
-      return null;
+      return key;
     } catch (error) {
       console.error('[Encryption] Failed to retrieve key:', error);
+      cachedKey = null;
       return null;
     }
   }
@@ -132,6 +136,7 @@ export class EncryptionService {
   static async clearKey(): Promise<void> {
     try {
       await SecureStore.deleteItemAsync(SECURE_STORE_KEY);
+      cachedKey = undefined;
       console.log('[Encryption] Key cleared from secure storage');
     } catch (error) {
       console.error('[Encryption] Failed to clear key:', error);

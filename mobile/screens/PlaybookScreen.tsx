@@ -400,7 +400,7 @@ export default function PlaybookScreen() {
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         {/* Today's Progress */}
-        <StandardContainer style={[styles.progressCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+        <StandardContainer style={[styles.progressCard, { borderColor: theme.colors.border }]}>
           <View style={styles.progressCardInner}>
             <Text style={[styles.progressTitle, { color: theme.colors.tertiaryText }]}>TODAY'S PROGRESS</Text>
             <View style={styles.progressStats}>
@@ -491,7 +491,7 @@ export default function PlaybookScreen() {
               onPress={() => handleStrategyTap(strategy)}
               onLongPress={() => handleStrategyLongPress(strategy)}
             >
-              <StandardContainer style={[styles.premiumCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+              <StandardContainer style={[styles.premiumCard, { borderColor: theme.colors.border }]}>
               <View style={styles.cardGradient}>
                 <View style={styles.cardHeader}>
                   <View style={[styles.emojiContainer, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : 'rgba(139, 92, 246, 0.1)' }]}>
@@ -510,12 +510,12 @@ export default function PlaybookScreen() {
                       {strategy.status === 'active' && protocolStats[strategy.id] && (
                         <View style={styles.inlineStreaks}>
                           <View style={styles.inlineStreakBadge}>
-                            <Text style={styles.streakEmoji}>🔥</Text>
-                            <Text style={styles.streakText}>{protocolStats[strategy.id].currentStreak}</Text>
+                            <Ionicons name="flame" size={14} color="#f97316" />
+                            <Text style={[styles.streakText, { color: theme.colors.primaryText }]}>{protocolStats[strategy.id].currentStreak}</Text>
                           </View>
                           <View style={styles.inlineStreakBadge}>
-                            <Text style={styles.streakEmoji}>🏆</Text>
-                            <Text style={styles.streakText}>{protocolStats[strategy.id].longestStreak}</Text>
+                            <Ionicons name="trophy-outline" size={14} color="#fbbf24" />
+                            <Text style={[styles.streakText, { color: theme.colors.primaryText }]}>{protocolStats[strategy.id].longestStreak}</Text>
                           </View>
                         </View>
                       )}
@@ -1188,7 +1188,6 @@ const styles = StyleSheet.create({
   streakText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1a1a2e',
   },
   // Suggestion count badge (like desktop "2" indicator)
   suggestionCountBadge: {

@@ -299,6 +299,21 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const THEME_STORAGE_KEY = '@insightai_theme';
 const CONTAINER_STYLE_KEY = '@insightai_container_style';
 
+const DARK_THEMES: ThemeName[] = ['dark', 'midnight', 'forest'];
+const LIGHT_THEMES: ThemeName[] = ['light', 'vibrant', 'ocean', 'sunset'];
+
+/** Collapse legacy palette themes into light or dark. */
+export const normalizeThemeName = (stored: string | null): ThemeName => {
+  if (!stored) return 'dark';
+  if (stored === 'light' || stored === 'dark') return stored;
+  if (DARK_THEMES.includes(stored as ThemeName)) return 'dark';
+  if (LIGHT_THEMES.includes(stored as ThemeName)) return 'light';
+  return 'dark';
+};
+
+/** Themes shown in Appearance settings. */
+export const selectableThemes: ThemeName[] = ['light', 'dark'];
+
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [themeName, setThemeName] = useState<ThemeName>('dark');
   const [containerStyle, setContainerStyleState] = useState<ContainerStyle>('modern-gray');
@@ -310,12 +325,12 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const loadTheme = async () => {
     try {
       const stored = await AsyncStorage.getItem(THEME_STORAGE_KEY);
-      if (stored && themes[stored as ThemeName]) {
-        setThemeName(stored as ThemeName);
-        console.log('[THEME] Active theme:', stored);
-      } else {
-        console.log('[THEME] Active theme:', 'dark (default)');
+      const normalized = normalizeThemeName(stored);
+      setThemeName(normalized);
+      if (stored && stored !== normalized) {
+        await AsyncStorage.setItem(THEME_STORAGE_KEY, normalized);
       }
+      console.log('[THEME] Active theme:', normalized);
       const storedContainer = await AsyncStorage.getItem(CONTAINER_STYLE_KEY);
       if (storedContainer === 'modern-gray' || storedContainer === 'responsive') {
         setContainerStyleState(storedContainer);
@@ -360,5 +375,5 @@ export const useTheme = () => {
 
 // Helper function to check if a theme uses dark styling (dark backgrounds, white text)
 export const isDarkTheme = (themeName: ThemeName): boolean => {
-  return themeName === 'dark' || themeName === 'midnight' || themeName === 'forest';
+  return normalizeThemeName(themeName) === 'dark';
 };

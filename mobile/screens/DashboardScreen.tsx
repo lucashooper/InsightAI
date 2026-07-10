@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
+import { useIsFocused } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -10,6 +11,7 @@ import {
   Animated,
   Modal,
   ImageBackground,
+  InteractionManager,
 } from 'react-native';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,8 +25,18 @@ import { mobileAiService } from '../services/mobileAiService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePreloadedData } from '../contexts/PreloadContext';
 import StandardContainer from '../components/shared/StandardContainer';
+import PremiumButton from '../components/shared/PremiumButton';
+import PremiumGradientText from '../components/shared/PremiumGradientText';
 import PageHeader from '../components/shared/PageHeader';
 import { isTablet, sf, ss, iPadWideContentStyle } from '../utils/responsive';
+import { yieldToUI } from '../utils/yieldToUI';
+import { notesSignature, computeDeferredDashboardData } from '../utils/computeDashboardData';
+import { sectionSubtitleForItems } from '../utils/patternGrouping';
+import {
+  getDashboardDeferredCache,
+  setDashboardDeferredCache,
+} from '../utils/dashboardCache';
+import { navigateToPlaybook } from '../utils/navigateToPlaybook';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -47,6 +59,7 @@ interface ChartData {
 export default function DashboardScreen() {
   const { user } = useAuth();
   const { theme, themeName } = useTheme();
+  const isFocused = useIsFocused();
   const { data: preloaded } = usePreloadedData();
   const navigation = useNavigation<any>();
   
@@ -129,15 +142,44 @@ export default function DashboardScreen() {
   const modalContentOpacity = useRef(new Animated.Value(0)).current;
   const modalCard1TranslateY = useRef(new Animated.Value(30)).current;
   const modalCard2TranslateY = useRef(new Animated.Value(30)).current;
+  const loadGenRef = useRef(0);
+  const deferredLoadedRef = useRef(false);
+  const lastLoadedSigRef = useRef<string | null>(null);
 
-  // Use preloaded data on mount — no network fetch needed initially
+  const applyDeferredCache = (cached: ReturnType<typeof getDashboardDeferredCache>) => {
+    if (!cached) return;
+    setPatternsToAddress(cached.patternsToAddress);
+    setWhatsWorking(cached.whatsWorking);
+    setAggregateStrengths(cached.aggregateStrengths);
+    setAggregateGrowth(cached.aggregateGrowth);
+    setMonthlyStrengths(cached.monthlyStrengths);
+    setMonthlyGrowthAreas(cached.monthlyGrowthAreas);
+    deferredLoadedRef.current = true;
+  };
+
+  // Load stats when Dashboard tab is focused — use cache to avoid reprocessing on every visit
   useEffect(() => {
-    if (preloaded.isLoaded && user) {
-      if (preloaded.userName) setUserName(preloaded.userName);
-      // loadStats processes preloaded.notes if available, otherwise fetches
-      loadStats();
+    if (!isFocused || !preloaded.isLoaded || !user?.id) return;
+    if (preloaded.userName) setUserName(preloaded.userName);
+
+    const sig = notesSignature(preloaded.notes);
+    const cached = getDashboardDeferredCache(user.id, sig);
+    if (cached) {
+      applyDeferredCache(cached);
     }
-  }, [preloaded.isLoaded, user]);
+
+    // Skip full reload when stats already computed for this notes snapshot
+    if (lastLoadedSigRef.current === sig && stats) {
+      setLoading(false);
+      return;
+    }
+
+    const gen = ++loadGenRef.current;
+    loadStats(gen, sig);
+    return () => {
+      loadGenRef.current++;
+    };
+  }, [isFocused, preloaded.isLoaded, user?.id, notesSignature(preloaded.notes)]);
 
   // Trigger modal animations when modal opens
   useEffect(() => {
@@ -218,7 +260,7 @@ export default function DashboardScreen() {
 
   const formatScoreLabel = (score: number | undefined): string => {
     if (score == null || Number.isNaN(score)) return 'No recent data';
-    if (score <= 3) return 'Running low – be gentle with yourself';
+    if (score <= 3) return 'Running low — be gentle with yourself';
     if (score <= 6) return 'Stable but with room to grow';
     return 'Stable but with room to grow';
   };
@@ -410,463 +452,25 @@ export default function DashboardScreen() {
     }
   };
 
-  // Helper: capitalize first letter of a string
-  const capitalizeFirst = (str: string) => str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
-
-  // Helper: make text more personal (replace third-person references)
-  const personalizeText = (text: string) => {
-    return capitalizeFirst(
-      text
-        .replace(/The user/g, 'You')
-        .replace(/the user/g, 'you')
-        .replace(/their /g, 'your ')
-        .replace(/Their /g, 'Your ')
-        .replace(/they /g, 'you ')
-        .replace(/They /g, 'You ')
-        .replace(/them /g, 'you ')
-        .replace(/his\/her/g, 'your')
-    );
-  };
-
-  // Helper: get a short origin label from entry content
-  const getOriginLabel = (n: any) => {
-    const title = n.title || n.content || '';
-    const cleaned = title.replace(/^["']|["']$/g, '').trim();
-    return cleaned.length > 50 ? cleaned.substring(0, 47) + '...' : cleaned;
-  };
-
-  // --- Smart semantic grouping for patterns/strengths ---
-
-  // Stop words to ignore when extracting keywords
-  const STOP_WORDS = new Set([
-    'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
-    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
-    'should', 'may', 'might', 'can', 'shall', 'to', 'of', 'in', 'for',
-    'on', 'with', 'at', 'by', 'from', 'as', 'into', 'about', 'between',
-    'through', 'during', 'before', 'after', 'and', 'but', 'or', 'not',
-    'no', 'so', 'if', 'then', 'than', 'too', 'very', 'just', 'also',
-    'more', 'most', 'some', 'any', 'all', 'each', 'every', 'this', 'that',
-    'these', 'those', 'it', 'its', 'you', 'your', 'yours', 'i', 'my',
-    'me', 'we', 'our', 'they', 'their', 'them', 'he', 'she', 'his', 'her',
-    'what', 'which', 'who', 'whom', 'how', 'when', 'where', 'why',
-    'up', 'out', 'off', 'over', 'under', 'again', 'further', 'once',
-    'here', 'there', 'both', 'few', 'own', 'same', 'other', 'such',
-    'only', 'still', 'get', 'got', 'make', 'made', 'take', 'try',
-    'need', 'want', 'like', 'know', 'think', 'feel', 'keep', 'let',
-    'begin', 'seem', 'help', 'show', 'tend', 'able', 'way', 'well',
-    'even', 'new', 'now', 'one', 'two', 'really', 'often', 'much',
-  ]);
-
-  // Extract meaningful keywords from text
-  const extractKeywords = (text: string): string[] => {
-    return text
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .split(/\s+/)
-      .filter(w => w.length > 2 && !STOP_WORDS.has(w));
-  };
-
-  // Calculate similarity between two keyword sets (Jaccard-like)
-  const keywordSimilarity = (a: string[], b: string[]): number => {
-    if (a.length === 0 || b.length === 0) return 0;
-    const setA = new Set(a);
-    const setB = new Set(b);
-    let shared = 0;
-    setA.forEach(w => { if (setB.has(w)) shared++; });
-    const union = new Set([...a, ...b]).size;
-    return union > 0 ? shared / union : 0;
-  };
-
-  // Check if text is a short actionable title (vs a long descriptive paragraph)
-  const isShortTitle = (text: string): boolean => text.length < 60 && !text.includes('. ');
-
-  // Generate a clean title from a group of related texts
-  const pickBestTitle = (texts: string[]): string => {
-    // Prefer short, actionable titles
-    const shortOnes = texts.filter(isShortTitle);
-    if (shortOnes.length > 0) {
-      // Pick the most descriptive short one
-      return shortOnes.sort((a, b) => b.length - a.length)[0];
-    }
-    // Fallback: take first sentence of longest text
-    const longest = texts.sort((a, b) => b.length - a.length)[0];
-    const firstSentence = longest.split(/\.\s/)[0];
-    return firstSentence.length > 80 ? firstSentence.substring(0, 77) + '...' : firstSentence;
-  };
-
-  // Pick the best suggestion/description from a group
-  const pickBestDescription = (texts: string[]): string | null => {
-    // Find the longest text that reads like advice (has action words)
-    const actionWords = ['try', 'consider', 'practice', 'establish', 'set', 'create', 'build', 'develop', 'focus', 'start', 'work', 'take', 'make', 'explore', 'reflect'];
-    const descriptive = texts
-      .filter(t => t.length > 50)
-      .sort((a, b) => {
-        const aScore = actionWords.filter(w => a.toLowerCase().includes(w)).length;
-        const bScore = actionWords.filter(w => b.toLowerCase().includes(w)).length;
-        return bScore - aScore || b.length - a.length;
-      });
-    if (descriptive.length > 0) {
-      const best = descriptive[0];
-      // If the title is the same as description, skip
-      return best.length > 80 ? best.substring(0, 120) + '...' : best;
-    }
-    return null;
-  };
-
-  // Group raw items by semantic similarity
-  const groupBySimilarity = (items: Array<{ text: string; entryId: string; entryIds?: string[]; originLabel: string; date: string }>, threshold = 0.25) => {
-    const groups: Array<{
-      texts: string[];
-      entryIds: string[];
-      originLabels: string[];
-      dates: string[];
-      keywords: string[];
-    }> = [];
-
-    items.forEach(item => {
-      const keywords = extractKeywords(item.text);
-      let bestGroupIdx = -1;
-      let bestSim = 0;
-
-      for (let i = 0; i < groups.length; i++) {
-        const sim = keywordSimilarity(keywords, groups[i].keywords);
-        if (sim > bestSim && sim >= threshold) {
-          bestSim = sim;
-          bestGroupIdx = i;
-        }
-      }
-
-      if (bestGroupIdx >= 0) {
-        const g = groups[bestGroupIdx];
-        g.texts.push(personalizeText(item.text));
-        if (!g.entryIds.includes(item.entryId)) g.entryIds.push(item.entryId);
-        if (item.originLabel && !g.originLabels.includes(item.originLabel)) g.originLabels.push(item.originLabel);
-        g.dates.push(item.date);
-        // Merge keywords
-        keywords.forEach(k => { if (!g.keywords.includes(k)) g.keywords.push(k); });
-      } else {
-        groups.push({
-          texts: [personalizeText(item.text)],
-          entryIds: [item.entryId],
-          originLabels: item.originLabel ? [item.originLabel] : [],
-          dates: [item.date],
-          keywords,
-        });
-      }
-    });
-
-    return groups;
-  };
-
-  const loadPatternsData = async (notes: any[]) => {
+  const loadPatternsData = async (notes: any[], gen: number, sig: string) => {
     try {
-      const rawPatterns: Array<{ text: string; entryId: string; originLabel: string; date: string }> = [];
-      const rawStrengths: Array<{ text: string; entryId: string; originLabel: string; date: string }> = [];
+      if (gen !== loadGenRef.current) return;
+      const deferred = computeDeferredDashboardData(notes);
+      if (gen !== loadGenRef.current) return;
 
-      console.log('[Dashboard:Patterns] Processing', notes.length, 'notes for patterns');
+      setPatternsToAddress(deferred.patternsToAddress);
+      setWhatsWorking(deferred.whatsWorking);
+      setAggregateStrengths(deferred.aggregateStrengths);
+      setAggregateGrowth(deferred.aggregateGrowth);
+      setMonthlyStrengths(deferred.monthlyStrengths);
+      setMonthlyGrowthAreas(deferred.monthlyGrowthAreas);
+      deferredLoadedRef.current = true;
 
-      notes.forEach(n => {
-        if (!n.ai_structured_insights) return;
-        const insights = n.ai_structured_insights;
-        const entryDate = new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        const originLabel = getOriginLabel(n);
-
-        const addRawPattern = (text: string) => {
-          if (!text || text === '{}' || text.length < 5) return;
-          rawPatterns.push({ text: text.substring(0, 300), entryId: n.id, originLabel, date: entryDate });
-        };
-        const addRawStrength = (text: string) => {
-          if (!text || text === '{}' || text.length < 5) return;
-          rawStrengths.push({ text: text.substring(0, 300), entryId: n.id, originLabel, date: entryDate });
-        };
-
-        // === AREAS TO IMPROVE / PATTERNS TO ADDRESS ===
-
-        // 1. progress_indicators.areas_for_growth
-        if (insights.progress_indicators?.areas_for_growth) {
-          const areas = Array.isArray(insights.progress_indicators.areas_for_growth)
-            ? insights.progress_indicators.areas_for_growth : [];
-          areas.forEach((area: any) => {
-            const text = typeof area === 'string' ? area : String(area.description || area.area || JSON.stringify(area));
-            addRawPattern(text);
-          });
-        }
-
-        // 2. coping_strategies.suggested
-        if (insights.coping_strategies?.suggested) {
-          const suggested = Array.isArray(insights.coping_strategies.suggested)
-            ? insights.coping_strategies.suggested : [];
-          suggested.forEach((s: any) => {
-            const text = typeof s === 'string' ? s : String(s.strategy || s.description || JSON.stringify(s));
-            addRawPattern(text);
-          });
-        }
-
-        // 3. insights_report.insightCards with type "growth" or "reflection"
-        if (insights.insights_report?.insightCards) {
-          const cards = Array.isArray(insights.insights_report.insightCards)
-            ? insights.insights_report.insightCards : [];
-          cards.forEach((card: any) => {
-            if (card.type === 'growth' || card.type === 'reflection') {
-              const text = typeof card === 'string' ? card : String(card.text || card.description || '');
-              addRawPattern(text);
-            }
-          });
-        }
-
-        // 4. thought_patterns
-        if (Array.isArray(insights.thought_patterns)) {
-          insights.thought_patterns.forEach((tp: any) => {
-            const text = typeof tp === 'string' ? tp : String(tp.pattern || tp.description || '');
-            addRawPattern(text);
-          });
-        }
-
-        // === WHAT'S WORKING / STRENGTHS ===
-
-        // 1. progress_indicators.positive_signals
-        if (insights.progress_indicators?.positive_signals) {
-          const signals = Array.isArray(insights.progress_indicators.positive_signals)
-            ? insights.progress_indicators.positive_signals : [];
-          signals.forEach((signal: any) => {
-            const text = typeof signal === 'string' ? signal : String(signal.description || JSON.stringify(signal));
-            addRawStrength(text);
-          });
-        }
-
-        // 2. insights_report.insightCards with type "strength" or "win"
-        if (insights.insights_report?.insightCards) {
-          const cards = Array.isArray(insights.insights_report.insightCards)
-            ? insights.insights_report.insightCards : [];
-          cards.forEach((card: any) => {
-            if (card.type === 'strength' || card.type === 'win') {
-              const text = typeof card === 'string' ? card : String(card.text || card.description || '');
-              addRawStrength(text);
-            }
-          });
-        }
-
-        // 3. coping_strategies.current
-        if (insights.coping_strategies?.current) {
-          const current = Array.isArray(insights.coping_strategies.current)
-            ? insights.coping_strategies.current : [];
-          current.forEach((c: any) => {
-            const text = typeof c === 'string' ? c : String(c.strategy || c.description || JSON.stringify(c));
-            addRawStrength(text);
-          });
-        }
-      });
-
-      // --- Smart grouping ---
-      const patternGroups = groupBySimilarity(rawPatterns, 0.2);
-      const strengthGroups = groupBySimilarity(rawStrengths, 0.2);
-
-      // Convert groups to display items
-      const patterns = patternGroups
-        .map((g, i) => {
-          const title = pickBestTitle(g.texts);
-          const description = g.texts.length > 1 ? pickBestDescription(g.texts.filter(t => t !== title)) : null;
-          return {
-            id: `pattern_${i}`,
-            summary: title,
-            description: description && description !== title ? description : null,
-            date: g.dates[0],
-            entryId: g.entryIds[0],
-            entryIds: g.entryIds,
-            originLabel: g.originLabels[0] || '',
-            count: g.entryIds.length,
-            rawCount: g.texts.length,
-          };
-        })
-        .sort((a, b) => b.count - a.count || b.rawCount - a.rawCount)
-        .slice(0, 15);
-
-      const strengths = strengthGroups
-        .map((g, i) => {
-          const title = pickBestTitle(g.texts);
-          const description = g.texts.length > 1 ? pickBestDescription(g.texts.filter(t => t !== title)) : null;
-          return {
-            id: `strength_${i}`,
-            summary: title,
-            description: description && description !== title ? description : null,
-            date: g.dates[0],
-            entryId: g.entryIds[0],
-            entryIds: g.entryIds,
-            originLabel: g.originLabels[0] || '',
-            count: g.entryIds.length,
-            rawCount: g.texts.length,
-          };
-        })
-        .sort((a, b) => b.count - a.count || b.rawCount - a.rawCount)
-        .slice(0, 12);
-
-      console.log('[Dashboard:Patterns] Grouped:', patterns.length, 'pattern groups from', rawPatterns.length, 'raw items;', strengths.length, 'strength groups from', rawStrengths.length, 'raw items');
-
-      setPatternsToAddress(patterns);
-      setWhatsWorking(strengths);
+      if (user?.id) {
+        setDashboardDeferredCache(user.id, { signature: sig, ...deferred });
+      }
     } catch (error) {
       console.error('[Dashboard:Patterns] Error:', error);
-    }
-  };
-
-  const aggregateInsights = async (notes: any[]) => {
-    try {
-      // Aggregate strengths across all entries
-      const strengthsMap: { [key: string]: { count: number; text: string; entries: string[] } } = {};
-      const growthMap: { [key: string]: { count: number; text: string; entries: string[] } } = {};
-
-      notes.forEach((n: any) => {
-        if (!n.ai_structured_insights) return;
-        const insights = n.ai_structured_insights;
-
-        // === Aggregate strengths ===
-
-        // 1. progress_indicators.positive_signals
-        const posSignals = insights.progress_indicators?.positive_signals;
-        if (Array.isArray(posSignals)) {
-          posSignals.forEach((signal: any) => {
-            const text = typeof signal === 'string' ? signal : String(signal.description || JSON.stringify(signal));
-            const key = text.toLowerCase().substring(0, 30);
-            if (!strengthsMap[key]) strengthsMap[key] = { count: 0, text, entries: [] };
-            strengthsMap[key].count++;
-            strengthsMap[key].entries.push(n.id);
-          });
-        }
-
-        // 2. coping_strategies.current
-        const currentStrats = insights.coping_strategies?.current;
-        if (Array.isArray(currentStrats)) {
-          currentStrats.forEach((c: any) => {
-            const text = typeof c === 'string' ? c : String(c.strategy || c.description || JSON.stringify(c));
-            const key = text.toLowerCase().substring(0, 30);
-            if (!strengthsMap[key]) strengthsMap[key] = { count: 0, text, entries: [] };
-            strengthsMap[key].count++;
-            strengthsMap[key].entries.push(n.id);
-          });
-        }
-
-        // 3. insightCards with type strength/win
-        const insightCards = insights.insights_report?.insightCards;
-        if (Array.isArray(insightCards)) {
-          insightCards.forEach((card: any) => {
-            if (card.type === 'strength' || card.type === 'win') {
-              const text = typeof card === 'string' ? card : String(card.text || card.description || '');
-              if (text) {
-                const key = text.toLowerCase().substring(0, 30);
-                if (!strengthsMap[key]) strengthsMap[key] = { count: 0, text, entries: [] };
-                strengthsMap[key].count++;
-                strengthsMap[key].entries.push(n.id);
-              }
-            }
-          });
-        }
-
-        // === Aggregate growth areas ===
-
-        // 1. progress_indicators.areas_for_growth
-        const areasForGrowth = insights.progress_indicators?.areas_for_growth;
-        if (Array.isArray(areasForGrowth)) {
-          areasForGrowth.forEach((area: any) => {
-            const text = typeof area === 'string' ? area : String(area.description || area.area || JSON.stringify(area));
-            const key = text.toLowerCase().substring(0, 30);
-            if (!growthMap[key]) growthMap[key] = { count: 0, text, entries: [] };
-            growthMap[key].count++;
-            growthMap[key].entries.push(n.id);
-          });
-        }
-
-        // 2. coping_strategies.suggested
-        const suggestedStrats = insights.coping_strategies?.suggested;
-        if (Array.isArray(suggestedStrats)) {
-          suggestedStrats.forEach((s: any) => {
-            const text = typeof s === 'string' ? s : String(s.strategy || s.description || JSON.stringify(s));
-            const key = text.toLowerCase().substring(0, 30);
-            if (!growthMap[key]) growthMap[key] = { count: 0, text, entries: [] };
-            growthMap[key].count++;
-            growthMap[key].entries.push(n.id);
-          });
-        }
-
-        // 3. insightCards with type growth/reflection
-        if (Array.isArray(insightCards)) {
-          insightCards.forEach((card: any) => {
-            if (card.type === 'growth' || card.type === 'reflection') {
-              const text = typeof card === 'string' ? card : String(card.text || card.description || '');
-              if (text) {
-                const key = text.toLowerCase().substring(0, 30);
-                if (!growthMap[key]) growthMap[key] = { count: 0, text, entries: [] };
-                growthMap[key].count++;
-                growthMap[key].entries.push(n.id);
-              }
-            }
-          });
-        }
-
-        // 4. thought_patterns
-        if (Array.isArray(insights.thought_patterns)) {
-          insights.thought_patterns.forEach((tp: any) => {
-            const text = typeof tp === 'string' ? tp : String(tp.pattern || tp.description || '');
-            if (text) {
-              const key = text.toLowerCase().substring(0, 30);
-              if (!growthMap[key]) growthMap[key] = { count: 0, text, entries: [] };
-              growthMap[key].count++;
-              growthMap[key].entries.push(n.id);
-            }
-          });
-        }
-      });
-
-      // Convert to arrays and sort by frequency
-      const topStrengths = Object.values(strengthsMap)
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 3)
-        .map((s, i) => ({
-          id: `strength_${i}`,
-          text: s.text,
-          count: s.count,
-          frequency: s.count > 3 ? 'Recurring strength' : 'Emerging pattern',
-          entryIds: s.entries
-        }));
-
-      const topGrowth = Object.values(growthMap)
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 3)
-        .map((g, i) => ({
-          id: `growth_${i}`,
-          text: g.text,
-          count: g.count,
-          frequency: g.count > 2 ? 'Pattern to address' : 'Area to explore',
-          entryIds: g.entries
-        }));
-
-      setAggregateStrengths(topStrengths);
-      setAggregateGrowth(topGrowth);
-      
-      // Set monthly aggregated insights for new sections
-      const monthlyStrengthsData = Object.values(strengthsMap)
-        .filter(s => s.count >= 2) // Show patterns with 2+ mentions
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5)
-        .map(s => ({
-          summary: s.text,
-          count: s.count,
-          entries: s.entries
-        }));
-      
-      const monthlyGrowthData = Object.values(growthMap)
-        .filter(g => g.count >= 2) // Show patterns with 2+ mentions
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5)
-        .map(g => ({
-          summary: g.text,
-          count: g.count,
-          entries: g.entries
-        }));
-      
-      setMonthlyStrengths(monthlyStrengthsData);
-      setMonthlyGrowthAreas(monthlyGrowthData);
-    } catch (error) {
-      console.error('[Dashboard] Error aggregating insights:', error);
     }
   };
 
@@ -941,7 +545,7 @@ export default function DashboardScreen() {
     }
   }, [stats]);
 
-  const loadStats = async () => {
+  const loadStats = async (gen: number, sig: string) => {
     if (!user) return;
 
     try {
@@ -977,9 +581,9 @@ export default function DashboardScreen() {
         : 0;
 
       // Calculate streak
-      const sortedNotes = notes?.sort((a, b) => 
+      const sortedNotes = [...(notes ?? [])].sort((a, b) => 
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      ) || [];
+      );
       
       let streak = 0;
       const today = new Date();
@@ -1093,23 +697,47 @@ export default function DashboardScreen() {
       }
 
       // Clear loading IMMEDIATELY so UI renders with stats + emotions + chart
+      if (gen !== loadGenRef.current) return;
       setLoading(false);
 
-      // Check for milestone streaks
       const milestones = [7, 14, 30, 60, 90, 180, 365];
       if (milestones.includes(streak)) {
         setMilestoneStreak(streak);
       }
 
-      // Run heavy async operations in background (UI already visible)
-      loadMonthlyStory(notes || []).catch(e => console.error('[Dashboard] Monthly story error:', e));
-      checkRememberWhen(notes || []).catch(e => console.error('[Dashboard] Remember when error:', e));
-      loadPatternsData(notes || []).catch(e => console.error('[Dashboard] Patterns error:', e));
-      aggregateInsights(notes || []).catch(e => console.error('[Dashboard] Aggregate error:', e));
+      lastLoadedSigRef.current = sig;
+
+      // Defer heavy work until after tab transition / interactions complete
+      InteractionManager.runAfterInteractions(() => {
+        if (gen !== loadGenRef.current) return;
+        runDeferredDashboardWork(notes || [], gen, sig);
+      });
 
     } catch (error) {
       console.error('Error loading stats:', error);
       setLoading(false);
+    }
+  };
+
+  const runDeferredDashboardWork = async (notes: any[], gen: number, sig: string) => {
+    try {
+      const hasDeferredCache = !!(user?.id && getDashboardDeferredCache(user.id, sig));
+
+      await yieldToUI();
+      if (gen !== loadGenRef.current) return;
+      checkRememberWhen(notes).catch(e => console.error('[Dashboard] Remember when error:', e));
+
+      if (!hasDeferredCache) {
+        await yieldToUI();
+        if (gen !== loadGenRef.current) return;
+        await loadPatternsData(notes, gen, sig);
+      }
+
+      await yieldToUI();
+      if (gen !== loadGenRef.current) return;
+      loadMonthlyStory(notes).catch(e => console.error('[Dashboard] Monthly story error:', e));
+    } catch (error) {
+      console.error('[Dashboard] Deferred work error:', error);
     }
   };
 
@@ -1132,6 +760,15 @@ export default function DashboardScreen() {
             {/* Emotion Bubble Map - Enhanced */}
             <Animated.View style={{ opacity: cardAnimations[1], transform: [{ translateY: cardAnimations[1].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
               <StandardContainer style={[styles.bubbleMapCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+                <LinearGradient
+                  colors={isDarkTheme(theme.name)
+                    ? ['rgba(139,92,246,0.32)', 'rgba(240,101,79,0.15)', 'rgba(45,212,191,0.10)']
+                    : ['rgba(168,85,247,0.20)', 'rgba(255,138,101,0.12)', 'rgba(255,206,138,0.10)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.heroGlassOverlay}
+                  pointerEvents="none"
+                />
                 <View style={styles.bubbleMapHeader}>
                   <Text style={[styles.bubbleMapTitle, { color: theme.colors.primaryText }]}>Emotional landscape</Text>
                   <Text style={[styles.bubbleMapSubtitle, { color: theme.colors.secondaryText }]}>
@@ -1153,11 +790,38 @@ export default function DashboardScreen() {
                           { top: 160, left: 120 },
                         ];
                         const position = positions[index] || { top: 80, left: 80 };
-                        
+
+                        // Cohesive warm-purple bubble palette; each emotion gets its own hue
+                        const bubblePalette = [
+                          { rgb: '139, 92, 246', glow: '#8b5cf6' },   // purple
+                          { rgb: '217, 108, 148', glow: '#d96c94' },  // rose
+                          { rgb: '244, 138, 96', glow: '#f48a60' },   // coral
+                          { rgb: '99, 102, 241', glow: '#6366f1' },   // indigo
+                          { rgb: '45, 190, 191', glow: '#2dbebf' },   // teal
+                        ];
+                        const palette = bubblePalette[index % bubblePalette.length];
+                        // Larger, more dominant emotions carry more light/weight
+                        const weight = item.percentage / 100;
+                        const coreAlpha = 0.6 + weight * 0.35;
+                        const edgeAlpha = 0.42 + weight * 0.3;
+                        const glowOpacity = 0.35 + weight * 0.5;
+                        const glowRadius = 12 + item.percentage * 0.5;
+
                         return (
                           <TouchableOpacity
                             key={item.emotion}
-                            style={[styles.emotionBubble, { width: size, height: size, borderRadius: size / 2, ...position }]}
+                            style={[
+                              styles.emotionBubble,
+                              {
+                                width: size,
+                                height: size,
+                                borderRadius: size / 2,
+                                shadowColor: palette.glow,
+                                shadowOpacity: glowOpacity,
+                                shadowRadius: glowRadius,
+                                ...position,
+                              },
+                            ]}
                             activeOpacity={0.8}
                             onPress={() => {
                               navigation.navigate('EmotionDetail', {
@@ -1169,12 +833,21 @@ export default function DashboardScreen() {
                           >
                             <LinearGradient
                               colors={[
-                                `rgba(139, 92, 246, ${0.3 + item.percentage / 200})`,
-                                `rgba(99, 102, 241, ${0.2 + item.percentage / 200})`,
+                                `rgba(${palette.rgb}, ${coreAlpha})`,
+                                `rgba(${palette.rgb}, ${edgeAlpha})`,
                               ]}
-                              style={styles.bubbleGradient}
+                              start={{ x: 0.25, y: 0.15 }}
+                              end={{ x: 0.85, y: 1 }}
+                              style={[styles.bubbleGradient, { borderColor: `rgba(${palette.rgb}, 0.45)` }]}
                             >
-                              <Text style={styles.bubbleEmotionText}>{item.emotion}</Text>
+                              <LinearGradient
+                                colors={['rgba(255,255,255,0.4)', 'rgba(255,255,255,0)']}
+                                start={{ x: 0.3, y: 0 }}
+                                end={{ x: 0.7, y: 0.7 }}
+                                style={styles.bubbleSheen}
+                                pointerEvents="none"
+                              />
+                              <Text style={styles.bubbleEmotionText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>{item.emotion}</Text>
                               <Text style={styles.bubblePercentageText}>{item.percentage}%</Text>
                             </LinearGradient>
                           </TouchableOpacity>
@@ -1186,7 +859,7 @@ export default function DashboardScreen() {
                         activeOpacity={0.8}
                         onPress={() => console.log('[Dashboard] Add emotion tapped')}
                       >
-                        <View style={[styles.addBubbleInner, { borderColor: theme.colors.border }]}>
+                        <View style={[styles.addBubbleInner, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
                           <Text style={[styles.addBubbleText, { color: theme.colors.secondaryText }]}>+</Text>
                         </View>
                       </TouchableOpacity>
@@ -1231,13 +904,15 @@ export default function DashboardScreen() {
                     color={theme.colors.secondaryText} 
                   />
                 </TouchableOpacity>
-                <Text style={[styles.patternSubtitle, { color: theme.colors.tertiaryText }]}>Top priorities based on your recent entries</Text>
+                <Text style={[styles.patternSubtitle, { color: theme.colors.tertiaryText }]}>
+                  {sectionSubtitleForItems(patternsToAddress, 'Top priorities based on your recent entries')}
+                </Text>
                 
                 <View style={styles.patternsContent}>
                   {patternsToAddress.slice(0, patternsExpanded ? patternsToAddress.length : 2).map((pattern) => (
                     <TouchableOpacity
                       key={pattern.id}
-                      style={[styles.patternCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+                      style={styles.patternCardWrap}
                       onPress={() => {
                         const entry = allNotes.find((n: any) => n.id === pattern.entryId);
                         if (entry) {
@@ -1246,42 +921,59 @@ export default function DashboardScreen() {
                       }}
                       activeOpacity={0.7}
                     >
-                      {pattern.count > 1 && (
+                      <StandardContainer variant="nested" style={styles.patternCard}>
+                      <View style={styles.patternCardHeader}>
                         <View style={styles.frequencyBadge}>
                           <Ionicons name="flame" size={13} color="#ef4444" />
-                          <Text style={styles.frequencyText}>x{pattern.count}</Text>
+                          <Text style={styles.frequencyText}>x{pattern.rawCount || pattern.count}</Text>
                         </View>
-                      )}
+                        {pattern.priority === 'HIGH' && (
+                          <View style={[styles.priorityBadge, styles.priorityBadgeHighGlow]}>
+                            <Text style={styles.priorityBadgeText}>High priority</Text>
+                          </View>
+                        )}
+                        {pattern.priority === 'MEDIUM' && (
+                          <View style={[styles.priorityBadge, styles.priorityBadgeMedium]}>
+                            <Text style={[styles.priorityBadgeText, styles.priorityBadgeTextMedium]}>Medium</Text>
+                          </View>
+                        )}
+                      </View>
                       <Text style={[styles.patternSummary, { color: theme.colors.primaryText }]}>{pattern.summary}</Text>
                       {pattern.description ? (
                         <Text style={[styles.patternDescription, { color: theme.colors.secondaryText }]} numberOfLines={3}>
                           {pattern.description}
                         </Text>
                       ) : null}
-                      {pattern.originLabel ? (
+                      {pattern.originLabel && !pattern.originLabel.includes('related entries') ? (
                         <Text style={[styles.patternOrigin, { color: theme.colors.tertiaryText }]} numberOfLines={1}>
                           from "{pattern.originLabel}"
                         </Text>
+                      ) : pattern.count > 1 ? (
+                        <Text style={[styles.patternOrigin, { color: theme.colors.tertiaryText }]} numberOfLines={1}>
+                          Mentioned across {pattern.count} entries
+                        </Text>
                       ) : null}
+                      </StandardContainer>
                     </TouchableOpacity>
                   ))}
                   
                   {!patternsExpanded && patternsToAddress.length > 2 && (
                     <TouchableOpacity
-                      style={[styles.viewAllButton, { borderColor: theme.colors.border }]}
+                      style={[styles.viewAllButton, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
                       onPress={() => setPatternsExpanded(true)}
                       activeOpacity={0.7}
                     >
-                      <Text style={[styles.viewAllText, { color: isDarkTheme(theme.name) ? theme.colors.primary : '#8b5cf6' }]}>View {patternsToAddress.length - 2} More Focus Areas →</Text>
+                      <Text style={[styles.viewAllText, { color: theme.colors.secondaryText }]}>View {patternsToAddress.length - 2} More Focus Areas</Text>
+                      <Ionicons name="chevron-forward" size={14} color={theme.colors.secondaryText} />
                     </TouchableOpacity>
                   )}
                   {patternsExpanded && patternsToAddress.length > 2 && (
                     <TouchableOpacity
-                      style={[styles.viewAllButton, { borderColor: theme.colors.border }]}
+                      style={[styles.viewAllButton, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
                       onPress={() => setPatternsExpanded(false)}
                       activeOpacity={0.7}
                     >
-                      <Text style={[styles.viewAllText, { color: isDarkTheme(theme.name) ? theme.colors.primary : '#8b5cf6' }]}>Show Less</Text>
+                      <Text style={[styles.viewAllText, { color: theme.colors.secondaryText }]}>Show Less</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -1306,13 +998,15 @@ export default function DashboardScreen() {
                     color={theme.colors.secondaryText} 
                   />
                 </TouchableOpacity>
-                <Text style={[styles.patternSubtitle, { color: theme.colors.tertiaryText }]}>Strategies that are helping you thrive</Text>
+                <Text style={[styles.patternSubtitle, { color: theme.colors.tertiaryText }]}>
+                  {sectionSubtitleForItems(whatsWorking, 'Strategies that are helping you thrive')}
+                </Text>
                 
                 <View style={styles.workingContent}>
                   {whatsWorking.slice(0, workingExpanded ? whatsWorking.length : 2).map((item) => (
                     <TouchableOpacity
                       key={item.id}
-                      style={[styles.workingItem, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+                      style={styles.patternCardWrap}
                       onPress={() => {
                         const entry = allNotes.find((n: any) => n.id === item.entryId);
                         if (entry) {
@@ -1321,42 +1015,54 @@ export default function DashboardScreen() {
                       }}
                       activeOpacity={0.7}
                     >
-                      {item.count > 1 && (
+                      <StandardContainer variant="nested" style={styles.patternCard}>
+                      <View style={styles.patternCardHeader}>
                         <View style={[styles.frequencyBadge, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
                           <Ionicons name="flame" size={13} color="#10b981" />
-                          <Text style={[styles.frequencyText, { color: '#10b981' }]}>x{item.count}</Text>
+                          <Text style={[styles.frequencyText, { color: '#10b981' }]}>x{item.rawCount || item.count}</Text>
                         </View>
-                      )}
+                        {item.priority === 'HIGH' && (
+                          <View style={[styles.priorityBadge, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+                            <Text style={[styles.priorityBadgeText, { color: '#10b981' }]}>High impact</Text>
+                          </View>
+                        )}
+                      </View>
                       <Text style={[styles.workingSummary, { color: theme.colors.primaryText }]}>{item.summary}</Text>
                       {item.description ? (
                         <Text style={[styles.patternDescription, { color: theme.colors.secondaryText }]} numberOfLines={3}>
                           {item.description}
                         </Text>
                       ) : null}
-                      {item.originLabel ? (
+                      {item.originLabel && !item.originLabel.includes('related entries') ? (
                         <Text style={[styles.patternOrigin, { color: theme.colors.tertiaryText }]} numberOfLines={1}>
                           from "{item.originLabel}"
                         </Text>
+                      ) : item.count > 1 ? (
+                        <Text style={[styles.patternOrigin, { color: theme.colors.tertiaryText }]} numberOfLines={1}>
+                          Mentioned across {item.count} entries
+                        </Text>
                       ) : null}
+                      </StandardContainer>
                     </TouchableOpacity>
                   ))}
 
                   {!workingExpanded && whatsWorking.length > 2 && (
                     <TouchableOpacity
-                      style={[styles.viewAllButton, { borderColor: theme.colors.border }]}
+                      style={[styles.viewAllButton, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
                       onPress={() => setWorkingExpanded(true)}
                       activeOpacity={0.7}
                     >
-                      <Text style={[styles.viewAllText, { color: isDarkTheme(theme.name) ? theme.colors.primary : '#8b5cf6' }]}>View {whatsWorking.length - 2} More Strengths →</Text>
+                      <Text style={[styles.viewAllText, { color: theme.colors.secondaryText }]}>View {whatsWorking.length - 2} More Strengths</Text>
+                      <Ionicons name="chevron-forward" size={14} color={theme.colors.secondaryText} />
                     </TouchableOpacity>
                   )}
                   {workingExpanded && whatsWorking.length > 2 && (
                     <TouchableOpacity
-                      style={[styles.viewAllButton, { borderColor: theme.colors.border }]}
+                      style={[styles.viewAllButton, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
                       onPress={() => setWorkingExpanded(false)}
                       activeOpacity={0.7}
                     >
-                      <Text style={[styles.viewAllText, { color: isDarkTheme(theme.name) ? theme.colors.primary : '#8b5cf6' }]}>Show Less</Text>
+                      <Text style={[styles.viewAllText, { color: theme.colors.secondaryText }]}>Show Less</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -1370,7 +1076,7 @@ export default function DashboardScreen() {
               <View style={styles.metricsRow}>
                 <View style={styles.metricItem}>
                   <View style={styles.metricIconValue}>
-                    <Text style={styles.metricEmoji}>🔥</Text>
+                    <Ionicons name="flame" size={22} color="#f97316" />
                     <Text style={[styles.metricValue, { color: theme.colors.primaryText }]}>
                       {stats.currentStreak > 0 ? stats.currentStreak : '-'}
                     </Text>
@@ -1380,7 +1086,7 @@ export default function DashboardScreen() {
                 
                 <View style={styles.metricItem}>
                   <View style={styles.metricIconValue}>
-                    <Text style={styles.metricEmoji}>😊</Text>
+                    <Ionicons name="happy-outline" size={22} color="#fbbf24" />
                     <Text style={[styles.metricValue, { color: theme.colors.primaryText }]}>
                       {stats.avgWellbeingScore > 0 ? `${stats.avgWellbeingScore}/10` : '-'}
                     </Text>
@@ -1407,7 +1113,9 @@ export default function DashboardScreen() {
             {monthlyStory && (
               <Animated.View style={{ opacity: cardAnimations[0], transform: [{ translateY: cardAnimations[0].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
                 <StandardContainer style={[styles.progressStoryCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-                  <Text style={[styles.progressStoryTitle, { color: theme.colors.primaryText }]}>Your {new Date().toLocaleDateString('en-US', { month: 'long' })} Story</Text>
+                  <PremiumGradientText variant="warm" style={styles.progressStoryTitle}>
+                    {`Your ${new Date().toLocaleDateString('en-US', { month: 'long' })} Story`}
+                  </PremiumGradientText>
                   {storyLoading ? (
                     <ActivityIndicator size="small" color={theme.colors.primary} style={{ marginVertical: 12 }} />
                   ) : (
@@ -1421,45 +1129,37 @@ export default function DashboardScreen() {
                         <View style={styles.inlineHighlights}>
                           {narrativeHighlights.strongestResilience && (
                             <View style={styles.inlineHighlightRow}>
-                              <Text style={styles.inlineHighlightIcon}>✨</Text>
+                              <Ionicons name="sparkles" size={14} color="#fbbf24" style={styles.inlineHighlightIconIon} />
                               <Text style={[styles.inlineHighlightText, { color: theme.colors.secondaryText }]}>
-                                Strongest day: <Text style={[styles.inlineHighlightValue, { color: theme.colors.primary }]}>{narrativeHighlights.strongestResilience.date}</Text>
+                                Strongest day: <Text style={[styles.inlineHighlightValue, { color: theme.colors.primaryText }]}>{narrativeHighlights.strongestResilience.date}</Text>
                               </Text>
                             </View>
                           )}
                           {narrativeHighlights.keyTheme && (
                             <View style={styles.inlineHighlightRow}>
-                              <Text style={styles.inlineHighlightIcon}>💭</Text>
+                              <Ionicons name="bulb-outline" size={14} color="#a78bfa" style={styles.inlineHighlightIconIon} />
                               <Text style={[styles.inlineHighlightText, { color: theme.colors.secondaryText }]}>
-                                Key theme: <Text style={[styles.inlineHighlightValue, { color: theme.colors.primary }]}>{narrativeHighlights.keyTheme.theme}</Text> ({narrativeHighlights.keyTheme.count} entries)
+                                Key theme: <Text style={[styles.inlineHighlightValue, { color: theme.colors.primaryText }]}>{narrativeHighlights.keyTheme.theme}</Text> ({narrativeHighlights.keyTheme.count} entries)
                               </Text>
                             </View>
                           )}
                           {narrativeHighlights.newStrategy && (
                             <View style={styles.inlineHighlightRow}>
-                              <Text style={styles.inlineHighlightIcon}>🌱</Text>
+                              <Ionicons name="leaf-outline" size={14} color="#10b981" style={styles.inlineHighlightIconIon} />
                               <Text style={[styles.inlineHighlightText, { color: theme.colors.secondaryText }]}>
-                                Strategy: <Text style={[styles.inlineHighlightValue, { color: theme.colors.primary }]}>{narrativeHighlights.newStrategy}</Text>
+                                Strategy: <Text style={[styles.inlineHighlightValue, { color: theme.colors.primaryText }]}>{narrativeHighlights.newStrategy}</Text>
                               </Text>
                             </View>
                           )}
                         </View>
                       )}
                       
-                      <TouchableOpacity 
-                        style={styles.readFullStoryButton}
+                      <PremiumButton
+                        label="Read Full Story"
                         onPress={() => setShowFullStory(true)}
-                        activeOpacity={0.8}
-                      >
-                        <LinearGradient
-                          colors={['#8b5cf6', '#7c3aed']}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 1 }}
-                          style={styles.readFullStoryGradient}
-                        >
-                          <Text style={styles.readFullStoryText}>Read Full Story →</Text>
-                        </LinearGradient>
-                      </TouchableOpacity>
+                        variant="secondary"
+                        style={{ marginTop: 12 }}
+                      />
                     </>
                   )}
                 </StandardContainer>
@@ -1475,7 +1175,7 @@ export default function DashboardScreen() {
                   end={{ x: 0, y: 1 }}
                   style={styles.milestoneCard}
                 >
-                  <Text style={styles.milestoneIcon}>🌱</Text>
+                  <Ionicons name="leaf" size={28} color="#fbbf24" style={styles.milestoneIconIon} />
                   <Text style={styles.milestoneTitle}>Quiet Achievement</Text>
                   <Text style={styles.milestoneMessage}>
                     You've reflected for {milestoneStreak} days in a row. That's a real commitment to understanding yourself.
@@ -1488,7 +1188,7 @@ export default function DashboardScreen() {
             {rememberWhenCard && (
               <Animated.View style={{ opacity: cardAnimations[3], transform: [{ translateY: cardAnimations[3].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
                 <StandardContainer style={styles.rememberWhenCard}>
-                  <Text style={styles.rememberWhenIcon}>💭</Text>
+                  <Ionicons name="chatbubble-ellipses-outline" size={24} color="#a78bfa" style={styles.rememberWhenIconIon} />
                   <Text style={[styles.rememberWhenTitle, { color: theme.colors.primaryText }]}>You've been here before</Text>
                   <Text style={[styles.rememberWhenMessage, { color: theme.colors.secondaryText }]}>
                     Last time you felt {rememberWhenCard.emotion.toLowerCase()} about {rememberWhenCard.topic} ({rememberWhenCard.date}), you found that {rememberWhenCard.strategy} helped. Worth trying again?
@@ -1503,7 +1203,9 @@ export default function DashboardScreen() {
                     }}
                     activeOpacity={0.7}
                   >
-                    <Text style={[styles.viewEntryText, { color: theme.colors.primaryText }]}>View That Entry →</Text>
+                    <Text style={[styles.viewEntryText, { color: theme.colors.primaryText }]}>View That Entry</Text>
+                    <Ionicons name="chevron-forward" size={14} color={theme.colors.primaryText} />
+                    <Ionicons name="chevron-forward" size={14} color={theme.colors.primaryText} />
                   </TouchableOpacity>
                 </StandardContainer>
               </Animated.View>
@@ -1610,7 +1312,7 @@ export default function DashboardScreen() {
                             colors={['rgba(139, 92, 246, 0.2)', 'rgba(139, 92, 246, 0.05)']}
                             style={styles.iconGlowCircle}
                           >
-                            <Text style={styles.premiumHighlightIcon}>✨</Text>
+                            <Ionicons name="sparkles" size={20} color="#fbbf24" />
                           </LinearGradient>
                         </View>
                         <View style={styles.highlightTextContainer}>
@@ -1618,7 +1320,7 @@ export default function DashboardScreen() {
                             <Text style={styles.premiumHighlightLabel}>Strongest Resilience: </Text>
                             <Text style={styles.premiumHighlightValue}>{narrativeHighlights.strongestResilience.date}</Text>
                           </Text>
-                          <Text style={styles.premiumHighlightSubtext}>"{narrativeHighlights.strongestResilience.title}" • Tap to view</Text>
+                          <Text style={styles.premiumHighlightSubtext}>"{narrativeHighlights.strongestResilience.title}" · Tap to view</Text>
                         </View>
                       </TouchableOpacity>
                     )}
@@ -1630,7 +1332,7 @@ export default function DashboardScreen() {
                             colors={['rgba(139, 92, 246, 0.3)', 'rgba(139, 92, 246, 0.1)']}
                             style={styles.iconGlowCircle}
                           >
-                            <Text style={styles.premiumHighlightIcon}>💭</Text>
+                            <Ionicons name="bulb-outline" size={20} color="#a78bfa" />
                           </LinearGradient>
                         </View>
                         <View style={styles.highlightTextContainer}>
@@ -1644,9 +1346,9 @@ export default function DashboardScreen() {
                     )}
 
                     {narrativeHighlights.newStrategy && (
-                      <View style={styles.premiumHighlightRow}>
+                        <View style={styles.premiumHighlightRow}>
+                        <Ionicons name="leaf-outline" size={18} color="#10b981" style={{ marginRight: 8 }} />
                         <Text style={styles.premiumHighlightText}>
-                          <Text style={styles.premiumHighlightIcon}>🌱 </Text>
                           <Text style={styles.premiumHighlightLabel}>Strategy: </Text>
                           <Text style={styles.premiumHighlightValue}>{narrativeHighlights.newStrategy}</Text>
                         </Text>
@@ -1686,7 +1388,7 @@ export default function DashboardScreen() {
                           colors={['rgba(80, 120, 200, 0.3)', 'rgba(80, 120, 200, 0.1)']}
                           style={styles.statIconGlow}
                         >
-                          <Text style={styles.statIcon}>📊</Text>
+                          <Ionicons name="bar-chart-outline" size={22} color="#8b5cf6" />
                         </LinearGradient>
                         <View style={styles.statTextContainer}>
                           <Text style={styles.statValue}>{monthlyStats.totalReflections}</Text>
@@ -1699,7 +1401,7 @@ export default function DashboardScreen() {
                           colors={['rgba(255, 100, 50, 0.3)', 'rgba(255, 100, 50, 0.1)']}
                           style={styles.statIconGlow}
                         >
-                          <Text style={styles.statIcon}>🔥</Text>
+                          <Ionicons name="flame" size={22} color="#f97316" />
                         </LinearGradient>
                         <View style={styles.statTextContainer}>
                           <Text style={styles.statValue}>{monthlyStats.longestStreak}</Text>
@@ -1713,7 +1415,7 @@ export default function DashboardScreen() {
                             colors={['rgba(255, 200, 80, 0.3)', 'rgba(255, 200, 80, 0.1)']}
                             style={styles.statIconGlow}
                           >
-                            <Text style={styles.statIcon}>😊</Text>
+                            <Ionicons name="happy-outline" size={22} color="#fbbf24" />
                           </LinearGradient>
                           <View style={styles.statTextContainer}>
                             <Text style={styles.statValue}>{monthlyStats.bestDay.score}/10</Text>
@@ -1728,7 +1430,7 @@ export default function DashboardScreen() {
                           colors={['rgba(139, 92, 246, 0.2)', 'rgba(139, 92, 246, 0.05)']}
                           style={styles.statIconGlow}
                         >
-                          <Text style={styles.statIcon}>💪</Text>
+                          <Ionicons name="fitness-outline" size={22} color="#10b981" />
                         </LinearGradient>
                         <View style={styles.statTextContainer}>
                           <Text style={styles.statValue}>{monthlyStats.avgResilience}/10</Text>
@@ -1827,7 +1529,7 @@ export default function DashboardScreen() {
                 style={[styles.sheetCtaButton, styles.sheetCtaPrimary]}
                 onPress={() => {
                   setEmotionDetail(null);
-                  navigation.navigate('Playbook');
+                  navigateToPlaybook(navigation);
                 }}
               >
                 <Text style={styles.sheetCtaPrimaryText}>Open Playbook</Text>
@@ -1850,7 +1552,6 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
   },
   backgroundGradient: {
     position: 'absolute',
@@ -2370,6 +2071,22 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: isTablet ? 24 : 20,
   },
+  heroGlassOverlay: {
+    position: 'absolute',
+    top: isTablet ? -24 : -20,
+    left: isTablet ? -24 : -20,
+    right: isTablet ? -24 : -20,
+    bottom: isTablet ? -24 : -20,
+  },
+  bubbleSheen: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '55%',
+    borderTopLeftRadius: 999,
+    borderTopRightRadius: 999,
+  },
   bubbleMapHeader: {
     marginBottom: 16,
   },
@@ -2406,12 +2123,13 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(139, 92, 246, 0.3)',
   },
   bubbleEmotionText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
     color: '#ffffff',
     textAlign: 'center',
-    paddingHorizontal: 8,
-    lineHeight: 16,
+    paddingHorizontal: 6,
+    lineHeight: 14,
+    width: '100%',
   },
   bubblePercentageText: {
     fontSize: 11,
@@ -2805,6 +2523,9 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.95)',
     fontWeight: '500',
   },
+  premiumHighlightIconIon: {
+    marginRight: 10,
+  },
   premiumHighlightIcon: {
     fontSize: 20,
   },
@@ -3089,10 +2810,10 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   patternCard: {
-    borderRadius: 12,
     padding: 16,
+  },
+  patternCardWrap: {
     marginBottom: 12,
-    borderWidth: 1,
   },
   patternHeader: {
     flexDirection: 'row',
@@ -3149,7 +2870,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
     gap: 3,
-    marginBottom: 8,
     backgroundColor: 'rgba(239, 68, 68, 0.15)',
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -3159,6 +2879,44 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#ef4444',
+  },
+  patternCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+    flexWrap: 'wrap',
+  },
+  priorityBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.25)',
+  },
+  priorityBadgeHighGlow: {
+    backgroundColor: 'rgba(239, 68, 68, 0.18)',
+    borderColor: 'rgba(239, 68, 68, 0.45)',
+    shadowColor: '#ef4444',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.55,
+    shadowRadius: 9,
+    elevation: 4,
+  },
+  priorityBadgeMedium: {
+    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+    borderColor: 'rgba(245, 158, 11, 0.25)',
+  },
+  priorityBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#ef4444',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  priorityBadgeTextMedium: {
+    color: '#f59e0b',
   },
   patternOrigin: {
     fontSize: 12,
@@ -3193,8 +2951,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 12,
     borderWidth: 1,
-    alignItems: 'center',
     marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
   },
   viewAllText: {
     fontSize: 14,

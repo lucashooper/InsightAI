@@ -6,15 +6,18 @@ import { Ionicons } from '@expo/vector-icons';
 import Purchases from 'react-native-purchases';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
+import { navigateToPlaybook } from '../utils/navigateToPlaybook';
 import { mobileAiService } from '../services/mobileAiService';
 import { checkAIConsent } from '../services/aiConsentService';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import ImmersiveAnalysisOverlay from '../components/shared/ImmersiveAnalysisOverlay';
+import StandardContainer from '../components/shared/StandardContainer';
 import PremiumUpsellOverlay from '../components/PremiumUpsellOverlay';
 import * as Haptics from 'expo-haptics';
 import { isTablet, sf, ss, si } from '../utils/responsive';
 import SunoGradient from '../components/onboarding/SunoGradient';
+import { decryptEntryFields } from '../utils/entryDecryption';
 
 // Helper function to get color styling based on emotion sentiment
 const getSentimentStyle = (emotion: string) => {
@@ -148,17 +151,22 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
   };
 
   useEffect(() => {
-    if (initialEntry) {
-      setEntry(initialEntry);
-      setEditableContent(initialEntry.content || '');
-      setEditableTitle(initialEntry.title || '');
-      
-      if (shouldAnalyze && !initialEntry.ai_structured_insights) {
-        handleAnalyzeEntry(initialEntry);
+    const hydrateEntry = async () => {
+      if (initialEntry) {
+        const decrypted = await decryptEntryFields(initialEntry);
+        setEntry(decrypted);
+        setEditableContent(decrypted.content || '');
+        setEditableTitle(decrypted.title || '');
+
+        if (shouldAnalyze && !decrypted.ai_structured_insights) {
+          handleAnalyzeEntry(decrypted);
+        }
+      } else if (entryId) {
+        loadEntry();
       }
-    } else if (entryId) {
-      loadEntry();
-    }
+    };
+
+    hydrateEntry();
   }, [entryId, initialEntry]);
 
   useEffect(() => {
@@ -183,9 +191,10 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
         .single();
       
       if (!error && data) {
-        setEntry(data);
-        setEditableContent(data.content || '');
-        setEditableTitle(data.title || '');
+        const decrypted = await decryptEntryFields(data);
+        setEntry(decrypted);
+        setEditableContent(decrypted.content || '');
+        setEditableTitle(decrypted.title || '');
         
         if (shouldAnalyze && !data.ai_structured_insights) {
           handleAnalyzeEntry(data);
@@ -555,7 +564,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
         'Added to Playbook!',
         `"${playbookDraft.title}" has been added to your Daily Protocols.`,
         [
-          { text: 'View Playbook', onPress: () => navigation.navigate('Playbook') },
+          { text: 'View Playbook', onPress: () => navigateToPlaybook(navigation) },
           { text: 'OK', style: 'cancel' },
         ]
       );
@@ -839,21 +848,17 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
               {(moodAnalysis || structuredInsights?.wellbeingScore != null) && (
                 <View style={styles.emotionWellbeingRow}>
                   {moodAnalysis && (
-                    <View style={[
-                      styles.inlineMoodCard,
-                      styles.inlineMoodCardTop,
-                      { flex: 1, backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }
-                    ]}>
+                    <StandardContainer variant="nested" style={[styles.inlineMoodCard, styles.inlineMoodCardTop, { flex: 1, borderColor: theme.colors.border }]}>
                       <View style={styles.emotionBadge}>
-                        <Text style={[styles.inlineMoodLabel, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.6)' : '#6B6B6B' }]}>PRIMARY EMOTION</Text>
-                        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[styles.inlineMoodEmotion, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.98)' : '#1a1a1a' }]}>{moodAnalysis.primary_emotion}</Text>
+                        <Text style={[styles.inlineMoodLabel, { color: theme.colors.secondaryText }]}>PRIMARY EMOTION</Text>
+                        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[styles.inlineMoodEmotion, { color: theme.colors.primaryText }]}>{moodAnalysis.primary_emotion}</Text>
                       </View>
-                    </View>
+                    </StandardContainer>
                   )}
                   {structuredInsights?.wellbeingScore != null && (
-                    <View style={[styles.inlineWellbeingCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-                      <Text style={[styles.inlineMoodLabel, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.6)' : '#6B6B6B' }]}>WELLBEING</Text>
-                      <Text style={[styles.inlineWellbeingScore, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.98)' : '#1a1a1a' }]}>{structuredInsights.wellbeingScore}<Text style={[styles.inlineWellbeingScore, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>/10</Text></Text>
+                    <StandardContainer variant="nested" style={[styles.inlineWellbeingCard, { borderColor: theme.colors.border }]}>
+                      <Text style={[styles.inlineMoodLabel, { color: theme.colors.secondaryText }]}>WELLBEING</Text>
+                      <Text style={[styles.inlineWellbeingScore, { color: theme.colors.primaryText }]}>{structuredInsights.wellbeingScore}<Text style={[styles.inlineWellbeingScore, { color: theme.colors.secondaryText }]}>/10</Text></Text>
                       <View style={styles.inlineWellbeingAdjust}>
                         <TouchableOpacity
                           onPress={async () => {
@@ -880,26 +885,26 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                           <Ionicons name="add-circle-outline" size={20} color={isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : '#6B6B6B'} />
                         </TouchableOpacity>
                       </View>
-                    </View>
+                    </StandardContainer>
                   )}
                 </View>
               )}
               
               {/* Summary */}
               {structuredInsights?.insights_report?.conversationalSummary && (
-                <View style={[styles.inlineBriefingCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+                <StandardContainer variant="nested" style={[styles.inlineBriefingCard, { borderColor: theme.colors.border }]}>
                   <View style={styles.insightHeader}>
                     <Ionicons name="sparkles" size={20} color="#f59e0b" />
                     <Text style={[styles.insightHeaderText, { color: theme.colors.secondaryText }]}>Summary</Text>
                   </View>
-                  <Text style={[styles.inlineBriefingText, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.9)' : '#2C2C2C' }]}>
+                  <Text style={[styles.inlineBriefingText, { color: theme.colors.primaryText }]}>
                     {structuredInsights.insights_report.conversationalSummary
                       .replace(/The user/g, 'You')
                       .replace(/the user/g, 'you')
                       .replace(/their/g, 'your')
                       .replace(/Their/g, 'Your')}
                   </Text>
-                </View>
+                </StandardContainer>
               )}
               
               {/* Structured Insight Cards with Accordions */}

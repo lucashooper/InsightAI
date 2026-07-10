@@ -14,6 +14,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
+import StandardContainer from './StandardContainer';
+import PremiumButton from './PremiumButton';
 
 type LoadingProps = {
   variant: 'loading';
@@ -54,8 +56,6 @@ type Props = {
 } & (LoadingProps | ResultsProps);
 
 const { width } = Dimensions.get('window');
-
-const gradientBg = require('../../public/cool-gradient-bg.png');
 
 export default function ImmersiveAnalysisOverlay(props: Props) {
   const { theme } = useTheme();
@@ -110,16 +110,10 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
 
   return (
     <Animated.View style={[styles.overlay, { opacity }]}>
-      {/* Cool gradient background */}
-      <ImageBackground
-        source={gradientBg}
-        style={styles.background}
-        resizeMode="cover"
-        imageStyle={styles.backgroundImage}
-      >
+      <LinearGradient colors={theme.colors.backgroundGradient as any} style={styles.background}>
         {props.variant === 'loading' ? (
         <View style={styles.center}>
-          <Text style={[styles.loadingText, { color: 'rgba(255, 255, 255, 0.95)' }]}>{props.message}</Text>
+          <Text style={[styles.loadingText, { color: textPrimary }]}>{props.message}</Text>
           <View style={styles.progressTrack}>
             <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
           </View>
@@ -129,11 +123,11 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
         </View>
       ) : (
         <View style={styles.resultsContainer}>
-          <Text style={[styles.resultsTitle, { color: 'rgba(255, 255, 255, 0.98)' }]} numberOfLines={2}>
+          <Text style={[styles.resultsTitle, { color: textPrimary }]} numberOfLines={2}>
             {props.entryTitle ? `"${props.entryTitle}"` : 'New Insights'}
           </Text>
           {props.entryTitle && (
-            <Text style={[styles.resultsSubtitle, { color: 'rgba(255, 255, 255, 0.6)' }]}>Your personal insights</Text>
+            <Text style={[styles.resultsSubtitle, { color: textSecondary }]}>Your personal insights</Text>
           )}
           
           <ScrollView 
@@ -143,23 +137,23 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
           >
             {/* Summary */}
             {props.insights?.insights_report?.conversationalSummary && (
-              <View style={styles.glassmorphicCard}>
+              <StandardContainer variant="nested" style={[styles.glassmorphicCard, { borderColor: cardBorder }]}>
                 <View style={styles.cardHeader}>
                   <Text style={styles.cardHeaderIcon}>📝</Text>
-                  <Text style={[styles.cardHeaderTitle, { color: 'rgba(255, 255, 255, 0.95)' }]}>Summary</Text>
+                  <Text style={[styles.cardHeaderTitle, { color: textPrimary }]}>Summary</Text>
                 </View>
-                <Text style={[styles.summaryText, { color: 'rgba(255, 255, 255, 0.85)' }]}>
+                <Text style={[styles.summaryText, { color: textSecondary }]}>
                   {props.insights.insights_report.conversationalSummary}
                 </Text>
-              </View>
+              </StandardContainer>
             )}
 
             {/* Primary Emotion & Wellbeing Score */}
-            <View style={styles.glassmorphicCard}>
+            <StandardContainer variant="nested" style={[styles.glassmorphicCard, { borderColor: cardBorder }]}>
               <View style={styles.emotionWellbeingRow}>
                 <View style={styles.emotionSection}>
-                  <Text style={[styles.resultsLabel, { color: 'rgba(255, 255, 255, 0.6)' }]}>PRIMARY EMOTION</Text>
-                  <Text style={[styles.resultsValue, { color: 'rgba(255, 255, 255, 0.98)' }]}>
+                  <Text style={[styles.resultsLabel, { color: textTertiary }]}>PRIMARY EMOTION</Text>
+                  <Text style={[styles.resultsValue, { color: textPrimary }]}>
                     {props.insights?.mood_analysis?.primary_emotion || '—'}
                   </Text>
                 </View>
@@ -189,7 +183,7 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
 
                   return (
                     <View style={styles.scoreSection}>
-                      <Text style={[styles.resultsLabel, { color: 'rgba(255, 255, 255, 0.6)' }]}>WELLBEING</Text>
+                      <Text style={[styles.resultsLabel, { color: textTertiary }]}>WELLBEING</Text>
                       <View style={styles.scoreRingContainer}>
                         <Svg width={ringSize} height={ringSize} style={styles.scoreRingSvg}>
                           <Circle
@@ -215,23 +209,23 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
                         </Svg>
                         <View style={styles.scoreRingInner}>
                           <Text style={[styles.scoreText, { color: ringColor }]}>{score}</Text>
-                          <Text style={[styles.scoreMax, { color: 'rgba(255, 255, 255, 0.6)' }]}>/10</Text>
+                          <Text style={[styles.scoreMax, { color: textTertiary }]}>/10</Text>
                         </View>
                       </View>
                       <View style={styles.scoreAdjustRow}>
                         <TouchableOpacity onPress={handleDecrement} style={styles.scoreAdjustBtn} activeOpacity={0.7}>
-                          <Text style={[styles.scoreAdjustText, { color: 'rgba(255, 255, 255, 0.7)' }]}>−</Text>
+                          <Text style={[styles.scoreAdjustText, { color: textSecondary }]}>−</Text>
                         </TouchableOpacity>
-                        <Text style={[styles.scoreAdjustLabel, { color: 'rgba(255, 255, 255, 0.6)' }]}>Adjust</Text>
+                        <Text style={[styles.scoreAdjustLabel, { color: textTertiary }]}>Adjust</Text>
                         <TouchableOpacity onPress={handleIncrement} style={styles.scoreAdjustBtn} activeOpacity={0.7}>
-                          <Text style={[styles.scoreAdjustText, { color: 'rgba(255, 255, 255, 0.7)' }]}>+</Text>
+                          <Text style={[styles.scoreAdjustText, { color: textSecondary }]}>+</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
                   );
                 })()}
               </View>
-            </View>
+            </StandardContainer>
 
             {/* Strengths & Wins Accordion */}
             {(() => {
@@ -243,41 +237,39 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
               
               return (
                 <View style={styles.accordionSection}>
-                  <TouchableOpacity 
-                    style={styles.glassmorphicAccordionHeader}
-                    onPress={() => setStrengthsExpanded(!strengthsExpanded)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.accordionHeaderLeft}>
-                      <Text style={styles.accordionIcon}>✨</Text>
-                      <Text style={[styles.accordionTitle, { color: 'rgba(255, 255, 255, 0.95)' }]}>What's Working</Text>
-                      <View style={styles.accordionBadge}>
-                        <Text style={[styles.accordionBadgeText, { color: 'rgba(255, 255, 255, 0.8)' }]}>{strengthCards.length}</Text>
-                      </View>
-                    </View>
-                    <Text style={[styles.accordionChevron, { color: 'rgba(255, 255, 255, 0.6)' }]}>{strengthsExpanded ? '▼' : '▶'}</Text>
-                  </TouchableOpacity>
-                  
-                  {strengthsExpanded && strengthCards.map((card: any, idx: number) => {
-                    return (
-                      <View key={idx} style={styles.glassmorphicInsightCard}>
-                        <View style={styles.growthCardInner}>
-                          <View style={styles.growthBadge}>
-                            <Text style={[styles.growthBadgeText, { color: 'rgba(255, 255, 255, 0.7)' }]}>
-                              {card.short_label || card.type.toUpperCase()}
-                            </Text>
-                          </View>
-                          <Text style={[styles.insightDescription, { color: 'rgba(255, 255, 255, 0.85)' }]}>
-                            {card.text
-                              .replace(/The user/g, 'You')
-                              .replace(/the user/g, 'you')
-                              .replace(/their/g, 'your')
-                              .replace(/Their/g, 'Your')}
-                          </Text>
+                  <StandardContainer variant="nested" style={[styles.accordionHeaderCard, { borderColor: cardBorder }]}>
+                    <TouchableOpacity
+                      style={styles.accordionHeaderRow}
+                      onPress={() => setStrengthsExpanded(!strengthsExpanded)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.accordionHeaderLeft}>
+                        <Ionicons name="sparkles-outline" size={18} color="#10b981" />
+                        <Text style={[styles.accordionTitle, { color: textPrimary }]}>What's Working</Text>
+                        <View style={[styles.accordionBadge, { backgroundColor: subtleBg }]}>
+                          <Text style={[styles.accordionBadgeText, { color: textSecondary }]}>{strengthCards.length}</Text>
                         </View>
                       </View>
-                    );
-                  })}
+                      <Ionicons name={strengthsExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={textSecondary} />
+                    </TouchableOpacity>
+                  </StandardContainer>
+
+                  {strengthsExpanded && strengthCards.map((card: any, idx: number) => (
+                    <StandardContainer key={idx} variant="nested" style={[styles.insightCard, { borderColor: cardBorder, marginTop: 8 }]}>
+                      <View style={[styles.growthBadge, { backgroundColor: subtleBg }]}>
+                        <Text style={[styles.growthBadgeText, { color: textSecondary }]}>
+                          {card.short_label || card.type.toUpperCase()}
+                        </Text>
+                      </View>
+                      <Text style={[styles.insightDescription, { color: textPrimary }]}>
+                        {card.text
+                          .replace(/The user/g, 'You')
+                          .replace(/the user/g, 'you')
+                          .replace(/their/g, 'your')
+                          .replace(/Their/g, 'Your')}
+                      </Text>
+                    </StandardContainer>
+                  ))}
                 </View>
               );
             })()}
@@ -295,85 +287,80 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
               
               return (
                 <View style={styles.accordionSection}>
-                  <TouchableOpacity 
-                    style={styles.glassmorphicAccordionHeader}
-                    onPress={() => setGrowthExpanded(!growthExpanded)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.accordionHeaderLeft}>
-                      <Text style={styles.accordionIcon}>🌱</Text>
-                      <Text style={[styles.accordionTitle, { color: 'rgba(255, 255, 255, 0.95)' }]}>Patterns to Address</Text>
-                      <View style={styles.accordionBadge}>
-                        <Text style={[styles.accordionBadgeText, { color: 'rgba(255, 255, 255, 0.8)' }]}>{growthCards.length}</Text>
-                      </View>
-                    </View>
-                    <Text style={[styles.accordionChevron, { color: 'rgba(255, 255, 255, 0.6)' }]}>{growthExpanded ? '▼' : '▶'}</Text>
-                  </TouchableOpacity>
-                  
-                  {growthExpanded && growthCards.map((card: any, idx: number) => {
-                    const isGrowth = card.type === 'growth';
-                    return (
-                      <View key={idx} style={styles.glassmorphicInsightCard}>
-                        <View style={styles.growthCardInner}>
-                          <View style={styles.growthBadge}>
-                            <Text style={[styles.growthBadgeText, { color: 'rgba(255, 255, 255, 0.7)' }]}>
-                              {card.short_label || card.type.toUpperCase()}
-                            </Text>
-                          </View>
-                          <Text style={[styles.insightDescription, { color: 'rgba(255, 255, 255, 0.85)' }]}>
-                            {card.text
-                              .replace(/The user/g, 'You')
-                              .replace(/the user/g, 'you')
-                              .replace(/their/g, 'your')
-                              .replace(/Their/g, 'Your')}
-                          </Text>
-                          {addToPlaybook && (
-                            <TouchableOpacity
-                              style={styles.overlayPlaybookBtn}
-                              onPress={() => addToPlaybook(card.text, idx)}
-                              disabled={addingId === `growth-${idx}`}
-                              activeOpacity={0.7}
-                            >
-                              {addingId === `growth-${idx}` ? (
-                                <ActivityIndicator size="small" color="#ffffff" />
-                              ) : (
-                                <>
-                                  <Ionicons name="add-circle-outline" size={16} color="#ffffff" />
-                                  <Text style={styles.overlayPlaybookText}>Add to Playbook</Text>
-                                </>
-                              )}
-                            </TouchableOpacity>
-                          )}
+                  <StandardContainer variant="nested" style={[styles.accordionHeaderCard, { borderColor: cardBorder }]}>
+                    <TouchableOpacity
+                      style={styles.accordionHeaderRow}
+                      onPress={() => setGrowthExpanded(!growthExpanded)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.accordionHeaderLeft}>
+                        <Ionicons name="leaf-outline" size={18} color="#f59e0b" />
+                        <Text style={[styles.accordionTitle, { color: textPrimary }]}>Patterns to Address</Text>
+                        <View style={[styles.accordionBadge, { backgroundColor: subtleBg }]}>
+                          <Text style={[styles.accordionBadgeText, { color: textSecondary }]}>{growthCards.length}</Text>
                         </View>
                       </View>
-                    );
-                  })}
+                      <Ionicons name={growthExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={textSecondary} />
+                    </TouchableOpacity>
+                  </StandardContainer>
+
+                  {growthExpanded && growthCards.map((card: any, idx: number) => (
+                    <StandardContainer key={idx} variant="nested" style={[styles.insightCard, { borderColor: cardBorder, marginTop: 8 }]}>
+                      <View style={[styles.growthBadge, { backgroundColor: subtleBg }]}>
+                        <Text style={[styles.growthBadgeText, { color: textSecondary }]}>
+                          {card.short_label || card.type.toUpperCase()}
+                        </Text>
+                      </View>
+                      <Text style={[styles.insightDescription, { color: textPrimary }]}>
+                        {card.text
+                          .replace(/The user/g, 'You')
+                          .replace(/the user/g, 'you')
+                          .replace(/their/g, 'your')
+                          .replace(/Their/g, 'Your')}
+                      </Text>
+                      {addToPlaybook && (
+                        <TouchableOpacity
+                          style={[styles.overlayPlaybookBtn, { backgroundColor: subtleBg, borderColor: cardBorder }]}
+                          onPress={() => addToPlaybook(card.text, idx)}
+                          disabled={addingId === `growth-${idx}`}
+                          activeOpacity={0.7}
+                        >
+                          {addingId === `growth-${idx}` ? (
+                            <ActivityIndicator size="small" color={textPrimary} />
+                          ) : (
+                            <>
+                              <Ionicons name="add-circle-outline" size={16} color={textPrimary} />
+                              <Text style={[styles.overlayPlaybookText, { color: textPrimary }]}>Add to Playbook</Text>
+                            </>
+                          )}
+                        </TouchableOpacity>
+                      )}
+                    </StandardContainer>
+                  ))}
                 </View>
               );
             })()}
 
             {/* Key Themes */}
             {props.insights?.key_themes && props.insights.key_themes.length > 0 && (
-              <View style={styles.glassmorphicCard}>
+              <StandardContainer variant="nested" style={[styles.glassmorphicCard, { borderColor: cardBorder }]}>
                 <View style={styles.cardHeader}>
-                  <Text style={styles.cardHeaderIcon}>💭</Text>
-                  <Text style={[styles.cardHeaderTitle, { color: 'rgba(255, 255, 255, 0.95)' }]}>Key Themes</Text>
+                  <Ionicons name="chatbubble-outline" size={18} color="#a78bfa" />
+                  <Text style={[styles.cardHeaderTitle, { color: textPrimary }]}>Key Themes</Text>
                 </View>
                 {props.insights.key_themes.slice(0, 3).map((t, idx) => (
-                  <View key={idx} style={styles.themeChip}>
-                    <Text style={styles.themeChipText}>{t.theme}</Text>
+                  <View key={idx} style={[styles.themeChip, { backgroundColor: subtleBg }]}>
+                    <Text style={[styles.themeChipText, { color: textPrimary }]}>{t.theme}</Text>
                   </View>
                 ))}
-              </View>
+              </StandardContainer>
             )}
           </ScrollView>
 
-          <TouchableOpacity onPress={props.onDone} style={styles.doneButton} activeOpacity={0.9}>
-            <Text style={styles.doneText}>Done</Text>
-          </TouchableOpacity>
+          <PremiumButton label="Done" onPress={props.onDone} style={styles.doneButtonWrap} />
         </View>
         )}
-      </ImageBackground>
+      </LinearGradient>
     </Animated.View>
   );
 }
@@ -382,7 +369,6 @@ const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 999,
-    backgroundColor: '#000000',
   },
   background: {
     ...StyleSheet.absoluteFillObject,
@@ -523,44 +509,25 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   glassmorphicCard: {
-    backgroundColor: 'rgba(88, 50, 150, 0.4)',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 0,
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 32,
-    elevation: 8,
-    overflow: 'hidden',
+    padding: 16,
+    marginBottom: 12,
   },
-  glassmorphicAccordionHeader: {
+  doneButtonWrap: {
+    marginTop: 8,
+    marginBottom: 24,
+  },
+  accordionHeaderCard: {
+    padding: 0,
+    marginBottom: 0,
+  },
+  accordionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 18,
-    borderRadius: 16,
-    backgroundColor: 'rgba(88, 50, 150, 0.4)',
-    borderWidth: 0,
-    marginBottom: 12,
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 6,
-  },
-  glassmorphicInsightCard: {
-    backgroundColor: 'rgba(88, 50, 150, 0.35)',
-    borderRadius: 12,
     padding: 16,
-    marginBottom: 12,
-    borderWidth: 0,
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 4,
+  },
+  insightCard: {
+    padding: 16,
   },
   accordionSection: {
     marginBottom: 14,
@@ -836,11 +803,10 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 20,
-    backgroundColor: '#8b5cf6',
+    borderWidth: 1,
   },
   overlayPlaybookText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#ffffff',
   },
 });

@@ -11,12 +11,8 @@ export default function AppearanceScreen({ navigation }: any) {
   const { theme, themeName, setTheme } = useTheme();
 
   const themes = [
-    { id: 'light', name: 'Light', description: 'Classic light theme' },
+    { id: 'light', name: 'Light', description: 'Bright and clean' },
     { id: 'dark', name: 'Dark', description: 'Easy on the eyes' },
-    { id: 'sunset', name: 'Sunset', description: 'Warm and cozy' },
-    { id: 'vibrant', name: 'Vibrant', description: 'Bold and energetic' },
-    { id: 'ocean', name: 'Ocean', description: 'Cool and calm' },
-    { id: 'midnight', name: 'Midnight', description: 'Deep and focused' },
   ];
 
   const handleThemeSelect = (themeId: string) => {

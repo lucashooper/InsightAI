@@ -10,6 +10,7 @@ import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { usePreloadedData } from '../contexts/PreloadContext';
 import { supabase } from '../lib/supabase';
 import { sf } from '../utils/responsive';
+import StandardContainer from '../components/shared/StandardContainer';
 
 function resolveProfilePictureUrl(raw: string | null | undefined): string | null {
   if (!raw || typeof raw !== 'string') return null;
@@ -242,11 +243,8 @@ export default function ProfileScreen({ navigation }: any) {
   );
 
   const renderMenuItem = (icon: string, title: string, subtitle?: string, onPress?: () => void, showChevron = true) => (
-    <TouchableOpacity
-      style={[styles.menuItem, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
+    <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+      <StandardContainer variant="nested" style={[styles.menuItem, { borderColor: theme.colors.border }]}>
       <View style={styles.menuItemContent}>
         <Ionicons name={icon as any} size={20} color={theme.colors.primaryText} style={styles.menuIcon} />
         <View style={styles.menuTextContainer}>
@@ -255,6 +253,7 @@ export default function ProfileScreen({ navigation }: any) {
         </View>
         {showChevron && <Ionicons name="chevron-forward" size={20} color={theme.colors.secondaryText} />}
       </View>
+      </StandardContainer>
     </TouchableOpacity>
   );
 
@@ -269,10 +268,10 @@ export default function ProfileScreen({ navigation }: any) {
 
         {/* Profile Card - Clickable */}
         <TouchableOpacity
-          style={[styles.profileCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
           onPress={() => navigation.navigate('EditProfile')}
           activeOpacity={0.7}
         >
+          <StandardContainer style={[styles.profileCard, { borderColor: theme.colors.border }]}>
           <View style={styles.profileContent}>
             {userProfile?.profile_picture_url && !imageLoadError ? (
               <Image
@@ -302,6 +301,7 @@ export default function ProfileScreen({ navigation }: any) {
             </View>
             <Ionicons name="chevron-forward" size={20} color={theme.colors.secondaryText} />
           </View>
+          </StandardContainer>
         </TouchableOpacity>
 
         {/* Account Section */}
@@ -409,13 +409,11 @@ const styles = StyleSheet.create({
   },
   menuSection: {
     marginBottom: 24,
-    borderRadius: 12,
-    overflow: 'hidden',
+    gap: 10,
   },
   menuItem: {
     paddingVertical: 16,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
   },
   menuItemContent: {
     flexDirection: 'row',

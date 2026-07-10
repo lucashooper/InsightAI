@@ -21,6 +21,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePreloadedData } from '../contexts/PreloadContext';
 import StandardContainer from '../components/shared/StandardContainer';
+import AuroraOrb from '../components/shared/AuroraOrb';
 import FirstTimeIntroOverlay from '../components/FirstTimeIntroOverlay';
 import PinnedRoutineCard from '../components/dashboard/PinnedRoutineCard';
 import PlaybookQuickAccessCard from '../components/dashboard/PlaybookQuickAccessCard';
@@ -28,7 +29,6 @@ import { isTablet, sf, ss, si, iPadContentStyle } from '../utils/responsive';
 import { getTodayPrompt, DailyPrompt } from '../data/dailyPrompts';
 // Temporarily disabled for Expo Go testing
 // import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
-const orbImage = require('../public/InsightAI-Orb.png');
 const insightLogo = require('../public/Insight-Logo-nobg.webp');
 
 const { width } = Dimensions.get('window');
@@ -43,7 +43,6 @@ export default function DashboardScreenNew() {
   const { user } = useAuth();
   const { theme } = useTheme();
   const { data: preloaded, refreshNotes } = usePreloadedData();
-  const rotateAnim = useRef(new Animated.Value(0)).current;
   const [orbImageLoaded, setOrbImageLoaded] = useState(true);
   const navigation = useNavigation<any>();
   const [loading, setLoading] = useState(true);
@@ -65,11 +64,6 @@ export default function DashboardScreenNew() {
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [showIntroOverlay, setShowIntroOverlay] = useState(false);
   const [dailyPrompt] = useState<DailyPrompt>(getTodayPrompt());
-  const [patternsToAddress, setPatternsToAddress] = useState<any[]>([]);
-  const [whatsWorking, setWhatsWorking] = useState<any[]>([]);
-  const [patternsExpanded, setPatternsExpanded] = useState(false);
-  const [workingExpanded, setWorkingExpanded] = useState(false);
-  const [allNotes, setAllNotes] = useState<any[]>([]);
 
   // Use preloaded data immediately on mount — no network fetch needed
   useEffect(() => {
@@ -85,21 +79,22 @@ export default function DashboardScreenNew() {
     }
   }, [preloaded.isLoaded]);
 
-  // Reload username from cache when screen comes into focus (instant Settings updates)
+  // Reload username and profile picture from cache when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      const refreshName = async () => {
+      const refreshProfile = async () => {
         if (!user?.id) return;
-        // Use user-specific cache key to match EditProfileScreen
         const cachedName = await AsyncStorage.getItem(`CACHED_USERNAME_${user.id}`);
-        console.log('[DashboardNew] Refreshing username from cache:', cachedName);
+        const cachedPfp = await AsyncStorage.getItem(`CACHED_PROFILE_PICTURE_${user.id}`);
         if (cachedName && cachedName !== userName) {
-          console.log('[DashboardNew] Updating userName from', userName, 'to', cachedName);
           setUserName(cachedName);
         }
+        if (cachedPfp) {
+          setProfilePicture(cachedPfp);
+        }
       };
-      refreshName();
-    }, [user?.id, userName])
+      refreshProfile();
+    }, [user?.id])
   );
 
   // Also refresh notes in background on focus
@@ -111,11 +106,13 @@ export default function DashboardScreenNew() {
     }, [])
   );
 
-  // When preloaded notes update (e.g. from background refresh), reprocess
+  // When preloaded notes update, debounce reprocessing to avoid blocking tab navigation
   useEffect(() => {
-    if (preloaded.notes && preloaded.notes.length > 0) {
-      processDashboardFromNotes(preloaded.notes);
-    }
+    if (!preloaded.notes || preloaded.notes.length === 0) return;
+    const timer = setTimeout(() => {
+      processDashboardFromNotes(preloaded.notes!);
+    }, 200);
+    return () => clearTimeout(timer);
   }, [preloaded.notes]);
 
   const checkFirstTimeUser = async () => {
@@ -143,7 +140,7 @@ export default function DashboardScreenNew() {
                   text: 'Add Email',
                   onPress: () => {
                     // Navigate to email signup
-                    navigation.navigate('Settings');
+                    navigation.navigate('Profile');
                   }
                 },
                 {
@@ -182,17 +179,6 @@ export default function DashboardScreenNew() {
     }
   };
 
-  useEffect(() => {
-    // Subtle slow rotation animation (45s cycle)
-    Animated.loop(
-      Animated.timing(rotateAnim, {
-        toValue: 1,
-        duration: 45000,
-        useNativeDriver: true,
-      })
-    ).start();
-  }, []);
-
   const loadUserProfile = async () => {
     if (!user) return;
     try {
@@ -230,7 +216,6 @@ export default function DashboardScreenNew() {
   const processDashboardFromNotes = (notes: any[]) => {
     try {
       const limited = notes.slice(0, 30);
-      setAllNotes(limited);
 
       // Calculate emotional state from recent entries
       if (limited.length > 0) {
@@ -263,9 +248,6 @@ export default function DashboardScreenNew() {
           }
         });
         setRecentPatterns(patterns.slice(0, 3));
-
-        // Load patterns to address and what's working
-        loadPatternsData(limited);
       }
 
       // Calculate streak
@@ -292,174 +274,6 @@ export default function DashboardScreenNew() {
       setStreak(streakCount);
     } catch (error) {
       console.error('Error processing dashboard notes:', error);
-    }
-  };
-
-  // --- Smart semantic grouping helpers ---
-  const STOP_WORDS_HOME = new Set([
-    'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
-    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
-    'should', 'may', 'might', 'can', 'shall', 'to', 'of', 'in', 'for',
-    'on', 'with', 'at', 'by', 'from', 'as', 'into', 'about', 'between',
-    'through', 'during', 'before', 'after', 'and', 'but', 'or', 'not',
-    'no', 'so', 'if', 'then', 'than', 'too', 'very', 'just', 'also',
-    'more', 'most', 'some', 'any', 'all', 'each', 'every', 'this', 'that',
-    'these', 'those', 'it', 'its', 'you', 'your', 'yours', 'i', 'my',
-    'me', 'we', 'our', 'they', 'their', 'them', 'he', 'she', 'his', 'her',
-    'what', 'which', 'who', 'whom', 'how', 'when', 'where', 'why',
-    'up', 'out', 'off', 'over', 'under', 'again', 'further', 'once',
-    'here', 'there', 'both', 'few', 'own', 'same', 'other', 'such',
-    'only', 'still', 'get', 'got', 'make', 'made', 'take', 'try',
-    'need', 'want', 'like', 'know', 'think', 'feel', 'keep', 'let',
-    'begin', 'seem', 'help', 'show', 'tend', 'able', 'way', 'well',
-    'even', 'new', 'now', 'one', 'two', 'really', 'often', 'much',
-  ]);
-
-  const extractKw = (text: string): string[] =>
-    text.toLowerCase().replace(/[^a-z0-9\s-]/g, '').split(/\s+/).filter(w => w.length > 2 && !STOP_WORDS_HOME.has(w));
-
-  const kwSimilarity = (a: string[], b: string[]): number => {
-    if (a.length === 0 || b.length === 0) return 0;
-    const setA = new Set(a); const setB = new Set(b);
-    let shared = 0; setA.forEach(w => { if (setB.has(w)) shared++; });
-    const union = new Set([...a, ...b]).size;
-    return union > 0 ? shared / union : 0;
-  };
-
-  const personalizeText = (text: string) => {
-    const t = text
-      .replace(/The user/g, 'You').replace(/the user/g, 'you')
-      .replace(/their /g, 'your ').replace(/Their /g, 'Your ')
-      .replace(/they /g, 'you ').replace(/They /g, 'You ');
-    return t.charAt(0).toUpperCase() + t.slice(1);
-  };
-
-  const groupBySimHome = (items: Array<{ text: string; entryId: string; originLabel: string; date: string }>, threshold = 0.2) => {
-    const groups: Array<{ texts: string[]; entryIds: string[]; originLabels: string[]; dates: string[]; keywords: string[] }> = [];
-    items.forEach(item => {
-      const keywords = extractKw(item.text);
-      let bestIdx = -1, bestSim = 0;
-      for (let i = 0; i < groups.length; i++) {
-        const sim = kwSimilarity(keywords, groups[i].keywords);
-        if (sim > bestSim && sim >= threshold) { bestSim = sim; bestIdx = i; }
-      }
-      if (bestIdx >= 0) {
-        const g = groups[bestIdx];
-        g.texts.push(personalizeText(item.text));
-        if (!g.entryIds.includes(item.entryId)) g.entryIds.push(item.entryId);
-        if (item.originLabel && !g.originLabels.includes(item.originLabel)) g.originLabels.push(item.originLabel);
-        g.dates.push(item.date);
-        keywords.forEach(k => { if (!g.keywords.includes(k)) g.keywords.push(k); });
-      } else {
-        groups.push({
-          texts: [personalizeText(item.text)],
-          entryIds: [item.entryId],
-          originLabels: item.originLabel ? [item.originLabel] : [],
-          dates: [item.date],
-          keywords,
-        });
-      }
-    });
-    return groups;
-  };
-
-  const pickTitle = (texts: string[]): string => {
-    const short = texts.filter(t => t.length < 60 && !t.includes('. '));
-    if (short.length > 0) return short.sort((a, b) => b.length - a.length)[0];
-    const longest = texts.sort((a, b) => b.length - a.length)[0];
-    const first = longest.split(/\.\s/)[0];
-    return first.length > 80 ? first.substring(0, 77) + '...' : first;
-  };
-
-  const pickDesc = (texts: string[]): string | null => {
-    const actionWords = ['try', 'consider', 'practice', 'establish', 'set', 'create', 'build', 'develop', 'focus', 'start', 'work', 'take', 'make', 'explore', 'reflect'];
-    const desc = texts.filter(t => t.length > 50).sort((a, b) => {
-      const aS = actionWords.filter(w => a.toLowerCase().includes(w)).length;
-      const bS = actionWords.filter(w => b.toLowerCase().includes(w)).length;
-      return bS - aS || b.length - a.length;
-    });
-    if (desc.length > 0) return desc[0].length > 120 ? desc[0].substring(0, 120) + '...' : desc[0];
-    return null;
-  };
-
-  const loadPatternsData = (notes: any[]) => {
-    try {
-      const rawPatterns: Array<{ text: string; entryId: string; originLabel: string; date: string }> = [];
-      const rawStrengths: Array<{ text: string; entryId: string; originLabel: string; date: string }> = [];
-
-      console.log('[Home:Patterns] Processing', notes.length, 'notes for patterns');
-
-      notes.forEach(n => {
-        if (!n.ai_structured_insights) return;
-        const insights = n.ai_structured_insights;
-        const entryTitle = n.title || 'Untitled Entry';
-        const entryDate = new Date(n.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-        const originLabel = entryTitle.length > 50 ? entryTitle.substring(0, 47) + '...' : entryTitle;
-
-        const addP = (text: string) => { if (text && text !== '{}' && text.length >= 5) rawPatterns.push({ text: text.substring(0, 300), entryId: n.id, originLabel, date: entryDate }); };
-        const addS = (text: string) => { if (text && text !== '{}' && text.length >= 5) rawStrengths.push({ text: text.substring(0, 300), entryId: n.id, originLabel, date: entryDate }); };
-
-        // === AREAS TO IMPROVE / PATTERNS TO ADDRESS ===
-        if (insights.progress_indicators?.areas_for_growth) {
-          (Array.isArray(insights.progress_indicators.areas_for_growth) ? insights.progress_indicators.areas_for_growth : []).forEach((a: any) => addP(typeof a === 'string' ? a : String(a.description || a.area || JSON.stringify(a))));
-        }
-        if (insights.coping_strategies?.suggested) {
-          (Array.isArray(insights.coping_strategies.suggested) ? insights.coping_strategies.suggested : []).forEach((s: any) => addP(typeof s === 'string' ? s : String(s.strategy || s.description || JSON.stringify(s))));
-        }
-        if (insights.insights_report?.insightCards) {
-          (Array.isArray(insights.insights_report.insightCards) ? insights.insights_report.insightCards : []).forEach((c: any) => {
-            if (c.type === 'growth' || c.type === 'reflection') addP(typeof c === 'string' ? c : String(c.text || c.description || ''));
-          });
-        }
-        if (Array.isArray(insights.thought_patterns)) {
-          insights.thought_patterns.forEach((tp: any) => addP(typeof tp === 'string' ? tp : String(tp.pattern || tp.description || '')));
-        }
-
-        // === WHAT'S WORKING / STRENGTHS ===
-        if (insights.progress_indicators?.positive_signals) {
-          (Array.isArray(insights.progress_indicators.positive_signals) ? insights.progress_indicators.positive_signals : []).forEach((s: any) => addS(typeof s === 'string' ? s : String(s.description || JSON.stringify(s))));
-        }
-        if (insights.insights_report?.insightCards) {
-          (Array.isArray(insights.insights_report.insightCards) ? insights.insights_report.insightCards : []).forEach((c: any) => {
-            if (c.type === 'strength' || c.type === 'win') addS(typeof c === 'string' ? c : String(c.text || c.description || ''));
-          });
-        }
-        if (insights.coping_strategies?.current) {
-          (Array.isArray(insights.coping_strategies.current) ? insights.coping_strategies.current : []).forEach((c: any) => addS(typeof c === 'string' ? c : String(c.strategy || c.description || JSON.stringify(c))));
-        }
-      });
-
-      // Smart grouping
-      const pGroups = groupBySimHome(rawPatterns, 0.2);
-      const sGroups = groupBySimHome(rawStrengths, 0.2);
-
-      const patterns = pGroups.map((g, i) => {
-        const title = pickTitle(g.texts);
-        const description = g.texts.length > 1 ? pickDesc(g.texts.filter(t => t !== title)) : null;
-        return {
-          id: `pattern_${i}`, text: title, description: description && description !== title ? description : null,
-          priority: g.entryIds.length >= 3 ? 'HIGH' : g.entryIds.length >= 2 ? 'MEDIUM' : 'LOW',
-          category: 'GROWTH', date: g.dates[0], entryTitle: g.originLabels[0] || '', entryId: g.entryIds[0],
-          count: g.entryIds.length, rawCount: g.texts.length,
-        };
-      }).sort((a, b) => b.count - a.count || b.rawCount - a.rawCount).slice(0, 10);
-
-      const strengths = sGroups.map((g, i) => {
-        const title = pickTitle(g.texts);
-        const description = g.texts.length > 1 ? pickDesc(g.texts.filter(t => t !== title)) : null;
-        return {
-          id: `strength_${i}`, text: title, description: description && description !== title ? description : null,
-          category: 'STRENGTH', date: g.dates[0], entryTitle: g.originLabels[0] || '', entryId: g.entryIds[0],
-          count: g.entryIds.length, rawCount: g.texts.length,
-        };
-      }).sort((a, b) => b.count - a.count || b.rawCount - a.rawCount).slice(0, 8);
-
-      console.log('[Home:Patterns] Grouped:', patterns.length, 'from', rawPatterns.length, 'raw;', strengths.length, 'from', rawStrengths.length, 'raw');
-
-      setPatternsToAddress(patterns);
-      setWhatsWorking(strengths);
-    } catch (error) {
-      console.error('[Home:Patterns] Error:', error);
     }
   };
 
@@ -668,15 +482,30 @@ export default function DashboardScreenNew() {
             <Image source={insightLogo} style={styles.headerLogo} resizeMode="contain" />
             <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>Insight</Text>
           </View>
-          <TouchableOpacity 
-            onPress={() => setShowStreakModal(true)}
-            activeOpacity={0.7}
-          >
-            <View style={[styles.streakInline, !isDarkTheme(theme.name) && { backgroundColor: '#FFFFFF', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16, borderWidth: 1, borderColor: '#E8E5DC', shadowColor: 'rgba(139, 92, 70, 0.08)', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 8 }]}>
-              <Text style={[styles.streakEmoji, { fontSize: !isDarkTheme(theme.name) ? 16 : 18 }]}>🔥</Text>
-              <Text style={[styles.streakCount, { color: theme.colors.primaryText, fontSize: 14, fontWeight: !isDarkTheme(theme.name) ? '700' : '600' }]}>{streak > 0 ? streak : '-'}</Text>
-            </View>
-          </TouchableOpacity>
+          <View style={styles.headerIcons}>
+            <TouchableOpacity 
+              onPress={() => setShowStreakModal(true)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.streakInline, !isDarkTheme(theme.name) && { backgroundColor: '#FFFFFF', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16, borderWidth: 1, borderColor: '#E8E5DC', shadowColor: 'rgba(139, 92, 70, 0.08)', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 8 }]}>
+                <Text style={[styles.streakEmoji, { fontSize: !isDarkTheme(theme.name) ? 16 : 18 }]}>🔥</Text>
+                <Text style={[styles.streakCount, { color: theme.colors.primaryText, fontSize: 14, fontWeight: !isDarkTheme(theme.name) ? '700' : '600' }]}>{streak > 0 ? streak : '-'}</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Profile')}
+              activeOpacity={0.7}
+              accessibilityLabel="Open profile"
+            >
+              {profilePicture && (profilePicture.startsWith('http://') || profilePicture.startsWith('https://')) ? (
+                <Image source={{ uri: profilePicture }} style={styles.profilePicture} resizeMode="cover" />
+              ) : (
+                <View style={[styles.profilePlaceholder, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.06)' }]}>
+                  <Ionicons name="person" size={20} color={theme.colors.secondaryText} />
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Orb Section with Centered Greeting — taps to AI Chat */}
@@ -685,29 +514,17 @@ export default function DashboardScreenNew() {
           onPress={() => navigation.navigate('AIChat')}
           activeOpacity={0.85}
         >
-          <Animated.Image 
-            source={orbImage} 
-            style={[
-              styles.orbImage,
-              {
-                transform: [{
-                  rotate: rotateAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ['0deg', '360deg']
-                  })
-                }]
-              }
-            ]}
-            resizeMode="contain"
+          <AuroraOrb
+            size={isTablet ? 600 : 340}
+            isDark={isDarkTheme(theme.name)}
+            style={[styles.orbImage, { left: (width - (isTablet ? 600 : 340)) / 2 }]}
           />
           <View style={styles.greetingInOrb}>
             <Text style={[styles.greetingText, { 
-              color: '#FFFFFF',
-              textShadowColor: !isDarkTheme(theme.name) ? 'rgba(0, 0, 0, 0.15)' : 'transparent',
+              color: isDarkTheme(theme.name) ? '#FFFFFF' : '#2A2140',
+              textShadowColor: !isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.25)',
               textShadowOffset: { width: 0, height: 1 },
-              textShadowRadius: 3,
-              fontWeight: '400',
-              letterSpacing: 0.5
+              textShadowRadius: 8,
             }]}>
               Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}{userName && userName !== 'there' ? `,\n${userName.charAt(0).toUpperCase() + userName.slice(1)}` : ''}
             </Text>
@@ -724,12 +541,14 @@ export default function DashboardScreenNew() {
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={['rgba(139, 92, 246, 0.5)', 'rgba(124, 58, 237, 0.4)']}
+                colors={['#a78bfa', '#8b5cf6', '#7c3aed']}
+                start={{ x: 0.15, y: 0 }}
+                end={{ x: 0.85, y: 1 }}
                 style={styles.glassmorphicButton}
               >
-                <LinearGradient colors={["rgba(255,255,255,0.22)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.8,y:1}} style={styles.innerHighlight} pointerEvents="none" />
+                <LinearGradient colors={["rgba(255,255,255,0.38)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.75,y:0.9}} style={styles.innerHighlight} pointerEvents="none" />
                 <View style={styles.iconWrap}>
-                  <Ionicons name="create-outline" size={si(24)} color="rgba(255, 255, 255, 0.98)" />
+                  <Ionicons name="create-outline" size={si(24)} color="#ffffff" />
                 </View>
               </LinearGradient>
             </TouchableOpacity>
@@ -744,12 +563,14 @@ export default function DashboardScreenNew() {
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={isRecording ? ['rgba(239, 68, 68, 0.5)', 'rgba(220, 38, 38, 0.4)'] : ['rgba(139, 92, 246, 0.5)', 'rgba(124, 58, 237, 0.4)']}
+                colors={isRecording ? ['#f87171', '#ef4444', '#dc2626'] : ['#a78bfa', '#8b5cf6', '#7c3aed']}
+                start={{ x: 0.15, y: 0 }}
+                end={{ x: 0.85, y: 1 }}
                 style={styles.glassmorphicButton}
               >
-                <LinearGradient colors={["rgba(255,255,255,0.22)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.8,y:1}} style={styles.innerHighlight} pointerEvents="none" />
+                <LinearGradient colors={["rgba(255,255,255,0.38)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.75,y:0.9}} style={styles.innerHighlight} pointerEvents="none" />
                 <View style={styles.iconWrap}>
-                  <Ionicons name={isRecording ? "mic" : "mic-outline"} size={si(24)} color="rgba(255, 255, 255, 0.98)" />
+                  <Ionicons name={isRecording ? "mic" : "mic-outline"} size={si(24)} color="#ffffff" />
                 </View>
               </LinearGradient>
             </TouchableOpacity>
@@ -763,12 +584,14 @@ export default function DashboardScreenNew() {
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={['rgba(139, 92, 246, 0.5)', 'rgba(124, 58, 237, 0.4)']}
+                colors={['#a78bfa', '#8b5cf6', '#7c3aed']}
+                start={{ x: 0.15, y: 0 }}
+                end={{ x: 0.85, y: 1 }}
                 style={styles.glassmorphicButton}
               >
-                <LinearGradient colors={["rgba(255,255,255,0.22)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.8,y:1}} style={styles.innerHighlight} pointerEvents="none" />
+                <LinearGradient colors={["rgba(255,255,255,0.38)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.75,y:0.9}} style={styles.innerHighlight} pointerEvents="none" />
                 <View style={styles.iconWrap}>
-                  <Ionicons name="scan-outline" size={si(24)} color="rgba(255, 255, 255, 0.98)" />
+                  <Ionicons name="scan-outline" size={si(24)} color="#ffffff" />
                 </View>
               </LinearGradient>
             </TouchableOpacity>
@@ -790,37 +613,38 @@ export default function DashboardScreenNew() {
           <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>Today's insights</Text>
           {!hasEntryToday ? (
             <TouchableOpacity 
-              style={[styles.insightCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
               onPress={() => navigation.navigate('CreateEntry')}
               activeOpacity={0.7}
             >
+              <StandardContainer style={[styles.insightCard, { borderColor: theme.colors.border }]}>
               <View style={styles.insightHeader}>
-                <Ionicons name="create-outline" size={24} color={theme.colors.primary} />
+                <Ionicons name="create-outline" size={24} color={theme.colors.secondaryText} />
                 <Text style={[styles.insightTitle, { color: theme.colors.primaryText, fontSize: sf(18) }]}>No check-in yet</Text>
               </View>
               <Text style={[styles.insightText, { color: theme.colors.secondaryText }]}>Write now to unlock insights</Text>
               <View style={styles.ctaArrow}>
                 <Ionicons name="arrow-forward" size={20} color={theme.colors.tertiaryText} />
               </View>
+              </StandardContainer>
             </TouchableOpacity>
           ) : todayInsights.length > 0 ? (
             todayInsights.map((insight, index) => (
-              <View key={index} style={[styles.insightCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+              <StandardContainer key={index} style={[styles.insightCard, { borderColor: theme.colors.border }]}>
                 <View style={styles.insightHeader}>
                   <Ionicons name={insight.icon as any} size={20} color={insight.iconColor} />
                   <Text style={[styles.insightTitle, { color: theme.colors.primaryText }]}>{insight.title}</Text>
                 </View>
                 <Text style={[styles.insightText, { color: theme.colors.secondaryText }]}>{insight.description}</Text>
-              </View>
+              </StandardContainer>
             ))
           ) : (
-            <View style={[styles.insightCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+            <StandardContainer style={[styles.insightCard, { borderColor: theme.colors.border }]}>
               <View style={styles.insightHeader}>
                 <Ionicons name="checkmark-circle" size={20} color={theme.colors.success} />
                 <Text style={[styles.insightTitle, { color: theme.colors.primaryText }]}>Great start!</Text>
               </View>
               <Text style={[styles.insightText, { color: theme.colors.secondaryText }]}>You've journaled today. Keep it up!</Text>
-            </View>
+            </StandardContainer>
           )}
         </View>
 
@@ -828,10 +652,10 @@ export default function DashboardScreenNew() {
         <View style={styles.challengesSection}>
           <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>Today's prompt</Text>
           <TouchableOpacity
-            style={[styles.insightCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
             onPress={() => navigation.navigate('PromptEntry', { promptText: dailyPrompt.prompt + (dailyPrompt.followUp ? `\n\n${dailyPrompt.followUp}` : '') })}
             activeOpacity={0.7}
           >
+            <StandardContainer style={[styles.insightCard, { borderColor: theme.colors.border }]}>
             <View style={styles.insightHeader}>
               <Text style={{ fontSize: 22 }}>{dailyPrompt.emoji}</Text>
               <View style={{ flex: 1, marginLeft: 4 }}>
@@ -842,12 +666,9 @@ export default function DashboardScreenNew() {
               </View>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
-              <LinearGradient
-                colors={['#8b5cf6', '#7c3aed']}
-                style={{ paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20 }}
-              >
-                <Text style={{ color: '#ffffff', fontSize: sf(13), fontWeight: '600' }}>Start writing →</Text>
-              </LinearGradient>
+              <View style={[styles.compactCta, { borderColor: theme.colors.border, backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
+                <Text style={[styles.compactCtaText, { color: theme.colors.primaryText }]}>Start writing →</Text>
+              </View>
               <View
                 style={{
                   marginLeft: 12,
@@ -872,6 +693,7 @@ export default function DashboardScreenNew() {
                 </Text>
               </View>
             </View>
+            </StandardContainer>
           </TouchableOpacity>
         </View>
 
@@ -880,11 +702,8 @@ export default function DashboardScreenNew() {
           <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>
             Suggested for you
           </Text>
-          <TouchableOpacity 
-            style={[styles.challengeCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
-            onPress={() => navigation.navigate('Meditation')}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity onPress={() => navigation.navigate('Meditation')} activeOpacity={0.7}>
+            <StandardContainer style={[styles.challengeCard, { borderColor: theme.colors.border }]}>
             <View style={styles.challengeContent}>
               <Text style={styles.challengeEmoji}>🧘</Text>
               <View style={styles.challengeInfo}>
@@ -893,12 +712,10 @@ export default function DashboardScreenNew() {
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
+            </StandardContainer>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.challengeCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
-            onPress={() => navigation.navigate('Gratitude')}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity onPress={() => navigation.navigate('Gratitude')} activeOpacity={0.7}>
+            <StandardContainer style={[styles.challengeCard, { borderColor: theme.colors.border }]}>
             <View style={styles.challengeContent}>
               <Text style={styles.challengeEmoji}>📝</Text>
               <View style={styles.challengeInfo}>
@@ -907,12 +724,10 @@ export default function DashboardScreenNew() {
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
+            </StandardContainer>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.challengeCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
-            onPress={() => navigation.navigate('AmbientSounds')}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity onPress={() => navigation.navigate('AmbientSounds')} activeOpacity={0.7}>
+            <StandardContainer style={[styles.challengeCard, { borderColor: theme.colors.border }]}>
             <View style={styles.challengeContent}>
               <Text style={styles.challengeEmoji}>🌧️</Text>
               <View style={styles.challengeInfo}>
@@ -921,12 +736,10 @@ export default function DashboardScreenNew() {
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
+            </StandardContainer>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.challengeCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
-            onPress={() => navigation.navigate('Explore')}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity onPress={() => navigation.navigate('Explore')} activeOpacity={0.7}>
+            <StandardContainer style={[styles.challengeCard, { borderColor: theme.colors.border }]}>
             <View style={styles.challengeContent}>
               <Text style={styles.challengeEmoji}>🔍</Text>
               <View style={styles.challengeInfo}>
@@ -935,12 +748,10 @@ export default function DashboardScreenNew() {
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
+            </StandardContainer>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.challengeCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
-            onPress={() => navigation.navigate('Todo')}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity onPress={() => navigation.navigate('Todo')} activeOpacity={0.7}>
+            <StandardContainer style={[styles.challengeCard, { borderColor: theme.colors.border }]}>
             <View style={styles.challengeContent}>
               <Text style={styles.challengeEmoji}>✅</Text>
               <View style={styles.challengeInfo}>
@@ -949,6 +760,7 @@ export default function DashboardScreenNew() {
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
+            </StandardContainer>
           </TouchableOpacity>
         </View>
 
@@ -1118,14 +930,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   profilePicture: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   profilePlaceholder: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1147,11 +959,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   greetingText: {
-    fontSize: isTablet ? 52 : 28,
-    fontWeight: '600',
-    letterSpacing: 1.2,
+    fontSize: isTablet ? 58 : 34,
+    fontWeight: '700',
+    letterSpacing: isTablet ? -0.6 : -0.4,
     textAlign: 'center',
-    lineHeight: isTablet ? 62 : 36,
+    lineHeight: isTablet ? 68 : 42,
   },
   iconButton: {
     width: isTablet ? 56 : 44,
@@ -1173,10 +985,8 @@ const styles = StyleSheet.create({
     top: 180,
   },
   orbImage: {
-    width: isTablet ? 580 : 320,
-    height: isTablet ? 580 : 320,
     position: 'absolute',
-    top: isTablet ? 30 : 20,
+    top: isTablet ? 20 : 10,
   },
   orbContent: {
     alignItems: 'center',
@@ -1244,21 +1054,22 @@ const styles = StyleSheet.create({
     width: isTablet ? 88 : 64,
     height: isTablet ? 88 : 64,
     borderRadius: isTablet ? 44 : 32,
-    overflow: 'hidden',
     shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 18,
+    elevation: 12,
   },
   glassmorphicButton: {
     width: '100%',
     height: '100%',
-    borderRadius: 32,
+    borderRadius: isTablet ? 44 : 32,
     overflow: 'hidden',
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.28)',
   },
   blurFallback: {
     ...StyleSheet.absoluteFillObject,
@@ -1375,8 +1186,6 @@ const styles = StyleSheet.create({
   },
   insightCard: {
     padding: isTablet ? 20 : 16,
-    borderRadius: isTablet ? 16 : 12,
-    borderWidth: 1,
     marginTop: 12,
   },
   insightHeader: {
@@ -1402,9 +1211,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: isTablet ? 20 : 16,
-    borderRadius: isTablet ? 16 : 12,
-    borderWidth: 1,
     marginTop: 12,
+  },
+  compactCta: {
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  compactCtaText: {
+    fontSize: sf(13),
+    fontWeight: '600',
   },
   challengeContent: {
     flexDirection: 'row',
@@ -1417,6 +1234,7 @@ const styles = StyleSheet.create({
   },
   challengeInfo: {
     flex: 1,
+    minWidth: 0,
   },
   challengeTitle: {
     fontSize: sf(17),

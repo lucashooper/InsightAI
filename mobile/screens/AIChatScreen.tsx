@@ -16,6 +16,7 @@ import {
   LayoutAnimation,
   UIManager,
   Image,
+  InteractionManager,
 } from 'react-native';
 
 // Enable LayoutAnimation on Android
@@ -32,7 +33,7 @@ import { mobileAiService } from '../services/mobileAiService';
 import { sf } from '../utils/responsive';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
-import Purchases from 'react-native-purchases';
+import { getCachedChatSuggestions, setCachedChatSuggestions } from '../utils/chatSuggestionsCache';
 
 const CHAT_HISTORY_KEY_PREFIX = 'AI_CHAT_HISTORY_';
 const AI_PERSONALITY_KEY = 'AI_PERSONALITY';
@@ -74,7 +75,9 @@ export default function AIChatScreen({ navigation }: any) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<string[]>(() =>
+    user?.id ? getCachedChatSuggestions(user.id) : [],
+  );
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [profilePictureError, setProfilePictureError] = useState(false);
@@ -89,34 +92,52 @@ export default function AIChatScreen({ navigation }: any) {
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
   const typingRef = useRef<{ timer: NodeJS.Timeout | null; cancelled: boolean }>({ timer: null, cancelled: false });
+  const initRef = useRef(0);
+  const getChatHistoryKey = useCallback(
+    () => `${CHAT_HISTORY_KEY_PREFIX}${user?.id || 'anonymous'}`,
+    [user?.id],
+  );
 
   useEffect(() => {
-    const load = async () => {
-      if (user) {
-        // Use user-specific cache key to prevent cross-user contamination
-        const cached = await AsyncStorage.getItem(`CACHED_PROFILE_PICTURE_${user.id}`);
+    if (!user?.id) return;
+    const gen = ++initRef.current;
+
+    // Show cached suggestions immediately
+    setSuggestions(getCachedChatSuggestions(user.id));
+
+    InteractionManager.runAfterInteractions(() => {
+      if (gen !== initRef.current) return;
+
+      const loadCached = async () => {
+        const [cached, savedPersonality, historyRaw] = await Promise.all([
+          AsyncStorage.getItem(`CACHED_PROFILE_PICTURE_${user.id}`),
+          AsyncStorage.getItem(AI_PERSONALITY_KEY),
+          AsyncStorage.getItem(getChatHistoryKey()),
+        ]);
+        if (gen !== initRef.current) return;
         if (cached) setProfilePicture(cached);
-      }
-      const savedPersonality = await AsyncStorage.getItem(AI_PERSONALITY_KEY);
-      if (savedPersonality) setPersonality(savedPersonality as Personality);
+        if (savedPersonality) setPersonality(savedPersonality as Personality);
+        if (historyRaw) {
+          const chats: SavedChat[] = JSON.parse(historyRaw);
+          setSavedChats(chats.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
+        }
+      };
+
+      loadCached();
+      loadSuggestions();
+    });
+
+    return () => {
+      initRef.current++;
     };
-    load();
-  }, [user]);
+  }, [user?.id, getChatHistoryKey]);
 
-  useEffect(() => { loadSuggestions(); }, []);
-
-  // When user changes (account switch), reset all chat state to prevent data leak
+  // When user changes (account switch), reset chat state
   useEffect(() => {
-    if (user) {
-      // Clear any in-memory messages from previous user
+    if (user?.id) {
       setMessages([]);
       setCurrentChatId(null);
       setShowSuggestions(true);
-      setSavedChats([]);
-      // Reload suggestions and chat history for the new user
-      loadSuggestions();
-      loadChatHistory();
-      checkAndUpdateUsage();
     }
   }, [user?.id]);
 
@@ -168,17 +189,13 @@ export default function AIChatScreen({ navigation }: any) {
     try {
       const s = await mobileAiService.getChatSuggestions();
       setSuggestions(s);
+      if (user?.id) setCachedChatSuggestions(user.id, s);
     } catch {
-      setSuggestions([
-        'How have I been feeling lately?',
-        'What patterns do you notice?',
-        'What should I focus on this week?',
-        'Help me reflect on my entries',
-      ]);
+      const fallback = getCachedChatSuggestions(user?.id || '');
+      setSuggestions(fallback);
     }
   };
 
-  const getChatHistoryKey = () => `${CHAT_HISTORY_KEY_PREFIX}${user?.id || 'anonymous'}`;
 
   const loadChatHistory = async () => {
     try {
@@ -595,7 +612,7 @@ export default function AIChatScreen({ navigation }: any) {
 
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity style={styles.headerBtn} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.headerBtn} onPress={() => requestAnimationFrame(() => navigation.goBack())} activeOpacity={0.7}>
           <Ionicons name="chevron-down" size={28} color={isDark ? '#fff' : theme.colors.primaryText} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.headerCenter} onPress={() => setShowPersonality(true)} activeOpacity={0.7}>

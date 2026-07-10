@@ -28,7 +28,6 @@ const HomePage: React.FC = () => {
       <section className="hero-section-v2 hero-premium">
         <div className="hero-v2-content">
           <div className="hero-v2-text hero-premium-text">
-            <p className="hero-eyebrow">AI-powered journaling</p>
             <h1 className="hero-v2-title hero-premium-title">
               Understand yourself
               <br />

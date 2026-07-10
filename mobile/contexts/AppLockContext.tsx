@@ -22,6 +22,7 @@ const APP_LOCK_BIOMETRIC_KEY = 'APP_LOCK_BIOMETRIC';
 interface AppLockContextType {
   isLocked: boolean;
   isLockEnabled: boolean;
+  isLockReady: boolean;
   isBiometricEnabled: boolean;
   isBiometricAvailable: boolean;
   unlock: (pin: string) => Promise<boolean>;
@@ -37,6 +38,7 @@ interface AppLockContextType {
 const AppLockContext = createContext<AppLockContextType>({
   isLocked: false,
   isLockEnabled: false,
+  isLockReady: false,
   isBiometricEnabled: false,
   isBiometricAvailable: false,
   unlock: async () => false,
@@ -59,9 +61,12 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
   const appState = useRef(AppState.currentState);
   const hasInitialized = useRef(false);
   const hasBackgrounded = useRef(false);
+  const currentUserIdRef = useRef<string | null>(null);
+  const [isLockReady, setIsLockReady] = useState(false);
 
   // Load lock settings for a specific user
   const loadSettingsForUser = useCallback(async (userId: string) => {
+    currentUserIdRef.current = userId;
     // Check biometric hardware
     if (LocalAuthentication) {
       const compatible = await LocalAuthentication.hasHardwareAsync();
@@ -86,6 +91,7 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
       setIsLocked(true);
     }
     hasInitialized.current = true;
+    setIsLockReady(true);
   }, []);
 
   // Listen to Supabase auth state - load or clear lock based on sign-in/out
@@ -100,6 +106,7 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
         setIsLockEnabled(false);
         setIsBiometricEnabled(false);
         hasInitialized.current = true;
+        setIsLockReady(true);
       }
     });
 
@@ -113,6 +120,8 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
         setIsLockEnabled(false);
         setIsBiometricEnabled(false);
         hasInitialized.current = false;
+        setIsLockReady(false);
+        currentUserIdRef.current = null;
       }
     });
 
@@ -145,9 +154,14 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
   }, [isLockEnabled]);
 
   const verifyPin = useCallback(async (pin: string): Promise<boolean> => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) return false;
-    const pinKey = getUserKey(APP_LOCK_PIN_KEY, session.user.id);
+    let userId = currentUserIdRef.current;
+    if (!userId) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return false;
+      userId = session.user.id;
+      currentUserIdRef.current = userId;
+    }
+    const pinKey = getUserKey(APP_LOCK_PIN_KEY, userId);
     const storedPin = await SecureStore.getItemAsync(pinKey);
     return storedPin === pin;
   }, []);
@@ -258,6 +272,7 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
       value={{
         isLocked,
         isLockEnabled,
+        isLockReady,
         isBiometricEnabled,
         isBiometricAvailable,
         unlock,

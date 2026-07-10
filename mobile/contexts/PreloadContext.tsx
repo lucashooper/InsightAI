@@ -2,7 +2,9 @@ import React, { createContext, useCallback, useContext, useMemo, useState, React
 import { supabase } from '../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Purchases from 'react-native-purchases';
-import { EncryptionService } from '../services/encryptionService';
+import { decryptEntries, decryptEntriesInChunks } from '../utils/decryptBatch';
+import { prewarmDashboardCache, clearDashboardCache } from '../utils/dashboardCache';
+import { prewarmChatSuggestions, clearChatSuggestionsCache } from '../utils/chatSuggestionsCache';
 
 interface UserProfile {
   id: string;
@@ -20,6 +22,7 @@ interface PreloadedData {
   entriesCount: number;
   entriesLimit: number;
   isLoaded: boolean;
+  isStartupReady: boolean;
 }
 
 interface PreloadContextType {
@@ -42,6 +45,7 @@ const EMPTY_PRELOADED_DATA: PreloadedData = {
   entriesCount: 0,
   entriesLimit: 2,
   isLoaded: false,
+  isStartupReady: false,
 };
 
 export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -70,21 +74,27 @@ export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, []);
 
   const preloadForUser = useCallback(async (userId: string, email: string) => {
-    console.log('[PRELOAD] Starting full data preload for user:', userId);
+    console.log('[PRELOAD] Starting preload for user:', userId);
+
+    const cachedUsername = await AsyncStorage.getItem('CACHED_USERNAME').catch(() => null);
+    setData((prev) => ({
+      ...prev,
+      userName: cachedUsername || prev.userName,
+    }));
+
     try {
-      // Fetch notes, profile, and profile account summary in parallel
-      const [notesResult, profileResult, accountStats] = await Promise.all([
+      const [notesResult, profileResult] = await Promise.all([
         supabase
           .from('notes')
           .select('*')
           .eq('user_id', userId)
-          .order('created_at', { ascending: false }),
+          .order('created_at', { ascending: false })
+          .limit(40),
         supabase
           .from('user_profiles')
           .select('*')
           .eq('user_id', userId)
           .maybeSingle(),
-        loadAccountStats(userId),
       ]);
 
       let notes = notesResult.data || [];
@@ -93,28 +103,11 @@ export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children })
         notes = [];
       }
 
-      // Decrypt notes if needed
-      const encryptionKey = await EncryptionService.getKey();
-      const processedNotes = await Promise.all(notes.map(async (entry: any) => {
-        // Only attempt decryption if we have an encryption key
-        if (encryptionKey && (entry.is_encrypted || (entry.content?.includes(':') && entry.content.length > 32)) && entry.content) {
-          try {
-            const decrypted = await EncryptionService.decrypt(entry.content, encryptionKey);
-            return { ...entry, content: decrypted };
-          } catch (e) {
-            // Decryption failed, return as-is (likely plain text)
-            return entry;
-          }
-        }
-        // No encryption key or not encrypted - return as-is
-        return entry;
-      }));
-
       const profile = profileResult.data;
       const userProfile: UserProfile = {
         id: profile?.id || '',
         username: profile?.username || '',
-        email: email,
+        email,
         profile_picture_url: profile?.profile_picture_url || null,
       };
 
@@ -132,22 +125,39 @@ export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children })
         await AsyncStorage.setItem('CACHED_USERNAME', userProfile.username).catch(() => {});
       }
 
-      console.log('[PRELOAD] ✅ Preloaded', processedNotes.length, 'notes, profile:', userProfile.username);
-
-      setData({
-        notes: processedNotes,
+      // Initial fetch complete — safe to reveal main UI
+      setData((prev) => ({
+        ...prev,
+        notes,
         userProfile,
         profilePicture: userProfile.profile_picture_url,
-        userName: userProfile.username,
-        subscriptionPlan: accountStats.subscriptionPlan,
-        entriesCount: accountStats.entriesCount,
-        entriesLimit: accountStats.entriesLimit,
+        userName: userProfile.username || prev.userName,
         isLoaded: true,
+        isStartupReady: true,
+      }));
+
+      // Decrypt in background without blocking navigation
+      decryptEntriesInChunks(notes, 5).then((processedNotes) => {
+        console.log('[PRELOAD] ✅ Decrypted', processedNotes.length, 'notes in background');
+        setData((prev) => ({ ...prev, notes: processedNotes }));
+        prewarmDashboardCache(userId, processedNotes);
+        prewarmChatSuggestions(userId);
       });
+
+      // Account stats — lowest priority
+      loadAccountStats(userId)
+        .then((accountStats) => {
+          setData((prev) => ({
+            ...prev,
+            subscriptionPlan: accountStats.subscriptionPlan,
+            entriesCount: accountStats.entriesCount,
+            entriesLimit: accountStats.entriesLimit,
+          }));
+        })
+        .catch((err) => console.error('[PRELOAD] Account stats error:', err));
     } catch (error) {
       console.error('[PRELOAD] Error:', error);
-      // Still mark as loaded so app doesn't hang
-      setData(prev => ({ ...prev, isLoaded: true }));
+      setData((prev) => ({ ...prev, isLoaded: true, isStartupReady: true }));
     }
   }, [loadAccountStats]);
 
@@ -161,21 +171,11 @@ export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children })
 
       if (error) throw error;
 
-      const encryptionKey = await EncryptionService.getKey();
-      const processedNotes = await Promise.all((notes || []).map(async (entry: any) => {
-        // Only attempt decryption if we have an encryption key
-        if (encryptionKey && (entry.is_encrypted || (entry.content?.includes(':') && entry.content.length > 32)) && entry.content) {
-          try {
-            const decrypted = await EncryptionService.decrypt(entry.content, encryptionKey);
-            return { ...entry, content: decrypted };
-          } catch (e) {
-            return entry;
-          }
-        }
-        return entry;
-      }));
+      const processedNotes = await decryptEntriesInChunks(notes || [], 5);
 
       setData(prev => ({ ...prev, notes: processedNotes }));
+      prewarmDashboardCache(userId, processedNotes);
+      prewarmChatSuggestions(userId);
     } catch (error) {
       console.error('[PRELOAD] Refresh notes error:', error);
     }
@@ -237,6 +237,8 @@ export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children })
   }, [loadAccountStats]);
 
   const resetData = useCallback(() => {
+    clearDashboardCache();
+    clearChatSuggestionsCache();
     setData(EMPTY_PRELOADED_DATA);
   }, []);
 

@@ -6,12 +6,17 @@ const navigationRef = createNavigationContainerRef();
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
-import { View, StyleSheet, TouchableOpacity, Pressable, Text, Modal, Image, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Modal, Image, ActivityIndicator, Platform, InteractionManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
-import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import FloatingTabBar from '../components/navigation/FloatingTabBar';
+
+function EmptyTabScreen() {
+  return null;
+}
 
 // Screens
 import LoginScreen from '../screens/LoginScreen';
@@ -64,192 +69,34 @@ import ExploreScreen from '../screens/ExploreScreen';
 import TodoScreen from '../screens/TodoScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isTablet, sf, si } from '../utils/responsive';
-import DailyMoodCheckIn from '../components/DailyMoodCheckIn';
-import { useAppLock } from '../contexts/AppLockContext';
-import SunoGradient from '../components/onboarding/SunoGradient';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Center FAB Button Component with Overlay Menu
-function CenterFabButton() {
-  const navigation = useNavigation<any>();
-  const { theme } = useTheme();
-  const [showMenu, setShowMenu] = React.useState(false);
-  const [showDailyMoodCheckIn, setShowDailyMoodCheckIn] = React.useState(false);
-  const { user } = useAuth();
-  const { isLocked, isLockEnabled } = useAppLock();
-
-  // Check if daily mood check-in should be shown
-  React.useEffect(() => {
-    const checkDailyMoodCheckIn = async () => {
-      try {
-        const lastCheckIn = await AsyncStorage.getItem('lastMoodCheckIn');
-        const dailyMoodEnabled = await AsyncStorage.getItem('dailyMoodCheckInEnabled');
-        
-        // Default to enabled if not set
-        if (dailyMoodEnabled === 'false') return;
-        
-        if (!lastCheckIn) {
-          // First time - show after 2 seconds
-          setTimeout(() => setShowDailyMoodCheckIn(true), 2000);
-          return;
-        }
-        
-        const lastCheckInDate = new Date(lastCheckIn);
-        const today = new Date();
-        
-        // Check if it's a new day
-        if (
-          lastCheckInDate.getDate() !== today.getDate() ||
-          lastCheckInDate.getMonth() !== today.getMonth() ||
-          lastCheckInDate.getFullYear() !== today.getFullYear()
-        ) {
-          setTimeout(() => setShowDailyMoodCheckIn(true), 2000);
-        }
-      } catch (error) {
-        console.error('Error checking daily mood check-in:', error);
-      }
-    };
-    
-    if (user && !(isLocked && isLockEnabled)) {
-      checkDailyMoodCheckIn();
-    }
-  }, [user, isLocked, isLockEnabled]);
-
-  const menuOptions = [
-    { icon: 'create-outline', label: 'Journal Entry', screen: 'CreateEntry' },
-    { icon: 'sparkles-outline', label: 'AI Chat', screen: 'AIChat' },
-    { icon: 'heart-outline', label: 'Gratitude', screen: 'Gratitude' },
-    { icon: 'musical-notes-outline', label: 'Meditation', screen: 'Meditation' },
-    { icon: 'book-outline', label: 'Playbook', screen: 'Playbook' },
-  ];
-
-  return (
-    <>
-      <TouchableOpacity
-        style={styles.centerFabButton}
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          setShowMenu(!showMenu);
-        }}
-        activeOpacity={0.85}
-        accessibilityLabel="Open quick actions menu"
-        accessibilityRole="button"
-      >
-        <LinearGradient
-          colors={['#8b5cf6', '#7c3aed', '#6d28d9']}
-          style={styles.centerFabGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Ionicons name={showMenu ? "close" : "add"} size={28} color="#ffffff" />
-        </LinearGradient>
-      </TouchableOpacity>
-
-      {/* Overlay Menu - Cal AI Style */}
-      <Modal
-        visible={showMenu}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowMenu(false)}
-      >
-        <Pressable 
-          style={styles.menuOverlay}
-          onPress={() => setShowMenu(false)}
-        >
-          <View style={styles.menuContainer}>
-            <View style={styles.menuGrid}>
-              {menuOptions.map((option) => (
-                <TouchableOpacity
-                  key={option.screen}
-                  style={[styles.menuCard, { backgroundColor: theme.name === 'dark' || theme.name === 'midnight' ? '#1a1a1a' : '#FFFFFF' }]}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setShowMenu(false);
-                    navigation.navigate(option.screen);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.menuCardIconContainer}>
-                    <Ionicons name={option.icon as any} size={28} color="#8b5cf6" />
-                  </View>
-                  <Text style={[styles.menuCardLabel, { color: theme.colors.primaryText }]}>{option.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </Pressable>
-      </Modal>
-
-      {/* Daily Mood Check-In */}
-      <DailyMoodCheckIn
-        visible={showDailyMoodCheckIn && !(isLocked && isLockEnabled)}
-        onDismiss={() => setShowDailyMoodCheckIn(false)}
-        onJournal={() => {
-          setShowDailyMoodCheckIn(false);
-          navigation.navigate('CreateEntry');
-        }}
-        userName={user?.user_metadata?.name || 'there'}
-      />
-    </>
-  );
-}
-
 // Bottom Tab Navigator for main app screens
 function MainTabs() {
   const { theme } = useTheme();
-  const { user } = useAuth();
-  const [cachedPfp, setCachedPfp] = React.useState<string | null>(null);
-  const [pfpLoadError, setPfpLoadError] = React.useState(false);
-
-  React.useEffect(() => {
-    const loadPfp = async () => {
-      if (!user) return;
-      // Use user-specific cache key to prevent cross-user contamination
-      const pfp = await AsyncStorage.getItem(`CACHED_PROFILE_PICTURE_${user.id}`);
-      if (pfp) {
-        // Ignore desktop default profile pictures
-        const desktopDefaults = ['Ocean-Swirl', 'Sunset-Swirl', 'Vibrant-Swirl', 'Midnight-Swirl', 'Forest-Swirl'];
-        if (desktopDefaults.some(def => pfp.includes(def))) {
-          setCachedPfp(null);
-          return;
-        }
-        setCachedPfp(pfp);
-        setPfpLoadError(false); // Reset error state when new pfp loads
-      }
-    };
-    loadPfp();
-  }, [user]);
 
   return (
     <Tab.Navigator
       initialRouteName="Home"
+      detachInactiveScreens
+      tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarShowLabel: true,
-        tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '500',
-          marginTop: 2,
+        lazy: true,
+        sceneStyle: {
+          paddingBottom: 88,
+          backgroundColor: theme.colors.background,
         },
+        tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: isDarkTheme(theme.name) ? '#0a0a0a' : '#FFFFFF',
-          borderTopColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#E8E5DC',
-          borderTopWidth: 1,
-          height: isTablet ? 90 : 75,
-          paddingBottom: isTablet ? 14 : 12,
-          paddingTop: isTablet ? 14 : 8,
-          paddingHorizontal: isTablet ? 40 : 0,
+          position: 'absolute',
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          elevation: 0,
+          height: 0,
         },
-        tabBarItemStyle: {
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-          marginHorizontal: isTablet ? 8 : 0,
-        },
-        tabBarActiveTintColor: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a',
-        tabBarInactiveTintColor: isDarkTheme(theme.name) ? '#888888' : '#8a8a8a',
       }}
     >
       {/* Tab 1: Home (Dashboard) */}
@@ -266,7 +113,6 @@ function MainTabs() {
         listeners={{
           tabPress: () => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            console.log('[TabBar] Home tab pressed');
           },
         }}
       />
@@ -284,16 +130,15 @@ function MainTabs() {
         listeners={{
           tabPress: () => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            console.log('[TabBar] Journal tab pressed');
           },
         }}
       />
-      {/* Tab 3: Center FAB (+) */}
+      {/* Tab 3: Center FAB placeholder */}
       <Tab.Screen
-        name="Playbook"
-        component={PlaybookScreen}
+        name="FabPlaceholder"
+        component={EmptyTabScreen}
         options={{
-          tabBarButton: () => <CenterFabButton />,
+          tabBarButton: () => null,
         }}
       />
       {/* Tab 5: Dashboard (Analytics) */}
@@ -310,53 +155,22 @@ function MainTabs() {
         listeners={{
           tabPress: () => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            console.log('[TabBar] Dashboard tab pressed');
           },
         }}
       />
-      {/* Tab 6: Profile */}
+      {/* Tab 6: Companion (AI Chat) */}
       <Tab.Screen
-        name="Settings"
-        component={ProfileScreen}
+        name="Companion"
+        component={EmptyTabScreen}
         options={{
-          tabBarLabel: 'Profile',
-          tabBarIcon: ({ color, focused }) => {
-            // Only show image if it's a valid HTTP/HTTPS URL and hasn't failed to load
-            const isValidUrl = cachedPfp && (cachedPfp.startsWith('http://') || cachedPfp.startsWith('https://'));
-            return isValidUrl && !pfpLoadError ? (
-              <View style={{ width: si(26), height: si(26), borderRadius: si(13), overflow: 'hidden', opacity: focused ? 1 : 0.6 }}>
-                <Image 
-                  source={{ uri: cachedPfp }} 
-                  style={{ width: '100%', height: '100%' }}
-                  resizeMode="cover"
-                  onError={() => setPfpLoadError(true)}
-                />
-              </View>
-            ) : (
-              <Ionicons name="person-circle-outline" size={si(26)} color={color} />
-            );
-          },
-          tabBarAccessibilityLabel: "Profile",
+          tabBarLabel: 'Companion',
+          tabBarAccessibilityLabel: 'Companion',
         }}
-        listeners={({ navigation }) => ({
-          tabPress: () => {
+        listeners={({ navigation: tabNav }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            console.log('[TabBar] Profile tab pressed');
-          },
-          focus: async () => {
-            if (user?.id) {
-              const pfp = await AsyncStorage.getItem(`CACHED_PROFILE_PICTURE_${user.id}`);
-              if (pfp && pfp !== cachedPfp) {
-                // Ignore desktop default profile pictures
-                const desktopDefaults = ['Ocean-Swirl', 'Sunset-Swirl', 'Vibrant-Swirl', 'Midnight-Swirl', 'Forest-Swirl'];
-                if (desktopDefaults.some(def => pfp.includes(def))) {
-                  setCachedPfp(null);
-                  return;
-                }
-                setPfpLoadError(false);
-                setCachedPfp(pfp);
-              }
-            }
+            tabNav.getParent()?.navigate('AIChat');
           },
         })}
       />
@@ -534,7 +348,7 @@ export default function AppNavigator() {
   React.useEffect(() => {
     if (user && isOnboardingCompleted === true && navigationRef.isReady() && !passwordRecoveryActive) {
       const currentRoute = navigationRef.getCurrentRoute();
-      if (currentRoute && currentRoute.name !== 'MainTabs' && currentRoute.name !== 'Settings' && currentRoute.name !== 'EntryDetail' && currentRoute.name !== 'CreateEntry' && currentRoute.name !== 'AIChat') {
+      if (currentRoute && currentRoute.name !== 'MainTabs' && currentRoute.name !== 'Profile' && currentRoute.name !== 'EntryDetail' && currentRoute.name !== 'CreateEntry' && currentRoute.name !== 'AIChat') {
         console.log('[NAV] Force navigating to MainTabs from:', currentRoute.name);
         navigationRef.reset({
           index: 0,
@@ -647,6 +461,8 @@ export default function AppNavigator() {
           <Stack.Screen name="EmotionDetail" component={EmotionDetailScreen} options={{ headerShown: false }} />
           <Stack.Screen name="AmbientSounds" component={AmbientSoundsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="AIChat" component={AIChatScreen} options={{ headerShown: false, animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
+          <Stack.Screen name="Playbook" component={PlaybookScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="Explore" component={ExploreScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="Todo" component={TodoScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
@@ -708,73 +524,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fef7f2',
-  },
-  centerFabButton: {
-    top: -20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 56,
-    marginLeft: 0,
-  },
-  centerFabGradient: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 16,
-    elevation: 12,
-  },
-  menuOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    zIndex: 9999,
-  },
-  menuContainer: {
-    position: 'absolute',
-    bottom: 100,
-    left: 20,
-    right: 20,
-    zIndex: 10000,
-  },
-  menuGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  menuCard: {
-    width: '48%',
-    height: 140,
-    borderRadius: 20,
-    padding: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  menuCardIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(139, 92, 246, 0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  menuCardLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    textAlign: 'center',
   },
 });
