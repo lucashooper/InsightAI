@@ -1,0 +1,244 @@
+{
+  "branding": {
+    "colorScheme": "light",
+    "fonts": [
+      {
+        "family": "Aave Repro",
+        "role": "unknown"
+      },
+      {
+        "family": "Roboto",
+        "role": "body"
+      },
+      {
+        "family": "Helvetica Neue",
+        "role": "body"
+      },
+      {
+        "family": "Arial",
+        "role": "body"
+      },
+      {
+        "family": "Noto Sans",
+        "role": "body"
+      }
+    ],
+    "colors": {
+      "primary": "#FF80FF",
+      "secondary": "#8080FF",
+      "accent": "#252228",
+      "background": "#FFFFFF",
+      "textPrimary": "#736F73",
+      "link": "#E680E6"
+    },
+    "typography": {
+      "fontFamilies": {
+        "primary": "Roboto",
+        "heading": "Roboto"
+      },
+      "fontStacks": {
+        "heading": [
+          "Aave Repro",
+          "ui-sans-serif",
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Arial",
+          "Noto Sans",
+          "sans-serif",
+          "Apple Color Emoji",
+          "Segoe UI Emoji",
+          "Segoe UI Symbol",
+          "Noto Color Emoji"
+        ],
+        "body": [
+          "Aave Repro",
+          "ui-sans-serif",
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Arial",
+          "Noto Sans",
+          "sans-serif",
+          "Apple Color Emoji",
+          "Segoe UI Emoji",
+          "Segoe UI Symbol",
+          "Noto Color Emoji"
+        ],
+        "paragraph": [
+          "Aave Repro",
+          "ui-sans-serif",
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Arial",
+          "Noto Sans",
+          "sans-serif",
+          "Apple Color Emoji",
+          "Segoe UI Emoji",
+          "Segoe UI Symbol",
+          "Noto Color Emoji"
+        ]
+      },
+      "fontSizes": {
+        "h1": "56px",
+        "h2": "40px",
+        "body": "14px"
+      }
+    },
+    "spacing": {
+      "baseUnit": 4,
+      "borderRadius": "16px"
+    },
+    "components": {
+      "input": {
+        "background": "#F8F8F9",
+        "textColor": "#221D1D",
+        "borderColor": null,
+        "borderRadius": "36px",
+        "borderRadiusCorners": {
+          "topLeft": "36px",
+          "topRight": "36px",
+          "bottomRight": "36px",
+          "bottomLeft": "36px"
+        },
+        "shadow": "none"
+      },
+      "buttonPrimary": {
+        "background": "#252228",
+        "textColor": "#FFFFFF",
+        "borderRadius": "99px",
+        "borderRadiusCorners": {
+          "topLeft": "99px",
+          "topRight": "99px",
+          "bottomRight": "99px",
+          "bottomLeft": "99px"
+        },
+        "shadow": "none"
+      },
+      "buttonSecondary": {
+        "background": "#FFFFFF",
+        "textColor": "#736F73",
+        "borderRadius": "50px",
+        "borderRadiusCorners": {
+          "topLeft": "50px",
+          "topRight": "50px",
+          "bottomRight": "50px",
+          "bottomLeft": "50px"
+        },
+        "shadow": "none"
+      }
+    },
+    "images": {
+      "logo": "data:image/svg+xml;utf8,%3Csvg%20class%3D%22styles_logo__EKrVz%20styles_headerLogo___xqC_%22%20width%3D%2294%22%20height%3D%2216%22%20viewBox%3D%220%200%2094%2016%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20data-fc-idx%3D%220%22%3E%3Cpath%20d%3D%22M86.2267%2012.3723C84.2104%2012.3723%2082.4186%2010.9191%2081.9571%208.91278H93.9286C93.9286%208.91278%2093.9927%208.18584%2093.9927%207.92867C93.9927%203.67036%2090.5098%200.205078%2086.2288%200.205078C81.9478%200.205078%2078.4648%203.66964%2078.4648%207.92867C78.4648%2012.1877%2081.9283%2015.5718%2086.2288%2015.5718C90.5293%2015.5718%2093.0402%2012.4204%2093.667%2010.139H90.0179C90.0179%2010.139%2088.8575%2012.3723%2086.2267%2012.3723ZM86.2288%203.40312C88.162%203.40312%2089.8402%204.67315%2090.4152%206.56599H82.0424C82.615%204.67315%2084.294%203.40312%2086.2288%203.40312Z%22%20style%3D%22fill%3A%20rgb(39%2C%2034%2C%2040)%20!important%3B%22%2F%3E%3Cpath%20d%3D%22M40.5454%2015.5718C36.2644%2015.5718%2032.9062%2012.1432%2032.9062%207.92867C32.9062%203.71416%2036.3892%200.205078%2040.6702%200.205078C44.9512%200.205078%2048.4344%203.80612%2048.4344%207.88771C48.4344%209.62682%2048.4344%2015.1889%2048.4344%2015.1889H45.4199V12.7523L45.2005%2012.6948C44.6696%2013.9893%2042.7474%2015.5718%2040.5454%2015.5718ZM40.6702%203.40312C38.2523%203.40312%2036.2844%205.42239%2036.2844%207.90496C36.2844%2010.3875%2038.2518%2012.373%2040.6702%2012.373C43.0889%2012.373%2045.056%2010.3689%2045.056%207.90496C45.056%205.44104%2043.0889%203.40312%2040.6702%203.40312Z%22%20style%3D%22fill%3A%20rgb(39%2C%2034%2C%2040)%20!important%3B%22%2F%3E%3Cpath%20d%3D%22M57.0368%2015.5718C52.7558%2015.5718%2049.3984%2012.1432%2049.3984%207.92867C49.3984%203.71416%2052.8814%200.205078%2057.1624%200.205078C61.4434%200.205078%2064.9266%203.80612%2064.9266%207.88771C64.9266%209.62682%2064.9266%2015.1889%2064.9266%2015.1889H61.9121V12.7523L61.6927%2012.6948C61.1618%2013.9893%2059.2388%2015.5718%2057.0368%2015.5718ZM57.1624%203.40312C54.7448%203.40312%2052.7769%205.42239%2052.7769%207.90496C52.7769%2010.3875%2054.744%2012.373%2057.1624%2012.373C59.5811%2012.373%2061.5482%2010.3689%2061.5482%207.90496C61.5482%205.44104%2059.5811%203.40312%2057.1624%203.40312Z%22%20style%3D%22fill%3A%20rgb(39%2C%2034%2C%2040)%20!important%3B%22%2F%3E%3Cpath%20d%3D%22M69.9877%2015.1874L63.8008%200.589355H67.1856L71.7202%2011.3429L76.2554%200.589355H79.6394L73.4533%2015.1874H69.9877Z%22%20style%3D%22fill%3A%20rgb(39%2C%2034%2C%2040)%20!important%3B%22%2F%3E%3Cpath%20d%3D%22M14.985%200C6.70823%200%20-0.00216598%206.80197%205.24457e-07%2015.19H3.82821C3.82821%208.90381%208.78373%203.8072%2014.985%203.8072C21.1862%203.8072%2026.1418%208.90381%2026.1418%2015.19H29.9699C29.9715%206.80197%2023.261%200%2014.985%200Z%22%20style%3D%22fill%3A%20rgb(39%2C%2034%2C%2040)%20!important%3B%22%2F%3E%3Cg%20class%3D%22logo-eyes%22%20style%3D%22fill%3A%20rgb(39%2C%2034%2C%2040)%20!important%3B%22%3E%3Cpath%20class%3D%22logo-eye-left%22%20d%3D%22M11.007%2015.5481C12.6893%2015.5481%2014.053%2014.1915%2014.053%2012.5182C14.053%2010.8448%2012.6893%209.48828%2011.007%209.48828C9.32471%209.48828%207.96094%2010.8448%207.96094%2012.5182C7.96094%2014.1915%209.32471%2015.5481%2011.007%2015.5481Z%22%20style%3D%22fill%3A%20rgb(39%2C%2034%2C%2040)%20!important%3B%22%2F%3E%3Cpath%20class%3D%22logo-eye-right%22%20d%3D%22M18.9679%2015.5481C20.6502%2015.5481%2022.014%2014.1915%2022.014%2012.5182C22.014%2010.8448%2020.6502%209.48828%2018.9679%209.48828C17.2856%209.48828%2015.9219%2010.8448%2015.9219%2012.5182C15.9219%2014.1915%2017.2856%2015.5481%2018.9679%2015.5481Z%22%20style%3D%22fill%3A%20rgb(39%2C%2034%2C%2040)%20!important%3B%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E",
+      "favicon": "https://aave.com/favicon.png",
+      "ogImage": "https://aave.com/og/company.png",
+      "logoHref": "/"
+    },
+    "__llm_logo_reasoning": {
+      "selectedIndex": 0,
+      "reasoning": "Selected #0 because it is visible, located in the header, links to the homepage, and matches the brand inferred from the URL and page title.",
+      "confidence": 0.95,
+      "source": "llm"
+    },
+    "__llm_button_reasoning": {
+      "primary": {
+        "index": 1,
+        "text": "Use Aave",
+        "reasoning": "Button #1 ('Use Aave') is the primary CTA due to its action-oriented text and distinct dark background color, which stands out as a call-to-action."
+      },
+      "secondary": {
+        "index": 2,
+        "text": "Developers",
+        "reasoning": "Button #2 ('Developers') is selected as secondary because it has a different background color (light/white) and serves as a supportive navigation option."
+      },
+      "confidence": 0.9
+    },
+    "personality": {
+      "tone": "modern",
+      "energy": "medium",
+      "targetAudience": "tech-savvy individuals interested in decentralized finance"
+    },
+    "designSystem": {
+      "framework": "custom",
+      "componentLibrary": ""
+    },
+    "confidence": {
+      "buttons": 0.9,
+      "colors": 0.9,
+      "overall": 0.9
+    },
+    "__llm_metadata": {
+      "logoSelection": {
+        "llmCalled": true,
+        "llmSucceeded": true,
+        "finalSource": "llm",
+        "rawLogoSelection": {
+          "selectedLogoIndex": 0,
+          "selectedLogoReasoning": "Selected #0 because it is visible, located in the header, links to the homepage, and matches the brand inferred from the URL and page title.",
+          "confidence": 0.95
+        }
+      },
+      "buttonClassification": {
+        "llmCalled": true,
+        "llmSucceeded": true
+      }
+    }
+  },
+  "metadata": {
+    "twitter:creator": "@aave",
+    "twitter:image": "https://aave.com/og/company.png",
+    "twitter:domain": "https://aave.com",
+    "twitter:title": "About Us",
+    "apple-mobile-web-app-status-bar-style": "#FFFFFF",
+    "og:url": "https://aave.com/about",
+    "og:image": "https://aave.com/og/company.png",
+    "og:description": "About the Aave Labs Company.",
+    "ogTitle": "About Us",
+    "og:title": "About Us",
+    "twitter:description": "About the Aave Labs Company.",
+    "ogSiteName": "aave.com",
+    "ogDescription": "About the Aave Labs Company.",
+    "language": "en",
+    "ogUrl": "https://aave.com/about",
+    "theme-color": [
+      "#FFFFFF",
+      "#FFFFFF"
+    ],
+    "og:type": "website",
+    "msapplication-navbutton-color": "#FFFFFF",
+    "title": "About Us | Aave",
+    "twitter:url": "https://aave.com/about",
+    "twitter:card": "summary_large_image",
+    "viewport": "width=device-width, initial-scale=1, maximum-scale=1",
+    "twitter:site": "https://aave.com",
+    "google-site-verification": "UBMpkfQBxLNG_14LwPmSVA9L-_z9GWT6Q33i_A1oPY0",
+    "ogImage": "https://aave.com/og/company.png",
+    "og:site_name": "aave.com",
+    "description": "About the Aave Labs Company.",
+    "msapplication-TileColor": [
+      "#FFFFFF",
+      "#FFFFFF"
+    ],
+    "favicon": "https://aave.com/favicon.png",
+    "scrapeId": "019f4cc1-691d-74ef-9336-e93991d56243",
+    "sourceURL": "https://aave.com/about",
+    "url": "https://aave.com/about",
+    "statusCode": 200,
+    "contentType": "text/html; charset=utf-8",
+    "timezone": "America/New_York",
+    "proxyUsed": "basic",
+    "indexId": "e57fbd76-3db6-4ddf-a29c-495e873b44b9",
+    "creditsUsed": 1,
+    "concurrencyLimited": false
+  }
+}

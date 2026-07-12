@@ -5,7 +5,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 const navigationRef = createNavigationContainerRef();
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { View, StyleSheet, TouchableOpacity, Text, Modal, Image, ActivityIndicator, Platform, InteractionManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -75,8 +74,6 @@ const Tab = createBottomTabNavigator();
 
 // Bottom Tab Navigator for main app screens
 function MainTabs() {
-  const { theme } = useTheme();
-
   return (
     <Tab.Navigator
       initialRouteName="Home"
@@ -85,10 +82,9 @@ function MainTabs() {
       screenOptions={{
         headerShown: false,
         lazy: true,
-        sceneStyle: {
-          paddingBottom: 88,
-          backgroundColor: theme.colors.background,
-        },
+        // Screens already reserve scroll space for the floating bar. Keeping the
+        // scene full-height lets each screen gradient continue behind the navbar.
+        sceneStyle: { backgroundColor: 'transparent' },
         tabBarShowLabel: false,
         tabBarStyle: {
           position: 'absolute',

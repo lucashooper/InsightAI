@@ -12,7 +12,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useTheme } from '../../contexts/ThemeContext';
+import { isDarkTheme, useTheme } from '../../contexts/ThemeContext';
 import { CheckInFlowProvider, useCheckInFlow } from './CheckInFlowProvider';
 import MoodSelectorStep from './MoodSelectorStep';
 import FeelingsStep from './FeelingsStep';
@@ -36,6 +36,10 @@ function CheckInFlowContent({ visible, onDismiss, onComplete, onLogMoodOnly }: P
   const { user } = useAuth();
   const { step, draft, goToStep, goBack, reset } = useCheckInFlow();
   const tint = MOOD_TINTS[draft.moodTier];
+  const isDark = isDarkTheme(theme.name);
+  const backgroundColors: [string, string, string] = isDark
+    ? tint.bg
+    : [theme.colors.background, tint.lightBg[1], theme.colors.background];
   const stepIndex = STEPS.indexOf(step as typeof STEPS[number]);
 
   useEffect(() => {
@@ -77,8 +81,8 @@ function CheckInFlowContent({ visible, onDismiss, onComplete, onLogMoodOnly }: P
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onDismiss}>
       <GestureHandlerRootView style={styles.fill}>
-      <StatusBar barStyle="light-content" />
-      <LinearGradient colors={tint.bg as any} style={styles.fill}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent />
+      <LinearGradient colors={backgroundColors} style={styles.fill}>
         <SafeAreaView style={styles.fill}>
           <View style={styles.header}>
             {step !== 'mood' ? (
@@ -96,7 +100,7 @@ function CheckInFlowContent({ visible, onDismiss, onComplete, onLogMoodOnly }: P
                     styles.dot,
                     {
                       backgroundColor:
-                        i <= stepIndex ? tint.accent : 'rgba(255,255,255,0.15)',
+                        i <= stepIndex ? tint.accent : theme.colors.divider,
                       width: i === stepIndex ? 22 : 7,
                     },
                   ]}

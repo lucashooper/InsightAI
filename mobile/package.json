@@ -6,6 +6,7 @@
     "start": "expo start --dev-client",
     "start:go": "expo start",
     "start:clear": "expo start --dev-client -c",
+    "test": "vitest run",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "ios:dev": "expo start --dev-client --ios",
@@ -74,7 +75,8 @@
     "@types/crypto-js": "^4.2.2",
     "@types/react": "~19.1.10",
     "patch-package": "^8.0.1",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "vitest": "^4.1.10"
   },
   "private": true
 }

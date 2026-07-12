@@ -305,7 +305,7 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
                   </StandardContainer>
 
                   {growthExpanded && growthCards.map((card: any, idx: number) => (
-                    <StandardContainer key={idx} variant="nested" style={[styles.insightCard, { borderColor: cardBorder, marginTop: 8 }]}>
+                    <StandardContainer key={idx} tint="violet" style={[styles.insightCard, { borderColor: cardBorder, marginTop: 10 }]}>
                       <View style={[styles.growthBadge, { backgroundColor: subtleBg }]}>
                         <Text style={[styles.growthBadgeText, { color: textSecondary }]}>
                           {card.short_label || card.type.toUpperCase()}
@@ -319,21 +319,31 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
                           .replace(/Their/g, 'Your')}
                       </Text>
                       {addToPlaybook && (
-                        <TouchableOpacity
-                          style={[styles.overlayPlaybookBtn, { backgroundColor: subtleBg, borderColor: cardBorder }]}
-                          onPress={() => addToPlaybook(card.text, idx)}
-                          disabled={addingId === `growth-${idx}`}
-                          activeOpacity={0.7}
+                        <LinearGradient
+                          colors={['#9B6DFF', '#7C3AED', '#6D28D9']}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                          style={[
+                            styles.overlayPlaybookBtn,
+                            addingId === `growth-${idx}` && styles.overlayPlaybookBtnDisabled,
+                          ]}
                         >
-                          {addingId === `growth-${idx}` ? (
-                            <ActivityIndicator size="small" color={textPrimary} />
-                          ) : (
-                            <>
-                              <Ionicons name="add-circle-outline" size={16} color={textPrimary} />
-                              <Text style={[styles.overlayPlaybookText, { color: textPrimary }]}>Add to Playbook</Text>
-                            </>
-                          )}
-                        </TouchableOpacity>
+                          <TouchableOpacity
+                            style={styles.overlayPlaybookBtnInner}
+                            onPress={() => addToPlaybook(card.text, idx)}
+                            disabled={addingId === `growth-${idx}`}
+                            activeOpacity={0.78}
+                          >
+                            {addingId === `growth-${idx}` ? (
+                              <ActivityIndicator size="small" color="#FFFFFF" />
+                            ) : (
+                              <>
+                                <Ionicons name="add-circle-outline" size={16} color="#FFFFFF" />
+                                <Text style={styles.overlayPlaybookText}>Add to Playbook</Text>
+                              </>
+                            )}
+                          </TouchableOpacity>
+                        </LinearGradient>
                       )}
                     </StandardContainer>
                   ))}
@@ -476,10 +486,11 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   resultsTitle: {
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: '700',
-    letterSpacing: -1,
-    marginBottom: 8,
+    letterSpacing: -1.1,
+    lineHeight: 40,
+    marginBottom: 10,
     textAlign: 'center',
     paddingHorizontal: 8,
   },
@@ -527,7 +538,8 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   insightCard: {
-    padding: 16,
+    padding: 18,
+    borderRadius: 18,
   },
   accordionSection: {
     marginBottom: 14,
@@ -697,10 +709,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   insightDescription: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '400',
     color: 'rgba(255, 255, 255, 0.7)',
-    lineHeight: 20,
+    lineHeight: 23,
   },
   themeChip: {
     paddingHorizontal: 16,
@@ -795,18 +807,29 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.9)',
   },
   overlayPlaybookBtn: {
+    alignSelf: 'flex-start',
+    marginTop: 16,
+    borderRadius: 20,
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  overlayPlaybookBtnDisabled: {
+    opacity: 0.62,
+  },
+  overlayPlaybookBtnInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 6,
-    marginTop: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    borderWidth: 1,
+    gap: 7,
+    paddingVertical: 9,
+    paddingHorizontal: 15,
   },
   overlayPlaybookText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.1,
   },
 });

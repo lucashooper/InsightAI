@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../contexts/ThemeContext';
+import { isDarkTheme, useTheme } from '../../contexts/ThemeContext';
 import { useCheckInFlow } from './CheckInFlowProvider';
 import PremiumButton from '../shared/PremiumButton';
 import PremiumGradientText from '../shared/PremiumGradientText';
@@ -22,6 +22,8 @@ export default function FeelingsStep({ onContinue }: Props) {
   const inputRef = useRef<TextInput>(null);
 
   const tint = MOOD_TINTS[draft.moodTier];
+  const isDark = isDarkTheme(theme.name);
+  const unselectedBackground = isDark ? theme.colors.surface : 'rgba(255,255,255,0.62)';
   const allFeelings = FEELINGS_BY_TIER[draft.moodTier];
   const visible = useMemo(
     () => (expanded ? allFeelings : allFeelings.slice(0, VISIBLE_COUNT)),
@@ -64,8 +66,8 @@ export default function FeelingsStep({ onContinue }: Props) {
               style={[
                 styles.chip,
                 {
-                  borderColor: selected ? tint.accent : 'rgba(255,255,255,0.10)',
-                  backgroundColor: selected ? tint.chip : 'rgba(255,255,255,0.04)',
+                  borderColor: selected ? tint.accent : theme.colors.border,
+                  backgroundColor: selected ? tint.chip : unselectedBackground,
                 },
               ]}
               onPress={() => toggleFeeling(feeling)}
@@ -74,7 +76,7 @@ export default function FeelingsStep({ onContinue }: Props) {
               <Text
                 style={[
                   styles.chipText,
-                  { color: selected ? theme.colors.primaryText : theme.colors.secondaryText },
+                  { color: selected ? (isDark ? '#FFFFFF' : theme.colors.primaryText) : theme.colors.secondaryText },
                 ]}
               >
                 {feeling}
@@ -91,8 +93,8 @@ export default function FeelingsStep({ onContinue }: Props) {
               style={[
                 styles.chip,
                 {
-                  borderColor: selected ? tint.accent : 'rgba(255,255,255,0.10)',
-                  backgroundColor: selected ? tint.chip : 'rgba(255,255,255,0.04)',
+                  borderColor: selected ? tint.accent : theme.colors.border,
+                  backgroundColor: selected ? tint.chip : unselectedBackground,
                 },
               ]}
               onPress={() => toggleFeeling(feeling)}
@@ -101,7 +103,7 @@ export default function FeelingsStep({ onContinue }: Props) {
               <Text
                 style={[
                   styles.chipText,
-                  { color: selected ? theme.colors.primaryText : theme.colors.secondaryText },
+                  { color: selected ? (isDark ? '#FFFFFF' : theme.colors.primaryText) : theme.colors.secondaryText },
                 ]}
               >
                 {feeling}
@@ -140,7 +142,7 @@ export default function FeelingsStep({ onContinue }: Props) {
             style={[
               styles.chip,
               styles.addChip,
-              { borderColor: 'rgba(255,255,255,0.14)', backgroundColor: 'rgba(255,255,255,0.04)' },
+              { borderColor: theme.colors.border, backgroundColor: unselectedBackground },
             ]}
             onPress={openCustomInput}
             activeOpacity={0.75}

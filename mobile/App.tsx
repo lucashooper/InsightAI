@@ -308,7 +308,7 @@ function AppContent({ onReady }: { onReady: () => void }) {
   return (
     <View style={{ flex: 1 }}>
       <AppNavigator />
-      {isLocked && isLockEnabled && isStartupReady && (
+      {isLocked && isLockEnabled && !authLoading && isLockReady && (
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}>
           <LockScreen />
         </View>

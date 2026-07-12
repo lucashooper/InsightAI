@@ -124,6 +124,17 @@ export default function CreateEntryScreen({ navigation, route }: any) {
     return unsubscribe;
   }, [navigation, content, title]);
 
+  const persistLinkedCheckIn = async (journalNoteId: string, journalTitle: string) => {
+    if (!checkInDraft || checkInSavedRef.current || !user?.id) return;
+
+    await saveCheckIn(user.id, checkInDraft as CheckInDraft, {
+      journalTitle,
+      journalBody: content.trim(),
+      journalNoteId,
+    });
+    checkInSavedRef.current = true;
+  };
+
   const handleAutoSave = async () => {
     if (!content.trim()) return;
     if (savingInProgress.current) return; // Prevent concurrent saves
@@ -169,14 +180,10 @@ export default function CreateEntryScreen({ navigation, route }: any) {
         if (!error) {
           hasUnsavedChanges.current = false;
           console.log('[CreateEntry] Entry updated successfully (id:', savedEntryIdRef.current, ')');
-          if (checkInDraft && !checkInSavedRef.current && user?.id && savedEntryIdRef.current) {
-            checkInSavedRef.current = true;
-            saveCheckIn(user.id, checkInDraft as CheckInDraft, {
-              journalTitle: title.trim() || content.trim().split('\n')[0].substring(0, 50) || 'Journal Entry',
-              journalBody: content.trim(),
-              journalNoteId: savedEntryIdRef.current,
-            }).catch((e) => console.warn('[CreateEntry] Check-in save failed:', e));
-          }
+          await persistLinkedCheckIn(
+            savedEntryIdRef.current,
+            title.trim() || content.trim().split('\n')[0].substring(0, 50) || 'Journal Entry',
+          );
         }
       } else {
         const { data, error } = await supabase
@@ -196,14 +203,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           savedEntryIdRef.current = data.id;
           hasUnsavedChanges.current = false;
           console.log('[CreateEntry] Entry saved successfully (id:', data.id, ', encrypted:', isEncrypted, ')');
-          if (checkInDraft && !checkInSavedRef.current && user?.id) {
-            checkInSavedRef.current = true;
-            saveCheckIn(user.id, checkInDraft as CheckInDraft, {
-              journalTitle: title.trim() || 'Journal Entry',
-              journalBody: content.trim(),
-              journalNoteId: data.id,
-            }).catch((e) => console.warn('[CreateEntry] Check-in save failed:', e));
-          }
+          await persistLinkedCheckIn(data.id, title.trim() || 'Journal Entry');
         }
       }
     } catch (error) {
@@ -271,6 +271,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           .eq('id', savedEntryIdRef.current);
 
         if (!error) {
+          await persistLinkedCheckIn(savedEntryIdRef.current, entryTitle);
           console.log('[CreateEntry] Updated existing entry, navigating to analyze');
           // Fetch the full entry to pass to EntryDetail
           const { data: updatedEntry } = await supabase
@@ -302,6 +303,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
 
         if (!error && data) {
           savedEntryIdRef.current = data.id;
+          await persistLinkedCheckIn(data.id, entryTitle);
           console.log('[CreateEntry] Entry saved successfully, navigating to analyze');
           navigation.navigate('EntryDetail', { entry: data, shouldAnalyze: true });
         } else {

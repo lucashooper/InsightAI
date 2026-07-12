@@ -1,4 +1,5 @@
 import { decryptEntryFields, decryptEntries } from './entryDecryption';
+import { yieldToUI } from './yieldToUI';
 
 export { decryptEntries };
 
@@ -12,7 +13,7 @@ export async function decryptEntriesInChunks<T extends { content?: string | null
     const chunk = entries.slice(i, i + chunkSize);
     const decrypted = await Promise.all(chunk.map((e) => decryptEntryFields(e)));
     result.push(...decrypted);
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await yieldToUI();
   }
   return result;
 }

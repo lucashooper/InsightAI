@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
-import { useTheme } from '../../contexts/ThemeContext';
+import { isDarkTheme, useTheme } from '../../contexts/ThemeContext';
 import { useCheckInFlow } from './CheckInFlowProvider';
 import PremiumButton from '../shared/PremiumButton';
 import PremiumGradientText from '../shared/PremiumGradientText';
@@ -41,6 +41,8 @@ export default function ContextReflectionStep({ onContinue }: Props) {
   const { user } = useAuth();
   const { draft, toggleContextTag } = useCheckInFlow();
   const tint = MOOD_TINTS[draft.moodTier];
+  const isDark = isDarkTheme(theme.name);
+  const unselectedBackground = isDark ? theme.colors.surface : 'rgba(255,255,255,0.62)';
 
   const [customTags, setCustomTags] = useState<Record<TagCategory, string[]>>({
     who: [],
@@ -101,8 +103,8 @@ export default function ContextReflectionStep({ onContinue }: Props) {
                     style={[
                       styles.chip,
                       {
-                        borderColor: isOn ? tint.accent : 'rgba(255,255,255,0.10)',
-                        backgroundColor: isOn ? tint.chip : 'rgba(255,255,255,0.04)',
+                        borderColor: isOn ? tint.accent : theme.colors.border,
+                        backgroundColor: isOn ? tint.chip : unselectedBackground,
                       },
                     ]}
                     onPress={() => toggleContextTag(group.key, tag)}
@@ -111,7 +113,7 @@ export default function ContextReflectionStep({ onContinue }: Props) {
                     <Text
                       style={[
                         styles.chipText,
-                        { color: isOn ? theme.colors.primaryText : theme.colors.secondaryText },
+                        { color: isOn ? (isDark ? '#FFFFFF' : theme.colors.primaryText) : theme.colors.secondaryText },
                       ]}
                     >
                       {tag}
@@ -120,7 +122,7 @@ export default function ContextReflectionStep({ onContinue }: Props) {
                 );
               })}
               <TouchableOpacity
-                style={[styles.addChip, { borderColor: 'rgba(255,255,255,0.14)' }]}
+                style={[styles.addChip, { borderColor: theme.colors.border, backgroundColor: unselectedBackground }]}
                 onPress={() => setAddModal({ category: group.category, group: group.key })}
               >
                 <Ionicons name="add" size={18} color={theme.colors.secondaryText} />

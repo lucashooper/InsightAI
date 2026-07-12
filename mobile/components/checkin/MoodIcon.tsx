@@ -48,9 +48,11 @@ function StrugglingIcon({ size, accent }: { size: number; accent: string }) {
       </Defs>
       <Circle cx="60" cy="58" r="46" fill="url(#strugglingGlow)" />
       <Circle cx="60" cy="58" r="34" fill="none" stroke={accent} strokeWidth={STROKE} />
+      <Path d="M42 48 L53 51" stroke={accent} strokeWidth={STROKE} strokeLinecap="round" />
+      <Path d="M78 48 L67 51" stroke={accent} strokeWidth={STROKE} strokeLinecap="round" />
       <Circle cx="48" cy={FACE_CENTER_Y - 4} r={EYE_R} fill={accent} />
       <Circle cx="72" cy={FACE_CENTER_Y - 4} r={EYE_R} fill={accent} />
-      <Path d="M44 70 Q60 78 76 70" stroke={accent} strokeWidth={STROKE} fill="none" strokeLinecap="round" />
+      <Path d="M44 74 Q60 61 76 74" stroke={accent} strokeWidth={STROKE} fill="none" strokeLinecap="round" />
     </Svg>
   );
 }

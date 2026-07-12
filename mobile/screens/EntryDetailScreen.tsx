@@ -18,6 +18,8 @@ import * as Haptics from 'expo-haptics';
 import { isTablet, sf, ss, si } from '../utils/responsive';
 import SunoGradient from '../components/onboarding/SunoGradient';
 import { decryptEntryFields } from '../utils/entryDecryption';
+import MoodIcon from '../components/checkin/MoodIcon';
+import { fetchCheckInForNote, StoredCheckIn } from '../services/checkInService';
 
 // Helper function to get color styling based on emotion sentiment
 const getSentimentStyle = (emotion: string) => {
@@ -105,6 +107,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [showMoodPicker, setShowMoodPicker] = useState(false);
   const [mood, setMood] = useState(initialEntry?.mood || '');
+  const [linkedCheckIn, setLinkedCheckIn] = useState<StoredCheckIn | null>(null);
   const [attachedPhotos, setAttachedPhotos] = useState<Array<{ uri: string; width: number; height: number }>>([]);
   const quickActionsAnim = useRef(new Animated.Value(0)).current;
   const controlsBottomAnim = useRef(new Animated.Value(20)).current;
@@ -150,6 +153,15 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
     }
   };
 
+  const loadLinkedCheckIn = async (noteId: string) => {
+    if (!user?.id) return;
+    try {
+      setLinkedCheckIn(await fetchCheckInForNote(user.id, noteId));
+    } catch (error) {
+      console.error('[EntryDetail] Error loading linked check-in:', error);
+    }
+  };
+
   useEffect(() => {
     const hydrateEntry = async () => {
       if (initialEntry) {
@@ -157,6 +169,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
         setEntry(decrypted);
         setEditableContent(decrypted.content || '');
         setEditableTitle(decrypted.title || '');
+        await loadLinkedCheckIn(decrypted.id);
 
         if (shouldAnalyze && !decrypted.ai_structured_insights) {
           handleAnalyzeEntry(decrypted);
@@ -195,6 +208,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
         setEntry(decrypted);
         setEditableContent(decrypted.content || '');
         setEditableTitle(decrypted.title || '');
+        await loadLinkedCheckIn(decrypted.id);
         
         if (shouldAnalyze && !data.ai_structured_insights) {
           handleAnalyzeEntry(data);
@@ -752,6 +766,25 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
             {formatDate(entry.created_at)}
           </Text>
 
+          {linkedCheckIn && (
+            <StandardContainer variant="nested" style={styles.checkInCard}>
+              <View style={styles.checkInCardRow}>
+                <MoodIcon tier={linkedCheckIn.moodTier} size={30} />
+                <View style={styles.checkInCardCopy}>
+                  <Text style={[styles.checkInCardEyebrow, { color: theme.colors.secondaryText }]}>
+                    CHECK-IN
+                  </Text>
+                  <Text style={[styles.checkInCardText, { color: theme.colors.primaryText }]}>
+                    Feeling — {linkedCheckIn.moodLabel}
+                    {linkedCheckIn.feelings.length > 0
+                      ? `, ${linkedCheckIn.feelings.join(', ')}`
+                      : ''}
+                  </Text>
+                </View>
+              </View>
+            </StandardContainer>
+          )}
+
           {/* Attached Photo Thumbnails - inline above content */}
           {attachedPhotos.length > 0 && (
             <View style={styles.photoGrid}>
@@ -922,7 +955,10 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                     {strengthCards.length > 0 && (
                       <View style={styles.accordionSection}>
                         <TouchableOpacity 
-                          style={[styles.accordionHeader, { backgroundColor: 'rgba(16, 185, 129, 0.08)', borderColor: 'rgba(16, 185, 129, 0.25)' }]}
+                          style={[styles.accordionHeader, {
+                            backgroundColor: isDarkTheme(theme.name) ? theme.colors.cardBackground : 'rgba(16, 185, 129, 0.08)',
+                            borderColor: isDarkTheme(theme.name) ? theme.colors.border : 'rgba(16, 185, 129, 0.25)',
+                          }]}
                           onPress={() => toggleAccordion('strengths')}
                         >
                           <View style={styles.accordionHeaderLeft}>
@@ -948,7 +984,6 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                               const isHighlighted = highlightedCardText && card.text?.toLowerCase().includes(highlightedCardText.toLowerCase().substring(0, 30));
                               return (
                                 <View key={index} style={[styles.insightCard, { backgroundColor: theme.colors.cardBackground, borderWidth: isHighlighted ? 2 : 1, borderColor: isHighlighted ? '#10b981' : theme.colors.border }]}>
-                                  <View style={[styles.insightCardBorder, { backgroundColor: theme.colors.primary }]} />
                                   <View style={styles.insightCardContent}>
                                     <View style={[styles.insightBadge, { backgroundColor: theme.colors.surface }]}>
                                       <Text style={[styles.insightBadgeText, { color: theme.colors.secondaryText }]}>
@@ -975,7 +1010,10 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                     {growthCards.length > 0 && (
                       <View style={styles.accordionSection}>
                         <TouchableOpacity 
-                          style={[styles.accordionHeader, { backgroundColor: 'rgba(217, 119, 6, 0.08)', borderColor: 'rgba(217, 119, 6, 0.25)' }]}
+                          style={[styles.accordionHeader, {
+                            backgroundColor: isDarkTheme(theme.name) ? theme.colors.cardBackground : 'rgba(217, 119, 6, 0.08)',
+                            borderColor: isDarkTheme(theme.name) ? theme.colors.border : 'rgba(217, 119, 6, 0.25)',
+                          }]}
                           onPress={() => toggleAccordion('growth')}
                         >
                           <View style={styles.accordionHeaderLeft}>
@@ -1002,7 +1040,6 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                               const isHighlighted = highlightedCardText && card.text?.toLowerCase().includes(highlightedCardText.toLowerCase().substring(0, 30));
                               return (
                                 <View key={index} style={[styles.insightCard, { backgroundColor: isHighlighted ? 'rgba(217, 119, 6, 0.08)' : theme.colors.cardBackground, borderWidth: isHighlighted ? 2 : 1, borderColor: isHighlighted ? '#d97706' : theme.colors.border }]}>
-                                  <View style={[styles.insightCardBorder, { backgroundColor: theme.colors.primary }]} />
                                   <View style={styles.insightCardContent}>
                                     <View style={[styles.insightBadge, { backgroundColor: theme.colors.surface }]}>
                                       <Text style={[styles.insightBadgeText, { color: theme.colors.secondaryText }]}>
@@ -1311,6 +1348,30 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.5)',
     marginBottom: isTablet ? 32 : 24,
   },
+  checkInCard: {
+    marginBottom: isTablet ? 28 : 22,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+  },
+  checkInCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  checkInCardCopy: {
+    flex: 1,
+    gap: 3,
+  },
+  checkInCardEyebrow: {
+    fontSize: sf(10),
+    fontWeight: '700',
+    letterSpacing: 1.2,
+  },
+  checkInCardText: {
+    fontSize: sf(15),
+    fontWeight: '600',
+    lineHeight: sf(21),
+  },
   contentInput: {
     fontSize: sf(17),
     color: 'rgba(255, 255, 255, 0.95)',
@@ -1442,15 +1503,8 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'hidden',
   },
-  insightCardBorder: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-  },
   insightCardContent: {
-    paddingLeft: 12,
+    paddingLeft: 0,
   },
   insightBadge: {
     alignSelf: 'flex-start',

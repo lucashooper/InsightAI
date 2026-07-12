@@ -39,6 +39,7 @@ import {
 import { navigateToPlaybook } from '../utils/navigateToPlaybook';
 
 const screenWidth = Dimensions.get('window').width;
+const SHOW_DASHBOARD_STORY_SECTIONS = false;
 
 interface DashboardStats {
   totalEntries: number;
@@ -759,16 +760,7 @@ export default function DashboardScreen() {
           <>
             {/* Emotion Bubble Map - Enhanced */}
             <Animated.View style={{ opacity: cardAnimations[1], transform: [{ translateY: cardAnimations[1].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
-              <StandardContainer style={[styles.bubbleMapCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-                <LinearGradient
-                  colors={isDarkTheme(theme.name)
-                    ? ['rgba(139,92,246,0.32)', 'rgba(240,101,79,0.15)', 'rgba(45,212,191,0.10)']
-                    : ['rgba(168,85,247,0.20)', 'rgba(255,138,101,0.12)', 'rgba(255,206,138,0.10)']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.heroGlassOverlay}
-                  pointerEvents="none"
-                />
+              <StandardContainer variant="hero" style={[styles.bubbleMapCard, { backgroundColor: theme.colors.cardBackground }]}>
                 <View style={styles.bubbleMapHeader}>
                   <Text style={[styles.bubbleMapTitle, { color: theme.colors.primaryText }]}>Emotional landscape</Text>
                   <Text style={[styles.bubbleMapSubtitle, { color: theme.colors.secondaryText }]}>
@@ -793,17 +785,18 @@ export default function DashboardScreen() {
 
                         // Cohesive warm-purple bubble palette; each emotion gets its own hue
                         const bubblePalette = [
-                          { rgb: '139, 92, 246', glow: '#8b5cf6' },   // purple
-                          { rgb: '217, 108, 148', glow: '#d96c94' },  // rose
-                          { rgb: '244, 138, 96', glow: '#f48a60' },   // coral
-                          { rgb: '99, 102, 241', glow: '#6366f1' },   // indigo
-                          { rgb: '45, 190, 191', glow: '#2dbebf' },   // teal
+                          { highlight: '216, 180, 254', core: '139, 92, 246', depth: '91, 33, 182', glow: '#A78BFA' },
+                          { highlight: '251, 182, 206', core: '225, 105, 154', depth: '159, 63, 112', glow: '#F09AB9' },
+                          { highlight: '255, 199, 163', core: '244, 128, 91', depth: '190, 73, 54', glow: '#FB9B78' },
+                          { highlight: '177, 184, 255', core: '99, 102, 241', depth: '67, 56, 202', glow: '#818CF8' },
+                          { highlight: '153, 246, 232', core: '45, 190, 191', depth: '22, 124, 139', glow: '#5EEAD4' },
                         ];
                         const palette = bubblePalette[index % bubblePalette.length];
                         // Larger, more dominant emotions carry more light/weight
                         const weight = item.percentage / 100;
-                        const coreAlpha = 0.6 + weight * 0.35;
-                        const edgeAlpha = 0.42 + weight * 0.3;
+                        const highlightAlpha = 0.76 + weight * 0.2;
+                        const coreAlpha = 0.72 + weight * 0.24;
+                        const depthAlpha = 0.68 + weight * 0.22;
                         const glowOpacity = 0.35 + weight * 0.5;
                         const glowRadius = 12 + item.percentage * 0.5;
 
@@ -833,20 +826,24 @@ export default function DashboardScreen() {
                           >
                             <LinearGradient
                               colors={[
-                                `rgba(${palette.rgb}, ${coreAlpha})`,
-                                `rgba(${palette.rgb}, ${edgeAlpha})`,
+                                `rgba(${palette.highlight}, ${highlightAlpha})`,
+                                `rgba(${palette.core}, ${coreAlpha})`,
+                                `rgba(${palette.depth}, ${depthAlpha})`,
                               ]}
-                              start={{ x: 0.25, y: 0.15 }}
-                              end={{ x: 0.85, y: 1 }}
-                              style={[styles.bubbleGradient, { borderColor: `rgba(${palette.rgb}, 0.45)` }]}
+                              locations={[0, 0.5, 1]}
+                              start={{ x: 0.16, y: 0.08 }}
+                              end={{ x: 0.88, y: 0.96 }}
+                              style={[styles.bubbleGradient, { borderColor: `rgba(${palette.highlight}, 0.62)` }]}
                             >
                               <LinearGradient
-                                colors={['rgba(255,255,255,0.4)', 'rgba(255,255,255,0)']}
-                                start={{ x: 0.3, y: 0 }}
-                                end={{ x: 0.7, y: 0.7 }}
+                                colors={['rgba(255,255,255,0.5)', 'rgba(255,255,255,0.12)', 'rgba(255,255,255,0)']}
+                                locations={[0, 0.42, 1]}
+                                start={{ x: 0.2, y: 0 }}
+                                end={{ x: 0.72, y: 0.78 }}
                                 style={styles.bubbleSheen}
                                 pointerEvents="none"
                               />
+                              <View style={styles.bubbleInnerRim} pointerEvents="none" />
                               <Text style={styles.bubbleEmotionText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>{item.emotion}</Text>
                               <Text style={styles.bubblePercentageText}>{item.percentage}%</Text>
                             </LinearGradient>
@@ -888,7 +885,7 @@ export default function DashboardScreen() {
 
             {/* Patterns to Address */}
             {patternsToAddress.length > 0 && (
-              <StandardContainer style={[styles.patternsCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+              <StandardContainer tint="coral" style={[styles.patternsCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
                 <TouchableOpacity 
                   style={styles.patternsHeader}
                   onPress={() => setPatternsExpanded(!patternsExpanded)}
@@ -956,7 +953,7 @@ export default function DashboardScreen() {
                       </StandardContainer>
                     </TouchableOpacity>
                   ))}
-                  
+
                   {!patternsExpanded && patternsToAddress.length > 2 && (
                     <TouchableOpacity
                       style={[styles.viewAllButton, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
@@ -982,7 +979,7 @@ export default function DashboardScreen() {
 
             {/* What's Working */}
             {whatsWorking.length > 0 && (
-              <StandardContainer style={[styles.workingCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+              <StandardContainer tint="aqua" style={[styles.workingCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
                 <TouchableOpacity 
                   style={styles.workingHeader}
                   onPress={() => setWorkingExpanded(!workingExpanded)}
@@ -1070,49 +1067,49 @@ export default function DashboardScreen() {
             )}
 
             {/* Refined This Week Card - Horizontal Layout */}
-            <StandardContainer style={[styles.heroCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-              <Text style={[styles.heroTitle, { color: theme.colors.primaryText }]}>This week at a glance</Text>
-              
-              <View style={styles.metricsRow}>
-                <View style={styles.metricItem}>
-                  <View style={styles.metricIconValue}>
-                    <Ionicons name="flame" size={22} color="#f97316" />
-                    <Text style={[styles.metricValue, { color: theme.colors.primaryText }]}>
-                      {stats.currentStreak > 0 ? stats.currentStreak : '-'}
-                    </Text>
-                  </View>
-                  <Text style={[styles.metricLabel, { color: theme.colors.secondaryText }]}>DAY STREAK</Text>
-                </View>
+            {SHOW_DASHBOARD_STORY_SECTIONS && (
+              <StandardContainer tint="gold" style={[styles.heroCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+                <Text style={[styles.heroTitle, { color: theme.colors.primaryText }]}>This week at a glance</Text>
                 
-                <View style={styles.metricItem}>
-                  <View style={styles.metricIconValue}>
-                    <Ionicons name="happy-outline" size={22} color="#fbbf24" />
-                    <Text style={[styles.metricValue, { color: theme.colors.primaryText }]}>
-                      {stats.avgWellbeingScore > 0 ? `${stats.avgWellbeingScore}/10` : '-'}
-                    </Text>
+                <View style={styles.metricsRow}>
+                  <View style={styles.metricItem}>
+                    <View style={styles.metricIconValue}>
+                      <Ionicons name="flame" size={22} color="#f97316" />
+                      <Text style={[styles.metricValue, { color: theme.colors.primaryText }]}>
+                        {stats.currentStreak > 0 ? stats.currentStreak : '-'}
+                      </Text>
+                    </View>
+                    <Text style={[styles.metricLabel, { color: theme.colors.secondaryText }]}>DAY STREAK</Text>
                   </View>
-                  <Text style={[styles.metricLabel, { color: theme.colors.secondaryText }]}>AVG MOOD</Text>
+
+                  <View style={styles.metricItem}>
+                    <View style={styles.metricIconValue}>
+                      <Ionicons name="happy-outline" size={22} color="#fbbf24" />
+                      <Text style={[styles.metricValue, { color: theme.colors.primaryText }]}>
+                        {stats.avgWellbeingScore > 0 ? `${stats.avgWellbeingScore}/10` : '-'}
+                      </Text>
+                    </View>
+                    <Text style={[styles.metricLabel, { color: theme.colors.secondaryText }]}>AVG MOOD</Text>
+                  </View>
                 </View>
-              </View>
-              
-              {/* Interpretive sentence */}
-              <Text style={[styles.interpretiveSentence, { color: theme.colors.secondaryText }]}> 
-                {stats.totalEntries === 0
-                  ? 'Start your journey by creating your first entry.'
-                  : stats.avgWellbeingScore >= 7 
-                  ? 'A steady week with consistent emotional balance.'
-                  : stats.avgWellbeingScore >= 5
-                  ? 'A steady week overall.'
-                  : stats.avgWellbeingScore > 0
-                  ? 'You\'ve been navigating some challenges this week.'
-                  : 'Begin tracking your mood to see insights here.'}
-              </Text>
-            </StandardContainer>
+                <Text style={[styles.interpretiveSentence, { color: theme.colors.secondaryText }]}>
+                  {stats.totalEntries === 0
+                    ? 'Start your journey by creating your first entry.'
+                    : stats.avgWellbeingScore >= 7
+                    ? 'A steady week with consistent emotional balance.'
+                    : stats.avgWellbeingScore >= 5
+                    ? 'A steady week overall.'
+                    : stats.avgWellbeingScore > 0
+                    ? 'You\'ve been navigating some challenges this week.'
+                    : 'Begin tracking your mood to see insights here.'}
+                </Text>
+              </StandardContainer>
+            )}
 
             {/* Progress Story Card - Enhanced with Inline Highlights */}
-            {monthlyStory && (
+            {SHOW_DASHBOARD_STORY_SECTIONS && monthlyStory && (
               <Animated.View style={{ opacity: cardAnimations[0], transform: [{ translateY: cardAnimations[0].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
-                <StandardContainer style={[styles.progressStoryCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+                <StandardContainer tint="violet" style={[styles.progressStoryCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
                   <PremiumGradientText variant="warm" style={styles.progressStoryTitle}>
                     {`Your ${new Date().toLocaleDateString('en-US', { month: 'long' })} Story`}
                   </PremiumGradientText>
@@ -1187,7 +1184,7 @@ export default function DashboardScreen() {
             {/* Remember When Callback */}
             {rememberWhenCard && (
               <Animated.View style={{ opacity: cardAnimations[3], transform: [{ translateY: cardAnimations[3].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
-                <StandardContainer style={styles.rememberWhenCard}>
+                <StandardContainer tint="violet" style={styles.rememberWhenCard}>
                   <Ionicons name="chatbubble-ellipses-outline" size={24} color="#a78bfa" style={styles.rememberWhenIconIon} />
                   <Text style={[styles.rememberWhenTitle, { color: theme.colors.primaryText }]}>You've been here before</Text>
                   <Text style={[styles.rememberWhenMessage, { color: theme.colors.secondaryText }]}>
@@ -1793,23 +1790,10 @@ const styles = StyleSheet.create({
     fontSize: 32,
     marginBottom: 12,
   },
-  statValue: {
-    fontSize: sf(40),
-    fontWeight: '700',
-    color: '#ffffff',
-    letterSpacing: -2,
-  },
   statSubLabel: {
     marginTop: 6,
     fontSize: 11,
     color: '#8b8b8b',
-  },
-  statLabel: {
-    fontSize: 10,
-    color: '#999999',
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
   },
   comingSoonText: {
     fontSize: 14,
@@ -2071,13 +2055,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: isTablet ? 24 : 20,
   },
-  heroGlassOverlay: {
-    position: 'absolute',
-    top: isTablet ? -24 : -20,
-    left: isTablet ? -24 : -20,
-    right: isTablet ? -24 : -20,
-    bottom: isTablet ? -24 : -20,
-  },
   bubbleSheen: {
     position: 'absolute',
     top: 0,
@@ -2086,6 +2063,12 @@ const styles = StyleSheet.create({
     height: '55%',
     borderTopLeftRadius: 999,
     borderTopRightRadius: 999,
+  },
+  bubbleInnerRim: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.22)',
   },
   bubbleMapHeader: {
     marginBottom: 16,
@@ -2119,7 +2102,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
+    borderWidth: 1.25,
     borderColor: 'rgba(139, 92, 246, 0.3)',
   },
   bubbleEmotionText: {
@@ -2254,7 +2237,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 8,
   },
-  inlineHighlightIcon: {
+  inlineHighlightIconIon: {
     fontSize: 16,
     lineHeight: 20,
   },
@@ -2325,7 +2308,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 6,
   },
-  milestoneIcon: {
+  milestoneIconIon: {
     fontSize: 32,
     marginBottom: 12,
     textAlign: 'center',
@@ -2351,7 +2334,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: '100%',
   },
-  rememberWhenIcon: {
+  rememberWhenIconIon: {
     fontSize: 28,
     marginBottom: 12,
   },
@@ -2673,8 +2656,8 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
     borderRadius: 12,
-    borderLeftWidth: 3,
-    borderLeftColor: 'rgba(128, 128, 128, 0.3)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     marginBottom: 12,
   },
   patternInsightText: {
@@ -2821,34 +2804,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  priorityBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  priorityHigh: {
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.4)',
-  },
-  priorityMedium: {
-    backgroundColor: 'rgba(251, 191, 36, 0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(251, 191, 36, 0.4)',
-  },
-  priorityLow: {
-    backgroundColor: 'rgba(96, 165, 250, 0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(96, 165, 250, 0.4)',
-  },
-  priorityText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.9)',
-    letterSpacing: 0.5,
-  },
   patternDate: {
     fontSize: 12,
     color: 'rgba(255, 255, 255, 0.5)',
@@ -2962,11 +2917,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 20,
   },
-  workingFrequency: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.6)',
-    marginBottom: 12,
-  },
   keepGoingButton: {
     alignSelf: 'flex-start',
     paddingVertical: 8,
@@ -3049,41 +2999,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '400',
   },
-  aggregateContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
   aggregateItem: {
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    borderLeftWidth: 3,
-  },
-  aggregateItemText: {
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 8,
-  },
-  aggregateItemCount: {
-    fontSize: 12,
-    fontWeight: '500',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   aggregateItemFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 4,
-  },
-  addToPlaybookButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-  },
-  addToPlaybookText: {
-    fontSize: 12,
-    fontWeight: '600',
   },
   strengthsTitle: {
     fontSize: 15,

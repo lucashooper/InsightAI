@@ -48,9 +48,9 @@ const themes: Record<ThemeName, Theme> = {
   dark: {
     name: 'dark',
     colors: {
-      background: '#0a0a0c',
-      backgroundGradient: ['#0e0e12', '#0a0a0c', '#060608'],
-      cardBackground: 'rgba(30, 30, 35, 0.9)',
+      background: '#08080d',
+      backgroundGradient: ['#101019', '#09090f', '#050508'],
+      cardBackground: 'rgba(4, 4, 7, 0.86)',
       
       primaryText: '#ffffff',
       secondaryText: '#e5e7eb',
@@ -69,13 +69,13 @@ const themes: Record<ThemeName, Theme> = {
       warning: '#f59e0b',
       error: '#ef4444',
       
-      border: 'rgba(255, 255, 255, 0.08)',
-      divider: 'rgba(255, 255, 255, 0.06)',
+      border: 'rgba(255, 255, 255, 0.085)',
+      divider: 'rgba(255, 255, 255, 0.065)',
       shadow: '#000000',
       
-      surface: 'rgba(139, 92, 246, 0.08)',
-      surfaceElevated: 'rgba(139, 92, 246, 0.12)',
-      surfaceHover: 'rgba(139, 92, 246, 0.15)',
+      surface: 'rgba(255, 255, 255, 0.045)',
+      surfaceElevated: 'rgba(255, 255, 255, 0.07)',
+      surfaceHover: 'rgba(255, 255, 255, 0.09)',
     },
   },
   
@@ -252,34 +252,34 @@ const themes: Record<ThemeName, Theme> = {
   light: {
     name: 'light',
     colors: {
-      background: '#fef7f2',
-      backgroundGradient: ['#fef5f8', '#fef0f5', '#fef7f2'],
-      cardBackground: 'rgba(248, 248, 250, 0.85)',
+      background: '#fbf6ff',
+      backgroundGradient: ['#fff0f8', '#f0eaff', '#fff0e8'],
+      cardBackground: 'rgba(255, 255, 255, 0.72)',
       
       primaryText: '#2C2C2C',
       secondaryText: '#4A4A4A',
       tertiaryText: '#6B6B6B',
       
-      primary: '#FFA726',
-      primaryGradient: ['#FFA726', '#FF9800'],
-      secondary: '#4DD0E1',
-      accent: '#FFD700',
+      primary: '#8b5cf6',
+      primaryGradient: ['#a78bfa', '#8b5cf6'],
+      secondary: '#e87974',
+      accent: '#35b9ad',
       
-      orbPrimary: ['rgba(255, 167, 38, 0.9)', 'rgba(255, 152, 0, 0.8)'],
-      orbSecondary: ['rgba(77, 208, 225, 0.85)', 'rgba(38, 198, 218, 0.75)'],
-      orbAccent: ['rgba(255, 215, 0, 0.8)', 'rgba(255, 193, 7, 0.7)'],
+      orbPrimary: ['rgba(168, 85, 247, 0.92)', 'rgba(139, 92, 246, 0.82)'],
+      orbSecondary: ['rgba(244, 122, 104, 0.82)', 'rgba(251, 146, 130, 0.70)'],
+      orbAccent: ['rgba(255, 193, 112, 0.75)', 'rgba(53, 185, 173, 0.55)'],
       
       success: '#66BB6A',
       warning: '#FFA726',
       error: '#EF5350',
       
-      border: '#E8E5DC',
-      divider: 'rgba(74, 74, 74, 0.1)',
-      shadow: 'rgba(139, 92, 70, 0.15)',
+      border: 'rgba(118, 82, 151, 0.14)',
+      divider: 'rgba(83, 55, 105, 0.10)',
+      shadow: 'rgba(107, 73, 135, 0.18)',
       
-      surface: 'rgba(255, 167, 38, 0.05)',
-      surfaceElevated: 'rgba(255, 167, 38, 0.08)',
-      surfaceHover: 'rgba(255, 167, 38, 0.12)',
+      surface: 'rgba(139, 92, 246, 0.055)',
+      surfaceElevated: 'rgba(139, 92, 246, 0.09)',
+      surfaceHover: 'rgba(139, 92, 246, 0.13)',
     },
   },
 };

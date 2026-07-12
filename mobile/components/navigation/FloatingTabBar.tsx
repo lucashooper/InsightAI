@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Pressable, Text, StyleSheet, Platform } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
@@ -76,14 +75,6 @@ export default function FloatingTabBar({ state, navigation }: BottomTabBarProps)
         ) : (
           <View style={[styles.blurFill, { backgroundColor: barFill }]} />
         )}
-        <LinearGradient
-          colors={
-            isDark
-              ? ['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.01)']
-              : ['rgba(255,255,255,0.55)', 'rgba(255,255,255,0.15)']
-          }
-          style={styles.topHighlight}
-        />
         <View style={[styles.barBorder, { borderColor }]} />
         <View style={styles.barContent}>
           <View style={styles.sideGroup}>{leftRoutes.map(renderTab)}</View>
@@ -131,14 +122,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     borderRadius: 28,
     overflow: 'hidden',
-  },
-  topHighlight: {
-    position: 'absolute',
-    top: 0,
-    left: 20,
-    right: 20,
-    height: 1,
-    borderRadius: 1,
   },
   barBorder: {
     ...StyleSheet.absoluteFillObject,

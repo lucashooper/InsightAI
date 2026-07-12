@@ -34,6 +34,8 @@ import { sf } from '../utils/responsive';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { getCachedChatSuggestions, setCachedChatSuggestions } from '../utils/chatSuggestionsCache';
+import InsightCompanionMark from '../components/companion/InsightCompanionMark';
+import Purchases from 'react-native-purchases';
 
 const CHAT_HISTORY_KEY_PREFIX = 'AI_CHAT_HISTORY_';
 const AI_PERSONALITY_KEY = 'AI_PERSONALITY';
@@ -522,9 +524,7 @@ export default function AIChatScreen({ navigation }: any) {
       ]}>
         {!isUser && (
           <View style={styles.avatarWrap}>
-            <LinearGradient colors={['#8b5cf6', '#6d28d9']} style={styles.avatarGradient}>
-              <Ionicons name="sparkles" size={12} color="#fff" />
-            </LinearGradient>
+            <InsightCompanionMark size={26} isDark={isDark} />
           </View>
         )}
         <Animated.View style={[
@@ -563,14 +563,9 @@ export default function AIChatScreen({ navigation }: any) {
     <View style={styles.emptyState}>
       {/* Premium orb */}
       <View style={styles.orbContainer}>
-        <LinearGradient
-          colors={['#a78bfa', '#8b5cf6', '#7c3aed', '#6d28d9']}
-          style={styles.orb}
-          start={{ x: 0.1, y: 0 }}
-          end={{ x: 0.9, y: 1 }}
-        >
-          <Ionicons name="sparkles" size={26} color="#fff" />
-        </LinearGradient>
+        <View style={styles.orb}>
+          <InsightCompanionMark size={68} isDark={isDark} />
+        </View>
       </View>
 
       <Text style={[styles.emptySubtitle, { color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)' }]}>
@@ -583,16 +578,25 @@ export default function AIChatScreen({ navigation }: any) {
           {suggestions.map((suggestion, index) => (
             <TouchableOpacity
               key={index}
-              style={styles.suggestionChip}
+              style={[
+                styles.suggestionChip,
+                {
+                  shadowOpacity: isDark ? 0.22 : 0.14,
+                  borderColor: isDark ? 'rgba(196,181,253,0.2)' : 'rgba(139,92,246,0.18)',
+                },
+              ]}
               onPress={() => sendMessage(suggestion)}
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={['rgba(139, 92, 246, 0.12)', 'rgba(139, 92, 246, 0.06)']}
+                colors={isDark
+                  ? ['rgba(139,92,246,0.2)', 'rgba(72,48,116,0.16)', 'rgba(18,16,28,0.3)']
+                  : ['rgba(255,255,255,0.88)', 'rgba(244,235,255,0.82)', 'rgba(255,241,247,0.72)']}
                 style={styles.suggestionChipInner}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
+                <View style={[styles.suggestionHighlight, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.72)' }]} />
                 <Text style={[styles.suggestionText, { color: isDark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.7)' }]} numberOfLines={2}>{suggestion}</Text>
                 <Ionicons name="arrow-forward" size={14} color="rgba(167,139,250,0.7)" style={{ marginLeft: 12, flexShrink: 0 }} />
               </LinearGradient>
@@ -662,7 +666,7 @@ export default function AIChatScreen({ navigation }: any) {
         <View style={[
           styles.inputContainer,
           { paddingBottom: Math.max(insets.bottom, 12) },
-          { backgroundColor: isDark ? `${theme.colors.background}F2` : `${theme.colors.background}F2` },
+          { backgroundColor: 'transparent' },
         ]}>
           {/* Usage indicator for free users */}
           {!isProUser && (
@@ -682,9 +686,9 @@ export default function AIChatScreen({ navigation }: any) {
               <Ionicons
                 name={isTemporary ? 'eye-off-outline' : 'save-outline'}
                 size={14}
-                color={isTemporary ? '#ef4444' : 'rgba(255,255,255,0.35)'}
+                color={isTemporary ? '#ef4444' : theme.colors.tertiaryText}
               />
-              <Text style={[styles.tempToggleText, isTemporary && { color: '#ef4444' }]}>
+              <Text style={[styles.tempToggleText, { color: theme.colors.tertiaryText }, isTemporary && { color: '#ef4444' }]}>
                 {isTemporary ? 'Temporary chat' : 'Chat will be saved'}
               </Text>
             </TouchableOpacity>
@@ -870,10 +874,11 @@ const styles = StyleSheet.create({
   // Empty state
   emptyState: { alignItems: 'center', paddingHorizontal: 24 },
   orbContainer: {
-    width: 64, height: 64, justifyContent: 'center', alignItems: 'center', marginBottom: 20,
+    width: 68, height: 68, justifyContent: 'center', alignItems: 'center', marginBottom: 22,
   },
   orb: {
-    width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center',
+    width: 68, height: 68, borderRadius: 34, overflow: 'hidden',
+    justifyContent: 'center', alignItems: 'center',
     shadowColor: '#8b5cf6', shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4, shadowRadius: 20, elevation: 14,
   },
@@ -883,12 +888,18 @@ const styles = StyleSheet.create({
   },
   suggestionsContainer: { width: '100%', gap: 10 },
   suggestionChip: {
-    borderRadius: 16, overflow: 'hidden',
+    borderRadius: 18,
     borderWidth: 1, borderColor: 'rgba(139,92,246,0.18)',
+    shadowColor: '#7C3AED', shadowOffset: { width: 0, height: 7 },
+    shadowRadius: 16, elevation: 4,
   },
   suggestionChipInner: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingVertical: 15,
+    borderRadius: 17, overflow: 'hidden',
+  },
+  suggestionHighlight: {
+    position: 'absolute', top: 0, left: 18, right: 18, height: StyleSheet.hairlineWidth,
   },
   suggestionText: {
     fontSize: sf(14.5), color: 'rgba(255,255,255,0.8)', fontWeight: '500', flex: 1,
@@ -898,7 +909,7 @@ const styles = StyleSheet.create({
   messageBubbleContainer: { flexDirection: 'row', marginBottom: 16, alignItems: 'flex-start' },
   userBubbleContainer: { justifyContent: 'flex-end', alignItems: 'flex-end' },
   assistantBubbleContainer: { justifyContent: 'flex-start', alignItems: 'flex-start' },
-  avatarWrap: { marginRight: 8, marginTop: 4 },
+  avatarWrap: { marginRight: 8, marginTop: 4, width: 26, height: 26, borderRadius: 13, overflow: 'hidden' },
   avatarGradient: { width: 26, height: 26, borderRadius: 13, justifyContent: 'center', alignItems: 'center' },
   userAvatarWrap: { marginLeft: 8, marginBottom: 2 },
   userAvatarFrame: {
@@ -932,7 +943,7 @@ const styles = StyleSheet.create({
   // Input
   inputContainer: {
     paddingHorizontal: 16, paddingTop: 8,
-    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(139,92,246,0.1)',
+    borderTopWidth: 0,
   },
   usageIndicator: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',

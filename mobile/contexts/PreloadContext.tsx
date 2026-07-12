@@ -1,10 +1,12 @@
 import React, { createContext, useCallback, useContext, useMemo, useState, ReactNode } from 'react';
+import { InteractionManager } from 'react-native';
 import { supabase } from '../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Purchases from 'react-native-purchases';
 import { decryptEntries, decryptEntriesInChunks } from '../utils/decryptBatch';
 import { prewarmDashboardCache, clearDashboardCache } from '../utils/dashboardCache';
 import { prewarmChatSuggestions, clearChatSuggestionsCache } from '../utils/chatSuggestionsCache';
+import { yieldToUI } from '../utils/yieldToUI';
 
 interface UserProfile {
   id: string;
@@ -77,9 +79,11 @@ export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children })
     console.log('[PRELOAD] Starting preload for user:', userId);
 
     const cachedUsername = await AsyncStorage.getItem('CACHED_USERNAME').catch(() => null);
+    // Reveal splash / PIN as soon as cached identity is ready — don't block on network or decrypt.
     setData((prev) => ({
       ...prev,
       userName: cachedUsername || prev.userName,
+      isStartupReady: true,
     }));
 
     try {
@@ -125,7 +129,7 @@ export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children })
         await AsyncStorage.setItem('CACHED_USERNAME', userProfile.username).catch(() => {});
       }
 
-      // Initial fetch complete — safe to reveal main UI
+      // Initial fetch complete — notes arrive encrypted; decrypt deferred so PIN stays responsive.
       setData((prev) => ({
         ...prev,
         notes,
@@ -136,12 +140,23 @@ export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children })
         isStartupReady: true,
       }));
 
-      // Decrypt in background without blocking navigation
-      decryptEntriesInChunks(notes, 5).then((processedNotes) => {
-        console.log('[PRELOAD] ✅ Decrypted', processedNotes.length, 'notes in background');
-        setData((prev) => ({ ...prev, notes: processedNotes }));
-        prewarmDashboardCache(userId, processedNotes);
-        prewarmChatSuggestions(userId);
+      InteractionManager.runAfterInteractions(async () => {
+        // Let splash fade + lock screen mount before any CPU-heavy work.
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        await yieldToUI();
+        await yieldToUI();
+
+        try {
+          const processedNotes = await decryptEntriesInChunks(notes, 2);
+          console.log('[PRELOAD] ✅ Decrypted', processedNotes.length, 'notes in background');
+          setData((prev) => ({ ...prev, notes: processedNotes }));
+
+          await yieldToUI();
+          prewarmDashboardCache(userId, processedNotes);
+          prewarmChatSuggestions(userId);
+        } catch (decryptError) {
+          console.error('[PRELOAD] Background decrypt error:', decryptError);
+        }
       });
 
       // Account stats — lowest priority

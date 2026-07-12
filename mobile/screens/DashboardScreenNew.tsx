@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Dimensions,
   Image,
-  Animated,
   Alert,
   ActivityIndicator,
 } from 'react-native';
@@ -43,7 +42,6 @@ export default function DashboardScreenNew() {
   const { user } = useAuth();
   const { theme } = useTheme();
   const { data: preloaded, refreshNotes } = usePreloadedData();
-  const [orbImageLoaded, setOrbImageLoaded] = useState(true);
   const navigation = useNavigation<any>();
   const [loading, setLoading] = useState(true);
   const [emotionalState, setEmotionalState] = useState<EmotionalState>({
@@ -520,11 +518,11 @@ export default function DashboardScreenNew() {
             style={[styles.orbImage, { left: (width - (isTablet ? 600 : 340)) / 2 }]}
           />
           <View style={styles.greetingInOrb}>
-            <Text style={[styles.greetingText, { 
-              color: isDarkTheme(theme.name) ? '#FFFFFF' : '#2A2140',
-              textShadowColor: !isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.25)',
+            <Text style={[styles.greetingText, {
+              color: '#FFFFFF',
+              textShadowColor: isDarkTheme(theme.name) ? 'rgba(0, 0, 0, 0.42)' : 'rgba(61, 31, 72, 0.32)',
               textShadowOffset: { width: 0, height: 1 },
-              textShadowRadius: 8,
+              textShadowRadius: 10,
             }]}>
               Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}{userName && userName !== 'there' ? `,\n${userName.charAt(0).toUpperCase() + userName.slice(1)}` : ''}
             </Text>
@@ -959,11 +957,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   greetingText: {
-    fontSize: isTablet ? 58 : 34,
-    fontWeight: '700',
-    letterSpacing: isTablet ? -0.6 : -0.4,
+    fontSize: isTablet ? 56 : 33,
+    fontWeight: '600',
+    letterSpacing: isTablet ? -0.4 : -0.25,
     textAlign: 'center',
-    lineHeight: isTablet ? 68 : 42,
+    lineHeight: isTablet ? 68 : 41,
   },
   iconButton: {
     width: isTablet ? 56 : 44,

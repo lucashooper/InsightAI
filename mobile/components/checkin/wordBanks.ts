@@ -43,29 +43,39 @@ export const CONTEXT_DOING = [
   'Creating', 'Learning', 'Scrolling', 'Chores', 'Reflecting',
 ];
 
-export const MOOD_TINTS: Record<MoodTier, { bg: [string, string, string]; accent: string; chip: string }> = {
+export const MOOD_TINTS: Record<MoodTier, {
+  bg: [string, string, string];
+  lightBg: [string, string, string];
+  accent: string;
+  chip: string;
+}> = {
   terrible: {
     bg: ['#0f0a14', '#1a1020', '#120818'],
+    lightBg: ['#fff9fc', '#fff1f2', '#faf5ff'],
     accent: '#F87171',
     chip: 'rgba(248, 113, 113, 0.22)',
   },
   struggling: {
     bg: ['#0f0c14', '#181028', '#120e1c'],
+    lightBg: ['#fffaf7', '#fff2e8', '#f8f3ff'],
     accent: '#FB923C',
     chip: 'rgba(251, 146, 60, 0.20)',
   },
   neutral: {
     bg: ['#0c0c12', '#14121c', '#101018'],
+    lightBg: ['#fcfaff', '#f4edff', '#fff8fb'],
     accent: '#A78BFA',
     chip: 'rgba(167, 139, 250, 0.18)',
   },
   good: {
     bg: ['#0c1018', '#121828', '#0e1420'],
+    lightBg: ['#f8fbff', '#eaf3ff', '#faf6ff'],
     accent: '#60A5FA',
     chip: 'rgba(96, 165, 250, 0.20)',
   },
   amazing: {
     bg: ['#100c18', '#1a1230', '#140e24'],
+    lightBg: ['#fff9ff', '#f5eaff', '#fff4fa'],
     accent: '#C084FC',
     chip: 'rgba(192, 132, 252, 0.24)',
   },
