@@ -1201,8 +1201,7 @@ export default function DashboardScreen() {
                     activeOpacity={0.7}
                   >
                     <Text style={[styles.viewEntryText, { color: theme.colors.primaryText }]}>View That Entry</Text>
-                    <Ionicons name="chevron-forward" size={14} color={theme.colors.primaryText} />
-                    <Ionicons name="chevron-forward" size={14} color={theme.colors.primaryText} />
+                    <Ionicons name="chevron-forward" size={14} color={theme.colors.secondaryText} />
                   </TouchableOpacity>
                 </StandardContainer>
               </Animated.View>
@@ -2351,6 +2350,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   viewEntryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     alignSelf: 'flex-start',
     paddingVertical: 10,
     paddingHorizontal: 18,

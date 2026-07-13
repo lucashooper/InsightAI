@@ -23,20 +23,24 @@ type Blob = {
 };
 
 const LIGHT_BLOBS: Blob[] = [
-  { rgb: '178,125,230', alpha: 0.64, diameter: 1.04, cx: 0.5, cy: 0.51, driftX: 3, driftY: -2, scaleFrom: 0.99, scaleTo: 1.02, duration: 15000 },
-  { rgb: '168,85,247', alpha: 0.88, diameter: 0.65, cx: 0.41, cy: 0.43, driftX: 7, driftY: -6, scaleFrom: 0.99, scaleTo: 1.04, duration: 10000 },
+  { rgb: '178,125,230', alpha: 0.64, diameter: 1.06, cx: 0.5, cy: 0.5, driftX: 3, driftY: -2, scaleFrom: 0.99, scaleTo: 1.02, duration: 15000 },
+  { rgb: '168,85,247', alpha: 0.88, diameter: 0.68, cx: 0.44, cy: 0.4, driftX: 7, driftY: -6, scaleFrom: 0.99, scaleTo: 1.04, duration: 10000 },
   { rgb: '255,123,101', alpha: 0.80, diameter: 0.60, cx: 0.6, cy: 0.52, driftX: -7, driftY: 5, scaleFrom: 1.03, scaleTo: 0.98, duration: 12000 },
   { rgb: '255,190,105', alpha: 0.64, diameter: 0.49, cx: 0.53, cy: 0.63, driftX: 5, driftY: 6, scaleFrom: 0.97, scaleTo: 1.02, duration: 13500 },
-  { rgb: '89,183,216', alpha: 0.58, diameter: 0.49, cx: 0.38, cy: 0.59, driftX: -5, driftY: -4, scaleFrom: 1.02, scaleTo: 0.99, duration: 11500 },
+  { rgb: '89,183,216', alpha: 0.58, diameter: 0.52, cx: 0.38, cy: 0.59, driftX: -5, driftY: -4, scaleFrom: 1.02, scaleTo: 0.99, duration: 11500 },
+  { rgb: '167,139,250', alpha: 0.52, diameter: 0.56, cx: 0.63, cy: 0.34, driftX: 4, driftY: -3, scaleFrom: 0.98, scaleTo: 1.03, duration: 12500 },
 ];
 
 const DARK_BLOBS: Blob[] = [
-  { rgb: '81,57,119', alpha: 0.72, diameter: 1.04, cx: 0.5, cy: 0.51, driftX: 3, driftY: -2, scaleFrom: 0.99, scaleTo: 1.02, duration: 15000 },
-  { rgb: '139,92,246', alpha: 0.92, diameter: 0.74, cx: 0.4, cy: 0.42, driftX: 12, driftY: -10, scaleFrom: 0.97, scaleTo: 1.07, duration: 10000 },
+  { rgb: '81,57,119', alpha: 0.72, diameter: 1.06, cx: 0.5, cy: 0.5, driftX: 3, driftY: -2, scaleFrom: 0.99, scaleTo: 1.02, duration: 15000 },
+  { rgb: '139,92,246', alpha: 0.92, diameter: 0.76, cx: 0.42, cy: 0.4, driftX: 12, driftY: -10, scaleFrom: 0.97, scaleTo: 1.07, duration: 10000 },
   { rgb: '240,101,79', alpha: 0.76, diameter: 0.66, cx: 0.61, cy: 0.51, driftX: -12, driftY: 9, scaleFrom: 1.05, scaleTo: 0.96, duration: 12000 },
   { rgb: '45,212,191', alpha: 0.67, diameter: 0.57, cx: 0.52, cy: 0.65, driftX: 9, driftY: 11, scaleFrom: 0.94, scaleTo: 1.04, duration: 13500 },
-  { rgb: '99,102,241', alpha: 0.64, diameter: 0.56, cx: 0.37, cy: 0.59, driftX: -9, driftY: -8, scaleFrom: 1.04, scaleTo: 0.97, duration: 11500 },
+  { rgb: '99,102,241', alpha: 0.64, diameter: 0.58, cx: 0.37, cy: 0.59, driftX: -9, driftY: -8, scaleFrom: 1.04, scaleTo: 0.97, duration: 11500 },
+  { rgb: '129,99,220', alpha: 0.58, diameter: 0.58, cx: 0.64, cy: 0.34, driftX: 6, driftY: -5, scaleFrom: 0.98, scaleTo: 1.04, duration: 12500 },
 ];
+
+const WARM_RGB = new Set(['255,123,101', '255,190,105', '240,101,79']);
 
 function AuroraBlob({
   blob,
@@ -109,18 +113,33 @@ function AuroraBlob({
   );
 }
 
-function scaleBlobsForSize(blobs: Blob[], size: number, compact: boolean): Blob[] {
+function scaleBlobsForSize(
+  blobs: Blob[],
+  size: number,
+  compact: boolean,
+  clipToCircle: boolean,
+): Blob[] {
   const scale = compact ? Math.min(1, size / 100) : 1;
   const driftScale = compact ? Math.max(0.15, scale * 0.45) : 1;
   const diameterScale = compact && size < 72 ? 0.94 : 1;
 
-  return blobs.map((blob) => ({
-    ...blob,
-    diameter: blob.diameter * diameterScale,
-    driftX: blob.driftX * driftScale,
-    driftY: blob.driftY * driftScale,
-    alpha: compact ? Math.min(blob.alpha, blob.alpha * (0.82 + scale * 0.18)) : blob.alpha,
-  }));
+  return blobs
+    .filter((blob) => !(compact && clipToCircle && blob.diameter >= 1.0))
+    .map((blob) => {
+      const warm = WARM_RGB.has(blob.rgb);
+      const warmDim = compact && clipToCircle && warm ? 0.42 : 1;
+      const coolBoost = compact && clipToCircle && !warm ? 1.08 : 1;
+
+      return {
+        ...blob,
+        diameter: blob.diameter * diameterScale,
+        driftX: blob.driftX * driftScale,
+        driftY: blob.driftY * driftScale,
+        alpha: compact
+          ? Math.min(blob.alpha * warmDim * coolBoost, warm ? blob.alpha * 0.55 : blob.alpha * 0.92)
+          : blob.alpha,
+      };
+    });
 }
 
 type Props = {
@@ -146,7 +165,7 @@ export default function AuroraOrb({
 }: Props) {
   const isCompact = compact || size <= 72;
   const sourceBlobs = isDark ? DARK_BLOBS : LIGHT_BLOBS;
-  const blobs = scaleBlobsForSize(sourceBlobs, size, isCompact);
+  const blobs = scaleBlobsForSize(sourceBlobs, size, isCompact, !!clipToCircle);
   const [motionEnabled, setMotionEnabled] = React.useState(true);
 
   React.useEffect(() => {

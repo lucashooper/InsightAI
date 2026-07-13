@@ -26,12 +26,13 @@ interface VerifyEmailScreenProps {
       email: string;
       type: 'signup' | 'email_change';
       username?: string;
+      password?: string;
     };
   };
 }
 
 export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScreenProps) {
-  const { email, type, username } = route.params;
+  const { email, type, username, password } = route.params;
   const { userName, setUserName } = useOnboarding();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -207,27 +208,53 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
     }
   };
 
+  const resendErrorMessage = (message: string) => {
+    const lower = message.toLowerCase();
+    if (lower.includes('rate limit') || lower.includes('once every')) {
+      return 'Please wait a minute before requesting another code.';
+    }
+    if (lower.includes('smtp') || lower.includes('email')) {
+      return 'We could not send the email right now. Check your inbox/spam, then try again in a minute.';
+    }
+    if (lower.includes('already registered') || lower.includes('already exists')) {
+      return 'This email is already registered. Try logging in instead.';
+    }
+    return 'Failed to resend code. Please try again.';
+  };
+
   const handleResendCode = async () => {
     if (resendCooldown > 0) return;
 
     setLoading(true);
     console.log('[OTP RESEND] Starting resend');
     console.log('[OTP RESEND] Email:', email);
+    console.log('[OTP RESEND] Type:', type);
 
     try {
-      const { error: resendError } = await supabase.auth.resend({
-        type: 'signup',
+      const resendType = type === 'email_change' ? 'email_change' : 'signup';
+      let { error: resendError } = await supabase.auth.resend({
+        type: resendType,
         email,
       });
+
+      // Fallback: re-trigger signup confirmation for unverified accounts
+      if (resendError && type === 'signup' && password) {
+        console.log('[OTP RESEND] auth.resend failed, trying signUp fallback');
+        const { error: signupError } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        resendError = signupError;
+      }
 
       if (resendError) {
         console.error('[OTP RESEND] ❌ Resend failed');
         console.error('[OTP RESEND] Error:', resendError);
-        Alert.alert('Error', 'Failed to resend code. Please try again.');
+        Alert.alert('Could Not Resend', resendErrorMessage(resendError.message));
       } else {
         console.log('[OTP RESEND] ✅ Code resent successfully');
         Alert.alert('Code Sent', 'A new verification code has been sent to your email.');
-        setResendCooldown(60); // 60 second cooldown
+        setResendCooldown(60);
       }
     } catch (err: any) {
       console.error('[OTP RESEND] ❌ Exception:', err);

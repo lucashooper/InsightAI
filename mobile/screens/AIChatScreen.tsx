@@ -879,8 +879,6 @@ const styles = StyleSheet.create({
   orb: {
     width: 68, height: 68, borderRadius: 34, overflow: 'hidden',
     justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#8b5cf6', shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4, shadowRadius: 20, elevation: 14,
   },
   emptySubtitle: {
     fontSize: sf(15), color: 'rgba(255,255,255,0.55)', textAlign: 'center',

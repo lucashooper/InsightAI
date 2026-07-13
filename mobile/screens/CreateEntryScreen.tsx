@@ -255,7 +255,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
     savingInProgress.current = true;
     
     try {
-      const entryTitle = content.trim().split('\n')[0].substring(0, 50) || 'Journal Entry';
+      const entryTitle = title.trim() || content.trim().split('\n')[0].substring(0, 50) || 'Journal Entry';
 
       // If auto-save already created the entry, update it and reuse
       if (savedEntryIdRef.current) {
@@ -281,7 +281,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
             .single();
 
           if (updatedEntry) {
-            navigation.navigate('EntryDetail', { entry: updatedEntry, shouldAnalyze: true });
+            navigation.replace('EntryDetail', { entry: updatedEntry, shouldAnalyze: true });
           }
         } else {
           console.error('[CreateEntry] Error updating entry:', error);
@@ -305,7 +305,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           savedEntryIdRef.current = data.id;
           await persistLinkedCheckIn(data.id, entryTitle);
           console.log('[CreateEntry] Entry saved successfully, navigating to analyze');
-          navigation.navigate('EntryDetail', { entry: data, shouldAnalyze: true });
+          navigation.replace('EntryDetail', { entry: data, shouldAnalyze: true });
         } else {
           console.error('[CreateEntry] Error saving entry:', error);
         }

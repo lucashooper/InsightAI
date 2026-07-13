@@ -1487,9 +1487,11 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    padding: 40,
+    paddingHorizontal: 40,
+    paddingTop: 72,
+    paddingBottom: 40,
   },
   emptyIcon: {
     fontSize: 64,

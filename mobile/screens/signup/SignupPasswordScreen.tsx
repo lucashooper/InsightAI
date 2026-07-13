@@ -62,6 +62,7 @@ export default function SignupPasswordScreen({ navigation, route }: any) {
       navigation.navigate('VerifyEmail', {
         email,
         type: 'signup',
+        password,
       });
     }
   };

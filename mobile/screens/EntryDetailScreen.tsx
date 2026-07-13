@@ -665,6 +665,14 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
 
   const structuredInsights = entry.ai_structured_insights || null;
   const moodAnalysis = structuredInsights?.mood_analysis || null;
+  const dark = isDarkTheme(theme.name);
+  const playbookScrim = dark ? 'rgba(0, 0, 0, 0.72)' : 'rgba(118, 100, 150, 0.24)';
+  const playbookModalBg = dark ? theme.colors.cardBackground : '#FFFFFF';
+  const playbookHeaderBorder = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+  const playbookEmojiBg = dark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.92)';
+  const playbookEmojiBorder = dark ? 'rgba(255,255,255,0.08)' : 'rgba(139,92,246,0.14)';
+  const playbookInputBg = dark ? 'rgba(255,255,255,0.05)' : 'rgba(248,245,255,0.98)';
+  const playbookInputBorder = dark ? theme.colors.border : 'rgba(139,92,246,0.16)';
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -1198,9 +1206,9 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
         onRequestClose={() => setPlaybookPreviewVisible(false)}
       >
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-          <View style={styles.playbookOverlay}>
-            <View style={[styles.playbookModal, { backgroundColor: theme.colors.cardBackground }]}>
-              <View style={styles.playbookModalHeader}>
+          <View style={[styles.playbookOverlay, { backgroundColor: playbookScrim }]}>
+            <View style={[styles.playbookModal, { backgroundColor: playbookModalBg }]}>
+              <View style={[styles.playbookModalHeader, { borderBottomColor: playbookHeaderBorder }]}>
                 <Text style={[styles.playbookModalTitle, { color: theme.colors.primaryText }]}>Add to Playbook</Text>
                 <TouchableOpacity onPress={() => setPlaybookPreviewVisible(false)}>
                   <Ionicons name="close" size={24} color={theme.colors.secondaryText} />
@@ -1216,6 +1224,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                       key={e}
                       style={[
                         styles.playbookEmojiOption,
+                        { backgroundColor: playbookEmojiBg, borderColor: playbookEmojiBorder },
                         playbookDraft.emoji === e && styles.playbookEmojiActive,
                       ]}
                       onPress={() => setPlaybookDraft({ ...playbookDraft, emoji: e })}
@@ -1228,7 +1237,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                 {/* Title */}
                 <Text style={[styles.playbookLabel, { color: theme.colors.secondaryText }]}>Title</Text>
                 <TextInput
-                  style={[styles.playbookInput, { color: theme.colors.primaryText, borderColor: theme.colors.border }]}
+                  style={[styles.playbookInput, { color: theme.colors.primaryText, borderColor: playbookInputBorder, backgroundColor: playbookInputBg }]}
                   value={playbookDraft.title}
                   onChangeText={(t) => setPlaybookDraft({ ...playbookDraft, title: t })}
                   placeholder="Protocol title"
@@ -1238,7 +1247,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                 {/* Description */}
                 <Text style={[styles.playbookLabel, { color: theme.colors.secondaryText }]}>Description</Text>
                 <TextInput
-                  style={[styles.playbookInput, styles.playbookTextArea, { color: theme.colors.primaryText, borderColor: theme.colors.border }]}
+                  style={[styles.playbookInput, styles.playbookTextArea, { color: theme.colors.primaryText, borderColor: playbookInputBorder, backgroundColor: playbookInputBg }]}
                   value={playbookDraft.description}
                   onChangeText={(t) => setPlaybookDraft({ ...playbookDraft, description: t })}
                   placeholder="Describe the daily practice..."
@@ -1588,7 +1597,6 @@ const styles = StyleSheet.create({
   // Playbook Preview Overlay
   playbookOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'flex-end',
   },
   playbookModal: {
@@ -1596,6 +1604,11 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     maxHeight: '85%',
     paddingBottom: 40,
+    shadowColor: '#6B5B95',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 12,
   },
   playbookModalHeader: {
     flexDirection: 'row',
@@ -1603,7 +1616,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   playbookModalTitle: {
     fontSize: 20,
@@ -1629,11 +1641,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.05)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
   },
   playbookEmojiActive: {
     backgroundColor: 'rgba(139, 92, 246, 0.2)',
@@ -1641,7 +1651,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   playbookInput: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 12,
     padding: 14,
     fontSize: 16,
