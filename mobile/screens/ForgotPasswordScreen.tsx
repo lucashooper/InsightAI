@@ -20,6 +20,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import SunoGradient from '../components/onboarding/SunoGradient';
 import OTPInput from '../components/OTPInput';
 import { supabase } from '../lib/supabase';
+import { useLanguage } from '../contexts/LanguageContext';
 
 type RecoveryStep = 'email' | 'code' | 'password' | 'success';
 const PASSWORD_RECOVERY_ACTIVE_KEY = 'PASSWORD_RECOVERY_ACTIVE';
@@ -27,6 +28,7 @@ const PASSWORD_RECOVERY_STAGE_KEY = 'PASSWORD_RECOVERY_STAGE';
 const PASSWORD_RECOVERY_EMAIL_KEY = 'PASSWORD_RECOVERY_EMAIL';
 
 export default function ForgotPasswordScreen({ navigation }: any) {
+  const { t } = useLanguage();
   const [step, setStep] = useState<RecoveryStep>('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -76,12 +78,12 @@ export default function ForgotPasswordScreen({ navigation }: any) {
 
   const sendRecoveryCode = async () => {
     if (!normalizedEmail) {
-      Alert.alert('Enter Email', 'Please enter your email address.');
+      Alert.alert(t('auxiliary.forgotPassword.enterEmail'), t('auxiliary.forgotPassword.enterEmailMessage'));
       return false;
     }
 
     if (!normalizedEmail.includes('@')) {
-      Alert.alert('Invalid Email', 'Please enter a valid email address.');
+      Alert.alert(t('auxiliary.forgotPassword.invalidEmail'), t('auxiliary.forgotPassword.invalidEmailMessage'));
       return false;
     }
 
@@ -93,7 +95,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
       const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail);
       if (error) {
         console.error('[PASSWORD RESET] Error sending recovery code:', error);
-        Alert.alert('Error', 'Failed to send your recovery code. Please try again.');
+        Alert.alert(t('auxiliary.common.error'), t('auxiliary.forgotPassword.sendFailed'));
         return false;
       }
 
@@ -104,7 +106,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
       return true;
     } catch (err: any) {
       console.error('[PASSWORD RESET] Exception sending recovery code:', err);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      Alert.alert(t('auxiliary.common.error'), t('auxiliary.common.tryAgain'));
       return false;
     } finally {
       setLoading(false);
@@ -153,7 +155,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
         console.error('[PASSWORD RESET] Recovery code verification failed:', error);
         await AsyncStorage.removeItem(PASSWORD_RECOVERY_ACTIVE_KEY);
         setCodeError(true);
-        Alert.alert('Invalid Code', 'That recovery code is invalid or has expired.');
+        Alert.alert(t('auxiliary.forgotPassword.invalidCode'), t('auxiliary.forgotPassword.invalidCodeMessage'));
         return;
       }
 
@@ -164,7 +166,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
       console.error('[PASSWORD RESET] Exception verifying recovery code:', err);
       await AsyncStorage.removeItem(PASSWORD_RECOVERY_ACTIVE_KEY);
       setCodeError(true);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      Alert.alert(t('auxiliary.common.error'), t('auxiliary.common.tryAgain'));
     } finally {
       setLoading(false);
     }
@@ -172,12 +174,12 @@ export default function ForgotPasswordScreen({ navigation }: any) {
 
   const handleUpdatePassword = async () => {
     if (!password || password.length < 8) {
-      Alert.alert('Password Too Short', 'Please use at least 8 characters.');
+      Alert.alert(t('auxiliary.forgotPassword.tooShort'), t('auxiliary.forgotPassword.tooShortMessage'));
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Passwords Do Not Match', 'Please make sure both passwords match.');
+      Alert.alert(t('auxiliary.forgotPassword.mismatch'), t('auxiliary.forgotPassword.mismatchMessage'));
       return;
     }
 
@@ -187,7 +189,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) {
         console.error('[PASSWORD RESET] Failed to update password:', error);
-        Alert.alert('Error', error.message || 'Failed to update your password.');
+        Alert.alert(t('auxiliary.common.error'), error.message || t('auxiliary.forgotPassword.updateFailed'));
         return;
       }
 
@@ -195,7 +197,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
       await AsyncStorage.setItem(PASSWORD_RECOVERY_STAGE_KEY, 'success');
     } catch (err: any) {
       console.error('[PASSWORD RESET] Exception updating password:', err);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      Alert.alert(t('auxiliary.common.error'), t('auxiliary.common.tryAgain'));
     } finally {
       setLoading(false);
     }
@@ -258,13 +260,13 @@ export default function ForgotPasswordScreen({ navigation }: any) {
   const renderTitle = () => {
     switch (step) {
       case 'code':
-        return 'Check your email';
+        return t('auxiliary.forgotPassword.checkEmail');
       case 'password':
-        return 'Create a new password';
+        return t('auxiliary.forgotPassword.createPassword');
       case 'success':
-        return 'Password updated';
+        return t('auxiliary.forgotPassword.updated');
       default:
-        return 'Reset Password';
+        return t('auxiliary.forgotPassword.reset');
     }
   };
 
@@ -273,26 +275,26 @@ export default function ForgotPasswordScreen({ navigation }: any) {
       case 'code':
         return (
           <Text style={styles.subtitle}>
-            Enter the 6-digit recovery code we sent to{' '}
+            {t('auxiliary.forgotPassword.codeSentTo')}{' '}
             <Text style={styles.emailInline}>{normalizedEmail}</Text>
           </Text>
         );
       case 'password':
         return (
           <Text style={styles.subtitle}>
-            Choose a new password for your account.
+            {t('auxiliary.forgotPassword.chooseNew')}
           </Text>
         );
       case 'success':
         return (
           <Text style={styles.subtitle}>
-            Your password has been reset. Sign back in with your new details.
+            {t('auxiliary.forgotPassword.successMessage')}
           </Text>
         );
       default:
         return (
           <Text style={styles.subtitle}>
-            Enter your email address and we&apos;ll send you a recovery code.
+            {t('auxiliary.forgotPassword.instructions')}
           </Text>
         );
     }
@@ -318,7 +320,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
               style={styles.secondaryButtonIcon}
             />
             <Text style={[styles.secondaryButtonText, resendCooldown > 0 && styles.secondaryButtonTextDisabled]}>
-              {resendCooldown > 0 ? `Resend code (${resendCooldown}s)` : 'Resend code'}
+              {resendCooldown > 0 ? t('auxiliary.verifyEmail.resendCountdown', { seconds: resendCooldown }) : t('auxiliary.verifyEmail.resend')}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -331,7 +333,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
               }
             }}
           >
-            <Text style={styles.linkButtonText}>Change email address</Text>
+            <Text style={styles.linkButtonText}>{t('auxiliary.verifyEmail.changeEmail')}</Text>
           </TouchableOpacity>
         </>
       );
@@ -343,7 +345,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
           <View style={styles.passwordContainer}>
             <TextInput
               style={styles.passwordInput}
-              placeholder="New password"
+              placeholder={t('auxiliary.forgotPassword.newPassword')}
               placeholderTextColor="rgba(0, 0, 0, 0.4)"
               value={password}
               onChangeText={setPassword}
@@ -364,7 +366,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
           <View style={styles.passwordContainer}>
             <TextInput
               style={styles.passwordInput}
-              placeholder="Confirm new password"
+              placeholder={t('auxiliary.forgotPassword.confirmPassword')}
               placeholderTextColor="rgba(0, 0, 0, 0.4)"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
@@ -396,7 +398,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
     return (
       <TextInput
         style={styles.input}
-        placeholder="Email"
+        placeholder={t('auxiliary.common.email')}
         placeholderTextColor="rgba(0, 0, 0, 0.4)"
         value={email}
         onChangeText={setEmail}
@@ -413,12 +415,12 @@ export default function ForgotPasswordScreen({ navigation }: any) {
   const renderPrimaryButton = () => {
     const buttonText =
       step === 'code'
-        ? 'Enter code above'
+        ? t('auxiliary.forgotPassword.enterCodeAbove')
         : step === 'password'
-          ? 'Update password'
+          ? t('auxiliary.forgotPassword.updatePassword')
           : step === 'success'
-            ? 'Back to Sign In'
-            : 'Send recovery code';
+            ? t('auxiliary.forgotPassword.backToSignIn')
+            : t('auxiliary.forgotPassword.sendCode');
 
     const onPress =
       step === 'password'

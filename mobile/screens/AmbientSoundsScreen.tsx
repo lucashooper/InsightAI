@@ -5,12 +5,13 @@ import { Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Asset } from 'expo-asset';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
 
 interface AmbientSound {
   id: string;
-  name: string;
+  nameKey: string;
   image: any;
   audio: any;
   color: string;
@@ -19,14 +20,14 @@ interface AmbientSound {
 const AMBIENT_SOUNDS: AmbientSound[] = [
   {
     id: 'rain',
-    name: 'Rain',
+    nameKey: 'auxiliary.ambient.rain',
     image: require('../public/ambient-stuff/rain-image.jpg'),
     audio: require('../public/ambient-stuff/rain-sounds.mp3'),
     color: '#4a5568',
   },
   {
     id: 'fireplace',
-    name: 'Fireplace',
+    nameKey: 'auxiliary.ambient.fireplace',
     image: require('../public/ambient-stuff/campfire-image.jpg'),
     audio: require('../public/ambient-stuff/campfire.mp3'),
     color: '#d97706',
@@ -38,6 +39,7 @@ AMBIENT_SOUNDS.forEach((sound) => {
 });
 
 export default function AmbientSoundsScreen({ navigation }: any) {
+  const { t } = useLanguage();
   const [selectedSound, setSelectedSound] = useState<AmbientSound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -165,7 +167,7 @@ export default function AmbientSoundsScreen({ navigation }: any) {
           </TouchableOpacity>
 
           <View style={styles.centerContent}>
-            <Text style={styles.soundTitle}>{selectedSound.name}</Text>
+            <Text style={styles.soundTitle}>{t(selectedSound.nameKey)}</Text>
             <Text style={styles.timer}>{formatTime(elapsedTime)}</Text>
 
             <View style={styles.controls}>
@@ -193,7 +195,7 @@ export default function AmbientSoundsScreen({ navigation }: any) {
             </View>
 
             <Text style={styles.subtitle}>
-              {isPlaying ? 'Breathe and relax...' : 'Press play to begin'}
+              {isPlaying ? t('auxiliary.ambient.relax') : t('auxiliary.ambient.pressPlay')}
             </Text>
           </View>
         </View>
@@ -212,12 +214,12 @@ export default function AmbientSoundsScreen({ navigation }: any) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="rgba(255,255,255,0.9)" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Ambient Sounds</Text>
+        <Text style={styles.headerTitle}>{t('auxiliary.ambient.title')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <View style={styles.soundsGrid}>
-        <Text style={styles.sectionTitle}>Choose your ambience</Text>
+        <Text style={styles.sectionTitle}>{t('auxiliary.ambient.choose')}</Text>
         {AMBIENT_SOUNDS.map((sound) => (
           <TouchableOpacity
             key={sound.id}
@@ -231,7 +233,7 @@ export default function AmbientSoundsScreen({ navigation }: any) {
               style={styles.soundOverlay}
             />
             <View style={styles.soundInfo}>
-              <Text style={styles.soundName}>{sound.name}</Text>
+              <Text style={styles.soundName}>{t(sound.nameKey)}</Text>
               <Ionicons name="play-circle" size={32} color="rgba(255,255,255,0.9)" />
             </View>
           </TouchableOpacity>

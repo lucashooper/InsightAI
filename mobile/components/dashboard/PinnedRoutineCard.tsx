@@ -7,6 +7,7 @@ import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../lib/supabase';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { sf } from '../../utils/responsive';
 import StandardContainer from '../shared/StandardContainer';
 
@@ -28,6 +29,7 @@ const LAST_RESET_KEY = 'PINNED_ROUTINE_LAST_RESET';
 
 export default function PinnedRoutineCard({ userId }: { userId: string }) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const dark = isDarkTheme(theme.name);
   const [tasks, setTasks] = useState<RoutineTask[]>([]);
   const [isExpanded, setIsExpanded] = useState(true);
@@ -161,7 +163,7 @@ export default function PinnedRoutineCard({ userId }: { userId: string }) {
                 {protocol.title}
               </Text>
               <Text style={[styles.subtitle, { color: theme.colors.tertiaryText }]}>
-                No tasks added yet
+                {t('components.routine.noTasks')}
               </Text>
             </View>
           </View>
@@ -196,7 +198,7 @@ export default function PinnedRoutineCard({ userId }: { userId: string }) {
               {protocol.title}
             </Text>
             <Text style={[styles.subtitle, { color: theme.colors.tertiaryText }]}>
-              {completedCount}/{tasks.length} complete
+              {t('components.routine.complete', { completed: completedCount, total: tasks.length })}
             </Text>
           </View>
         </View>

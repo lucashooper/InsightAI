@@ -13,6 +13,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
 const insightLogo = require('../public/Insight-Logo-nobg.webp');
@@ -24,6 +25,7 @@ interface PremiumUpsellOverlayProps {
 }
 
 export default function PremiumUpsellOverlay({ visible, onUpgrade, onDismiss }: PremiumUpsellOverlayProps) {
+  const { t } = useLanguage();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
 
@@ -91,9 +93,9 @@ export default function PremiumUpsellOverlay({ visible, onUpgrade, onDismiss }: 
                 style={styles.logoImage}
                 resizeMode="contain"
               />
-              <Text style={styles.title}>Unlock AI-Powered Insights</Text>
+              <Text style={styles.title}>{t('components.premium.title')}</Text>
               <Text style={styles.subtitle}>
-                Get daily AI analysis and personalized growth recommendations to track your emotional journey
+                {t('components.premium.subtitle')}
               </Text>
             </View>
 
@@ -104,9 +106,9 @@ export default function PremiumUpsellOverlay({ visible, onUpgrade, onDismiss }: 
                   <Ionicons name="sparkles" size={28} color="#a855f7" />
                 </View>
                 <View style={styles.featureText}>
-                  <Text style={styles.featureTitle}>Daily AI Analyses</Text>
+                  <Text style={styles.featureTitle}>{t('components.premium.dailyTitle')}</Text>
                   <Text style={styles.featureDescription}>
-                    Analyze up to 2 journal entries per day with deep AI insights
+                    {t('components.premium.dailyDescription')}
                   </Text>
                 </View>
               </View>
@@ -116,9 +118,9 @@ export default function PremiumUpsellOverlay({ visible, onUpgrade, onDismiss }: 
                   <Ionicons name="analytics" size={28} color="#fbbf24" />
                 </View>
                 <View style={styles.featureText}>
-                  <Text style={styles.featureTitle}>Deep Pattern Detection</Text>
+                  <Text style={styles.featureTitle}>{t('components.premium.patternsTitle')}</Text>
                   <Text style={styles.featureDescription}>
-                    Discover hidden emotional patterns and recurring themes in your thoughts
+                    {t('components.premium.patternsDescription')}
                   </Text>
                 </View>
               </View>
@@ -128,9 +130,9 @@ export default function PremiumUpsellOverlay({ visible, onUpgrade, onDismiss }: 
                   <Ionicons name="trending-up" size={28} color="#10b981" />
                 </View>
                 <View style={styles.featureText}>
-                  <Text style={styles.featureTitle}>Personalized Growth Plans</Text>
+                  <Text style={styles.featureTitle}>{t('components.premium.growthTitle')}</Text>
                   <Text style={styles.featureDescription}>
-                    Receive tailored recommendations to help you grow and improve
+                    {t('components.premium.growthDescription')}
                   </Text>
                 </View>
               </View>
@@ -140,9 +142,9 @@ export default function PremiumUpsellOverlay({ visible, onUpgrade, onDismiss }: 
                   <Ionicons name="calendar" size={28} color="#ec4899" />
                 </View>
                 <View style={styles.featureText}>
-                  <Text style={styles.featureTitle}>Weekly Progress Summaries</Text>
+                  <Text style={styles.featureTitle}>{t('components.premium.weeklyTitle')}</Text>
                   <Text style={styles.featureDescription}>
-                    Get comprehensive weekly insights tracking your emotional journey
+                    {t('components.premium.weeklyDescription')}
                   </Text>
                 </View>
               </View>
@@ -152,9 +154,9 @@ export default function PremiumUpsellOverlay({ visible, onUpgrade, onDismiss }: 
                   <Ionicons name="bulb" size={28} color="#3b82f6" />
                 </View>
                 <View style={styles.featureText}>
-                  <Text style={styles.featureTitle}>Trigger Analysis</Text>
+                  <Text style={styles.featureTitle}>{t('components.premium.triggersTitle')}</Text>
                   <Text style={styles.featureDescription}>
-                    Identify what triggers your emotions and learn how to manage them
+                    {t('components.premium.triggersDescription')}
                   </Text>
                 </View>
               </View>
@@ -174,7 +176,7 @@ export default function PremiumUpsellOverlay({ visible, onUpgrade, onDismiss }: 
                   style={styles.upgradeGradient}
                 >
                   <Ionicons name="sparkles" size={20} color="#fff" />
-                  <Text style={styles.upgradeButtonText}>Upgrade to Pro</Text>
+                  <Text style={styles.upgradeButtonText}>{t('components.premium.upgrade')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
 
@@ -183,7 +185,7 @@ export default function PremiumUpsellOverlay({ visible, onUpgrade, onDismiss }: 
                 onPress={handleDismiss}
                 activeOpacity={0.7}
               >
-                <Text style={styles.dismissButtonText}>Maybe Later</Text>
+                <Text style={styles.dismissButtonText}>{t('components.premium.maybeLater')}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>

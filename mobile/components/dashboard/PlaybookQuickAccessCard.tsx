@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { sf } from '../../utils/responsive';
 
 interface PlaybookEntry {
@@ -25,6 +26,7 @@ export default function PlaybookQuickAccessCard({
   onNavigateToPlaybook: () => void;
 }) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const dark = isDarkTheme(theme.name);
   const [pinnedEntry, setPinnedEntry] = useState<PlaybookEntry | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -68,10 +70,10 @@ export default function PlaybookQuickAccessCard({
             </LinearGradient>
             <View style={{ flex: 1 }}>
               <Text style={[styles.title, { color: theme.colors.primaryText }]}>
-                Quick Access Playbook
+                {t('components.playbook.quickAccessTitle')}
               </Text>
               <Text style={[styles.subtitle, { color: theme.colors.tertiaryText }]}>
-                Pin an entry for easy access
+                {t('components.playbook.pinEntry')}
               </Text>
             </View>
           </View>
@@ -149,7 +151,7 @@ export default function PlaybookQuickAccessCard({
           activeOpacity={0.7}
         >
           <Text style={[styles.viewButtonText, { color: '#3b82f6' }]}>
-            View full entry
+            {t('components.playbook.viewFull')}
           </Text>
           <Ionicons name="arrow-forward" size={16} color="#3b82f6" />
         </TouchableOpacity>

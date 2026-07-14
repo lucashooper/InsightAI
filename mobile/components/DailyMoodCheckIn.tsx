@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const { width } = Dimensions.get('window');
 
@@ -37,19 +38,6 @@ const MOOD_FACES = {
   10: '🌟',
 };
 
-const MOOD_LABELS = {
-  1: 'Struggling',
-  2: 'Not great',
-  3: 'Meh',
-  4: 'Alright',
-  5: 'Okay',
-  6: 'Good',
-  7: 'Great',
-  8: 'Really good',
-  9: 'Amazing',
-  10: 'Incredible',
-};
-
 const getTimeOfDay = () => {
   const hour = new Date().getHours();
   if (hour < 12) return 'morning';
@@ -61,9 +49,10 @@ export default function DailyMoodCheckIn({
   visible,
   onDismiss,
   onJournal,
-  userName = 'there',
+  userName,
 }: DailyMoodCheckInProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [moodValue, setMoodValue] = useState(5);
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(-300));
@@ -127,8 +116,8 @@ export default function DailyMoodCheckIn({
   };
 
   const getMoodLabel = () => {
-    const roundedMood = Math.round(moodValue) as keyof typeof MOOD_LABELS;
-    return MOOD_LABELS[roundedMood] || 'Okay';
+    const roundedMood = Math.round(moodValue);
+    return t(`components.dailyMood.moods.${roundedMood}`);
   };
 
   return (
@@ -164,7 +153,15 @@ export default function DailyMoodCheckIn({
 
             <View style={styles.content}>
               <Text style={styles.greeting}>
-                Hey, {displayName}. How are you this {getTimeOfDay()}?
+                {t(
+                  displayName
+                    ? 'components.dailyMood.greeting'
+                    : 'components.dailyMood.greetingAnonymous',
+                  {
+                    name: displayName ?? '',
+                    timeOfDay: t(`components.dailyMood.${getTimeOfDay()}`),
+                  },
+                )}
               </Text>
 
               <Text style={styles.moodFace}>{getMoodFace()}</Text>
@@ -183,8 +180,8 @@ export default function DailyMoodCheckIn({
                   thumbTintColor="#ffffff"
                 />
                 <View style={styles.sliderLabels}>
-                  <Text style={styles.sliderLabel}>Struggling</Text>
-                  <Text style={styles.sliderLabel}>Amazing</Text>
+                  <Text style={styles.sliderLabel}>{t('components.dailyMood.moods.1')}</Text>
+                  <Text style={styles.sliderLabel}>{t('components.dailyMood.moods.9')}</Text>
                 </View>
               </View>
 
@@ -193,7 +190,7 @@ export default function DailyMoodCheckIn({
                 onPress={handleJournal}
                 activeOpacity={0.8}
               >
-                <Text style={styles.journalButtonText}>Want to write about it?</Text>
+                <Text style={styles.journalButtonText}>{t('components.dailyMood.writeAboutIt')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -201,7 +198,7 @@ export default function DailyMoodCheckIn({
                 onPress={handleDismiss}
                 activeOpacity={0.7}
               >
-                <Text style={styles.skipButtonText}>Maybe later</Text>
+                <Text style={styles.skipButtonText}>{t('components.dailyMood.maybeLater')}</Text>
               </TouchableOpacity>
             </View>
           </LinearGradient>

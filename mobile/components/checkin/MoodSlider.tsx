@@ -10,6 +10,7 @@ import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
 import { MOOD_STOPS } from './types';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const THUMB_WIDTH = 28;
 const STOPS = MOOD_STOPS.length;
@@ -36,6 +37,7 @@ function positionToScore(x: number, trackWidth: number): number {
 
 export default function MoodSlider({ score, accent, onScoreChange }: Props) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const trackWidth = useRef(0);
   const thumbX = useRef(new Animated.Value(0)).current;
   const dragStartX = useRef(0);
@@ -114,8 +116,8 @@ export default function MoodSlider({ score, accent, onScoreChange }: Props) {
   return (
     <View style={styles.block}>
       <View style={styles.labels}>
-        <Text style={[styles.edgeLabel, { color: theme.colors.secondaryText }]}>Terrible</Text>
-        <Text style={[styles.edgeLabel, { color: theme.colors.secondaryText }]}>Amazing</Text>
+        <Text style={[styles.edgeLabel, { color: theme.colors.secondaryText }]}>{t('checkIn.terrible')}</Text>
+        <Text style={[styles.edgeLabel, { color: theme.colors.secondaryText }]}>{t('checkIn.amazing')}</Text>
       </View>
       <View style={styles.trackWrap} onLayout={onTrackLayout}>
         <View style={[styles.track, { backgroundColor: theme.colors.divider }]}>

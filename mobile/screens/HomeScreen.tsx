@@ -20,6 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { useFocusEffect } from '@react-navigation/native';
 import { decryptEntries } from '../utils/entryDecryption';
@@ -59,6 +60,7 @@ interface UserProfile {
 export default function HomeScreen({ navigation, route }: any) {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { t, formatDate: formatLocalizedDate } = useLanguage();
   const { data: preloaded, refreshNotes } = usePreloadedData();
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [streak, setStreak] = useState<StreakData>({ currentStreak: 0, longestStreak: 0 });
@@ -127,7 +129,7 @@ export default function HomeScreen({ navigation, route }: any) {
       setEntries(prev => prev.map(e => e.id === entry.id ? { ...e, is_favorite: nextValue } : e));
     } catch (err) {
       console.error('Error toggling favorite:', err);
-      Alert.alert('Error', 'Failed to update favorite');
+      Alert.alert(t('common.error'), t('journal.errorFavorite'));
     }
   };
 
@@ -169,14 +171,14 @@ export default function HomeScreen({ navigation, route }: any) {
       setEntries((prev) => prev.filter((e) => e.id !== entry.id));
     } catch (err) {
       console.error('Error deleting entry:', err);
-      Alert.alert('Error', 'Failed to delete entry');
+      Alert.alert(t('common.error'), t('journal.errorDelete'));
     }
   };
 
   const handleShareEntry = async (entry: DiaryEntry) => {
     try {
       await Share.share({
-        title: entry.title || 'Journal entry',
+        title: entry.title || t('journal.shareTitle'),
         message: entry.content,
       });
     } catch (err) {
@@ -191,14 +193,14 @@ export default function HomeScreen({ navigation, route }: any) {
 
   const showEntryOptions = (entry: DiaryEntry) => {
     const options = [
-      'View Insights',
-      'Rename',
-      'Change Date',
-      entry.is_favorite ? 'Remove from Favorites' : 'Add to Favorites',
-      'Hide entry',
-      'Share',
-      'Delete',
-      'Cancel',
+      t('journal.viewInsights'),
+      t('journal.rename'),
+      t('journal.changeDate'),
+      entry.is_favorite ? t('journal.removeFavorite') : t('journal.addFavorite'),
+      t('journal.hideEntry'),
+      t('journal.share'),
+      t('common.delete'),
+      t('common.cancel'),
     ];
     const cancelButtonIndex = 7;
     const destructiveButtonIndex = 6;
@@ -219,7 +221,7 @@ export default function HomeScreen({ navigation, route }: any) {
       } else if (buttonIndex === 6) {
         console.log('[Journal] Deleted entry:', entry.id);
         handleDeleteEntry(entry);
-        Alert.alert('Deleted', 'Entry removed', [{ text: 'OK' }]);
+        Alert.alert(t('journal.deleted'), t('journal.entryRemoved'), [{ text: t('common.ok') }]);
       }
     };
 
@@ -233,7 +235,7 @@ export default function HomeScreen({ navigation, route }: any) {
         handleSelection,
       );
     } else {
-      Alert.alert('Entry options', undefined, [
+      Alert.alert(t('journal.options'), undefined, [
         { text: options[0], onPress: () => handleSelection(0) },
         { text: options[1], onPress: () => handleSelection(1) },
         { text: options[2], onPress: () => handleSelection(2) },
@@ -248,8 +250,8 @@ export default function HomeScreen({ navigation, route }: any) {
 
   const handleRenameEntry = (entry: DiaryEntry) => {
     Alert.prompt(
-      'Rename Entry',
-      'Enter a new title for this entry',
+      t('journal.renameTitle'),
+      t('journal.renamePrompt'),
       async (newTitle) => {
         if (newTitle && newTitle.trim()) {
           try {
@@ -260,13 +262,13 @@ export default function HomeScreen({ navigation, route }: any) {
 
             if (!error) {
               loadEntries();
-              Alert.alert('Success', 'Entry renamed');
+              Alert.alert(t('common.success'), t('journal.renamed'));
             } else {
-              Alert.alert('Error', 'Failed to rename entry');
+              Alert.alert(t('common.error'), t('journal.renameFailed'));
             }
           } catch (err) {
             console.error('[Home] Error renaming entry:', err);
-            Alert.alert('Error', 'Failed to rename entry');
+            Alert.alert(t('common.error'), t('journal.renameFailed'));
           }
         }
       },
@@ -289,17 +291,17 @@ export default function HomeScreen({ navigation, route }: any) {
 
         if (!error) {
           loadEntries();
-          Alert.alert('Success', 'Entry date updated');
+          Alert.alert(t('common.success'), t('journal.dateUpdated'));
           if (Platform.OS === 'ios') {
             setShowDatePicker(false);
           }
         } else {
           console.error('[Home] Error changing date:', error);
-          Alert.alert('Error', 'Failed to change entry date');
+          Alert.alert(t('common.error'), t('journal.dateFailed'));
         }
       } catch (err) {
         console.error('[Home] Error changing entry date:', err);
-        Alert.alert('Error', 'Failed to change entry date');
+        Alert.alert(t('common.error'), t('journal.dateFailed'));
       }
     }
   };
@@ -367,7 +369,7 @@ export default function HomeScreen({ navigation, route }: any) {
         setUserProfile({
           id: user.id,
           email: user.email || '',
-          username: cachedName || user.email?.split('@')[0] || 'User',
+          username: cachedName || user.email?.split('@')[0] || t('journal.fallbackUser'),
           profile_picture_url: cachedPfp || null,
         });
       }
@@ -378,7 +380,7 @@ export default function HomeScreen({ navigation, route }: any) {
       setUserProfile({
         id: user.id,
         email: user.email || '',
-        username: cachedName || user.email?.split('@')[0] || 'User',
+        username: cachedName || user.email?.split('@')[0] || t('journal.fallbackUser'),
         profile_picture_url: cachedPfp || null,
       });
     }
@@ -502,8 +504,7 @@ const onRefresh = () => {
 };
 
 const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
+  return formatLocalizedDate(dateString, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -512,21 +513,21 @@ const formatDate = (dateString: string) => {
 
 const getGreeting = () => {
   const hour = new Date().getHours();
-  const name = userProfile?.username || 'there';
-  if (hour < 12) return `Good morning, ${name}`;
-  if (hour < 18) return `Good afternoon, ${name}`;
-  return `Good evening, ${name}`;
+  const name = userProfile?.username || t('journal.fallbackName');
+  if (hour < 12) return t('journal.greetingMorning', { name });
+  if (hour < 18) return t('journal.greetingAfternoon', { name });
+  return t('journal.greetingEvening', { name });
 };
 
 const getMicroMessage = () => {
-  const name = userProfile?.username || 'there';
+  const name = userProfile?.username || t('journal.fallbackName');
   const messages = [
-    `Welcome back, ${name}.`,
-    `Reflection streak: ${streak.currentStreak} days.`,
+    t('journal.welcomeBack', { name }),
+    t('journal.reflectionStreak', { count: streak.currentStreak }),
     entries.length > 0 && dominantEmotions.length > 0
-      ? `Your last entry was mostly ${dominantEmotions[0].emotion.toLowerCase()}.`
+      ? t('journal.lastEmotion', { emotion: dominantEmotions[0].emotion.toLowerCase() })
       : null,
-    'Good to see you again.',
+    t('journal.goodToSeeYou'),
   ].filter(Boolean);
   // Simple rotation based on current second (changes every render but feels dynamic)
   const index = Math.floor(Date.now() / 5000) % messages.length;
@@ -562,10 +563,10 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
       style={styles.premiumCardPressable}
       onPress={() => {
         if (isHidden) {
-          Alert.alert('Locked entry', 'Unlock this entry to view its contents?', [
-            { text: 'Cancel', style: 'cancel' },
+          Alert.alert(t('journal.locked'), t('journal.unlockPrompt'), [
+            { text: t('common.cancel'), style: 'cancel' },
             {
-              text: 'Unlock',
+              text: t('journal.unlock'),
               onPress: () => {
                 toggleHidden(item.id);
                 navigation.navigate('EntryDetail', { entry: item });
@@ -590,7 +591,7 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
                 ) : null;
               })()}
               <Text style={[styles.entryTitle, { color: theme.colors.primaryText }]} numberOfLines={1}>
-                {isHidden ? 'Locked entry' : searchQuery.trim() ? highlightText(item.title || 'Untitled Entry', searchQuery) : item.title || 'Untitled Entry'}
+                {isHidden ? t('journal.locked') : searchQuery.trim() ? highlightText(item.title || t('journal.untitled'), searchQuery) : item.title || t('journal.untitled')}
               </Text>
             </View>
             {item.mood && (
@@ -603,19 +604,19 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
             {item.entry_type === 'prompt' && (
               <View style={[styles.insightBadge, { backgroundColor: 'rgba(139, 92, 246, 0.9)' }]}>
                 <Ionicons name="bulb" size={12} color="#ffffff" />
-                <Text style={styles.insightBadgeText}>Prompt</Text>
+                <Text style={styles.insightBadgeText}>{t('journal.prompt')}</Text>
               </View>
             )}
             {hasInsights && (
               <View style={styles.insightBadge}>
                 <Ionicons name="sparkles" size={12} color="#ffffff" />
-                <Text style={styles.insightBadgeText}>Analyzed</Text>
+                <Text style={styles.insightBadgeText}>{t('journal.analyzed')}</Text>
               </View>
             )}
           </View>
 
             <Text style={[styles.entryContent, { color: theme.colors.secondaryText }]} numberOfLines={3}>
-              {isHidden ? 'Tap to unlock and view this entry.' : searchQuery.trim() ? highlightText(item.content, searchQuery) : item.content}
+              {isHidden ? t('journal.lockedBody') : searchQuery.trim() ? highlightText(item.content, searchQuery) : item.content}
             </Text>
 
             <View style={styles.entryFooter}>
@@ -638,7 +639,7 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
                     style={styles.viewInsightsButtonInner}
                     onPress={() => navigation.navigate('EntryDetail', { entry: item })}
                   >
-                    <Text style={styles.viewInsightsText}>View Insights</Text>
+                    <Text style={styles.viewInsightsText}>{t('journal.viewInsights')}</Text>
                     <Ionicons name="arrow-forward" size={14} color="#ffffff" />
                   </TouchableOpacity>
                 </LinearGradient>
@@ -658,7 +659,7 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
     />
 
     <PageHeader
-      title="Journal"
+      title={t('journal.title')}
       right={
         <View style={styles.headerRight}>
           {streak.currentStreak > 0 && (
@@ -676,7 +677,7 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
         <Ionicons name="search" size={16} color="#6b7280" style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search entries..."
+          placeholder={t('journal.searchPlaceholder')}
           placeholderTextColor="#6b7280"
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -690,11 +691,11 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
         style={{ marginTop: 12 }}
       >
         {[
-          { key: 'all', label: 'All' },
-          { key: 'analyzed', label: 'Analyzed' },
-          { key: 'unanalyzed', label: 'Unanalyzed' },
-          { key: 'favorites', label: '⭐ Favorites' },
-          { key: 'prompts', label: '💡 Prompts' },
+          { key: 'all', label: t('journal.filterAll') },
+          { key: 'analyzed', label: t('journal.filterAnalyzed') },
+          { key: 'unanalyzed', label: t('journal.filterUnanalyzed') },
+          { key: 'favorites', label: t('journal.filterFavorites') },
+          { key: 'prompts', label: t('journal.filterPrompts') },
         ].map((chip) => (
           <TouchableOpacity
             key={chip.key}
@@ -723,15 +724,15 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
       ) : filteredEntries.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyIcon}>📝</Text>
-          <Text style={[styles.emptyTitle, { color: isDarkTheme(theme.name) ? '#ffffff' : '#000000' }]}>No Entries Yet</Text>
+          <Text style={[styles.emptyTitle, { color: isDarkTheme(theme.name) ? '#ffffff' : '#000000' }]}>{t('journal.noEntriesTitle')}</Text>
           <Text style={[styles.emptyText, { color: isDarkTheme(theme.name) ? '#9ca3af' : '#4b5563' }]}>
-            Start your journaling journey by creating your first entry
+            {t('journal.noEntriesSubtitle')}
           </Text>
           <TouchableOpacity
             style={styles.createButton}
             onPress={() => navigation.navigate('CreateEntry')}
           >
-            <Text style={styles.createButtonText}>Create Entry</Text>
+            <Text style={styles.createButtonText}>{t('journal.createEntry')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -779,14 +780,14 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
               onStartShouldSetResponder={() => true}
             >
               <Text style={{ fontSize: 18, fontWeight: '600', color: theme.colors.primaryText, marginBottom: 16 }}>
-                Change Entry Date
+                {t('journal.changeEntryDate')}
               </Text>
               <View style={{ padding: 20, backgroundColor: theme.colors.background, borderRadius: 12, alignItems: 'center' }}>
                 <Text style={{ fontSize: 16, color: theme.colors.primaryText }}>
-                  {selectedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                  {formatLocalizedDate(selectedDate, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </Text>
                 <Text style={{ fontSize: 12, color: theme.colors.secondaryText, marginTop: 8 }}>
-                  Date picker requires @react-native-community/datetimepicker
+                  {t('journal.datePickerUnavailable')}
                 </Text>
               </View>
               {Platform.OS === 'ios' && (
@@ -795,13 +796,13 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
                     onPress={() => setShowDatePicker(false)}
                     style={{ paddingHorizontal: 20, paddingVertical: 10 }}
                   >
-                    <Text style={{ color: theme.colors.secondaryText, fontSize: 16, fontWeight: '600' }}>Cancel</Text>
+                    <Text style={{ color: theme.colors.secondaryText, fontSize: 16, fontWeight: '600' }}>{t('common.cancel')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => handleDateChange(null, selectedDate)}
                     style={{ paddingHorizontal: 20, paddingVertical: 10, backgroundColor: '#8b5cf6', borderRadius: 10 }}
                   >
-                    <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>OK</Text>
+                    <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>{t('common.ok')}</Text>
                   </TouchableOpacity>
                 </View>
               )}

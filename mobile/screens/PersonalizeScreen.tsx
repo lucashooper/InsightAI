@@ -5,10 +5,13 @@ import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../contexts/ThemeContext';
 import PageHeader from '../components/shared/PageHeader';
+import LanguagePicker from '../components/LanguagePicker';
 import { sf } from '../utils/responsive';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function PersonalizeScreen({ navigation }: any) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const [remindersEnabled, setRemindersEnabled] = useState(false);
   const [promptsEnabled, setPromptsEnabled] = useState(true);
 
@@ -37,14 +40,27 @@ export default function PersonalizeScreen({ navigation }: any) {
 
   return (
     <View style={[styles.wrapper, { backgroundColor: theme.colors.background }]}>
-      <PageHeader title="Personalize" onBack={() => navigation.goBack()} />
+      <PageHeader title={t('auxiliary.personalize.title')} onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
         <Text style={[styles.sectionTitle, { color: theme.colors.secondaryText }]}>
-          Preferences
+          {t('auxiliary.personalize.preferences')}
         </Text>
 
         <View style={styles.optionsList}>
+          <View
+            style={[
+              styles.optionItem,
+              {
+                backgroundColor: theme.colors.cardBackground,
+                borderColor: theme.colors.border,
+                paddingHorizontal: 16,
+              },
+            ]}
+          >
+            <LanguagePicker variant="row" />
+          </View>
+
           <View
             style={[
               styles.optionItem,
@@ -57,10 +73,10 @@ export default function PersonalizeScreen({ navigation }: any) {
             <View style={styles.optionContent}>
               <View style={styles.optionTextContainer}>
                 <Text style={[styles.optionTitle, { color: theme.colors.primaryText }]}>
-                  Daily Reminders
+                  {t('auxiliary.personalize.dailyReminders')}
                 </Text>
                 <Text style={[styles.optionDescription, { color: theme.colors.secondaryText }]}>
-                  Get reminded to journal each day
+                  {t('auxiliary.personalize.dailyRemindersDescription')}
                 </Text>
               </View>
               <Switch
@@ -84,10 +100,10 @@ export default function PersonalizeScreen({ navigation }: any) {
             <View style={styles.optionContent}>
               <View style={styles.optionTextContainer}>
                 <Text style={[styles.optionTitle, { color: theme.colors.primaryText }]}>
-                  Journal Prompts
+                  {t('auxiliary.personalize.journalPrompts')}
                 </Text>
                 <Text style={[styles.optionDescription, { color: theme.colors.secondaryText }]}>
-                  Show suggested prompts when journaling
+                  {t('auxiliary.personalize.journalPromptsDescription')}
                 </Text>
               </View>
               <Switch

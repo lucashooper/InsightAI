@@ -14,6 +14,7 @@ import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { isTablet, sf, ss, iPadContentStyle, iPadWideContentStyle } from '../../utils/responsive';
 import { analytics } from '../../services/analytics';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const cambridgeLogo = require('../../assets/Cambridge-logo.png');
 const stressManagementLottie = require('../../public/animations/Stress Management.json');
@@ -64,76 +65,76 @@ const STEPS: Step[] = [
     {
         id: 'name',
         type: 'text_input',
-        title: "What is your name?",
-        subtitle: "We'll use this to personalize your experience.",
+        title: 'onboarding.questions.name.title',
+        subtitle: 'onboarding.questions.name.subtitle',
     },
     // 1. Where did you hear about us
     {
         id: 'referral',
         type: 'question',
-        title: "Where did you hear about us?",
+        title: 'onboarding.questions.referral.title',
         options: [
-            { label: 'Instagram', value: 'instagram', icon: 'logo-instagram' },
-            { label: 'Facebook', value: 'facebook', icon: 'logo-facebook' },
-            { label: 'TikTok', value: 'tiktok', icon: 'logo-tiktok' },
-            { label: 'YouTube', value: 'youtube', icon: 'logo-youtube' },
-            { label: 'Google', value: 'google', icon: 'logo-google' },
-            { label: 'Friend', value: 'friend', icon: 'people' },
-            { label: 'Other', value: 'other', icon: 'ellipsis-horizontal' },
+            { label: 'onboarding.questions.referral.instagram', value: 'instagram', icon: 'logo-instagram' },
+            { label: 'onboarding.questions.referral.facebook', value: 'facebook', icon: 'logo-facebook' },
+            { label: 'onboarding.questions.referral.tiktok', value: 'tiktok', icon: 'logo-tiktok' },
+            { label: 'onboarding.questions.referral.youtube', value: 'youtube', icon: 'logo-youtube' },
+            { label: 'onboarding.questions.referral.google', value: 'google', icon: 'logo-google' },
+            { label: 'onboarding.questions.referral.friend', value: 'friend', icon: 'people' },
+            { label: 'onboarding.questions.referral.other', value: 'other', icon: 'ellipsis-horizontal' },
         ]
     },
     // 2. Goal
     {
         id: 'goal',
         type: 'question',
-        title: "What is your main goal right now?",
+        title: 'onboarding.questions.goal.title',
         options: [
-            { label: 'Improve Mood', value: 'mood', icon: 'sunny' },
-            { label: 'Reduce Stress', value: 'stress', icon: 'leaf' },
-            { label: 'Build Habits', value: 'habits', icon: 'calendar' },
-            { label: 'Gain Clarity', value: 'clarity', icon: 'bulb' },
+            { label: 'onboarding.questions.goal.mood', value: 'mood', icon: 'sunny' },
+            { label: 'onboarding.questions.goal.stress', value: 'stress', icon: 'leaf' },
+            { label: 'onboarding.questions.goal.habits', value: 'habits', icon: 'calendar' },
+            { label: 'onboarding.questions.goal.clarity', value: 'clarity', icon: 'bulb' },
         ]
     },
     // 2. Info Slide A (Research)
     {
         id: 'research_info',
         type: 'info',
-        title: "Grounded in psychology",
-        subtitle: "Research shows that reflective journaling improves emotional awareness and long-term wellbeing.",
-        badges: ['Cambridge University'],
+        title: 'onboarding.questions.research.title',
+        subtitle: 'onboarding.questions.research.subtitle',
+        badges: ['onboarding.questions.research.badge'],
         animationType: 'journaling',
         learnMoreLink: true,
-        buttonText: "Continue"
+        buttonText: 'common.continue'
     },
     // 3. Frequency
     {
         id: 'frequency',
         type: 'question',
-        title: "How often do you want to reflect?",
+        title: 'onboarding.questions.frequency.title',
         options: [
-            { label: 'Daily', value: 'daily', icon: 'repeat' },
-            { label: 'Weekly', value: 'weekly', icon: 'calendar-outline' },
-            { label: 'As Needed', value: 'as_needed', icon: 'hand-left' },
+            { label: 'onboarding.questions.frequency.daily', value: 'daily', icon: 'repeat' },
+            { label: 'onboarding.questions.frequency.weekly', value: 'weekly', icon: 'calendar-outline' },
+            { label: 'onboarding.questions.frequency.asNeeded', value: 'as_needed', icon: 'hand-left' },
         ]
     },
     // 4. Journaling Experience
     {
         id: 'journalingExperience',
         type: 'question',
-        title: "How long have you been journaling?",
+        title: 'onboarding.questions.experience.title',
         options: [
-            { label: "I'm new to journaling", value: 'new', icon: 'star-outline' },
-            { label: "< 6 months", value: '<6m', icon: 'time-outline' },
-            { label: "6–24 months", value: '6-24m', icon: 'book-outline' },
-            { label: "2+ years", value: '2+y', icon: 'ribbon-outline' },
+            { label: 'onboarding.questions.experience.new', value: 'new', icon: 'star-outline' },
+            { label: 'onboarding.questions.experience.underSixMonths', value: '<6m', icon: 'time-outline' },
+            { label: 'onboarding.questions.experience.sixToTwentyFourMonths', value: '6-24m', icon: 'book-outline' },
+            { label: 'onboarding.questions.experience.twoPlusYears', value: '2+y', icon: 'ribbon-outline' },
         ]
     },
     // 6. Wellbeing Slider
     {
         id: 'wellbeing',
         type: 'slider',
-        title: "How would you rate your daily wellbeing?",
-        subtitle: "On a scale of 1-10, where do you typically feel?",
+        title: 'onboarding.questions.wellbeing.title',
+        subtitle: 'onboarding.questions.wellbeing.subtitle',
         min: 1,
         max: 10,
         defaultValue: 7,
@@ -141,139 +142,139 @@ const STEPS: Step[] = [
     {
         id: 'stressResponse',
         type: 'question',
-        title: "When you're under pressure, what do you tend to do?",
+        title: 'onboarding.questions.stressResponse.title',
         options: [
-            { label: 'Ruminate or spiral', value: 'ruminate', icon: 'sync-outline' },
-            { label: 'Blame myself', value: 'self_blame', icon: 'person-outline' },
-            { label: 'Fixate on getting it perfect', value: 'fixate', icon: 'create-outline' },
-            { label: 'Pause and regroup', value: 'step_back', icon: 'leaf-outline' },
+            { label: 'onboarding.questions.stressResponse.ruminate', value: 'ruminate', icon: 'sync-outline' },
+            { label: 'onboarding.questions.stressResponse.selfBlame', value: 'self_blame', icon: 'person-outline' },
+            { label: 'onboarding.questions.stressResponse.fixate', value: 'fixate', icon: 'create-outline' },
+            { label: 'onboarding.questions.stressResponse.stepBack', value: 'step_back', icon: 'leaf-outline' },
         ]
     },
     {
         id: 'selfTalk',
         type: 'question',
-        title: "How would you describe your inner voice?",
+        title: 'onboarding.questions.selfTalk.title',
         options: [
-            { label: 'Often harsh or judging', value: 'critical', icon: 'thunderstorm-outline' },
-            { label: 'Depends on the day', value: 'mixed', icon: 'cloud-outline' },
-            { label: 'Mostly supportive', value: 'supportive', icon: 'heart-outline' },
+            { label: 'onboarding.questions.selfTalk.critical', value: 'critical', icon: 'thunderstorm-outline' },
+            { label: 'onboarding.questions.selfTalk.mixed', value: 'mixed', icon: 'cloud-outline' },
+            { label: 'onboarding.questions.selfTalk.supportive', value: 'supportive', icon: 'heart-outline' },
         ]
     },
     {
         id: 'copingStyle',
         type: 'question',
-        title: "When emotions feel overwhelming, what helps you most?",
+        title: 'onboarding.questions.coping.title',
         options: [
-            { label: 'Talking it through', value: 'social', icon: 'chatbubbles-outline' },
-            { label: 'Moving my body', value: 'physical', icon: 'fitness-outline' },
-            { label: 'Journaling or creative work', value: 'expressive', icon: 'brush-outline' },
-            { label: 'Time alone to recharge', value: 'solitude', icon: 'moon-outline' },
+            { label: 'onboarding.questions.coping.social', value: 'social', icon: 'chatbubbles-outline' },
+            { label: 'onboarding.questions.coping.physical', value: 'physical', icon: 'fitness-outline' },
+            { label: 'onboarding.questions.coping.expressive', value: 'expressive', icon: 'brush-outline' },
+            { label: 'onboarding.questions.coping.solitude', value: 'solitude', icon: 'moon-outline' },
         ]
     },
     {
         id: 'changeResponse',
         type: 'question',
-        title: "How do you typically respond to big changes?",
+        title: 'onboarding.questions.change.title',
         options: [
-            { label: 'Resist at first, then adapt', value: 'resistant', icon: 'shield-outline' },
-            { label: 'Feel anxious but push through', value: 'anxious_persevere', icon: 'trending-up-outline' },
-            { label: 'Embrace the challenge', value: 'embrace', icon: 'rocket-outline' },
-            { label: 'Need lots of support', value: 'support_seeking', icon: 'people-outline' },
+            { label: 'onboarding.questions.change.resistant', value: 'resistant', icon: 'shield-outline' },
+            { label: 'onboarding.questions.change.anxious', value: 'anxious_persevere', icon: 'trending-up-outline' },
+            { label: 'onboarding.questions.change.embrace', value: 'embrace', icon: 'rocket-outline' },
+            { label: 'onboarding.questions.change.support', value: 'support_seeking', icon: 'people-outline' },
         ]
     },
     {
         id: 'motivationDriver',
         type: 'question',
-        title: "What drives you to keep going when things get hard?",
+        title: 'onboarding.questions.motivation.title',
         options: [
-            { label: 'Fear of failure or letting others down', value: 'fear_based', icon: 'alert-circle-outline' },
-            { label: 'External rewards or recognition', value: 'external', icon: 'trophy-outline' },
-            { label: 'Internal values and purpose', value: 'values_driven', icon: 'compass-outline' },
-            { label: 'Love for what I do', value: 'passion', icon: 'flame-outline' },
+            { label: 'onboarding.questions.motivation.fear', value: 'fear_based', icon: 'alert-circle-outline' },
+            { label: 'onboarding.questions.motivation.external', value: 'external', icon: 'trophy-outline' },
+            { label: 'onboarding.questions.motivation.values', value: 'values_driven', icon: 'compass-outline' },
+            { label: 'onboarding.questions.motivation.passion', value: 'passion', icon: 'flame-outline' },
         ]
     },
     // Optional deeper questions start here
     {
         id: 'relationshipPatterns',
         type: 'question',
-        title: "In close relationships, what pattern shows up for you?",
+        title: 'onboarding.questions.relationships.title',
         options: [
-            { label: 'I need a lot of reassurance', value: 'anxious_attachment', icon: 'heart-dislike-outline' },
-            { label: 'I pull away when things get intense', value: 'avoidant', icon: 'shield-outline' },
-            { label: 'I alternate between pushing away and clinging', value: 'fearful_avoidant', icon: 'swap-horizontal-outline' },
-            { label: 'I feel secure and comfortable', value: 'secure', icon: 'heart-circle-outline' },
+            { label: 'onboarding.questions.relationships.anxious', value: 'anxious_attachment', icon: 'heart-dislike-outline' },
+            { label: 'onboarding.questions.relationships.avoidant', value: 'avoidant', icon: 'shield-outline' },
+            { label: 'onboarding.questions.relationships.fearful', value: 'fearful_avoidant', icon: 'swap-horizontal-outline' },
+            { label: 'onboarding.questions.relationships.secure', value: 'secure', icon: 'heart-circle-outline' },
         ],
         skippable: true,
     },
     {
         id: 'conflictStyle',
         type: 'question',
-        title: "When there's tension or conflict, you usually...",
+        title: 'onboarding.questions.conflict.title',
         options: [
-            { label: 'Avoid it at all costs', value: 'avoid', icon: 'close-circle-outline' },
-            { label: 'Try to smooth it over or please', value: 'accommodate', icon: 'happy-outline' },
-            { label: 'Push to win or prove my point', value: 'compete', icon: 'medal-outline' },
-            { label: 'Address it calmly and directly', value: 'collaborate', icon: 'chatbubbles-outline' },
+            { label: 'onboarding.questions.conflict.avoid', value: 'avoid', icon: 'close-circle-outline' },
+            { label: 'onboarding.questions.conflict.accommodate', value: 'accommodate', icon: 'happy-outline' },
+            { label: 'onboarding.questions.conflict.compete', value: 'compete', icon: 'medal-outline' },
+            { label: 'onboarding.questions.conflict.collaborate', value: 'collaborate', icon: 'chatbubbles-outline' },
         ],
         skippable: true,
     },
     {
         id: 'restStyle',
         type: 'question',
-        title: "What does rest look like for you?",
+        title: 'onboarding.questions.rest.title',
         options: [
-            { label: 'I struggle to rest—I feel guilty', value: 'guilt_rest', icon: 'time-outline' },
-            { label: 'I need total solitude', value: 'solitude_rest', icon: 'moon-outline' },
-            { label: 'I recharge through social connection', value: 'social_rest', icon: 'people-outline' },
-            { label: 'I rest by doing calming activities', value: 'active_rest', icon: 'leaf-outline' },
+            { label: 'onboarding.questions.rest.guilt', value: 'guilt_rest', icon: 'time-outline' },
+            { label: 'onboarding.questions.rest.solitude', value: 'solitude_rest', icon: 'moon-outline' },
+            { label: 'onboarding.questions.rest.social', value: 'social_rest', icon: 'people-outline' },
+            { label: 'onboarding.questions.rest.active', value: 'active_rest', icon: 'leaf-outline' },
         ],
         skippable: true,
     },
     {
         id: 'identitySource',
         type: 'question',
-        title: "Where do you most derive your sense of identity?",
+        title: 'onboarding.questions.identitySource.title',
         options: [
-            { label: 'My achievements and success', value: 'achievement', icon: 'trophy-outline' },
-            { label: 'My relationships and connections', value: 'relationships', icon: 'people-outline' },
-            { label: 'My values and beliefs', value: 'values', icon: 'book-outline' },
-            { label: 'My creativity or self-expression', value: 'expression', icon: 'brush-outline' },
+            { label: 'onboarding.questions.identitySource.achievement', value: 'achievement', icon: 'trophy-outline' },
+            { label: 'onboarding.questions.identitySource.relationships', value: 'relationships', icon: 'people-outline' },
+            { label: 'onboarding.questions.identitySource.values', value: 'values', icon: 'book-outline' },
+            { label: 'onboarding.questions.identitySource.expression', value: 'expression', icon: 'brush-outline' },
         ],
         skippable: true,
     },
     {
         id: 'failureResponse',
         type: 'question',
-        title: "When you fail or make a mistake, what's your first reaction?",
+        title: 'onboarding.questions.failure.title',
         options: [
-            { label: "I feel like I'm not good enough", value: 'shame', icon: 'sad-outline' },
-            { label: 'I get defensive or blame external factors', value: 'defensive', icon: 'shield-checkmark-outline' },
-            { label: 'I analyze what went wrong', value: 'analytical', icon: 'search-outline' },
-            { label: 'I see it as a learning opportunity', value: 'growth', icon: 'trending-up-outline' },
+            { label: 'onboarding.questions.failure.shame', value: 'shame', icon: 'sad-outline' },
+            { label: 'onboarding.questions.failure.defensive', value: 'defensive', icon: 'shield-checkmark-outline' },
+            { label: 'onboarding.questions.failure.analytical', value: 'analytical', icon: 'search-outline' },
+            { label: 'onboarding.questions.failure.growth', value: 'growth', icon: 'trending-up-outline' },
         ],
         skippable: true,
     },
     {
         id: 'emotionalAwareness',
         type: 'question',
-        title: "How aware are you of your emotions in the moment?",
+        title: 'onboarding.questions.awareness.title',
         options: [
-            { label: "I often don't notice until later", value: 'low_awareness', icon: 'eye-off-outline' },
-            { label: "I feel them but can't always name them", value: 'moderate_awareness', icon: 'help-circle-outline' },
-            { label: 'I can identify most emotions as they happen', value: 'high_awareness', icon: 'eye-outline' },
-            { label: "I'm very attuned to subtle shifts", value: 'very_high_awareness', icon: 'glasses-outline' },
+            { label: 'onboarding.questions.awareness.low', value: 'low_awareness', icon: 'eye-off-outline' },
+            { label: 'onboarding.questions.awareness.moderate', value: 'moderate_awareness', icon: 'help-circle-outline' },
+            { label: 'onboarding.questions.awareness.high', value: 'high_awareness', icon: 'eye-outline' },
+            { label: 'onboarding.questions.awareness.veryHigh', value: 'very_high_awareness', icon: 'glasses-outline' },
         ],
         skippable: true,
     },
     {
         id: 'decisionMaking',
         type: 'question',
-        title: "When making important decisions, you tend to...",
+        title: 'onboarding.questions.decisions.title',
         options: [
-            { label: 'Overthink and get stuck in analysis paralysis', value: 'overthink', icon: 'infinite-outline' },
-            { label: 'Go with my gut instinct', value: 'intuitive', icon: 'flash-outline' },
-            { label: 'Seek lots of advice from others', value: 'external_validation', icon: 'people-circle-outline' },
-            { label: 'Weigh pros/cons systematically', value: 'systematic', icon: 'list-outline' },
+            { label: 'onboarding.questions.decisions.overthink', value: 'overthink', icon: 'infinite-outline' },
+            { label: 'onboarding.questions.decisions.intuitive', value: 'intuitive', icon: 'flash-outline' },
+            { label: 'onboarding.questions.decisions.external', value: 'external_validation', icon: 'people-circle-outline' },
+            { label: 'onboarding.questions.decisions.systematic', value: 'systematic', icon: 'list-outline' },
         ],
         skippable: true,
     },
@@ -281,13 +282,13 @@ const STEPS: Step[] = [
     {
         id: 'genderIdentity',
         type: 'question',
-        title: "How do you identify?",
-        subtitle: "We only use this to personalize insights.",
+        title: 'onboarding.questions.gender.title',
+        subtitle: 'onboarding.questions.gender.subtitle',
         options: [
-            { label: 'Woman', value: 'woman', icon: 'female' },
-            { label: 'Man', value: 'man', icon: 'male' },
-            { label: 'Non-binary', value: 'non-binary', icon: 'transgender' },
-            { label: 'Prefer not to say', value: 'prefer-not', icon: 'person' },
+            { label: 'onboarding.questions.gender.woman', value: 'woman', icon: 'female' },
+            { label: 'onboarding.questions.gender.man', value: 'man', icon: 'male' },
+            { label: 'onboarding.questions.gender.nonBinary', value: 'non-binary', icon: 'transgender' },
+            { label: 'onboarding.questions.gender.preferNot', value: 'prefer-not', icon: 'person' },
         ]
     }
 ];
@@ -295,6 +296,7 @@ const STEPS: Step[] = [
 export default function OnboardingQuestionScreen({ navigation, route }: any) {
     const { userName, setUserName, setOnboardingAnswers } = useOnboarding();
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const startIndex = route?.params?.startIndex ?? 0;
     const incomingAnswers = route?.params?.answers || {};
     const [currentIndex, setCurrentIndex] = useState(startIndex);
@@ -555,7 +557,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                             {/* Title - positioned at same height as quiz pages */}
                             <Animated.View style={{ opacity: infoCardAnim, width: '100%' }}>
                                 <Text style={[styles.researchTitle, isDarkTheme(theme.name) && { color: '#ffffff' }]}>
-                                    Insight is grounded in psychology
+                                    {t('onboarding.questions.research.screenTitle')}
                                 </Text>
                             </Animated.View>
 
@@ -587,7 +589,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                         style={styles.glassCardGradient}
                                     >
                                         <Text style={[styles.glassCardBody, isDarkTheme(theme.name) && { color: 'rgba(255, 255, 255, 0.7)' }]}>
-                                            Journaling is linked to better emotional awareness and mental wellbeing.
+                                            {t('onboarding.questions.research.body')}
                                         </Text>
                                     </LinearGradient>
                                 </View>
@@ -647,18 +649,18 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                 letterSpacing: -0.6,
                                 marginBottom: 20,
                             }}>
-                                {currentStep.title}
+                                {t(currentStep.title)}
                             </Text>
 
                             {currentStep.subtitle && (
-                                <Text style={[styles.subtitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : '#555555' }]}>{currentStep.subtitle}</Text>
+                                <Text style={[styles.subtitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : '#555555' }]}>{t(currentStep.subtitle)}</Text>
                             )}
 
                             {/* Slim Pill APA Study Tag for Patterns Page */}
                             {currentStep.type === 'info' && currentStep.id === 'patterns_info' && currentStep.showAPAStudy && (
                                 <View style={styles.apaStudyPill}>
                                     <Text style={styles.apaStudyText}>
-                                        📘 Expressive writing boosts emotional processing — APA Psychology Review
+                                        {t('onboarding.questions.apaStudy')}
                                     </Text>
                                 </View>
                             )}
@@ -683,7 +685,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                 marginBottom: 20,
                                 textAlign: 'center',
                             }}>
-                                GET INSIGHTS WITH
+                                {t('onboarding.questions.insightsWith')}
                             </Text>
 
                             {/* Feature Pills with Staggered Animation */}
@@ -748,7 +750,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                             fontWeight: '600',
                                             textAlign: 'center',
                                         }}>
-                                            {feature.text}
+                                            {t(feature.text)}
                                         </Text>
                                     </Animated.View>
                                 ))}
@@ -768,7 +770,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                         color: '#ffffff',
                                     }
                                 ]}
-                                placeholder="Enter your name"
+                                placeholder={t('onboarding.questions.name.placeholder')}
                                 placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.5)' : '#6b7280'}
                                 value={textInputValue}
                                 onChangeText={setTextInputValue}
@@ -798,7 +800,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                 disabled={!textInputValue.trim()}
                             >
                                 <View style={styles.continueGradient}>
-                                    <Text style={styles.continueText}>Continue</Text>
+                                    <Text style={styles.continueText}>{t('common.continue')}</Text>
                                 </View>
                             </TouchableOpacity>
                         </View>
@@ -823,7 +825,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                             }}
                                         >
                                             <PillOption
-                                                label={option.label}
+                                                label={t(option.label)}
                                                 icon={option.icon}
                                                 selected={selectedOption === option.value}
                                                 onPress={() => setSelectedOption(option.value)}
@@ -834,7 +836,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
 
                                 {currentStep.skippable && (
                                     <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-                                        <Text style={styles.skipText}>Skip for now</Text>
+                                        <Text style={styles.skipText}>{t('onboarding.skipForNow')}</Text>
                                     </TouchableOpacity>
                                 )}
                             </ScrollView>
@@ -856,7 +858,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                 disabled={!selectedOption}
                             >
                                 <View style={styles.continueGradient}>
-                                    <Text style={styles.continueText}>Continue</Text>
+                                    <Text style={styles.continueText}>{t('common.continue')}</Text>
                                 </View>
                             </TouchableOpacity>
                         </View>
@@ -867,7 +869,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                         <View style={styles.sliderContent}>
                             <View style={styles.sliderValueRow}>
                                 <Text style={[styles.sliderValueText, isDarkTheme(theme.name) && styles.sliderValueTextDark]}>{Math.round(wellbeingValue)}/10</Text>
-                                <Text style={[styles.sliderHintText, isDarkTheme(theme.name) && { color: 'rgba(255, 255, 255, 0.3)' }]}>TYPICAL DAY</Text>
+                                <Text style={[styles.sliderHintText, isDarkTheme(theme.name) && { color: 'rgba(255, 255, 255, 0.3)' }]}>{t('onboarding.questions.wellbeing.typicalDay')}</Text>
                             </View>
 
                             <View style={styles.sliderTrackContainer}>
@@ -913,7 +915,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                 }}
                             >
                                 <View style={styles.sliderContinueGradient}>
-                                    <Text style={styles.sliderContinueText}>Continue</Text>
+                                    <Text style={styles.sliderContinueText}>{t('common.continue')}</Text>
                                 </View>
                             </TouchableOpacity>
                         </View>
@@ -933,7 +935,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                             >
                                 <View style={styles.primaryButtonGradient}>
                                     <Text style={styles.primaryButtonText}>
-                                        {currentStep.buttonText || "Continue"}
+                                        {currentStep.buttonText ? t(currentStep.buttonText) : t('common.continue')}
                                     </Text>
                                 </View>
                             </TouchableOpacity>

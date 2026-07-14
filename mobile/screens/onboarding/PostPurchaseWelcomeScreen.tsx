@@ -5,11 +5,13 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 export default function PostPurchaseWelcomeScreen({ navigation }: any) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
 
   const handleContinue = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -32,8 +34,8 @@ export default function PostPurchaseWelcomeScreen({ navigation }: any) {
         </View>
 
         {/* Welcome Text */}
-        <Text style={[styles.title, isDarkTheme(theme.name) && { color: '#ffffff' }]}>Welcome to Insight</Text>
-        <Text style={styles.subtitle}>You're all set with Pro</Text>
+        <Text style={[styles.title, isDarkTheme(theme.name) && { color: '#ffffff' }]}>{t('onboarding.postPurchase.title')}</Text>
+        <Text style={styles.subtitle}>{t('onboarding.postPurchase.subtitle')}</Text>
 
         {/* Features */}
         <View style={styles.features}>
@@ -41,25 +43,25 @@ export default function PostPurchaseWelcomeScreen({ navigation }: any) {
             <View style={[styles.featureIcon, isDarkTheme(theme.name) && { backgroundColor: 'rgba(168, 85, 247, 0.25)' }]}>
               <Ionicons name="sparkles" size={20} color="#a855f7" />
             </View>
-            <Text style={[styles.featureText, isDarkTheme(theme.name) && { color: '#ffffff' }]}>AI-powered journal analysis</Text>
+            <Text style={[styles.featureText, isDarkTheme(theme.name) && { color: '#ffffff' }]}>{t('onboarding.postPurchase.analysis')}</Text>
           </View>
           <View style={styles.featureRow}>
             <View style={[styles.featureIcon, isDarkTheme(theme.name) && { backgroundColor: 'rgba(168, 85, 247, 0.25)' }]}>
               <Ionicons name="shield-checkmark" size={20} color="#a855f7" />
             </View>
-            <Text style={[styles.featureText, isDarkTheme(theme.name) && { color: '#ffffff' }]}>Private & encrypted entries</Text>
+            <Text style={[styles.featureText, isDarkTheme(theme.name) && { color: '#ffffff' }]}>{t('onboarding.postPurchase.privateEntries')}</Text>
           </View>
           <View style={styles.featureRow}>
             <View style={[styles.featureIcon, isDarkTheme(theme.name) && { backgroundColor: 'rgba(168, 85, 247, 0.25)' }]}>
               <Ionicons name="trending-up" size={20} color="#a855f7" />
             </View>
-            <Text style={[styles.featureText, isDarkTheme(theme.name) && { color: '#ffffff' }]}>Track your growth over time</Text>
+            <Text style={[styles.featureText, isDarkTheme(theme.name) && { color: '#ffffff' }]}>{t('onboarding.postPurchase.growth')}</Text>
           </View>
         </View>
 
         {/* Info text */}
         <Text style={[styles.infoText, isDarkTheme(theme.name) && { color: 'rgba(255, 255, 255, 0.45)' }]}>
-          Create an account to save your entries and access them across devices.
+          {t('onboarding.postPurchase.accountInfo')}
         </Text>
       </View>
 
@@ -71,7 +73,7 @@ export default function PostPurchaseWelcomeScreen({ navigation }: any) {
           activeOpacity={0.9}
         >
           <View style={styles.continueGradient}>
-            <Text style={styles.continueText}>Continue</Text>
+            <Text style={styles.continueText}>{t('common.continue')}</Text>
           </View>
         </TouchableOpacity>
       </View>

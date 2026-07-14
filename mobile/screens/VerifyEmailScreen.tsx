@@ -18,6 +18,7 @@ import { supabase } from '../lib/supabase';
 import OTPInput from '../components/OTPInput';
 import { useOnboarding } from '../contexts/OnboardingContext';
 import SunoGradient from '../components/onboarding/SunoGradient';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface VerifyEmailScreenProps {
   navigation: any;
@@ -32,6 +33,7 @@ interface VerifyEmailScreenProps {
 }
 
 export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScreenProps) {
+  const { t } = useLanguage();
   const { email, type, username, password } = route.params;
   const { userName, setUserName } = useOnboarding();
   const [loading, setLoading] = useState(false);
@@ -141,27 +143,27 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
         // Check if it's a network error
         if (verifyError.message.includes('Network request failed') || verifyError.name === 'AuthRetryableFetchError') {
           Alert.alert(
-            'Connection Issue',
-            'This is a known issue with Expo Go. The verification code is correct, but Expo Go has network limitations.\n\nSolutions:\n1. Wait 10 seconds and tap Retry\n2. Use a development build instead of Expo Go\n3. Try on a different network',
+            t('auxiliary.verifyEmail.connectionIssue'),
+            t('auxiliary.verifyEmail.connectionIssueMessage'),
             [
               { 
-                text: 'Retry', 
+                text: t('auxiliary.common.retry'),
                 onPress: () => {
                   // Wait a moment before retrying
                   setTimeout(() => handleVerifyOTP(code), 1000);
                 }
               },
-              { text: 'Cancel', style: 'cancel' }
+              { text: t('auxiliary.common.cancel'), style: 'cancel' }
             ]
           );
         } else if (verifyError.message.includes('expired') || verifyError.message.includes('invalid')) {
           Alert.alert(
-            'Code Expired', 
-            'This code has expired. Please request a new code.',
-            [{ text: 'OK' }]
+            t('auxiliary.verifyEmail.codeExpired'),
+            t('auxiliary.verifyEmail.codeExpiredMessage'),
+            [{ text: t('auxiliary.common.ok') }]
           );
         } else {
-          Alert.alert('Invalid Code', 'The code you entered is incorrect. Please try again or request a new code.');
+          Alert.alert(t('auxiliary.verifyEmail.invalidCode'), t('auxiliary.verifyEmail.invalidCodeMessage'));
         }
         return; // Don't navigate on error
       } else {
@@ -202,7 +204,7 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
       console.error('[OTP VERIFY] ❌ Exception:', err);
       console.error('[OTP VERIFY] Exception message:', err.message);
       setError(true);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      Alert.alert(t('auxiliary.common.error'), t('auxiliary.common.tryAgain'));
     } finally {
       setLoading(false);
     }
@@ -211,15 +213,15 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
   const resendErrorMessage = (message: string) => {
     const lower = message.toLowerCase();
     if (lower.includes('rate limit') || lower.includes('once every')) {
-      return 'Please wait a minute before requesting another code.';
+      return t('auxiliary.verifyEmail.waitBeforeResend');
     }
     if (lower.includes('smtp') || lower.includes('email')) {
-      return 'We could not send the email right now. Check your inbox/spam, then try again in a minute.';
+      return t('auxiliary.verifyEmail.emailSendFailed');
     }
     if (lower.includes('already registered') || lower.includes('already exists')) {
-      return 'This email is already registered. Try logging in instead.';
+      return t('auxiliary.verifyEmail.alreadyRegistered');
     }
-    return 'Failed to resend code. Please try again.';
+    return t('auxiliary.verifyEmail.resendFailed');
   };
 
   const handleResendCode = async () => {
@@ -250,15 +252,15 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
       if (resendError) {
         console.error('[OTP RESEND] ❌ Resend failed');
         console.error('[OTP RESEND] Error:', resendError);
-        Alert.alert('Could Not Resend', resendErrorMessage(resendError.message));
+        Alert.alert(t('auxiliary.verifyEmail.couldNotResend'), resendErrorMessage(resendError.message));
       } else {
         console.log('[OTP RESEND] ✅ Code resent successfully');
-        Alert.alert('Code Sent', 'A new verification code has been sent to your email.');
+        Alert.alert(t('auxiliary.verifyEmail.codeSent'), t('auxiliary.verifyEmail.codeSentMessage'));
         setResendCooldown(60);
       }
     } catch (err: any) {
       console.error('[OTP RESEND] ❌ Exception:', err);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      Alert.alert(t('auxiliary.common.error'), t('auxiliary.common.tryAgain'));
     } finally {
       setLoading(false);
     }
@@ -292,11 +294,11 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
           </View>
 
           {/* Title */}
-          <Text style={styles.title}>Verify Your Email</Text>
+          <Text style={styles.title}>{t('auxiliary.verifyEmail.title')}</Text>
 
           {/* Subtitle */}
           <Text style={styles.subtitle}>
-            We sent a 6-digit code to{' '}
+            {t('auxiliary.verifyEmail.sentCodeTo')}{' '}
             <Text style={styles.emailInline}>{email}</Text>
           </Text>
 
@@ -327,8 +329,8 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
             />
             <Text style={[styles.resendButtonText, resendCooldown > 0 && styles.resendButtonTextDisabled]}>
               {resendCooldown > 0
-                ? `Resend code (${resendCooldown}s)`
-                : 'Resend code'}
+                ? t('auxiliary.verifyEmail.resendCountdown', { seconds: resendCooldown })
+                : t('auxiliary.verifyEmail.resend')}
             </Text>
           </TouchableOpacity>
 
@@ -337,7 +339,7 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
             style={styles.changeEmailButton}
             onPress={() => navigation.goBack()}
           >
-            <Text style={styles.changeEmailText}>Change email address</Text>
+            <Text style={styles.changeEmailText}>{t('auxiliary.verifyEmail.changeEmail')}</Text>
           </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>

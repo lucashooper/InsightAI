@@ -11,34 +11,36 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
 
 // Breathing phase configuration (Headspace-inspired)
 const BREATH_PHASES = {
-  INHALE: { duration: 4000, label: 'Breathe in', type: 'inhale' as const },
-  HOLD_IN: { duration: 3000, label: 'Hold', type: 'hold' as const },
-  EXHALE: { duration: 6000, label: 'Breathe out', type: 'exhale' as const },
-  HOLD_OUT: { duration: 3000, label: 'Hold', type: 'hold' as const },
+  INHALE: { duration: 4000, labelKey: 'auxiliary.meditation.breatheIn', type: 'inhale' as const },
+  HOLD_IN: { duration: 3000, labelKey: 'auxiliary.meditation.hold', type: 'hold' as const },
+  EXHALE: { duration: 6000, labelKey: 'auxiliary.meditation.breatheOut', type: 'exhale' as const },
+  HOLD_OUT: { duration: 3000, labelKey: 'auxiliary.meditation.hold', type: 'hold' as const },
 };
 
 const TOTAL_CYCLE_DURATION = Object.values(BREATH_PHASES).reduce((sum, phase) => sum + phase.duration, 0);
 
-const CALMING_PHRASES = [
-  'Let your thoughts drift like clouds',
-  'You are exactly where you need to be',
-  'This moment is enough',
-  'Peace begins within',
-  'Release what no longer serves you',
-  'Be gentle with yourself',
-];
+const CALMING_PHRASE_KEYS = [
+  'drift',
+  'rightPlace',
+  'momentEnough',
+  'peaceWithin',
+  'release',
+  'beGentle',
+] as const;
 
 type BreathPhase = 'inhale' | 'hold_in' | 'exhale' | 'hold_out';
 
 export default function MeditationScreen({ navigation }: any) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const [breathPhase, setBreathPhase] = useState<BreathPhase>('inhale');
-  const [phaseLabel, setPhaseLabel] = useState('Breathe in');
+  const [phaseLabel, setPhaseLabel] = useState(() => t(BREATH_PHASES.INHALE.labelKey));
   const [breathCount, setBreathCount] = useState(0);
   const [cycleCount, setCycleCount] = useState(0);
   const [currentPhrase, setCurrentPhrase] = useState(0);
@@ -68,7 +70,7 @@ export default function MeditationScreen({ navigation }: any) {
     cycleStartTimeRef.current = Date.now();
     breathPhaseRef.current = 'inhale';
     setBreathPhase('inhale');
-    setPhaseLabel(BREATH_PHASES.INHALE.label);
+    setPhaseLabel(t(BREATH_PHASES.INHALE.labelKey));
     setBreathCount(0);
     breathProgress.setValue(0);
 
@@ -111,25 +113,25 @@ export default function MeditationScreen({ navigation }: any) {
         if (currentPhase !== 'inhale') {
           breathPhaseRef.current = 'inhale';
           setBreathPhase('inhale');
-          setPhaseLabel(BREATH_PHASES.INHALE.label);
+          setPhaseLabel(t(BREATH_PHASES.INHALE.labelKey));
         }
       } else if (elapsed < BREATH_PHASES.INHALE.duration + BREATH_PHASES.HOLD_IN.duration) {
         if (currentPhase !== 'hold_in') {
           breathPhaseRef.current = 'hold_in';
           setBreathPhase('hold_in');
-          setPhaseLabel(BREATH_PHASES.HOLD_IN.label);
+          setPhaseLabel(t(BREATH_PHASES.HOLD_IN.labelKey));
         }
       } else if (elapsed < BREATH_PHASES.INHALE.duration + BREATH_PHASES.HOLD_IN.duration + BREATH_PHASES.EXHALE.duration) {
         if (currentPhase !== 'exhale') {
           breathPhaseRef.current = 'exhale';
           setBreathPhase('exhale');
-          setPhaseLabel(BREATH_PHASES.EXHALE.label);
+          setPhaseLabel(t(BREATH_PHASES.EXHALE.labelKey));
         }
       } else {
         if (currentPhase !== 'hold_out') {
           breathPhaseRef.current = 'hold_out';
           setBreathPhase('hold_out');
-          setPhaseLabel(BREATH_PHASES.HOLD_OUT.label);
+          setPhaseLabel(t(BREATH_PHASES.HOLD_OUT.labelKey));
           setBreathCount(prev => {
             const newCount = prev + 1;
             // Complete cycle every 1 breath (simplified for demo)
@@ -159,7 +161,7 @@ export default function MeditationScreen({ navigation }: any) {
         breathCycleRef.current = null;
       }
     };
-  }, [hasStartedBreathing, breathProgress]);
+  }, [hasStartedBreathing, breathProgress, t]);
 
 
   // Clouds are static (no animation)
@@ -203,7 +205,7 @@ export default function MeditationScreen({ navigation }: any) {
           useNativeDriver: true,
         }),
       ]).start(() => {
-        setCurrentPhrase((prev) => (prev + 1) % CALMING_PHRASES.length);
+        setCurrentPhrase((prev) => (prev + 1) % CALMING_PHRASE_KEYS.length);
       });
     }, 5200);
 
@@ -299,11 +301,11 @@ export default function MeditationScreen({ navigation }: any) {
       <View style={styles.centerContent}>
         {!hasStartedBreathing ? (
           <>
-            <Text style={styles.breathText}>{isCompleted ? 'Exercise complete' : 'Take a slow breath'}</Text>
+            <Text style={styles.breathText}>{isCompleted ? t('auxiliary.meditation.complete') : t('auxiliary.meditation.takeBreath')}</Text>
             <Text style={styles.breathCountText}>
               {isCompleted 
-                ? `Great work! You completed ${MAX_CYCLES} breathing cycles.` 
-                : 'When you\'re ready, start a breathing exercise.'}
+                ? t('auxiliary.meditation.greatWork', { count: MAX_CYCLES })
+                : t('auxiliary.meditation.ready')}
             </Text>
 
             <TouchableOpacity
@@ -316,7 +318,7 @@ export default function MeditationScreen({ navigation }: any) {
               }}
               activeOpacity={0.9}
             >
-              <Text style={styles.startButtonText}>{isCompleted ? 'Start again' : 'Start breathing exercise'}</Text>
+              <Text style={styles.startButtonText}>{isCompleted ? t('auxiliary.meditation.startAgain') : t('auxiliary.meditation.start')}</Text>
             </TouchableOpacity>
           </>
         ) : (
@@ -331,8 +333,8 @@ export default function MeditationScreen({ navigation }: any) {
             </View>
 
             {/* Breath counter and cycle progress */}
-            <Text style={styles.exerciseBreathCountText}>{breathCount} {breathCount === 1 ? 'breath' : 'breaths'}</Text>
-            <Text style={styles.cycleProgressText}>Cycle {cycleCount + 1} of {MAX_CYCLES}</Text>
+            <Text style={styles.exerciseBreathCountText}>{t(breathCount === 1 ? 'auxiliary.meditation.breath' : 'auxiliary.meditation.breaths', { count: breathCount })}</Text>
+            <Text style={styles.cycleProgressText}>{t('auxiliary.meditation.cycle', { current: cycleCount + 1, total: MAX_CYCLES })}</Text>
             
             {/* Stop button */}
             <TouchableOpacity
@@ -340,7 +342,7 @@ export default function MeditationScreen({ navigation }: any) {
               onPress={stopExercise}
               activeOpacity={0.9}
             >
-              <Text style={styles.stopButtonText}>Stop exercise</Text>
+              <Text style={styles.stopButtonText}>{t('auxiliary.meditation.stop')}</Text>
             </TouchableOpacity>
           </>
         )}
@@ -349,7 +351,7 @@ export default function MeditationScreen({ navigation }: any) {
       {/* Calming phrase (appears occasionally) */}
       {showPhrase && (
         <Animated.View style={[styles.phraseContainer, { opacity: phraseOpacity }]}>
-          <Text style={styles.phraseText}>{CALMING_PHRASES[currentPhrase]}</Text>
+          <Text style={styles.phraseText}>{t(`auxiliary.meditation.phrases.${CALMING_PHRASE_KEYS[currentPhrase]}`)}</Text>
         </Animated.View>
       )}
     </View>

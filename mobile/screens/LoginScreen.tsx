@@ -18,10 +18,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import SunoGradient from '../components/onboarding/SunoGradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const GoogleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>`;
 
 export default function LoginScreen({ navigation }: any) {
+  const { t } = useLanguage();
   const [emailOrUsername, setEmailOrUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -31,7 +33,7 @@ export default function LoginScreen({ navigation }: any) {
 
   const handleLogin = async () => {
     if (!emailOrUsername || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert(t('auxiliary.common.error'), t('auxiliary.login.fillAllFields'));
       return;
     }
 
@@ -52,14 +54,14 @@ export default function LoginScreen({ navigation }: any) {
         
         if (error || !data) {
           setLoading(false);
-          Alert.alert('Login Failed', 'Username not found');
+          Alert.alert(t('auxiliary.login.failed'), t('auxiliary.login.usernameNotFound'));
           return;
         }
         
         loginEmail = data.email;
       } catch (err) {
         setLoading(false);
-        Alert.alert('Login Failed', 'Failed to lookup username');
+        Alert.alert(t('auxiliary.login.failed'), t('auxiliary.login.usernameLookupFailed'));
         return;
       }
     }
@@ -73,7 +75,7 @@ export default function LoginScreen({ navigation }: any) {
     if (error) {
       // Revert the flag if sign-in failed
       await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
-      Alert.alert('Login Failed', error.message);
+      Alert.alert(t('auxiliary.login.failed'), error.message);
     }
     // On success, navigator automatically switches to authenticated stack
     // with initialRouteName='MainTabs' because HAS_COMPLETED_ONBOARDING is set
@@ -88,7 +90,7 @@ export default function LoginScreen({ navigation }: any) {
     const { error } = await signInWithGoogle();
     setSocialLoading(false);
     if (error) {
-      Alert.alert('Google Sign-In Failed', error.message || 'An error occurred');
+      Alert.alert(t('auxiliary.login.googleFailed'), error.message || t('auxiliary.common.genericError'));
     }
   };
 
@@ -97,7 +99,7 @@ export default function LoginScreen({ navigation }: any) {
     const { error } = await signInWithApple();
     setSocialLoading(false);
     if (error) {
-      Alert.alert('Apple Sign-In Failed', error.message || 'An error occurred');
+      Alert.alert(t('auxiliary.login.appleFailed'), error.message || t('auxiliary.common.genericError'));
     }
   };
 
@@ -126,11 +128,11 @@ export default function LoginScreen({ navigation }: any) {
         </TouchableOpacity>
 
         <View style={styles.content}>
-          <Text style={styles.title}>Sign In</Text>
+          <Text style={styles.title}>{t('auxiliary.common.signIn')}</Text>
 
           <TextInput
             style={styles.input}
-            placeholder="Email or username"
+            placeholder={t('auxiliary.login.emailOrUsername')}
             placeholderTextColor="rgba(0, 0, 0, 0.4)"
             value={emailOrUsername}
             onChangeText={setEmailOrUsername}
@@ -143,7 +145,7 @@ export default function LoginScreen({ navigation }: any) {
           <View style={styles.passwordContainer}>
             <TextInput
               style={styles.passwordInput}
-              placeholder="Password"
+              placeholder={t('auxiliary.common.password')}
               placeholderTextColor="rgba(0, 0, 0, 0.4)"
               value={password}
               onChangeText={setPassword}
@@ -169,13 +171,13 @@ export default function LoginScreen({ navigation }: any) {
             style={styles.forgotPasswordButton}
             onPress={handleForgotPassword}
           >
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            <Text style={styles.forgotPasswordText}>{t('auxiliary.login.forgotPassword')}</Text>
           </TouchableOpacity>
 
           <View style={styles.socialSection}>
             <View style={styles.dividerContainer}>
               <View style={styles.divider} />
-              <Text style={styles.dividerText}>or</Text>
+              <Text style={styles.dividerText}>{t('auxiliary.common.or')}</Text>
               <View style={styles.divider} />
             </View>
 
@@ -185,7 +187,7 @@ export default function LoginScreen({ navigation }: any) {
               disabled={socialLoading}
             >
               <Ionicons name="logo-apple" size={24} color="#000" />
-              <Text style={styles.appleButtonText}>Sign in with Apple</Text>
+              <Text style={styles.appleButtonText}>{t('auxiliary.login.apple')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -194,7 +196,7 @@ export default function LoginScreen({ navigation }: any) {
               disabled={socialLoading}
             >
               <SvgXml xml={GoogleSvg} width={20} height={20} />
-              <Text style={styles.googleButtonText}>Continue with Google</Text>
+              <Text style={styles.googleButtonText}>{t('auxiliary.login.google')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -202,7 +204,7 @@ export default function LoginScreen({ navigation }: any) {
               onPress={() => navigation.navigate('Signup')}
             >
               <Text style={styles.signupText}>
-                Don't have an account? <Text style={styles.signupTextBold}>Sign Up</Text>
+                {t('auxiliary.login.noAccount')}{' '}<Text style={styles.signupTextBold}>{t('auxiliary.login.signUp')}</Text>
               </Text>
             </TouchableOpacity>
           </View>
@@ -217,7 +219,7 @@ export default function LoginScreen({ navigation }: any) {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.continueButtonText}>Continue</Text>
+              <Text style={styles.continueButtonText}>{t('auxiliary.common.continue')}</Text>
             )}
           </TouchableOpacity>
         </View>

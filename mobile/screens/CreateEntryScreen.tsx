@@ -30,6 +30,7 @@ import { CheckInDraft } from '../components/checkin/types';
 import { saveCheckIn } from '../services/checkInService';
 import StandardContainer from '../components/shared/StandardContainer';
 import MoodIcon from '../components/checkin/MoodIcon';
+import { useLanguage } from '../contexts/LanguageContext';
 // Conditionally import speech recognition (crashes in Expo Go where native module isn't available)
 let ExpoSpeechRecognitionModule: any = null;
 let useSpeechRecognitionEvent: any = (_event: string, _handler: any) => {};
@@ -44,6 +45,7 @@ try {
 export default function CreateEntryScreen({ navigation, route }: any) {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { t, locale } = useLanguage();
   const { initialContent, voiceMode, prefillPrompt, checkInDraft } = route?.params || {};
   const checkInSavedRef = useRef(false);
   const [title, setTitle] = useState('');
@@ -76,17 +78,6 @@ export default function CreateEntryScreen({ navigation, route }: any) {
   const scrollViewRef = useRef<any>(null);
 
   const moods = ['😊', '😔', '😰', '😡', '😌', '🤔', '😴', '🎉'];
-  const moodLabels: Record<string, string> = {
-    '😊': 'Happy',
-    '😔': 'Sad',
-    '😰': 'Anxious',
-    '😡': 'Angry',
-    '😌': 'Calm',
-    '🤔': 'Thoughtful',
-    '😴': 'Tired',
-    '🎉': 'Excited',
-  };
-
   // Auto-save functionality
   useEffect(() => {
     if (!content.trim() || !hasUnsavedChanges.current) return;
@@ -170,7 +161,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
         const { error } = await supabase
           .from('notes')
           .update({
-            title: title.trim() || content.trim().split('\n')[0].substring(0, 50) || 'Journal Entry',
+            title: title.trim() || content.trim().split('\n')[0].substring(0, 50) || t('editor.journalEntry'),
             content: contentToSave,
             is_encrypted: isEncrypted,
             updated_at: new Date().toISOString(),
@@ -182,7 +173,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           console.log('[CreateEntry] Entry updated successfully (id:', savedEntryIdRef.current, ')');
           await persistLinkedCheckIn(
             savedEntryIdRef.current,
-            title.trim() || content.trim().split('\n')[0].substring(0, 50) || 'Journal Entry',
+            title.trim() || content.trim().split('\n')[0].substring(0, 50) || t('editor.journalEntry'),
           );
         }
       } else {
@@ -190,7 +181,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           .from('notes')
           .insert({
             user_id: user?.id,
-            title: title.trim() || 'Journal Entry',
+            title: title.trim() || t('editor.journalEntry'),
             content: contentToSave,
             is_encrypted: isEncrypted,
             created_at: new Date().toISOString(),
@@ -203,7 +194,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           savedEntryIdRef.current = data.id;
           hasUnsavedChanges.current = false;
           console.log('[CreateEntry] Entry saved successfully (id:', data.id, ', encrypted:', isEncrypted, ')');
-          await persistLinkedCheckIn(data.id, title.trim() || 'Journal Entry');
+          await persistLinkedCheckIn(data.id, title.trim() || t('editor.journalEntry'));
         }
       }
     } catch (error) {
@@ -255,7 +246,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
     savingInProgress.current = true;
     
     try {
-      const entryTitle = title.trim() || content.trim().split('\n')[0].substring(0, 50) || 'Journal Entry';
+      const entryTitle = title.trim() || content.trim().split('\n')[0].substring(0, 50) || t('editor.journalEntry');
 
       // If auto-save already created the entry, update it and reuse
       if (savedEntryIdRef.current) {
@@ -436,7 +427,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
     setInterimText('');
     stopWaveAnimation();
     if (event.error === 'not-allowed') {
-      Alert.alert('Microphone Access', 'Please allow microphone access in Settings to use voice recording.');
+      Alert.alert(t('editor.microphoneTitle'), t('editor.microphoneMessage'));
     }
   });
 
@@ -449,7 +440,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
 
   const toggleVoiceRecording = async () => {
     if (!ExpoSpeechRecognitionModule) {
-      Alert.alert('Voice Recording', 'Voice recording requires a development build and is not available in Expo Go.');
+      Alert.alert(t('editor.voiceTitle'), t('editor.voiceExpo'));
       return;
     }
 
@@ -464,7 +455,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
     try {
       const { granted } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
       if (!granted) {
-        Alert.alert('Microphone Access', 'Please allow microphone access in Settings to use voice recording.');
+        Alert.alert(t('editor.microphoneTitle'), t('editor.microphoneMessage'));
         return;
       }
 
@@ -472,7 +463,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       contentBeforeRecording.current = content;
 
       ExpoSpeechRecognitionModule.start({
-        lang: 'en-US',
+        lang: locale,
         interimResults: true,
         continuous: true,
         addsPunctuation: true,
@@ -480,7 +471,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       setIsRecording(true);
     } catch (error: any) {
       console.error('[CreateEntry] Speech recognition start error:', error);
-      Alert.alert('Voice Recording', 'Voice recording is not available on this device. Please use a development build or TestFlight.');
+      Alert.alert(t('editor.voiceTitle'), t('editor.voiceUnavailable'));
     }
   };
 
@@ -529,7 +520,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Photos Access', 'Please allow photo library access in Settings to add photos.');
+        Alert.alert(t('editor.photosTitle'), t('editor.photosMessage'));
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -544,17 +535,17 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       }
     } catch (error) {
       console.error('[CreateEntry] Photo picker error:', error);
-      Alert.alert('Error', 'Failed to open photo library.');
+      Alert.alert(t('common.error'), t('editor.photoOpenFailed'));
     }
   };
 
   const AI_PERSONALITY_KEY = 'AI_PERSONALITY';
   const PERSONALITIES = [
-    { key: 'balanced', label: 'Balanced', emoji: '⚖️', desc: 'Warm and thoughtful' },
-    { key: 'cheerful', label: 'Cheerful', emoji: '☀️', desc: 'Upbeat and encouraging' },
-    { key: 'direct', label: 'Direct', emoji: '🎯', desc: 'Concise and to the point' },
-    { key: 'playful', label: 'Playful', emoji: '✨', desc: 'Light-hearted and fun' },
-    { key: 'gentle', label: 'Gentle', emoji: '🌿', desc: 'Extra soft and nurturing' },
+    { key: 'balanced', label: t('editor.personalities.balanced'), emoji: '⚖️', desc: t('editor.personalities.balancedDesc') },
+    { key: 'cheerful', label: t('editor.personalities.cheerful'), emoji: '☀️', desc: t('editor.personalities.cheerfulDesc') },
+    { key: 'direct', label: t('editor.personalities.direct'), emoji: '🎯', desc: t('editor.personalities.directDesc') },
+    { key: 'playful', label: t('editor.personalities.playful'), emoji: '✨', desc: t('editor.personalities.playfulDesc') },
+    { key: 'gentle', label: t('editor.personalities.gentle'), emoji: '🌿', desc: t('editor.personalities.gentleDesc') },
   ];
 
   useEffect(() => {
@@ -571,14 +562,9 @@ export default function CreateEntryScreen({ navigation, route }: any) {
   };
 
   const WRITING_PROMPTS = [
-    'What made you smile today?',
-    'What\'s been on your mind lately?',
-    'Describe a moment you felt proud of recently.',
-    'What would you tell your future self right now?',
-    'What\'s something you\'re grateful for today?',
-    'If you could change one thing about today, what would it be?',
-    'What\'s a challenge you\'re currently facing?',
-    'Describe how your body feels right now.',
+    t('editor.prompts.smile'), t('editor.prompts.mind'), t('editor.prompts.proud'),
+    t('editor.prompts.future'), t('editor.prompts.grateful'), t('editor.prompts.change'),
+    t('editor.prompts.challenge'), t('editor.prompts.body'),
   ];
 
   const [inlinePrompt, setInlinePrompt] = useState<string | null>(null);
@@ -625,7 +611,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
               end={{ x: 1, y: 1 }}
               style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, minWidth: 80, alignItems: 'center' }}
             >
-              <Text style={{ color: '#ffffff', fontSize: 15, fontWeight: '600' }}>Analyze</Text>
+              <Text style={{ color: '#ffffff', fontSize: 15, fontWeight: '600' }}>{t('editor.analyze')}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -637,10 +623,10 @@ export default function CreateEntryScreen({ navigation, route }: any) {
             <View style={styles.checkInChipRow}>
               <MoodIcon tier={checkInDraft.moodTier} size={28} />
               <Text style={[styles.checkInChipText, { color: theme.colors.primaryText }]}>
-                Feeling — {checkInDraft.moodLabel}
-                {checkInDraft.feelings.length > 0
-                  ? `, ${checkInDraft.feelings.slice(0, 2).join(', ')}`
-                  : ''}
+                {t('editor.checkInFeeling', {
+                  mood: t(`checkIn.${checkInDraft.moodTier}`),
+                  feelings: checkInDraft.feelings.length > 0 ? `, ${checkInDraft.feelings.slice(0, 2).join(', ')}` : '',
+                })}
               </Text>
             </View>
           </StandardContainer>
@@ -660,7 +646,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
                 colors={['rgba(20, 20, 30, 0.95)', 'rgba(10, 10, 20, 0.98)']}
                 style={styles.glassmorphicContainer}
               >
-                <Text style={styles.moodPickerTitle}>How are you feeling?</Text>
+                <Text style={styles.moodPickerTitle}>{t('editor.howFeeling')}</Text>
                 <View style={styles.moodGrid}>
                   {moods.map((emoji) => (
                     <TouchableOpacity
@@ -704,7 +690,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
             ))}
           </View>
           <View style={styles.recordingTextContainer}>
-            <Text style={[styles.recordingLabel, { color: '#8b5cf6' }]}>Listening...</Text>
+            <Text style={[styles.recordingLabel, { color: '#8b5cf6' }]}>{t('editor.listening')}</Text>
             {interimText ? (
               <Text style={[styles.interimText, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }]} numberOfLines={1}>
                 {interimText}
@@ -732,7 +718,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
         >
           <TextInput
             style={[styles.titleInput, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}
-            placeholder="Title (optional)"
+            placeholder={t('editor.titleOptional')}
             placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'}
             value={title}
             onChangeText={setTitle}
@@ -747,7 +733,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
                 <Image source={require('../public/Insight-Logo-nobg.webp')} style={styles.promptLogo} resizeMode="contain" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.promptLabel}>Insight prompt</Text>
+                <Text style={styles.promptLabel}>{t('editor.insightPrompt')}</Text>
                 <Text style={[styles.promptQuestion, { color: isDarkTheme(theme.name) ? 'rgba(200, 180, 255, 0.9)' : '#4a3a6b' }]}>{promptText}</Text>
               </View>
             </View>
@@ -757,7 +743,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
             style={[styles.contentInput, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}
             value={content}
             onChangeText={handleContentChange}
-            placeholder={promptText ? "Your thoughts..." : "Write here..."}
+            placeholder={promptText ? t('editor.yourThoughts') : t('editor.writeHere')}
             placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'}
             multiline
             textAlignVertical="top"
@@ -788,7 +774,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
                 <Image source={require('../public/Insight-Logo-nobg.webp')} style={styles.promptLogo} resizeMode="contain" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.promptLabel}>New direction</Text>
+                <Text style={styles.promptLabel}>{t('editor.newDirection')}</Text>
                 <Text style={[styles.promptQuestion, { color: isDarkTheme(theme.name) ? 'rgba(200, 180, 255, 0.9)' : '#4a3a6b' }]}>{inlinePrompt}</Text>
               </View>
               <TouchableOpacity onPress={() => setInlinePrompt(null)} style={{ padding: 4 }}>
@@ -862,19 +848,19 @@ export default function CreateEntryScreen({ navigation, route }: any) {
                 }}
               >
                 <Ionicons name={isRecording ? 'mic-off' : 'mic'} size={20} color={isRecording ? '#ef4444' : 'rgba(255, 255, 255, 0.8)'} />
-                <Text style={styles.quickActionText}>{isRecording ? 'Stop recording' : 'Voice mode'}</Text>
+                <Text style={styles.quickActionText}>{isRecording ? t('editor.stopRecording') : t('editor.voiceMode')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.quickActionItem} onPress={handleAddPhotos}>
                 <Ionicons name="image" size={20} color="rgba(255, 255, 255, 0.8)" />
-                <Text style={styles.quickActionText}>Add photos</Text>
+                <Text style={styles.quickActionText}>{t('editor.addPhotos')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.quickActionItem} onPress={handleCustomizeAI}>
                 <Ionicons name="color-palette" size={20} color="rgba(255, 255, 255, 0.8)" />
-                <Text style={styles.quickActionText}>Customize AI</Text>
+                <Text style={styles.quickActionText}>{t('editor.customizeAi')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.quickActionItem} onPress={handleNewDirection}>
                 <Ionicons name="compass" size={20} color="rgba(255, 255, 255, 0.8)" />
-                <Text style={styles.quickActionText}>New direction</Text>
+                <Text style={styles.quickActionText}>{t('editor.newDirection')}</Text>
               </TouchableOpacity>
             </LinearGradient>
           </BlurView>
@@ -909,7 +895,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           onPress={() => setShowPersonalityModal(false)}
         >
           <View style={[styles.personalitySheet, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#fff' }]}>
-            <Text style={[styles.personalityTitle, { color: isDarkTheme(theme.name) ? '#fff' : '#1a1a1a' }]}>AI Personality</Text>
+            <Text style={[styles.personalityTitle, { color: isDarkTheme(theme.name) ? '#fff' : '#1a1a1a' }]}>{t('editor.aiPersonality')}</Text>
             {PERSONALITIES.map(p => (
               <TouchableOpacity
                 key={p.key}

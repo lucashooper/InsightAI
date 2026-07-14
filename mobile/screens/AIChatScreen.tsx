@@ -28,6 +28,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { mobileAiService } from '../services/mobileAiService';
 import { sf } from '../utils/responsive';
@@ -61,16 +62,16 @@ interface SavedChat {
 
 type Personality = 'balanced' | 'cheerful' | 'direct' | 'playful' | 'gentle';
 
-const PERSONALITIES: { key: Personality; label: string; emoji: string; desc: string }[] = [
-  { key: 'balanced', label: 'Balanced', emoji: '⚖️', desc: 'Warm and thoughtful' },
-  { key: 'cheerful', label: 'Cheerful', emoji: '☀️', desc: 'Upbeat and encouraging' },
-  { key: 'direct', label: 'Direct', emoji: '🎯', desc: 'Concise and to the point' },
-  { key: 'playful', label: 'Playful', emoji: '✨', desc: 'Light-hearted and fun' },
-  { key: 'gentle', label: 'Gentle', emoji: '🌿', desc: 'Extra soft and nurturing' },
-];
-
 export default function AIChatScreen({ navigation }: any) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
+  const personalities: { key: Personality; label: string; emoji: string; desc: string }[] = [
+    { key: 'balanced', label: t('editor.personalities.balanced'), emoji: '⚖️', desc: t('editor.personalities.balancedDesc') },
+    { key: 'cheerful', label: t('editor.personalities.cheerful'), emoji: '☀️', desc: t('editor.personalities.cheerfulDesc') },
+    { key: 'direct', label: t('editor.personalities.direct'), emoji: '🎯', desc: t('editor.personalities.directDesc') },
+    { key: 'playful', label: t('editor.personalities.playful'), emoji: '✨', desc: t('editor.personalities.playfulDesc') },
+    { key: 'gentle', label: t('editor.personalities.gentle'), emoji: '🌿', desc: t('editor.personalities.gentleDesc') },
+  ];
   const isDark = theme.name === 'dark' || theme.name === 'midnight' || theme.name === 'forest';
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
@@ -93,7 +94,7 @@ export default function AIChatScreen({ navigation }: any) {
   const [isProUser, setIsProUser] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
-  const typingRef = useRef<{ timer: NodeJS.Timeout | null; cancelled: boolean }>({ timer: null, cancelled: false });
+  const typingRef = useRef<{ timer: ReturnType<typeof setTimeout> | null; cancelled: boolean }>({ timer: null, cancelled: false });
   const initRef = useRef(0);
   const getChatHistoryKey = useCallback(
     () => `${CHAT_HISTORY_KEY_PREFIX}${user?.id || 'anonymous'}`,
@@ -218,7 +219,7 @@ export default function AIChatScreen({ navigation }: any) {
       let chats: SavedChat[] = raw ? JSON.parse(raw) : [];
 
       const firstUserMsg = messages.find(m => m.role === 'user');
-      const title = firstUserMsg ? firstUserMsg.content.substring(0, 50) + (firstUserMsg.content.length > 50 ? '...' : '') : 'New chat';
+      const title = firstUserMsg ? firstUserMsg.content.substring(0, 50) + (firstUserMsg.content.length > 50 ? '…' : '') : t('companion.newChat');
       const chatId = currentChatId || `chat-${Date.now()}`;
 
       if (!currentChatId) setCurrentChatId(chatId);
@@ -288,7 +289,7 @@ export default function AIChatScreen({ navigation }: any) {
     loadSuggestions();
   };
 
-  const typingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Cleanup typing interval on unmount
   useEffect(() => {
@@ -386,11 +387,11 @@ export default function AIChatScreen({ navigation }: any) {
       if (currentCount >= FREE_USER_DAILY_LIMIT) {
         console.log('[AIChatScreen] ❌ Daily limit reached');
         Alert.alert(
-          'Daily Limit Reached',
-          `You've reached your daily limit of ${FREE_USER_DAILY_LIMIT} messages. Upgrade to Insight Pro for unlimited AI conversations!`,
+          t('companion.dailyLimitTitle'),
+          t('companion.dailyLimitMessage', { limit: FREE_USER_DAILY_LIMIT }),
           [
-            { text: 'Maybe Later', style: 'cancel' },
-            { text: 'Upgrade to Pro', onPress: () => navigation.navigate('Paywall') }
+            { text: t('companion.maybeLater'), style: 'cancel' },
+            { text: t('companion.upgradePro'), onPress: () => navigation.navigate('Paywall') }
           ]
         );
         return false;
@@ -434,11 +435,11 @@ export default function AIChatScreen({ navigation }: any) {
         const isPro = !!customerInfo.entitlements.active['InsightAI Pro'] || Object.keys(customerInfo.entitlements.active).length > 0;
         if (!isPro) {
           Alert.alert(
-            'Pro Feature',
-            'AI Chat is available exclusively for Insight Pro subscribers. Upgrade to unlock unlimited AI conversations about your journal.',
+            t('companion.proFeature'),
+            t('companion.proFeatureMessage'),
             [
-              { text: 'Maybe Later', style: 'cancel' },
-              { text: 'Upgrade to Pro', onPress: () => navigation.navigate('Paywall') }
+              { text: t('companion.maybeLater'), style: 'cancel' },
+              { text: t('companion.upgradePro'), onPress: () => navigation.navigate('Paywall') }
             ]
           );
           return;
@@ -497,7 +498,7 @@ export default function AIChatScreen({ navigation }: any) {
       const errorMsg: ChatMessage = {
         id: `error-${Date.now()}`,
         role: 'assistant',
-        content: `I'm having trouble connecting right now. ${error?.message || 'Please try again in a moment.'}`,
+        content: t('companion.connectionError', { detail: error?.message || t('companion.tryAgain') }),
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMsg]);
@@ -569,7 +570,7 @@ export default function AIChatScreen({ navigation }: any) {
       </View>
 
       <Text style={[styles.emptySubtitle, { color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)' }]}>
-        I know your journal inside out.{'\n'}Ask me anything about your patterns, emotions, or growth.
+        {t('companion.emptySubtitle')}
       </Text>
 
       {/* Suggestion chips */}
@@ -621,7 +622,7 @@ export default function AIChatScreen({ navigation }: any) {
         </TouchableOpacity>
         <TouchableOpacity style={styles.headerCenter} onPress={() => setShowPersonality(true)} activeOpacity={0.7}>
           <View style={styles.headerDot} />
-          <Text style={[styles.headerTitle, { color: isDark ? '#fff' : theme.colors.primaryText }]}>Insight</Text>
+          <Text style={[styles.headerTitle, { color: isDark ? '#fff' : theme.colors.primaryText }]}>{t('companion.headerTitle')}</Text>
           <Ionicons name="chevron-down" size={14} color={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'} />
         </TouchableOpacity>
         <TouchableOpacity
@@ -672,7 +673,7 @@ export default function AIChatScreen({ navigation }: any) {
           {!isProUser && (
             <View style={styles.usageIndicator}>
               <Text style={styles.usageText}>
-                {dailyMessageCount}/{FREE_USER_DAILY_LIMIT} messages today
+                {t('companion.messagesToday', { count: dailyMessageCount, limit: FREE_USER_DAILY_LIMIT })}
               </Text>
             </View>
           )}
@@ -689,7 +690,7 @@ export default function AIChatScreen({ navigation }: any) {
                 color={isTemporary ? '#ef4444' : theme.colors.tertiaryText}
               />
               <Text style={[styles.tempToggleText, { color: theme.colors.tertiaryText }, isTemporary && { color: '#ef4444' }]}>
-                {isTemporary ? 'Temporary chat' : 'Chat will be saved'}
+                {isTemporary ? t('companion.temporaryChat') : t('companion.chatSaved')}
               </Text>
             </TouchableOpacity>
           )}
@@ -701,7 +702,7 @@ export default function AIChatScreen({ navigation }: any) {
               style={styles.voiceButton}
               onPress={() => {
                 // TODO: Implement voice recording functionality
-                Alert.alert('Voice Mode', 'Voice recording feature coming soon!');
+                Alert.alert(t('companion.voiceMode'), t('companion.voiceComingSoon'));
               }}
               activeOpacity={0.7}
             >
@@ -710,7 +711,7 @@ export default function AIChatScreen({ navigation }: any) {
             <TextInput
               ref={inputRef}
               style={[styles.textInput, { color: isDark ? '#fff' : theme.colors.primaryText }]}
-              placeholder="Ask me anything..."
+              placeholder={t('companion.inputPlaceholder')}
               placeholderTextColor={isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)'}
               value={inputText}
               onChangeText={setInputText}
@@ -741,7 +742,7 @@ export default function AIChatScreen({ navigation }: any) {
         <View style={[styles.modalOverlay, { paddingTop: insets.top }]}>
           <View style={[styles.modalContent, { backgroundColor: '#111' }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Chats</Text>
+              <Text style={styles.modalTitle}>{t('companion.chats')}</Text>
               <View style={{ flexDirection: 'row', gap: 12 }}>
                 <TouchableOpacity onPress={startNewChat} activeOpacity={0.7}>
                   <Ionicons name="add-circle" size={28} color="#8b5cf6" />
@@ -753,7 +754,7 @@ export default function AIChatScreen({ navigation }: any) {
             </View>
             <ScrollView style={styles.chatList} showsVerticalScrollIndicator={false}>
               {savedChats.length === 0 ? (
-                <Text style={styles.noChatText}>No saved chats yet</Text>
+                <Text style={styles.noChatText}>{t('companion.noSavedChats')}</Text>
               ) : (
                 savedChats.map(chat => (
                   <TouchableOpacity
@@ -765,9 +766,9 @@ export default function AIChatScreen({ navigation }: any) {
                     ]}
                     onPress={() => loadChat(chat)}
                     onLongPress={() => {
-                      Alert.alert('Delete Chat', 'Are you sure?', [
-                        { text: 'Cancel', style: 'cancel' },
-                        { text: 'Delete', style: 'destructive', onPress: () => deleteChat(chat.id) },
+                      Alert.alert(t('companion.deleteChat'), t('companion.areYouSure'), [
+                        { text: t('common.cancel'), style: 'cancel' },
+                        { text: t('common.delete'), style: 'destructive', onPress: () => deleteChat(chat.id) },
                       ]);
                     }}
                     activeOpacity={0.7}
@@ -797,8 +798,8 @@ export default function AIChatScreen({ navigation }: any) {
           onPress={() => setShowPersonality(false)}
         >
           <View style={[styles.personalitySheet, { backgroundColor: '#1a1a1a' }]}>
-            <Text style={[styles.personalityTitle, { color: '#fff' }]}>AI Personality</Text>
-            {PERSONALITIES.map(p => (
+            <Text style={[styles.personalityTitle, { color: '#fff' }]}>{t('editor.aiPersonality')}</Text>
+            {personalities.map(p => (
               <TouchableOpacity
                 key={p.key}
                 style={[

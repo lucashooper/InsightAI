@@ -47,11 +47,13 @@ function AuroraBlob({
   size,
   index,
   motionEnabled,
+  vivid = false,
 }: {
   blob: Blob;
   size: number;
   index: number;
   motionEnabled: boolean;
+  vivid?: boolean;
 }) {
   const progress = useRef(new Animated.Value(0)).current;
   const gradientId = `aurora-${index}-${blob.rgb.replace(/,/g, '-')}`;
@@ -101,9 +103,9 @@ function AuroraBlob({
       <Svg width="100%" height="100%" viewBox="0 0 100 100">
         <Defs>
           <RadialGradient id={gradientId} cx="50%" cy="50%" r="50%">
-            <Stop offset="0%" stopColor={`rgb(${blob.rgb})`} stopOpacity={blob.alpha} />
-            <Stop offset="48%" stopColor={`rgb(${blob.rgb})`} stopOpacity={blob.alpha * 0.58} />
-            <Stop offset="76%" stopColor={`rgb(${blob.rgb})`} stopOpacity={blob.alpha * 0.18} />
+            <Stop offset="0%" stopColor={`rgb(${blob.rgb})`} stopOpacity={vivid ? Math.min(blob.alpha * 1.15, 1) : blob.alpha} />
+            <Stop offset={vivid ? '32%' : '48%'} stopColor={`rgb(${blob.rgb})`} stopOpacity={vivid ? blob.alpha * 0.82 : blob.alpha * 0.58} />
+            <Stop offset={vivid ? '58%' : '76%'} stopColor={`rgb(${blob.rgb})`} stopOpacity={vivid ? blob.alpha * 0.42 : blob.alpha * 0.18} />
             <Stop offset="100%" stopColor={`rgb(${blob.rgb})`} stopOpacity={0} />
           </RadialGradient>
         </Defs>
@@ -118,17 +120,18 @@ function scaleBlobsForSize(
   size: number,
   compact: boolean,
   clipToCircle: boolean,
+  vivid: boolean,
 ): Blob[] {
   const scale = compact ? Math.min(1, size / 100) : 1;
   const driftScale = compact ? Math.max(0.15, scale * 0.45) : 1;
-  const diameterScale = compact && size < 72 ? 0.94 : 1;
+  const diameterScale = compact && size < 72 && !vivid ? 0.94 : 1;
 
   return blobs
-    .filter((blob) => !(compact && clipToCircle && blob.diameter >= 1.0))
+    .filter((blob) => !(compact && clipToCircle && blob.diameter >= 1.0 && !vivid))
     .map((blob) => {
       const warm = WARM_RGB.has(blob.rgb);
-      const warmDim = compact && clipToCircle && warm ? 0.42 : 1;
-      const coolBoost = compact && clipToCircle && !warm ? 1.08 : 1;
+      const warmDim = compact && clipToCircle && warm && !vivid ? 0.55 : 1;
+      const coolBoost = compact && clipToCircle && !warm ? (vivid ? 1.22 : 1.08) : 1;
 
       return {
         ...blob,
@@ -136,7 +139,7 @@ function scaleBlobsForSize(
         driftX: blob.driftX * driftScale,
         driftY: blob.driftY * driftScale,
         alpha: compact
-          ? Math.min(blob.alpha * warmDim * coolBoost, warm ? blob.alpha * 0.55 : blob.alpha * 0.92)
+          ? Math.min(blob.alpha * warmDim * coolBoost, vivid ? blob.alpha * 1.05 : warm ? blob.alpha * 0.72 : blob.alpha * 0.95)
           : blob.alpha,
       };
     });
@@ -150,6 +153,8 @@ type Props = {
   clipToCircle?: boolean;
   /** Tighter blobs and reduced drift for icon-sized renders (≤ ~72px). */
   compact?: boolean;
+  /** Sharper, more saturated compact renders for companion avatar. */
+  vivid?: boolean;
 };
 
 /**
@@ -162,10 +167,11 @@ export default function AuroraOrb({
   style,
   clipToCircle = false,
   compact = false,
+  vivid = false,
 }: Props) {
   const isCompact = compact || size <= 72;
   const sourceBlobs = isDark ? DARK_BLOBS : LIGHT_BLOBS;
-  const blobs = scaleBlobsForSize(sourceBlobs, size, isCompact, !!clipToCircle);
+  const blobs = scaleBlobsForSize(sourceBlobs, size, isCompact, !!clipToCircle, vivid);
   const [motionEnabled, setMotionEnabled] = React.useState(true);
 
   React.useEffect(() => {
@@ -181,7 +187,7 @@ export default function AuroraOrb({
   const content = (
     <>
       {blobs.map((blob, i) => (
-        <AuroraBlob key={i} blob={blob} size={size} index={i} motionEnabled={allowMotion} />
+        <AuroraBlob key={i} blob={blob} size={size} index={i} motionEnabled={allowMotion} vivid={vivid} />
       ))}
     </>
   );

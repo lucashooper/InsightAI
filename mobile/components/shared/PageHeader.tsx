@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { isTablet, sf, si } from '../../utils/responsive';
 
 type Props = {
@@ -13,6 +14,7 @@ type Props = {
 
 export default function PageHeader({ title, onBack, right, style }: Props) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   
   // Dark and midnight themes use white text, all other themes use dark text
   const isThemeDark = isDarkTheme(theme.name);
@@ -23,7 +25,13 @@ export default function PageHeader({ title, onBack, right, style }: Props) {
     <View style={[styles.container, style]}>
       <View style={styles.left}>
         {onBack ? (
-          <TouchableOpacity onPress={onBack} style={styles.backButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity
+            onPress={onBack}
+            style={styles.backButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityRole="button"
+            accessibilityLabel={t('components.common.back')}
+          >
             <Ionicons name="arrow-back" size={si(22)} color={iconColor} />
           </TouchableOpacity>
         ) : (

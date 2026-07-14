@@ -10,6 +10,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { usePreloadedData } from '../contexts/PreloadContext';
 import { supabase } from '../lib/supabase';
 import { isTablet, sf } from '../utils/responsive';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Inline base64 to ArrayBuffer decoder (avoids broken base64-arraybuffer package)
 function decodeBase64(base64: string): ArrayBuffer {
@@ -38,6 +39,7 @@ function decodeBase64(base64: string): ArrayBuffer {
 export default function EditProfileScreen({ navigation }: any) {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const { refreshProfile } = usePreloadedData();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -112,7 +114,7 @@ export default function EditProfileScreen({ navigation }: any) {
       
       if (status !== 'granted') {
         console.log('[EditProfile] Permission denied');
-        Alert.alert('Permission needed', 'Please allow access to your photos to change your profile picture.');
+        Alert.alert(t('auxiliary.editProfile.permissionNeeded'), t('auxiliary.editProfile.permissionMessage'));
         return;
       }
 
@@ -135,7 +137,7 @@ export default function EditProfileScreen({ navigation }: any) {
       }
     } catch (error) {
       console.error('[EditProfile] ❌ Error in handleChangePhoto:', error);
-      Alert.alert('Error', 'Failed to open image picker. Please try again.');
+      Alert.alert(t('auxiliary.common.error'), t('auxiliary.editProfile.pickerFailed'));
     }
   };
 
@@ -245,11 +247,11 @@ export default function EditProfileScreen({ navigation }: any) {
       await refreshProfile(user.id);
       
       console.log('[EditProfile] 🎉 Profile picture upload complete!');
-      Alert.alert('Success', 'Profile picture updated!');
+      Alert.alert(t('auxiliary.common.success'), t('auxiliary.editProfile.photoUpdated'));
     } catch (error: any) {
       console.error('[EditProfile] ❌ ERROR uploading profile picture:', error);
       console.error('[EditProfile] Error details:', JSON.stringify(error, null, 2));
-      Alert.alert('Error', error.message || 'Failed to upload profile picture');
+      Alert.alert(t('auxiliary.common.error'), error.message || t('auxiliary.editProfile.uploadFailed'));
     } finally {
       setSaving(false);
     }
@@ -294,11 +296,11 @@ export default function EditProfileScreen({ navigation }: any) {
       await AsyncStorage.setItem(`CACHED_USERNAME_${user.id}`, username);
       await AsyncStorage.setItem('CACHED_USERNAME', username);
       await refreshProfile(user.id);
-      Alert.alert('Success', 'Profile updated!');
+      Alert.alert(t('auxiliary.common.success'), t('auxiliary.editProfile.profileUpdated'));
       navigation.goBack();
     } catch (error: any) {
       console.error('[EditProfile] Error saving profile:', error);
-      Alert.alert('Error', error.message || 'Failed to save profile');
+      Alert.alert(t('auxiliary.common.error'), error.message || t('auxiliary.editProfile.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -320,7 +322,7 @@ export default function EditProfileScreen({ navigation }: any) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={theme.colors.primaryText} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>Edit Profile</Text>
+        <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>{t('auxiliary.editProfile.title')}</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -352,7 +354,7 @@ export default function EditProfileScreen({ navigation }: any) {
           </TouchableOpacity>
           <TouchableOpacity onPress={handleChangePhoto} disabled={saving}>
             <Text style={[styles.changePhotoText, { color: theme.colors.secondaryText }]}>
-              Change Photo
+              {t('auxiliary.editProfile.changePhoto')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -360,7 +362,7 @@ export default function EditProfileScreen({ navigation }: any) {
         {/* Name Fields */}
         <View style={styles.formSection}>
           <View style={styles.inputGroup}>
-            <Text style={[styles.inputLabel, { color: theme.colors.secondaryText }]}>First Name</Text>
+            <Text style={[styles.inputLabel, { color: theme.colors.secondaryText }]}>{t('auxiliary.editProfile.firstName')}</Text>
             <TextInput
               style={[styles.input, { 
                 backgroundColor: theme.colors.cardBackground, 
@@ -369,14 +371,14 @@ export default function EditProfileScreen({ navigation }: any) {
               }]}
               value={firstName}
               onChangeText={setFirstName}
-              placeholder="First Name"
+              placeholder={t('auxiliary.editProfile.firstName')}
               placeholderTextColor={theme.colors.secondaryText}
               editable={!saving}
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={[styles.inputLabel, { color: theme.colors.secondaryText }]}>Last Name</Text>
+            <Text style={[styles.inputLabel, { color: theme.colors.secondaryText }]}>{t('auxiliary.editProfile.lastName')}</Text>
             <TextInput
               style={[styles.input, { 
                 backgroundColor: theme.colors.cardBackground, 
@@ -385,7 +387,7 @@ export default function EditProfileScreen({ navigation }: any) {
               }]}
               value={lastName}
               onChangeText={setLastName}
-              placeholder="Last Name"
+              placeholder={t('auxiliary.editProfile.lastName')}
               placeholderTextColor={theme.colors.secondaryText}
               editable={!saving}
             />
@@ -401,7 +403,7 @@ export default function EditProfileScreen({ navigation }: any) {
           {saving ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.saveButtonText}>Continue</Text>
+            <Text style={styles.saveButtonText}>{t('auxiliary.common.continue')}</Text>
           )}
         </TouchableOpacity>
       </View>

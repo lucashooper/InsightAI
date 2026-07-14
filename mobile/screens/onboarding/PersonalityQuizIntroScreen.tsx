@@ -9,6 +9,7 @@ import { isTablet, sf, iPadWideContentStyle } from '../../utils/responsive';
 import Svg, { Circle } from 'react-native-svg';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const bookIcon = require('../../public/Book-Icon-Insight.webp');
 
@@ -95,6 +96,7 @@ const DecorativeBlossoms = ({ dark }: { dark: boolean }) => {
 export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
   const { theme } = useTheme();
   const { userName } = useOnboarding();
+  const { t } = useLanguage();
   const dark = isDarkTheme(theme.name);
   const neutralAccent = dark ? 'rgba(255,255,255,0.94)' : '#1a1a2e';
   const neutralSubtle = dark ? 'rgba(255,255,255,0.72)' : 'rgba(0,0,0,0.6)';
@@ -152,12 +154,12 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
 
         {/* Title */}
         <Text style={[styles.title, { color: dark ? '#fff' : '#1a1a2e' }]}>
-          Help us understand your habits
+          {t('onboarding.quizIntro.title')}
         </Text>
 
         {/* Description */}
         <Text style={[styles.description, { color: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)' }]}>
-          Optional questions to personalize your experience
+          {t('onboarding.quizIntro.description')}
         </Text>
 
         {/* Info Cards - Glassmorphic style */}
@@ -165,21 +167,21 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
           <View style={[styles.card, { backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)', borderColor: dark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.4)' }]}>
             <View style={styles.cardContent}>
               <Text style={[styles.cardNumber, { color: neutralAccent }]}>10</Text>
-              <Text style={[styles.cardLabel, { color: neutralSubtle }]}>questions</Text>
+              <Text style={[styles.cardLabel, { color: neutralSubtle }]}>{t('onboarding.quizIntro.questions')}</Text>
             </View>
           </View>
 
           <View style={[styles.card, { backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)', borderColor: dark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.4)' }]}>
             <View style={styles.cardContent}>
               <Text style={[styles.cardNumber, { color: neutralAccent }]}>2</Text>
-              <Text style={[styles.cardLabel, { color: neutralSubtle }]}>minutes</Text>
+              <Text style={[styles.cardLabel, { color: neutralSubtle }]}>{t('onboarding.quizIntro.minutes')}</Text>
             </View>
           </View>
 
           <View style={[styles.card, { backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)', borderColor: dark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.4)' }]}>
             <View style={styles.cardContent}>
               <Ionicons name="lock-closed" size={28} color={neutralAccent} />
-              <Text style={[styles.cardLabel, { color: neutralSubtle }]}>private</Text>
+              <Text style={[styles.cardLabel, { color: neutralSubtle }]}>{t('onboarding.quizIntro.private')}</Text>
             </View>
           </View>
         </View>
@@ -189,19 +191,19 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
           <View style={styles.benefitRow}>
             <Ionicons name="checkmark-circle" size={20} color={neutralAccent} />
             <Text style={[styles.benefitText, { color: dark ? 'rgba(255,255,255,0.82)' : 'rgba(0,0,0,0.72)' }]}>
-              More accurate insights
+              {t('onboarding.quizIntro.accurateInsights')}
             </Text>
           </View>
           <View style={styles.benefitRow}>
             <Ionicons name="checkmark-circle" size={20} color={neutralAccent} />
             <Text style={[styles.benefitText, { color: dark ? 'rgba(255,255,255,0.82)' : 'rgba(0,0,0,0.72)' }]}>
-              Personalized recommendations
+              {t('onboarding.quizIntro.recommendations')}
             </Text>
           </View>
           <View style={styles.benefitRow}>
             <Ionicons name="checkmark-circle" size={20} color={neutralAccent} />
             <Text style={[styles.benefitText, { color: dark ? 'rgba(255,255,255,0.82)' : 'rgba(0,0,0,0.72)' }]}>
-              Better pattern tracking
+              {t('onboarding.quizIntro.patternTracking')}
             </Text>
           </View>
         </View>
@@ -216,7 +218,7 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
           onPress={handleContinue}
         >
           <View style={styles.continueGradient}>
-            <Text style={styles.continueText}>Continue</Text>
+            <Text style={styles.continueText}>{t('common.continue')}</Text>
           </View>
         </TouchableOpacity>
 
@@ -227,7 +229,7 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
           onPress={handleSkip}
         >
           <Text style={[styles.skipText, { color: dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)' }]}>
-            Skip for now
+            {t('onboarding.skipForNow')}
           </Text>
         </TouchableOpacity>
       </View>

@@ -7,6 +7,7 @@ import * as Haptics from 'expo-haptics';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { isTablet, sf } from '../../utils/responsive';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const { width } = Dimensions.get('window');
 
@@ -21,7 +22,10 @@ interface PersonalityProfile {
 }
 
 // Map onboarding answers to personality dimensions
-function computePersonality(answers: Record<string, string>): PersonalityProfile {
+function computePersonality(
+  answers: Record<string, string>,
+  t: (key: string, params?: Record<string, string | number>) => string,
+): PersonalityProfile {
   // Dimensions based on Young's Schema Therapy (2003) & CBT irrational beliefs
   const dims = {
     perfectionism: 0.3,
@@ -150,21 +154,21 @@ function computePersonality(answers: Record<string, string>): PersonalityProfile
 
   // Determine primary pattern
   const scores = [
-    { key: 'perfectionism', label: 'Perfectionism', score: dims.perfectionism },
-    { key: 'anxiety', label: 'Anxiety', score: dims.anxiety },
-    { key: 'selfCompassion', label: 'Lack of self-compassion', score: dims.selfCompassion },
-    { key: 'boundaries', label: 'Lack of boundaries', score: dims.boundaries },
-    { key: 'selfEsteem', label: 'Low self-esteem', score: dims.selfEsteem },
+    { key: 'perfectionism', label: t('onboarding.personality.perfectionism'), score: dims.perfectionism },
+    { key: 'anxiety', label: t('onboarding.personality.anxiety'), score: dims.anxiety },
+    { key: 'selfCompassion', label: t('onboarding.personality.selfCompassion'), score: dims.selfCompassion },
+    { key: 'boundaries', label: t('onboarding.personality.boundaries'), score: dims.boundaries },
+    { key: 'selfEsteem', label: t('onboarding.personality.selfEsteem'), score: dims.selfEsteem },
   ];
 
   const primary = scores.reduce((a, b) => a.score > b.score ? a : b);
 
   const DESCRIPTIONS: Record<string, string> = {
-    perfectionism: 'Perfectionism can keep you tense and stuck. It pushes you to chase certainty instead of feeling finished.',
-    anxiety: 'Anxiety often comes from a mind that scans for danger too often. It can leave you tense even when you are safe.',
-    selfCompassion: 'Low self-compassion means being harder on yourself than you would be on someone you love. That makes growth feel heavier than it needs to.',
-    boundaries: 'Weak boundaries can come from fearing conflict or disappointing people. Over time, that leaves you drained and pulled away from your own needs.',
-    selfEsteem: 'Low self-esteem can make your mind fixate on what feels lacking. That keeps a distorted self-image in place.',
+    perfectionism: t('onboarding.personality.descriptions.perfectionism'),
+    anxiety: t('onboarding.personality.descriptions.anxiety'),
+    selfCompassion: t('onboarding.personality.descriptions.selfCompassion'),
+    boundaries: t('onboarding.personality.descriptions.boundaries'),
+    selfEsteem: t('onboarding.personality.descriptions.selfEsteem'),
   };
 
   return {
@@ -309,9 +313,10 @@ function RadarChart({ dimensions, dark }: { dimensions: { label: string; score: 
 // ── Main Screen ───────────────────────────────────────────────
 export default function PersonalityResultScreen({ navigation, route }: any) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const dark = isDarkTheme(theme.name);
   const answers = route?.params?.answers || {};
-  const profile = computePersonality(answers);
+  const profile = computePersonality(answers, t);
 
   useEffect(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -349,7 +354,7 @@ export default function PersonalityResultScreen({ navigation, route }: any) {
         <View>
           {/* Header text */}
           <Text style={[styles.subtitle, { color: dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }]}>
-            Your primary pattern
+            {t('onboarding.personality.primaryPattern')}
           </Text>
 
           <Text style={[styles.primaryPattern, { color: dark ? '#fff' : '#1a1a2e' }]}>
@@ -371,7 +376,7 @@ export default function PersonalityResultScreen({ navigation, route }: any) {
           }]}>
             <Ionicons name="sparkles" size={18} color="#8b5cf6" style={{ marginRight: 10, marginTop: 2 }} />
             <Text style={[styles.insightText, { color: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)' }]}>
-              We'll track how this evolves and help you work through it.
+              {t('onboarding.personality.evolution')}
             </Text>
           </View>
         </View>
@@ -388,7 +393,7 @@ export default function PersonalityResultScreen({ navigation, route }: any) {
           }}
         >
           <View style={styles.ctaGradient}>
-            <Text style={styles.ctaText}>Continue</Text>
+            <Text style={styles.ctaText}>{t('common.continue')}</Text>
           </View>
         </TouchableOpacity>
       </View>

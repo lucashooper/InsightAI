@@ -5,6 +5,8 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import * as Haptics from 'expo-haptics';
 import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
 import SunoGradient from '../../components/onboarding/SunoGradient';
+import LanguagePicker from '../../components/LanguagePicker';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -12,10 +14,16 @@ const phoneMockup = require('../../public/Modern-Iphone-Insight-LANDING.png');
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 export default function ProductRevealScreen({ navigation }: any) {
+    const { t } = useLanguage();
+
     return (
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={false} />
             <SunoGradient />
+
+            <View style={styles.languageAnchor}>
+                <LanguagePicker variant="pill" />
+            </View>
 
             {/* Centered logo */}
             <View style={styles.brandRow}>
@@ -28,7 +36,7 @@ export default function ProductRevealScreen({ navigation }: any) {
 
             {/* Welcome text */}
             <View style={styles.welcomeContainer}>
-                <Text style={styles.welcomeText}>Welcome to Insight</Text>
+                <Text style={styles.welcomeText}>{t('onboarding.welcome')}</Text>
             </View>
 
             {/* Phone image - centered and slightly larger, with soft bottom fade */}
@@ -68,7 +76,7 @@ export default function ProductRevealScreen({ navigation }: any) {
                     }}
                 >
                     <View style={styles.buttonInner}>
-                        <Text style={styles.buttonText}>Get Started</Text>
+                        <Text style={styles.buttonText}>{t('onboarding.getStarted')}</Text>
                     </View>
                 </TouchableOpacity>
 
@@ -76,7 +84,7 @@ export default function ProductRevealScreen({ navigation }: any) {
                     onPress={() => navigation.navigate('Login')}
                     style={styles.signInLink}
                 >
-                    <Text style={styles.signInText}>Already have an account?</Text>
+                    <Text style={styles.signInText}>{t('onboarding.alreadyHaveAccount')}</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -89,6 +97,12 @@ const styles = StyleSheet.create({
         backgroundColor: '#fef7f2',
         paddingTop: isTablet ? 80 : 60,
         paddingBottom: isTablet ? 70 : 50,
+    },
+    languageAnchor: {
+        position: 'absolute',
+        top: isTablet ? 88 : 68,
+        right: 20,
+        zIndex: 10,
     },
 
     /* ── Brand row ─────────────────────────────────────────────── */

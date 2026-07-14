@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { supabase } from '../../lib/supabase';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface AIConsentScreenProps {
   onConsent: (granted: boolean) => void;
@@ -19,6 +20,7 @@ interface AIConsentScreenProps {
 
 export default function AIConsentScreen({ onConsent, onSkip }: AIConsentScreenProps) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const [saving, setSaving] = useState(false);
 
   const handleAccept = async () => {
@@ -78,12 +80,12 @@ export default function AIConsentScreen({ onConsent, onSkip }: AIConsentScreenPr
 
         {/* Title */}
         <Text style={[styles.title, { color: theme.colors.primaryText }]}>
-          Enable AI Analysis?
+          {t('onboarding.aiConsent.title')}
         </Text>
 
         {/* Subtitle */}
         <Text style={[styles.subtitle, { color: theme.colors.secondaryText }]}>
-          Get personalized insights from your journal entries using AI technology
+          {t('onboarding.aiConsent.subtitle')}
         </Text>
 
         {/* What we send section */}
@@ -91,29 +93,29 @@ export default function AIConsentScreen({ onConsent, onSkip }: AIConsentScreenPr
           <View style={styles.infoHeader}>
             <Ionicons name="document-text-outline" size={24} color={theme.colors.primary} />
             <Text style={[styles.infoTitle, { color: theme.colors.primaryText }]}>
-              What data is sent
+              {t('onboarding.aiConsent.dataTitle')}
             </Text>
           </View>
           <Text style={[styles.infoText, { color: theme.colors.secondaryText }]}>
-            When you tap "Analyze" on a journal entry, we send the text content to our AI service for analysis.
+            {t('onboarding.aiConsent.dataBody')}
           </Text>
           <View style={styles.bulletList}>
             <View style={styles.bulletItem}>
               <Text style={[styles.bullet, { color: theme.colors.primary }]}>•</Text>
               <Text style={[styles.bulletText, { color: theme.colors.secondaryText }]}>
-                Your journal entry text
+                {t('onboarding.aiConsent.entryText')}
               </Text>
             </View>
             <View style={styles.bulletItem}>
               <Text style={[styles.bullet, { color: theme.colors.primary }]}>•</Text>
               <Text style={[styles.bulletText, { color: theme.colors.secondaryText }]}>
-                No personal identifiers (name, email, etc.)
+                {t('onboarding.aiConsent.noIdentifiers')}
               </Text>
             </View>
             <View style={styles.bulletItem}>
               <Text style={[styles.bullet, { color: theme.colors.primary }]}>•</Text>
               <Text style={[styles.bulletText, { color: theme.colors.secondaryText }]}>
-                Only when you tap the "Analyze" button
+                {t('onboarding.aiConsent.analyzeOnly')}
               </Text>
             </View>
           </View>
@@ -124,14 +126,18 @@ export default function AIConsentScreen({ onConsent, onSkip }: AIConsentScreenPr
           <View style={styles.infoHeader}>
             <Ionicons name="business-outline" size={24} color={theme.colors.primary} />
             <Text style={[styles.infoTitle, { color: theme.colors.primaryText }]}>
-              Who receives your data
+              {t('onboarding.aiConsent.recipientTitle')}
             </Text>
           </View>
           <Text style={[styles.infoText, { color: theme.colors.secondaryText }]}>
-            We use <Text style={{ fontWeight: '600' }}>Groq</Text> (an AI infrastructure company) running the <Text style={{ fontWeight: '600' }}>Llama 3</Text> language model to analyze your journal entries.
+            {t('onboarding.aiConsent.recipientIntro')}
+            <Text style={{ fontWeight: '600' }}>{t('onboarding.aiConsent.providerName')}</Text>
+            {t('onboarding.aiConsent.recipientCompany')}
+            <Text style={{ fontWeight: '600' }}>{t('onboarding.aiConsent.modelName')}</Text>
+            {t('onboarding.aiConsent.recipientModelTail')}
           </Text>
           <Text style={[styles.infoText, { color: theme.colors.secondaryText, marginTop: 8 }]}>
-            Groq processes your data according to their privacy policy and does not use your data to train AI models.
+            {t('onboarding.aiConsent.recipientPrivacy')}
           </Text>
         </View>
 
@@ -140,32 +146,32 @@ export default function AIConsentScreen({ onConsent, onSkip }: AIConsentScreenPr
           <View style={styles.infoHeader}>
             <Ionicons name="lock-closed-outline" size={24} color={theme.colors.primary} />
             <Text style={[styles.infoTitle, { color: theme.colors.primaryText }]}>
-              How your data is protected
+              {t('onboarding.aiConsent.protectionTitle')}
             </Text>
           </View>
           <View style={styles.bulletList}>
             <View style={styles.bulletItem}>
               <Text style={[styles.bullet, { color: theme.colors.primary }]}>•</Text>
               <Text style={[styles.bulletText, { color: theme.colors.secondaryText }]}>
-                All data is encrypted in transit (HTTPS/TLS)
+                {t('onboarding.aiConsent.encrypted')}
               </Text>
             </View>
             <View style={styles.bulletItem}>
               <Text style={[styles.bullet, { color: theme.colors.primary }]}>•</Text>
               <Text style={[styles.bulletText, { color: theme.colors.secondaryText }]}>
-                Your entries are stored securely in your private database
+                {t('onboarding.aiConsent.secureStorage')}
               </Text>
             </View>
             <View style={styles.bulletItem}>
               <Text style={[styles.bullet, { color: theme.colors.primary }]}>•</Text>
               <Text style={[styles.bulletText, { color: theme.colors.secondaryText }]}>
-                You can revoke consent anytime in Settings
+                {t('onboarding.aiConsent.revoke')}
               </Text>
             </View>
             <View style={styles.bulletItem}>
               <Text style={[styles.bullet, { color: theme.colors.primary }]}>•</Text>
               <Text style={[styles.bulletText, { color: theme.colors.secondaryText }]}>
-                AI features are optional — you can journal without them
+                {t('onboarding.aiConsent.optional')}
               </Text>
             </View>
           </View>
@@ -173,8 +179,7 @@ export default function AIConsentScreen({ onConsent, onSkip }: AIConsentScreenPr
 
         {/* Privacy notice */}
         <Text style={[styles.privacyNotice, { color: theme.colors.tertiaryText }]}>
-          By accepting, you consent to sending your journal entry text to Groq for AI analysis when you tap "Analyze". 
-          See our Privacy Policy for complete details.
+          {t('onboarding.aiConsent.notice')}
         </Text>
       </ScrollView>
 
@@ -190,7 +195,7 @@ export default function AIConsentScreen({ onConsent, onSkip }: AIConsentScreenPr
             <ActivityIndicator size="small" color={theme.colors.secondaryText} />
           ) : (
             <Text style={[styles.declineButtonText, { color: theme.colors.secondaryText }]}>
-              Decline
+              {t('onboarding.aiConsent.decline')}
             </Text>
           )}
         </TouchableOpacity>
@@ -204,7 +209,7 @@ export default function AIConsentScreen({ onConsent, onSkip }: AIConsentScreenPr
           {saving ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Text style={styles.acceptButtonText}>Accept & Continue</Text>
+            <Text style={styles.acceptButtonText}>{t('onboarding.aiConsent.accept')}</Text>
           )}
         </TouchableOpacity>
       </View>

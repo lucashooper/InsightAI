@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 const navigationRef = createNavigationContainerRef();
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { View, StyleSheet, TouchableOpacity, Text, Modal, Image, ActivityIndicator, Platform, InteractionManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -74,6 +75,8 @@ const Tab = createBottomTabNavigator();
 
 // Bottom Tab Navigator for main app screens
 function MainTabs() {
+  const { t } = useLanguage();
+
   return (
     <Tab.Navigator
       initialRouteName="Home"
@@ -100,11 +103,11 @@ function MainTabs() {
         name="Home"
         component={DashboardScreenNew}
         options={{
-          tabBarLabel: 'Home',
+          tabBarLabel: t('tabs.home'),
           tabBarIcon: ({ color }) => (
             <Ionicons name="home" size={si(24)} color={color} />
           ),
-          tabBarAccessibilityLabel: "Home",
+          tabBarAccessibilityLabel: t('tabs.home'),
         }}
         listeners={{
           tabPress: () => {
@@ -117,11 +120,11 @@ function MainTabs() {
         name="Journal"
         component={HomeScreen}
         options={{
-          tabBarLabel: 'Journal',
+          tabBarLabel: t('tabs.journal'),
           tabBarIcon: ({ color }) => (
             <Ionicons name="journal" size={si(24)} color={color} />
           ),
-          tabBarAccessibilityLabel: "Journal",
+          tabBarAccessibilityLabel: t('tabs.journal'),
         }}
         listeners={{
           tabPress: () => {
@@ -142,11 +145,11 @@ function MainTabs() {
         name="Dashboard"
         component={DashboardScreen}
         options={{
-          tabBarLabel: 'Dashboard',
+          tabBarLabel: t('tabs.dashboard'),
           tabBarIcon: ({ color }) => (
             <Ionicons name="analytics" size={si(24)} color={color} />
           ),
-          tabBarAccessibilityLabel: "Dashboard",
+          tabBarAccessibilityLabel: t('tabs.dashboard'),
         }}
         listeners={{
           tabPress: () => {
@@ -159,8 +162,8 @@ function MainTabs() {
         name="Companion"
         component={EmptyTabScreen}
         options={{
-          tabBarLabel: 'Companion',
-          tabBarAccessibilityLabel: 'Companion',
+          tabBarLabel: t('tabs.companion'),
+          tabBarAccessibilityLabel: t('tabs.companion'),
         }}
         listeners={({ navigation: tabNav }) => ({
           tabPress: (e) => {

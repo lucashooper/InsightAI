@@ -1,31 +1,33 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function LoginScreen({ navigation }: any) {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
+      <Text style={styles.title}>{t('auxiliary.loginSimple.title')}</Text>
       
       <TextInput
         style={styles.input}
-        placeholder="Email"
+        placeholder={t('auxiliary.common.email')}
         value={email}
         onChangeText={setEmail}
       />
 
       <TextInput
         style={styles.input}
-        placeholder="Password"
+        placeholder={t('auxiliary.common.password')}
         value={password}
         onChangeText={setPassword}
         secureTextEntry={true}
       />
 
       <TouchableOpacity style={styles.button}>
-        <Text style={styles.buttonText}>Sign In</Text>
+        <Text style={styles.buttonText}>{t('auxiliary.common.signIn')}</Text>
       </TouchableOpacity>
     </View>
   );

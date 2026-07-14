@@ -13,6 +13,8 @@ import { checkAIConsent, updateAIConsent } from '../services/aiConsentService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import StandardContainer from '../components/shared/StandardContainer';
 import PageHeader from '../components/shared/PageHeader';
+import LanguagePicker from '../components/LanguagePicker';
+import { useLanguage } from '../contexts/LanguageContext';
 import { isTablet, sf, ss, si, iPadContentStyle } from '../utils/responsive';
 import { printSubscriptionDebugReport, resetRevenueCatOnly, nukeAllSubscriptionState } from '../utils/subscriptionDebug';
 import Constants from 'expo-constants';
@@ -28,6 +30,7 @@ export default function SettingsScreen({ navigation }: any) {
   const { user, signOut } = useAuth();
   const { theme, themeName, setTheme, containerStyle, setContainerStyle } = useTheme();
   const { isLockEnabled, isBiometricEnabled, isBiometricAvailable, enableLock, disableLock, toggleBiometric } = useAppLock();
+  const { t } = useLanguage();
   const [showPinSetup, setShowPinSetup] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinConfirm, setPinConfirm] = useState('');
@@ -48,7 +51,7 @@ export default function SettingsScreen({ navigation }: any) {
   const [moodIndicatorsEnabled, setMoodIndicatorsEnabled] = useState(true);
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [reminderTime, setReminderTime] = useState('20:00');
-  const [subscriptionPlan, setSubscriptionPlan] = useState<string>('Free');
+  const [subscriptionPlan, setSubscriptionPlan] = useState<string>(() => t('settings.free'));
   const [isLoadingSubscription, setIsLoadingSubscription] = useState(true);
   const [aiConsentGranted, setAiConsentGranted] = useState<boolean | null>(null);
   const [loadingAiConsent, setLoadingAiConsent] = useState(true);
@@ -59,15 +62,15 @@ export default function SettingsScreen({ navigation }: any) {
   };
 
   const defaultThemes: { name: ThemeName; label: string; emoji: string }[] = [
-    { name: 'dark', label: 'Dark', emoji: '' },
-    { name: 'light', label: 'Light', emoji: '' },
+    { name: 'dark', label: t('settings.dark'), emoji: '' },
+    { name: 'light', label: t('settings.light'), emoji: '' },
   ];
 
   const otherThemes: { name: ThemeName; label: string; emoji: string }[] = [
-    { name: 'sunset', label: 'Sunset', emoji: '' },
-    { name: 'vibrant', label: 'Vibrant', emoji: '' },
-    { name: 'ocean', label: 'Ocean', emoji: '' },
-    { name: 'midnight', label: 'Midnight', emoji: '' },
+    { name: 'sunset', label: t('settings.sunset'), emoji: '' },
+    { name: 'vibrant', label: t('settings.vibrant'), emoji: '' },
+    { name: 'ocean', label: t('settings.ocean'), emoji: '' },
+    { name: 'midnight', label: t('settings.midnight'), emoji: '' },
   ];
 
   useEffect(() => {
@@ -109,17 +112,17 @@ export default function SettingsScreen({ navigation }: any) {
       if (success) {
         setAiConsentGranted(newValue);
         Alert.alert(
-          newValue ? 'AI Analysis Enabled' : 'AI Analysis Disabled',
+          newValue ? t('settings.aiEnabled') : t('settings.aiDisabled'),
           newValue 
-            ? 'You can now tap "Analyze" on journal entries to get AI-powered insights.'
-            : 'AI analysis has been disabled. You can re-enable it anytime in Settings.'
+            ? t('settings.aiEnabledMessage')
+            : t('settings.aiDisabledMessage')
         );
       } else {
-        Alert.alert('Error', 'Failed to update AI consent. Please try again.');
+        Alert.alert(t('common.error'), t('settings.updateConsentFailed'));
       }
     } catch (error) {
       console.error('Error toggling AI consent:', error);
-      Alert.alert('Error', 'Failed to update AI consent. Please try again.');
+      Alert.alert(t('common.error'), t('settings.updateConsentFailed'));
     }
   };
 
@@ -175,21 +178,21 @@ export default function SettingsScreen({ navigation }: any) {
 
   const handleSetReminderTime = () => {
     Alert.prompt(
-      'Set Reminder Time',
-      'Enter time in 24-hour format (HH:MM, e.g., 20:00 for 8 PM)',
+      t('settings.reminderTime'),
+      t('settings.reminderPrompt'),
       async (time) => {
         if (time && time.trim()) {
           const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
           if (!timeRegex.test(time.trim())) {
-            Alert.alert('Invalid Format', 'Please use HH:MM format (e.g., 20:00)');
+            Alert.alert(t('settings.invalidFormat'), t('settings.invalidFormatMessage'));
             return;
           }
           
           setReminderTime(time.trim());
           await AsyncStorage.setItem('reminderTime', time.trim());
           Alert.alert(
-            'Reminder Set',
-            `You'll receive a daily reminder at ${time.trim()}.\n\nNote: Make sure notifications are enabled in your iPhone settings.`
+            t('settings.reminderSet'),
+            t('settings.reminderSetMessage', { time: time.trim() })
           );
         }
       },
@@ -200,15 +203,15 @@ export default function SettingsScreen({ navigation }: any) {
 
   const handleEditUsername = () => {
     Alert.prompt(
-      'Edit Name',
-      'Enter your new name (max 30 characters)',
+      t('settings.editName'),
+      t('settings.editNamePrompt'),
       [
         {
-          text: 'Cancel',
+          text: t('common.cancel'),
           style: 'cancel'
         },
         {
-          text: 'Save',
+          text: t('settings.save'),
           onPress: async (newName?: string) => {
             if (!newName || !newName.trim()) return;
             
@@ -223,16 +226,16 @@ export default function SettingsScreen({ navigation }: any) {
               
               if (error) {
                 console.error('[Settings] Error updating username:', error);
-                Alert.alert('Error', 'Failed to update name. Please try again.');
+                Alert.alert(t('common.error'), t('settings.updateNameFailed'));
               } else {
                 console.log('[Settings] ✅ Username updated successfully');
                 setUserProfile(prev => prev ? { ...prev, username: trimmedName } : prev);
                 await AsyncStorage.setItem('CACHED_USERNAME', trimmedName);
-                Alert.alert('Success', 'Your name has been updated!');
+                Alert.alert(t('common.success'), t('settings.nameUpdated'));
               }
             } catch (err) {
               console.error('[Settings] Exception updating username:', err);
-              Alert.alert('Error', 'Failed to update name. Please try again.');
+              Alert.alert(t('common.error'), t('settings.updateNameFailed'));
             }
           }
         }
@@ -278,7 +281,7 @@ export default function SettingsScreen({ navigation }: any) {
         setUserProfile({
           id: user.id,
           email: user.email || '',
-          username: cachedName || user.email?.split('@')[0] || 'User',
+          username: cachedName || user.email?.split('@')[0] || t('settings.user'),
           profile_picture_url: cachedPfp || null
         });
       } else if (data) {
@@ -315,7 +318,7 @@ export default function SettingsScreen({ navigation }: any) {
         setUserProfile({
           id: user.id,
           email: user.email || '',
-          username: cachedName || user.user_metadata?.username || user.email?.split('@')[0] || 'User',
+          username: cachedName || user.user_metadata?.username || user.email?.split('@')[0] || t('settings.user'),
           profile_picture_url: cachedPfp || null
         });
       }
@@ -326,7 +329,7 @@ export default function SettingsScreen({ navigation }: any) {
       setUserProfile({
         id: user.id,
         email: user.email || '',
-        username: cachedName || user.user_metadata?.username || user.email?.split('@')[0] || 'User',
+        username: cachedName || user.user_metadata?.username || user.email?.split('@')[0] || t('settings.user'),
         profile_picture_url: cachedPfp || null
       });
     }
@@ -385,14 +388,14 @@ export default function SettingsScreen({ navigation }: any) {
         setUsageLimit(2);
         console.log('[Settings] ✅ Subscription is active - setting plan to Pro');
       } else {
-        setSubscriptionPlan('Free');
+        setSubscriptionPlan(t('settings.free'));
         setUsageLimit(0);
         console.log('[Settings] ⚠️ No active subscription - setting plan to Free');
       }
     } catch (error: any) {
       console.error('[Settings] ❌ Error loading subscription status:', error);
       console.error('[Settings] Error message:', error.message);
-      setSubscriptionPlan('Free');
+      setSubscriptionPlan(t('settings.free'));
       setUsageLimit(0);
     } finally {
       setIsLoadingSubscription(false);
@@ -403,7 +406,7 @@ export default function SettingsScreen({ navigation }: any) {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (permissionResult.granted === false) {
-      Alert.alert('Permission Required', 'Please allow access to your photo library.');
+      Alert.alert(t('settings.permissionRequired'), t('settings.photoPermission'));
       return;
     }
 
@@ -461,10 +464,10 @@ export default function SettingsScreen({ navigation }: any) {
 
         // Update local state regardless
         setUserProfile(prev => prev ? { ...prev, profile_picture_url: urlData.publicUrl } : null);
-        Alert.alert('Success', 'Profile picture updated!');
+        Alert.alert(t('common.success'), t('settings.pictureUpdated'));
       } catch (error) {
         console.error('Error uploading image:', error);
-        Alert.alert('Upload Failed', 'Could not upload profile picture.');
+        Alert.alert(t('settings.uploadFailed'), t('settings.uploadFailedMessage'));
       } finally {
         setUploadingImage(false);
       }
@@ -473,7 +476,7 @@ export default function SettingsScreen({ navigation }: any) {
 
   const handleSubmitFeedback = async () => {
     if (!feedbackTitle.trim() || !feedbackMessage.trim()) {
-      Alert.alert('Missing Information', 'Please enter both a title and message');
+      Alert.alert(t('settings.missingInfo'), t('settings.missingInfoMessage'));
       return;
     }
 
@@ -502,7 +505,7 @@ export default function SettingsScreen({ navigation }: any) {
       setTimeout(() => setFeedbackSuccess(false), 3000);
     } catch (error: any) {
       console.error('[Settings] Error submitting feedback:', error);
-      Alert.alert('Error', error?.message || 'Failed to submit feedback. Please try again.');
+      Alert.alert(t('common.error'), error?.message || t('settings.feedbackFailed'));
     } finally {
       setSubmittingFeedback(false);
     }
@@ -519,10 +522,10 @@ export default function SettingsScreen({ navigation }: any) {
 
       if (error) throw error;
 
-      Alert.alert('Success', `Synced ${data?.length || 0} strategies from cloud`);
+      Alert.alert(t('common.success'), t('settings.syncSuccess', { count: data?.length || 0 }));
       console.log('📥 Synced strategies:', data);
     } catch (error) {
-      Alert.alert('Error', 'Failed to sync data');
+      Alert.alert(t('common.error'), t('settings.syncFailed'));
       console.error('Sync error:', error);
     } finally {
       setSyncing(false);
@@ -531,12 +534,12 @@ export default function SettingsScreen({ navigation }: any) {
 
   const handleSignOut = async () => {
     Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
+      t('settings.signOut'),
+      t('settings.signOutConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Sign Out',
+          text: t('settings.signOut'),
           style: 'destructive',
           onPress: async () => {
             await signOut();
@@ -557,7 +560,7 @@ export default function SettingsScreen({ navigation }: any) {
         style={styles.backgroundGradient}
       />
 
-      <PageHeader title="Settings" />
+      <PageHeader title={t('settings.pageTitle')} />
 
       <ScrollView 
         style={styles.content}
@@ -595,7 +598,7 @@ export default function SettingsScreen({ navigation }: any) {
                 </TouchableOpacity>
                 <View style={styles.profileInfo}>
                   <TouchableOpacity onPress={handleEditUsername}>
-                    <Text style={[styles.profileName, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]} numberOfLines={1}>{userProfile?.username || user?.user_metadata?.username || 'User'}</Text>
+                    <Text style={[styles.profileName, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]} numberOfLines={1}>{userProfile?.username || user?.user_metadata?.username || t('settings.user')}</Text>
                   </TouchableOpacity>
                   {user?.email && <Text style={[styles.profileEmail, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.6)' : '#6B6B6B' }]}>{user.email}</Text>}
                 </View>
@@ -604,6 +607,14 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         </View>
 
+        {/* Language — always visible, not hidden inside another section */}
+        <View style={styles.section}>
+          <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+            <View style={{ paddingHorizontal: 16 }}>
+              <LanguagePicker variant="row" />
+            </View>
+          </View>
+        </View>
 
         {/* Appearance - Collapsible */}
         <View style={styles.section}>
@@ -614,7 +625,7 @@ export default function SettingsScreen({ navigation }: any) {
               activeOpacity={0.7}
             >
               <View style={{ flex: 1 }}>
-                <Text style={[styles.settingLabel, { color: theme.colors.primaryText, marginBottom: 0 }]}>Appearance</Text>
+                <Text style={[styles.settingLabel, { color: theme.colors.primaryText, marginBottom: 0 }]}>{t('settings.appearance')}</Text>
                 <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Theme: {themeName.charAt(0).toUpperCase() + themeName.slice(1)}</Text>
               </View>
               <Ionicons name={expandedSection === 'appearance' ? 'chevron-up' : 'chevron-forward'} size={18} color={theme.colors.secondaryText} />
@@ -624,7 +635,7 @@ export default function SettingsScreen({ navigation }: any) {
                 <View style={[styles.settingDivider, { backgroundColor: theme.colors.border, marginHorizontal: 0, marginBottom: 16 }]} />
                 
                 {/* Theme Selection */}
-                <Text style={[styles.subsectionLabel, { color: theme.colors.secondaryText }]}>Theme</Text>
+                <Text style={[styles.subsectionLabel, { color: theme.colors.secondaryText }]}>{t('settings.theme')}</Text>
                 <View style={styles.themeGrid}>
                   {[...defaultThemes, ...otherThemes].map((t) => (
                     <TouchableOpacity
@@ -647,7 +658,7 @@ export default function SettingsScreen({ navigation }: any) {
                 </View>
                 
                 {/* Container Style Selection */}
-                <Text style={[styles.subsectionLabel, { color: theme.colors.secondaryText, marginTop: 20 }]}>Container Style</Text>
+                <Text style={[styles.subsectionLabel, { color: theme.colors.secondaryText, marginTop: 20 }]}>{t('settings.containerStyle')}</Text>
                 <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
                   <TouchableOpacity
                     style={[
@@ -658,8 +669,8 @@ export default function SettingsScreen({ navigation }: any) {
                     onPress={() => setContainerStyle('modern-gray')}
                     activeOpacity={0.7}
                   >
-                    <Text style={[styles.accentModeLabel, { color: containerStyle === 'modern-gray' ? '#8b5cf6' : theme.colors.secondaryText }]}>Modern Gray</Text>
-                    <Text style={[styles.accentModeDesc, { color: theme.colors.tertiaryText }]}>Sleek neutral containers</Text>
+                    <Text style={[styles.accentModeLabel, { color: containerStyle === 'modern-gray' ? '#8b5cf6' : theme.colors.secondaryText }]}>{t('settings.modernGray')}</Text>
+                    <Text style={[styles.accentModeDesc, { color: theme.colors.tertiaryText }]}>{t('settings.modernGrayDesc')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[
@@ -670,8 +681,8 @@ export default function SettingsScreen({ navigation }: any) {
                     onPress={() => setContainerStyle('responsive')}
                     activeOpacity={0.7}
                   >
-                    <Text style={[styles.accentModeLabel, { color: containerStyle === 'responsive' ? '#8b5cf6' : theme.colors.secondaryText }]}>Responsive</Text>
-                    <Text style={[styles.accentModeDesc, { color: theme.colors.tertiaryText }]}>Adapts to theme</Text>
+                    <Text style={[styles.accentModeLabel, { color: containerStyle === 'responsive' ? '#8b5cf6' : theme.colors.secondaryText }]}>{t('settings.responsive')}</Text>
+                    <Text style={[styles.accentModeDesc, { color: theme.colors.tertiaryText }]}>{t('settings.responsiveDesc')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -688,8 +699,8 @@ export default function SettingsScreen({ navigation }: any) {
               activeOpacity={0.7}
             >
               <View style={{ flex: 1 }}>
-                <Text style={[styles.settingLabel, { color: theme.colors.primaryText, marginBottom: 0 }]}>Security</Text>
-                <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>{isLockEnabled ? 'App Lock enabled' : 'No lock set'}</Text>
+                <Text style={[styles.settingLabel, { color: theme.colors.primaryText, marginBottom: 0 }]}>{t('settings.security')}</Text>
+                <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>{isLockEnabled ? t('settings.lockEnabledShort') : t('settings.noLock')}</Text>
               </View>
               <Ionicons name={expandedSection === 'security' ? 'chevron-up' : 'chevron-forward'} size={18} color={theme.colors.secondaryText} />
             </TouchableOpacity>
@@ -701,13 +712,13 @@ export default function SettingsScreen({ navigation }: any) {
                   onPress={() => {
                     if (isLockEnabled) {
                       Alert.prompt(
-                        'Disable App Lock',
-                        'Enter your current PIN to disable the lock.',
+                        t('settings.disableLock'),
+                        t('settings.disableLockPrompt'),
                         async (text: string) => {
                           if (text && text.length === 4) {
                             const success = await disableLock(text);
                             if (!success) {
-                              Alert.alert('Incorrect PIN', 'The PIN you entered is incorrect.');
+                              Alert.alert(t('settings.incorrectPin'), t('settings.incorrectPinMessage'));
                             }
                           }
                         },
@@ -717,30 +728,30 @@ export default function SettingsScreen({ navigation }: any) {
                       );
                     } else {
                       Alert.prompt(
-                        'Set App Lock PIN',
-                        'Choose a 4-digit PIN to lock your journal.',
+                        t('settings.setLockPin'),
+                        t('settings.setLockPinPrompt'),
                         [
-                          { text: 'Cancel', style: 'cancel' },
+                          { text: t('common.cancel'), style: 'cancel' },
                           {
-                            text: 'Next',
+                            text: t('settings.next'),
                             onPress: (pin?: string) => {
                               if (!pin || pin.length !== 4) {
-                                Alert.alert('Invalid PIN', 'Please enter exactly 4 digits.');
+                                Alert.alert(t('settings.invalidPin'), t('settings.invalidPinMessage'));
                                 return;
                               }
                               Alert.prompt(
-                                'Confirm PIN',
-                                'Re-enter your 4-digit PIN to confirm.',
+                                t('settings.confirmPin'),
+                                t('settings.confirmPinPrompt'),
                                 [
-                                  { text: 'Cancel', style: 'cancel' },
+                                  { text: t('common.cancel'), style: 'cancel' },
                                   {
-                                    text: 'Enable Lock',
+                                    text: t('settings.enableLock'),
                                     onPress: async (confirmPin?: string) => {
                                       if (confirmPin === pin) {
                                         await enableLock(pin);
-                                        Alert.alert('App Lock Enabled', 'Your journal is now protected with a PIN.');
+                                        Alert.alert(t('settings.lockEnabled'), t('settings.lockEnabledMessage'));
                                       } else {
-                                        Alert.alert('PINs Don\'t Match', 'The PINs you entered don\'t match. Please try again.');
+                                        Alert.alert(t('settings.pinsMismatch'), t('settings.pinsMismatchMessage'));
                                       }
                                     },
                                   },
@@ -761,8 +772,8 @@ export default function SettingsScreen({ navigation }: any) {
                   activeOpacity={0.7}
                 >
                   <View style={styles.settingLeft}>
-                    <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>App Lock</Text>
-                    <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Require a PIN to open Insight</Text>
+                    <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>{t('settings.appLock')}</Text>
+                    <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>{t('settings.appLockDesc')}</Text>
                   </View>
                   <View style={[styles.toggle, isLockEnabled && styles.toggleActive]}>
                     <View style={[styles.toggleThumb, isLockEnabled && styles.toggleThumbActive]} />
@@ -778,8 +789,8 @@ export default function SettingsScreen({ navigation }: any) {
                       activeOpacity={0.7}
                     >
                       <View style={styles.settingLeft}>
-                        <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Face ID / Touch ID</Text>
-                        <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Unlock with biometrics instead of PIN</Text>
+                        <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>{t('settings.biometrics')}</Text>
+                        <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>{t('settings.biometricsDesc')}</Text>
                       </View>
                       <View style={[styles.toggle, isBiometricEnabled && styles.toggleActive]}>
                         <View style={[styles.toggleThumb, isBiometricEnabled && styles.toggleThumbActive]} />
@@ -795,34 +806,34 @@ export default function SettingsScreen({ navigation }: any) {
                       style={styles.settingRow}
                       onPress={() => {
                         Alert.prompt(
-                          'Change PIN',
-                          'Enter your current PIN first.',
+                          t('settings.changePin'),
+                          t('settings.currentPinPrompt'),
                           [
-                            { text: 'Cancel', style: 'cancel' },
+                            { text: t('common.cancel'), style: 'cancel' },
                             {
-                              text: 'Next',
+                              text: t('settings.next'),
                               onPress: async (currentPin?: string) => {
                                 if (!currentPin) return;
                                 const valid = await disableLock(currentPin);
                                 if (!valid) {
-                                  Alert.alert('Incorrect PIN', 'The PIN you entered is incorrect.');
+                                  Alert.alert(t('settings.incorrectPin'), t('settings.incorrectPinMessage'));
                                   return;
                                 }
                                 Alert.prompt(
-                                  'New PIN',
-                                  'Choose a new 4-digit PIN.',
+                                  t('settings.newPin'),
+                                  t('settings.newPinPrompt'),
                                   [
-                                    { text: 'Cancel', style: 'cancel' },
+                                    { text: t('common.cancel'), style: 'cancel' },
                                     {
-                                      text: 'Set PIN',
+                                      text: t('settings.setPin'),
                                       onPress: async (newPin?: string) => {
                                         if (!newPin || newPin.length !== 4) {
-                                          Alert.alert('Invalid PIN', 'Please enter exactly 4 digits.');
+                                          Alert.alert(t('settings.invalidPin'), t('settings.invalidPinMessage'));
                                           await enableLock(currentPin);
                                           return;
                                         }
                                         await enableLock(newPin);
-                                        Alert.alert('PIN Changed', 'Your new PIN has been set.');
+                                        Alert.alert(t('settings.pinChanged'), t('settings.pinChangedMessage'));
                                       },
                                     },
                                   ],
@@ -841,8 +852,8 @@ export default function SettingsScreen({ navigation }: any) {
                       activeOpacity={0.7}
                     >
                       <View style={styles.settingLeft}>
-                        <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Change PIN</Text>
-                        <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Update your 4-digit lock PIN</Text>
+                        <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>{t('settings.changePin')}</Text>
+                        <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>{t('settings.changePinDesc')}</Text>
                       </View>
                       <Ionicons name="chevron-forward" size={18} color={theme.colors.secondaryText} />
                     </TouchableOpacity>
@@ -860,12 +871,12 @@ export default function SettingsScreen({ navigation }: any) {
               style={styles.settingRow}
               onPress={() => {
                 Alert.alert(
-                  'Privacy Policy',
-                  'View our Privacy Policy to learn how we handle your data, including AI analysis.\n\nWould you like to open it in your browser?',
+                  t('settings.privacy'),
+                  t('settings.privacyMessage'),
                   [
-                    { text: 'Cancel', style: 'cancel' },
+                    { text: t('common.cancel'), style: 'cancel' },
                     { 
-                      text: 'Open', 
+                      text: t('settings.open'),
                       onPress: () => {
                         const url = 'https://myinsightai.app/privacy';
                         console.log('Opening privacy policy:', url);
@@ -877,7 +888,7 @@ export default function SettingsScreen({ navigation }: any) {
               activeOpacity={0.7}
             >
               <View style={{ flex: 1 }}>
-                <Text style={[styles.settingLabel, { color: theme.colors.primaryText, marginBottom: 0 }]}>Privacy Policy</Text>
+                <Text style={[styles.settingLabel, { color: theme.colors.primaryText, marginBottom: 0 }]}>{t('settings.privacy')}</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={theme.colors.secondaryText} />
             </TouchableOpacity>
@@ -893,8 +904,8 @@ export default function SettingsScreen({ navigation }: any) {
               activeOpacity={0.7}
             >
               <View style={{ flex: 1 }}>
-                <Text style={[styles.settingLabel, { color: theme.colors.primaryText, marginBottom: 0 }]}>Personalize</Text>
-                <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Reminders, prompts & preferences</Text>
+                <Text style={[styles.settingLabel, { color: theme.colors.primaryText, marginBottom: 0 }]}>{t('settings.personalize')}</Text>
+                <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>{t('settings.personalizeDesc')}</Text>
               </View>
               <Ionicons name={expandedSection === 'personalize' ? 'chevron-up' : 'chevron-forward'} size={18} color={theme.colors.secondaryText} />
             </TouchableOpacity>
@@ -907,7 +918,7 @@ export default function SettingsScreen({ navigation }: any) {
                   activeOpacity={0.7}
                 >
                   <View style={styles.settingLeft}>
-                    <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Daily journal reminder</Text>
+                    <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>{t('settings.dailyReminder')}</Text>
                     <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Receive a notification at {reminderTime}</Text>
                   </View>
                   <View style={[styles.toggle, reminderEnabled && styles.toggleActive]}>
@@ -924,7 +935,7 @@ export default function SettingsScreen({ navigation }: any) {
                       activeOpacity={0.7}
                     >
                       <View style={styles.settingLeft}>
-                        <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Change time</Text>
+                        <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>{t('settings.changeTime')}</Text>
                         <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Currently set to {reminderTime}</Text>
                       </View>
                       <Ionicons name="chevron-forward" size={18} color={theme.colors.secondaryText} />
@@ -939,8 +950,8 @@ export default function SettingsScreen({ navigation }: any) {
                   activeOpacity={0.7}
                 >
                   <View style={styles.settingLeft}>
-                    <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Daily mood check-in</Text>
-                    <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Get a quick check-in when you open the app</Text>
+                    <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>{t('checkIn.dailyMoodCheckIn')}</Text>
+                    <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>{t('checkIn.dailyMoodDescription')}</Text>
                   </View>
                   <View style={[styles.toggle, dailyMoodCheckInEnabled && styles.toggleActive]}>
                     <View style={[styles.toggleThumb, dailyMoodCheckInEnabled && styles.toggleThumbActive]} />
@@ -954,8 +965,8 @@ export default function SettingsScreen({ navigation }: any) {
                   activeOpacity={0.7}
                 >
                   <View style={styles.settingLeft}>
-                    <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Breathing prompts</Text>
-                    <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Take 3 deep breaths before reflecting</Text>
+                    <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>{t('settings.breathing')}</Text>
+                    <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>{t('settings.breathingDesc')}</Text>
                   </View>
                   <View style={[styles.toggle, breathingPromptsEnabled && styles.toggleActive]}>
                     <View style={[styles.toggleThumb, breathingPromptsEnabled && styles.toggleThumbActive]} />
@@ -969,8 +980,8 @@ export default function SettingsScreen({ navigation }: any) {
                   activeOpacity={0.7}
                 >
                   <View style={styles.settingLeft}>
-                    <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Monthly progress stories</Text>
-                    <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Receive a narrative summary of your month</Text>
+                    <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>{t('settings.monthly')}</Text>
+                    <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>{t('settings.monthlyDesc')}</Text>
                   </View>
                   <View style={[styles.toggle, monthlyStoriesEnabled && styles.toggleActive]}>
                     <View style={[styles.toggleThumb, monthlyStoriesEnabled && styles.toggleThumbActive]} />
@@ -984,8 +995,8 @@ export default function SettingsScreen({ navigation }: any) {
                   activeOpacity={0.7}
                 >
                   <View style={styles.settingLeft}>
-                    <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>Show entry mood indicators</Text>
-                    <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>Display emoji and color on journal entries</Text>
+                    <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>{t('settings.moodIndicators')}</Text>
+                    <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>{t('settings.moodIndicatorsDesc')}</Text>
                   </View>
                   <View style={[styles.toggle, moodIndicatorsEnabled && styles.toggleActive]}>
                     <View style={[styles.toggleThumb, moodIndicatorsEnabled && styles.toggleThumbActive]} />
@@ -998,11 +1009,11 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Subscription & Usage */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>Account</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>{t('settings.account')}</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <View style={styles.cardGradient}>
               <View style={styles.usageRow}>
-                <Text style={[styles.usageLabel, { color: theme.colors.secondaryText }]}>Current Plan</Text>
+                <Text style={[styles.usageLabel, { color: theme.colors.secondaryText }]}>{t('settings.currentPlan')}</Text>
                 {isLoadingSubscription ? (
                   <ActivityIndicator size="small" color="#a855f7" />
                 ) : (
@@ -1013,7 +1024,7 @@ export default function SettingsScreen({ navigation }: any) {
               {subscriptionPlan === 'Pro' && (
                 <View style={styles.usageProgress}>
                   <View style={styles.usageProgressRow}>
-                    <Text style={[styles.usageProgressLabel, { color: theme.colors.secondaryText }]}>Analysed today</Text>
+                    <Text style={[styles.usageProgressLabel, { color: theme.colors.secondaryText }]}>{t('settings.analyzedToday')}</Text>
                     <Text style={[styles.usageProgressValue, { color: theme.colors.primaryText }]}>{usageCount} / {usageLimit}</Text>
                   </View>
                   <View style={styles.progressBarContainer}>
@@ -1040,7 +1051,7 @@ export default function SettingsScreen({ navigation }: any) {
                   style={styles.upgradeGradient}
                 >
                   <Ionicons name={subscriptionPlan === 'Pro' ? 'settings-outline' : 'sparkles'} size={18} color="#fff" />
-                  <Text style={styles.upgradeButtonText}>{subscriptionPlan === 'Pro' ? 'Manage Subscription' : 'Upgrade to Pro'}</Text>
+                  <Text style={styles.upgradeButtonText}>{subscriptionPlan === 'Pro' ? t('settings.manageSubscription') : t('settings.upgradePro')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -1050,27 +1061,30 @@ export default function SettingsScreen({ navigation }: any) {
         {/* Developer Testing Tools - Only visible to admin account */}
         {__DEV__ && user?.email === 'edwardsjonny547@gmail.com' && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>Developer Tools</Text>
+            <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>{t('settings.developerTools')}</Text>
             <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
               <TouchableOpacity
                 style={styles.devToolButton}
                 onPress={async () => {
                   Alert.alert(
-                    'Clear RevenueCat Cache',
-                    'This will invalidate the local RevenueCat cache and force a fresh check with Apple servers.\n\nNote: This won\'t fix Apple\'s sandbox cache issue. For that, use App Store Connect → Clear Purchase History.',
+                    t('settings.clearCache'),
+                    t('settings.clearCacheMessage'),
                     [
-                      { text: 'Cancel', style: 'cancel' },
-                      { text: 'Clear Cache', onPress: async () => {
+                      { text: t('common.cancel'), style: 'cancel' },
+                      { text: t('settings.clearCacheAction'), onPress: async () => {
                         try {
                           await Purchases.invalidateCustomerInfoCache();
                           const customerInfo = await Purchases.getCustomerInfo();
                           const hasEntitlement = Object.keys(customerInfo.entitlements.active).length > 0;
                           Alert.alert(
-                            'Cache Cleared',
-                            `Fresh subscription status:\n\nEntitlements: ${hasEntitlement ? 'Active' : 'None'}\nPlan: ${hasEntitlement ? 'Pro' : 'Free'}\n\nIf still showing "Already subscribed" error, clear purchase history in App Store Connect.`
+                            t('settings.cacheCleared'),
+                            t('settings.freshStatus', {
+                              entitlements: hasEntitlement ? t('settings.active') : t('settings.none'),
+                              plan: hasEntitlement ? 'Pro' : t('settings.free'),
+                            })
                           );
                         } catch (error: any) {
-                          Alert.alert('Error', error.message);
+                          Alert.alert(t('common.error'), error.message);
                         }
                       }}
                     ]
@@ -1079,7 +1093,7 @@ export default function SettingsScreen({ navigation }: any) {
                 activeOpacity={0.7}
               >
                 <Ionicons name="refresh" size={20} color="#a855f7" />
-                <Text style={[styles.devToolButtonText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Clear RevenueCat Cache</Text>
+                <Text style={[styles.devToolButtonText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('settings.clearCache')}</Text>
               </TouchableOpacity>
               
               <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
@@ -1090,19 +1104,25 @@ export default function SettingsScreen({ navigation }: any) {
                   try {
                     const customerInfo = await Purchases.getCustomerInfo();
                     const hasEntitlement = Object.keys(customerInfo.entitlements.active).length > 0;
-                    const entitlementsList = Object.keys(customerInfo.entitlements.active).join(', ') || 'None';
+                    const entitlementsList = Object.keys(customerInfo.entitlements.active).join(', ') || t('settings.none');
                     Alert.alert(
-                      'Subscription Debug Info',
-                      `User ID: ${customerInfo.originalAppUserId}\n\nActive Entitlements:\n${entitlementsList}\n\nPlan: ${hasEntitlement ? 'Pro' : 'Free'}\n\nOriginal Purchase Date:\n${customerInfo.originalPurchaseDate || 'Never'}\n\nLatest Expiration:\n${customerInfo.latestExpirationDate || 'N/A'}`
+                      t('settings.subscriptionDebug'),
+                      t('settings.subscriptionDebugMessage', {
+                        userId: customerInfo.originalAppUserId,
+                        entitlements: entitlementsList,
+                        plan: hasEntitlement ? 'Pro' : t('settings.free'),
+                        purchaseDate: customerInfo.originalPurchaseDate || t('settings.never'),
+                        expiration: customerInfo.latestExpirationDate || t('settings.notAvailable'),
+                      })
                     );
                   } catch (error: any) {
-                    Alert.alert('Error', error.message);
+                    Alert.alert(t('common.error'), error.message);
                   }
                 }}
                 activeOpacity={0.7}
               >
                 <Ionicons name="information-circle" size={20} color="#3b82f6" />
-                <Text style={[styles.devToolButtonText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Show Subscription Debug Info</Text>
+                <Text style={[styles.devToolButtonText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('settings.debugInfo')}</Text>
               </TouchableOpacity>
               
               <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
@@ -1111,18 +1131,18 @@ export default function SettingsScreen({ navigation }: any) {
                 style={styles.devToolButton}
                 onPress={async () => {
                   Alert.alert(
-                    'Force Reset App',
-                    'This will:\n• Sign you out\n• Clear all AsyncStorage data\n• Reset to Welcome screen\n\nUse this to test Google sign-in and anonymous purchases from scratch.',
+                    t('settings.forceReset'),
+                    t('settings.forceResetMessage'),
                     [
-                      { text: 'Cancel', style: 'cancel' },
-                      { text: 'Reset', style: 'destructive', onPress: async () => {
+                      { text: t('common.cancel'), style: 'cancel' },
+                      { text: t('settings.reset'), style: 'destructive', onPress: async () => {
                         try {
                           console.log('[Settings] Force reset initiated');
                           await AsyncStorage.clear();
                           await signOut();
                           console.log('[Settings] Force reset complete');
                         } catch (error: any) {
-                          Alert.alert('Error', error.message);
+                          Alert.alert(t('common.error'), error.message);
                         }
                       }}
                     ]
@@ -1131,7 +1151,7 @@ export default function SettingsScreen({ navigation }: any) {
                 activeOpacity={0.7}
               >
                 <Ionicons name="trash" size={20} color="#ef4444" />
-                <Text style={[styles.devToolButtonText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Force Reset App</Text>
+                <Text style={[styles.devToolButtonText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('settings.forceReset')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1139,21 +1159,21 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Send Feedback */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>Send Feedback</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>{t('settings.feedback')}</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <View style={styles.cardGradient}>
               <TextInput
                 style={styles.feedbackInput}
                 value={feedbackTitle}
                 onChangeText={setFeedbackTitle}
-                placeholder="Title"
+                placeholder={t('settings.feedbackTitle')}
                 placeholderTextColor="#666"
               />
               <TextInput
                 style={[styles.feedbackInput, styles.feedbackTextArea]}
                 value={feedbackMessage}
                 onChangeText={setFeedbackMessage}
-                placeholder="Your feedback..."
+                placeholder={t('settings.feedbackPlaceholder')}
                 placeholderTextColor="#666"
                 multiline
                 numberOfLines={4}
@@ -1171,14 +1191,14 @@ export default function SettingsScreen({ navigation }: any) {
                 ) : (
                   <>
                     <Ionicons name="send" size={16} color="#fff" />
-                    <Text style={styles.feedbackButtonText}>Send</Text>
+                    <Text style={styles.feedbackButtonText}>{t('common.send')}</Text>
                   </>
                 )}
               </TouchableOpacity>
               {feedbackSuccess && (
                 <View style={styles.feedbackSuccess}>
                   <Ionicons name="checkmark-circle" size={18} color="#10b981" />
-                  <Text style={styles.feedbackSuccessText}>Thank you! Feedback sent.</Text>
+                  <Text style={styles.feedbackSuccessText}>{t('settings.feedbackThanks')}</Text>
                 </View>
               )}
             </View>
@@ -1187,14 +1207,14 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* Actions */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>Actions</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>{t('settings.actions')}</Text>
 
           <TouchableOpacity style={{}} onPress={handleSignOut} activeOpacity={0.85}>
             <StandardContainer style={styles.card}>
               <View style={styles.cardGradient}>
                 <View style={styles.actionRow}>
                   <Ionicons name="log-out" size={20} color="#ef4444" />
-                  <Text style={[styles.actionText, { color: '#ef4444' }]}>Sign Out</Text>
+                  <Text style={[styles.actionText, { color: '#ef4444' }]}>{t('settings.signOut')}</Text>
                 </View>
               </View>
             </StandardContainer>
@@ -1205,22 +1225,22 @@ export default function SettingsScreen({ navigation }: any) {
             onPress={() => {
               // First confirmation
               Alert.alert(
-                '⚠️ Delete Account',
-                'Are you sure you want to permanently delete your account? This action cannot be undone and will delete all your journal entries, insights, and personal data.',
+                t('settings.deleteAccountWarning'),
+                t('settings.deleteConfirm'),
                 [
-                  { text: 'Cancel', style: 'cancel' },
+                  { text: t('common.cancel'), style: 'cancel' },
                   {
-                    text: 'Continue',
+                    text: t('common.continue'),
                     style: 'destructive',
                     onPress: () => {
                       // Second confirmation - require typing confirmation
                       Alert.alert(
-                        '⚠️ Final Confirmation',
-                        'This will PERMANENTLY delete:\n\n• All journal entries\n• All AI insights\n• Your profile and data\n\nThis CANNOT be undone.\n\nAre you absolutely sure?',
+                        t('settings.finalConfirmation'),
+                        t('settings.deleteFinal'),
                         [
-                          { text: 'Cancel', style: 'cancel' },
+                          { text: t('common.cancel'), style: 'cancel' },
                           {
-                            text: 'Yes, Delete Everything',
+                            text: t('settings.deleteEverything'),
                             style: 'destructive',
                             onPress: async () => {
                               try {
@@ -1250,10 +1270,10 @@ export default function SettingsScreen({ navigation }: any) {
                                 
                                 console.log('[Settings] Signing out after deletion...');
                                 await signOut();
-                                Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
+                                Alert.alert(t('settings.accountDeleted'), t('settings.accountDeletedMessage'));
                               } catch (error) {
                                 console.error('[Settings] Error deleting account:', error);
-                                Alert.alert('Error', 'Failed to delete account. Please contact support at support@myinsightai.app');
+                                Alert.alert(t('common.error'), t('settings.deleteFailed'));
                               }
                             }
                           }
@@ -1270,7 +1290,7 @@ export default function SettingsScreen({ navigation }: any) {
               <View style={styles.cardGradient}>
                 <View style={styles.actionRow}>
                   <Ionicons name="trash" size={20} color="#ef4444" />
-                  <Text style={[styles.actionText, { color: '#ef4444' }]}>Delete Account</Text>
+                  <Text style={[styles.actionText, { color: '#ef4444' }]}>{t('settings.deleteAccount')}</Text>
                 </View>
               </View>
             </StandardContainer>
@@ -1279,11 +1299,11 @@ export default function SettingsScreen({ navigation }: any) {
 
         {/* About Section */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>About</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>{t('settings.about')}</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <View style={styles.cardGradient}>
               <Text style={[styles.infoText, { color: theme.colors.primaryText }]}>Insight Mobile v1.0.0</Text>
-              <Text style={[styles.infoSubtext, { color: theme.colors.secondaryText }]}>Your Personal AI Journal</Text>
+              <Text style={[styles.infoSubtext, { color: theme.colors.secondaryText }]}>{t('settings.personalJournal')}</Text>
             </View>
           </View>
         </View>

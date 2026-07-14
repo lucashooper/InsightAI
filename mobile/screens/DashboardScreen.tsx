@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useIsFocused } from '@react-navigation/native';
 import {
   View,
@@ -19,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { LineChart } from 'react-native-chart-kit';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { useNavigation } from '@react-navigation/native';
 import { mobileAiService } from '../services/mobileAiService';
@@ -60,6 +61,7 @@ interface ChartData {
 export default function DashboardScreen() {
   const { user } = useAuth();
   const { theme, themeName } = useTheme();
+  const { t, formatDate } = useLanguage();
   const isFocused = useIsFocused();
   const { data: preloaded } = usePreloadedData();
   const navigation = useNavigation<any>();
@@ -260,10 +262,10 @@ export default function DashboardScreen() {
   }, [chartData, chartOpacity]);
 
   const formatScoreLabel = (score: number | undefined): string => {
-    if (score == null || Number.isNaN(score)) return 'No recent data';
-    if (score <= 3) return 'Running low — be gentle with yourself';
-    if (score <= 6) return 'Stable but with room to grow';
-    return 'Stable but with room to grow';
+    if (score == null || Number.isNaN(score)) return t('dashboard.noRecentData');
+    if (score <= 3) return t('dashboard.runningLow');
+    if (score <= 6) return t('dashboard.stable');
+    return t('dashboard.stable');
   };
 
   const loadMonthlyStory = async (notes: any[]) => {
@@ -394,7 +396,7 @@ export default function DashboardScreen() {
           highestResilience = resilience;
           strongestEntry = {
             date: new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-            title: n.title || 'Untitled entry',
+            title: n.title || t('dashboard.untitled'),
             entryId: n.id
           };
         }
@@ -751,7 +753,7 @@ export default function DashboardScreen() {
       />
 
       {/* Header */}
-      <PageHeader title="Dashboard" />
+      <PageHeader title={t('dashboard.title')} />
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         {loading ? (
@@ -762,9 +764,9 @@ export default function DashboardScreen() {
             <Animated.View style={{ opacity: cardAnimations[1], transform: [{ translateY: cardAnimations[1].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
               <StandardContainer variant="hero" style={[styles.bubbleMapCard, { backgroundColor: theme.colors.cardBackground }]}>
                 <View style={styles.bubbleMapHeader}>
-                  <Text style={[styles.bubbleMapTitle, { color: theme.colors.primaryText }]}>Emotional landscape</Text>
+                  <Text style={[styles.bubbleMapTitle, { color: theme.colors.primaryText }]}>{t('dashboard.emotionalLandscape')}</Text>
                   <Text style={[styles.bubbleMapSubtitle, { color: theme.colors.secondaryText }]}>
-                    {dominantEmotions.length > 0 ? 'Tap to explore' : 'Track your emotions'}
+                    {dominantEmotions.length > 0 ? t('dashboard.tapExplore') : t('dashboard.trackEmotions')}
                   </Text>
                 </View>
                 
@@ -902,7 +904,7 @@ export default function DashboardScreen() {
                   />
                 </TouchableOpacity>
                 <Text style={[styles.patternSubtitle, { color: theme.colors.tertiaryText }]}>
-                  {sectionSubtitleForItems(patternsToAddress, 'Top priorities based on your recent entries')}
+                  {sectionSubtitleForItems(patternsToAddress, t('dashboard.prioritiesSubtitle'))}
                 </Text>
                 
                 <View style={styles.patternsContent}>
@@ -926,12 +928,12 @@ export default function DashboardScreen() {
                         </View>
                         {pattern.priority === 'HIGH' && (
                           <View style={[styles.priorityBadge, styles.priorityBadgeHighGlow]}>
-                            <Text style={styles.priorityBadgeText}>High priority</Text>
+                            <Text style={styles.priorityBadgeText}>{t('dashboard.highPriority')}</Text>
                           </View>
                         )}
                         {pattern.priority === 'MEDIUM' && (
                           <View style={[styles.priorityBadge, styles.priorityBadgeMedium]}>
-                            <Text style={[styles.priorityBadgeText, styles.priorityBadgeTextMedium]}>Medium</Text>
+                            <Text style={[styles.priorityBadgeText, styles.priorityBadgeTextMedium]}>{t('dashboard.medium')}</Text>
                           </View>
                         )}
                       </View>
@@ -970,7 +972,7 @@ export default function DashboardScreen() {
                       onPress={() => setPatternsExpanded(false)}
                       activeOpacity={0.7}
                     >
-                      <Text style={[styles.viewAllText, { color: theme.colors.secondaryText }]}>Show Less</Text>
+                      <Text style={[styles.viewAllText, { color: theme.colors.secondaryText }]}>{t('dashboard.showLess')}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -996,7 +998,7 @@ export default function DashboardScreen() {
                   />
                 </TouchableOpacity>
                 <Text style={[styles.patternSubtitle, { color: theme.colors.tertiaryText }]}>
-                  {sectionSubtitleForItems(whatsWorking, 'Strategies that are helping you thrive')}
+                  {sectionSubtitleForItems(whatsWorking, t('dashboard.strategiesSubtitle'))}
                 </Text>
                 
                 <View style={styles.workingContent}>
@@ -1020,7 +1022,7 @@ export default function DashboardScreen() {
                         </View>
                         {item.priority === 'HIGH' && (
                           <View style={[styles.priorityBadge, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-                            <Text style={[styles.priorityBadgeText, { color: '#10b981' }]}>High impact</Text>
+                            <Text style={[styles.priorityBadgeText, { color: '#10b981' }]}>{t('dashboard.highImpact')}</Text>
                           </View>
                         )}
                       </View>
@@ -1059,7 +1061,7 @@ export default function DashboardScreen() {
                       onPress={() => setWorkingExpanded(false)}
                       activeOpacity={0.7}
                     >
-                      <Text style={[styles.viewAllText, { color: theme.colors.secondaryText }]}>Show Less</Text>
+                      <Text style={[styles.viewAllText, { color: theme.colors.secondaryText }]}>{t('dashboard.showLess')}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -1069,7 +1071,7 @@ export default function DashboardScreen() {
             {/* Refined This Week Card - Horizontal Layout */}
             {SHOW_DASHBOARD_STORY_SECTIONS && (
               <StandardContainer tint="gold" style={[styles.heroCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
-                <Text style={[styles.heroTitle, { color: theme.colors.primaryText }]}>This week at a glance</Text>
+                <Text style={[styles.heroTitle, { color: theme.colors.primaryText }]}>{t('dashboard.weekGlance')}</Text>
                 
                 <View style={styles.metricsRow}>
                   <View style={styles.metricItem}>
@@ -1079,7 +1081,7 @@ export default function DashboardScreen() {
                         {stats.currentStreak > 0 ? stats.currentStreak : '-'}
                       </Text>
                     </View>
-                    <Text style={[styles.metricLabel, { color: theme.colors.secondaryText }]}>DAY STREAK</Text>
+                    <Text style={[styles.metricLabel, { color: theme.colors.secondaryText }]}>{t('dashboard.dayStreak')}</Text>
                   </View>
 
                   <View style={styles.metricItem}>
@@ -1089,19 +1091,19 @@ export default function DashboardScreen() {
                         {stats.avgWellbeingScore > 0 ? `${stats.avgWellbeingScore}/10` : '-'}
                       </Text>
                     </View>
-                    <Text style={[styles.metricLabel, { color: theme.colors.secondaryText }]}>AVG MOOD</Text>
+                    <Text style={[styles.metricLabel, { color: theme.colors.secondaryText }]}>{t('dashboard.averageMood')}</Text>
                   </View>
                 </View>
                 <Text style={[styles.interpretiveSentence, { color: theme.colors.secondaryText }]}>
                   {stats.totalEntries === 0
-                    ? 'Start your journey by creating your first entry.'
+                    ? t('dashboard.firstEntry')
                     : stats.avgWellbeingScore >= 7
                     ? 'A steady week with consistent emotional balance.'
                     : stats.avgWellbeingScore >= 5
                     ? 'A steady week overall.'
                     : stats.avgWellbeingScore > 0
-                    ? 'You\'ve been navigating some challenges this week.'
-                    : 'Begin tracking your mood to see insights here.'}
+                    ? t('dashboard.challengesWeek')
+                    : t('dashboard.beginMood')}
                 </Text>
               </StandardContainer>
             )}
@@ -1111,7 +1113,7 @@ export default function DashboardScreen() {
               <Animated.View style={{ opacity: cardAnimations[0], transform: [{ translateY: cardAnimations[0].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
                 <StandardContainer tint="violet" style={[styles.progressStoryCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
                   <PremiumGradientText variant="warm" style={styles.progressStoryTitle}>
-                    {`Your ${new Date().toLocaleDateString('en-US', { month: 'long' })} Story`}
+                    {t('dashboard.yourMonthStory', { month: formatDate(new Date(), { month: 'long' }) })}
                   </PremiumGradientText>
                   {storyLoading ? (
                     <ActivityIndicator size="small" color={theme.colors.primary} style={{ marginVertical: 12 }} />
@@ -1152,7 +1154,7 @@ export default function DashboardScreen() {
                       )}
                       
                       <PremiumButton
-                        label="Read Full Story"
+                        label={t('dashboard.readFullStory')}
                         onPress={() => setShowFullStory(true)}
                         variant="secondary"
                         style={{ marginTop: 12 }}
@@ -1173,7 +1175,7 @@ export default function DashboardScreen() {
                   style={styles.milestoneCard}
                 >
                   <Ionicons name="leaf" size={28} color="#fbbf24" style={styles.milestoneIconIon} />
-                  <Text style={styles.milestoneTitle}>Quiet Achievement</Text>
+                  <Text style={styles.milestoneTitle}>{t('dashboard.achievement')}</Text>
                   <Text style={styles.milestoneMessage}>
                     You've reflected for {milestoneStreak} days in a row. That's a real commitment to understanding yourself.
                   </Text>
@@ -1186,7 +1188,7 @@ export default function DashboardScreen() {
               <Animated.View style={{ opacity: cardAnimations[3], transform: [{ translateY: cardAnimations[3].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
                 <StandardContainer tint="violet" style={styles.rememberWhenCard}>
                   <Ionicons name="chatbubble-ellipses-outline" size={24} color="#a78bfa" style={styles.rememberWhenIconIon} />
-                  <Text style={[styles.rememberWhenTitle, { color: theme.colors.primaryText }]}>You've been here before</Text>
+                  <Text style={[styles.rememberWhenTitle, { color: theme.colors.primaryText }]}>{t('dashboard.rememberWhenTitle')}</Text>
                   <Text style={[styles.rememberWhenMessage, { color: theme.colors.secondaryText }]}>
                     Last time you felt {rememberWhenCard.emotion.toLowerCase()} about {rememberWhenCard.topic} ({rememberWhenCard.date}), you found that {rememberWhenCard.strategy} helped. Worth trying again?
                   </Text>
@@ -1200,7 +1202,7 @@ export default function DashboardScreen() {
                     }}
                     activeOpacity={0.7}
                   >
-                    <Text style={[styles.viewEntryText, { color: theme.colors.primaryText }]}>View That Entry</Text>
+                    <Text style={[styles.viewEntryText, { color: theme.colors.primaryText }]}>{t('dashboard.viewThatEntry')}</Text>
                     <Ionicons name="chevron-forward" size={14} color={theme.colors.secondaryText} />
                   </TouchableOpacity>
                 </StandardContainer>
@@ -1211,7 +1213,7 @@ export default function DashboardScreen() {
         ) : (
           <View style={styles.emptyContainer}>
             <Ionicons name="stats-chart" size={64} color="#666" />
-            <Text style={styles.emptyText}>No data available</Text>
+            <Text style={styles.emptyText}>{t('dashboard.noData')}</Text>
           </View>
         )}
       </ScrollView>
@@ -1241,7 +1243,9 @@ export default function DashboardScreen() {
                 <MaskedView
                   maskElement={
                     <Text style={styles.modalTitle}>
-                      {userName ? `${userName}'s ${new Date().toLocaleDateString('en-US', { month: 'long' })} Story` : `Your ${new Date().toLocaleDateString('en-US', { month: 'long' })} Story`}
+                      {userName
+                        ? t('dashboard.userMonthStory', { name: userName, month: formatDate(new Date(), { month: 'long' }) })
+                        : t('dashboard.yourMonthStory', { month: formatDate(new Date(), { month: 'long' }) })}
                     </Text>
                   }
                 >
@@ -1252,7 +1256,9 @@ export default function DashboardScreen() {
                     style={{ flex: 1 }}
                   >
                     <Text style={[styles.modalTitle, { opacity: 0 }]}>
-                      {userName ? `${userName}'s ${new Date().toLocaleDateString('en-US', { month: 'long' })} Story` : `Your ${new Date().toLocaleDateString('en-US', { month: 'long' })} Story`}
+                      {userName
+                        ? t('dashboard.userMonthStory', { name: userName, month: formatDate(new Date(), { month: 'long' }) })
+                        : t('dashboard.yourMonthStory', { month: formatDate(new Date(), { month: 'long' }) })}
                     </Text>
                   </LinearGradient>
                 </MaskedView>
@@ -1272,7 +1278,7 @@ export default function DashboardScreen() {
                 <Animated.View style={[styles.premiumSection, { transform: [{ translateY: modalCard1TranslateY }] }]}>
                   <MaskedView
                     maskElement={
-                      <Text style={styles.premiumSectionTitle}>NARRATIVE HIGHLIGHTS</Text>
+                      <Text style={styles.premiumSectionTitle}>{t('dashboard.narrativeHighlights')}</Text>
                     }
                   >
                     <LinearGradient
@@ -1281,7 +1287,7 @@ export default function DashboardScreen() {
                       end={{ x: 1, y: 0 }}
                       style={{ height: 30 }}
                     >
-                      <Text style={[styles.premiumSectionTitle, { opacity: 0 }]}>NARRATIVE HIGHLIGHTS</Text>
+                      <Text style={[styles.premiumSectionTitle, { opacity: 0 }]}>{t('dashboard.narrativeHighlights')}</Text>
                     </LinearGradient>
                   </MaskedView>
                   
@@ -1313,7 +1319,7 @@ export default function DashboardScreen() {
                         </View>
                         <View style={styles.highlightTextContainer}>
                           <Text style={styles.premiumHighlightText}>
-                            <Text style={styles.premiumHighlightLabel}>Strongest Resilience: </Text>
+                            <Text style={styles.premiumHighlightLabel}>{t('dashboard.strongestResilience')}</Text>
                             <Text style={styles.premiumHighlightValue}>{narrativeHighlights.strongestResilience.date}</Text>
                           </Text>
                           <Text style={styles.premiumHighlightSubtext}>"{narrativeHighlights.strongestResilience.title}" · Tap to view</Text>
@@ -1333,7 +1339,7 @@ export default function DashboardScreen() {
                         </View>
                         <View style={styles.highlightTextContainer}>
                           <Text style={styles.premiumHighlightText}>
-                            <Text style={styles.premiumHighlightLabel}>Key Theme: </Text>
+                            <Text style={styles.premiumHighlightLabel}>{t('dashboard.keyTheme')}</Text>
                             <Text style={styles.premiumHighlightValue}>{narrativeHighlights.keyTheme.theme}</Text>
                             <Text style={styles.premiumHighlightMeta}> ({narrativeHighlights.keyTheme.count} entries)</Text>
                           </Text>
@@ -1345,7 +1351,7 @@ export default function DashboardScreen() {
                         <View style={styles.premiumHighlightRow}>
                         <Ionicons name="leaf-outline" size={18} color="#10b981" style={{ marginRight: 8 }} />
                         <Text style={styles.premiumHighlightText}>
-                          <Text style={styles.premiumHighlightLabel}>Strategy: </Text>
+                          <Text style={styles.premiumHighlightLabel}>{t('dashboard.strategy')}</Text>
                           <Text style={styles.premiumHighlightValue}>{narrativeHighlights.newStrategy}</Text>
                         </Text>
                       </View>
@@ -1359,7 +1365,7 @@ export default function DashboardScreen() {
                 <Animated.View style={[styles.premiumSection, { transform: [{ translateY: modalCard2TranslateY }] }]}>
                   <MaskedView
                     maskElement={
-                      <Text style={styles.premiumSectionTitle}>YOUR DATA THIS MONTH</Text>
+                      <Text style={styles.premiumSectionTitle}>{t('dashboard.dataMonth')}</Text>
                     }
                   >
                     <LinearGradient
@@ -1368,7 +1374,7 @@ export default function DashboardScreen() {
                       end={{ x: 1, y: 0 }}
                       style={{ height: 30 }}
                     >
-                      <Text style={[styles.premiumSectionTitle, { opacity: 0 }]}>YOUR DATA THIS MONTH</Text>
+                      <Text style={[styles.premiumSectionTitle, { opacity: 0 }]}>{t('dashboard.dataMonth')}</Text>
                     </LinearGradient>
                   </MaskedView>
                   
@@ -1388,7 +1394,7 @@ export default function DashboardScreen() {
                         </LinearGradient>
                         <View style={styles.statTextContainer}>
                           <Text style={styles.statValue}>{monthlyStats.totalReflections}</Text>
-                          <Text style={styles.statLabel}>Total reflections</Text>
+                          <Text style={styles.statLabel}>{t('dashboard.totalReflections')}</Text>
                         </View>
                       </View>
                       
@@ -1401,7 +1407,7 @@ export default function DashboardScreen() {
                         </LinearGradient>
                         <View style={styles.statTextContainer}>
                           <Text style={styles.statValue}>{monthlyStats.longestStreak}</Text>
-                          <Text style={styles.statLabel}>Longest streak</Text>
+                          <Text style={styles.statLabel}>{t('dashboard.longestStreak')}</Text>
                         </View>
                       </View>
                       
@@ -1415,7 +1421,7 @@ export default function DashboardScreen() {
                           </LinearGradient>
                           <View style={styles.statTextContainer}>
                             <Text style={styles.statValue}>{monthlyStats.bestDay.score}/10</Text>
-                            <Text style={styles.statLabel}>Best day</Text>
+                            <Text style={styles.statLabel}>{t('dashboard.bestDay')}</Text>
                             <Text style={styles.statMeta}>({monthlyStats.bestDay.date})</Text>
                           </View>
                         </View>
@@ -1430,7 +1436,7 @@ export default function DashboardScreen() {
                         </LinearGradient>
                         <View style={styles.statTextContainer}>
                           <Text style={styles.statValue}>{monthlyStats.avgResilience}/10</Text>
-                          <Text style={styles.statLabel}>Avg resilience</Text>
+                          <Text style={styles.statLabel}>{t('dashboard.averageResilience')}</Text>
                         </View>
                       </View>
                     </View>
@@ -1482,7 +1488,7 @@ export default function DashboardScreen() {
 
             {emotionDetail.entries.length > 0 && (
               <View style={styles.sheetEntriesSection}>
-                <Text style={styles.sheetEntriesTitle}>Recent entries</Text>
+                <Text style={styles.sheetEntriesTitle}>{t('dashboard.recentEntries')}</Text>
                 {emotionDetail.entries.map((entry: any) => (
                   <TouchableOpacity
                     key={entry.id}
@@ -1499,7 +1505,7 @@ export default function DashboardScreen() {
                       })}
                     </Text>
                     <Text style={styles.sheetEntryTitle} numberOfLines={1}>
-                      {entry.title || 'Untitled entry'}
+                      {entry.title || t('dashboard.untitled')}
                     </Text>
                     <Text style={styles.sheetEntrySnippet} numberOfLines={1}>
                       {entry.content}
@@ -1528,7 +1534,7 @@ export default function DashboardScreen() {
                   navigateToPlaybook(navigation);
                 }}
               >
-                <Text style={styles.sheetCtaPrimaryText}>Open Playbook</Text>
+                <Text style={styles.sheetCtaPrimaryText}>{t('dashboard.openPlaybook')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -1536,7 +1542,7 @@ export default function DashboardScreen() {
               style={styles.sheetCloseArea}
               onPress={() => setEmotionDetail(null)}
             >
-              <Text style={styles.sheetCloseText}>Close</Text>
+              <Text style={styles.sheetCloseText}>{t('common.close')}</Text>
             </TouchableOpacity>
           </LinearGradient>
         </View>

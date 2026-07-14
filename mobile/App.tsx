@@ -15,13 +15,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, normalizeThemeName } from './contexts/ThemeContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 import { PreloadProvider, usePreloadedData } from './contexts/PreloadContext';
 import type { ThemeName } from './contexts/ThemeContext';
 import { OnboardingProvider } from './contexts/OnboardingContext';
 import { AppLockProvider, useAppLock } from './contexts/AppLockContext';
 import AppNavigator from './navigation/AppNavigator';
 import LockScreen from './components/LockScreen';
-import { EncryptionService } from './services/encryptionService';
 import SunoGradient from './components/onboarding/SunoGradient';
 import { analytics } from './services/analytics';
 
@@ -180,9 +180,6 @@ export default function App() {
           Asset.fromModule(require('./public/ambient-stuff/rain-image.jpg')).downloadAsync(),
           Asset.fromModule(require('./public/ambient-stuff/campfire-image.jpg')).downloadAsync(),
         ]).catch(() => {});
-
-        // Encryption test — background only
-        EncryptionService.testEncryption().catch(() => {});
       } catch (e: any) {
         console.error('[APP] ❌ Error in loadResourcesAndDataAsync:', e);
         console.error('[APP] Error message:', e.message);
@@ -222,6 +219,7 @@ export default function App() {
       {/* Providers and navigator render underneath from the start */}
       {assetsLoaded ? (
         <ThemeProvider>
+          <LanguageProvider>
           <AppLockProvider>
             <AuthProvider>
               <PreloadProvider>
@@ -232,6 +230,7 @@ export default function App() {
               </PreloadProvider>
             </AuthProvider>
           </AppLockProvider>
+          </LanguageProvider>
         </ThemeProvider>
       ) : (
         <View style={{ flex: 1 }} />

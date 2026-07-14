@@ -14,8 +14,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import { supabase } from '../../lib/supabase';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function SignupEmailScreen({ navigation, route }: any) {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [checking, setChecking] = useState(false);
 
@@ -49,13 +51,13 @@ export default function SignupEmailScreen({ navigation, route }: any) {
 
         <View style={styles.content}>
           {/* Title */}
-          <Text style={styles.title}>What's your email?</Text>
-          <Text style={styles.subtitle}>We'll send you a verification code</Text>
+          <Text style={styles.title}>{t('auxiliary.signup.emailTitle')}</Text>
+          <Text style={styles.subtitle}>{t('auxiliary.signup.emailSubtitle')}</Text>
 
           {/* Email Input */}
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder={t('auxiliary.common.email')}
             placeholderTextColor="rgba(0, 0, 0, 0.4)"
             value={email}
             onChangeText={setEmail}
@@ -77,7 +79,7 @@ export default function SignupEmailScreen({ navigation, route }: any) {
             {checking ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.continueButtonText}>Continue</Text>
+              <Text style={styles.continueButtonText}>{t('auxiliary.common.continue')}</Text>
             )}
           </TouchableOpacity>
         </View>

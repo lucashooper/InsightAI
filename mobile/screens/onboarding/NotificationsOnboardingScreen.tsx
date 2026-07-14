@@ -7,6 +7,7 @@ import SunoGradient from '../../components/onboarding/SunoGradient';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 const bellIcon = require('../../public/onboarding-icons/BellIcon.webp');
@@ -20,6 +21,7 @@ interface NotificationsOnboardingScreenProps {
 export default function NotificationsOnboardingScreen({ navigation }: NotificationsOnboardingScreenProps) {
   const { theme } = useTheme();
   const { userName } = useOnboarding();
+  const { t } = useLanguage();
 
   React.useEffect(() => {
     analytics.trackOnboardingScreen('notifications', 'viewed', userName || undefined);
@@ -78,21 +80,21 @@ export default function NotificationsOnboardingScreen({ navigation }: Notificati
       </View>
 
       {/* Title */}
-      <Text style={[styles.title, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>Turn on notifications</Text>
+      <Text style={[styles.title, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>{t('onboarding.notifications.title')}</Text>
 
       {/* Subtitle */}
       <Text style={[styles.subtitle, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>
-        Get the most out of Insight by staying up to date with what's happening.
+        {t('onboarding.notifications.subtitle')}
       </Text>
 
       {/* Allow Button */}
       <TouchableOpacity style={styles.allowButton} onPress={handleAllowNotifications} activeOpacity={0.9}>
-        <Text style={styles.allowButtonText}>Allow notifications</Text>
+        <Text style={styles.allowButtonText}>{t('onboarding.notifications.allow')}</Text>
       </TouchableOpacity>
 
       {/* Skip */}
       <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
-        <Text style={[styles.skipText, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : 'rgba(0, 0, 0, 0.5)' }]}>Skip for now →</Text>
+        <Text style={[styles.skipText, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : 'rgba(0, 0, 0, 0.5)' }]}>{t('onboarding.notifications.skip')}</Text>
       </TouchableOpacity>
     </View>
   );

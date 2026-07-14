@@ -9,6 +9,7 @@ import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { supabase } from '../../lib/supabase';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const { width } = Dimensions.get('window');
 
@@ -20,6 +21,7 @@ export default function AnalysisCompleteScreen({ navigation }: Props) {
     const { userName } = useOnboarding();
     const { user } = useAuth();
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const checkmarkScale = useRef(new Animated.Value(0)).current;
     const contentFade = useRef(new Animated.Value(0)).current;
 
@@ -130,8 +132,8 @@ export default function AnalysisCompleteScreen({ navigation }: Props) {
                     <Animated.View style={[styles.checkIcon, { transform: [{ scale: checkmarkScale }] }]}>
                         <Ionicons name="checkmark-outline" size={90} color="#a855f7" />
                     </Animated.View>
-                    <Text style={[styles.headline, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>{userName ? `${userName}, your personal plan is ready` : "You're all set"}</Text>
-                    <Text style={[styles.reassurance, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.6)' : '#6b7280' }]}>Your space is ready.</Text>
+                    <Text style={[styles.headline, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>{userName ? t('onboarding.analysisComplete.namedTitle', { name: userName }) : t('onboarding.analysisComplete.title')}</Text>
+                    <Text style={[styles.reassurance, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.6)' : '#6b7280' }]}>{t('onboarding.analysisComplete.reassurance')}</Text>
                 </Animated.View>
 
                 {/* CTA Button */}
@@ -142,7 +144,7 @@ export default function AnalysisCompleteScreen({ navigation }: Props) {
                         onPress={handleContinue}
                     >
                         <View style={styles.ctaGradient}>
-                            <Text style={styles.ctaText}>Continue</Text>
+                            <Text style={styles.ctaText}>{t('common.continue')}</Text>
                         </View>
                     </TouchableOpacity>
                 </Animated.View>

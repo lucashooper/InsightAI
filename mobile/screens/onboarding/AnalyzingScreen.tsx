@@ -10,6 +10,7 @@ import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { isTablet } from '../../utils/responsive';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const { width } = Dimensions.get('window');
 
@@ -21,15 +22,16 @@ type Props = {
 const TOTAL_DURATION = 11000;
 
 const CHECKLIST_ITEMS = [
-    { label: 'Analyzing emotional patterns', pct: 0 },
-    { label: 'Processing your responses', pct: 25 },
-    { label: 'Identifying stress markers', pct: 55 },
-    { label: 'Building your personal plan', pct: 80 },
+    { labelKey: 'emotionalPatterns', pct: 0 },
+    { labelKey: 'responses', pct: 25 },
+    { labelKey: 'stressMarkers', pct: 55 },
+    { labelKey: 'personalPlan', pct: 80 },
 ];
 
 export default function AnalyzingScreen({ navigation, route }: Props) {
     const { theme } = useTheme();
     const { userName } = useOnboarding();
+    const { t } = useLanguage();
     const answers = route?.params?.answers ?? {};
     const skipPersonality = route?.params?.skipPersonality ?? false;
     const [percentage, setPercentage] = useState(0);
@@ -39,7 +41,9 @@ export default function AnalyzingScreen({ navigation, route }: Props) {
     const progressAnim = useRef(new Animated.Value(0)).current;
     const statusFade = useRef(new Animated.Value(1)).current;
     const ctaFade = useRef(new Animated.Value(0)).current;
-    const [statusText, setStatusText] = useState(CHECKLIST_ITEMS[0].label + '...');
+    const [statusText, setStatusText] = useState(
+        t('onboarding.analyzing.status', { label: t(`onboarding.analyzing.${CHECKLIST_ITEMS[0].labelKey}`) }),
+    );
     const activeItemRef = useRef(0);
 
     useEffect(() => {
@@ -60,7 +64,7 @@ export default function AnalyzingScreen({ navigation, route }: Props) {
                         duration: 150,
                         useNativeDriver: true,
                     }).start(() => {
-                        setStatusText(item.label + '...');
+                        setStatusText(t('onboarding.analyzing.status', { label: t(`onboarding.analyzing.${item.labelKey}`) }));
                         Animated.timing(statusFade, {
                             toValue: 1,
                             duration: 250,
@@ -166,7 +170,7 @@ export default function AnalyzingScreen({ navigation, route }: Props) {
                                     { color: itemActive ? textColor : subColor },
                                     itemCompleted && { color: subColor },
                                 ]}>
-                                    {item.label}
+                                    {t(`onboarding.analyzing.${item.labelKey}`)}
                                 </Text>
                                 {itemCompleted && (
                                     <Ionicons name="checkmark-circle" size={18} color="#a855f7" style={{ marginLeft: 'auto' }} />
@@ -198,7 +202,7 @@ export default function AnalyzingScreen({ navigation, route }: Props) {
                     }}
                 >
                     <View style={styles.ctaGradient}>
-                        <Text style={styles.ctaText}>Continue</Text>
+                        <Text style={styles.ctaText}>{t('common.continue')}</Text>
                     </View>
                 </TouchableOpacity>
             </Animated.View>

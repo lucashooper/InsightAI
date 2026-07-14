@@ -14,6 +14,7 @@ import { supabase } from '../../lib/supabase';
 import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { analytics } from '../../services/analytics';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
@@ -29,10 +30,10 @@ const CAROUSEL_IMAGE_WIDTH = SCREEN_WIDTH;
 const PHONE_DISPLAY_HEIGHT = isTablet ? SCREEN_HEIGHT * 0.52 : SCREEN_HEIGHT * 0.46;
 
 const slideHeadings = [
-  'Understand Yourself\nwith Insight',
-  'Track Your Growth\n& Progress',
-  'Reflect Deeper,\nLive Better',
-  'Unlock AI-Powered\nInsights',
+  'understand',
+  'growth',
+  'reflect',
+  'unlock',
 ];
 
 const ENTITLEMENT_ID = 'Insight Pro';
@@ -41,6 +42,7 @@ export default function PaywallScreen({ navigation, route }: any) {
   const { user } = useAuth();
   const { userName } = useOnboarding();
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const [offering, setOffering] = useState<PurchasesOffering | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
@@ -251,9 +253,9 @@ export default function PaywallScreen({ navigation, route }: any) {
       if (!isOwnSubscription) {
         console.log('[Paywall] ❌ Subscription belongs to different user:', originalOwner);
         Alert.alert(
-          'Subscription Found on Another Account',
-          'This subscription belongs to a different account on this device. Please log in to that account to use Pro features.',
-          [{ text: 'OK' }]
+          t('onboarding.paywall.alerts.otherAccountTitle'),
+          t('onboarding.paywall.alerts.otherAccountBody'),
+          [{ text: t('onboarding.paywall.alerts.ok') }]
         );
         return;
       }
@@ -270,11 +272,11 @@ export default function PaywallScreen({ navigation, route }: any) {
         // User is upgrading from Settings - just show success and go back
         console.log('[Paywall] User upgrading from Settings - showing success alert');
         Alert.alert(
-          'Purchase Successful! 🎉',
-          'You now have access to unlimited AI insights and all Pro features.',
+          t('onboarding.paywall.alerts.purchaseSuccessTitle'),
+          t('onboarding.paywall.alerts.purchaseSuccessBody'),
           [
             {
-              text: 'OK',
+              text: t('onboarding.paywall.alerts.ok'),
               onPress: () => {
                 console.log('[Paywall] Navigating back to Settings');
                 navigation.goBack();
@@ -322,7 +324,7 @@ export default function PaywallScreen({ navigation, route }: any) {
       }
     } else {
       console.log('[Paywall] ❌ Subscription not active after purchase');
-      Alert.alert('Subscription not active', 'Your purchase could not be confirmed. Please contact support if this persists.');
+      Alert.alert(t('onboarding.paywall.alerts.inactiveTitle'), t('onboarding.paywall.alerts.inactiveBody'));
     }
   };
 
@@ -348,11 +350,11 @@ export default function PaywallScreen({ navigation, route }: any) {
       console.log('[REVENUECAT] Available packages:', offering?.availablePackages.length || 0);
       
       Alert.alert(
-        'Subscriptions Coming Soon',
-        'Mobile subscriptions are being set up. You can continue using the app and subscribe later on the web at myinsightai.app',
+        t('onboarding.paywall.alerts.comingSoonTitle'),
+        t('onboarding.paywall.alerts.comingSoonBody'),
         [
           {
-            text: 'Continue to App',
+            text: t('onboarding.paywall.alerts.continueToApp'),
             onPress: async () => {
               console.log('[REVENUECAT] User continuing without purchase');
               
@@ -405,9 +407,9 @@ export default function PaywallScreen({ navigation, route }: any) {
           // Subscription belongs to this user - grant access
           console.log('[REVENUECAT] User owns this subscription - granting access');
           Alert.alert(
-            'Already Subscribed',
-            'You already have an active Pro subscription. Enjoy your premium features!',
-            [{ text: 'OK', onPress: () => {
+            t('onboarding.paywall.alerts.alreadySubscribedTitle'),
+            t('onboarding.paywall.alerts.alreadySubscribedBody'),
+            [{ text: t('onboarding.paywall.alerts.ok'), onPress: () => {
               const fromSettings = route?.params?.fromSettings === true;
               if (fromSettings) {
                 navigation.goBack();
@@ -420,10 +422,10 @@ export default function PaywallScreen({ navigation, route }: any) {
           // Subscription belongs to ANOTHER user on this device
           console.log('[REVENUECAT] Subscription belongs to different user:', originalOwner);
           Alert.alert(
-            'Subscription Found on Another Account',
-            'A Pro subscription is active on a different account on this device. Please log in to that account to use Pro features, or purchase a new subscription for this account.',
+            t('onboarding.paywall.alerts.otherAccountTitle'),
+            t('onboarding.paywall.alerts.otherAccountPurchaseBody'),
             [
-              { text: 'OK', style: 'cancel' },
+              { text: t('onboarding.paywall.alerts.ok'), style: 'cancel' },
             ]
           );
         }
@@ -484,10 +486,10 @@ export default function PaywallScreen({ navigation, route }: any) {
       if (isAlreadySubscribed) {
         // CRITICAL: Do NOT grant Pro access here - this receipt likely belongs to another account
         Alert.alert(
-          'Subscription Already Exists',
-          'A subscription was previously purchased on this device with a different account. To use Pro features, please log in to the account that originally purchased the subscription.\n\nIf you believe this is an error, try restoring purchases or contact support.',
+          t('onboarding.paywall.alerts.existsTitle'),
+          t('onboarding.paywall.alerts.existsBody'),
           [
-            { text: 'Try Restore', onPress: async () => {
+            { text: t('onboarding.paywall.alerts.tryRestore'), onPress: async () => {
               try {
                 console.log('[REVENUECAT] Attempting restore to verify ownership...');
                 await Purchases.invalidateCustomerInfoCache();
@@ -497,14 +499,17 @@ export default function PaywallScreen({ navigation, route }: any) {
                 console.error('[REVENUECAT] Restore failed:', error);
               }
             }},
-            { text: 'OK', style: 'cancel' }
+            { text: t('onboarding.paywall.alerts.ok'), style: 'cancel' }
           ]
         );
       } else {
         Alert.alert(
-          'Purchase Failed',
-          `Error: ${error.message}\n\nCode: ${error.code || 'unknown'}\n\nPlease check:\n1. Sandbox account is signed in (Settings > App Store)\n2. Products are configured in App Store Connect\n3. Try again in a few moments`,
-          [{ text: 'OK' }]
+          t('onboarding.paywall.alerts.purchaseFailed'),
+          t('onboarding.paywall.alerts.purchaseError', {
+            message: error.message,
+            code: error.code || t('onboarding.paywall.alerts.unknown'),
+          }),
+          [{ text: t('onboarding.paywall.alerts.ok') }]
         );
       }
     } finally {
@@ -546,14 +551,17 @@ export default function PaywallScreen({ navigation, route }: any) {
       console.log('================================');
       
       if (Object.keys(customerInfo.entitlements.active).length === 0) {
-        Alert.alert('No Purchases Found', 'No active subscriptions were found for this Apple ID.');
+        Alert.alert(t('onboarding.paywall.alerts.noPurchasesTitle'), t('onboarding.paywall.alerts.noPurchasesBody'));
       } else {
         handleCustomerInfo(customerInfo);
       }
     } catch (error: any) {
       console.error('[REVENUECAT] ❌ Restore error:', error);
       console.error('[REVENUECAT] Error message:', error.message);
-      Alert.alert('Restore failed', `Could not restore purchases: ${error.message}`);
+      Alert.alert(
+        t('onboarding.paywall.alerts.restoreFailed'),
+        t('onboarding.paywall.alerts.restoreError', { message: error.message }),
+      );
     } finally {
       setIsPurchasing(false);
     }
@@ -608,7 +616,7 @@ export default function PaywallScreen({ navigation, route }: any) {
 
         {/* Dynamic heading that changes per slide */}
         <View style={styles.header}>
-          <Text style={[styles.title, !isDarkTheme(theme.name) && styles.titleLight]}>{slideHeadings[activeCarouselIndex]}</Text>
+          <Text style={[styles.title, !isDarkTheme(theme.name) && styles.titleLight]}>{t(`onboarding.paywall.headings.${slideHeadings[activeCarouselIndex]}`)}</Text>
         </View>
 
         {/* Phone Image Carousel - half phone with fade */}
@@ -685,11 +693,11 @@ export default function PaywallScreen({ navigation, route }: any) {
             activeOpacity={0.8}
           >
             <View style={styles.trialBadge}>
-              <Text style={styles.trialBadgeText}>3 day trial</Text>
+              <Text style={styles.trialBadgeText}>{t('onboarding.paywall.trial')}</Text>
             </View>
-            <Text style={[styles.compactPlanName, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'weekly' && styles.compactPlanNameSelected]}>Weekly</Text>
-            <Text style={[styles.compactPlanDaily, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'weekly' && styles.compactPlanDailySelected]}>$0.71 / day</Text>
-            <Text style={[styles.compactPlanPrice, !isDarkTheme(theme.name) && { color: 'rgba(0,0,0,0.5)' }, selectedPlan === 'weekly' && styles.compactPlanPriceSelected]}>$4.99 per week</Text>
+            <Text style={[styles.compactPlanName, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'weekly' && styles.compactPlanNameSelected]}>{t('onboarding.paywall.weekly')}</Text>
+            <Text style={[styles.compactPlanDaily, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'weekly' && styles.compactPlanDailySelected]}>{t('onboarding.paywall.perDay', { price: '$0.71' })}</Text>
+            <Text style={[styles.compactPlanPrice, !isDarkTheme(theme.name) && { color: 'rgba(0,0,0,0.5)' }, selectedPlan === 'weekly' && styles.compactPlanPriceSelected]}>{t('onboarding.paywall.perWeek', { price: '$4.99' })}</Text>
           </TouchableOpacity>
 
           {/* Yearly - Best Value */}
@@ -702,11 +710,11 @@ export default function PaywallScreen({ navigation, route }: any) {
             activeOpacity={0.8}
           >
             <View style={styles.saveBadge}>
-              <Text style={styles.saveBadgeText}>Save 73%</Text>
+              <Text style={styles.saveBadgeText}>{t('onboarding.paywall.save')}</Text>
             </View>
-            <Text style={[styles.compactPlanName, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'yearly' && styles.compactPlanNameSelected]}>Yearly</Text>
-            <Text style={[styles.compactPlanDaily, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'yearly' && styles.compactPlanDailySelected]}>$0.19 / day</Text>
-            <Text style={[styles.compactPlanPrice, !isDarkTheme(theme.name) && { color: 'rgba(0,0,0,0.5)' }, selectedPlan === 'yearly' && styles.compactPlanPriceSelected]}>$69.99 per year</Text>
+            <Text style={[styles.compactPlanName, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'yearly' && styles.compactPlanNameSelected]}>{t('onboarding.paywall.yearly')}</Text>
+            <Text style={[styles.compactPlanDaily, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'yearly' && styles.compactPlanDailySelected]}>{t('onboarding.paywall.perDay', { price: '$0.19' })}</Text>
+            <Text style={[styles.compactPlanPrice, !isDarkTheme(theme.name) && { color: 'rgba(0,0,0,0.5)' }, selectedPlan === 'yearly' && styles.compactPlanPriceSelected]}>{t('onboarding.paywall.perYear', { price: '$69.99' })}</Text>
           </TouchableOpacity>
 
           {/* Monthly */}
@@ -718,26 +726,26 @@ export default function PaywallScreen({ navigation, route }: any) {
             }}
             activeOpacity={0.8}
           >
-            <Text style={[styles.compactPlanName, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'monthly' && styles.compactPlanNameSelected]}>Monthly</Text>
-            <Text style={[styles.compactPlanDaily, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'monthly' && styles.compactPlanDailySelected]}>$0.60 / day</Text>
-            <Text style={[styles.compactPlanPrice, !isDarkTheme(theme.name) && { color: 'rgba(0,0,0,0.5)' }, selectedPlan === 'monthly' && styles.compactPlanPriceSelected]}>$17.99 per month</Text>
+            <Text style={[styles.compactPlanName, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'monthly' && styles.compactPlanNameSelected]}>{t('onboarding.paywall.monthly')}</Text>
+            <Text style={[styles.compactPlanDaily, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'monthly' && styles.compactPlanDailySelected]}>{t('onboarding.paywall.perDay', { price: '$0.60' })}</Text>
+            <Text style={[styles.compactPlanPrice, !isDarkTheme(theme.name) && { color: 'rgba(0,0,0,0.5)' }, selectedPlan === 'monthly' && styles.compactPlanPriceSelected]}>{t('onboarding.paywall.perMonth', { price: '$17.99' })}</Text>
           </TouchableOpacity>
         </View>
         </View>
 
         {/* What you get */}
         <View style={styles.whatYouGetContainer}>
-          <Text style={[styles.whatYouGetTitle, !isDarkTheme(theme.name) && styles.whatYouGetTitleLight]}>What you get:</Text>
+          <Text style={[styles.whatYouGetTitle, !isDarkTheme(theme.name) && styles.whatYouGetTitleLight]}>{t('onboarding.paywall.whatYouGet')}</Text>
           <View style={styles.whatYouGetList}>
             {[
-              'Unlimited AI-powered journal insights',
-              'Deep pattern & trigger detection',
-              'Personalized weekly summaries',
-              'Growth playbook & action plans',
-            ].map((item, i) => (
+              'unlimited',
+              'patterns',
+              'summaries',
+              'playbook',
+            ].map((itemKey, i) => (
               <View key={i} style={styles.whatYouGetItem}>
                 <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-                <Text style={[styles.whatYouGetText, !isDarkTheme(theme.name) && styles.whatYouGetTextLight]}>{item}</Text>
+                <Text style={[styles.whatYouGetText, !isDarkTheme(theme.name) && styles.whatYouGetTextLight]}>{t(`onboarding.paywall.benefits.${itemKey}`)}</Text>
               </View>
             ))}
           </View>
@@ -747,11 +755,11 @@ export default function PaywallScreen({ navigation, route }: any) {
         <View style={styles.testimonialContainer}>
           <FlatList
             data={[
-              { id: '1', text: "Insight has completely changed how I understand my emotions. The AI insights are incredibly accurate and helpful.", author: "Jessica M." },
-              { id: '2', text: "The journaling prompts are thoughtful and the pattern tracking helps me see my growth over time.", author: "Michael R." },
-              { id: '3', text: "Best mental health app I've used. The AI feels like talking to a therapist who really gets me.", author: "Sarah K." },
-              { id: '4', text: "I love how it connects my daily habits to my mood patterns. Eye-opening insights every week.", author: "David L." },
-              { id: '5', text: "The playbook feature with personalized strategies has been a game-changer for my anxiety.", author: "Emma T." },
+              { id: '1', textKey: 'first' },
+              { id: '2', textKey: 'second' },
+              { id: '3', textKey: 'third' },
+              { id: '4', textKey: 'fourth' },
+              { id: '5', textKey: 'fifth' },
             ]}
             horizontal
             pagingEnabled
@@ -777,9 +785,9 @@ export default function PaywallScreen({ navigation, route }: any) {
                     ))}
                   </View>
                   <Text style={[styles.testimonialText, !isDarkTheme(theme.name) && styles.testimonialTextLight]}>
-                    "{item.text}"
+                    “{t(`onboarding.paywall.testimonials.${item.textKey}`)}”
                   </Text>
-                  <Text style={[styles.testimonialAuthor, !isDarkTheme(theme.name) && styles.testimonialAuthorLight]}>— {item.author}</Text>
+                  <Text style={[styles.testimonialAuthor, !isDarkTheme(theme.name) && styles.testimonialAuthorLight]}>— {t(`onboarding.paywall.authors.${item.textKey}`)}</Text>
                 </View>
               </View>
             )}
@@ -807,7 +815,7 @@ export default function PaywallScreen({ navigation, route }: any) {
         {/* Commitment Badge */}
         <View style={styles.commitmentBadge}>
           <Text style={styles.commitmentEmoji}>✅</Text>
-          <Text style={styles.commitmentText}>No Commitment, Cancel anytime.</Text>
+          <Text style={styles.commitmentText}>{t('onboarding.paywall.noCommitment')}</Text>
         </View>
 
         {/* CTA Button - Purple gradient */}
@@ -821,7 +829,7 @@ export default function PaywallScreen({ navigation, route }: any) {
             {isPurchasing ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.ctaText}>Start My Journey Today</Text>
+              <Text style={styles.ctaText}>{t('onboarding.paywall.startJourney')}</Text>
             )}
           </View>
         </TouchableOpacity>
@@ -829,15 +837,15 @@ export default function PaywallScreen({ navigation, route }: any) {
         {/* Footer Links */}
         <View style={styles.footer}>
           <TouchableOpacity onPress={handleRestorePurchases}>
-            <Text style={styles.footerLink}>Restore Purchase</Text>
+            <Text style={styles.footerLink}>{t('onboarding.paywall.restorePurchase')}</Text>
           </TouchableOpacity>
           <Text style={styles.footerDivider}>•</Text>
           <TouchableOpacity onPress={() => Linking.openURL('https://myinsightai.app/terms')}>
-            <Text style={styles.footerLink}>Terms & Conditions</Text>
+            <Text style={styles.footerLink}>{t('onboarding.paywall.terms')}</Text>
           </TouchableOpacity>
           <Text style={styles.footerDivider}>•</Text>
           <TouchableOpacity onPress={() => Linking.openURL('https://myinsightai.app/privacy')}>
-            <Text style={styles.footerLink}>Privacy Policy</Text>
+            <Text style={styles.footerLink}>{t('onboarding.paywall.privacyPolicy')}</Text>
           </TouchableOpacity>
         </View>
       </View>

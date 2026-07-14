@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface GratitudeEntry {
   id: string;
@@ -24,6 +25,7 @@ export default function GratitudeHistoryScreen({ navigation }: any) {
   const { theme } = useTheme();
   const dark = isDarkTheme(theme.name);
   const { user } = useAuth();
+  const { t, formatDate } = useLanguage();
   const [entries, setEntries] = useState<GratitudeEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -51,15 +53,6 @@ export default function GratitudeHistoryScreen({ navigation }: any) {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
-
   const renderEntry = ({ item }: { item: GratitudeEntry }) => (
     <TouchableOpacity
       style={styles.entryCard}
@@ -72,7 +65,9 @@ export default function GratitudeHistoryScreen({ navigation }: any) {
       }]}>
         <View style={styles.entryHeader}>
           <Ionicons name="heart" size={20} color="#f472b6" />
-          <Text style={[styles.entryDate, { color: dark ? 'rgba(255, 255, 255, 0.8)' : theme.colors.primaryText }]}>{formatDate(item.created_at)}</Text>
+          <Text style={[styles.entryDate, { color: dark ? 'rgba(255, 255, 255, 0.8)' : theme.colors.primaryText }]}>
+            {formatDate(item.created_at, { month: 'short', day: 'numeric', year: 'numeric' })}
+          </Text>
         </View>
         <Text style={[styles.entryContent, { color: dark ? 'rgba(255, 255, 255, 0.9)' : theme.colors.primaryText }]} numberOfLines={3}>
           {item.content}
@@ -92,7 +87,7 @@ export default function GratitudeHistoryScreen({ navigation }: any) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={dark ? 'rgba(255, 255, 255, 0.7)' : theme.colors.primaryText} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: dark ? '#ffffff' : theme.colors.primaryText }]}>Gratitude History</Text>
+        <Text style={[styles.headerTitle, { color: dark ? '#ffffff' : theme.colors.primaryText }]}>{t('auxiliary.gratitudeHistory.title')}</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -103,9 +98,9 @@ export default function GratitudeHistoryScreen({ navigation }: any) {
       ) : entries.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="heart-outline" size={64} color={dark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)'} />
-          <Text style={[styles.emptyTitle, { color: dark ? '#ffffff' : theme.colors.primaryText }]}>No Gratitude Entries Yet</Text>
+          <Text style={[styles.emptyTitle, { color: dark ? '#ffffff' : theme.colors.primaryText }]}>{t('auxiliary.gratitudeHistory.emptyTitle')}</Text>
           <Text style={[styles.emptyText, { color: dark ? 'rgba(255, 255, 255, 0.6)' : theme.colors.secondaryText }]}>
-            Start your gratitude practice to see your entries here
+            {t('auxiliary.gratitudeHistory.emptyMessage')}
           </Text>
         </View>
       ) : (

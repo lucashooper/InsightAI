@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -41,6 +42,7 @@ interface EmotionalState {
 export default function DashboardScreenNew() {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const { data: preloaded, refreshNotes } = usePreloadedData();
   const navigation = useNavigation<any>();
   const [loading, setLoading] = useState(true);
@@ -131,18 +133,18 @@ export default function DashboardScreenNew() {
           // Show email signup prompt after a short delay
           setTimeout(() => {
             Alert.alert(
-              'Welcome to Insight! 🎉',
-              'To get the most out of Insight and ensure you never lose access to your journal, please add your email address.',
+              t('home.welcomeTitle'),
+              t('home.welcomeEmail'),
               [
                 {
-                  text: 'Add Email',
+                  text: t('home.addEmail'),
                   onPress: () => {
                     // Navigate to email signup
                     navigation.navigate('Profile');
                   }
                 },
                 {
-                  text: 'Later',
+                  text: t('common.later'),
                   style: 'cancel',
                   onPress: async () => {
                     await AsyncStorage.removeItem('NEEDS_EMAIL_SIGNUP');
@@ -335,19 +337,19 @@ export default function DashboardScreenNew() {
         let insightText = '';
         
         if (primaryEmotion) {
-          insightText = `You're feeling ${primaryEmotion.toLowerCase()}`;
+          insightText = t('home.feeling', { emotion: primaryEmotion.toLowerCase() });
           
           // Add context from secondary emotions or energy
           if (secondaryEmotions.length > 0) {
-            insightText += `, with notes of ${secondaryEmotions[0].toLowerCase()}`;
+            insightText += t('home.withNotes', { emotion: secondaryEmotions[0].toLowerCase() });
           }
           
           // Add energy context if available
           if (energyLevel) {
             if (energyLevel === 'low' || energyLevel === 'very_low') {
-              insightText += ', but low energy is holding you back';
+              insightText += t('home.lowEnergy');
             } else if (energyLevel === 'high' || energyLevel === 'very_high') {
-              insightText += ', with strong energy driving you forward';
+              insightText += t('home.highEnergy');
             }
           }
           
@@ -371,7 +373,7 @@ export default function DashboardScreenNew() {
           insights.push({
             icon,
             iconColor,
-            title: 'Emotional snapshot',
+            title: t('home.emotionalSnapshot'),
             description: insightText
           });
         }
@@ -493,7 +495,7 @@ export default function DashboardScreenNew() {
             <TouchableOpacity
               onPress={() => navigation.navigate('Profile')}
               activeOpacity={0.7}
-              accessibilityLabel="Open profile"
+              accessibilityLabel={t('accessibility.openProfile')}
             >
               {profilePicture && (profilePicture.startsWith('http://') || profilePicture.startsWith('https://')) ? (
                 <Image source={{ uri: profilePicture }} style={styles.profilePicture} resizeMode="cover" />
@@ -524,7 +526,11 @@ export default function DashboardScreenNew() {
               textShadowOffset: { width: 0, height: 1 },
               textShadowRadius: 10,
             }]}>
-              Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}{userName && userName !== 'there' ? `,\n${userName.charAt(0).toUpperCase() + userName.slice(1)}` : ''}
+              {(() => {
+                const hour = new Date().getHours();
+                const greeting = hour < 12 ? t('home.goodMorning') : hour < 18 ? t('home.goodAfternoon') : t('home.goodEvening');
+                return `${greeting}${userName && userName !== 'there' ? `,\n${userName.charAt(0).toUpperCase() + userName.slice(1)}` : ''}`;
+              })()}
             </Text>
           </View>
         </TouchableOpacity>
@@ -550,7 +556,7 @@ export default function DashboardScreenNew() {
                 </View>
               </LinearGradient>
             </TouchableOpacity>
-            <Text style={[styles.actionLabel, { color: theme.colors.primaryText }]}>Write</Text>
+            <Text style={[styles.actionLabel, { color: theme.colors.primaryText }]}>{t('home.write')}</Text>
           </View>
 
           <View style={styles.actionItem}>
@@ -572,13 +578,13 @@ export default function DashboardScreenNew() {
                 </View>
               </LinearGradient>
             </TouchableOpacity>
-            <Text style={[styles.actionLabel, { color: theme.colors.primaryText }]}>{isRecording ? 'Listening...' : 'Speak'}</Text>
+            <Text style={[styles.actionLabel, { color: theme.colors.primaryText }]}>{isRecording ? t('home.listening') : t('home.speak')}</Text>
           </View>
 
           <View style={styles.actionItem}>
             <TouchableOpacity 
               style={styles.actionCircle}
-              onPress={() => Alert.alert('Coming Soon', 'Document scanning will be available soon!')}
+              onPress={() => Alert.alert(t('home.comingSoon'), t('home.scanSoon'))}
               activeOpacity={0.8}
             >
               <LinearGradient
@@ -593,7 +599,7 @@ export default function DashboardScreenNew() {
                 </View>
               </LinearGradient>
             </TouchableOpacity>
-            <Text style={[styles.actionLabel, { color: theme.colors.primaryText }]}>Scan</Text>
+            <Text style={[styles.actionLabel, { color: theme.colors.primaryText }]}>{t('home.scan')}</Text>
           </View>
         </View>
 
@@ -608,7 +614,7 @@ export default function DashboardScreenNew() {
 
         {/* Today's Insights - Data-driven */}
         <View style={styles.insightsSection}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>Today's insights</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>{t('home.todaysInsights')}</Text>
           {!hasEntryToday ? (
             <TouchableOpacity 
               onPress={() => navigation.navigate('CreateEntry')}
@@ -617,9 +623,9 @@ export default function DashboardScreenNew() {
               <StandardContainer style={[styles.insightCard, { borderColor: theme.colors.border }]}>
               <View style={styles.insightHeader}>
                 <Ionicons name="create-outline" size={24} color={theme.colors.secondaryText} />
-                <Text style={[styles.insightTitle, { color: theme.colors.primaryText, fontSize: sf(18) }]}>No check-in yet</Text>
+                <Text style={[styles.insightTitle, { color: theme.colors.primaryText, fontSize: sf(18) }]}>{t('home.noCheckIn')}</Text>
               </View>
-              <Text style={[styles.insightText, { color: theme.colors.secondaryText }]}>Write now to unlock insights</Text>
+              <Text style={[styles.insightText, { color: theme.colors.secondaryText }]}>{t('home.unlockInsights')}</Text>
               <View style={styles.ctaArrow}>
                 <Ionicons name="arrow-forward" size={20} color={theme.colors.tertiaryText} />
               </View>
@@ -639,16 +645,16 @@ export default function DashboardScreenNew() {
             <StandardContainer style={[styles.insightCard, { borderColor: theme.colors.border }]}>
               <View style={styles.insightHeader}>
                 <Ionicons name="checkmark-circle" size={20} color={theme.colors.success} />
-                <Text style={[styles.insightTitle, { color: theme.colors.primaryText }]}>Great start!</Text>
+                <Text style={[styles.insightTitle, { color: theme.colors.primaryText }]}>{t('home.greatStart')}</Text>
               </View>
-              <Text style={[styles.insightText, { color: theme.colors.secondaryText }]}>You've journaled today. Keep it up!</Text>
+              <Text style={[styles.insightText, { color: theme.colors.secondaryText }]}>{t('home.journaledToday')}</Text>
             </StandardContainer>
           )}
         </View>
 
         {/* Daily Prompt */}
         <View style={styles.challengesSection}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>Today's prompt</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>{t('home.todaysPrompt')}</Text>
           <TouchableOpacity
             onPress={() => navigation.navigate('PromptEntry', { promptText: dailyPrompt.prompt + (dailyPrompt.followUp ? `\n\n${dailyPrompt.followUp}` : '') })}
             activeOpacity={0.7}
@@ -665,7 +671,7 @@ export default function DashboardScreenNew() {
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
               <View style={[styles.compactCta, { borderColor: theme.colors.border, backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
-                <Text style={[styles.compactCtaText, { color: theme.colors.primaryText }]}>Start writing →</Text>
+                <Text style={[styles.compactCtaText, { color: theme.colors.primaryText }]}>{t('home.startWriting')}</Text>
               </View>
               <View
                 style={{
@@ -698,15 +704,15 @@ export default function DashboardScreenNew() {
         {/* Suggested Challenges */}
         <View style={styles.challengesSection}>
           <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>
-            Suggested for you
+            {t('home.suggested')}
           </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Meditation')} activeOpacity={0.7}>
             <StandardContainer style={[styles.challengeCard, { borderColor: theme.colors.border }]}>
             <View style={styles.challengeContent}>
               <Text style={styles.challengeEmoji}>🧘</Text>
               <View style={styles.challengeInfo}>
-                <Text style={[styles.challengeTitle, { color: theme.colors.primaryText }]}>5-minute meditation</Text>
-                <Text style={[styles.challengeSubtext, { color: theme.colors.tertiaryText }]}>Start your day mindfully</Text>
+                <Text style={[styles.challengeTitle, { color: theme.colors.primaryText }]}>{t('home.meditation')}</Text>
+                <Text style={[styles.challengeSubtext, { color: theme.colors.tertiaryText }]}>{t('home.meditationDesc')}</Text>
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
@@ -717,8 +723,8 @@ export default function DashboardScreenNew() {
             <View style={styles.challengeContent}>
               <Text style={styles.challengeEmoji}>📝</Text>
               <View style={styles.challengeInfo}>
-                <Text style={[styles.challengeTitle, { color: theme.colors.primaryText }]}>Gratitude practice</Text>
-                <Text style={[styles.challengeSubtext, { color: theme.colors.tertiaryText }]}>List 3 things you're grateful for</Text>
+                <Text style={[styles.challengeTitle, { color: theme.colors.primaryText }]}>{t('home.gratitude')}</Text>
+                <Text style={[styles.challengeSubtext, { color: theme.colors.tertiaryText }]}>{t('home.gratitudeDesc')}</Text>
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
@@ -729,8 +735,8 @@ export default function DashboardScreenNew() {
             <View style={styles.challengeContent}>
               <Text style={styles.challengeEmoji}>🌧️</Text>
               <View style={styles.challengeInfo}>
-                <Text style={[styles.challengeTitle, { color: theme.colors.primaryText }]}>Ambient sounds</Text>
-                <Text style={[styles.challengeSubtext, { color: theme.colors.tertiaryText }]}>Relax with calming nature sounds</Text>
+                <Text style={[styles.challengeTitle, { color: theme.colors.primaryText }]}>{t('home.ambient')}</Text>
+                <Text style={[styles.challengeSubtext, { color: theme.colors.tertiaryText }]}>{t('home.ambientDesc')}</Text>
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
@@ -741,8 +747,8 @@ export default function DashboardScreenNew() {
             <View style={styles.challengeContent}>
               <Text style={styles.challengeEmoji}>🔍</Text>
               <View style={styles.challengeInfo}>
-                <Text style={[styles.challengeTitle, { color: theme.colors.primaryText }]}>Explore articles</Text>
-                <Text style={[styles.challengeSubtext, { color: theme.colors.tertiaryText }]}>Psychology insights & research</Text>
+                <Text style={[styles.challengeTitle, { color: theme.colors.primaryText }]}>{t('home.articles')}</Text>
+                <Text style={[styles.challengeSubtext, { color: theme.colors.tertiaryText }]}>{t('home.articlesDesc')}</Text>
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
@@ -753,8 +759,8 @@ export default function DashboardScreenNew() {
             <View style={styles.challengeContent}>
               <Text style={styles.challengeEmoji}>✅</Text>
               <View style={styles.challengeInfo}>
-                <Text style={[styles.challengeTitle, { color: theme.colors.primaryText }]}>Daily to-do</Text>
-                <Text style={[styles.challengeSubtext, { color: theme.colors.tertiaryText }]}>Set helping routines & tasks</Text>
+                <Text style={[styles.challengeTitle, { color: theme.colors.primaryText }]}>{t('home.todo')}</Text>
+                <Text style={[styles.challengeSubtext, { color: theme.colors.tertiaryText }]}>{t('home.todoDesc')}</Text>
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
@@ -766,7 +772,7 @@ export default function DashboardScreenNew() {
         {recentPatterns.length > 0 && (
           <View style={styles.patternsSection}>
             <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>
-              Recent Patterns
+              {t('home.recentPatterns')}
             </Text>
             {recentPatterns.map((pattern, index) => (
               <View 
@@ -825,7 +831,7 @@ export default function DashboardScreenNew() {
               </View>
 
               <Text style={[styles.streakModalTitle, { color: '#E89B6C' }]}>
-                {streak} Day streak
+                {t('home.dayStreak', { count: streak })}
               </Text>
 
               <View style={styles.streakModalCalendar}>
@@ -841,7 +847,7 @@ export default function DashboardScreenNew() {
               </View>
 
               <Text style={[styles.streakModalMessage, { color: theme.colors.secondaryText }]}>
-                You're building momentum! The more you journal, the deeper your self-understanding grows.
+                {t('home.streakMessage')}
               </Text>
             </View>
 
@@ -850,7 +856,7 @@ export default function DashboardScreenNew() {
               onPress={() => setShowStreakModal(false)}
               activeOpacity={0.8}
             >
-              <Text style={styles.streakModalButtonText}>Continue</Text>
+              <Text style={styles.streakModalButtonText}>{t('common.continue')}</Text>
             </TouchableOpacity>
           </View>
         </View>

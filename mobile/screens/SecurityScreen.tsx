@@ -5,9 +5,11 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useAppLock } from '../contexts/AppLockContext';
 import PageHeader from '../components/shared/PageHeader';
 import { sf } from '../utils/responsive';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function SecurityScreen({ navigation }: any) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const { isLockEnabled, isBiometricEnabled, isBiometricAvailable, enableLock, disableLock, toggleBiometric } = useAppLock();
 
   const handleToggleLock = async (value: boolean) => {
@@ -16,30 +18,30 @@ export default function SecurityScreen({ navigation }: any) {
     if (value) {
       // Enable lock - prompt for PIN
       Alert.prompt(
-        'Set App Lock PIN',
-        'Choose a 4-digit PIN to lock your journal.',
+        t('auxiliary.security.setPin'),
+        t('auxiliary.security.choosePin'),
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: t('auxiliary.common.cancel'), style: 'cancel' },
           {
-            text: 'Next',
+            text: t('auxiliary.common.next'),
             onPress: (pin?: string) => {
               if (!pin || pin.length !== 4) {
-                Alert.alert('Invalid PIN', 'Please enter exactly 4 digits.');
+                Alert.alert(t('auxiliary.security.invalidPin'), t('auxiliary.security.exactlyFourDigits'));
                 return;
               }
               Alert.prompt(
-                'Confirm PIN',
-                'Re-enter your 4-digit PIN to confirm.',
+                t('auxiliary.security.confirmPin'),
+                t('auxiliary.security.reenterPin'),
                 [
-                  { text: 'Cancel', style: 'cancel' },
+                  { text: t('auxiliary.common.cancel'), style: 'cancel' },
                   {
-                    text: 'Enable Lock',
+                    text: t('auxiliary.security.enableLock'),
                     onPress: async (confirmPin?: string) => {
                       if (confirmPin === pin) {
                         await enableLock(pin);
-                        Alert.alert('App Lock Enabled', 'Your journal is now protected with a PIN.');
+                        Alert.alert(t('auxiliary.security.lockEnabled'), t('auxiliary.security.lockEnabledMessage'));
                       } else {
-                        Alert.alert('PINs Don\'t Match', 'The PINs you entered don\'t match. Please try again.');
+                        Alert.alert(t('auxiliary.security.pinsMismatch'), t('auxiliary.security.pinsMismatchMessage'));
                       }
                     },
                   },
@@ -58,13 +60,13 @@ export default function SecurityScreen({ navigation }: any) {
     } else {
       // Disable lock - verify PIN first
       Alert.prompt(
-        'Disable App Lock',
-        'Enter your current PIN to disable the lock.',
+        t('auxiliary.security.disableLock'),
+        t('auxiliary.security.enterCurrentPin'),
         async (text: string) => {
           if (text && text.length === 4) {
             const success = await disableLock(text);
             if (!success) {
-              Alert.alert('Incorrect PIN', 'The PIN you entered is incorrect.');
+              Alert.alert(t('auxiliary.security.incorrectPin'), t('auxiliary.security.incorrectPinMessage'));
             }
           }
         },
@@ -82,11 +84,11 @@ export default function SecurityScreen({ navigation }: any) {
 
   return (
     <View style={[styles.wrapper, { backgroundColor: theme.colors.background }]}>
-      <PageHeader title="Security" onBack={() => navigation.goBack()} />
+      <PageHeader title={t('auxiliary.security.title')} onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
         <Text style={[styles.sectionTitle, { color: theme.colors.secondaryText }]}>
-          App Lock
+          {t('auxiliary.security.appLock')}
         </Text>
 
         <View style={styles.optionsList}>
@@ -102,10 +104,10 @@ export default function SecurityScreen({ navigation }: any) {
             <View style={styles.optionContent}>
               <View style={styles.optionTextContainer}>
                 <Text style={[styles.optionTitle, { color: theme.colors.primaryText }]}>
-                  App Lock
+                  {t('auxiliary.security.appLock')}
                 </Text>
                 <Text style={[styles.optionDescription, { color: theme.colors.secondaryText }]}>
-                  {isLockEnabled ? 'Require PIN to open app' : 'No lock set'}
+                  {isLockEnabled ? t('auxiliary.security.requirePin') : t('auxiliary.security.noLock')}
                 </Text>
               </View>
               <Switch
@@ -130,10 +132,10 @@ export default function SecurityScreen({ navigation }: any) {
               <View style={styles.optionContent}>
                 <View style={styles.optionTextContainer}>
                   <Text style={[styles.optionTitle, { color: theme.colors.primaryText }]}>
-                    Face ID / Touch ID
+                    {t('auxiliary.security.biometrics')}
                   </Text>
                   <Text style={[styles.optionDescription, { color: theme.colors.secondaryText }]}>
-                    Unlock with biometrics instead of PIN
+                    {t('auxiliary.security.biometricsDescription')}
                   </Text>
                 </View>
                 <Switch

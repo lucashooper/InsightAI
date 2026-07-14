@@ -4,17 +4,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { isDarkTheme, useTheme } from '../../contexts/ThemeContext';
 import { useCheckInFlow } from './CheckInFlowProvider';
 import PremiumButton from '../shared/PremiumButton';
-import PremiumGradientText from '../shared/PremiumGradientText';
 import { FEELINGS_BY_TIER, MOOD_TINTS } from './wordBanks';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 type Props = {
   onContinue: () => void;
 };
 
 const VISIBLE_COUNT = 12;
+const wordKey = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '_');
 
 export default function FeelingsStep({ onContinue }: Props) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const { draft, toggleFeeling, addCustomFeeling } = useCheckInFlow();
   const [expanded, setExpanded] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
@@ -49,13 +51,11 @@ export default function FeelingsStep({ onContinue }: Props) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.headingRow}>
-        <Text style={[styles.heading, { color: theme.colors.primaryText }]}>What feelings have made your mood </Text>
-        <PremiumGradientText variant="accent" style={styles.accentWord}>
-          {draft.moodLabel.toLowerCase()}
-        </PremiumGradientText>
-        <Text style={[styles.heading, { color: theme.colors.primaryText }]}>?</Text>
+        <Text style={[styles.heading, { color: theme.colors.primaryText }]}>
+          {t('checkIn.feelingsQuestion', { mood: t(`checkIn.${draft.moodTier}`).toLowerCase() })}
+        </Text>
       </View>
-      <Text style={[styles.sub, { color: theme.colors.secondaryText }]}>Choose all that apply</Text>
+      <Text style={[styles.sub, { color: theme.colors.secondaryText }]}>{t('checkIn.chooseAll')}</Text>
 
       <View style={styles.grid}>
         {visible.map((feeling) => {
@@ -79,7 +79,7 @@ export default function FeelingsStep({ onContinue }: Props) {
                   { color: selected ? (isDark ? '#FFFFFF' : theme.colors.primaryText) : theme.colors.secondaryText },
                 ]}
               >
-                {feeling}
+                {t(`checkIn.words.${wordKey(feeling)}`)}
               </Text>
             </TouchableOpacity>
           );
@@ -126,7 +126,7 @@ export default function FeelingsStep({ onContinue }: Props) {
             <TextInput
               ref={inputRef}
               style={[styles.customInput, { color: theme.colors.primaryText }]}
-              placeholder="Your feeling..."
+              placeholder={t('checkIn.customFeeling')}
               placeholderTextColor={theme.colors.tertiaryText}
               value={customText}
               onChangeText={setCustomText}
@@ -155,12 +155,12 @@ export default function FeelingsStep({ onContinue }: Props) {
       {allFeelings.length > VISIBLE_COUNT && (
         <TouchableOpacity onPress={() => setExpanded(!expanded)} activeOpacity={0.7}>
           <Text style={[styles.showMore, { color: tint.accent }]}>
-            {expanded ? 'Show less' : 'Show more'}
+            {expanded ? t('common.showLess') : t('common.showMore')}
           </Text>
         </TouchableOpacity>
       )}
 
-      <PremiumButton label="Continue" onPress={onContinue} style={styles.cta} />
+      <PremiumButton label={t('checkIn.continue')} onPress={onContinue} style={styles.cta} />
     </ScrollView>
   );
 }

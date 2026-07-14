@@ -61,6 +61,7 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
   const appState = useRef(AppState.currentState);
   const hasInitialized = useRef(false);
   const hasBackgrounded = useRef(false);
+  const backgroundedAtRef = useRef<number | null>(null);
   const currentUserIdRef = useRef<string | null>(null);
   const [isLockReady, setIsLockReady] = useState(false);
 
@@ -134,17 +135,31 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
       // Track when app goes to background
       if (nextAppState === 'background') {
         hasBackgrounded.current = true;
+        backgroundedAtRef.current = Date.now();
       }
       
-      // Only lock if app actually went to background and is now coming back to active
+      // iOS/Expo can briefly report `background` while presenting system sheets
+      // or reconnecting the dev client. Treat those short transitions as
+      // transient so they do not unexpectedly throw the user onto the PIN page.
       if (
         hasBackgrounded.current &&
         nextAppState === 'active' &&
         isLockEnabled &&
         hasInitialized.current
       ) {
-        setIsLocked(true);
-        hasBackgrounded.current = false; // Reset flag
+        const backgroundDuration = backgroundedAtRef.current
+          ? Date.now() - backgroundedAtRef.current
+          : 0;
+        if (backgroundDuration >= 10_000) {
+          setIsLocked(true);
+        }
+        hasBackgrounded.current = false;
+        backgroundedAtRef.current = null;
+      }
+
+      if (nextAppState === 'active' && hasBackgrounded.current) {
+        hasBackgrounded.current = false;
+        backgroundedAtRef.current = null;
       }
       
       appState.current = nextAppState;

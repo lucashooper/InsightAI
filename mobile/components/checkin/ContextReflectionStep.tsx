@@ -14,10 +14,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { isDarkTheme, useTheme } from '../../contexts/ThemeContext';
 import { useCheckInFlow } from './CheckInFlowProvider';
 import PremiumButton from '../shared/PremiumButton';
-import PremiumGradientText from '../shared/PremiumGradientText';
 import { CONTEXT_DOING, CONTEXT_WHERE, CONTEXT_WHO, MOOD_TINTS } from './wordBanks';
 import { addCustomTag, fetchCustomTags } from '../../services/checkInService';
 import { TagCategory } from './types';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 type Props = {
   onContinue: () => void;
@@ -29,15 +29,11 @@ type GroupConfig = {
   category: TagCategory;
   defaults: string[];
 };
-
-const GROUPS: GroupConfig[] = [
-  { key: 'withWho', title: 'Who are you with?', category: 'who', defaults: CONTEXT_WHO },
-  { key: 'whereAt', title: 'Where are you?', category: 'where', defaults: CONTEXT_WHERE },
-  { key: 'doing', title: 'What are you doing?', category: 'doing', defaults: CONTEXT_DOING },
-];
+const wordKey = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '_');
 
 export default function ContextReflectionStep({ onContinue }: Props) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const { user } = useAuth();
   const { draft, toggleContextTag } = useCheckInFlow();
   const tint = MOOD_TINTS[draft.moodTier];
@@ -51,6 +47,11 @@ export default function ContextReflectionStep({ onContinue }: Props) {
   });
   const [addModal, setAddModal] = useState<{ category: TagCategory; group: GroupConfig['key'] } | null>(null);
   const [newTag, setNewTag] = useState('');
+  const groups: GroupConfig[] = [
+    { key: 'withWho', title: t('checkIn.who'), category: 'who', defaults: CONTEXT_WHO },
+    { key: 'whereAt', title: t('checkIn.where'), category: 'where', defaults: CONTEXT_WHERE },
+    { key: 'doing', title: t('checkIn.doing'), category: 'doing', defaults: CONTEXT_DOING },
+  ];
 
   useEffect(() => {
     if (!user?.id) return;
@@ -79,16 +80,15 @@ export default function ContextReflectionStep({ onContinue }: Props) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.headingRow}>
-        <Text style={[styles.heading, { color: theme.colors.primaryText }]}>I'm feeling </Text>
-        <PremiumGradientText variant="accent" style={styles.accentWord}>
-          {draft.moodLabel.toLowerCase()}
-        </PremiumGradientText>
+        <Text style={[styles.heading, { color: theme.colors.primaryText }]}>
+          {t('checkIn.feelingPrefix', { mood: t(`checkIn.${draft.moodTier}`).toLowerCase() })}
+        </Text>
       </View>
       <Text style={[styles.sub, { color: theme.colors.secondaryText }]}>
-        Reflect on what influences you
+        {t('checkIn.reflectInfluences')}
       </Text>
 
-      {GROUPS.map((group) => {
+      {groups.map((group) => {
         const tags = [...group.defaults, ...customTags[group.category]];
         const selected = draft[group.key];
         return (
@@ -116,7 +116,7 @@ export default function ContextReflectionStep({ onContinue }: Props) {
                         { color: isOn ? (isDark ? '#FFFFFF' : theme.colors.primaryText) : theme.colors.secondaryText },
                       ]}
                     >
-                      {tag}
+                      {group.defaults.includes(tag) ? t(`checkIn.words.${wordKey(tag)}`) : tag}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -132,21 +132,21 @@ export default function ContextReflectionStep({ onContinue }: Props) {
         );
       })}
 
-      <PremiumButton label="Continue" onPress={onContinue} style={styles.cta} />
+      <PremiumButton label={t('checkIn.continue')} onPress={onContinue} style={styles.cta} />
 
       <Modal visible={!!addModal} transparent animationType="fade" onRequestClose={() => setAddModal(null)}>
         <Pressable style={styles.modalOverlay} onPress={() => setAddModal(null)}>
           <Pressable style={[styles.modalCard, { backgroundColor: theme.colors.cardBackground }]} onPress={(e) => e.stopPropagation()}>
-            <Text style={[styles.modalTitle, { color: theme.colors.primaryText }]}>Add your own</Text>
+            <Text style={[styles.modalTitle, { color: theme.colors.primaryText }]}>{t('checkIn.addOwn')}</Text>
             <TextInput
               value={newTag}
               onChangeText={setNewTag}
-              placeholder="e.g. Gym, Mum's house"
+              placeholder={t('checkIn.customContextPlaceholder')}
               placeholderTextColor={theme.colors.tertiaryText}
               style={[styles.input, { color: theme.colors.primaryText, borderColor: theme.colors.border }]}
               autoFocus
             />
-            <PremiumButton label="Add" onPress={handleAddTag} />
+            <PremiumButton label={t('common.add')} onPress={handleAddTag} />
           </Pressable>
         </Pressable>
       </Modal>

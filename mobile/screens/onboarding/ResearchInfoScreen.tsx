@@ -5,10 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import LottieView from 'lottie-react-native';
 import SunoGradient from '../../components/onboarding/SunoGradient';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const meditationLottie = require('../../public/animations/Stress Management.json');
 
 export default function ResearchInfoScreen({ navigation }: any) {
+  const { t } = useLanguage();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
 
@@ -62,15 +64,15 @@ export default function ResearchInfoScreen({ navigation }: any) {
           </View>
 
           {/* Headline */}
-          <Text style={styles.headline}>Grounded in{'\n'}psychology</Text>
+          <Text style={styles.headline}>{t('onboarding.research.title')}</Text>
 
           {/* Body text */}
           <Text style={styles.bodyText}>
-            Research shows that reflective journaling improves emotional awareness and long-term wellbeing.
+            {t('onboarding.research.body')}
           </Text>
 
           {/* Citation */}
-          <Text style={styles.citation}>Advances in Psychiatric Treatment, 2005</Text>
+          <Text style={styles.citation}>{t('onboarding.research.citation')}</Text>
 
           {/* Learn more link */}
           <TouchableOpacity
@@ -80,7 +82,7 @@ export default function ResearchInfoScreen({ navigation }: any) {
             }}
             style={styles.learnMoreButton}
           >
-            <Text style={styles.learnMoreText}>Learn more</Text>
+            <Text style={styles.learnMoreText}>{t('onboarding.research.learnMore')}</Text>
             <Ionicons name="arrow-forward" size={16} color="#8b5cf6" />
           </TouchableOpacity>
         </Animated.View>
@@ -97,7 +99,7 @@ export default function ResearchInfoScreen({ navigation }: any) {
           }}
         >
           <View style={styles.buttonGradient}>
-            <Text style={styles.buttonText}>Continue</Text>
+            <Text style={styles.buttonText}>{t('common.continue')}</Text>
           </View>
         </TouchableOpacity>
       </View>

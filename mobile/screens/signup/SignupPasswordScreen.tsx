@@ -14,8 +14,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import SunoGradient from '../../components/onboarding/SunoGradient';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function SignupPasswordScreen({ navigation, route }: any) {
+  const { t } = useLanguage();
   const { email } = route.params;
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -24,12 +26,12 @@ export default function SignupPasswordScreen({ navigation, route }: any) {
 
   const handleContinue = async () => {
     if (!password) {
-      Alert.alert('Error', 'Please enter a password');
+      Alert.alert(t('auxiliary.common.error'), t('auxiliary.signup.enterPassword'));
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      Alert.alert(t('auxiliary.common.error'), t('auxiliary.signup.passwordMinimum'));
       return;
     }
 
@@ -46,15 +48,15 @@ export default function SignupPasswordScreen({ navigation, route }: any) {
       // Check if user already exists
       if (error.message.includes('already registered') || error.message.includes('already exists') || error.message.includes('User already registered')) {
         Alert.alert(
-          'Account Already Exists',
-          'This email is already registered. Please log in instead or use a different email.',
+          t('auxiliary.signup.accountExists'),
+          t('auxiliary.signup.accountExistsMessage'),
           [
-            { text: 'Go to Login', onPress: () => navigation.navigate('Login') },
-            { text: 'Try Different Email', style: 'cancel' }
+            { text: t('auxiliary.signup.goToLogin'), onPress: () => navigation.navigate('Login') },
+            { text: t('auxiliary.signup.tryDifferentEmail'), style: 'cancel' }
           ]
         );
       } else {
-        Alert.alert('Signup Failed', error.message);
+        Alert.alert(t('auxiliary.signup.failed'), error.message);
       }
     } else {
       console.log('[SIGNUP] Success! Navigating to verification...');
@@ -89,14 +91,14 @@ export default function SignupPasswordScreen({ navigation, route }: any) {
           {/* Progress Indicator - Hidden on last step */}
 
           {/* Title */}
-          <Text style={styles.title}>Create a password</Text>
-          <Text style={styles.subtitle}>Must be at least 6 characters</Text>
+          <Text style={styles.title}>{t('auxiliary.signup.passwordTitle')}</Text>
+          <Text style={styles.subtitle}>{t('auxiliary.signup.passwordSubtitle')}</Text>
 
           {/* Password Input */}
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Password"
+              placeholder={t('auxiliary.common.password')}
               placeholderTextColor="rgba(0, 0, 0, 0.4)"
               value={password}
               onChangeText={setPassword}
@@ -132,7 +134,7 @@ export default function SignupPasswordScreen({ navigation, route }: any) {
             {loading ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.continueButtonText}>Create Account</Text>
+              <Text style={styles.continueButtonText}>{t('auxiliary.signup.createAccount')}</Text>
             )}
           </TouchableOpacity>
         </View>

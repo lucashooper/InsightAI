@@ -3,20 +3,22 @@ import { View, Text, StyleSheet, TouchableOpacity, Animated, StatusBar } from 'r
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
 
 const PATTERNS = [
-  { emoji: '😴', text: 'Adjust sleep schedule', frequency: 8 },
-  { emoji: '🧘', text: 'Practice self-compassion more', frequency: 6 },
-  { emoji: '📵', text: 'Reduce screen time before bed', frequency: 5 },
-  { emoji: '🍃', text: 'Manage stress proactively', frequency: 4 },
-  { emoji: '🗣️', text: 'Set clearer boundaries', frequency: 3 },
-  { emoji: '💭', text: 'Challenge negative self-talk', frequency: 2 },
+  { emoji: '😴', textKey: 'adjustSleep', frequency: 8 },
+  { emoji: '🧘', textKey: 'selfCompassion', frequency: 6 },
+  { emoji: '📵', textKey: 'reduceScreenTime', frequency: 5 },
+  { emoji: '🍃', textKey: 'manageStress', frequency: 4 },
+  { emoji: '🗣️', textKey: 'setBoundaries', frequency: 3 },
+  { emoji: '💭', textKey: 'challengeSelfTalk', frequency: 2 },
 ];
 
 export default function ValuePropPatternsScreen({ navigation }: any) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const dark = isDarkTheme(theme.name);
 
   const pillAnims = useRef(PATTERNS.map(() => ({
@@ -61,13 +63,13 @@ export default function ValuePropPatternsScreen({ navigation }: any) {
       <View style={styles.content}>
         <View>
           <Text style={[styles.eyebrow, { color: dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}>
-            Powered by AI
+            {t('onboarding.patterns.eyebrow')}
           </Text>
           <Text style={[styles.title, { color: dark ? '#ffffff' : '#1a1a2e' }]}> 
-            Track your patterns{'\n'}over time
+            {t('onboarding.patterns.title')}
           </Text>
           <Text style={[styles.subtitle, { color: dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }]}>
-            Insight identifies what's holding you back and surfaces your top priorities to work on.
+            {t('onboarding.patterns.subtitle')}
           </Text>
         </View>
 
@@ -87,11 +89,11 @@ export default function ValuePropPatternsScreen({ navigation }: any) {
               ]}
             >
               <View style={styles.frequencyBadge}>
-                <Text style={styles.frequencyText}>x{item.frequency}</Text>
+                <Text style={styles.frequencyText}>{t('onboarding.patterns.frequency', { count: item.frequency })}</Text>
               </View>
               <Text style={styles.pillEmoji}>{item.emoji}</Text>
               <Text style={[styles.pillText, { color: dark ? 'rgba(255,255,255,0.85)' : '#1a1a2e' }]}>
-                {item.text}
+                {t(`onboarding.patterns.${item.textKey}`)}
               </Text>
             </Animated.View>
           ))}
@@ -117,7 +119,7 @@ export default function ValuePropPatternsScreen({ navigation }: any) {
           }}
         >
           <View style={styles.buttonInner}>
-            <Text style={styles.buttonText}>Continue</Text>
+            <Text style={styles.buttonText}>{t('common.continue')}</Text>
           </View>
         </TouchableOpacity>
       </Animated.View>

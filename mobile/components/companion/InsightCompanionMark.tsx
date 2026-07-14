@@ -14,6 +14,7 @@ export default function InsightCompanionMark({ size = 64, isDark = true }: Props
       isDark={isDark}
       clipToCircle
       compact
+      vivid
     />
   );
 }

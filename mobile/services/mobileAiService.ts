@@ -2,6 +2,8 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { supabase } from '../lib/supabase';
+import { getCurrentLanguage, getCurrentLocale } from '../i18n/languageRef';
+import { getAiLanguageInstruction, getChatLanguageInstruction, translate } from '../i18n';
 
 export interface MoodAnalysis {
   primary_emotion: string;
@@ -76,6 +78,17 @@ async function callGroqProxy(messages: Array<{role: string; content: string}>, o
   }
   console.log('[callGroqProxy] Session found, calling groq-proxy...');
 
+  // Enforce the persisted app language for every AI-generated surface
+  // (chat, follow-ups, protocols, stories, and any future call sites).
+  const languageInstruction = getChatLanguageInstruction(getCurrentLanguage());
+  const localizedMessages = languageInstruction
+    ? messages.map((message, index) =>
+        index === 0 && message.role === 'system'
+          ? { ...message, content: `${message.content}\n\n${languageInstruction}` }
+          : message,
+      )
+    : messages;
+
   const response = await fetch(`${SUPABASE_FUNCTION_URL}/groq-proxy`, {
     method: 'POST',
     headers: {
@@ -83,7 +96,7 @@ async function callGroqProxy(messages: Array<{role: string; content: string}>, o
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      messages,
+      messages: localizedMessages,
       model: opts?.model || 'llama-3.3-70b-versatile',
       temperature: opts?.temperature ?? 0.8,
       max_tokens: opts?.max_tokens ?? 500,
@@ -103,12 +116,14 @@ async function callGroqProxy(messages: Array<{role: string; content: string}>, o
   return data.choices?.[0]?.message?.content || '';
 }
 
-const defaultChatSuggestions = [
-  'How have I been feeling lately?',
-  'What patterns do you notice in my journal?',
-  'What should I focus on this week?',
-  'Help me reflect on my recent entries',
-];
+function getDefaultChatSuggestions(): string[] {
+  return [
+    'companion.suggestionFeeling',
+    'companion.suggestionPatterns',
+    'companion.suggestionFocus',
+    'companion.suggestionReflect',
+  ].map((key) => translate(getCurrentLanguage(), key));
+}
 
 export const mobileAiService = {
   async analyzeEntry(content: string, options?: { signal?: AbortSignal }): Promise<EnhancedAIAnalysis> {
@@ -228,7 +243,7 @@ Entry text: ${content}`;
     8. **POSITIVITY BIAS**: Always lead with strengths and wins. Frame challenges as growth opportunities. Key Themes should be ENCOURAGING and GROWTH-ORIENTED, not negative labels. For example:
        - GOOD: "Building social confidence", "Embracing new experiences", "Developing self-compassion"
        - BAD: "Social anxiety and self-perception", "Missed opportunities and self-doubt", "Accidental loss of personal data"
-    9. Even when addressing struggles, use empowering language that highlights their awareness and potential for growth.`;
+    9. Even when addressing struggles, use empowering language that highlights their awareness and potential for growth.${getAiLanguageInstruction(getCurrentLanguage())}`;
 
     // Get user session for authentication - use multiple strategies with timeouts
     console.log('[mobileAiService] Getting user session...');
@@ -468,10 +483,11 @@ Example:
 Provide ONLY the protocol in the exact format above, nothing else.`;
 
     try {
+      const lang = getCurrentLanguage();
       const protocolText = await callGroqProxy([
         {
           role: 'system',
-          content: 'You are a practical mental health coach who creates simple, actionable daily protocols. Always format your response exactly as requested.',
+          content: `You are a practical mental health coach who creates simple, actionable daily protocols. Always format your response exactly as requested.${getAiLanguageInstruction(lang)}`,
         },
         {
           role: 'user',
@@ -689,7 +705,7 @@ Write in second person ("you"). Keep it under 60 words.`;
     let journalContext = '';
     if (entries && entries.length > 0) {
       const summaries = entries.map((e: any) => {
-        const date = new Date(e.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const date = new Date(e.created_at).toLocaleDateString(getCurrentLocale(), { month: 'short', day: 'numeric', year: 'numeric' });
         const emotion = e.ai_structured_insights?.mood_analysis?.primary_emotion || '';
         const themes = e.ai_structured_insights?.key_themes?.slice(0, 3).map((t: any) => t.theme).join(', ') || '';
         const snippet = e.content?.substring(0, 300) || '';
@@ -725,7 +741,9 @@ ${tone}
 
 You are NOT a therapist. You're a supportive companion who helps them reflect and discover patterns in their own words.
 
-CRITICAL RULE: Only reference journal entries that are explicitly provided below. If no entries are provided, you MUST tell the user they have no entries yet. NEVER fabricate, imagine, or hallucinate journal content.${journalContext}`;
+CRITICAL RULE: Only reference journal entries that are explicitly provided below. If no entries are provided, you MUST tell the user they have no entries yet. NEVER fabricate, imagine, or hallucinate journal content.${journalContext}
+
+${getChatLanguageInstruction(getCurrentLanguage())}`;
 
     try {
       console.log('[mobileAiService] Building API messages...');
@@ -759,7 +777,7 @@ CRITICAL RULE: Only reference journal entries that are explicitly provided below
    */
   async getChatSuggestions(): Promise<string[]> {
     const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
-    if (userError || !currentUser) return defaultChatSuggestions;
+    if (userError || !currentUser) return getDefaultChatSuggestions();
 
     console.log('[mobileAiService] getChatSuggestions for user:', currentUser.id);
     const { data: entries } = await supabase
@@ -769,7 +787,7 @@ CRITICAL RULE: Only reference journal entries that are explicitly provided below
       .order('created_at', { ascending: false })
       .limit(5);
 
-    if (!entries || entries.length === 0) return defaultChatSuggestions;
+    if (!entries || entries.length === 0) return getDefaultChatSuggestions();
 
     // Generate contextual suggestions based on recent entries
     const recentEmotion = entries[0]?.ai_structured_insights?.mood_analysis?.primary_emotion;

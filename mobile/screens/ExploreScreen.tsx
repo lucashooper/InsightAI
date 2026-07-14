@@ -13,19 +13,20 @@ import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { isTablet, sf } from '../utils/responsive';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const noiseTexture = require('../public/noisy-image.webp');
 
 // ── Article Data ──────────────────────────────────────────────
 // Curated psychology articles based on real research
 const CATEGORIES = [
-  { id: 'all', label: 'All', icon: 'sparkles' },
-  { id: 'anxiety', label: 'Anxiety', icon: 'cloud' },
-  { id: 'thinking', label: 'Thinking', icon: 'bulb' },
-  { id: 'habits', label: 'Habits', icon: 'repeat' },
-  { id: 'relationships', label: 'Relationships', icon: 'heart' },
-  { id: 'sleep', label: 'Sleep', icon: 'moon' },
-  { id: 'resilience', label: 'Resilience', icon: 'shield-checkmark' },
+  { id: 'all', icon: 'sparkles' },
+  { id: 'anxiety', icon: 'cloud' },
+  { id: 'thinking', icon: 'bulb' },
+  { id: 'habits', icon: 'repeat' },
+  { id: 'relationships', icon: 'heart' },
+  { id: 'sleep', icon: 'moon' },
+  { id: 'resilience', icon: 'shield-checkmark' },
 ];
 
 interface Article {
@@ -33,9 +34,9 @@ interface Article {
   title: string;
   subtitle: string;
   category: string;
-  readTime: string;
+  readMinutes: number;
   emoji: string;
-  gradient: string[];
+  gradient: [string, string, ...string[]];
   content: string[];
   source: string;
   isTrending?: boolean;
@@ -47,7 +48,7 @@ const ARTICLES: Article[] = [
     title: 'Stuck in your head? The anti-overthinking toolkit',
     subtitle: 'Break free from rumination spirals',
     category: 'thinking',
-    readTime: '5 mins',
+    readMinutes: 5,
     emoji: '🧠',
     gradient: ['#3949ab', '#7b5cff', '#f1c27d'],
     source: 'Based on research by Nolen-Hoeksema (2000)',
@@ -70,7 +71,7 @@ const ARTICLES: Article[] = [
     title: 'The comfort zone trap: Why unknown feels scary',
     subtitle: 'Understanding your brain\'s safety system',
     category: 'anxiety',
-    readTime: '5 mins',
+    readMinutes: 5,
     emoji: '🫧',
     gradient: ['#2f4f9f', '#8b5cf6', '#f0c987'],
     source: 'Based on research by Yerkes & Dodson (1908)',
@@ -91,7 +92,7 @@ const ARTICLES: Article[] = [
     title: 'Some days, you\'re just tired — and that\'s okay',
     subtitle: 'The science of rest and recovery',
     category: 'resilience',
-    readTime: '4 mins',
+    readMinutes: 4,
     emoji: '🌙',
     gradient: ['#4251a8', '#7367f0', '#f3d18f'],
     source: 'Based on research by Saundra Dalton-Smith, MD',
@@ -112,7 +113,7 @@ const ARTICLES: Article[] = [
     title: 'Why your brain loves negative thoughts',
     subtitle: 'The negativity bias explained',
     category: 'thinking',
-    readTime: '4 mins',
+    readMinutes: 4,
     emoji: '⚡',
     gradient: ['#4d3f96', '#7e5bef', '#f2bf7a'],
     source: 'Based on research by Baumeister et al. (2001)',
@@ -133,7 +134,7 @@ const ARTICLES: Article[] = [
     title: 'The 2-minute rule that changes everything',
     subtitle: 'Building habits that actually stick',
     category: 'habits',
-    readTime: '3 mins',
+    readMinutes: 3,
     emoji: '🎯',
     gradient: ['#2f5f96', '#6f60d9', '#efc782'],
     source: 'Based on research by James Clear (Atomic Habits)',
@@ -154,7 +155,7 @@ const ARTICLES: Article[] = [
     title: 'Why you can\'t sleep when you\'re stressed',
     subtitle: 'Breaking the anxiety-insomnia cycle',
     category: 'sleep',
-    readTime: '5 mins',
+    readMinutes: 5,
     emoji: '😴',
     gradient: ['#3c468f', '#7754db', '#efd09a'],
     source: 'Based on research by Walker (2017), "Why We Sleep"',
@@ -177,7 +178,7 @@ const ARTICLES: Article[] = [
     title: '6 signs your relationship will last',
     subtitle: 'What science says about lasting love',
     category: 'relationships',
-    readTime: '6 mins',
+    readMinutes: 6,
     emoji: '🦋',
     gradient: ['#3450a5', '#8b5cf6', '#f1bf77'],
     isTrending: true,
@@ -203,7 +204,7 @@ const ARTICLES: Article[] = [
     title: 'Anxiety isn\'t the enemy — avoidance is',
     subtitle: 'How to work with anxiety, not against it',
     category: 'anxiety',
-    readTime: '5 mins',
+    readMinutes: 5,
     emoji: '🌊',
     gradient: ['#2e5b92', '#7060d8', '#f1cb86'],
     source: 'Based on ACT therapy by Steven Hayes, PhD',
@@ -226,6 +227,7 @@ const ARTICLES: Article[] = [
 // ── Article Detail Component ──────────────────────────────────
 function ArticleDetail({ article, onClose, dark }: { article: Article; onClose: () => void; dark: boolean }) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
 
   return (
@@ -235,7 +237,7 @@ function ArticleDetail({ article, onClose, dark }: { article: Article; onClose: 
         <TouchableOpacity onPress={onClose} style={styles.articleBackButton}>
           <Ionicons name="arrow-back" size={24} color={theme.colors.primaryText} />
         </TouchableOpacity>
-        <Text style={[styles.articleDetailHeaderTitle, { color: theme.colors.primaryText }]}>Article</Text>
+        <Text style={[styles.articleDetailHeaderTitle, { color: theme.colors.primaryText }]}>{t('auxiliary.explore.article')}</Text>
         <View style={{ width: 32 }} />
       </View>
 
@@ -253,18 +255,18 @@ function ArticleDetail({ article, onClose, dark }: { article: Article; onClose: 
         >
           <Image source={noiseTexture} style={styles.heroNoise} resizeMode="cover" />
           <View style={styles.articleDetailBadge}>
-            <Text style={styles.articleDetailBadgeText}>{article.category}</Text>
+            <Text style={styles.articleDetailBadgeText}>{t(`auxiliary.explore.categories.${article.category}`)}</Text>
           </View>
           <Text style={styles.articleDetailHeroTitle}>{article.title}</Text>
         </LinearGradient>
 
         <View style={styles.articleDetailMeta}>
           <Text style={[styles.articleDetailReadTime, { color: theme.colors.secondaryText }]}>
-            Article
+            {t('auxiliary.explore.article')}
           </Text>
           <Text style={[styles.articleMetaDivider, { color: theme.colors.secondaryText }]}>•</Text>
           <Text style={[styles.articleDetailReadTime, { color: theme.colors.secondaryText }]}>
-            {article.readTime} read
+            {t('auxiliary.explore.readTime', { time: t('auxiliary.explore.minutes', { count: article.readMinutes }) })}
           </Text>
         </View>
         <View style={styles.articleDetailSourceWrap}>
@@ -300,6 +302,7 @@ export default function ExploreScreen({ navigation }: any) {
   const { theme } = useTheme();
   const dark = isDarkTheme(theme.name);
   const insets = useSafeAreaInsets();
+  const { t } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
 
@@ -325,7 +328,7 @@ export default function ExploreScreen({ navigation }: any) {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color={theme.colors.primaryText} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>Explore</Text>
+          <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>{t('auxiliary.explore.title')}</Text>
         </View>
 
         {/* Trending Card */}
@@ -345,7 +348,7 @@ export default function ExploreScreen({ navigation }: any) {
           <Image source={noiseTexture} style={styles.heroNoise} resizeMode="cover" />
             <View style={styles.trendingBadge}>
               <Ionicons name="flash" size={12} color="#f59e0b" />
-              <Text style={styles.trendingBadgeText}>TRENDING</Text>
+              <Text style={styles.trendingBadgeText}>{t('auxiliary.explore.trending')}</Text>
             </View>
           <Text style={styles.trendingEmoji}>{trendingArticle.emoji}</Text>
           <View style={styles.trendingTextWrap}>
@@ -358,7 +361,7 @@ export default function ExploreScreen({ navigation }: any) {
                 setSelectedArticle(trendingArticle);
               }}
             >
-              <Text style={styles.trendingButtonText}>Explore now</Text>
+              <Text style={styles.trendingButtonText}>{t('auxiliary.explore.exploreNow')}</Text>
             </TouchableOpacity>
           </View>
           </LinearGradient>
@@ -400,7 +403,7 @@ export default function ExploreScreen({ navigation }: any) {
                     { color: isActive ? '#fff' : theme.colors.secondaryText },
                   ]}
                 >
-                  {cat.label}
+                  {t(`auxiliary.explore.categories.${cat.id}`)}
                 </Text>
               </TouchableOpacity>
             );
@@ -409,7 +412,7 @@ export default function ExploreScreen({ navigation }: any) {
 
         {/* Section: Based on your journey */}
         <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>
-          Based on your journey
+          {t('auxiliary.explore.basedOnJourney')}
         </Text>
 
         {/* Article Cards */}
@@ -433,7 +436,7 @@ export default function ExploreScreen({ navigation }: any) {
               <View style={styles.articleCardTopRow}>
                 <View style={[styles.articleCategoryPill, { backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
                   <Text style={[styles.articleCategoryPillText, { color: theme.colors.secondaryText }]}>
-                    {article.category}
+                    {t(`auxiliary.explore.categories.${article.category}`)}
                   </Text>
                 </View>
               </View>
@@ -445,11 +448,11 @@ export default function ExploreScreen({ navigation }: any) {
               </Text>
               <View style={styles.articleCardMeta}>
                 <Text style={[styles.articleCardType, { color: theme.colors.secondaryText }]}>
-                  Article
+                  {t('auxiliary.explore.article')}
                 </Text>
                 <Text style={[styles.articleCardDot, { color: theme.colors.secondaryText }]}>•</Text>
                 <Text style={[styles.articleCardTime, { color: theme.colors.secondaryText }]}>
-                  {article.readTime}
+                  {t('auxiliary.explore.minutes', { count: article.readMinutes })}
                 </Text>
               </View>
             </View>

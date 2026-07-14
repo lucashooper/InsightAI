@@ -11,6 +11,8 @@ import { usePreloadedData } from '../contexts/PreloadContext';
 import { supabase } from '../lib/supabase';
 import { sf } from '../utils/responsive';
 import StandardContainer from '../components/shared/StandardContainer';
+import LanguagePicker from '../components/LanguagePicker';
+import { useLanguage } from '../contexts/LanguageContext';
 
 function resolveProfilePictureUrl(raw: string | null | undefined): string | null {
   if (!raw || typeof raw !== 'string') return null;
@@ -42,6 +44,7 @@ interface UserProfile {
 export default function ProfileScreen({ navigation }: any) {
   const { user, signOut } = useAuth();
   const { theme, themeName } = useTheme();
+  const { t } = useLanguage();
   const { data: preloaded, refreshProfile, refreshAccountStats } = usePreloadedData();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [subscriptionPlan, setSubscriptionPlan] = useState<string>('Free');
@@ -79,7 +82,7 @@ export default function ProfileScreen({ navigation }: any) {
     } else {
       loadUserProfile();
     }
-  }, [user?.id, preloaded.isLoaded, preloaded.userName, preloaded.profilePicture]);
+  }, [user?.id, preloaded.isLoaded, preloaded.userName, preloaded.profilePicture, t]);
 
   // Refresh on focus — sync pfp from cache and Supabase (handles return from Edit Profile)
   useFocusEffect(
@@ -96,7 +99,7 @@ export default function ProfileScreen({ navigation }: any) {
             if (!cached) return prev;
             return {
               id: user.id,
-              username: preloaded.userName || user.email?.split('@')[0] || 'User',
+              username: preloaded.userName || user.email?.split('@')[0] || t('auxiliary.common.user'),
               email: user.email || '',
               profile_picture_url: cached,
             };
@@ -107,7 +110,7 @@ export default function ProfileScreen({ navigation }: any) {
         if (cached) setImageLoadError(false);
       };
       syncPfp();
-    }, [user?.id, refreshProfile, refreshAccountStats, preloaded.userName])
+    }, [user?.id, user?.email, refreshProfile, refreshAccountStats, preloaded.userName, t])
   );
 
   const loadUserProfile = async () => {
@@ -157,7 +160,7 @@ export default function ProfileScreen({ navigation }: any) {
         // Fallback to user data if no profile exists
         setUserProfile({
           id: user.id,
-          username: cachedUsername || metadataUsername || user.email?.split('@')[0] || 'User',
+          username: cachedUsername || metadataUsername || user.email?.split('@')[0] || t('auxiliary.common.user'),
           email: user.email || '',
           profile_picture_url: null,
         });
@@ -172,7 +175,7 @@ export default function ProfileScreen({ navigation }: any) {
       // Set fallback profile on error
       setUserProfile({
         id: user.id,
-        username: cachedUsername || metadataUsername || user.email?.split('@')[0] || 'User',
+        username: cachedUsername || metadataUsername || user.email?.split('@')[0] || t('auxiliary.common.user'),
         email: user.email || '',
         profile_picture_url: null,
       });
@@ -181,12 +184,12 @@ export default function ProfileScreen({ navigation }: any) {
 
   const handleSignOut = async () => {
     Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
+      t('auxiliary.profile.signOut'),
+      t('auxiliary.profile.signOutConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('auxiliary.common.cancel'), style: 'cancel' },
         {
-          text: 'Sign Out',
+          text: t('auxiliary.profile.signOut'),
           style: 'destructive',
           onPress: async () => {
             await signOut();
@@ -198,12 +201,12 @@ export default function ProfileScreen({ navigation }: any) {
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      'Delete Account',
-      'This will permanently delete your account and all your data. This action cannot be undone.',
+      t('auxiliary.profile.deleteAccount'),
+      t('auxiliary.profile.deleteAccountWarning'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('auxiliary.common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('auxiliary.common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -224,11 +227,11 @@ export default function ProfileScreen({ navigation }: any) {
                 // Still sign out even if RPC fails
               }
               
-              Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
+              Alert.alert(t('auxiliary.profile.accountDeleted'), t('auxiliary.profile.accountDeletedMessage'));
               await signOut();
             } catch (error) {
               console.error('Error deleting account:', error);
-              Alert.alert('Error', 'Failed to delete account. Please try again.');
+              Alert.alert(t('auxiliary.common.error'), t('auxiliary.profile.deleteFailed'));
             }
           },
         },
@@ -264,7 +267,7 @@ export default function ProfileScreen({ navigation }: any) {
         style={styles.backgroundGradient}
       />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.title, { color: theme.colors.primaryText }]}>Profile</Text>
+        <Text style={[styles.title, { color: theme.colors.primaryText }]}>{t('auxiliary.profile.title')}</Text>
 
         {/* Profile Card - Clickable */}
         <TouchableOpacity
@@ -293,7 +296,7 @@ export default function ProfileScreen({ navigation }: any) {
             )}
             <View style={styles.profileInfo}>
               <Text style={[styles.profileName, { color: theme.colors.primaryText }]}>
-                {userProfile?.username || user?.email?.split('@')[0] || 'User'}
+                {userProfile?.username || user?.email?.split('@')[0] || t('auxiliary.common.user')}
               </Text>
               <Text style={[styles.profileEmail, { color: theme.colors.secondaryText }]}>
                 {userProfile?.email || user?.email || ''}
@@ -305,31 +308,39 @@ export default function ProfileScreen({ navigation }: any) {
         </TouchableOpacity>
 
         {/* Account Section */}
-        {renderSectionHeader('Account')}
+        {renderSectionHeader(t('auxiliary.profile.account'))}
         <View style={styles.menuSection}>
-          {renderMenuItem('card-outline', 'Current Plan', subscriptionPlan, () => navigation.navigate('Paywall'))}
-          {renderMenuItem('calendar-outline', 'Analysed today', `${entriesCount} / ${entriesLimit}`, undefined, false)}
+          {renderMenuItem(
+            'card-outline',
+            t('auxiliary.profile.currentPlan'),
+            subscriptionPlan.toLowerCase() === 'free' ? t('auxiliary.profile.freePlan') : subscriptionPlan,
+            () => navigation.navigate('Paywall'),
+          )}
+          {renderMenuItem('calendar-outline', t('auxiliary.profile.analysedToday'), `${entriesCount} / ${entriesLimit}`, undefined, false)}
         </View>
 
         {/* Preferences Section */}
-        {renderSectionHeader('Preferences')}
+        {renderSectionHeader(t('auxiliary.profile.preferences'))}
         <View style={styles.menuSection}>
-          {renderMenuItem('color-palette-outline', 'Appearance', `Theme: ${themeName.charAt(0).toUpperCase() + themeName.slice(1)}`, () => navigation.navigate('Appearance'))}
-          {renderMenuItem('lock-closed-outline', 'Security', 'No lock set', () => navigation.navigate('Security'))}
-          {renderMenuItem('options-outline', 'Personalize', 'Reminders, prompts & preferences', () => navigation.navigate('Personalize'))}
+          <StandardContainer variant="nested" style={[styles.menuItem, { borderColor: theme.colors.border }]}>
+            <LanguagePicker variant="row" />
+          </StandardContainer>
+          {renderMenuItem('color-palette-outline', t('auxiliary.appearance.title'), t('auxiliary.profile.themeValue', { theme: t(`auxiliary.appearance.${themeName}`) }), () => navigation.navigate('Appearance'))}
+          {renderMenuItem('lock-closed-outline', t('auxiliary.security.title'), t('auxiliary.security.noLock'), () => navigation.navigate('Security'))}
+          {renderMenuItem('options-outline', t('auxiliary.personalize.title'), t('auxiliary.profile.personalizeDescription'), () => navigation.navigate('Personalize'))}
         </View>
 
         {/* Support Section */}
-        {renderSectionHeader('Support')}
+        {renderSectionHeader(t('auxiliary.profile.support'))}
         <View style={styles.menuSection}>
-          {renderMenuItem('document-text-outline', 'Privacy Policy', undefined, () => Linking.openURL('https://myinsightai.app/privacy'))}
+          {renderMenuItem('document-text-outline', t('auxiliary.profile.privacyPolicy'), undefined, () => Linking.openURL('https://myinsightai.app/privacy'))}
         </View>
 
         {/* Account Actions */}
-        {renderSectionHeader('Account Actions')}
+        {renderSectionHeader(t('auxiliary.profile.accountActions'))}
         <View style={styles.menuSection}>
-          {renderMenuItem('log-out-outline', 'Logout', undefined, handleSignOut, false)}
-          {renderMenuItem('trash-outline', 'Delete Account', undefined, handleDeleteAccount, false)}
+          {renderMenuItem('log-out-outline', t('auxiliary.profile.logout'), undefined, handleSignOut, false)}
+          {renderMenuItem('trash-outline', t('auxiliary.profile.deleteAccount'), undefined, handleDeleteAccount, false)}
         </View>
 
         <View style={{ height: 40 }} />

@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import StandardContainer from '../components/shared/StandardContainer';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface EmotionDetailRouteParams {
   emotion: string;
@@ -21,6 +22,7 @@ interface EmotionDetailRouteParams {
 
 export default function EmotionDetailScreen() {
   const { theme } = useTheme();
+  const { t, formatDate } = useLanguage();
   const navigation = useNavigation<any>();
   const route = useRoute();
   const params = route.params as EmotionDetailRouteParams;
@@ -35,25 +37,25 @@ export default function EmotionDetailScreen() {
     
     if (percentage > 40) {
       if (emotionLower.includes('neutral')) {
-        return 'This emotion has been your dominant state recently. You\'re maintaining emotional equilibrium, which can be both grounding and a sign of stability.';
+        return t('auxiliary.emotionDetail.summary.neutralDominant');
       } else if (emotionLower.includes('hop') || emotionLower.includes('joy') || emotionLower.includes('excit')) {
-        return 'This emotion has appeared often recently. You\'re experiencing a sustained period of positive energy — embrace it and notice what\'s contributing to it.';
+        return t('auxiliary.emotionDetail.summary.positiveDominant');
       } else if (emotionLower.includes('anx') || emotionLower.includes('stress') || emotionLower.includes('worry')) {
-        return 'This emotion has been showing up frequently. You\'re carrying tension that deserves attention and care. It\'s okay to feel this way.';
+        return t('auxiliary.emotionDetail.summary.anxiousDominant');
       } else if (emotionLower.includes('sad') || emotionLower.includes('down') || emotionLower.includes('lonely')) {
-        return 'This emotion has been present in many of your entries. You\'re moving through a difficult period, and acknowledging this is an important step.';
+        return t('auxiliary.emotionDetail.summary.sadDominant');
       } else if (emotionLower.includes('frustrat') || emotionLower.includes('anger')) {
-        return 'This emotion has appeared often recently. You\'re encountering obstacles or unmet needs — this frustration is information worth exploring.';
+        return t('auxiliary.emotionDetail.summary.frustratedDominant');
       } else if (emotionLower.includes('tired') || emotionLower.includes('exhaust')) {
-        return 'This emotion has been recurring. Your energy reserves are depleted, and your body is asking for rest and restoration.';
+        return t('auxiliary.emotionDetail.summary.tiredDominant');
       }
     } else if (percentage > 20) {
-      return `This emotion appears in about ${percentage}% of your recent entries. It's a notable part of your emotional landscape, worth paying attention to.`;
+      return t('auxiliary.emotionDetail.summary.notable', { percentage });
     } else {
-      return `This emotion shows up occasionally in your reflections. While not dominant, it's part of the fuller picture of how you're feeling.`;
+      return t('auxiliary.emotionDetail.summary.occasional');
     }
     
-    return 'This emotion has appeared in your recent entries, forming part of your emotional experience.';
+    return t('auxiliary.emotionDetail.summary.default');
   };
 
   // Generate contextual interpretation
@@ -66,23 +68,23 @@ export default function EmotionDetailScreen() {
     const contexts: string[] = [];
     
     if (allContent.includes('work') || allContent.includes('job') || allContent.includes('project') || allContent.includes('meeting')) {
-      contexts.push('work');
+      contexts.push(t('auxiliary.emotionDetail.context.work'));
     }
     if (allContent.includes('sleep') || allContent.includes('tired') || allContent.includes('rest') || allContent.includes('wake')) {
-      contexts.push('sleep patterns');
+      contexts.push(t('auxiliary.emotionDetail.context.sleep'));
     }
     if (allContent.includes('friend') || allContent.includes('family') || allContent.includes('relationship') || allContent.includes('partner')) {
-      contexts.push('relationships');
+      contexts.push(t('auxiliary.emotionDetail.context.relationships'));
     }
     if (allContent.includes('routine') || allContent.includes('habit') || allContent.includes('schedule')) {
-      contexts.push('daily routines');
+      contexts.push(t('auxiliary.emotionDetail.context.routines'));
     }
     
     if (contexts.length > 0) {
-      return `This feeling often appears in entries mentioning ${contexts.join(', ')}. These areas of your life may be connected to this emotional pattern.`;
+      return t('auxiliary.emotionDetail.context.connected', { contexts: contexts.join(', ') });
     }
     
-    return 'Looking at your entries, this emotion appears across different aspects of your life.';
+    return t('auxiliary.emotionDetail.context.default');
   };
 
   // Generate actionable suggestions
@@ -91,46 +93,46 @@ export default function EmotionDetailScreen() {
     
     if (emotionLower.includes('anx') || emotionLower.includes('stress') || emotionLower.includes('worry')) {
       return [
-        'Try a 5-minute breathing exercise when you notice this feeling arising',
-        'Write down what you can control vs. what you can\'t',
-        'Consider talking to someone you trust about what\'s weighing on you',
+        t('auxiliary.emotionDetail.suggestions.anxiety1'),
+        t('auxiliary.emotionDetail.suggestions.anxiety2'),
+        t('auxiliary.emotionDetail.suggestions.anxiety3'),
       ];
     } else if (emotionLower.includes('sad') || emotionLower.includes('down') || emotionLower.includes('lonely')) {
       return [
-        'Reach out to a friend or loved one, even if it feels hard',
-        'Allow yourself to feel this without judgment',
-        'Do one small thing that usually brings you comfort',
+        t('auxiliary.emotionDetail.suggestions.sad1'),
+        t('auxiliary.emotionDetail.suggestions.sad2'),
+        t('auxiliary.emotionDetail.suggestions.sad3'),
       ];
     } else if (emotionLower.includes('frustrat') || emotionLower.includes('anger')) {
       return [
-        'Identify what need isn\'t being met behind this frustration',
-        'Take a physical break — walk, stretch, or move your body',
-        'Express this feeling through writing or creative outlet',
+        t('auxiliary.emotionDetail.suggestions.anger1'),
+        t('auxiliary.emotionDetail.suggestions.anger2'),
+        t('auxiliary.emotionDetail.suggestions.anger3'),
       ];
     } else if (emotionLower.includes('tired') || emotionLower.includes('exhaust')) {
       return [
-        'Prioritize sleep and rest over productivity for the next few days',
-        'Say no to one non-essential commitment',
-        'Check in with your energy levels throughout the day',
+        t('auxiliary.emotionDetail.suggestions.tired1'),
+        t('auxiliary.emotionDetail.suggestions.tired2'),
+        t('auxiliary.emotionDetail.suggestions.tired3'),
       ];
     } else if (emotionLower.includes('hop') || emotionLower.includes('joy') || emotionLower.includes('excit')) {
       return [
-        'Notice what\'s contributing to this positive energy',
-        'Share this feeling with someone close to you',
-        'Consider how you can sustain this momentum',
+        t('auxiliary.emotionDetail.suggestions.positive1'),
+        t('auxiliary.emotionDetail.suggestions.positive2'),
+        t('auxiliary.emotionDetail.suggestions.positive3'),
       ];
     } else if (emotionLower.includes('neutral') || emotionLower.includes('calm')) {
       return [
-        'Use this stable period to build healthy routines',
-        'Reflect on what helps you maintain this balance',
-        'Check in with yourself about any underlying feelings',
+        t('auxiliary.emotionDetail.suggestions.calm1'),
+        t('auxiliary.emotionDetail.suggestions.calm2'),
+        t('auxiliary.emotionDetail.suggestions.calm3'),
       ];
     }
     
     return [
-      'Continue journaling to understand this emotion better',
-      'Notice when this feeling tends to arise',
-      'Be gentle with yourself as you explore this',
+      t('auxiliary.emotionDetail.suggestions.default1'),
+      t('auxiliary.emotionDetail.suggestions.default2'),
+      t('auxiliary.emotionDetail.suggestions.default3'),
     ];
   };
 
@@ -157,7 +159,7 @@ export default function EmotionDetailScreen() {
         >
           <Ionicons name="arrow-back" size={24} color={theme.colors.primaryText} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>Emotion Detail</Text>
+        <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>{t('auxiliary.emotionDetail.title')}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -172,7 +174,7 @@ export default function EmotionDetailScreen() {
             {emotion}
           </Text>
           <Text style={[styles.emotionPercentage, { color: theme.colors.secondaryText }]}>
-            Seen in {percentage}% of your analyzed entries
+            {t('auxiliary.emotionDetail.seenIn', { percentage })}
           </Text>
         </View>
 
@@ -180,7 +182,7 @@ export default function EmotionDetailScreen() {
         <StandardContainer style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="heart-outline" size={20} color="#8b5cf6" />
-            <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>Understanding this emotion</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>{t('auxiliary.emotionDetail.understanding')}</Text>
           </View>
           <Text style={[styles.sectionBody, { color: theme.colors.secondaryText }]}>
             {empatheticSummary}
@@ -191,7 +193,7 @@ export default function EmotionDetailScreen() {
         <StandardContainer style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="analytics-outline" size={20} color="#8b5cf6" />
-            <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>Context & patterns</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>{t('auxiliary.emotionDetail.contextPatterns')}</Text>
           </View>
           <Text style={[styles.sectionBody, { color: theme.colors.secondaryText }]}>
             {contextualInterpretation}
@@ -202,7 +204,7 @@ export default function EmotionDetailScreen() {
         <StandardContainer style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="bulb-outline" size={20} color="#8b5cf6" />
-            <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>What might help</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>{t('auxiliary.emotionDetail.whatMightHelp')}</Text>
           </View>
           {suggestions.map((suggestion, index) => (
             <View key={index} style={styles.suggestionItem}>
@@ -222,7 +224,7 @@ export default function EmotionDetailScreen() {
             <View style={styles.sectionHeader}>
               <Ionicons name="journal-outline" size={20} color="#8b5cf6" />
               <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>
-                Recent entries ({entries.length})
+                {t('auxiliary.emotionDetail.recentEntries', { count: entries.length })}
               </Text>
             </View>
             {entries.slice(0, 5).map((entry, index) => (
@@ -235,13 +237,13 @@ export default function EmotionDetailScreen() {
                 }}
               >
                 <Text style={[styles.entryDate, { color: theme.colors.secondaryText }]}>
-                  {new Date(entry.created_at).toLocaleDateString('en-US', {
+                  {formatDate(entry.created_at, {
                     month: 'short',
                     day: 'numeric',
                   })}
                 </Text>
                 <Text style={[styles.entryTitle, { color: theme.colors.primaryText }]} numberOfLines={1}>
-                  {entry.title || 'Untitled entry'}
+                  {entry.title || t('auxiliary.emotionDetail.untitled')}
                 </Text>
                 <Text style={[styles.entrySnippet, { color: theme.colors.secondaryText }]} numberOfLines={2}>
                   {entry.content}
@@ -258,7 +260,7 @@ export default function EmotionDetailScreen() {
                 }}
               >
                 <Text style={[styles.viewAllText, { color: theme.colors.accent }]}>
-                  View all {entries.length} entries
+                  {t('auxiliary.emotionDetail.viewAll', { count: entries.length })}
                 </Text>
                 <Ionicons name="arrow-forward" size={16} color={theme.colors.accent} />
               </TouchableOpacity>

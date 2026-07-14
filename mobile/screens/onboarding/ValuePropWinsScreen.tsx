@@ -3,20 +3,22 @@ import { View, Text, StyleSheet, TouchableOpacity, Animated, StatusBar } from 'r
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
 
 const WINS = [
-  { emoji: '🏋️', text: 'Going to the gym consistently' },
-  { emoji: '📚', text: 'Reading every day this week' },
-  { emoji: '🤝', text: 'Opening up to people more' },
-  { emoji: '🧠', text: 'Staying calm under pressure' },
-  { emoji: '🌅', text: 'Maintaining a morning routine' },
-  { emoji: '💪', text: 'Pushing through difficult moments' },
+  { emoji: '🏋️', textKey: 'gym' },
+  { emoji: '📚', textKey: 'reading' },
+  { emoji: '🤝', textKey: 'openingUp' },
+  { emoji: '🧠', textKey: 'calm' },
+  { emoji: '🌅', textKey: 'morningRoutine' },
+  { emoji: '💪', textKey: 'perseverance' },
 ];
 
 export default function ValuePropWinsScreen({ navigation }: any) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const dark = isDarkTheme(theme.name);
 
   const pillAnims = useRef(WINS.map(() => ({
@@ -60,13 +62,13 @@ export default function ValuePropWinsScreen({ navigation }: any) {
       <View style={styles.content}>
         <View>
           <Text style={[styles.eyebrow, { color: dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}> 
-            Celebrate growth
+            {t('onboarding.wins.eyebrow')}
           </Text>
           <Text style={[styles.title, { color: dark ? '#ffffff' : '#1a1a2e' }]}> 
-            Celebrate your{'\n'}wins too
+            {t('onboarding.wins.title')}
           </Text>
           <Text style={[styles.subtitle, { color: dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }]}> 
-            Insight also spots what's going well so you can build on your strengths.
+            {t('onboarding.wins.subtitle')}
           </Text>
         </View>
 
@@ -86,7 +88,7 @@ export default function ValuePropWinsScreen({ navigation }: any) {
             >
               <Text style={styles.pillEmoji}>{item.emoji}</Text>
               <Text style={[styles.pillText, { color: dark ? 'rgba(255,255,255,0.85)' : '#1a1a2e' }]}>
-                {item.text}
+                {t(`onboarding.wins.${item.textKey}`)}
               </Text>
             </Animated.View>
           ))}
@@ -111,7 +113,7 @@ export default function ValuePropWinsScreen({ navigation }: any) {
           }}
         >
           <View style={styles.buttonInner}>
-            <Text style={styles.buttonText}>Continue</Text>
+            <Text style={styles.buttonText}>{t('common.continue')}</Text>
           </View>
         </TouchableOpacity>
       </Animated.View>

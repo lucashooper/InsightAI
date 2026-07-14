@@ -11,8 +11,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import SunoGradient from '../../components/onboarding/SunoGradient';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function SignupUsernameScreen({ navigation }: any) {
+  const { t } = useLanguage();
   const [name, setName] = useState('');
 
   const handleContinue = () => {
@@ -48,13 +50,13 @@ export default function SignupUsernameScreen({ navigation }: any) {
           </View>
 
           {/* Title */}
-          <Text style={styles.title}>What's your name?</Text>
-          <Text style={styles.subtitle}>This will be displayed on your profile</Text>
+          <Text style={styles.title}>{t('auxiliary.signup.nameTitle')}</Text>
+          <Text style={styles.subtitle}>{t('auxiliary.signup.nameSubtitle')}</Text>
 
           {/* Name Input */}
           <TextInput
             style={styles.input}
-            placeholder="Name"
+            placeholder={t('auxiliary.common.name')}
             placeholderTextColor="rgba(255, 255, 255, 0.5)"
             value={name}
             onChangeText={setName}
@@ -72,7 +74,7 @@ export default function SignupUsernameScreen({ navigation }: any) {
             onPress={handleContinue}
             disabled={!name.trim()}
           >
-            <Text style={styles.continueButtonText}>Continue</Text>
+            <Text style={styles.continueButtonText}>{t('auxiliary.common.continue')}</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>

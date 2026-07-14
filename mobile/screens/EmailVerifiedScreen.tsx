@@ -5,9 +5,11 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function EmailVerifiedScreen({ navigation }: any) {
   const { user, loading } = useAuth();
+  const { t } = useLanguage();
   const [isReady, setIsReady] = useState(false);
 
   // CRITICAL FIX: Wait for auth state to update after email verification
@@ -88,7 +90,7 @@ export default function EmailVerifiedScreen({ navigation }: any) {
         <View style={styles.content}>
           <ActivityIndicator size="large" color="#8b5cf6" />
           <Text style={[styles.subtitle, { marginTop: 16 }]}>
-            Verifying your account...
+            {t('auxiliary.emailVerified.verifying')}
           </Text>
         </View>
       </View>
@@ -111,9 +113,9 @@ export default function EmailVerifiedScreen({ navigation }: any) {
         </View>
 
         {/* Title */}
-        <Text style={styles.title}>Email Confirmed!</Text>
+        <Text style={styles.title}>{t('auxiliary.emailVerified.title')}</Text>
         <Text style={styles.subtitle}>
-          Your email has been successfully verified.{'\n'}Let's continue setting up your account.
+          {t('auxiliary.emailVerified.subtitle')}
         </Text>
       </View>
 
@@ -130,7 +132,7 @@ export default function EmailVerifiedScreen({ navigation }: any) {
             end={{ x: 1, y: 1 }}
             style={styles.buttonGradient}
           >
-            <Text style={styles.continueButtonText}>Continue</Text>
+            <Text style={styles.continueButtonText}>{t('auxiliary.common.continue')}</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>

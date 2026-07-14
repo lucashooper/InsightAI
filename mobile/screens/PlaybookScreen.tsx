@@ -10,6 +10,7 @@ import { supabase } from '../lib/supabase';
 import { protocolCompletionService } from '../services/protocolCompletionService';
 import PageHeader from '../components/shared/PageHeader';
 import StandardContainer from '../components/shared/StandardContainer';
+import { useLanguage } from '../contexts/LanguageContext';
 
 type TabType = 'protocols' | 'strategies';
 
@@ -30,6 +31,7 @@ export default function PlaybookScreen() {
   console.log('[Playbook] 🔄 UPDATED VERSION LOADED - Suggestion count badges added to strategies');
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<TabType>('protocols');
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [loading, setLoading] = useState(true);
@@ -238,7 +240,7 @@ export default function PlaybookScreen() {
 
       if (error) {
         console.error('[Playbook] Error updating strategy:', error);
-        Alert.alert('Error', 'Failed to update strategy.');
+        Alert.alert(t('auxiliary.common.error'), t('auxiliary.playbook.updateFailed'));
         return;
       }
 
@@ -267,10 +269,10 @@ export default function PlaybookScreen() {
     try {
       await AsyncStorage.setItem(`PINNED_PROTOCOL_${user.id}`, strategyId);
       setPinnedProtocolId(strategyId);
-      Alert.alert('Success', 'Protocol pinned to Home');
+      Alert.alert(t('auxiliary.common.success'), t('auxiliary.playbook.pinned'));
     } catch (error) {
       console.error('[Playbook] Error pinning protocol:', error);
-      Alert.alert('Error', 'Failed to pin protocol');
+      Alert.alert(t('auxiliary.common.error'), t('auxiliary.playbook.pinFailed'));
     }
   };
 
@@ -279,10 +281,10 @@ export default function PlaybookScreen() {
     try {
       await AsyncStorage.removeItem(`PINNED_PROTOCOL_${user.id}`);
       setPinnedProtocolId(null);
-      Alert.alert('Success', 'Protocol unpinned from Home');
+      Alert.alert(t('auxiliary.common.success'), t('auxiliary.playbook.unpinned'));
     } catch (error) {
       console.error('[Playbook] Error unpinning protocol:', error);
-      Alert.alert('Error', 'Failed to unpin protocol');
+      Alert.alert(t('auxiliary.common.error'), t('auxiliary.playbook.unpinFailed'));
     }
   };
 
@@ -291,9 +293,9 @@ export default function PlaybookScreen() {
     const isActiveProtocol = strategy.status === 'active';
     
     const options: any[] = [
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('auxiliary.common.cancel'), style: 'cancel' },
       {
-        text: 'Edit',
+        text: t('auxiliary.common.edit'),
         onPress: () => handleStrategyTap(strategy),
       },
     ];
@@ -302,25 +304,25 @@ export default function PlaybookScreen() {
     if (isActiveProtocol) {
       if (isPinned) {
         options.push({
-          text: 'Unpin from Home',
+          text: t('auxiliary.playbook.unpinFromHome'),
           onPress: () => handleUnpinProtocol(),
         });
       } else {
         options.push({
-          text: 'Pin to Home',
+          text: t('auxiliary.playbook.pinToHome'),
           onPress: () => handlePinProtocol(strategy.id),
         });
       }
     }
     
     options.push({
-      text: 'Delete strategy',
+      text: t('auxiliary.playbook.deleteStrategy'),
       style: 'destructive',
       onPress: () => deleteStrategy(strategy.id),
     });
     
     Alert.alert(
-      'Strategy options',
+      t('auxiliary.playbook.strategyOptions'),
       `"${strategy.title}"`,
       options,
     );
@@ -396,16 +398,16 @@ export default function PlaybookScreen() {
       />
 
       {/* Header */}
-      <PageHeader title="Playbook" />
+      <PageHeader title={t('auxiliary.playbook.title')} />
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         {/* Today's Progress */}
         <StandardContainer style={[styles.progressCard, { borderColor: theme.colors.border }]}>
           <View style={styles.progressCardInner}>
-            <Text style={[styles.progressTitle, { color: theme.colors.tertiaryText }]}>TODAY'S PROGRESS</Text>
+            <Text style={[styles.progressTitle, { color: theme.colors.tertiaryText }]}>{t('auxiliary.playbook.todayProgress')}</Text>
             <View style={styles.progressStats}>
               <Text style={[styles.progressFraction, { color: theme.colors.primaryText }]}>{protocolProgress.completed}/{protocolProgress.total}</Text>
-              <Text style={[styles.progressLabel, { color: theme.colors.secondaryText }]}>protocols completed</Text>
+              <Text style={[styles.progressLabel, { color: theme.colors.secondaryText }]}>{t('auxiliary.playbook.protocolsCompleted')}</Text>
             </View>
             <View style={[styles.progressBarContainer, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : 'rgba(0,0,0,0.08)' }]}>
               <LinearGradient
@@ -415,7 +417,7 @@ export default function PlaybookScreen() {
                 end={{ x: 1, y: 0 }}
               />
             </View>
-            <Text style={[styles.progressPercentage, { color: theme.colors.primaryText }]}>{protocolProgress.percentage}% Completion</Text>
+            <Text style={[styles.progressPercentage, { color: theme.colors.primaryText }]}>{t('auxiliary.playbook.completion', { percentage: protocolProgress.percentage })}</Text>
           </View>
         </StandardContainer>
 
@@ -426,7 +428,7 @@ export default function PlaybookScreen() {
             onPress={() => setActiveTab('protocols')}
           >
             <Text style={[styles.tabText, { color: theme.colors.secondaryText }, activeTab === 'protocols' && { color: '#ffffff', fontWeight: '600' }]}>
-              Daily Protocols
+              {t('auxiliary.playbook.dailyProtocols')}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -434,7 +436,7 @@ export default function PlaybookScreen() {
             onPress={() => setActiveTab('strategies')}
           >
             <Text style={[styles.tabText, { color: theme.colors.secondaryText }, activeTab === 'strategies' && { color: '#ffffff', fontWeight: '600' }]}>
-              Suggested
+              {t('auxiliary.playbook.suggested')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -449,7 +451,7 @@ export default function PlaybookScreen() {
             style={styles.createButtonGradient}
           >
             <Ionicons name="add-circle" size={20} color="#ffffff" />
-            <Text style={styles.createButtonText}>Create New Strategy</Text>
+            <Text style={styles.createButtonText}>{t('auxiliary.playbook.createNew')}</Text>
           </LinearGradient>
         </TouchableOpacity>
 
@@ -472,13 +474,13 @@ export default function PlaybookScreen() {
               <Text style={styles.emptyIcon}>📚</Text>
               <Text style={[styles.emptyText, { color: theme.colors.primaryText }]}>
                 {activeTab === 'strategies'
-                  ? 'No suggested strategies yet.'
-                  : 'No daily protocols yet.'}
+                  ? t('auxiliary.playbook.noSuggestions')
+                  : t('auxiliary.playbook.noProtocols')}
               </Text>
               <Text style={[styles.emptySubtext, { color: theme.colors.secondaryText }]}>
                 {activeTab === 'strategies'
-                  ? 'Analyze a few entries to get personalized recommendations.'
-                  : 'Add strategies to your daily protocols to build a routine.'}
+                  ? t('auxiliary.playbook.noSuggestionsMessage')
+                  : t('auxiliary.playbook.noProtocolsMessage')}
               </Text>
             </View>
           ) : (
@@ -536,7 +538,7 @@ export default function PlaybookScreen() {
                         ))}
                         {strategy.tasks.length > 2 && (
                           <Text style={[styles.taskPreviewMore, { color: theme.colors.tertiaryText }]}>
-                            +{strategy.tasks.length - 2} more
+                            {t('auxiliary.playbook.moreCount', { count: strategy.tasks.length - 2 })}
                           </Text>
                         )}
                       </View>
@@ -548,11 +550,13 @@ export default function PlaybookScreen() {
                   <View style={styles.badges}>
                     <View style={[styles.categoryPill, { backgroundColor: '#8b5cf6' }]}>
                       <Text style={[styles.categoryText, { color: '#ffffff' }]}>
-                        {strategy.category}
+                        {t(`auxiliary.playbook.categories.${strategy.category}`)}
                       </Text>
                     </View>
                     <View style={[styles.difficultyBadge, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
-                      <Text style={[styles.difficultyText, { color: theme.colors.secondaryText }]}>{strategy.difficulty}</Text>
+                      <Text style={[styles.difficultyText, { color: theme.colors.secondaryText }]}>
+                        {t(`auxiliary.playbook.difficulties.${strategy.difficulty}`)}
+                      </Text>
                     </View>
                   </View>
                   
@@ -610,8 +614,8 @@ export default function PlaybookScreen() {
                 />
                 <Text style={styles.showMoreText}>
                   {showAllSuggestions 
-                    ? 'Show Less' 
-                    : `💡 More Suggested Strategies (${filteredStrategies.length - 3})`}
+                    ? t('auxiliary.playbook.showLess')
+                    : t('auxiliary.playbook.moreSuggested', { count: filteredStrategies.length - 3 })}
                 </Text>
               </TouchableOpacity>
             )}
@@ -630,40 +634,40 @@ export default function PlaybookScreen() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a2e' : '#ffffff' }]}>
             <View style={[styles.modalHeader, { borderBottomColor: isDarkTheme(theme.name) ? '#2a2a3e' : '#e5e5e5' }]}>
-              <Text style={[styles.modalTitle, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>New Strategy</Text>
+              <Text style={[styles.modalTitle, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.playbook.newStrategy')}</Text>
               <TouchableOpacity onPress={() => setShowCreateModal(false)}>
                 <Ionicons name="close" size={24} color={isDarkTheme(theme.name) ? '#999' : '#666'} />
               </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.modalBody}>
-              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Title *</Text>
+              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.playbook.titleRequired')}</Text>
               <TextInput
                 style={[styles.input, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', borderColor: isDarkTheme(theme.name) ? '#2a2a2a' : '#e0e0e0', color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}
                 value={newStrategy.title}
                 onChangeText={(text) => setNewStrategy({ ...newStrategy, title: text })}
-                placeholder="e.g., Morning Meditation"
+                placeholder={t('auxiliary.playbook.titleExample')}
                 placeholderTextColor={isDarkTheme(theme.name) ? '#666' : '#999'}
               />
 
-              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Description (optional)</Text>
+              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.playbook.descriptionOptional')}</Text>
               <TextInput
                 style={[styles.input, styles.textArea, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', borderColor: isDarkTheme(theme.name) ? '#2a2a2a' : '#e0e0e0', color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}
                 value={newStrategy.description}
                 onChangeText={(text) => setNewStrategy({ ...newStrategy, description: text })}
-                placeholder="Describe your strategy..."
+                placeholder={t('auxiliary.playbook.describe')}
                 placeholderTextColor={isDarkTheme(theme.name) ? '#666' : '#999'}
                 multiline
                 numberOfLines={4}
               />
 
-              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Tasks (optional)</Text>
+              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.playbook.tasksOptional')}</Text>
               <View style={styles.taskInputContainer}>
                 <TextInput
                   style={[styles.taskInput, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', borderColor: isDarkTheme(theme.name) ? '#2a2a2a' : '#e0e0e0', color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}
                   value={newTask}
                   onChangeText={setNewTask}
-                  placeholder="Add a task..."
+                  placeholder={t('auxiliary.playbook.addTaskPlaceholder')}
                   placeholderTextColor={isDarkTheme(theme.name) ? '#666' : '#999'}
                   onSubmitEditing={() => {
                     if (newTask.trim()) {
@@ -703,7 +707,7 @@ export default function PlaybookScreen() {
                 </View>
               )}
 
-              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Emoji</Text>
+              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.playbook.emoji')}</Text>
               <View style={styles.emojiGrid}>
                 {['✨', '💪', '🏃', '👥', '🧘', '😴', '🥗', '🎯', '🌟', '💡', '🔥', '🌈', '🎨', '📚', '🎵', '🌱', '☕', '🍃', '💝', '🌸'].map((emoji) => (
                   <TouchableOpacity
@@ -720,7 +724,7 @@ export default function PlaybookScreen() {
                 ))}
               </View>
 
-              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Category</Text>
+              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.playbook.category')}</Text>
               <View style={styles.categoryGrid}>
                 {['general', 'coping', 'exercise', 'social', 'mindfulness', 'sleep', 'nutrition'].map((cat) => (
                   <TouchableOpacity
@@ -737,7 +741,7 @@ export default function PlaybookScreen() {
                       { color: isDarkTheme(theme.name) ? '#999' : '#666' },
                       newStrategy.category === cat && { color: '#ffffff' }
                     ]}>
-                      {cat}
+                      {t(`auxiliary.playbook.categories.${cat}`)}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -753,7 +757,7 @@ export default function PlaybookScreen() {
                   style={styles.modalPrimaryButtonGradient}
                 >
                   <Ionicons name="checkmark" size={18} color="#ffffff" />
-                  <Text style={styles.modalPrimaryButtonText}>Create Strategy</Text>
+                  <Text style={styles.modalPrimaryButtonText}>{t('auxiliary.playbook.createStrategy')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </ScrollView>
@@ -774,7 +778,7 @@ export default function PlaybookScreen() {
         >
           <View style={[styles.modalContent, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a2e' : '#ffffff' }]}>
             <View style={[styles.modalHeader, { borderBottomColor: isDarkTheme(theme.name) ? '#2a2a3e' : '#e5e5e5' }]}>
-              <Text style={[styles.modalTitle, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Edit Strategy</Text>
+              <Text style={[styles.modalTitle, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.playbook.editStrategy')}</Text>
               <TouchableOpacity onPress={() => { setShowEditModal(false); setEditingStrategy(null); }}>
                 <Ionicons name="close" size={24} color={isDarkTheme(theme.name) ? '#999' : '#666'} />
               </TouchableOpacity>
@@ -785,7 +789,7 @@ export default function PlaybookScreen() {
               keyboardShouldPersistTaps="handled"
               contentContainerStyle={{ paddingBottom: 40 }}
             >
-              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Emoji</Text>
+              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.playbook.emoji')}</Text>
               <View style={styles.emojiGrid}>
                 {['✨', '💪', '🏃', '👥', '🧘', '😴', '🥗', '🎯', '🌟', '💡', '🔥', '🌈', '🎨', '📚', '🎵', '🌱', '☕', '🍃', '💝', '🌸', '📈', '💭'].map((emoji) => (
                   <TouchableOpacity
@@ -802,26 +806,26 @@ export default function PlaybookScreen() {
                 ))}
               </View>
 
-              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Title *</Text>
+              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.playbook.titleRequired')}</Text>
               <TextInput
                 style={[styles.input, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', borderColor: isDarkTheme(theme.name) ? '#2a2a2a' : '#e0e0e0', color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}
                 value={editDraft.title}
                 onChangeText={(text) => setEditDraft({ ...editDraft, title: text })}
-                placeholder="Strategy title"
+                placeholder={t('auxiliary.playbook.strategyTitle')}
                 placeholderTextColor={isDarkTheme(theme.name) ? '#666' : '#999'}
               />
 
-              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Description</Text>
+              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.playbook.description')}</Text>
               <TextInput
                 style={[styles.input, styles.textArea, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', borderColor: isDarkTheme(theme.name) ? '#2a2a2a' : '#e0e0e0', color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}
                 value={editDraft.description}
                 onChangeText={(text) => setEditDraft({ ...editDraft, description: text })}
-                placeholder="Describe your strategy..."
+                placeholder={t('auxiliary.playbook.describe')}
                 placeholderTextColor={isDarkTheme(theme.name) ? '#666' : '#999'}
                 multiline
               />
 
-              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Category</Text>
+              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.playbook.category')}</Text>
               <View style={styles.categoryGrid}>
                 {['general', 'coping', 'exercise', 'social', 'mindfulness', 'sleep', 'nutrition'].map((cat) => (
                   <TouchableOpacity
@@ -838,20 +842,20 @@ export default function PlaybookScreen() {
                       { color: isDarkTheme(theme.name) ? '#999' : '#666' },
                       editDraft.category === cat && { color: '#ffffff' }
                     ]}>
-                      {cat}
+                      {t(`auxiliary.playbook.categories.${cat}`)}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
 
               {/* Tasks Section */}
-              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Tasks (Optional)</Text>
+              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.playbook.tasksOptional')}</Text>
               <View style={styles.taskInputContainer}>
                 <TextInput
                   style={[styles.taskInput, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', borderColor: isDarkTheme(theme.name) ? '#2a2a2a' : '#e0e0e0', color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}
                   value={newTask}
                   onChangeText={setNewTask}
-                  placeholder="Add a task..."
+                  placeholder={t('auxiliary.playbook.addTaskPlaceholder')}
                   placeholderTextColor={isDarkTheme(theme.name) ? '#666' : '#999'}
                   onSubmitEditing={() => {
                     if (newTask.trim()) {
@@ -899,7 +903,7 @@ export default function PlaybookScreen() {
                   style={styles.modalPrimaryButtonGradient}
                 >
                   <Ionicons name="checkmark" size={18} color="#ffffff" />
-                  <Text style={styles.modalPrimaryButtonText}>Save Changes</Text>
+                  <Text style={styles.modalPrimaryButtonText}>{t('auxiliary.playbook.saveChanges')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
 
@@ -913,7 +917,7 @@ export default function PlaybookScreen() {
                   }}
                 >
                   <Ionicons name="trash-outline" size={18} color="#ef4444" />
-                  <Text style={styles.editDeleteText}>Delete Strategy</Text>
+                  <Text style={styles.editDeleteText}>{t('auxiliary.playbook.deleteStrategy')}</Text>
                 </TouchableOpacity>
               )}
             </ScrollView>

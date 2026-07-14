@@ -1,34 +1,40 @@
 import { InteractionManager } from 'react-native';
 import { mobileAiService } from '../services/mobileAiService';
 import { yieldToUI } from './yieldToUI';
+import { getCurrentLanguage } from '../i18n/languageRef';
+import { translate } from '../i18n';
 
-const FALLBACK_SUGGESTIONS = [
-  'How have I been feeling lately?',
-  'What patterns do you notice?',
-  'What should I focus on this week?',
-  'Help me reflect on my entries',
-];
+function fallbackSuggestions() {
+  const language = getCurrentLanguage();
+  return [
+    'companion.suggestionFeeling',
+    'companion.suggestionPatterns',
+    'companion.suggestionFocus',
+    'companion.suggestionReflect',
+  ].map((key) => translate(language, key));
+}
 
-let cachedUserId: string | null = null;
-let cachedSuggestions: string[] = FALLBACK_SUGGESTIONS;
+let cachedKey: string | null = null;
+let cachedSuggestions: string[] = fallbackSuggestions();
 let prewarmGen = 0;
 
 export function getCachedChatSuggestions(userId: string): string[] {
-  if (cachedUserId === userId && cachedSuggestions.length > 0) {
+  const key = `${userId}:${getCurrentLanguage()}`;
+  if (cachedKey === key && cachedSuggestions.length > 0) {
     return cachedSuggestions;
   }
-  return FALLBACK_SUGGESTIONS;
+  return fallbackSuggestions();
 }
 
 export function setCachedChatSuggestions(userId: string, suggestions: string[]) {
   if (!suggestions.length) return;
-  cachedUserId = userId;
+  cachedKey = `${userId}:${getCurrentLanguage()}`;
   cachedSuggestions = suggestions;
 }
 
 export function clearChatSuggestionsCache() {
-  cachedUserId = null;
-  cachedSuggestions = FALLBACK_SUGGESTIONS;
+  cachedKey = null;
+  cachedSuggestions = fallbackSuggestions();
 }
 
 /** Pre-fetch chat suggestions after preload so Companion opens instantly. */

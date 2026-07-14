@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useCheckInFlow } from './CheckInFlowProvider';
 import MoodIcon from './MoodIcon';
 import MoodSlider from './MoodSlider';
@@ -16,6 +17,7 @@ type Props = {
 
 export default function MoodSelectorStep({ onContinue }: Props) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const { draft, setMoodScore } = useCheckInFlow();
   const tint = MOOD_TINTS[draft.moodTier];
 
@@ -27,20 +29,20 @@ export default function MoodSelectorStep({ onContinue }: Props) {
       bounces={false}
     >
       <Text style={[styles.heading, { color: theme.colors.primaryText }]}>
-        How do you feel right now?
+        {t('checkIn.howDoYouFeel')}
       </Text>
 
       <View style={styles.iconArea}>
         <MoodIcon tier={draft.moodTier} size={184} />
       </View>
 
-      <Text style={[styles.moodLabel, { color: tint.accent }]}>{draft.moodLabel}</Text>
+      <Text style={[styles.moodLabel, { color: tint.accent }]}>{t(`checkIn.${draft.moodTier}`)}</Text>
 
       <View style={styles.sliderBlock}>
         <MoodSlider score={draft.moodScore} accent={tint.accent} onScoreChange={setMoodScore} />
       </View>
 
-      <PremiumButton label="Continue" onPress={onContinue} large style={styles.cta} />
+      <PremiumButton label={t('checkIn.continue')} onPress={onContinue} large style={styles.cta} />
     </ScrollView>
   );
 }

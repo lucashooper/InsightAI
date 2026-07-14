@@ -7,12 +7,13 @@ import { ThemeName, useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import ProgressBarNeon from '../../components/onboarding/ProgressBarNeon';
 import { isTablet, sf } from '../../utils/responsive';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface VibeOption {
   name: ThemeName;
-  label: string;
+  labelKey: string;
   emoji: string;
   orbColors: string[];
   glowColor: string;
@@ -21,42 +22,42 @@ interface VibeOption {
 const vibeOptions: VibeOption[] = [
   {
     name: 'dark',
-    label: 'Dark',
+    labelKey: 'dark',
     emoji: '🌑',
     orbColors: ['rgba(30, 30, 35, 0.95)', 'rgba(20, 20, 25, 0.9)', 'rgba(15, 15, 20, 0.85)'],
     glowColor: 'rgba(50, 50, 60, 0.4)',
   },
   {
     name: 'light',
-    label: 'Light',
+    labelKey: 'light',
     emoji: '☀️',
     orbColors: ['rgba(255, 167, 38, 0.9)', 'rgba(255, 152, 0, 0.8)', 'rgba(251, 140, 0, 0.7)'],
     glowColor: 'rgba(255, 167, 38, 0.4)',
   },
   {
     name: 'sunset',
-    label: 'Sunset',
+    labelKey: 'sunset',
     emoji: '🌅',
     orbColors: ['rgba(255, 107, 74, 0.95)', 'rgba(255, 87, 51, 0.85)', 'rgba(255, 69, 58, 0.75)'],
     glowColor: 'rgba(255, 107, 74, 0.4)',
   },
   {
     name: 'vibrant',
-    label: 'Vibrant',
+    labelKey: 'vibrant',
     emoji: '✨',
     orbColors: ['rgba(168, 85, 247, 0.95)', 'rgba(139, 92, 246, 0.85)', 'rgba(124, 58, 237, 0.75)'],
     glowColor: 'rgba(168, 85, 247, 0.4)',
   },
   {
     name: 'ocean',
-    label: 'Ocean',
+    labelKey: 'ocean',
     emoji: '�',
     orbColors: ['rgba(59, 130, 246, 0.95)', 'rgba(37, 99, 235, 0.85)', 'rgba(29, 78, 216, 0.75)'],
     glowColor: 'rgba(59, 130, 246, 0.4)',
   },
   {
     name: 'midnight',
-    label: 'Midnight',
+    labelKey: 'midnight',
     emoji: '🌙',
     orbColors: ['rgba(99, 102, 241, 0.95)', 'rgba(79, 70, 229, 0.85)', 'rgba(67, 56, 202, 0.75)'],
     glowColor: 'rgba(99, 102, 241, 0.4)',
@@ -69,6 +70,7 @@ interface Props {
 }
 
 export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) {
+  const { t } = useLanguage();
   const [selectedVibe, setSelectedVibe] = useState<ThemeName | null>('light');
   const getThemeBackgroundColors = (themeName: ThemeName): string[] => {
     switch (themeName) {
@@ -156,7 +158,7 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
       
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={[styles.title, { color: textColor }]}>Choose your vibe</Text>
+          <Text style={[styles.title, { color: textColor }]}>{t('onboarding.vibe.title')}</Text>
         </View>
 
         <View style={styles.orbGrid}>
@@ -183,7 +185,7 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
           activeOpacity={0.8}
         >
           <View style={[styles.continueGradient, !selectedVibe && { opacity: 0.4 }]}> 
-            <Text style={styles.continueText}>Continue</Text>
+            <Text style={styles.continueText}>{t('common.continue')}</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -200,6 +202,7 @@ interface OrbOptionProps {
 }
 
 function OrbOption({ vibe, isSelected, onPress, delay, selectedTheme }: OrbOptionProps) {
+  const { t } = useLanguage();
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const selectionAnim = useRef(new Animated.Value(0)).current;
@@ -285,7 +288,7 @@ function OrbOption({ vibe, isSelected, onPress, delay, selectedTheme }: OrbOptio
         </View>
       </Animated.View>
 
-      <Text style={[styles.label, { color: isDarkTheme(selectedTheme || 'light') ? '#ffffff' : '#1a1a2e' }]}>{vibe.label}</Text>
+      <Text style={[styles.label, { color: isDarkTheme(selectedTheme || 'light') ? '#ffffff' : '#1a1a2e' }]}>{t(`onboarding.vibe.${vibe.labelKey}`)}</Text>
     </TouchableOpacity>
   );
 }

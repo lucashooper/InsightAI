@@ -10,11 +10,11 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAppLock } from '../../contexts/AppLockContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import CheckInFlowModal from '../checkin/CheckInFlowModal';
 import { CheckInDraft } from '../checkin/types';
 import { navigateToPlaybook } from '../../utils/navigateToPlaybook';
@@ -26,77 +26,23 @@ type Props = {
 export default function CenterFabButton({ embedded = false }: Props) {
   const navigation = useNavigation<any>();
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const isDark = isDarkTheme(theme.name);
   const [showMenu, setShowMenu] = React.useState(false);
   const [showDailyMoodCheckIn, setShowDailyMoodCheckIn] = React.useState(false);
   const { user } = useAuth();
-  const { isLocked, isLockEnabled, isLockReady } = useAppLock();
-  const checkInTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const checkInPromptedRef = React.useRef(false);
-
-  React.useEffect(() => {
-    if (!user || !isLockReady || (isLocked && isLockEnabled) || checkInPromptedRef.current) {
-      return;
-    }
-
-    let cancelled = false;
-
-    const checkDailyMoodCheckIn = async () => {
-      try {
-        const todayKey = new Date().toISOString().split('T')[0];
-        const promptedKey = `checkInPrompted_${user.id}_${todayKey}`;
-        const alreadyPrompted = await AsyncStorage.getItem(promptedKey);
-        if (alreadyPrompted === 'true') return;
-
-        const lastCheckIn = await AsyncStorage.getItem('lastMoodCheckIn');
-        const dailyMoodEnabled = await AsyncStorage.getItem('dailyMoodCheckInEnabled');
-        if (dailyMoodEnabled === 'false') return;
-
-        const needsCheckIn = (() => {
-          if (!lastCheckIn) return true;
-          const lastCheckInDate = new Date(lastCheckIn);
-          const today = new Date();
-          return (
-            lastCheckInDate.getDate() !== today.getDate() ||
-            lastCheckInDate.getMonth() !== today.getMonth() ||
-            lastCheckInDate.getFullYear() !== today.getFullYear()
-          );
-        })();
-
-        if (!needsCheckIn || cancelled) return;
-
-        checkInPromptedRef.current = true;
-        await AsyncStorage.setItem(promptedKey, 'true');
-
-        checkInTimeoutRef.current = setTimeout(() => {
-          if (!cancelled) setShowDailyMoodCheckIn(true);
-        }, 2000);
-      } catch (error) {
-        console.error('Error checking daily mood check-in:', error);
-      }
-    };
-
-    checkDailyMoodCheckIn();
-
-    return () => {
-      cancelled = true;
-      if (checkInTimeoutRef.current) {
-        clearTimeout(checkInTimeoutRef.current);
-        checkInTimeoutRef.current = null;
-      }
-    };
-  }, [user?.id, isLockReady, isLocked, isLockEnabled]);
+  const { isLocked, isLockEnabled } = useAppLock();
 
   const menuOptions: Array<
-    | { icon: string; label: string; screen: string }
-    | { icon: string; label: string; action: 'check-in' }
+    | { icon: string; labelKey: string; screen: string }
+    | { icon: string; labelKey: string; action: 'check-in' }
   > = [
-    { icon: 'create-outline', label: 'Journal Entry', screen: 'CreateEntry' },
-    { icon: 'sparkles-outline', label: 'AI Chat', screen: 'AIChat' },
-    { icon: 'heart-outline', label: 'Gratitude', screen: 'Gratitude' },
-    { icon: 'musical-notes-outline', label: 'Meditation', screen: 'Meditation' },
-    { icon: 'book-outline', label: 'Playbook', screen: 'Playbook' },
-    { icon: 'happy-outline', label: 'Check in', action: 'check-in' },
+    { icon: 'create-outline', labelKey: 'fab.journalEntry', screen: 'CreateEntry' },
+    { icon: 'sparkles-outline', labelKey: 'fab.aiChat', screen: 'AIChat' },
+    { icon: 'heart-outline', labelKey: 'fab.gratitude', screen: 'Gratitude' },
+    { icon: 'musical-notes-outline', labelKey: 'fab.meditation', screen: 'Meditation' },
+    { icon: 'book-outline', labelKey: 'fab.playbook', screen: 'Playbook' },
+    { icon: 'happy-outline', labelKey: 'checkIn.checkIn', action: 'check-in' },
   ];
 
   return (
@@ -108,7 +54,7 @@ export default function CenterFabButton({ embedded = false }: Props) {
           setShowMenu(!showMenu);
         }}
         activeOpacity={0.85}
-        accessibilityLabel="Open quick actions menu"
+        accessibilityLabel={t('accessibility.openQuickActions')}
         accessibilityRole="button"
       >
         <LinearGradient
@@ -147,7 +93,7 @@ export default function CenterFabButton({ embedded = false }: Props) {
                   <View style={styles.menuCardIconContainer}>
                     <Ionicons name={option.icon as any} size={28} color="#8b5cf6" />
                   </View>
-                  <Text style={[styles.menuCardLabel, { color: theme.colors.primaryText }]}>{option.label}</Text>
+                  <Text style={[styles.menuCardLabel, { color: theme.colors.primaryText }]}>{t(option.labelKey)}</Text>
                 </TouchableOpacity>
               ))}
             </View>

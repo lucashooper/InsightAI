@@ -8,6 +8,7 @@ import SunoGradient from '../../components/onboarding/SunoGradient';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
@@ -17,6 +18,7 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
     const { answers } = route.params || {};
     const { theme } = useTheme();
     const { userName } = useOnboarding();
+    const { t } = useLanguage();
     const fadeAnim = new Animated.Value(0);
     const scaleAnim = new Animated.Value(0.9);
     const confettiRef = useRef<any>(null);
@@ -58,15 +60,15 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
         const goal = answers?.goal;
         switch (goal) {
             case 'mood':
-                return "We'll help you improve your mood with guided reflections and insights.";
+                return t('onboarding.summary.mood');
             case 'stress':
-                return "We'll help you reduce stress with guided reflections and insights.";
+                return t('onboarding.summary.stress');
             case 'habits':
-                return "We'll help you build habits with guided reflections and insights.";
+                return t('onboarding.summary.habits');
             case 'clarity':
-                return "We'll help you gain clarity with guided reflections and insights.";
+                return t('onboarding.summary.clarity');
             default:
-                return "Your personal space for reflection is ready. Let's start your journey.";
+                return t('onboarding.summary.default');
         }
     };
 
@@ -111,7 +113,7 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
                         <Ionicons name="checkmark-circle" size={64} color="#4ade80" />
                     </View>
 
-                    <Text style={[styles.title, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>You're All Set!</Text>
+                    <Text style={[styles.title, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>{t('onboarding.summary.title')}</Text>
                     <Text style={[styles.subtitle, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.7)' : '#6b7280' }]}>
                         {getSummaryText()}
                     </Text>
@@ -124,7 +126,7 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
                         onPress={handleFinish}
                     >
                         <View style={styles.buttonGradient}>
-                            <Text style={styles.buttonText}>Continue</Text>
+                            <Text style={styles.buttonText}>{t('common.continue')}</Text>
                         </View>
                     </TouchableOpacity>
                 </View>

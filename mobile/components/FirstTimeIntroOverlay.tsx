@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import ConfettiCannon from 'react-native-confetti-cannon';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
 const insightLogo = require('../public/Insight-Logo-nobg.webp');
@@ -23,6 +24,7 @@ interface FirstTimeIntroOverlayProps {
 }
 
 export default function FirstTimeIntroOverlay({ visible, onClose }: FirstTimeIntroOverlayProps) {
+  const { t } = useLanguage();
   const confettiRef = useRef<any>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -79,9 +81,9 @@ export default function FirstTimeIntroOverlay({ visible, onClose }: FirstTimeInt
               style={styles.logoImage}
               resizeMode="contain"
             />
-            <Text style={styles.title}>Welcome to Insight!</Text>
+            <Text style={styles.title}>{t('components.intro.title')}</Text>
             <Text style={styles.subtitle}>
-              Here's a quick overview of your new space for reflection and growth
+              {t('components.intro.subtitle')}
             </Text>
           </View>
 
@@ -92,9 +94,9 @@ export default function FirstTimeIntroOverlay({ visible, onClose }: FirstTimeInt
                 <Ionicons name="create-outline" size={24} color="#8b5cf6" />
               </View>
               <View style={styles.featureText}>
-                <Text style={styles.featureTitle}>Journal Your Thoughts</Text>
+                <Text style={styles.featureTitle}>{t('components.intro.journalTitle')}</Text>
                 <Text style={styles.featureDescription}>
-                  Tap the + button to create entries and track your emotions
+                  {t('components.intro.journalDescription')}
                 </Text>
               </View>
             </View>
@@ -104,9 +106,9 @@ export default function FirstTimeIntroOverlay({ visible, onClose }: FirstTimeInt
                 <Ionicons name="analytics-outline" size={24} color="#10b981" />
               </View>
               <View style={styles.featureText}>
-                <Text style={styles.featureTitle}>Track Your Progress</Text>
+                <Text style={styles.featureTitle}>{t('components.intro.progressTitle')}</Text>
                 <Text style={styles.featureDescription}>
-                  View insights and patterns in your emotional journey
+                  {t('components.intro.progressDescription')}
                 </Text>
               </View>
             </View>
@@ -116,9 +118,9 @@ export default function FirstTimeIntroOverlay({ visible, onClose }: FirstTimeInt
                 <Ionicons name="heart-outline" size={24} color="#3b82f6" />
               </View>
               <View style={styles.featureText}>
-                <Text style={styles.featureTitle}>Build Healthy Habits</Text>
+                <Text style={styles.featureTitle}>{t('components.intro.habitsTitle')}</Text>
                 <Text style={styles.featureDescription}>
-                  Access meditation, gratitude, and wellness tools
+                  {t('components.intro.habitsDescription')}
                 </Text>
               </View>
             </View>
@@ -136,7 +138,7 @@ export default function FirstTimeIntroOverlay({ visible, onClose }: FirstTimeInt
               end={{ x: 1, y: 1 }}
               style={styles.buttonGradient}
             >
-              <Text style={styles.buttonText}>Get Started</Text>
+              <Text style={styles.buttonText}>{t('components.intro.getStarted')}</Text>
               <Ionicons name="arrow-forward" size={20} color="#fff" />
             </LinearGradient>
           </TouchableOpacity>

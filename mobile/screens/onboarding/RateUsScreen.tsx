@@ -6,24 +6,17 @@ import * as StoreReview from 'expo-store-review';
 import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import SunoGradient from '../../components/onboarding/SunoGradient';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const testimonials = [
-  {
-    text: "Insight has completely changed how I understand my emotions. The AI insights are incredibly accurate and helpful.",
-    author: "Jessica M.",
-  },
-  {
-    text: "This app helped me identify patterns I never noticed before. It's like having a therapist in my pocket.",
-    author: "Michael R.",
-  },
-  {
-    text: "The daily reflections and insights have become an essential part of my self-care routine.",
-    author: "Sarah L.",
-  },
+  { textKey: 'first' },
+  { textKey: 'second' },
+  { textKey: 'third' },
 ];
 
 export default function RateUsScreen({ navigation }: any) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const dark = isDarkTheme(theme.name);
 
   const handleContinue = async () => {
@@ -72,10 +65,10 @@ export default function RateUsScreen({ navigation }: any) {
         {/* Title Row with Star */}
         <View style={styles.titleRow}>
           <Text style={styles.starIconSmall}>⭐</Text>
-          <Text style={[styles.title, dark && styles.titleDark]}>Rate us 5 Stars</Text>
+          <Text style={[styles.title, dark && styles.titleDark]}>{t('onboarding.rateUs.title')}</Text>
         </View>
         <Text style={[styles.subtitle, dark && styles.subtitleDark]}>
-          Help us spread the message of mindful living and personal growth
+          {t('onboarding.rateUs.subtitle')}
         </Text>
 
         {/* Testimonials */}
@@ -97,12 +90,12 @@ export default function RateUsScreen({ navigation }: any) {
 
               {/* Quote */}
               <Text style={[styles.testimonialText, dark && styles.testimonialTextDark]}>
-                "{testimonial.text}"
+                “{t(`onboarding.rateUs.testimonials.${testimonial.textKey}`)}”
               </Text>
 
               {/* Author */}
               <Text style={[styles.testimonialAuthor, dark && styles.testimonialAuthorDark]}>
-                — {testimonial.author}
+                — {t(`onboarding.rateUs.authors.${testimonial.textKey}`)}
               </Text>
             </View>
           ))}
@@ -116,14 +109,14 @@ export default function RateUsScreen({ navigation }: any) {
           onPress={handleContinue}
           activeOpacity={0.9}
         >
-          <Text style={styles.continueButtonText}>Continue</Text>
+          <Text style={styles.continueButtonText}>{t('common.continue')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           onPress={handleSkip}
           style={styles.skipButton}
         >
-          <Text style={[styles.skipText, dark && styles.skipTextDark]}>Skip</Text>
+          <Text style={[styles.skipText, dark && styles.skipTextDark]}>{t('onboarding.skip')}</Text>
         </TouchableOpacity>
       </View>
     </View>

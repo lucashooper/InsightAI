@@ -6,13 +6,15 @@ import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
 import PageHeader from '../components/shared/PageHeader';
 import { sf } from '../utils/responsive';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function AppearanceScreen({ navigation }: any) {
   const { theme, themeName, setTheme } = useTheme();
+  const { t } = useLanguage();
 
   const themes = [
-    { id: 'light', name: 'Light', description: 'Bright and clean' },
-    { id: 'dark', name: 'Dark', description: 'Easy on the eyes' },
+    { id: 'light', name: t('auxiliary.appearance.light'), description: t('auxiliary.appearance.lightDescription') },
+    { id: 'dark', name: t('auxiliary.appearance.dark'), description: t('auxiliary.appearance.darkDescription') },
   ];
 
   const handleThemeSelect = (themeId: string) => {
@@ -26,11 +28,11 @@ export default function AppearanceScreen({ navigation }: any) {
         colors={theme.colors.backgroundGradient as any}
         style={styles.backgroundGradient}
       />
-      <PageHeader title="Appearance" onBack={() => navigation.goBack()} />
+      <PageHeader title={t('auxiliary.appearance.title')} onBack={() => navigation.goBack()} />
 
       <View style={styles.content}>
         <Text style={[styles.sectionTitle, { color: theme.colors.secondaryText }]}>
-          Theme
+          {t('auxiliary.appearance.theme')}
         </Text>
 
         <View style={styles.optionsList}>

@@ -6,6 +6,7 @@ import SunoGradient from '../../components/onboarding/SunoGradient';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { isTablet, iPadContentStyle, sf } from '../../utils/responsive';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
@@ -24,6 +25,7 @@ interface PrivacyOnboardingScreenProps {
 export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardingScreenProps) {
   const { theme } = useTheme();
   const { userName } = useOnboarding();
+  const { t } = useLanguage();
 
   useEffect(() => {
     analytics.trackOnboardingScreen('privacy', 'viewed', userName || undefined);
@@ -70,26 +72,26 @@ export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardin
         {/* Content below lock icon */}
         <View style={styles.content}>
         {/* Title */}
-        <Text style={[styles.title, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>Your notes are fully private</Text>
+        <Text style={[styles.title, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>{t('onboarding.privacy.title')}</Text>
 
         {/* Subtitle */}
         <Text style={[styles.subtitle, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>
-          We use end-to-end encryption to keep your journal entries secure. Only you can read them.
+          {t('onboarding.privacy.subtitle')}
         </Text>
 
         {/* Features */}
         <View style={styles.featuresContainer}>
           <View style={[styles.feature, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.05)' : 'rgba(255, 255, 255, 0.5)', borderColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0, 0, 0, 0.06)' }]}>
             <Ionicons name="shield-checkmark" size={24} color="#8b5cf6" />
-            <Text style={[styles.featureText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>AES-256 encryption</Text>
+            <Text style={[styles.featureText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>{t('onboarding.privacy.encryption')}</Text>
           </View>
           <View style={[styles.feature, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.05)' : 'rgba(255, 255, 255, 0.5)', borderColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0, 0, 0, 0.06)' }]}>
             <Ionicons name="key" size={24} color="#8b5cf6" />
-            <Text style={[styles.featureText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>Your password is the key</Text>
+            <Text style={[styles.featureText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>{t('onboarding.privacy.passwordKey')}</Text>
           </View>
           <View style={[styles.feature, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.05)' : 'rgba(255, 255, 255, 0.5)', borderColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0, 0, 0, 0.06)' }]}>
             <Ionicons name="eye-off" size={24} color="#8b5cf6" />
-            <Text style={[styles.featureText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>We can't read your entries</Text>
+            <Text style={[styles.featureText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>{t('onboarding.privacy.cannotRead')}</Text>
           </View>
         </View>
       </View>
@@ -97,7 +99,7 @@ export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardin
 
       {/* Continue Button */}
       <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-        <Text style={styles.continueButtonText}>Continue</Text>
+        <Text style={styles.continueButtonText}>{t('common.continue')}</Text>
       </TouchableOpacity>
     </View>
   );

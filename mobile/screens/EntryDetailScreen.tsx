@@ -20,6 +20,7 @@ import SunoGradient from '../components/onboarding/SunoGradient';
 import { decryptEntryFields } from '../utils/entryDecryption';
 import MoodIcon from '../components/checkin/MoodIcon';
 import { fetchCheckInForNote, StoredCheckIn } from '../services/checkInService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Helper function to get color styling based on emotion sentiment
 const getSentimentStyle = (emotion: string) => {
@@ -84,6 +85,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
   const { entry: initialEntry, entryId, shouldAnalyze, highlightText } = route.params || {};
   const { theme } = useTheme();
   const { user } = useAuth();
+  const { t, formatDate: formatLocalizedDate } = useLanguage();
   const [analyzing, setAnalyzing] = useState(false);
   const [entry, setEntry] = useState<any>(initialEntry || null);
   const [editableContent, setEditableContent] = useState(initialEntry?.content || '');
@@ -96,7 +98,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
 
   const [analysisOverlayVisible, setAnalysisOverlayVisible] = useState(false);
   const [analysisOverlayMode, setAnalysisOverlayMode] = useState<'loading' | 'results'>('loading');
-  const [analysisOverlayMessage, setAnalysisOverlayMessage] = useState('Connecting with your thoughts...');
+  const [analysisOverlayMessage, setAnalysisOverlayMessage] = useState(() => t('entry.loadingAnalysis'));
   const [analysisOverlayInsights, setAnalysisOverlayInsights] = useState<any>(undefined);
   const analysisProgress = useRef(new Animated.Value(0)).current;
   const analysisAbortRef = useRef<AbortController | null>(null);
@@ -231,14 +233,14 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
       const { error } = await supabase
         .from('notes')
         .update({
-          title: editableTitle.trim() || 'Untitled Entry',
+          title: editableTitle.trim() || t('entry.untitled'),
           content: editableContent.trim(),
           updated_at: new Date().toISOString(),
         })
         .eq('id', entry.id);
 
       if (!error) {
-        entry.title = editableTitle.trim() || 'Untitled Entry';
+        entry.title = editableTitle.trim() || t('entry.untitled');
         entry.content = editableContent.trim();
         setIsModified(false);
       }
@@ -357,9 +359,9 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
         if (!countError && (count || 0) >= dailyLimit) {
           console.log('[EntryDetail] Daily usage limit reached:', count, '/', dailyLimit);
           Alert.alert(
-            'Daily Limit Reached',
-            `You've used your ${dailyLimit} AI analyses for today. Come back tomorrow for more insights!`,
-            [{ text: 'OK' }]
+            t('entry.dailyLimit'),
+            t('entry.dailyLimitMessage', { limit: dailyLimit }),
+            [{ text: t('common.ok') }]
           );
           return;
         }
@@ -371,11 +373,8 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
 
     const ANALYSIS_MIN_MS = 10000;
     const messages = [
-      'Connecting with your thoughts...',
-      'Synthesizing patterns...',
-      'Finding the emotions underneath...',
-      'Turning reflection into clarity...',
-      'Finalizing your insights...',
+      t('entry.loadingAnalysis'), t('entry.synthesizing'), t('entry.emotions'),
+      t('entry.clarity'), t('entry.finalizing'),
     ];
 
     try {
@@ -462,7 +461,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
           if (!card.text) return;
           try {
             const protocol = await mobileAiService.generateProtocol(card.text);
-            const description = `${protocol.practice}\n\n**Why it works:** ${protocol.why}`;
+            const description = `${protocol.practice}\n\n**${t('entry.whyItWorks')}:** ${protocol.why}`;
             const { error: suggestError } = await supabase.from('actionable_insights').insert({
               user_id: user.id,
               title: protocol.name,
@@ -508,7 +507,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
       analysisProgress.setValue(0);
       
       // Show specific error message from the service
-      const errorMessage = err?.message || 'Something went wrong while analyzing this entry.';
+      const errorMessage = err?.message || t('entry.analysisError');
       
       // Check if this is a subscription error
       if (errorMessage.includes('Subscription required') || errorMessage.includes('subscription')) {
@@ -516,7 +515,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
         setPremiumUpsellVisible(true);
       } else {
         // Show generic error alert
-        Alert.alert('Analysis failed', errorMessage);
+        Alert.alert(t('entry.analysisFailed'), errorMessage);
       }
     } finally {
       analysisAbortRef.current = null;
@@ -537,13 +536,13 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
       // Show preview overlay so user can review/edit before saving
       setPlaybookDraft({
         title: protocol.name,
-        description: `${protocol.practice}\n\nWhy it works: ${protocol.why}`,
+        description: `${protocol.practice}\n\n${t('entry.whyItWorks')}: ${protocol.why}`,
         emoji: '📈',
       });
       setPlaybookPreviewVisible(true);
     } catch (error) {
       console.error('[EntryDetail] Error generating protocol:', error);
-      Alert.alert('Error', 'Failed to create protocol. Please try again.');
+      Alert.alert(t('common.error'), t('entry.protocolFailed'));
     } finally {
       setAddingToPlaybook(null);
     }
@@ -568,29 +567,28 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
 
       if (error) {
         console.error('[EntryDetail] Error saving protocol:', error);
-        Alert.alert('Error', 'Failed to add protocol to Playbook.');
+        Alert.alert(t('common.error'), t('entry.addFailed'));
         return;
       }
 
       setPlaybookPreviewVisible(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert(
-        'Added to Playbook!',
-        `"${playbookDraft.title}" has been added to your Daily Protocols.`,
+        t('entry.added'),
+        t('entry.addedMessage', { title: playbookDraft.title }),
         [
-          { text: 'View Playbook', onPress: () => navigateToPlaybook(navigation) },
-          { text: 'OK', style: 'cancel' },
+          { text: t('entry.viewPlaybook'), onPress: () => navigateToPlaybook(navigation) },
+          { text: t('common.ok'), style: 'cancel' },
         ]
       );
     } catch (error) {
       console.error('[EntryDetail] Error saving protocol:', error);
-      Alert.alert('Error', 'Failed to save. Please try again.');
+      Alert.alert(t('common.error'), t('entry.saveFailed'));
     }
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
+    return formatLocalizedDate(dateString, {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -611,7 +609,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Photos Access', 'Please allow photo library access in Settings to add photos.');
+        Alert.alert(t('editor.photosTitle'), t('editor.photosMessage'));
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -626,7 +624,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
       }
     } catch (error) {
       console.error('[EntryDetail] Photo picker error:', error);
-      Alert.alert('Error', 'Failed to open photo library.');
+      Alert.alert(t('common.error'), t('editor.photoOpenFailed'));
     }
   };
 
@@ -715,7 +713,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                 style={styles.analyzeHeaderGradient}
               >
                 <Text style={styles.analyzeHeaderText}>
-                  {structuredInsights ? 'Re-analyze' : 'Analyze'}
+                  {structuredInsights ? t('editor.reanalyze') : t('editor.analyze')}
                 </Text>
               </LinearGradient>
             )}
@@ -730,7 +728,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
           <View style={styles.moodPickerOverlay}>
             <BlurView intensity={80} tint="dark" style={styles.blurContainer}>
               <LinearGradient colors={['rgba(139, 92, 246, 0.15)', 'rgba(99, 102, 241, 0.1)']} style={styles.glassmorphicContainer}>
-                <Text style={styles.moodPickerTitle}>How are you feeling?</Text>
+                <Text style={styles.moodPickerTitle}>{t('editor.howFeeling')}</Text>
                 <View style={styles.moodGrid}>
                   {MOODS.map((m) => (
                     <TouchableOpacity
@@ -766,7 +764,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
             style={[styles.titleInput, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}
             value={editableTitle}
             onChangeText={setEditableTitle}
-            placeholder="Untitled Entry"
+            placeholder={t('editor.untitled')}
             placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'}
             autoFocus={false}
           />
@@ -780,13 +778,13 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                 <MoodIcon tier={linkedCheckIn.moodTier} size={30} />
                 <View style={styles.checkInCardCopy}>
                   <Text style={[styles.checkInCardEyebrow, { color: theme.colors.secondaryText }]}>
-                    CHECK-IN
+                    {t('entry.checkIn')}
                   </Text>
                   <Text style={[styles.checkInCardText, { color: theme.colors.primaryText }]}>
-                    Feeling — {linkedCheckIn.moodLabel}
-                    {linkedCheckIn.feelings.length > 0
-                      ? `, ${linkedCheckIn.feelings.join(', ')}`
-                      : ''}
+                    {t('editor.checkInFeeling', {
+                      mood: t(`checkIn.${linkedCheckIn.moodTier}`),
+                      feelings: linkedCheckIn.feelings.length > 0 ? `, ${linkedCheckIn.feelings.join(', ')}` : '',
+                    })}
                   </Text>
                 </View>
               </View>
@@ -825,7 +823,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                     <View style={styles.promptBadgeRow}>
                       <Ionicons name="bulb" size={18} color="#8b5cf6" />
                       <Text style={[styles.promptBadgeLabel, { color: isDarkTheme(theme.name) ? 'rgba(139, 92, 246, 0.9)' : '#7c3aed' }]}>
-                        Today's Insight
+                        {t('entry.todaysInsight')}
                       </Text>
                     </View>
                     <Text style={[styles.promptQuestionText, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>
@@ -833,7 +831,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                     </Text>
                   </View>
                   <Text style={[styles.responseLabel, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>
-                    Your Reflection
+                    {t('entry.yourReflection')}
                   </Text>
                   <TextInput
                     style={[styles.contentInput, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}
@@ -841,7 +839,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                     onChangeText={(text) => setEditableContent(`[Insight Prompt: ${promptText}]\n\n${text}`)}
                     multiline
                     textAlignVertical="top"
-                    placeholder="Your thoughts..."
+                    placeholder={t('editor.yourThoughts')}
                     placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'}
                     autoFocus={false}
                   />
@@ -855,7 +853,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                 onChangeText={setEditableContent}
                 multiline
                 textAlignVertical="top"
-                placeholder="What's on your mind?"
+                placeholder={t('editor.prompts.mind')}
                 placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'}
                 autoFocus={false}
               />
@@ -866,7 +864,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
             <View style={styles.inlineInsightsSection}>
               <View style={styles.insightsDivider} />
               <View style={styles.insightsHeaderRow}>
-                <Text style={[styles.inlineInsightsTitle, { color: theme.colors.primaryText }]}>Insights</Text>
+                <Text style={[styles.inlineInsightsTitle, { color: theme.colors.primaryText }]}>{t('entry.insights')}</Text>
                 <TouchableOpacity
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -891,14 +889,14 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                   {moodAnalysis && (
                     <StandardContainer variant="nested" style={[styles.inlineMoodCard, styles.inlineMoodCardTop, { flex: 1, borderColor: theme.colors.border }]}>
                       <View style={styles.emotionBadge}>
-                        <Text style={[styles.inlineMoodLabel, { color: theme.colors.secondaryText }]}>PRIMARY EMOTION</Text>
+                        <Text style={[styles.inlineMoodLabel, { color: theme.colors.secondaryText }]}>{t('entry.primaryEmotion')}</Text>
                         <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[styles.inlineMoodEmotion, { color: theme.colors.primaryText }]}>{moodAnalysis.primary_emotion}</Text>
                       </View>
                     </StandardContainer>
                   )}
                   {structuredInsights?.wellbeingScore != null && (
                     <StandardContainer variant="nested" style={[styles.inlineWellbeingCard, { borderColor: theme.colors.border }]}>
-                      <Text style={[styles.inlineMoodLabel, { color: theme.colors.secondaryText }]}>WELLBEING</Text>
+                      <Text style={[styles.inlineMoodLabel, { color: theme.colors.secondaryText }]}>{t('entry.wellbeing')}</Text>
                       <Text style={[styles.inlineWellbeingScore, { color: theme.colors.primaryText }]}>{structuredInsights.wellbeingScore}<Text style={[styles.inlineWellbeingScore, { color: theme.colors.secondaryText }]}>/10</Text></Text>
                       <View style={styles.inlineWellbeingAdjust}>
                         <TouchableOpacity
@@ -936,7 +934,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                 <StandardContainer variant="nested" style={[styles.inlineBriefingCard, { borderColor: theme.colors.border }]}>
                   <View style={styles.insightHeader}>
                     <Ionicons name="sparkles" size={20} color="#f59e0b" />
-                    <Text style={[styles.insightHeaderText, { color: theme.colors.secondaryText }]}>Summary</Text>
+                    <Text style={[styles.insightHeaderText, { color: theme.colors.secondaryText }]}>{t('entry.summary')}</Text>
                   </View>
                   <Text style={[styles.inlineBriefingText, { color: theme.colors.primaryText }]}>
                     {structuredInsights.insights_report.conversationalSummary
@@ -972,7 +970,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                           <View style={styles.accordionHeaderLeft}>
                             <Text style={{ fontSize: 18 }}>✨</Text>
                             <Text style={[styles.accordionHeaderText, { color: theme.colors.primaryText }]}>
-                              What's Working
+                              {t('entry.working')}
                             </Text>
                             <View style={[styles.accordionBadge, { backgroundColor: theme.colors.surface }]}>
                               <Text style={[styles.accordionBadgeText, { color: theme.colors.primaryText }]}>{strengthCards.length}</Text>
@@ -1027,7 +1025,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                           <View style={styles.accordionHeaderLeft}>
                             <Text style={{ fontSize: 18 }}>🌱</Text>
                             <Text style={[styles.accordionHeaderText, { color: theme.colors.primaryText }]}>
-                              Patterns to Address
+                              {t('entry.patterns')}
                             </Text>
                             <View style={[styles.accordionBadge, { backgroundColor: theme.colors.surface }]}>
                               <Text style={[styles.accordionBadgeText, { color: theme.colors.primaryText }]}>{growthCards.length}</Text>
@@ -1080,7 +1078,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                                             <>
                                               <Ionicons name="add-circle-outline" size={16} color="#ffffff" />
                                               <Text style={[styles.playbookButtonText, { color: '#ffffff' }]}>
-                                                Add to Playbook
+                                                {t('entry.addToPlaybook')}
                                               </Text>
                                             </>
                                           )}
@@ -1122,7 +1120,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
             <LinearGradient colors={['rgba(139, 92, 246, 0.15)', 'rgba(99, 102, 241, 0.1)']} style={styles.quickActionsContainer}>
               <TouchableOpacity style={styles.quickActionItem} onPress={handleAddPhotos}>
                 <Ionicons name="image" size={20} color="rgba(255, 255, 255, 0.8)" />
-                <Text style={styles.quickActionText}>Add photos</Text>
+                <Text style={styles.quickActionText}>{t('editor.addPhotos')}</Text>
               </TouchableOpacity>
             </LinearGradient>
           </BlurView>
@@ -1209,7 +1207,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
           <View style={[styles.playbookOverlay, { backgroundColor: playbookScrim }]}>
             <View style={[styles.playbookModal, { backgroundColor: playbookModalBg }]}>
               <View style={[styles.playbookModalHeader, { borderBottomColor: playbookHeaderBorder }]}>
-                <Text style={[styles.playbookModalTitle, { color: theme.colors.primaryText }]}>Add to Playbook</Text>
+                <Text style={[styles.playbookModalTitle, { color: theme.colors.primaryText }]}>{t('entry.addToPlaybook')}</Text>
                 <TouchableOpacity onPress={() => setPlaybookPreviewVisible(false)}>
                   <Ionicons name="close" size={24} color={theme.colors.secondaryText} />
                 </TouchableOpacity>
@@ -1217,7 +1215,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
 
               <ScrollView style={styles.playbookModalBody} keyboardShouldPersistTaps="handled">
                 {/* Emoji Picker */}
-                <Text style={[styles.playbookLabel, { color: theme.colors.secondaryText }]}>Icon</Text>
+                <Text style={[styles.playbookLabel, { color: theme.colors.secondaryText }]}>{t('entry.icon')}</Text>
                 <View style={styles.playbookEmojiRow}>
                   {['📈', '🌱', '💭', '🧘', '💪', '🎯', '🔥', '✨', '🌟', '💡', '🌈', '☕'].map((e) => (
                     <TouchableOpacity
@@ -1235,22 +1233,22 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                 </View>
 
                 {/* Title */}
-                <Text style={[styles.playbookLabel, { color: theme.colors.secondaryText }]}>Title</Text>
+                <Text style={[styles.playbookLabel, { color: theme.colors.secondaryText }]}>{t('entry.title')}</Text>
                 <TextInput
                   style={[styles.playbookInput, { color: theme.colors.primaryText, borderColor: playbookInputBorder, backgroundColor: playbookInputBg }]}
                   value={playbookDraft.title}
                   onChangeText={(t) => setPlaybookDraft({ ...playbookDraft, title: t })}
-                  placeholder="Protocol title"
+                  placeholder={t('entry.protocolTitle')}
                   placeholderTextColor={theme.colors.secondaryText}
                 />
 
                 {/* Description */}
-                <Text style={[styles.playbookLabel, { color: theme.colors.secondaryText }]}>Description</Text>
+                <Text style={[styles.playbookLabel, { color: theme.colors.secondaryText }]}>{t('entry.description')}</Text>
                 <TextInput
                   style={[styles.playbookInput, styles.playbookTextArea, { color: theme.colors.primaryText, borderColor: playbookInputBorder, backgroundColor: playbookInputBg }]}
                   value={playbookDraft.description}
                   onChangeText={(t) => setPlaybookDraft({ ...playbookDraft, description: t })}
-                  placeholder="Describe the daily practice..."
+                  placeholder={t('entry.protocolDescription')}
                   placeholderTextColor={theme.colors.secondaryText}
                   multiline
                   textAlignVertical="top"
@@ -1260,7 +1258,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                 <TouchableOpacity onPress={confirmAddToPlaybook} style={{ marginTop: 16, borderRadius: 12, overflow: 'hidden' }}>
                   <LinearGradient colors={['#8b5cf6', '#7c3aed']} style={styles.playbookConfirmBtn}>
                     <Ionicons name="checkmark-circle" size={20} color="#fff" />
-                    <Text style={styles.playbookConfirmText}>Add to Daily Protocols</Text>
+                    <Text style={styles.playbookConfirmText}>{t('entry.addDailyProtocols')}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
               </ScrollView>

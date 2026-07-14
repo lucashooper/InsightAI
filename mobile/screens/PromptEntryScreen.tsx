@@ -19,11 +19,13 @@ import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { EncryptionService } from '../services/encryptionService';
 import { sf, ss } from '../utils/responsive';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function PromptEntryScreen({ navigation, route }: any) {
   const { promptText } = route?.params || {};
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const [content, setContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -47,7 +49,7 @@ export default function PromptEntryScreen({ navigation, route }: any) {
 
   const handleSave = async () => {
     if (!content.trim()) {
-      Alert.alert('Empty Entry', 'Please write something before saving.');
+      Alert.alert(t('auxiliary.promptEntry.emptyTitle'), t('auxiliary.promptEntry.emptyMessage'));
       return;
     }
 
@@ -71,7 +73,7 @@ export default function PromptEntryScreen({ navigation, route }: any) {
         .from('diary_entries')
         .insert({
           user_id: user?.id,
-          title: autoTitle || 'Prompt Response',
+          title: autoTitle || t('auxiliary.promptEntry.defaultTitle'),
           content: contentToSave,
           is_encrypted: !!encryptionKey,
           entry_type: 'prompt', // Mark as prompt entry
@@ -86,7 +88,7 @@ export default function PromptEntryScreen({ navigation, route }: any) {
       navigation.navigate('Home', { refresh: true });
     } catch (error: any) {
       console.error('Error saving prompt entry:', error);
-      Alert.alert('Error', 'Failed to save entry. Please try again.');
+      Alert.alert(t('auxiliary.common.error'), t('auxiliary.promptEntry.saveFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -133,7 +135,7 @@ export default function PromptEntryScreen({ navigation, route }: any) {
           {/* Prompt Badge */}
           <View style={styles.promptBadge}>
             <Ionicons name="sparkles" size={16} color={isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a'} />
-            <Text style={[styles.promptBadgeText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Today's Prompt</Text>
+            <Text style={[styles.promptBadgeText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.promptEntry.todayPrompt')}</Text>
           </View>
 
           {/* Prompt Question */}
@@ -144,10 +146,10 @@ export default function PromptEntryScreen({ navigation, route }: any) {
 
           {/* Writing Area */}
           <View style={styles.writingContainer}>
-            <Text style={[styles.writingLabel, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.7)' }]}>Your Reflection</Text>
+            <Text style={[styles.writingLabel, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.7)' }]}>{t('auxiliary.promptEntry.yourReflection')}</Text>
             <TextInput
               style={[styles.textInput, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}
-              placeholder="Start writing your thoughts..."
+              placeholder={t('auxiliary.promptEntry.placeholder')}
               placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)'}
               multiline
               value={content}
@@ -160,7 +162,7 @@ export default function PromptEntryScreen({ navigation, route }: any) {
           {/* Character Count */}
           {content.length > 0 && (
             <Text style={[styles.characterCount, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' }]}>
-              {content.length} character{content.length !== 1 ? 's' : ''}
+              {t(content.length === 1 ? 'auxiliary.promptEntry.character' : 'auxiliary.promptEntry.characters', { count: content.length })}
             </Text>
           )}
         </Animated.View>
@@ -181,11 +183,11 @@ export default function PromptEntryScreen({ navigation, route }: any) {
             end={{ x: 1, y: 1 }}
           >
             {isSaving ? (
-              <Text style={[styles.saveButtonText, { color: '#8b5cf6' }]}>Saving...</Text>
+              <Text style={[styles.saveButtonText, { color: '#8b5cf6' }]}>{t('auxiliary.common.saving')}</Text>
             ) : (
               <>
                 <Ionicons name="checkmark-circle" size={22} color="#8b5cf6" />
-                <Text style={[styles.saveButtonText, { color: '#8b5cf6' }]}>Save Reflection</Text>
+                <Text style={[styles.saveButtonText, { color: '#8b5cf6' }]}>{t('auxiliary.promptEntry.saveReflection')}</Text>
               </>
             )}
           </LinearGradient>

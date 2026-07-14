@@ -9,6 +9,7 @@ import * as Crypto from 'expo-crypto';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { analytics } from '../services/analytics';
+import { getCurrentLanguage } from '../i18n/languageRef';
 
 // Conditionally import Google Sign-In to avoid Expo Go errors
 let GoogleSignin: any = null;
@@ -274,6 +275,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       options: {
         data: {
           username,
+          language: getCurrentLanguage(),
         },
       },
     });

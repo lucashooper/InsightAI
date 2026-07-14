@@ -15,16 +15,17 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-
-const GRATITUDE_PROMPTS = [
-  'What made you smile today?',
-  'Who are you grateful for right now?',
-  'What small moment brought you joy?',
-];
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function GratitudeScreen({ navigation }: any) {
   const { theme } = useTheme();
   const { user } = useAuth();
+  const { t } = useLanguage();
+  const gratitudePrompts = [
+    t('auxiliary.gratitude.promptSmile'),
+    t('auxiliary.gratitude.promptPerson'),
+    t('auxiliary.gratitude.promptJoy'),
+  ];
   const [currentPrompt, setCurrentPrompt] = useState(0);
   const [responses, setResponses] = useState(['', '', '']);
   const [saving, setSaving] = useState(false);
@@ -51,23 +52,23 @@ export default function GratitudeScreen({ navigation }: any) {
     const allResponses = responses.filter(r => r.trim().length > 0);
     
     if (allResponses.length === 0) {
-      Alert.alert('No responses', 'Please write at least one gratitude response.');
+      Alert.alert(t('auxiliary.gratitude.noResponses'), t('auxiliary.gratitude.noResponsesMessage'));
       return;
     }
 
     setSaving(true);
     try {
       // Format with better typography and structure
-      const gratitudeEntry = `🙏 Gratitude Practice\n\n${GRATITUDE_PROMPTS.map((prompt, i) => {
+      const gratitudeEntry = `🙏 ${t('auxiliary.gratitude.title')}\n\n${gratitudePrompts.map((prompt, i) => {
         if (!responses[i].trim()) return '';
-        return `✨ Insight: ${prompt}\n\n${responses[i].trim()}\n\n---\n`;
+        return `✨ ${t('auxiliary.gratitude.insight')}: ${prompt}\n\n${responses[i].trim()}\n\n---\n`;
       }).filter(Boolean).join('\n')}`;
 
       const { error } = await supabase
         .from('notes')
         .insert({
           user_id: user?.id,
-          title: 'Gratitude Practice',
+          title: t('auxiliary.gratitude.title'),
           content: gratitudeEntry.trim(),
           mood: '🙏',
           created_at: new Date().toISOString(),
@@ -76,14 +77,14 @@ export default function GratitudeScreen({ navigation }: any) {
 
       if (error) throw error;
 
-      Alert.alert('Saved', 'Your gratitude practice has been saved to your journal.', [
-        { text: 'OK', onPress: () => navigation.goBack() }
+      Alert.alert(t('auxiliary.common.saved'), t('auxiliary.gratitude.savedMessage'), [
+        { text: t('auxiliary.common.ok'), onPress: () => navigation.goBack() }
       ]);
     } catch (error: any) {
       console.error('[Gratitude] Error saving gratitude:', error);
       console.error('[Gratitude] Error details:', JSON.stringify(error, null, 2));
-      const errorMessage = error?.message || error?.code || 'Unknown error';
-      Alert.alert('Error', `Failed to save your gratitude practice. ${errorMessage}`);
+      const errorMessage = error?.message || error?.code || t('auxiliary.common.unknownError');
+      Alert.alert(t('auxiliary.common.error'), t('auxiliary.gratitude.saveFailed', { error: errorMessage }));
     } finally {
       setSaving(false);
     }
@@ -101,7 +102,7 @@ export default function GratitudeScreen({ navigation }: any) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : '#1a1a1a'} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>Gratitude Practice</Text>
+        <Text style={[styles.headerTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>{t('auxiliary.gratitude.title')}</Text>
         <TouchableOpacity 
           onPress={() => navigation.navigate('GratitudeHistory')} 
           style={styles.historyButton}
@@ -134,8 +135,8 @@ export default function GratitudeScreen({ navigation }: any) {
 
           {/* Prompt */}
           <View style={styles.promptContainer}>
-            <Text style={[styles.promptNumber, { color: isDarkTheme(theme.name) ? 'rgba(139, 92, 246, 0.8)' : '#8b5cf6' }]}>{currentPrompt + 1} of 3</Text>
-            <Text style={[styles.promptText, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>{GRATITUDE_PROMPTS[currentPrompt]}</Text>
+            <Text style={[styles.promptNumber, { color: isDarkTheme(theme.name) ? 'rgba(139, 92, 246, 0.8)' : '#8b5cf6' }]}>{t('auxiliary.gratitude.progress', { current: currentPrompt + 1, total: 3 })}</Text>
+            <Text style={[styles.promptText, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>{gratitudePrompts[currentPrompt]}</Text>
           </View>
 
           {/* Input */}
@@ -144,7 +145,7 @@ export default function GratitudeScreen({ navigation }: any) {
               style={[styles.input, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}
               value={responses[currentPrompt]}
               onChangeText={handleResponseChange}
-              placeholder="Write your thoughts..."
+              placeholder={t('auxiliary.gratitude.placeholder')}
               placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'}
               multiline
               textAlignVertical="top"
@@ -156,7 +157,7 @@ export default function GratitudeScreen({ navigation }: any) {
           <View style={styles.buttonContainer}>
             {currentPrompt > 0 && (
               <TouchableOpacity onPress={handlePrevious} style={styles.navButton}>
-                <Text style={styles.navButtonText}>Previous</Text>
+                <Text style={styles.navButtonText}>{t('auxiliary.common.previous')}</Text>
               </TouchableOpacity>
             )}
             
@@ -169,7 +170,7 @@ export default function GratitudeScreen({ navigation }: any) {
                   colors={[theme.colors.primary, theme.colors.secondary]}
                   style={styles.navButtonGradient}
                 >
-                  <Text style={styles.navButtonTextPrimary}>Next</Text>
+                  <Text style={styles.navButtonTextPrimary}>{t('auxiliary.common.next')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             ) : (
@@ -183,7 +184,7 @@ export default function GratitudeScreen({ navigation }: any) {
                   style={styles.navButtonGradient}
                 >
                   <Text style={styles.navButtonTextPrimary}>
-                    {saving ? 'Saving...' : 'Complete'}
+                    {saving ? t('auxiliary.common.saving') : t('auxiliary.common.complete')}
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>

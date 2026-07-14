@@ -9,6 +9,7 @@ import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { isTablet, sf } from '../../utils/responsive';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -17,29 +18,33 @@ type Props = {
 };
 
 const SUGGESTED_PROMPTS = [
-    "I've been feeling overwhelmed with work lately...",
-    "Today I noticed I was happier after going outside",
-    "I keep putting things off and I'm not sure why",
-    "Something happened today that made me really grateful",
+    'overwhelmed',
+    'outside',
+    'procrastinating',
+    'grateful',
 ];
 
 // Simple local AI response — no backend needed during onboarding
-const getLocalAIResponse = (entry: string): string => {
+const getLocalAIResponse = (
+    entry: string,
+    t: (key: string) => string,
+): string => {
     const lower = entry.toLowerCase();
-    if (lower.includes('overwhelm') || lower.includes('stress') || lower.includes('anxious') || lower.includes('work'))
-        return "It sounds like you're carrying a lot right now. Recognizing that feeling is the first step — Insight can help you track these patterns and find what brings you relief. 💜";
-    if (lower.includes('happy') || lower.includes('grateful') || lower.includes('good') || lower.includes('outside') || lower.includes('walk'))
-        return "That's a beautiful observation. Noticing what lifts your mood is powerful — Insight will help you build on these positive patterns over time. ✨";
-    if (lower.includes('putting off') || lower.includes('procrastinat') || lower.includes('lazy') || lower.includes('motivation'))
-        return "Procrastination often has deeper roots than we think. Journaling can reveal the hidden emotions behind it — Insight will help you understand and overcome those blocks. 🔑";
-    if (lower.includes('sad') || lower.includes('lonely') || lower.includes('alone') || lower.includes('depress'))
-        return "Thank you for sharing that. Expressing difficult feelings is brave and healing. Insight is here to listen and help you navigate through these moments. 💙";
-    return "Thank you for sharing. Every entry is a step toward deeper self-understanding. Insight will help you uncover patterns, track your growth, and gain clarity over time. 💜";
+    if (lower.includes('overwhelm') || lower.includes('stress') || lower.includes('anxious') || lower.includes('work') || lower.includes('abrum') || lower.includes('estrés') || lower.includes('ansiedad') || lower.includes('trabajo'))
+        return t('onboarding.showcase.responses.overwhelmed');
+    if (lower.includes('happy') || lower.includes('grateful') || lower.includes('good') || lower.includes('outside') || lower.includes('walk') || lower.includes('feliz') || lower.includes('grat') || lower.includes('salir') || lower.includes('paseo'))
+        return t('onboarding.showcase.responses.positive');
+    if (lower.includes('putting off') || lower.includes('procrastinat') || lower.includes('lazy') || lower.includes('motivation') || lower.includes('pospon') || lower.includes('pereza') || lower.includes('motivación'))
+        return t('onboarding.showcase.responses.procrastination');
+    if (lower.includes('sad') || lower.includes('lonely') || lower.includes('alone') || lower.includes('depress') || lower.includes('triste') || lower.includes('solo') || lower.includes('depres'))
+        return t('onboarding.showcase.responses.sadness');
+    return t('onboarding.showcase.responses.default');
 };
 
 export default function InteractiveShowcaseScreen({ navigation }: Props) {
     const { theme } = useTheme();
     const { userName } = useOnboarding();
+    const { t } = useLanguage();
     const [entryText, setEntryText] = useState('');
     const [showPromptPicker, setShowPromptPicker] = useState(true);
     const [showAIBubble, setShowAIBubble] = useState(false);
@@ -94,7 +99,7 @@ export default function InteractiveShowcaseScreen({ navigation }: Props) {
         // Simulate a brief analysis delay, then show AI response
         setTimeout(() => {
             setIsAnalyzing(false);
-            const response = getLocalAIResponse(text);
+            const response = getLocalAIResponse(text, t);
             setAiResponse(response);
             setShowAIBubble(true);
 
@@ -124,7 +129,7 @@ export default function InteractiveShowcaseScreen({ navigation }: Props) {
                 }
             }, 16);
         }, 1500);
-    }, [hasSubmitted]);
+    }, [hasSubmitted, t]);
 
     const handlePickPrompt = (prompt: string) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -166,20 +171,20 @@ export default function InteractiveShowcaseScreen({ navigation }: Props) {
                     <Animated.View style={[styles.content, { opacity: containerFade }]}>
                         {/* Header */}
                         <View style={styles.header}>
-                            <Text style={[styles.headerLabel, { color: subColor }]}>TRY IT OUT</Text>
-                            <Text style={[styles.title, { color: textColor }]}>Write freely.{'\n'}Get clarity.</Text>
+                            <Text style={[styles.headerLabel, { color: subColor }]}>{t('onboarding.showcase.label')}</Text>
+                            <Text style={[styles.title, { color: textColor }]}>{t('onboarding.showcase.title')}</Text>
                         </View>
 
                         {/* Journal Input Card */}
                         <View style={[styles.journalCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
                             <View style={styles.journalHeader}>
-                                <Text style={[styles.journalHeaderLabel, { color: subColor }]}>Your Entry</Text>
+                                <Text style={[styles.journalHeaderLabel, { color: subColor }]}>{t('onboarding.showcase.entry')}</Text>
                                 <View style={styles.cursorDot} />
                             </View>
                             <TextInput
                                 ref={inputRef}
                                 style={[styles.journalInput, { color: textColor }]}
-                                placeholder="Start writing how you feel..."
+                                placeholder={t('onboarding.showcase.placeholder')}
                                 placeholderTextColor={dark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'}
                                 multiline
                                 value={entryText}
@@ -206,9 +211,11 @@ export default function InteractiveShowcaseScreen({ navigation }: Props) {
                         {showPromptPicker && !hasSubmitted && (
                             <Animated.View style={[styles.promptPickerContainer, { opacity: promptPickerFade }]}>
                                 <Text style={[styles.promptPickerTitle, { color: textColor }]}>
-                                    Or pick a prompt
+                                    {t('onboarding.showcase.pickPrompt')}
                                 </Text>
-                                {SUGGESTED_PROMPTS.map((prompt, index) => (
+                                {SUGGESTED_PROMPTS.map((promptKey, index) => {
+                                    const prompt = t(`onboarding.showcase.prompts.${promptKey}`);
+                                    return (
                                     <TouchableOpacity
                                         key={index}
                                         style={styles.promptChipWrapper}
@@ -227,7 +234,8 @@ export default function InteractiveShowcaseScreen({ navigation }: Props) {
                                             <Ionicons name="chevron-forward" size={16} color={dark ? 'rgba(255,255,255,0.4)' : '#9ca3af'} />
                                         </LinearGradient>
                                     </TouchableOpacity>
-                                ))}
+                                    );
+                                })}
                             </Animated.View>
                         )}
 
@@ -235,7 +243,7 @@ export default function InteractiveShowcaseScreen({ navigation }: Props) {
                         {isAnalyzing && (
                             <View style={styles.analyzingContainer}>
                                 <ActivityIndicator size="small" color="#a855f7" />
-                                <Text style={[styles.analyzingText, { color: subColor }]}>Insight is thinking...</Text>
+                                <Text style={[styles.analyzingText, { color: subColor }]}>{t('onboarding.showcase.thinking')}</Text>
                             </View>
                         )}
 
@@ -246,7 +254,7 @@ export default function InteractiveShowcaseScreen({ navigation }: Props) {
                                     <LinearGradient colors={['#8b5cf6', '#6d28d9']} style={styles.aiAvatar}>
                                         <Ionicons name="sparkles" size={14} color="#fff" />
                                     </LinearGradient>
-                                    <Text style={[styles.aiLabel, { color: subColor }]}>Insight AI</Text>
+                                    <Text style={[styles.aiLabel, { color: subColor }]}>{t('onboarding.showcase.aiLabel')}</Text>
                                 </View>
                                 <View style={[styles.aiBubble, { backgroundColor: dark ? 'rgba(139,92,246,0.12)' : 'rgba(139,92,246,0.08)', borderColor: dark ? 'rgba(139,92,246,0.2)' : 'rgba(139,92,246,0.15)' }]}>
                                     <Text style={[styles.aiText, { color: textColor }]}>
@@ -267,7 +275,7 @@ export default function InteractiveShowcaseScreen({ navigation }: Props) {
                             onPress={() => navigation.navigate('PrivacyOnboarding')}
                         >
                             <View style={styles.ctaGradient}>
-                                <Text style={styles.ctaText}>Continue</Text>
+                                <Text style={styles.ctaText}>{t('common.continue')}</Text>
                             </View>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -275,7 +283,7 @@ export default function InteractiveShowcaseScreen({ navigation }: Props) {
                             style={styles.skipButton}
                             activeOpacity={0.7}
                         >
-                            <Text style={[styles.skipText, { color: subColor }]}>Skip for now</Text>
+                            <Text style={[styles.skipText, { color: subColor }]}>{t('onboarding.skipForNow')}</Text>
                         </TouchableOpacity>
                     </Animated.View>
                 )}
@@ -288,7 +296,7 @@ export default function InteractiveShowcaseScreen({ navigation }: Props) {
                             style={styles.skipButton}
                             activeOpacity={0.7}
                         >
-                            <Text style={[styles.skipText, { color: subColor }]}>Skip for now</Text>
+                            <Text style={[styles.skipText, { color: subColor }]}>{t('onboarding.skipForNow')}</Text>
                         </TouchableOpacity>
                     </View>
                 )}

@@ -2,8 +2,10 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Haptics from 'expo-haptics';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function NotificationPermissionScreen({ navigation }: any) {
+    const { t } = useLanguage();
     const pointerAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
@@ -46,11 +48,11 @@ export default function NotificationPermissionScreen({ navigation }: any) {
     return (
         <View style={styles.container}>
             <View style={styles.content}>
-                <Text style={styles.title}>Remember to reflect with notifications</Text>
+                <Text style={styles.title}>{t('onboarding.notifications.permissionTitle')}</Text>
 
                 <View style={styles.permissionCard}>
-                    <Text style={styles.permissionTitle}>Insight AI would like to send you</Text>
-                    <Text style={styles.permissionTitle}>Notifications</Text>
+                    <Text style={styles.permissionTitle}>{t('onboarding.notifications.permissionRequest')}</Text>
+                    <Text style={styles.permissionTitle}>{t('onboarding.notifications.permissionType')}</Text>
 
                     <View style={styles.buttonRow}>
                         <TouchableOpacity
@@ -58,7 +60,7 @@ export default function NotificationPermissionScreen({ navigation }: any) {
                             onPress={handleDontAllow}
                             activeOpacity={0.7}
                         >
-                            <Text style={styles.dontAllowText}>Don't Allow</Text>
+                            <Text style={styles.dontAllowText}>{t('onboarding.notifications.dontAllow')}</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -66,7 +68,7 @@ export default function NotificationPermissionScreen({ navigation }: any) {
                             onPress={handleAllow}
                             activeOpacity={0.7}
                         >
-                            <Text style={styles.allowText}>Allow</Text>
+                            <Text style={styles.allowText}>{t('onboarding.notifications.allow')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

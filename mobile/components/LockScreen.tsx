@@ -14,12 +14,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppLock } from '../contexts/AppLockContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const insightLogo = require('../public/Insight-Logo-nobg.webp');
 const { width } = Dimensions.get('window');
 
 export default function LockScreen() {
   const { unlock, unlockWithBiometric, isBiometricEnabled, isBiometricAvailable, forgotPin } = useAppLock();
+  const { t } = useLanguage();
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const shakeAnim = useRef(new Animated.Value(0)).current;
@@ -65,7 +67,7 @@ export default function LockScreen() {
     if (key === 'biometric') {
       const success = await unlockWithBiometric();
       if (!success) {
-        setError('Biometric authentication failed');
+        setError(t('components.lock.biometricFailed'));
       }
       return;
     }
@@ -78,7 +80,7 @@ export default function LockScreen() {
     if (newPin.length === PIN_LENGTH) {
       const success = await unlock(newPin);
       if (!success) {
-        setError('Incorrect PIN');
+        setError(t('components.lock.incorrectPin'));
         // Shake animation
         Animated.sequence([
           Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
@@ -186,8 +188,8 @@ export default function LockScreen() {
       <View style={styles.content}>
         <Image source={insightLogo} style={styles.logo} resizeMode="contain" />
         
-        <Text style={styles.title}>Welcome back</Text>
-        <Text style={styles.subtitle}>Enter your PIN to unlock</Text>
+        <Text style={styles.title}>{t('components.lock.welcome')}</Text>
+        <Text style={styles.subtitle}>{t('components.lock.enterPin')}</Text>
 
         {renderDots()}
 
@@ -200,7 +202,7 @@ export default function LockScreen() {
             style={styles.biometricHint}
             onPress={() => handleKeyPress('biometric')}
           >
-            <Text style={styles.biometricHintText}>Tap to use Face ID</Text>
+            <Text style={styles.biometricHintText}>{t('components.lock.useFaceId')}</Text>
           </TouchableOpacity>
         )}
 
@@ -208,18 +210,18 @@ export default function LockScreen() {
           style={styles.forgotPin}
           onPress={() => {
             Alert.alert(
-              'Forgot PIN?',
-              'We\'ll send a security email to your account and reset the PIN on this device.',
+              t('components.lock.forgotTitle'),
+              t('components.lock.forgotMessage'),
               [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('components.lock.cancel'), style: 'cancel' },
                 {
-                  text: 'Send Email',
+                  text: t('components.lock.sendEmail'),
                   onPress: async () => {
                     const success = await forgotPin();
                     if (success) {
-                      Alert.alert('PIN Reset', 'Your PIN has been reset on this device. We also sent an email to your account for security.');
+                      Alert.alert(t('components.lock.resetTitle'), t('components.lock.resetMessage'));
                     } else {
-                      Alert.alert('Error', 'Could not send reset email. Please try again later.');
+                      Alert.alert(t('components.lock.errorTitle'), t('components.lock.errorMessage'));
                     }
                   },
                 },
@@ -227,7 +229,7 @@ export default function LockScreen() {
             );
           }}
         >
-          <Text style={styles.forgotPinText}>Forgot PIN?</Text>
+          <Text style={styles.forgotPinText}>{t('components.lock.forgotTitle')}</Text>
         </TouchableOpacity>
       </View>
     </View>

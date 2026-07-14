@@ -19,6 +19,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { isTablet, sf } from '../utils/responsive';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { useLanguage } from '../contexts/LanguageContext';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -35,21 +36,21 @@ interface TodoItem {
 
 // ── Suggested Tasks ───────────────────────────────────────────
 const SUGGESTED_TASKS = [
-  { text: 'Write in your journal for 5 minutes', priority: 'medium' as const },
-  { text: 'Take a 10-minute walk outside', priority: 'low' as const },
-  { text: 'Practice deep breathing for 2 minutes', priority: 'low' as const },
-  { text: 'Drink a full glass of water', priority: 'low' as const },
-  { text: 'Send a kind message to someone', priority: 'medium' as const },
-  { text: 'List 3 things you\'re grateful for', priority: 'medium' as const },
-  { text: 'Stretch for 5 minutes', priority: 'low' as const },
-  { text: 'Put your phone away for 30 minutes', priority: 'high' as const },
-  { text: 'Read for 15 minutes', priority: 'medium' as const },
-  { text: 'Clean one small area of your space', priority: 'low' as const },
-  { text: 'Cook a healthy meal', priority: 'medium' as const },
-  { text: 'Listen to your favorite song mindfully', priority: 'low' as const },
-  { text: 'Set an intention for tomorrow', priority: 'medium' as const },
-  { text: 'Do one thing that scares you (just a little)', priority: 'high' as const },
-  { text: 'Get to bed before 11pm', priority: 'high' as const },
+  { key: 'journal', priority: 'medium' as const },
+  { key: 'walk', priority: 'low' as const },
+  { key: 'breathe', priority: 'low' as const },
+  { key: 'water', priority: 'low' as const },
+  { key: 'kindMessage', priority: 'medium' as const },
+  { key: 'gratitude', priority: 'medium' as const },
+  { key: 'stretch', priority: 'low' as const },
+  { key: 'phoneAway', priority: 'high' as const },
+  { key: 'read', priority: 'medium' as const },
+  { key: 'clean', priority: 'low' as const },
+  { key: 'cook', priority: 'medium' as const },
+  { key: 'song', priority: 'low' as const },
+  { key: 'intention', priority: 'medium' as const },
+  { key: 'courage', priority: 'high' as const },
+  { key: 'bed', priority: 'high' as const },
 ];
 
 const PRIORITY_COLORS = {
@@ -60,6 +61,7 @@ const PRIORITY_COLORS = {
 
 // ── Calendar Strip ────────────────────────────────────────────
 function CalendarStrip({ selectedDate, onSelectDate, dark, theme }: any) {
+  const { formatDate } = useLanguage();
   const today = new Date();
   const dates: Date[] = [];
   
@@ -69,8 +71,6 @@ function CalendarStrip({ selectedDate, onSelectDate, dark, theme }: any) {
     d.setDate(today.getDate() + i);
     dates.push(d);
   }
-
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   const isSameDay = (a: Date, b: Date) =>
     a.getDate() === b.getDate() &&
@@ -101,7 +101,7 @@ function CalendarStrip({ selectedDate, onSelectDate, dark, theme }: any) {
                 { color: isSelected ? '#fff' : theme.colors.secondaryText },
               ]}
             >
-              {dayNames[date.getDay()]}
+              {formatDate(date, { weekday: 'short' })}
             </Text>
             <View
               style={[
@@ -137,6 +137,7 @@ function CalendarStrip({ selectedDate, onSelectDate, dark, theme }: any) {
 export default function TodoScreen({ navigation }: any) {
   const { theme } = useTheme();
   const { user } = useAuth();
+  const { t, formatDate } = useLanguage();
   const dark = isDarkTheme(theme.name);
   const insets = useSafeAreaInsets();
 
@@ -222,22 +223,21 @@ export default function TodoScreen({ navigation }: any) {
 
   const addSuggestedTask = () => {
     // Pick a random suggestion not already in the list
-    const existingTexts = todos.map(t => t.text);
-    const available = SUGGESTED_TASKS.filter(s => !existingTexts.includes(s.text));
+    const existingTexts = todos.map(item => item.text);
+    const available = SUGGESTED_TASKS.filter(s => !existingTexts.includes(t(`auxiliary.todo.suggestions.${s.key}`)));
     if (available.length === 0) {
-      Alert.alert('All caught up!', 'You\'ve added all suggested tasks. Try creating your own!');
+      Alert.alert(t('auxiliary.todo.allCaughtUp'), t('auxiliary.todo.allCaughtUpMessage'));
       return;
     }
     const random = available[Math.floor(Math.random() * available.length)];
-    addTask(random.text, random.priority);
+    addTask(t(`auxiliary.todo.suggestions.${random.key}`), random.priority);
   };
 
   const completedCount = todos.filter(t => t.completed).length;
   const totalCount = todos.length;
 
   // Format selected date
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const dateLabel = `${monthNames[selectedDate.getMonth()]} ${selectedDate.getDate()}`;
+  const dateLabel = formatDate(selectedDate, { month: 'short', day: 'numeric' });
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -252,7 +252,7 @@ export default function TodoScreen({ navigation }: any) {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color={theme.colors.primaryText} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>To-do</Text>
+          <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>{t('auxiliary.todo.title')}</Text>
         </View>
 
         {/* Date Label */}
@@ -271,10 +271,10 @@ export default function TodoScreen({ navigation }: any) {
         {/* Progress Section */}
         <View style={styles.progressSection}>
           <Text style={[styles.todoSectionTitle, { color: theme.colors.primaryText }]}>
-            To-do
+            {t('auxiliary.todo.title')}
           </Text>
           <Text style={[styles.progressText, { color: theme.colors.secondaryText }]}>
-            {completedCount} of {totalCount} completed
+            {t('auxiliary.todo.completed', { completed: completedCount, total: totalCount })}
           </Text>
         </View>
 
@@ -286,10 +286,10 @@ export default function TodoScreen({ navigation }: any) {
           }]}>
             <Ionicons name="checkbox-outline" size={40} color={theme.colors.secondaryText} style={{ marginBottom: 12 }} />
             <Text style={[styles.emptyStateTitle, { color: theme.colors.primaryText }]}>
-              No tasks yet
+              {t('auxiliary.todo.emptyTitle')}
             </Text>
             <Text style={[styles.emptyStateSubtitle, { color: theme.colors.secondaryText }]}>
-              Add your first task or get a suggestion
+              {t('auxiliary.todo.emptyMessage')}
             </Text>
           </View>
         ) : (
@@ -305,9 +305,9 @@ export default function TodoScreen({ navigation }: any) {
               ]}
               onPress={() => toggleTodo(todo.id)}
               onLongPress={() => {
-                Alert.alert('Delete Task', 'Remove this task?', [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'Delete', style: 'destructive', onPress: () => deleteTodo(todo.id) },
+                Alert.alert(t('auxiliary.todo.deleteTask'), t('auxiliary.todo.deleteConfirm'), [
+                  { text: t('auxiliary.common.cancel'), style: 'cancel' },
+                  { text: t('auxiliary.common.delete'), style: 'destructive', onPress: () => deleteTodo(todo.id) },
                 ]);
               }}
               activeOpacity={0.7}
@@ -348,7 +348,7 @@ export default function TodoScreen({ navigation }: any) {
           }]}>
             <TextInput
               style={[styles.newTaskInput, { color: theme.colors.primaryText }]}
-              placeholder="What do you want to do?"
+              placeholder={t('auxiliary.todo.placeholder')}
               placeholderTextColor={theme.colors.secondaryText}
               value={newTaskText}
               onChangeText={setNewTaskText}
@@ -364,7 +364,7 @@ export default function TodoScreen({ navigation }: any) {
                 }}
                 style={styles.newTaskCancel}
               >
-                <Text style={[styles.newTaskCancelText, { color: theme.colors.secondaryText }]}>Cancel</Text>
+                <Text style={[styles.newTaskCancelText, { color: theme.colors.secondaryText }]}>{t('auxiliary.common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => addTask(newTaskText)}
@@ -374,7 +374,7 @@ export default function TodoScreen({ navigation }: any) {
                   colors={['#8b5cf6', '#7c3aed']}
                   style={styles.newTaskAddGradient}
                 >
-                  <Text style={styles.newTaskAddText}>Add</Text>
+                  <Text style={styles.newTaskAddText}>{t('auxiliary.common.add')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -393,7 +393,7 @@ export default function TodoScreen({ navigation }: any) {
             }}
           >
             <Ionicons name="add-circle" size={20} color="#8b5cf6" />
-            <Text style={[styles.actionButtonText, { color: '#8b5cf6' }]}>Add task</Text>
+            <Text style={[styles.actionButtonText, { color: '#8b5cf6' }]}>{t('auxiliary.todo.addTask')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -403,7 +403,7 @@ export default function TodoScreen({ navigation }: any) {
             onPress={addSuggestedTask}
           >
             <Ionicons name="sparkles" size={20} color="#10b981" />
-            <Text style={[styles.actionButtonText, { color: '#10b981' }]}>Suggest task</Text>
+            <Text style={[styles.actionButtonText, { color: '#10b981' }]}>{t('auxiliary.todo.suggestTask')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -414,7 +414,7 @@ export default function TodoScreen({ navigation }: any) {
         }]}>
           <Ionicons name="bulb" size={20} color="#8b5cf6" style={{ marginRight: 12 }} />
           <Text style={[styles.tipText, { color: theme.colors.secondaryText }]}>
-            Long press a task to delete it. Tasks are saved per day — check back tomorrow for a fresh start!
+            {t('auxiliary.todo.tip')}
           </Text>
         </View>
 

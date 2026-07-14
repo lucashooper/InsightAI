@@ -5,19 +5,21 @@ import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { si } from '../../utils/responsive';
 import CenterFabButton from './CenterFabButton';
 
-const TAB_CONFIG: Record<string, { label: string; icon: keyof typeof Ionicons.glyphMap }> = {
-  Home: { label: 'Home', icon: 'home' },
-  Journal: { label: 'Journal', icon: 'journal' },
-  Dashboard: { label: 'Dashboard', icon: 'analytics' },
-  Companion: { label: 'Companion', icon: 'chatbubble-ellipses-outline' },
+const TAB_CONFIG: Record<string, { labelKey: string; icon: keyof typeof Ionicons.glyphMap }> = {
+  Home: { labelKey: 'tabs.home', icon: 'home' },
+  Journal: { labelKey: 'tabs.journal', icon: 'journal' },
+  Dashboard: { labelKey: 'tabs.dashboard', icon: 'analytics' },
+  Companion: { labelKey: 'tabs.companion', icon: 'chatbubble-ellipses-outline' },
 };
 
 export default function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const isDark = isDarkTheme(theme.name);
 
   const visibleRoutes = state.routes.filter((r) => r.name !== 'FabPlaceholder');
@@ -46,7 +48,13 @@ export default function FloatingTabBar({ state, navigation }: BottomTabBarProps)
     };
 
     return (
-      <Pressable key={route.key} onPress={onPress} style={styles.tab} accessibilityRole="button">
+      <Pressable
+        key={route.key}
+        onPress={onPress}
+        style={styles.tab}
+        accessibilityRole="button"
+        accessibilityLabel={t(config.labelKey)}
+      >
         {isFocused && (
           <View
             style={[
@@ -56,7 +64,7 @@ export default function FloatingTabBar({ state, navigation }: BottomTabBarProps)
           />
         )}
         <Ionicons name={config.icon} size={si(22)} color={color} />
-        <Text style={[styles.tabLabel, { color }]}>{config.label}</Text>
+        <Text style={[styles.tabLabel, { color }]}>{t(config.labelKey)}</Text>
       </Pressable>
     );
   };

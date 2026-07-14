@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { sf } from '../../utils/responsive';
 
 const noisyImage = require('../../public/noisy-image.webp');
@@ -12,6 +13,7 @@ const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 export default function ValuePropScreen({ navigation }: any) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const noisyAnim = useRef(new Animated.Value(0)).current;
   const arrowAnim = useRef(new Animated.Value(0)).current;
   const clarityAnim = useRef(new Animated.Value(0)).current;
@@ -55,7 +57,7 @@ export default function ValuePropScreen({ navigation }: any) {
         <View style={styles.mainContent}>
           {/* Headline */}
           <Text style={[styles.headline, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>
-            Insight turns thoughts{' '}into clarity
+            {t('onboarding.valueProp.title')}
           </Text>
 
           <View style={styles.contrastContainer}>
@@ -78,7 +80,7 @@ export default function ValuePropScreen({ navigation }: any) {
                   resizeMode="cover"
                 />
               </View>
-              <Text style={[styles.contrastLabel, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}>Mental noise</Text>
+              <Text style={[styles.contrastLabel, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}>{t('onboarding.valueProp.mentalNoise')}</Text>
             </Animated.View>
 
             <Animated.Text style={[
@@ -114,7 +116,7 @@ export default function ValuePropScreen({ navigation }: any) {
                   resizeMode="cover"
                 />
               </View>
-              <Text style={[styles.contrastLabel, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}>Understanding</Text>
+              <Text style={[styles.contrastLabel, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}>{t('onboarding.valueProp.understanding')}</Text>
             </Animated.View>
           </View>
 
@@ -132,21 +134,21 @@ export default function ValuePropScreen({ navigation }: any) {
             <View style={styles.bulletRow}>
               <Text style={styles.bulletDot}>•</Text>
               <Text style={[styles.bulletText, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.7)' : '#4a4a4a' }]}> 
-                Capture how you feel
+                {t('onboarding.valueProp.captureFeelings')}
               </Text>
             </View>
 
             <View style={styles.bulletRow}>
               <Text style={styles.bulletDot}>•</Text>
               <Text style={[styles.bulletText, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.7)' : '#4a4a4a' }]}>
-                Understand patterns over time
+                {t('onboarding.valueProp.understandPatterns')}
               </Text>
             </View>
 
             <View style={styles.bulletRow}>
               <Text style={styles.bulletDot}>•</Text>
               <Text style={[styles.bulletText, styles.bulletTextPurple]}>
-                Gain clarity — not clutter
+                {t('onboarding.valueProp.gainClarity')}
               </Text>
             </View>
           </View>
@@ -178,7 +180,7 @@ export default function ValuePropScreen({ navigation }: any) {
           }}
         >
           <View style={styles.buttonInner}>
-            <Text style={styles.buttonText}>Continue</Text>
+            <Text style={styles.buttonText}>{t('common.continue')}</Text>
           </View>
         </TouchableOpacity>
       </Animated.View>
