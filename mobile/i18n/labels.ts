@@ -17,3 +17,11 @@ export function translateMachineLabel(
   const translated = t(key);
   return translated === key ? value : translated;
 }
+
+/** Display-time label for canonical English emotion keys stored in AI analysis. */
+export function translateEmotion(
+  t: (key: string) => string,
+  emotion?: string | null,
+): string {
+  return translateMachineLabel(t, 'emotions', emotion);
+}

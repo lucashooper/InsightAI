@@ -177,12 +177,27 @@ class ProtocolCompletionService {
   /**
    * Get all completions for today (for progress tracking)
    */
-  async getTodayCompletions(): Promise<string[]> {
+  async getTodayCompletions(activeProtocolIds?: string[]): Promise<string[]> {
     const today = this.getTodayDateString();
     const completions = await this.getCompletions();
-    return completions
+    const todayIds = completions
       .filter(c => c.date === today)
       .map(c => c.protocolId);
+
+    if (!activeProtocolIds?.length) return todayIds;
+
+    const active = new Set(activeProtocolIds);
+    return todayIds.filter((id) => active.has(id));
+  }
+
+  /** Drop completion records for protocols that no longer exist. */
+  async pruneCompletions(knownProtocolIds: string[]): Promise<void> {
+    const known = new Set(knownProtocolIds);
+    const completions = await this.getCompletions();
+    const pruned = completions.filter((c) => known.has(c.protocolId));
+    if (pruned.length !== completions.length) {
+      await this.saveCompletions(pruned);
+    }
   }
 }
 

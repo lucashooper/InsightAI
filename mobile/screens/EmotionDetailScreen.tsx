@@ -13,6 +13,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import StandardContainer from '../components/shared/StandardContainer';
 import { useLanguage } from '../contexts/LanguageContext';
+import { translateEmotion } from '../i18n/labels';
 
 interface EmotionDetailRouteParams {
   emotion: string;
@@ -171,7 +172,7 @@ export default function EmotionDetailScreen() {
         {/* Emotion Header */}
         <View style={styles.emotionHeader}>
           <Text style={[styles.emotionName, { color: theme.colors.primaryText }]}>
-            {emotion}
+            {translateEmotion(t, emotion)}
           </Text>
           <Text style={[styles.emotionPercentage, { color: theme.colors.secondaryText }]}>
             {t('auxiliary.emotionDetail.seenIn', { percentage })}

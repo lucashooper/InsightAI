@@ -1,4 +1,17 @@
+import { AppLanguage } from '../i18n/types';
 import { groupPatternItems, groupsToDisplayItems } from './patternGrouping';
+
+/**
+ * When the user has insights analyzed in the current locale, dashboard patterns
+ * and aggregates use only those entries — so new localized screenshots are not
+ * drowned out by older English analysis on the same account.
+ */
+export function filterNotesForDisplayLocale(notes: any[], locale: AppLanguage): any[] {
+  const localeMatched = notes.filter(
+    (n) => n.ai_structured_insights?.analysis_locale === locale,
+  );
+  return localeMatched.length > 0 ? localeMatched : notes;
+}
 
 function capitalizeFirst(str: string) {
   return str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
@@ -267,8 +280,9 @@ export function computeAggregateInsights(notes: any[]) {
   };
 }
 
-export function computeDeferredDashboardData(notes: any[]) {
-  const patterns = computePatternsData(notes);
-  const aggregates = computeAggregateInsights(notes);
+export function computeDeferredDashboardData(notes: any[], locale?: AppLanguage) {
+  const scoped = locale ? filterNotesForDisplayLocale(notes, locale) : notes;
+  const patterns = computePatternsData(scoped);
+  const aggregates = computeAggregateInsights(scoped);
   return { ...patterns, ...aggregates };
 }

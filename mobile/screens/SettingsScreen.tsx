@@ -15,6 +15,7 @@ import StandardContainer from '../components/shared/StandardContainer';
 import PageHeader from '../components/shared/PageHeader';
 import LanguagePicker from '../components/LanguagePicker';
 import { useLanguage } from '../contexts/LanguageContext';
+import { usePreloadedData } from '../contexts/PreloadContext';
 import { isTablet, sf, ss, si, iPadContentStyle } from '../utils/responsive';
 import { printSubscriptionDebugReport, resetRevenueCatOnly, nukeAllSubscriptionState } from '../utils/subscriptionDebug';
 import Constants from 'expo-constants';
@@ -31,6 +32,7 @@ export default function SettingsScreen({ navigation }: any) {
   const { theme, themeName, setTheme, containerStyle, setContainerStyle } = useTheme();
   const { isLockEnabled, isBiometricEnabled, isBiometricAvailable, enableLock, disableLock, toggleBiometric } = useAppLock();
   const { t } = useLanguage();
+  const { refreshProfile } = usePreloadedData();
   const [showPinSetup, setShowPinSetup] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinConfirm, setPinConfirm] = useState('');
@@ -231,6 +233,10 @@ export default function SettingsScreen({ navigation }: any) {
                 console.log('[Settings] ✅ Username updated successfully');
                 setUserProfile(prev => prev ? { ...prev, username: trimmedName } : prev);
                 await AsyncStorage.setItem('CACHED_USERNAME', trimmedName);
+                if (user?.id) {
+                  await AsyncStorage.setItem(`CACHED_USERNAME_${user.id}`, trimmedName);
+                  await refreshProfile(user.id);
+                }
                 Alert.alert(t('common.success'), t('settings.nameUpdated'));
               }
             } catch (err) {

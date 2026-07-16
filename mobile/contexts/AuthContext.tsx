@@ -3,6 +3,8 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import Purchases from 'react-native-purchases';
 import { EncryptionService } from '../services/encryptionService';
+import { ensureDecryptCacheLoaded } from '../utils/decryptCache';
+import { clearDecryptCache } from '../utils/decryptCache';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
@@ -221,6 +223,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       try {
         await EncryptionService.initializeKey(password, data.user.id);
+        await ensureDecryptCacheLoaded(data.user.id);
         console.log('[Auth] Encryption key initialized on login');
       } catch (encError) {
         console.error('[Auth] Failed to initialize encryption key:', encError);
@@ -565,6 +568,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    const signingOutUserId = user?.id;
+
     // Track sign out
     analytics.trackSignOut();
     analytics.reset();
@@ -575,6 +580,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('[Auth] Encryption key cleared on logout');
     } catch (error) {
       console.error('[Auth] Failed to clear encryption key:', error);
+    }
+
+    if (signingOutUserId) {
+      clearDecryptCache(signingOutUserId);
     }
     
     // CRITICAL FIX: Invalidate RevenueCat cache and log out when user signs out

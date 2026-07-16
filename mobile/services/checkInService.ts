@@ -3,6 +3,8 @@ import { CheckInDraft, TagCategory } from '../components/checkin/types';
 
 type SupabaseLikeClient = Pick<typeof supabase, 'from'>;
 
+let checkInsTableAvailable: boolean | null = null;
+
 export type StoredCheckIn = CheckInDraft & {
   id: string;
   journalNoteId: string | null;
@@ -84,6 +86,10 @@ export async function fetchCheckInForNote(
   journalNoteId: string,
   client: SupabaseLikeClient = supabase,
 ): Promise<StoredCheckIn | null> {
+  if (checkInsTableAvailable === false) {
+    return null;
+  }
+
   const { data, error } = await client
     .from('check_ins')
     .select('*')
@@ -93,7 +99,17 @@ export async function fetchCheckInForNote(
     .limit(1)
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    // Table not deployed in this Supabase project — skip quietly after first hit.
+    if (error.code === '42P01') {
+      checkInsTableAvailable = false;
+      console.log('[CheckIn] check_ins table unavailable — skipping linked check-in lookups');
+      return null;
+    }
+    throw error;
+  }
+
+  checkInsTableAvailable = true;
   return data ? checkInRowToDraft(data) : null;
 }
 

@@ -26,11 +26,23 @@ import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { mobileAiService } from '../services/mobileAiService';
 import { EncryptionService } from '../services/encryptionService';
+import { setCachedEntry, entryVersion } from '../utils/decryptCache';
 import { CheckInDraft } from '../components/checkin/types';
 import { saveCheckIn } from '../services/checkInService';
 import StandardContainer from '../components/shared/StandardContainer';
 import MoodIcon from '../components/checkin/MoodIcon';
 import { useLanguage } from '../contexts/LanguageContext';
+import GoDeeperThread from '../components/editor/GoDeeperThread';
+import InsightCompanionMark from '../components/companion/InsightCompanionMark';
+import { useEditorKeyboardPadding } from '../hooks/useEditorKeyboardPadding';
+import { useTypewriterReveal } from '../hooks/useTypewriterReveal';
+import {
+  loadGoDeeperConversation,
+  saveGoDeeperConversation,
+  migrateDraftToEntry,
+  createGoDeeperMessage,
+  type GoDeeperMessage,
+} from '../services/goDeeperConversationService';
 // Conditionally import speech recognition (crashes in Expo Go where native module isn't available)
 let ExpoSpeechRecognitionModule: any = null;
 let useSpeechRecognitionEvent: any = (_event: string, _handler: any) => {};
@@ -63,11 +75,9 @@ export default function CreateEntryScreen({ navigation, route }: any) {
   const waveAnims = useRef(Array.from({ length: 5 }, () => new Animated.Value(0.3))).current;
   const waveAnimRef = useRef<Animated.CompositeAnimation | null>(null);
   const contentBeforeRecording = useRef('');
-  const [aiResponse, setAiResponse] = useState<{ reflection: string; questions: string[] } | null>(null);
-  const [displayedText, setDisplayedText] = useState('');
-  const [isLoadingAi, setIsLoadingAi] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const [goDeeperMessages, setGoDeeperMessages] = useState<GoDeeperMessage[]>([]);
+  const [goDeeperReply, setGoDeeperReply] = useState('');
+  const [isGoDeeperLoading, setIsGoDeeperLoading] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasUnsavedChanges = useRef(false);
   const savedEntryIdRef = useRef<string | null>(null);
@@ -76,6 +86,19 @@ export default function CreateEntryScreen({ navigation, route }: any) {
   const quickActionsAnim = useRef(new Animated.Value(0)).current;
   const controlsBottomAnim = useRef(new Animated.Value(20)).current;
   const scrollViewRef = useRef<any>(null);
+  const contentInputRef = useRef<TextInput>(null);
+  const { scrollPaddingBottom } = useEditorKeyboardPadding();
+  const { activeId: typingMessageId, displayText: typingDisplayText, startReveal } = useTypewriterReveal();
+
+  const persistGoDeeper = async (messages: GoDeeperMessage[]) => {
+    if (!user?.id) return;
+    await saveGoDeeperConversation(user.id, messages, savedEntryIdRef.current);
+  };
+
+  useEffect(() => {
+    if (!user?.id) return;
+    loadGoDeeperConversation(user.id, savedEntryIdRef.current).then(setGoDeeperMessages);
+  }, [user?.id]);
 
   const moods = ['😊', '😔', '😰', '😡', '😌', '🤔', '😴', '🎉'];
   // Auto-save functionality
@@ -156,20 +179,40 @@ export default function CreateEntryScreen({ navigation, route }: any) {
         console.warn('[CreateEntry] No encryption key found, saving unencrypted');
       }
 
+      const savedAt = new Date().toISOString();
+      const savedTitle = title.trim() || content.trim().split('\n')[0].substring(0, 50) || t('editor.journalEntry');
+      const cachePlaintext = async (noteId: string) => {
+        if (!user?.id) return;
+        setCachedEntry(
+          user.id,
+          noteId,
+          entryVersion({
+            updated_at: savedAt,
+            created_at: savedAt,
+            is_encrypted: isEncrypted,
+            content: contentToSave,
+            title: savedTitle,
+          }),
+          savedTitle,
+          fullContent,
+        );
+      };
+
       // If we already saved this entry, update it instead of inserting a new one
       if (savedEntryIdRef.current) {
         const { error } = await supabase
           .from('notes')
           .update({
-            title: title.trim() || content.trim().split('\n')[0].substring(0, 50) || t('editor.journalEntry'),
+            title: savedTitle,
             content: contentToSave,
             is_encrypted: isEncrypted,
-            updated_at: new Date().toISOString(),
+            updated_at: savedAt,
           })
           .eq('id', savedEntryIdRef.current);
 
         if (!error) {
           hasUnsavedChanges.current = false;
+          await cachePlaintext(savedEntryIdRef.current);
           console.log('[CreateEntry] Entry updated successfully (id:', savedEntryIdRef.current, ')');
           await persistLinkedCheckIn(
             savedEntryIdRef.current,
@@ -181,11 +224,11 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           .from('notes')
           .insert({
             user_id: user?.id,
-            title: title.trim() || t('editor.journalEntry'),
+            title: savedTitle,
             content: contentToSave,
             is_encrypted: isEncrypted,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            created_at: savedAt,
+            updated_at: savedAt,
           })
           .select()
           .single();
@@ -193,8 +236,12 @@ export default function CreateEntryScreen({ navigation, route }: any) {
         if (!error && data) {
           savedEntryIdRef.current = data.id;
           hasUnsavedChanges.current = false;
+          await cachePlaintext(data.id);
           console.log('[CreateEntry] Entry saved successfully (id:', data.id, ', encrypted:', isEncrypted, ')');
           await persistLinkedCheckIn(data.id, title.trim() || t('editor.journalEntry'));
+          await migrateDraftToEntry(user!.id, data.id);
+          const loaded = await loadGoDeeperConversation(user!.id, data.id);
+          if (loaded.length > 0) setGoDeeperMessages(loaded);
         }
       }
     } catch (error) {
@@ -320,58 +367,51 @@ export default function CreateEntryScreen({ navigation, route }: any) {
   };
 
   const handleGoDeeper = async () => {
-    if (!content.trim() || isLoadingAi) return;
-    
-    setIsLoadingAi(true);
-    setDisplayedText('');
-    
+    if (!content.trim() || isGoDeeperLoading) return;
+
+    setIsGoDeeperLoading(true);
     try {
       const response = await mobileAiService.generateFollowUpQuestions(content);
-      setAiResponse(response);
-      setIsTyping(true);
-      
-      // Start pulse animation
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.2,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-      
-      // Typewriter effect
-      const fullText = response.reflection + '\n\n' + response.questions.join('\n\n');
-      let currentIndex = 0;
-      
-      const typeInterval = setInterval(() => {
-        if (currentIndex < fullText.length) {
-          setDisplayedText(fullText.substring(0, currentIndex + 1));
-          currentIndex++;
-          
-          // Scroll as text appears
-          if (currentIndex % 20 === 0) {
-            scrollViewRef.current?.scrollToEnd({ animated: true });
-          }
-        } else {
-          clearInterval(typeInterval);
-          setIsTyping(false);
-          pulseAnim.stopAnimation();
-          pulseAnim.setValue(1);
-        }
-      }, 25); // 25ms per character for natural typing speed
-      
+      const text = mobileAiService.formatGoDeeperReflection(response.reflection, response.questions);
+      const msg = createGoDeeperMessage('assistant', text);
+      setGoDeeperMessages((prev) => [...prev, msg]);
+      startReveal(msg.id, text, () => {
+        setGoDeeperMessages((prev) => {
+          persistGoDeeper(prev);
+          return prev;
+        });
+        setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 80);
+      });
     } catch (error) {
       console.error('[CreateEntry] Go Deeper error:', error);
-      setIsTyping(false);
     } finally {
-      setIsLoadingAi(false);
+      setIsGoDeeperLoading(false);
+    }
+  };
+
+  const handleGoDeeperReply = async () => {
+    const reply = goDeeperReply.trim();
+    if (!reply || isGoDeeperLoading || !content.trim()) return;
+
+    setGoDeeperReply('');
+    const userMsg = createGoDeeperMessage('user', reply);
+    const withUser = [...goDeeperMessages, userMsg];
+    setGoDeeperMessages(withUser);
+    setIsGoDeeperLoading(true);
+
+    try {
+      const assistantText = await mobileAiService.continueGoDeeperChat(content, withUser);
+      const assistantMsg = createGoDeeperMessage('assistant', assistantText);
+      const full = [...withUser, assistantMsg];
+      setGoDeeperMessages(full);
+      startReveal(assistantMsg.id, assistantText, () => {
+        persistGoDeeper(full);
+        setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 80);
+      });
+    } catch (error) {
+      console.error('[CreateEntry] Go Deeper reply error:', error);
+    } finally {
+      setIsGoDeeperLoading(false);
     }
   };
 
@@ -712,7 +752,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
         <ScrollView
           ref={scrollViewRef}
           style={{ flex: 1 }}
-          contentContainerStyle={{ flexGrow: 1 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: scrollPaddingBottom }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -730,7 +770,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           {promptText && (
             <View style={styles.promptBanner}>
               <View style={styles.promptIconWrap}>
-                <Image source={require('../public/Insight-Logo-nobg.webp')} style={styles.promptLogo} resizeMode="contain" />
+                <InsightCompanionMark size={22} isDark={isDarkTheme(theme.name)} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.promptLabel}>{t('editor.insightPrompt')}</Text>
@@ -740,6 +780,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           )}
 
           <TextInput
+            ref={contentInputRef}
             style={[styles.contentInput, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}
             value={content}
             onChangeText={handleContentChange}
@@ -771,7 +812,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           {inlinePrompt && (
             <View style={styles.promptBanner}>
               <View style={styles.promptIconWrap}>
-                <Image source={require('../public/Insight-Logo-nobg.webp')} style={styles.promptLogo} resizeMode="contain" />
+                <InsightCompanionMark size={22} isDark={isDarkTheme(theme.name)} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.promptLabel}>{t('editor.newDirection')}</Text>
@@ -783,20 +824,17 @@ export default function CreateEntryScreen({ navigation, route }: any) {
             </View>
           )}
 
-          {/* AI Response - Conversational style with typewriter effect */}
-          {aiResponse && displayedText && (
-            <View style={styles.aiResponseContainer}>
-              <View style={styles.aiResponseRow}>
-                <Animated.View style={[styles.aiIconContainer, { transform: [{ scale: isTyping ? pulseAnim : 1 }] }]}>
-                  <Ionicons name="book-outline" size={20} color="#8b5cf6" />
-                </Animated.View>
-                <Text style={[styles.aiResponseText, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.75)' : '#6B6B6B' }]}>
-                  {displayedText}
-                  {isTyping && <Text style={styles.cursor}>|</Text>}
-                </Text>
-              </View>
-            </View>
-          )}
+          <GoDeeperThread
+            messages={goDeeperMessages}
+            replyText={goDeeperReply}
+            onReplyChange={setGoDeeperReply}
+            onSendReply={handleGoDeeperReply}
+            isLoading={isGoDeeperLoading}
+            isDark={isDarkTheme(theme.name)}
+            replyPlaceholder={t('editor.goDeeperReply')}
+            typingMessageId={typingMessageId}
+            typingDisplayText={typingDisplayText}
+          />
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -872,13 +910,13 @@ export default function CreateEntryScreen({ navigation, route }: any) {
         <TouchableOpacity 
           onPress={handleGoDeeper}
           activeOpacity={0.8}
-          disabled={isLoadingAi || !content.trim()}
+          disabled={isGoDeeperLoading || !content.trim()}
         >
           <LinearGradient
-            colors={isLoadingAi ? ['#6b46c1', '#553c9a'] : ['#8b5cf6', '#7c3aed']}
+            colors={isGoDeeperLoading ? ['#6b46c1', '#553c9a'] : ['#8b5cf6', '#7c3aed']}
             style={styles.sparkleFabGradient}
           >
-            {isLoadingAi ? (
+            {isGoDeeperLoading ? (
               <Ionicons name="hourglass" size={24} color="#ffffff" />
             ) : (
               <Ionicons name="sparkles" size={24} color="#ffffff" />

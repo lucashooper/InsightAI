@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, InteractionManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -26,6 +26,7 @@ interface PinnedProtocol {
 
 const STORAGE_KEY = 'PINNED_ROUTINE_TASKS';
 const LAST_RESET_KEY = 'PINNED_ROUTINE_LAST_RESET';
+const PINNED_LOAD_STALE_MS = 60_000;
 
 export default function PinnedRoutineCard({ userId }: { userId: string }) {
   const { theme } = useTheme();
@@ -34,10 +35,17 @@ export default function PinnedRoutineCard({ userId }: { userId: string }) {
   const [tasks, setTasks] = useState<RoutineTask[]>([]);
   const [isExpanded, setIsExpanded] = useState(true);
   const [protocol, setProtocol] = useState<PinnedProtocol | null>(null);
+  const lastLoadAtRef = useRef(0);
 
   useFocusEffect(
     useCallback(() => {
-      loadPinnedProtocol();
+      const now = Date.now();
+      if (now - lastLoadAtRef.current < PINNED_LOAD_STALE_MS) return;
+      lastLoadAtRef.current = now;
+      const handle = InteractionManager.runAfterInteractions(() => {
+        loadPinnedProtocol();
+      });
+      return () => handle.cancel();
     }, [userId])
   );
 

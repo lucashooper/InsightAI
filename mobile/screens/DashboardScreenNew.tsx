@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { BlurView } from 'expo-blur';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { filterNotesForDisplayLocale } from '../utils/computeDashboardData';
 import { supabase } from '../lib/supabase';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -42,9 +43,10 @@ interface EmotionalState {
 export default function DashboardScreenNew() {
   const { user } = useAuth();
   const { theme } = useTheme();
-  const { t } = useLanguage();
-  const { data: preloaded, refreshNotes } = usePreloadedData();
+  const { t, language } = useLanguage();
+  const { data: preloaded } = usePreloadedData();
   const navigation = useNavigation<any>();
+  const introCheckedRef = useRef(false);
   const [loading, setLoading] = useState(true);
   const [emotionalState, setEmotionalState] = useState<EmotionalState>({
     mood: 'Balanced',
@@ -67,24 +69,34 @@ export default function DashboardScreenNew() {
 
   // Use preloaded data immediately on mount — no network fetch needed
   useEffect(() => {
-    if (preloaded.isLoaded) {
-      if (preloaded.userName) setUserName(preloaded.userName);
-      if (preloaded.profilePicture) setProfilePicture(preloaded.profilePicture);
-      if (preloaded.notes) {
-        processDashboardFromNotes(preloaded.notes);
-      }
-      setLoading(false);
-      loadTodayInsights();
+    if (!preloaded.isLoaded) return;
+    if (preloaded.userName) setUserName(preloaded.userName);
+    if (preloaded.profilePicture) setProfilePicture(preloaded.profilePicture);
+    setLoading(false);
+    if (!introCheckedRef.current) {
+      introCheckedRef.current = true;
       checkFirstTimeUser();
     }
-  }, [preloaded.isLoaded]);
+  }, [preloaded.isLoaded, preloaded.userName, preloaded.profilePicture]);
+
+  // When preloaded notes update, debounce reprocessing to avoid blocking tab navigation
+  useEffect(() => {
+    if (!preloaded.notes) return;
+    const timer = setTimeout(() => {
+      processDashboardFromNotes(preloaded.notes!);
+      applyTodayInsightsFromNotes(preloaded.notes!);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [preloaded.notes, language]);
 
   // Reload username and profile picture from cache when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
       const refreshProfile = async () => {
         if (!user?.id) return;
-        const cachedName = await AsyncStorage.getItem(`CACHED_USERNAME_${user.id}`);
+        const cachedName =
+          (await AsyncStorage.getItem(`CACHED_USERNAME_${user.id}`)) ||
+          (await AsyncStorage.getItem('CACHED_USERNAME'));
         const cachedPfp = await AsyncStorage.getItem(`CACHED_PROFILE_PICTURE_${user.id}`);
         if (cachedName && cachedName !== userName) {
           setUserName(cachedName);
@@ -96,24 +108,6 @@ export default function DashboardScreenNew() {
       refreshProfile();
     }, [user?.id])
   );
-
-  // Also refresh notes in background on focus
-  useFocusEffect(
-    React.useCallback(() => {
-      if (user) {
-        refreshNotes(user.id);
-      }
-    }, [])
-  );
-
-  // When preloaded notes update, debounce reprocessing to avoid blocking tab navigation
-  useEffect(() => {
-    if (!preloaded.notes || preloaded.notes.length === 0) return;
-    const timer = setTimeout(() => {
-      processDashboardFromNotes(preloaded.notes!);
-    }, 200);
-    return () => clearTimeout(timer);
-  }, [preloaded.notes]);
 
   const checkFirstTimeUser = async () => {
     try {
@@ -215,7 +209,8 @@ export default function DashboardScreenNew() {
   // Process notes into dashboard state (works with preloaded or refreshed notes)
   const processDashboardFromNotes = (notes: any[]) => {
     try {
-      const limited = notes.slice(0, 30);
+      const scoped = filterNotesForDisplayLocale(notes, language);
+      const limited = scoped.slice(0, 30);
 
       // Calculate emotional state from recent entries
       if (limited.length > 0) {
@@ -286,30 +281,18 @@ export default function DashboardScreenNew() {
     setIsRecording(false);
   };
 
-  const loadTodayInsights = async () => {
-    if (!user) return;
-    
+  const applyTodayInsightsFromNotes = (notes: any[]) => {
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
-      const { data: todayNotes, error } = await supabase
-        .from('notes')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('created_at', today.toISOString())
-        .order('created_at', { ascending: false });
+      const todayStart = today.getTime();
 
-      if (error) {
-        console.error('[HomeInsights] Error loading today entries:', error);
-        setHasEntryToday(false);
-        setTodayInsights([]);
-        return;
-      }
+      const todayNotes = notes.filter((n) => {
+        const created = new Date(n.created_at).getTime();
+        return created >= todayStart;
+      });
 
-      console.log('[HomeInsights] Today entries count:', todayNotes?.length || 0);
-      
-      if (!todayNotes || todayNotes.length === 0) {
+      if (todayNotes.length === 0) {
         setHasEntryToday(false);
         setTodayInsights([]);
         return;
@@ -317,34 +300,24 @@ export default function DashboardScreenNew() {
 
       setHasEntryToday(true);
 
-      // Pull insights from ACTUAL AI analysis (ai_structured_insights)
       const insights: Array<{icon: string, iconColor: string, title: string, description: string}> = [];
+      const analyzedToday = todayNotes.find((n) => n.ai_structured_insights);
 
-      // Get most recent analyzed entry from today
-      const analyzedToday = todayNotes.find(n => n.ai_structured_insights);
-      
-      if (analyzedToday && analyzedToday.ai_structured_insights) {
+      if (analyzedToday?.ai_structured_insights) {
         const analysis = analyzedToday.ai_structured_insights;
-        console.log('[HomeInsights] Found analyzed entry:', analyzedToday.id);
-        
-        // Extract emotional trend from mood_analysis
         const primaryEmotion = analysis.mood_analysis?.primary_emotion;
         const secondaryEmotions = analysis.mood_analysis?.secondary_emotions || [];
-        const wellbeingScore = analysis.wellbeingScore;
         const energyLevel = analysis.mood_analysis?.energy_level;
-        
-        // Build insight from actual analysis data
+
         let insightText = '';
-        
+
         if (primaryEmotion) {
           insightText = t('home.feeling', { emotion: primaryEmotion.toLowerCase() });
-          
-          // Add context from secondary emotions or energy
+
           if (secondaryEmotions.length > 0) {
             insightText += t('home.withNotes', { emotion: secondaryEmotions[0].toLowerCase() });
           }
-          
-          // Add energy context if available
+
           if (energyLevel) {
             if (energyLevel === 'low' || energyLevel === 'very_low') {
               insightText += t('home.lowEnergy');
@@ -352,13 +325,12 @@ export default function DashboardScreenNew() {
               insightText += t('home.highEnergy');
             }
           }
-          
+
           insightText += '.';
-          
-          // Determine icon based on emotion
+
           let icon = 'pulse';
           let iconColor = '#8b5cf6';
-          
+
           if (primaryEmotion.toLowerCase().includes('hop') || primaryEmotion.toLowerCase().includes('excit')) {
             icon = 'trending-up';
             iconColor = '#22c55e';
@@ -369,20 +341,16 @@ export default function DashboardScreenNew() {
             icon = 'trending-down';
             iconColor = '#ef4444';
           }
-          
+
           insights.push({
             icon,
             iconColor,
             title: t('home.emotionalSnapshot'),
-            description: insightText
+            description: insightText,
           });
         }
-        
-        console.log('[HomeInsights] Generated from AI analysis:', insights.length);
-      } else {
-        console.log('[HomeInsights] No analyzed entry today yet');
       }
-      
+
       setTodayInsights(insights);
     } catch (error) {
       console.error('[HomeInsights] Error:', error);

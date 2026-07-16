@@ -15,6 +15,7 @@ import {
   ActionSheetIOS,
   Platform,
   Modal,
+  InteractionManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,7 +24,7 @@ import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { useFocusEffect } from '@react-navigation/native';
-import { decryptEntries } from '../utils/entryDecryption';
+import { invalidateCachedNote } from '../utils/decryptCache';
 import PageHeader from '../components/shared/PageHeader';
 import StandardContainer from '../components/shared/StandardContainer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -61,7 +62,7 @@ export default function HomeScreen({ navigation, route }: any) {
   const { user } = useAuth();
   const { theme } = useTheme();
   const { t, formatDate: formatLocalizedDate } = useLanguage();
-  const { data: preloaded, refreshNotes } = usePreloadedData();
+  const { data: preloaded, refreshNotes, removeNoteById } = usePreloadedData();
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [streak, setStreak] = useState<StreakData>({ currentStreak: 0, longestStreak: 0 });
   const [loading, setLoading] = useState(true);
@@ -159,6 +160,7 @@ export default function HomeScreen({ navigation, route }: any) {
 
   const handleDeleteEntry = async (entry: DiaryEntry) => {
     if (!user) return;
+    const start = Date.now();
     try {
       const { error } = await supabase
         .from('notes')
@@ -169,6 +171,8 @@ export default function HomeScreen({ navigation, route }: any) {
       if (error) throw error;
 
       setEntries((prev) => prev.filter((e) => e.id !== entry.id));
+      removeNoteById(user.id, entry.id);
+      console.log(`[Perf:Journal] Delete complete (+${Date.now() - start}ms) — no full re-decrypt`);
     } catch (err) {
       console.error('Error deleting entry:', err);
       Alert.alert(t('common.error'), t('journal.errorDelete'));
@@ -261,7 +265,8 @@ export default function HomeScreen({ navigation, route }: any) {
               .eq('id', entry.id);
 
             if (!error) {
-              loadEntries();
+              if (user?.id) invalidateCachedNote(user.id, entry.id);
+              await refreshNotes(user.id);
               Alert.alert(t('common.success'), t('journal.renamed'));
             } else {
               Alert.alert(t('common.error'), t('journal.renameFailed'));
@@ -290,7 +295,8 @@ export default function HomeScreen({ navigation, route }: any) {
           .eq('id', datePickerEntryId);
 
         if (!error) {
-          loadEntries();
+          if (user?.id && datePickerEntryId) invalidateCachedNote(user.id, datePickerEntryId);
+          await refreshNotes(user!.id);
           Alert.alert(t('common.success'), t('journal.dateUpdated'));
           if (Platform.OS === 'ios') {
             setShowDatePicker(false);
@@ -386,49 +392,6 @@ export default function HomeScreen({ navigation, route }: any) {
     }
   };
 
-  const loadEntries = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('notes')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('updated_at', { ascending: false })
-        .limit(20);
-
-      if (error) throw error;
-
-      const processedEntries = await decryptEntries(data || []);
-
-      setEntries(processedEntries);
-      setStreak(calculateStreak(processedEntries));
-
-      // Calculate dominant emotions for greeting
-      const emotionCounts: Record<string, number> = {};
-      processedEntries
-        .filter((n: any) => n.ai_structured_insights?.mood_analysis?.primary_emotion)
-        .forEach((n: any) => {
-          const key = String(n.ai_structured_insights.mood_analysis.primary_emotion).trim();
-          if (key) emotionCounts[key] = (emotionCounts[key] || 0) + 1;
-        });
-      const totalEmotionSamples = Object.values(emotionCounts).reduce((sum, c) => sum + c, 0);
-      const dominant = Object.entries(emotionCounts)
-        .map(([emotion, count]) => ({
-          emotion,
-          percentage: totalEmotionSamples ? Math.round((count / totalEmotionSamples) * 100) : 0,
-        }))
-        .sort((a, b) => b.percentage - a.percentage)
-        .slice(0, 2);
-      setDominantEmotions(dominant);
-    } catch (error) {
-      console.error('Error loading entries:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
   // Process preloaded notes into entries state (no network calls needed)
   const processEntriesFromNotes = (notes: any[]) => {
     setEntries(notes as DiaryEntry[]);
@@ -474,10 +437,13 @@ export default function HomeScreen({ navigation, route }: any) {
 
   useFocusEffect(
     useCallback(() => {
-      // Refresh notes in background on focus
-      if (user) refreshNotes(user.id);
       loadMoodIndicatorsSetting();
-    }, [])
+      if (!user?.id) return;
+      const handle = InteractionManager.runAfterInteractions(() => {
+        refreshNotes(user.id);
+      });
+      return () => handle.cancel();
+    }, [user?.id, refreshNotes])
   );
 
   const loadMoodIndicatorsSetting = async () => {
@@ -498,9 +464,14 @@ useEffect(() => {
   }
 }, [route?.params?.searchQuery]);
 
-const onRefresh = () => {
+const onRefresh = async () => {
+  if (!user) return;
   setRefreshing(true);
-  loadEntries();
+  try {
+    await refreshNotes(user.id, { force: true });
+  } finally {
+    setRefreshing(false);
+  }
 };
 
 const formatDate = (dateString: string) => {

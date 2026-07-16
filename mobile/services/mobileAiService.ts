@@ -4,6 +4,12 @@ import Constants from 'expo-constants';
 import { supabase } from '../lib/supabase';
 import { getCurrentLanguage, getCurrentLocale } from '../i18n/languageRef';
 import { getAiLanguageInstruction, getChatLanguageInstruction, translate } from '../i18n';
+import {
+  AiPersonality,
+  buildMiraChatSystemPrompt,
+  getChatMaxTokens,
+  getChatTemperature,
+} from '../utils/aiPersonalities';
 
 export interface MoodAnalysis {
   primary_emotion: string;
@@ -39,6 +45,8 @@ export interface EnhancedAIAnalysis {
   };
   processing_time: number;
   confidence: number;
+  /** Locale active when analysis ran — used to scope dashboard patterns per language. */
+  analysis_locale?: string;
   insights_report?: {
     conversationalSummary: string;
     keyTakeaways: Array<{
@@ -119,9 +127,18 @@ async function callGroqProxy(messages: Array<{role: string; content: string}>, o
 function getDefaultChatSuggestions(): string[] {
   return [
     'companion.suggestionFeeling',
-    'companion.suggestionPatterns',
-    'companion.suggestionFocus',
-    'companion.suggestionReflect',
+    'companion.suggestionCallOut',
+    'companion.suggestionAvoiding',
+    'companion.suggestionRoastWeek',
+  ].map((key) => translate(getCurrentLanguage(), key));
+}
+
+export function getRoastChatSuggestions(): string[] {
+  return [
+    'companion.suggestionDoingWrong',
+    'companion.suggestionRoastWeek',
+    'companion.suggestionCallOut',
+    'companion.suggestionAvoiding',
   ].map((key) => translate(getCurrentLanguage(), key));
 }
 
@@ -425,6 +442,7 @@ Entry text: ${content}`;
         processing_time: processingTime,
         confidence: parsed.confidence || 70,
         insights_report: parsed.insights_report,
+        analysis_locale: getCurrentLanguage(),
       };
 
       console.log('[mobileAiService] analyzeEntry success', {
@@ -608,6 +626,46 @@ Provide ONLY the JSON, nothing else.`;
     }
   },
 
+  async continueGoDeeperChat(
+    journalContent: string,
+    messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+  ): Promise<string> {
+    await waitForRateLimit();
+
+    const history = messages
+      .map((m) => `${m.role === 'assistant' ? 'Mira' : 'User'}: ${m.content}`)
+      .join('\n\n');
+
+    const prompt = `You are Mira, a warm and insightful journal companion. The user wrote this journal entry:
+
+"${journalContent}"
+
+Conversation so far:
+${history}
+
+Respond naturally to the user's latest message. Be empathetic, specific to what they wrote, and curious — not generic. Keep it to 2-4 sentences. Do NOT ask multiple numbered questions. Do NOT analyze or score the entry. Just continue the conversation.`;
+
+    try {
+      const responseText = await callGroqProxy([
+        {
+          role: 'system',
+          content: 'You are Mira, a compassionate journal companion. You write in warm, conversational prose — never JSON, never bullet lists unless very short.',
+        },
+        { role: 'user', content: prompt },
+      ], { temperature: 0.75, max_tokens: 280 });
+
+      return responseText.trim() || "I'm listening — tell me more about that.";
+    } catch (error) {
+      console.error('[mobileAiService] continueGoDeeperChat error', error);
+      return "I'm here with you. What else is coming up as you think about this?";
+    }
+  },
+
+  formatGoDeeperReflection(reflection: string, questions: string[]): string {
+    const qs = questions.filter(Boolean).map((q) => q.trim()).join('\n\n');
+    return qs ? `${reflection}\n\n${qs}` : reflection;
+  },
+
   async generateMonthlyStory(entries: any[]): Promise<string> {
     await waitForRateLimit();
 
@@ -660,7 +718,7 @@ Write in second person ("you"). Keep it under 60 words.`;
    */
   async chat(
     messages: Array<{ role: 'user' | 'assistant'; content: string }>,
-    options?: { signal?: AbortSignal; personality?: string }
+    options?: { signal?: AbortSignal; personality?: AiPersonality }
   ): Promise<string> {
     console.log('[mobileAiService] 💬 Chat function called');
     await waitForRateLimit();
@@ -716,37 +774,16 @@ Write in second person ("you"). Keep it under 60 words.`;
       journalContext = '\n\nIMPORTANT: This user has NO journal entries yet. Do NOT reference, summarize, or pretend to have access to any journal entries. If they ask about entries, patterns, or their journal history, let them know they haven\'t written any entries yet and encourage them to start journaling. Do NOT make up or hallucinate any journal content.';
     }
 
-    // Personality-specific tone instructions
-    const personalityTones: Record<string, string> = {
-      balanced: '- Warm, supportive, and genuinely curious about the user\'s wellbeing\n- Like a wise friend who remembers everything they\'ve shared',
-      cheerful: '- Upbeat, encouraging, and optimistic — always highlight the bright side\n- Enthusiastic and energetic, use more emoji and exclamation naturally\n- Celebrate wins big and small, make the user feel great about their progress',
-      direct: '- Straightforward and efficient — get to the point quickly\n- No fluff, give clear actionable insights\n- Still caring but prefer brevity and clarity over warmth',
-      playful: '- Light-hearted, witty, and fun — use humor and creative language\n- Make journaling feel like chatting with a clever friend\n- Use playful metaphors and keep things engaging',
-      gentle: '- Extra soft, nurturing, and patient\n- Prioritize emotional validation above all else\n- Use soothing language, take things slowly, never push',
-    };
+    const personality = (options?.personality || 'balanced') as AiPersonality;
 
-    const tone = personalityTones[options?.personality || 'balanced'] || personalityTones.balanced;
-
-    const systemMessage = `You are Insight, an AI companion embedded in a journaling app. You have access to the user's journal entries and can reference them to provide personalized support.
-
-Your personality:
-${tone}
-- You use "you" and speak directly to them
-- Concise but thoughtful — 2-4 sentences per response unless they ask for more
-- You can reference specific entries, emotions, patterns, and themes from their journal
-- When they ask about their history, quote or paraphrase specific entries
-- Suggest actionable insights based on patterns you notice
-- Never be preachy or give unsolicited advice — ask before suggesting
-- If they seem distressed, be extra gentle and validating
-
-You are NOT a therapist. You're a supportive companion who helps them reflect and discover patterns in their own words.
-
-CRITICAL RULE: Only reference journal entries that are explicitly provided below. If no entries are provided, you MUST tell the user they have no entries yet. NEVER fabricate, imagine, or hallucinate journal content.${journalContext}
-
-${getChatLanguageInstruction(getCurrentLanguage())}`;
+    const systemMessage = buildMiraChatSystemPrompt(
+      personality,
+      journalContext,
+      getChatLanguageInstruction(getCurrentLanguage()),
+    );
 
     try {
-      console.log('[mobileAiService] Building API messages...');
+      console.log('[mobileAiService] Building API messages...', { personality });
       const apiMessages = [
         { role: 'system', content: systemMessage },
         ...messages.map(m => ({ role: m.role, content: m.content })),
@@ -754,8 +791,8 @@ ${getChatLanguageInstruction(getCurrentLanguage())}`;
 
       console.log('[mobileAiService] Calling Groq proxy...');
       const response = await callGroqProxy(apiMessages, {
-        temperature: 0.85,
-        max_tokens: 600,
+        temperature: getChatTemperature(personality),
+        max_tokens: getChatMaxTokens(personality),
         model: 'llama-3.3-70b-versatile',
       });
 

@@ -1,4 +1,5 @@
 import { InteractionManager } from 'react-native';
+import { getCurrentLanguage } from '../i18n/languageRef';
 import {
   notesSignature,
   computeDeferredDashboardData,
@@ -18,10 +19,10 @@ export type DashboardDeferredCache = {
 const cacheByUser = new Map<string, DashboardDeferredCache>();
 let prewarmGen = 0;
 
-const CACHE_LOGIC_VERSION = 'pg-v2';
+const CACHE_LOGIC_VERSION = 'locale-v1';
 
 function versionedSignature(signature: string) {
-  return `${CACHE_LOGIC_VERSION}:${signature}`;
+  return `${CACHE_LOGIC_VERSION}:${getCurrentLanguage()}:${signature}`;
 }
 
 export function getDashboardDeferredCache(userId: string, signature: string): DashboardDeferredCache | null {
@@ -52,7 +53,7 @@ export function prewarmDashboardCache(userId: string, notes: any[]) {
     if (getDashboardDeferredCache(userId, signature)) return;
 
     try {
-      const deferred = computeDeferredDashboardData(notes);
+      const deferred = computeDeferredDashboardData(notes, getCurrentLanguage());
       setDashboardDeferredCache(userId, { signature, ...deferred });
       console.log('[Dashboard:Cache] ✅ Prewarmed patterns for', notes.length, 'notes');
     } catch (e) {

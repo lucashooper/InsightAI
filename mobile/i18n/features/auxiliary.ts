@@ -527,7 +527,7 @@ const generatedTranslations: Partial<Record<AppLanguage, TranslationTree>> = {
         "unpinFailed": "No se pudo desbloquear el protocolo",
         "strategyOptions": "Opciones de estrategia",
         "dailyProtocols": "Protocolos diarios",
-        "suggested": "sugerido",
+        "suggested": "Sugerido",
         "createNew": "Crear nueva estrategia",
         "deleteStrategy": "Eliminar estrategia",
         "todayProgress": "EL PROGRESO DE HOY",

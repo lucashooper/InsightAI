@@ -22,6 +22,14 @@ type Blob = {
   duration: number;
 };
 
+const ROAST_BLOBS: Blob[] = [
+  { rgb: '220,38,38', alpha: 0.96, diameter: 1.08, cx: 0.5, cy: 0.5, driftX: 4, driftY: -3, scaleFrom: 0.94, scaleTo: 1.08, duration: 5200 },
+  { rgb: '234,88,12', alpha: 0.88, diameter: 0.72, cx: 0.44, cy: 0.4, driftX: 9, driftY: -7, scaleFrom: 0.96, scaleTo: 1.06, duration: 4200 },
+  { rgb: '127,29,29', alpha: 0.92, diameter: 0.66, cx: 0.6, cy: 0.52, driftX: -8, driftY: 6, scaleFrom: 1.04, scaleTo: 0.95, duration: 4800 },
+  { rgb: '251,146,60', alpha: 0.78, diameter: 0.54, cx: 0.52, cy: 0.64, driftX: 6, driftY: 7, scaleFrom: 0.95, scaleTo: 1.05, duration: 5500 },
+  { rgb: '185,28,28', alpha: 0.82, diameter: 0.58, cx: 0.36, cy: 0.58, driftX: -6, driftY: -5, scaleFrom: 1.03, scaleTo: 0.97, duration: 4600 },
+];
+
 const LIGHT_BLOBS: Blob[] = [
   { rgb: '178,125,230', alpha: 0.64, diameter: 1.06, cx: 0.5, cy: 0.5, driftX: 3, driftY: -2, scaleFrom: 0.99, scaleTo: 1.02, duration: 15000 },
   { rgb: '168,85,247', alpha: 0.88, diameter: 0.68, cx: 0.44, cy: 0.4, driftX: 7, driftY: -6, scaleFrom: 0.99, scaleTo: 1.04, duration: 10000 },
@@ -155,6 +163,10 @@ type Props = {
   compact?: boolean;
   /** Sharper, more saturated compact renders for companion avatar. */
   vivid?: boolean;
+  /** Fiery roast-mode palette with faster pulse. */
+  variant?: 'default' | 'roast';
+  /** When false, blobs stay static (e.g. voice overlay driven by external audio level). */
+  animate?: boolean;
 };
 
 /**
@@ -168,10 +180,12 @@ export default function AuroraOrb({
   clipToCircle = false,
   compact = false,
   vivid = false,
+  variant = 'default',
+  animate = true,
 }: Props) {
   const isCompact = compact || size <= 72;
-  const sourceBlobs = isDark ? DARK_BLOBS : LIGHT_BLOBS;
-  const blobs = scaleBlobsForSize(sourceBlobs, size, isCompact, !!clipToCircle, vivid);
+  const sourceBlobs = variant === 'roast' ? ROAST_BLOBS : isDark ? DARK_BLOBS : LIGHT_BLOBS;
+  const blobs = scaleBlobsForSize(sourceBlobs, size, isCompact, !!clipToCircle, vivid || variant === 'roast');
   const [motionEnabled, setMotionEnabled] = React.useState(true);
 
   React.useEffect(() => {
@@ -182,7 +196,7 @@ export default function AuroraOrb({
     return () => subscription.remove();
   }, []);
 
-  const allowMotion = motionEnabled && !(isCompact && size < 40);
+  const allowMotion = animate && motionEnabled && !(isCompact && size < 40);
 
   const content = (
     <>

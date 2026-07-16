@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { translateEmotion } from '../../i18n/labels';
 import StandardContainer from './StandardContainer';
 import PremiumButton from './PremiumButton';
 
@@ -156,7 +157,7 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
                 <View style={styles.emotionSection}>
                   <Text style={[styles.resultsLabel, { color: textTertiary }]}>{t('insights.primaryEmotion')}</Text>
                   <Text style={[styles.resultsValue, { color: textPrimary }]}>
-                    {props.insights?.mood_analysis?.primary_emotion || '—'}
+                    {translateEmotion(t, props.insights?.mood_analysis?.primary_emotion) || '—'}
                   </Text>
                 </View>
                 {props.insights?.wellbeingScore !== undefined && (() => {

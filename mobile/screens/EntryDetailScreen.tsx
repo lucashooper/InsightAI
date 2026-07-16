@@ -17,10 +17,23 @@ import PremiumUpsellOverlay from '../components/PremiumUpsellOverlay';
 import * as Haptics from 'expo-haptics';
 import { isTablet, sf, ss, si } from '../utils/responsive';
 import SunoGradient from '../components/onboarding/SunoGradient';
-import { decryptEntryFields } from '../utils/entryDecryption';
+import { decryptEntryFieldsCached } from '../utils/decryptBatch';
+import { setCachedEntry, entryVersion } from '../utils/decryptCache';
 import MoodIcon from '../components/checkin/MoodIcon';
 import { fetchCheckInForNote, StoredCheckIn } from '../services/checkInService';
 import { useLanguage } from '../contexts/LanguageContext';
+import { withContentLocale } from '../i18n/contentLocale';
+import { translateEmotion } from '../i18n/labels';
+import GoDeeperThread from '../components/editor/GoDeeperThread';
+import InsightCompanionMark from '../components/companion/InsightCompanionMark';
+import { useEditorKeyboardPadding } from '../hooks/useEditorKeyboardPadding';
+import { useTypewriterReveal } from '../hooks/useTypewriterReveal';
+import {
+  loadGoDeeperConversation,
+  saveGoDeeperConversation,
+  createGoDeeperMessage,
+  type GoDeeperMessage,
+} from '../services/goDeeperConversationService';
 
 // Helper function to get color styling based on emotion sentiment
 const getSentimentStyle = (emotion: string) => {
@@ -85,7 +98,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
   const { entry: initialEntry, entryId, shouldAnalyze, highlightText } = route.params || {};
   const { theme } = useTheme();
   const { user } = useAuth();
-  const { t, formatDate: formatLocalizedDate } = useLanguage();
+  const { t, formatDate: formatLocalizedDate, language } = useLanguage();
   const [analyzing, setAnalyzing] = useState(false);
   const [entry, setEntry] = useState<any>(initialEntry || null);
   const [editableContent, setEditableContent] = useState(initialEntry?.content || '');
@@ -116,6 +129,11 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef<ScrollView>(null);
   const insightsSectionY = useRef<number>(0);
+  const [goDeeperMessages, setGoDeeperMessages] = useState<GoDeeperMessage[]>([]);
+  const [goDeeperReply, setGoDeeperReply] = useState('');
+  const [isGoDeeperLoading, setIsGoDeeperLoading] = useState(false);
+  const { scrollPaddingBottom } = useEditorKeyboardPadding();
+  const { activeId: typingMessageId, displayText: typingDisplayText, startReveal } = useTypewriterReveal();
   const [highlightedCardText, setHighlightedCardText] = useState<string | null>(highlightText || null);
 
   // Auto-scroll to insights when navigating from Dashboard with highlightText
@@ -155,23 +173,25 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
     }
   };
 
-  const loadLinkedCheckIn = async (noteId: string) => {
+  const loadLinkedCheckIn = (noteId: string) => {
     if (!user?.id) return;
-    try {
-      setLinkedCheckIn(await fetchCheckInForNote(user.id, noteId));
-    } catch (error) {
-      console.error('[EntryDetail] Error loading linked check-in:', error);
-    }
+    fetchCheckInForNote(user.id, noteId)
+      .then((checkIn) => setLinkedCheckIn(checkIn))
+      .catch((error) => {
+        console.warn('[EntryDetail] Linked check-in skipped:', error?.message || error);
+      });
   };
 
   useEffect(() => {
     const hydrateEntry = async () => {
       if (initialEntry) {
-        const decrypted = await decryptEntryFields(initialEntry);
+        const decrypted = user?.id
+          ? await decryptEntryFieldsCached(initialEntry, user.id)
+          : initialEntry;
         setEntry(decrypted);
         setEditableContent(decrypted.content || '');
         setEditableTitle(decrypted.title || '');
-        await loadLinkedCheckIn(decrypted.id);
+        loadLinkedCheckIn(decrypted.id);
 
         if (shouldAnalyze && !decrypted.ai_structured_insights) {
           handleAnalyzeEntry(decrypted);
@@ -206,11 +226,13 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
         .single();
       
       if (!error && data) {
-        const decrypted = await decryptEntryFields(data);
+        const decrypted = user?.id
+          ? await decryptEntryFieldsCached(data, user.id)
+          : data;
         setEntry(decrypted);
         setEditableContent(decrypted.content || '');
         setEditableTitle(decrypted.title || '');
-        await loadLinkedCheckIn(decrypted.id);
+        loadLinkedCheckIn(decrypted.id);
         
         if (shouldAnalyze && !data.ai_structured_insights) {
           handleAnalyzeEntry(data);
@@ -240,8 +262,21 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
         .eq('id', entry.id);
 
       if (!error) {
-        entry.title = editableTitle.trim() || t('entry.untitled');
-        entry.content = editableContent.trim();
+        const savedTitle = editableTitle.trim() || t('entry.untitled');
+        const savedContent = editableContent.trim();
+        const savedAt = new Date().toISOString();
+        entry.title = savedTitle;
+        entry.content = savedContent;
+        entry.updated_at = savedAt;
+        if (user?.id && entry.id) {
+          setCachedEntry(
+            user.id,
+            entry.id,
+            entryVersion({ ...entry, updated_at: savedAt, content: savedContent, title: savedTitle }),
+            savedTitle,
+            savedContent,
+          );
+        }
         setIsModified(false);
       }
     } catch (error) {
@@ -470,7 +505,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
               difficulty: 'moderate',
               emoji: card.type === 'growth' ? '🌱' : '💭',
               status: 'suggested',
-              source: 'ai_suggested',
+              source: withContentLocale('ai_suggested', language),
               source_entry_id: targetEntry.id,
             });
             if (suggestError) console.warn('[EntryDetail] Suggested strategy insert failed:', JSON.stringify(suggestError));
@@ -562,7 +597,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
           difficulty: 'moderate',
           emoji: playbookDraft.emoji,
           status: 'active',
-          source: 'ai_suggested',
+          source: withContentLocale('ai_suggested', language),
         });
 
       if (error) {
@@ -597,6 +632,75 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
   };
 
   const MOODS = ['😊', '😌', '😔', '😤', '😰', '🥰', '😴', '🤔', '😢', '🙂', '😁', '😐'];
+
+  useEffect(() => {
+    if (!user?.id || !entry?.id) return;
+    loadGoDeeperConversation(user.id, entry.id).then(setGoDeeperMessages);
+  }, [user?.id, entry?.id]);
+
+  const persistGoDeeper = async (messages: GoDeeperMessage[]) => {
+    if (!user?.id || !entry?.id) return;
+    await saveGoDeeperConversation(user.id, messages, entry.id);
+  };
+
+  const getJournalBodyForGoDeeper = () => {
+    const promptMatch = editableContent.match(/\[Insight Prompt: ([^\]]+)\]/);
+    if (promptMatch && entry?.entry_type === 'prompt') {
+      return editableContent.replace(/\[Insight Prompt: [^\]]+\]\n\n/, '').trim();
+    }
+    return editableContent.trim();
+  };
+
+  const handleGoDeeper = async () => {
+    const body = getJournalBodyForGoDeeper();
+    if (!body || isGoDeeperLoading) return;
+
+    setIsGoDeeperLoading(true);
+    try {
+      const response = await mobileAiService.generateFollowUpQuestions(body);
+      const text = mobileAiService.formatGoDeeperReflection(response.reflection, response.questions);
+      const msg = createGoDeeperMessage('assistant', text);
+      setGoDeeperMessages((prev) => [...prev, msg]);
+      startReveal(msg.id, text, () => {
+        setGoDeeperMessages((prev) => {
+          persistGoDeeper(prev);
+          return prev;
+        });
+        setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 80);
+      });
+    } catch (error) {
+      console.error('[EntryDetail] Go Deeper error:', error);
+    } finally {
+      setIsGoDeeperLoading(false);
+    }
+  };
+
+  const handleGoDeeperReply = async () => {
+    const reply = goDeeperReply.trim();
+    const body = getJournalBodyForGoDeeper();
+    if (!reply || isGoDeeperLoading || !body) return;
+
+    setGoDeeperReply('');
+    const userMsg = createGoDeeperMessage('user', reply);
+    const withUser = [...goDeeperMessages, userMsg];
+    setGoDeeperMessages(withUser);
+    setIsGoDeeperLoading(true);
+
+    try {
+      const assistantText = await mobileAiService.continueGoDeeperChat(body, withUser);
+      const assistantMsg = createGoDeeperMessage('assistant', assistantText);
+      const full = [...withUser, assistantMsg];
+      setGoDeeperMessages(full);
+      startReveal(assistantMsg.id, assistantText, () => {
+        persistGoDeeper(full);
+        setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 80);
+      });
+    } catch (error) {
+      console.error('[EntryDetail] Go Deeper reply error:', error);
+    } finally {
+      setIsGoDeeperLoading(false);
+    }
+  };
 
   const toggleQuickActions = () => {
     const toValue = showQuickActions ? 0 : 1;
@@ -754,7 +858,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
       <ScrollView 
         ref={scrollViewRef} 
         style={styles.scrollView} 
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollPaddingBottom }]}
         showsVerticalScrollIndicator={true}
         scrollEventThrottle={16}
         keyboardShouldPersistTaps="handled"
@@ -821,7 +925,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                     borderColor: isDarkTheme(theme.name) ? 'rgba(139, 92, 246, 0.3)' : 'rgba(139, 92, 246, 0.2)'
                   }]}>
                     <View style={styles.promptBadgeRow}>
-                      <Ionicons name="bulb" size={18} color="#8b5cf6" />
+                      <InsightCompanionMark size={20} isDark={isDarkTheme(theme.name)} />
                       <Text style={[styles.promptBadgeLabel, { color: isDarkTheme(theme.name) ? 'rgba(139, 92, 246, 0.9)' : '#7c3aed' }]}>
                         {t('entry.todaysInsight')}
                       </Text>
@@ -859,6 +963,18 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
               />
             );
           })()}
+
+          <GoDeeperThread
+            messages={goDeeperMessages}
+            replyText={goDeeperReply}
+            onReplyChange={setGoDeeperReply}
+            onSendReply={handleGoDeeperReply}
+            isLoading={isGoDeeperLoading}
+            isDark={isDarkTheme(theme.name)}
+            replyPlaceholder={t('editor.goDeeperReply')}
+            typingMessageId={typingMessageId}
+            typingDisplayText={typingDisplayText}
+          />
           
           {structuredInsights && (
             <View style={styles.inlineInsightsSection}>
@@ -890,7 +1006,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                     <StandardContainer variant="nested" style={[styles.inlineMoodCard, styles.inlineMoodCardTop, { flex: 1, borderColor: theme.colors.border }]}>
                       <View style={styles.emotionBadge}>
                         <Text style={[styles.inlineMoodLabel, { color: theme.colors.secondaryText }]}>{t('entry.primaryEmotion')}</Text>
-                        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[styles.inlineMoodEmotion, { color: theme.colors.primaryText }]}>{moodAnalysis.primary_emotion}</Text>
+                        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[styles.inlineMoodEmotion, { color: theme.colors.primaryText }]}>{translateEmotion(t, moodAnalysis.primary_emotion)}</Text>
                       </View>
                     </StandardContainer>
                   )}
@@ -1130,15 +1246,15 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
       {/* Bottom-Right Go Deeper Button */}
       <Animated.View style={[styles.sparkleButton, { bottom: controlsBottomAnim }]}>
         <TouchableOpacity
-          onPress={() => handleAnalyzeEntry()}
-          disabled={analyzing || !editableContent?.trim()}
+          onPress={handleGoDeeper}
+          disabled={isGoDeeperLoading || !getJournalBodyForGoDeeper()}
           activeOpacity={0.8}
         >
           <LinearGradient
             colors={['#8b5cf6', '#6d28d9']}
-            style={[styles.sparkleFabGradient, (!editableContent?.trim() || analyzing) && { opacity: 0.4 }]}
+            style={[styles.sparkleFabGradient, (!getJournalBodyForGoDeeper() || isGoDeeperLoading) && { opacity: 0.4 }]}
           >
-            {analyzing ? (
+            {isGoDeeperLoading ? (
               <Ionicons name="hourglass" size={24} color="#ffffff" />
             ) : (
               <Ionicons name="sparkles" size={24} color="#ffffff" />

@@ -11,6 +11,7 @@ import { protocolCompletionService } from '../services/protocolCompletionService
 import PageHeader from '../components/shared/PageHeader';
 import StandardContainer from '../components/shared/StandardContainer';
 import { useLanguage } from '../contexts/LanguageContext';
+import { filterByContentLocale, withContentLocale } from '../i18n/contentLocale';
 
 type TabType = 'protocols' | 'strategies';
 
@@ -31,7 +32,7 @@ export default function PlaybookScreen() {
   console.log('[Playbook] 🔄 UPDATED VERSION LOADED - Suggestion count badges added to strategies');
   const { user } = useAuth();
   const { theme } = useTheme();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<TabType>('protocols');
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,7 +67,7 @@ export default function PlaybookScreen() {
   useFocusEffect(
     useCallback(() => {
       loadStrategies();
-    }, [user])
+    }, [user, language])
   );
 
   const loadStrategies = async () => {
@@ -86,10 +87,13 @@ export default function PlaybookScreen() {
       }
 
       console.log('[Mobile Playbook] strategies loaded from Supabase', data);
-      setStrategies(data || []);
+      const scoped = filterByContentLocale(data || [], language);
+      setStrategies(scoped);
+
+      await protocolCompletionService.pruneCompletions(scoped.map((s) => s.id));
       
       // Load completion data
-      await loadCompletionData(data || []);
+      await loadCompletionData(scoped);
     } catch (error) {
       console.error('Error loading strategies:', error);
     } finally {
@@ -99,11 +103,12 @@ export default function PlaybookScreen() {
 
   const loadCompletionData = async (strategies: Strategy[]) => {
     // Get today's completions
-    const todayCompletions = await protocolCompletionService.getTodayCompletions();
+    const activeProtocols = strategies.filter(s => s.status === 'active');
+    const activeIds = activeProtocols.map((p) => p.id);
+    const todayCompletions = await protocolCompletionService.getTodayCompletions(activeIds);
     setCompletedToday(todayCompletions);
     
     // Get stats for each active protocol
-    const activeProtocols = strategies.filter(s => s.status === 'active');
     const stats: Record<string, { currentStreak: number; longestStreak: number }> = {};
     
     for (const protocol of activeProtocols) {
@@ -116,12 +121,12 @@ export default function PlaybookScreen() {
     
     setProtocolStats(stats);
     
-    // Update progress
+    // Update progress — only count completions for protocols that still exist
     const total = activeProtocols.length;
     const completed = todayCompletions.length;
     setProtocolProgress({
       completed,
-      total: total || 1,
+      total,
       percentage: total > 0 ? Math.round((completed / total) * 100) : 0
     });
   };
@@ -156,7 +161,7 @@ export default function PlaybookScreen() {
           difficulty: newStrategy.difficulty,
           emoji: newStrategy.emoji,
           status: 'active',
-          source: 'user_created',
+          source: withContentLocale('user_created', language),
           tasks: newStrategy.tasks,
         })
         .select()
@@ -203,8 +208,11 @@ export default function PlaybookScreen() {
         return;
       }
 
-      // Reload strategies
+      // Reload strategies to reflect the change
       await loadStrategies();
+      await protocolCompletionService.pruneCompletions(
+        strategies.filter((s) => s.id !== id).map((s) => s.id),
+      );
     } catch (error) {
       console.error('Error deleting strategy:', error);
     }

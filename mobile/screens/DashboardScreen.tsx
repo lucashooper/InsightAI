@@ -31,13 +31,14 @@ import PremiumGradientText from '../components/shared/PremiumGradientText';
 import PageHeader from '../components/shared/PageHeader';
 import { isTablet, sf, ss, iPadWideContentStyle } from '../utils/responsive';
 import { yieldToUI } from '../utils/yieldToUI';
-import { notesSignature, computeDeferredDashboardData } from '../utils/computeDashboardData';
+import { notesSignature, computeDeferredDashboardData, filterNotesForDisplayLocale } from '../utils/computeDashboardData';
 import { sectionSubtitleForItems } from '../utils/patternGrouping';
 import {
   getDashboardDeferredCache,
   setDashboardDeferredCache,
 } from '../utils/dashboardCache';
 import { navigateToPlaybook } from '../utils/navigateToPlaybook';
+import { translateEmotion } from '../i18n/labels';
 
 const screenWidth = Dimensions.get('window').width;
 const SHOW_DASHBOARD_STORY_SECTIONS = false;
@@ -61,7 +62,8 @@ interface ChartData {
 export default function DashboardScreen() {
   const { user } = useAuth();
   const { theme, themeName } = useTheme();
-  const { t, formatDate } = useLanguage();
+  const { t, formatDate, language } = useLanguage();
+  const labelEmotion = (emotion: string) => translateEmotion(t, emotion);
   const isFocused = useIsFocused();
   const { data: preloaded } = usePreloadedData();
   const navigation = useNavigation<any>();
@@ -164,7 +166,10 @@ export default function DashboardScreen() {
   useEffect(() => {
     if (!isFocused || !preloaded.isLoaded || !user?.id) return;
     if (preloaded.userName) setUserName(preloaded.userName);
+  }, [preloaded.userName]);
 
+  useEffect(() => {
+    if (!isFocused || !preloaded.isLoaded || !user?.id) return;
     const sig = notesSignature(preloaded.notes);
     const cached = getDashboardDeferredCache(user.id, sig);
     if (cached) {
@@ -172,17 +177,23 @@ export default function DashboardScreen() {
     }
 
     // Skip full reload when stats already computed for this notes snapshot
-    if (lastLoadedSigRef.current === sig && stats) {
+    const localeSig = `${sig}:${language}`;
+    if (lastLoadedSigRef.current === localeSig && stats) {
       setLoading(false);
       return;
     }
 
-    const gen = ++loadGenRef.current;
-    loadStats(gen, sig);
+    const handle = InteractionManager.runAfterInteractions(() => {
+      const gen = ++loadGenRef.current;
+      console.log('[Perf:Dashboard] loadStats starting after tab transition');
+      loadStats(gen, localeSig);
+    });
+
     return () => {
       loadGenRef.current++;
+      handle.cancel();
     };
-  }, [isFocused, preloaded.isLoaded, user?.id, notesSignature(preloaded.notes)]);
+  }, [isFocused, preloaded.isLoaded, user?.id, language, notesSignature(preloaded.notes)]);
 
   // Trigger modal animations when modal opens
   useEffect(() => {
@@ -458,7 +469,7 @@ export default function DashboardScreen() {
   const loadPatternsData = async (notes: any[], gen: number, sig: string) => {
     try {
       if (gen !== loadGenRef.current) return;
-      const deferred = computeDeferredDashboardData(notes);
+      const deferred = computeDeferredDashboardData(notes, language);
       if (gen !== loadGenRef.current) return;
 
       setPatternsToAddress(deferred.patternsToAddress);
@@ -528,15 +539,17 @@ export default function DashboardScreen() {
     }
   };
 
-  const getOppositeEmotion = (emotion: string): string => {
+  const getOppositeEmotionKey = (emotion: string): string => {
     const opposites: Record<string, string> = {
-      'anxious': 'calm',
-      'frustrated': 'content',
-      'sad': 'joy',
-      'angry': 'peace',
-      'overwhelmed': 'clarity',
-      'tired': 'energized',
-      'stressed': 'relaxed',
+      anxious: 'calm',
+      frustrated: 'content',
+      sad: 'joyful',
+      angry: 'peaceful',
+      overwhelmed: 'clear',
+      tired: 'energized',
+      stressed: 'calm',
+      hopeful: 'balanced',
+      reflective: 'energized',
     };
     return opposites[emotion.toLowerCase()] || 'balance';
   };
@@ -615,10 +628,12 @@ export default function DashboardScreen() {
       // Store all notes for other features
       setAllNotes(notes || []);
 
+      const dashboardNotes = filterNotesForDisplayLocale(notes || [], language);
+
       // Build dominant emotions synchronously (fast) so UI shows immediately
       const emotionCounts: Record<string, number> = {};
       const entriesByEmotion: Record<string, any[]> = {};
-      notes
+      dashboardNotes
         ?.filter((n: any) => n.ai_structured_insights?.mood_analysis?.primary_emotion)
         .forEach((n: any) => {
           const key = String(
@@ -846,7 +861,7 @@ export default function DashboardScreen() {
                                 pointerEvents="none"
                               />
                               <View style={styles.bubbleInnerRim} pointerEvents="none" />
-                              <Text style={styles.bubbleEmotionText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>{item.emotion}</Text>
+                              <Text style={styles.bubbleEmotionText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>{labelEmotion(item.emotion)}</Text>
                               <Text style={styles.bubblePercentageText}>{item.percentage}%</Text>
                             </LinearGradient>
                           </TouchableOpacity>
@@ -867,10 +882,18 @@ export default function DashboardScreen() {
                     {/* Enhanced Insights Below Bubbles */}
                     <View style={[styles.emotionInsightSection, { borderTopColor: theme.colors.divider }]}>
                       <Text style={[styles.emotionInsightText, { color: theme.colors.secondaryText }]}>
-                        Most recurring: <Text style={[styles.emotionInsightEmphasis, { color: theme.colors.primaryText }]}>{dominantEmotions[0].emotion}</Text> ({dominantEmotions[0].percentage}%)
+                        {t('dashboard.mostRecurring')}: <Text style={[styles.emotionInsightEmphasis, { color: theme.colors.primaryText }]}>{labelEmotion(dominantEmotions[0].emotion)}</Text> ({dominantEmotions[0].percentage}%)
                       </Text>
                       <Text style={[styles.emotionPromptText, { color: theme.colors.tertiaryText }]}>
-                        You've been {dominantEmotions[0].emotion.toLowerCase()} this week. Want to explore what brings you more {getOppositeEmotion(dominantEmotions[0].emotion)}?
+                        {t('dashboard.emotionWeekPrompt', {
+                          emotion: labelEmotion(dominantEmotions[0].emotion).toLowerCase(),
+                          opposite: (() => {
+                            const oppositeKey = getOppositeEmotionKey(dominantEmotions[0].emotion);
+                            return oppositeKey === 'balance'
+                              ? t('dashboard.balance')
+                              : labelEmotion(oppositeKey).toLowerCase();
+                          })(),
+                        })}
                       </Text>
                     </View>
                   </>
@@ -878,7 +901,7 @@ export default function DashboardScreen() {
                   <View style={styles.emptyBubbleContainer}>
                     <Ionicons name="happy-outline" size={48} color={theme.colors.secondaryText} />
                     <Text style={[styles.emptyBubbleText, { color: theme.colors.secondaryText }]}>
-                      Your emotions will appear here as you journal
+                      {t('dashboard.emotionsEmpty')}
                     </Text>
                   </View>
                 )}
@@ -895,7 +918,7 @@ export default function DashboardScreen() {
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Ionicons name="leaf-outline" size={20} color="#10b981" />
-                    <Text style={[styles.patternsTitle, { color: theme.colors.primaryText }]}>Patterns to Address ({patternsToAddress.length})</Text>
+                    <Text style={[styles.patternsTitle, { color: theme.colors.primaryText }]}>{t('dashboard.patternsToAddressCount', { count: patternsToAddress.length })}</Text>
                   </View>
                   <Ionicons 
                     name={patternsExpanded ? "chevron-up" : "chevron-down"} 
@@ -945,11 +968,11 @@ export default function DashboardScreen() {
                       ) : null}
                       {pattern.originLabel && !pattern.originLabel.includes('related entries') ? (
                         <Text style={[styles.patternOrigin, { color: theme.colors.tertiaryText }]} numberOfLines={1}>
-                          from "{pattern.originLabel}"
+                          {t('dashboard.patternFrom', { label: pattern.originLabel })}
                         </Text>
                       ) : pattern.count > 1 ? (
                         <Text style={[styles.patternOrigin, { color: theme.colors.tertiaryText }]} numberOfLines={1}>
-                          Mentioned across {pattern.count} entries
+                          {t('dashboard.patternMentionedAcross', { count: pattern.count })}
                         </Text>
                       ) : null}
                       </StandardContainer>
@@ -962,7 +985,7 @@ export default function DashboardScreen() {
                       onPress={() => setPatternsExpanded(true)}
                       activeOpacity={0.7}
                     >
-                      <Text style={[styles.viewAllText, { color: theme.colors.secondaryText }]}>View {patternsToAddress.length - 2} More Focus Areas</Text>
+                      <Text style={[styles.viewAllText, { color: theme.colors.secondaryText }]}>{t('dashboard.viewMoreFocusAreas', { count: patternsToAddress.length - 2 })}</Text>
                       <Ionicons name="chevron-forward" size={14} color={theme.colors.secondaryText} />
                     </TouchableOpacity>
                   )}
@@ -989,7 +1012,7 @@ export default function DashboardScreen() {
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Ionicons name="sparkles-outline" size={20} color="#f59e0b" />
-                    <Text style={[styles.workingTitle, { color: theme.colors.primaryText }]}>What's Working ({whatsWorking.length})</Text>
+                    <Text style={[styles.workingTitle, { color: theme.colors.primaryText }]}>{t('dashboard.whatsWorkingCount', { count: whatsWorking.length })}</Text>
                   </View>
                   <Ionicons 
                     name={workingExpanded ? "chevron-up" : "chevron-down"} 

@@ -266,18 +266,18 @@ export default function App() {
 function AppContent({ onReady }: { onReady: () => void }) {
   const { isLocked, isLockEnabled, isLockReady } = useAppLock();
   const { loading: authLoading, user } = useAuth();
-  const { data: preloadedData, preloadForUser, resetData } = usePreloadedData();
+  const { preloadForUser, resetData } = usePreloadedData();
   const preloadStartedRef = useRef(false);
   const hasSignaledReadyRef = useRef(false);
 
-  // Preload during splash — even when locked — so PIN screen stays responsive after reveal
+  // Preload in background as soon as auth resolves — never block PIN on network/decrypt.
   useEffect(() => {
-    if (!isLockReady || authLoading || !user) return;
+    if (authLoading || !user) return;
     if (preloadStartedRef.current) return;
 
     preloadStartedRef.current = true;
     preloadForUser(user.id, user.email || '');
-  }, [isLockReady, authLoading, user, preloadForUser]);
+  }, [authLoading, user, preloadForUser]);
 
   useEffect(() => {
     if (!user) {
@@ -291,12 +291,9 @@ function AppContent({ onReady }: { onReady: () => void }) {
     }
   }, [authLoading, user, resetData]);
 
-  const isStartupReady =
-    !authLoading &&
-    isLockReady &&
-    (!user || preloadedData.isStartupReady);
+  const isStartupReady = !authLoading && isLockReady;
 
-  // Keep splash visible until auth, lock state, and initial data are all ready
+  // Dismiss splash once auth + lock settings are ready — data preload continues underneath.
   useEffect(() => {
     if (!isStartupReady || hasSignaledReadyRef.current) return;
     hasSignaledReadyRef.current = true;

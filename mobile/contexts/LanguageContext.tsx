@@ -104,10 +104,6 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     [language, setLanguage, t, formatDate, ready],
   );
 
-  // Keep the native splash visible until the persisted locale is known. This
-  // prevents an English frame flashing before the selected language loads.
-  if (!ready) return null;
-
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 

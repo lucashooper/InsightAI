@@ -58,5 +58,6 @@ export async function decryptEntryFields<T extends { content?: string | null; ti
 export async function decryptEntries<T extends { content?: string | null; title?: string | null; is_encrypted?: boolean }>(
   entries: T[],
 ): Promise<T[]> {
-  return Promise.all(entries.map((entry) => decryptEntryFields(entry)));
+  const { decryptEntriesInChunks } = await import('./decryptBatch');
+  return decryptEntriesInChunks(entries, 4);
 }

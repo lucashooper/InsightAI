@@ -1,4 +1,27 @@
-export default {
+const fs = require('fs');
+const path = require('path');
+
+function readEnvValue(key) {
+  const fromProcess = process.env[key];
+  if (fromProcess && fromProcess.length > 10) return fromProcess;
+
+  const envPath = path.join(__dirname, '.env');
+  if (!fs.existsSync(envPath)) return undefined;
+
+  for (const line of fs.readFileSync(envPath, 'utf8').split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eq = trimmed.indexOf('=');
+    if (eq <= 0) continue;
+    const name = trimmed.slice(0, eq).trim();
+    if (name === key) return trimmed.slice(eq + 1).trim();
+  }
+  return undefined;
+}
+
+const elevenLabsKey = readEnvValue('EXPO_PUBLIC_ELEVENLABS_API_KEY');
+
+module.exports = {
   expo: {
     name: "Insight",
     slug: "insight-app",
@@ -38,11 +61,11 @@ export default {
       eas: {
         projectId: "8ffc6ed0-5105-49a6-90c1-3b7ab9ba9011"
       },
-      // Hardcoded for EAS builds - process.env doesn't work at build time
       EXPO_PUBLIC_SUPABASE_URL: "https://ptpqvghlaesyrzlljzkk.supabase.co",
       EXPO_PUBLIC_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0cHF2Z2hsYWVzeXJ6bGxqemtrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxMDc4MzEsImV4cCI6MjA2ODY4MzgzMX0.dmkb2_Hdf0vQwirOwJKX4ssfr0ltA1eIZ5_v1s5p6DE",
       EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: "878031859491-tub0qt8omp6enuiaqr7liivotmkq7gef.apps.googleusercontent.com",
       EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: "878031859491-dmj3m0e95nl2hmbt08c4oo7qm3a4j49l.apps.googleusercontent.com",
+      EXPO_PUBLIC_ELEVENLABS_API_KEY: elevenLabsKey,
     },
     owner: "crupid2s-organization",
     plugins: [
@@ -63,4 +86,4 @@ export default {
       ]
     ]
   }
-}
+};

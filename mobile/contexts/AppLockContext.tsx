@@ -182,9 +182,11 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const unlock = useCallback(async (pin: string): Promise<boolean> => {
+    const start = Date.now();
     const valid = await verifyPin(pin);
     if (valid) {
       setIsLocked(false);
+      console.log(`[Perf:AppLock] PIN unlock (+${Date.now() - start}ms)`);
     }
     return valid;
   }, [verifyPin]);
