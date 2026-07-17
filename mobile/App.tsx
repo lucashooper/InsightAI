@@ -14,7 +14,7 @@ import { Asset } from 'expo-asset';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { ThemeProvider, normalizeThemeName } from './contexts/ThemeContext';
+import { ThemeProvider, normalizeThemeName, useTheme, isDarkTheme } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { PreloadProvider, usePreloadedData } from './contexts/PreloadContext';
 import type { ThemeName } from './contexts/ThemeContext';
@@ -225,7 +225,7 @@ export default function App() {
               <PreloadProvider>
                 <OnboardingProvider>
                   <AppContent onReady={() => setAppReady(true)} />
-                  <StatusBar style="auto" />
+                  <ThemedStatusBar />
                 </OnboardingProvider>
               </PreloadProvider>
             </AuthProvider>
@@ -261,6 +261,11 @@ export default function App() {
       })()}
     </GestureHandlerRootView>
   );
+}
+
+function ThemedStatusBar() {
+  const { theme } = useTheme();
+  return <StatusBar style={isDarkTheme(theme.name) ? 'light' : 'dark'} />;
 }
 
 function AppContent({ onReady }: { onReady: () => void }) {

@@ -573,8 +573,8 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
           </View>
           <View style={styles.entryHeader}>
             {item.entry_type === 'prompt' && (
-              <View style={[styles.insightBadge, { backgroundColor: 'rgba(139, 92, 246, 0.9)' }]}>
-                <Ionicons name="bulb" size={12} color="#ffffff" />
+              <View style={[styles.insightBadge, { backgroundColor: 'rgba(139, 92, 246, 0.18)' }]}>
+                <Ionicons name="bulb" size={12} color="rgba(255,255,255,0.85)" />
                 <Text style={styles.insightBadgeText}>{t('journal.prompt')}</Text>
               </View>
             )}
@@ -1337,12 +1337,13 @@ const styles = StyleSheet.create({
   },
   // Premium Entry Card Styles
   premiumCardPressable: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
   premiumCard: {
+    borderRadius: 18,
   },
   cardGradient: {
-    padding: 14,
+    padding: 16,
   },
   entryHeader: {
     marginBottom: 8,
@@ -1372,11 +1373,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   entryTitle: {
-    fontSize: sf(20),
+    fontSize: sf(19),
     fontWeight: '700',
     color: '#ffffff',
     flex: 1,
-    letterSpacing: -0.3,
+    letterSpacing: -0.5,
+    lineHeight: sf(22),
   },
   moodBadge: {
     width: 40,
@@ -1397,21 +1399,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: 'rgba(139, 92, 246, 0.25)',
+    backgroundColor: 'rgba(139, 92, 246, 0.16)',
     alignSelf: 'flex-start',
   },
   insightBadgeText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
-    color: '#ffffff',
+    color: 'rgba(255, 255, 255, 0.82)',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
   },
   entryContent: {
-    fontSize: sf(15),
+    fontSize: sf(14),
     color: '#999999',
-    lineHeight: sf(22),
-    marginBottom: 16,
+    lineHeight: sf(21),
+    marginBottom: 12,
   },
   entryFooter: {
     flexDirection: 'row',
@@ -1433,9 +1435,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   entryDate: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#666666',
     fontWeight: '500',
+    letterSpacing: 0.2,
   },
   viewInsightsButton: {
     borderRadius: 8,

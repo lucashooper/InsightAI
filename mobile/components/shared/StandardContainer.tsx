@@ -33,7 +33,7 @@ export default function StandardContainer({ children, style, variant = 'default'
         ? ['rgba(6, 6, 9, 0.86)', 'rgba(2, 2, 5, 0.91)']
         : ['rgba(255, 255, 255, 0.74)', 'rgba(249, 242, 255, 0.64)']
       : dark
-        ? ['rgba(6, 6, 9, 0.89)', 'rgba(2, 2, 5, 0.94)']
+        ? ['rgba(14, 14, 22, 0.88)', 'rgba(9, 9, 15, 0.94)']
         : ['rgba(255, 255, 255, 0.86)', 'rgba(251, 248, 253, 0.76)'];
 
   const borderColor = isHero
@@ -147,10 +147,10 @@ const styles = StyleSheet.create({
   },
   defaultShadowDark: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.34,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.22,
+    shadowRadius: 16,
+    elevation: 6,
   },
   defaultShadowLight: {
     shadowColor: '#8f6aa8',

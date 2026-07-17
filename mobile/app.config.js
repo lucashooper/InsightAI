@@ -28,7 +28,7 @@ module.exports = {
     version: "1.0.3",
     orientation: "portrait",
     icon: "./assets/InsightAI-New-Logo.png",
-    userInterfaceStyle: "light",
+    userInterfaceStyle: "automatic",
     newArchEnabled: true,
     ios: {
       supportsTablet: true,

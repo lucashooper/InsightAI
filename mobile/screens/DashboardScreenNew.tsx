@@ -22,7 +22,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePreloadedData } from '../contexts/PreloadContext';
 import StandardContainer from '../components/shared/StandardContainer';
-import AuroraOrb from '../components/shared/AuroraOrb';
+import HeroHomeOrb from '../components/shared/HeroHomeOrb';
 import FirstTimeIntroOverlay from '../components/FirstTimeIntroOverlay';
 import PinnedRoutineCard from '../components/dashboard/PinnedRoutineCard';
 import PlaybookQuickAccessCard from '../components/dashboard/PlaybookQuickAccessCard';
@@ -33,6 +33,7 @@ import { getTodayPrompt, DailyPrompt } from '../data/dailyPrompts';
 const insightLogo = require('../public/Insight-Logo-nobg.webp');
 
 const { width } = Dimensions.get('window');
+const HERO_ORB_SIZE = isTablet ? 600 : 340;
 
 interface EmotionalState {
   mood: string;
@@ -482,10 +483,10 @@ export default function DashboardScreenNew() {
           onPress={() => navigation.navigate('AIChat')}
           activeOpacity={0.85}
         >
-          <AuroraOrb
-            size={isTablet ? 600 : 340}
+          <HeroHomeOrb
+            size={HERO_ORB_SIZE}
             isDark={isDarkTheme(theme.name)}
-            style={[styles.orbImage, { left: (width - (isTablet ? 600 : 340)) / 2 }]}
+            style={[styles.orbImage, { left: (width - HERO_ORB_SIZE) / 2 }]}
           />
           <View style={styles.greetingInOrb}>
             <Text style={[styles.greetingText, {
@@ -915,6 +916,13 @@ const styles = StyleSheet.create({
   },
   greetingInOrb: {
     alignItems: 'center',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: isTablet ? 20 : 10,
+    height: isTablet ? 600 : 340,
+    justifyContent: 'center',
+    paddingHorizontal: isTablet ? 48 : 32,
   },
   greeting: {
     fontSize: sf(16),
@@ -1066,6 +1074,8 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: sf(20),
     fontWeight: '700',
+    letterSpacing: -0.4,
+    lineHeight: sf(24),
     marginBottom: isTablet ? 20 : 16,
   },
   patternCard: {
@@ -1155,10 +1165,12 @@ const styles = StyleSheet.create({
   insightsSection: {
     paddingHorizontal: isTablet ? 56 : 24,
     marginBottom: isTablet ? 40 : 32,
+    gap: 4,
   },
   insightCard: {
-    padding: isTablet ? 20 : 16,
-    marginTop: 12,
+    padding: isTablet ? 20 : 18,
+    marginTop: 8,
+    borderRadius: 18,
   },
   insightHeader: {
     flexDirection: 'row',
@@ -1169,10 +1181,12 @@ const styles = StyleSheet.create({
   insightTitle: {
     fontSize: sf(17),
     fontWeight: '600',
+    letterSpacing: -0.3,
+    lineHeight: sf(21),
   },
   insightText: {
     fontSize: sf(13),
-    lineHeight: sf(18),
+    lineHeight: sf(19),
   },
   challengesSection: {
     paddingHorizontal: isTablet ? 56 : 24,

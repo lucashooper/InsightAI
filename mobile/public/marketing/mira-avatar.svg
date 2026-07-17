@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <!-- Static export of Mira's aurora orb avatar for Figma / App Store comps. -->
+  <!-- Live app renders this programmatically via components/shared/AuroraOrb.tsx -->
+  <defs>
+    <radialGradient id="core" cx="50%" cy="48%" r="52%">
+      <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.95"/>
+      <stop offset="55%" stop-color="#6366F1" stop-opacity="0.72"/>
+      <stop offset="100%" stop-color="#1E1B4B" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="pink" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#F0654F" stop-opacity="0.78"/>
+      <stop offset="100%" stop-color="#F0654F" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="teal" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#2DD4BF" stop-opacity="0.62"/>
+      <stop offset="100%" stop-color="#2DD4BF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="violet" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#A78BFA" stop-opacity="0.58"/>
+      <stop offset="100%" stop-color="#A78BFA" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="indigo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#513977" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#513977" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="circle">
+      <circle cx="64" cy="64" r="64"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#circle)">
+    <rect width="128" height="128" fill="#120F1A"/>
+    <circle cx="64" cy="62" r="70" fill="url(#core)"/>
+    <circle cx="52" cy="50" r="42" fill="url(#violet)"/>
+    <circle cx="78" cy="58" r="38" fill="url(#pink)"/>
+    <circle cx="66" cy="82" r="34" fill="url(#teal)"/>
+    <circle cx="46" cy="72" r="30" fill="url(#indigo)"/>
+    <circle cx="82" cy="44" r="28" fill="url(#violet)" opacity="0.7"/>
+  </g>
+</svg>

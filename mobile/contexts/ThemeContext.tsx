@@ -69,13 +69,13 @@ const themes: Record<ThemeName, Theme> = {
       warning: '#f59e0b',
       error: '#ef4444',
       
-      border: 'rgba(255, 255, 255, 0.085)',
-      divider: 'rgba(255, 255, 255, 0.065)',
+      border: 'rgba(255, 255, 255, 0.055)',
+      divider: 'rgba(255, 255, 255, 0.05)',
       shadow: '#000000',
       
-      surface: 'rgba(255, 255, 255, 0.045)',
-      surfaceElevated: 'rgba(255, 255, 255, 0.07)',
-      surfaceHover: 'rgba(255, 255, 255, 0.09)',
+      surface: 'rgba(255, 255, 255, 0.04)',
+      surfaceElevated: 'rgba(255, 255, 255, 0.065)',
+      surfaceHover: 'rgba(255, 255, 255, 0.085)',
     },
   },
   
