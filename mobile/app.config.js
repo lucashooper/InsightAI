@@ -25,14 +25,14 @@ module.exports = {
   expo: {
     name: "Insight",
     slug: "insight-app",
-    version: "1.0.3",
+    version: "1.0.7",
     orientation: "portrait",
     icon: "./assets/InsightAI-New-Logo.png",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
-      buildNumber: "69",
+      buildNumber: "102",
       infoPlist: {
         NSMicrophoneUsageDescription: "InsightAI uses the microphone for voice notes.",
         NSSpeechRecognitionUsageDescription: "InsightAI uses speech recognition to convert your voice into text for taking notes and searching your content.",
@@ -69,6 +69,18 @@ module.exports = {
     },
     owner: "crupid2s-organization",
     plugins: [
+      [
+        "expo-build-properties",
+        {
+          ios: {
+            extraPods: [
+              { name: "GoogleUtilities", modular_headers: true },
+              { name: "RecaptchaInterop", modular_headers: true },
+              { name: "AppCheckCore", version: "11.2.0" },
+            ],
+          },
+        },
+      ],
       "expo-speech-recognition",
       "expo-secure-store",
       [
