@@ -313,7 +313,8 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "understand": "借助 Insight\n了解自己",
           "growth": "追踪你的成长\n与进步",
           "reflect": "深度反思\n生活更美好",
-          "unlock": "解锁 AI 驱动的\n深度洞察"
+          "mira": "与 Mira 对话",
+          "findWhatWorks": "找到适合你的方法"
         },
         "trial": "3 天试用",
         "weekly": "每周",
@@ -727,7 +728,8 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "understand": "Insight के साथ\nखुद को समझें",
           "growth": "अपनी प्रगति और\nविकास को ट्रैक करें",
           "reflect": "गहराई से चिंतन करें,\nबेहतर जीवन जिएँ",
-          "unlock": "एआई-संचालित\nअंतर्दृष्टि अनलॉक करें"
+          "mira": "Mira से बात करें",
+          "findWhatWorks": "जो काम करता है उसे खोजें"
         },
         "trial": "3 दिवसीय परीक्षण",
         "weekly": "साप्ताहिक",
@@ -1141,7 +1143,8 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "understand": "Mieux vous comprendre\navec Insight",
           "growth": "Suivez votre évolution\net vos progrès",
           "reflect": "Réfléchissez davantage,\nvivez mieux",
-          "unlock": "Débloquez des analyses\noptimisées par l’IA"
+          "mira": "Parlez à Mira",
+          "findWhatWorks": "Trouvez ce qui fonctionne"
         },
         "trial": "Essai de 3 jours",
         "weekly": "Hebdomadaire",
@@ -1555,7 +1558,8 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "understand": "Verstehen Sie sich\nmit Insight besser",
           "growth": "Verfolgen Sie Wachstum\nund Fortschritte",
           "reflect": "Reflektieren Sie tiefer,\nleben Sie besser",
-          "unlock": "KI-gestützte Erkenntnisse\nfreischalten"
+          "mira": "Sprich mit Mira",
+          "findWhatWorks": "Finde, was funktioniert"
         },
         "trial": "3-Tage-Testversion",
         "weekly": "Wöchentlich",
@@ -1969,7 +1973,8 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "understand": "Лучше поймите себя\nс Insight",
           "growth": "Отслеживайте рост\nи прогресс",
           "reflect": "Размышляйте глубже,\nживите лучше",
-          "unlock": "Откройте аналитику\nна основе ИИ"
+          "mira": "Поговорите с Mira",
+          "findWhatWorks": "Найдите то, что работает"
         },
         "trial": "3-дневная пробная версия",
         "weekly": "Еженедельно",
@@ -2383,7 +2388,8 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "understand": "Entenda-se melhor\ncom o Insight",
           "growth": "Acompanhe seu crescimento\ne progresso",
           "reflect": "Reflita mais,\nviva melhor",
-          "unlock": "Desbloqueie insights\ncom tecnologia de IA"
+          "mira": "Fale com a Mira",
+          "findWhatWorks": "Encontre o que funciona"
         },
         "trial": "Teste de 3 dias",
         "weekly": "Semanalmente",
@@ -2797,7 +2803,8 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "understand": "Comprenditi meglio\ncon Insight",
           "growth": "Segui la tua crescita\ne i tuoi progressi",
           "reflect": "Rifletti più a fondo,\nvivi meglio",
-          "unlock": "Sblocca insight\nbasati sull’AI"
+          "mira": "Parla con Mira",
+          "findWhatWorks": "Trova ciò che funziona"
         },
         "trial": "prova di 3 giorni",
         "weekly": "Settimanale",
@@ -3211,7 +3218,8 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "understand": "Înțelege-te mai bine\ncu Insight",
           "growth": "Urmărește-ți evoluția\nși progresul",
           "reflect": "Reflectează mai profund,\ntrăiește mai bine",
-          "unlock": "Deblochează insight-uri\nbazate pe AI"
+          "mira": "Vorbește cu Mira",
+          "findWhatWorks": "Găsește ce funcționează"
         },
         "trial": "Proba de 3 zile",
         "weekly": "Săptămânal",
@@ -3625,7 +3633,8 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "understand": "Insight ilə\nözünüzü daha yaxşı anlayın",
           "growth": "İnkişafınızı və\ntərəqqinizi izləyin",
           "reflect": "Daha dərindən düşünün,\ndaha yaxşı yaşayın",
-          "unlock": "AI əsaslı təhlilləri\nkiliddən çıxarın"
+          "mira": "Mira ilə danışın",
+          "findWhatWorks": "Nəyin işlədiyini tapın"
         },
         "trial": "3 günlük sınaq",
         "weekly": "Həftəlik",
@@ -4039,7 +4048,8 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "understand": "Begrijp jezelf beter\nmet Insight",
           "growth": "Volg je groei\nen vooruitgang",
           "reflect": "Reflecteer dieper,\nleef beter",
-          "unlock": "Ontgrendel inzichten\nop basis van AI"
+          "mira": "Praat met Mira",
+          "findWhatWorks": "Vind wat werkt"
         },
         "trial": "3 dagen op proef",
         "weekly": "Wekelijks",

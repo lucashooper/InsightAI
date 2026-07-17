@@ -19,21 +19,26 @@ import { useLanguage } from '../../contexts/LanguageContext';
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 const phoneImages = [
-  require('../../public/new-paywall-phones/Insight-Light-Main-Phone.png'),
-  require('../../public/new-paywall-phones/Insight-Light-Dashboard-Phone.png'),
-  require('../../public/new-paywall-phones/Insight-Light-Journal-Phone.png'),
-  require('../../public/new-paywall-phones/Insight-Light-Insights-Phone.png'),
+  require('../../public/new-phone-images/Insight-Main-Phone 1.png'),
+  require('../../public/new-phone-images/Insight-Dashboard-Phone (2) 1.png'),
+  require('../../public/new-phone-images/Insight-Insights-Phone-Black-Better 1.png'),
+  require('../../public/new-phone-images/Mira-Insight-Marketing-Phone.png'),
+  require('../../public/new-phone-images/Insight-Playbook-Phone 1.png'),
 ];
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CAROUSEL_IMAGE_WIDTH = SCREEN_WIDTH;
-const PHONE_DISPLAY_HEIGHT = isTablet ? SCREEN_HEIGHT * 0.52 : SCREEN_HEIGHT * 0.46;
+const PHONE_SCALE = 0.80;
+const PHONE_IMAGE_WIDTH = (isTablet ? SCREEN_WIDTH * 0.74 : SCREEN_WIDTH * 0.98) * PHONE_SCALE;
+const PHONE_FULL_HEIGHT = PHONE_IMAGE_WIDTH * 2.08;
+const PHONE_DISPLAY_HEIGHT = PHONE_FULL_HEIGHT * 0.70;
 
 const slideHeadings = [
   'understand',
   'growth',
   'reflect',
-  'unlock',
+  'mira',
+  'findWhatWorks',
 ];
 
 const ENTITLEMENT_ID = 'Insight Pro';
@@ -918,19 +923,18 @@ const styles = StyleSheet.create({
     height: PHONE_DISPLAY_HEIGHT,
     overflow: 'hidden',
     position: 'relative',
-    marginTop: isTablet ? -80 : -100,
-    marginBottom: isTablet ? -20 : -14,
+    marginTop: isTablet ? -40 : -28,
+    marginBottom: isTablet ? -4 : -2,
   },
   carouselSlide: {
     width: SCREEN_WIDTH,
+    height: PHONE_DISPLAY_HEIGHT,
     alignItems: 'center',
     justifyContent: 'flex-start',
   },
   carouselImage: {
-    width: isTablet ? SCREEN_WIDTH * 0.70 : SCREEN_WIDTH * 1.12,
-    height: isTablet ? SCREEN_WIDTH * 0.70 * 2.1 : SCREEN_WIDTH * 1.12 * 2.1,
-    borderRadius: 28,
-    transform: [{ translateY: isTablet ? -470 : -322 }],
+    width: PHONE_IMAGE_WIDTH,
+    height: PHONE_FULL_HEIGHT,
   },
   phoneFade: {
     position: 'absolute',

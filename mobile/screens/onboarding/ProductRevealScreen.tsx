@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import MaskedView from '@react-native-masked-view/masked-view';
 import * as Haptics from 'expo-haptics';
 import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
 import SunoGradient from '../../components/onboarding/SunoGradient';
@@ -9,8 +8,11 @@ import LanguagePicker from '../../components/LanguagePicker';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const PHONE_IMAGE_WIDTH = isTablet ? SCREEN_WIDTH * 0.74 : SCREEN_WIDTH * 0.98;
+const PHONE_FULL_HEIGHT = PHONE_IMAGE_WIDTH * 2.08;
+const PHONE_VISIBLE_HEIGHT = PHONE_FULL_HEIGHT * 0.70;
 
-const phoneMockup = require('../../public/Modern-Iphone-Insight-LANDING.png');
+const phoneMockup = require('../../public/new-phone-images/Insight-Main-Phone 1.png');
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 export default function ProductRevealScreen({ navigation }: any) {
@@ -39,27 +41,18 @@ export default function ProductRevealScreen({ navigation }: any) {
                 <Text style={styles.welcomeText}>{t('onboarding.welcome')}</Text>
             </View>
 
-            {/* Phone image - centered and slightly larger, with soft bottom fade */}
+            {/* Phone image — large, bottom ~30% cropped for screen content focus */}
             <View style={styles.phoneSection}>
-                <MaskedView
-                    style={styles.maskedContainer}
-                    maskElement={
-                        <LinearGradient
-                            colors={['#000', '#000', '#000', 'transparent']}
-                            locations={[0, 0.62, 0.82, 1]}
-                            style={{ flex: 1 }}
-                        />
-                    }
-                >
+                <View style={styles.phoneCrop}>
                     <Image
                         source={phoneMockup}
                         style={styles.phoneMockup}
                         resizeMode="contain"
                     />
-                </MaskedView>
+                </View>
                 <LinearGradient
-                    colors={['rgba(254,247,242,0)', 'rgba(254,247,242,0.75)', '#fef7f2']}
-                    locations={[0, 0.55, 1]}
+                    colors={['rgba(254,247,242,0)', '#fef7f2']}
+                    locations={[0, 1]}
                     pointerEvents="none"
                     style={styles.phoneFadeOverlay}
                 />
@@ -135,25 +128,27 @@ const styles = StyleSheet.create({
     phoneSection: {
         flex: 1,
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         overflow: 'hidden',
-        marginTop: isTablet ? 0 : -6,
+        paddingHorizontal: isTablet ? 32 : 8,
+        marginTop: isTablet ? -4 : -8,
     },
-    maskedContainer: {
-        width: SCREEN_WIDTH * (isTablet ? 0.9 : 1.16),
-        height: SCREEN_HEIGHT * (isTablet ? 0.74 : 0.74),
-        marginTop: isTablet ? -14 : -8,
+    phoneCrop: {
+        width: PHONE_IMAGE_WIDTH,
+        height: PHONE_VISIBLE_HEIGHT,
+        overflow: 'hidden',
+        alignItems: 'center',
     },
     phoneMockup: {
-        width: '100%',
-        height: '100%',
+        width: PHONE_IMAGE_WIDTH,
+        height: PHONE_FULL_HEIGHT,
     },
     phoneFadeOverlay: {
         position: 'absolute',
         left: 0,
         right: 0,
         bottom: 0,
-        height: isTablet ? 120 : 110,
+        height: isTablet ? 64 : 52,
     },
 
     /* ── Footer ────────────────────────────────────────────────── */
