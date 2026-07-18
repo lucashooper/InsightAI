@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { MARKETING_PHONE_IMAGES } from '../../constants/marketingPhoneImages';
 
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
@@ -14,22 +15,27 @@ const showcaseFeatures = [
   {
     title: 'AI-Powered Analysis',
     description: 'Get deep insights into your emotional patterns. Our AI reads between the lines and surfaces what matters most to your wellbeing.',
-    image: '/new-phone-images/Main-Insight.png',
+    image: MARKETING_PHONE_IMAGES.main,
   },
   {
     title: 'Beautiful Dashboard',
     description: 'Track your emotional health over time with interactive charts, mood trends, and pattern recognition — all in one view.',
-    image: '/new-phone-images/Insight-Dashboard.png',
+    image: MARKETING_PHONE_IMAGES.dashboard,
   },
   {
     title: 'Deep Insights',
     description: 'Discover meaningful patterns in your thoughts and emotions with AI-powered analysis that helps you understand yourself better.',
-    image: '/new-phone-images/Insight-Insights.png',
+    image: MARKETING_PHONE_IMAGES.insights,
   },
   {
     title: 'Personal Playbook',
     description: 'Build a library of strategies and coping techniques suggested by AI based on your unique patterns and growth areas.',
-    image: '/new-phone-images/Playbook.png',
+    image: MARKETING_PHONE_IMAGES.playbook,
+  },
+  {
+    title: 'Meet Mira',
+    description: 'Your AI companion for reflection and growth. Chat with Mira anytime for thoughtful guidance, deeper insights, and support tailored to your journal.',
+    image: MARKETING_PHONE_IMAGES.miraChat,
   },
 ];
 
@@ -75,8 +81,10 @@ const FeatureShowcase: React.FC = () => {
 
   const mobilePhoneImg: React.CSSProperties = {
     width: '260px',
-    maxWidth: '65%',
+    maxWidth: '68%',
+    maxHeight: '580px',
     height: 'auto',
+    objectFit: 'contain',
     filter: 'drop-shadow(0 20px 40px rgba(0, 0, 0, 0.4))',
   };
 

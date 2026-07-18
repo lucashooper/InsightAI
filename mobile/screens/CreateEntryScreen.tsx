@@ -34,6 +34,7 @@ import MoodIcon from '../components/checkin/MoodIcon';
 import { useLanguage } from '../contexts/LanguageContext';
 import GoDeeperThread from '../components/editor/GoDeeperThread';
 import InsightCompanionMark from '../components/companion/InsightCompanionMark';
+import { formatJournalPromptContent } from '../constants/branding';
 import { useEditorKeyboardPadding } from '../hooks/useEditorKeyboardPadding';
 import { useTypewriterReveal } from '../hooks/useTypewriterReveal';
 import {
@@ -161,7 +162,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       // If there's a prompt, prepend it as context for AI analysis
       let fullContent = content.trim();
       if (promptText && fullContent) {
-        fullContent = `[Insight Prompt: ${promptText}]\n\n${fullContent}`;
+        fullContent = formatJournalPromptContent(promptText, fullContent);
       }
       let contentToSave = fullContent;
       let isEncrypted = false;
@@ -301,7 +302,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           .from('notes')
           .update({
             title: entryTitle,
-            content: promptText ? `[Insight Prompt: ${promptText}]\n\n${content.trim()}` : content.trim(),
+            content: promptText ? formatJournalPromptContent(promptText, content.trim()) : content.trim(),
             is_encrypted: false, // Analyze always saves unencrypted for AI processing
             mood: mood || null,
             updated_at: new Date().toISOString(),
@@ -331,7 +332,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           .insert({
             user_id: user?.id,
             title: entryTitle,
-            content: promptText ? `[Insight Prompt: ${promptText}]\n\n${content.trim()}` : content.trim(),
+            content: promptText ? formatJournalPromptContent(promptText, content.trim()) : content.trim(),
             mood: mood || null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),

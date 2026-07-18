@@ -15,16 +15,11 @@ import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { analytics } from '../../services/analytics';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { PAYWALL_PHONE_IMAGES } from '../../constants/phoneMockups';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
-const phoneImages = [
-  require('../../public/new-phone-images/Insight-Main-Phone 1.png'),
-  require('../../public/new-phone-images/Insight-Dashboard-Phone (2) 1.png'),
-  require('../../public/new-phone-images/Insight-Insights-Phone-Black-Better 1.png'),
-  require('../../public/new-phone-images/Mira-Insight-Marketing-Phone.png'),
-  require('../../public/new-phone-images/Insight-Playbook-Phone 1.png'),
-];
+const phoneImages = [...PAYWALL_PHONE_IMAGES];
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CAROUSEL_IMAGE_WIDTH = SCREEN_WIDTH;

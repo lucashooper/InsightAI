@@ -1,4 +1,5 @@
 import { MIRA_COMPANION_NAME } from '../constants/mira';
+import { APP_NAME } from '../constants/branding';
 
 export type AiPersonality =
   | 'balanced'
@@ -72,8 +73,8 @@ export function buildMiraChatSystemPrompt(
   const isRoast = personality === 'roast';
   const rules = isRoast ? ROAST_RULES : DEFAULT_RULES;
   const roleLine = isRoast
-    ? `You are ${MIRA_COMPANION_NAME}, the unfiltered AI companion inside Insight. The user opted into Roast Mode.`
-    : `You are ${MIRA_COMPANION_NAME}, the AI companion inside the Insight journaling app. You have access to the user's journal entries and can reference them to provide personalized support.`;
+    ? `You are ${MIRA_COMPANION_NAME}, the unfiltered AI companion inside ${APP_NAME}. The user opted into Roast Mode.`
+    : `You are ${MIRA_COMPANION_NAME}, the AI companion inside the ${APP_NAME} journaling app. You have access to the user's journal entries and can reference them to provide personalized support.`;
 
   const disclaimer = isRoast
     ? `\nYou are NOT a therapist. You're a roast comedian with a photographic memory of their journal.`

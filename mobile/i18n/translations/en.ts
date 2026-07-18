@@ -18,7 +18,7 @@ const en: TranslationTree = {
     settingDescription: 'App text and AI insights',
   },
   onboarding: {
-    welcome: 'Welcome to Insight',
+    welcome: 'Welcome to Zeno',
     getStarted: 'Get Started',
     alreadyHaveAccount: 'Already have an account?',
     signIn: 'Sign In',
@@ -29,7 +29,7 @@ const en: TranslationTree = {
     skip: 'Skip',
     skipForNow: 'Skip for now',
     valueProp: {
-      title: 'Insight turns thoughts into clarity',
+      title: 'Zeno turns thoughts into clarity',
       mentalNoise: 'Mental noise',
       understanding: 'Understanding',
       captureFeelings: 'Capture how you feel',
@@ -39,7 +39,7 @@ const en: TranslationTree = {
     patterns: {
       eyebrow: 'Powered by AI',
       title: 'Track your patterns\nover time',
-      subtitle: "Insight identifies what's holding you back and surfaces your top priorities to work on.",
+      subtitle: "Zeno identifies what's holding you back and surfaces your top priorities to work on.",
       adjustSleep: 'Adjust sleep schedule',
       selfCompassion: 'Practice self-compassion more',
       reduceScreenTime: 'Reduce screen time before bed',
@@ -51,7 +51,7 @@ const en: TranslationTree = {
     wins: {
       eyebrow: 'Celebrate growth',
       title: 'Celebrate your\nwins too',
-      subtitle: "Insight also spots what's going well so you can build on your strengths.",
+      subtitle: "Zeno also spots what's going well so you can build on your strengths.",
       gym: 'Going to the gym consistently',
       reading: 'Reading every day this week',
       openingUp: 'Opening up to people more',
@@ -114,7 +114,7 @@ const en: TranslationTree = {
         title: 'Grounded in psychology',
         subtitle: 'Research shows that reflective journaling improves emotional awareness and long-term wellbeing.',
         badge: 'Cambridge University',
-        screenTitle: 'Insight is grounded in psychology',
+        screenTitle: 'Zeno is grounded in psychology',
         body: 'Journaling is linked to better emotional awareness and mental wellbeing.',
       },
       frequency: {
@@ -282,14 +282,14 @@ const en: TranslationTree = {
         procrastinating: "I keep putting things off and I'm not sure why",
         grateful: 'Something happened today that made me really grateful',
       },
-      thinking: 'Insight is thinking...',
-      aiLabel: 'Insight AI',
+      thinking: 'Zeno is thinking...',
+      aiLabel: 'Zeno',
       responses: {
-        overwhelmed: "It sounds like you're carrying a lot right now. Recognizing that feeling is the first step — Insight can help you track these patterns and find what brings you relief. 💜",
-        positive: "That's a beautiful observation. Noticing what lifts your mood is powerful — Insight will help you build on these positive patterns over time. ✨",
-        procrastination: 'Procrastination often has deeper roots than we think. Journaling can reveal the hidden emotions behind it — Insight will help you understand and overcome those blocks. 🔑',
-        sadness: 'Thank you for sharing that. Expressing difficult feelings is brave and healing. Insight is here to listen and help you navigate through these moments. 💙',
-        default: 'Thank you for sharing. Every entry is a step toward deeper self-understanding. Insight will help you uncover patterns, track your growth, and gain clarity over time. 💜',
+        overwhelmed: "It sounds like you're carrying a lot right now. Recognizing that feeling is the first step — Zeno can help you track these patterns and find what brings you relief. 💜",
+        positive: "That's a beautiful observation. Noticing what lifts your mood is powerful — Zeno will help you build on these positive patterns over time. ✨",
+        procrastination: 'Procrastination often has deeper roots than we think. Journaling can reveal the hidden emotions behind it — Zeno will help you understand and overcome those blocks. 🔑',
+        sadness: 'Thank you for sharing that. Expressing difficult feelings is brave and healing. Zeno is here to listen and help you navigate through these moments. 💙',
+        default: 'Thank you for sharing. Every entry is a step toward deeper self-understanding. Zeno will help you uncover patterns, track your growth, and gain clarity over time. 💜',
       },
     },
     privacy: {
@@ -301,11 +301,11 @@ const en: TranslationTree = {
     },
     notifications: {
       title: 'Turn on notifications',
-      subtitle: "Get the most out of Insight by staying up to date with what's happening.",
+      subtitle: "Get the most out of Zeno by staying up to date with what's happening.",
       allow: 'Allow notifications',
       skip: 'Skip for now →',
       permissionTitle: 'Remember to reflect with notifications',
-      permissionRequest: 'Insight AI would like to send you',
+      permissionRequest: 'Zeno would like to send you',
       permissionType: 'Notifications',
       dontAllow: "Don't Allow",
     },
@@ -313,7 +313,7 @@ const en: TranslationTree = {
       title: 'Rate us 5 Stars',
       subtitle: 'Help us spread the message of mindful living and personal growth',
       testimonials: {
-        first: 'Insight has completely changed how I understand my emotions. The AI insights are incredibly accurate and helpful.',
+        first: 'Zeno has completely changed how I understand my emotions. The AI insights are incredibly accurate and helpful.',
         second: "This app helped me identify patterns I never noticed before. It's like having a therapist in my pocket.",
         third: 'The daily reflections and insights have become an essential part of my self-care routine.',
       },
@@ -325,7 +325,7 @@ const en: TranslationTree = {
     },
     paywall: {
       headings: {
-        understand: 'Understand Yourself\nwith Insight',
+        understand: 'Understand Yourself\nwith Zeno',
         growth: 'Track Your Growth\n& Progress',
         reflect: 'Reflect Deeper,\nLive Better',
         mira: 'Talk to Mira',
@@ -348,7 +348,7 @@ const en: TranslationTree = {
         playbook: 'Growth playbook & action plans',
       },
       testimonials: {
-        first: 'Insight has completely changed how I understand my emotions. The AI insights are incredibly accurate and helpful.',
+        first: 'Zeno has completely changed how I understand my emotions. The AI insights are incredibly accurate and helpful.',
         second: 'The journaling prompts are thoughtful and the pattern tracking helps me see my growth over time.',
         third: "Best mental health app I've used. The AI feels like talking to a therapist who really gets me.",
         fourth: 'I love how it connects my daily habits to my mood patterns. Eye-opening insights every week.',
@@ -393,7 +393,7 @@ const en: TranslationTree = {
       },
     },
     postPurchase: {
-      title: 'Welcome to Insight',
+      title: 'Welcome to Zeno',
       subtitle: "You're all set with Pro",
       analysis: 'AI-powered journal analysis',
       privateEntries: 'Private & encrypted entries',
@@ -508,7 +508,7 @@ const en: TranslationTree = {
     highImpact: 'HIGH IMPACT',
   },
   companion: {
-    headerTitle: 'Insight',
+    headerTitle: 'Mira',
     emptySubtitle: "I know your journal inside out.\nAsk me anything about your patterns, emotions, or growth.",
     inputPlaceholder: 'Ask me anything...',
     messagesToday: '{{count}}/{{limit}} messages today',

@@ -15,6 +15,7 @@ import StandardContainer from '../components/shared/StandardContainer';
 import PageHeader from '../components/shared/PageHeader';
 import LanguagePicker from '../components/LanguagePicker';
 import { useLanguage } from '../contexts/LanguageContext';
+import { APP_NAME } from '../constants/branding';
 import { usePreloadedData } from '../contexts/PreloadContext';
 import { isTablet, sf, ss, si, iPadContentStyle } from '../utils/responsive';
 import { printSubscriptionDebugReport, resetRevenueCatOnly, nukeAllSubscriptionState } from '../utils/subscriptionDebug';
@@ -1023,7 +1024,7 @@ export default function SettingsScreen({ navigation }: any) {
                 {isLoadingSubscription ? (
                   <ActivityIndicator size="small" color="#a855f7" />
                 ) : (
-                  <Text style={[styles.usageTier, { color: theme.colors.primaryText }]}>Insight {subscriptionPlan}</Text>
+                  <Text style={[styles.usageTier, { color: theme.colors.primaryText }]}>{APP_NAME} {subscriptionPlan}</Text>
                 )}
               </View>
               {/* Only show usage counter for Pro users */}
@@ -1308,7 +1309,7 @@ export default function SettingsScreen({ navigation }: any) {
           <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>{t('settings.about')}</Text>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
             <View style={styles.cardGradient}>
-              <Text style={[styles.infoText, { color: theme.colors.primaryText }]}>Insight Mobile v1.0.0</Text>
+              <Text style={[styles.infoText, { color: theme.colors.primaryText }]}>{APP_NAME} Mobile v1.0.0</Text>
               <Text style={[styles.infoSubtext, { color: theme.colors.secondaryText }]}>{t('settings.personalJournal')}</Text>
             </View>
           </View>

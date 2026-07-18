@@ -23,7 +23,7 @@ const elevenLabsKey = readEnvValue('EXPO_PUBLIC_ELEVENLABS_API_KEY');
 
 module.exports = {
   expo: {
-    name: "Insight",
+    name: "Zeno",
     slug: "insight-app",
     version: "1.0.7",
     orientation: "portrait",
@@ -34,11 +34,11 @@ module.exports = {
       supportsTablet: true,
       buildNumber: "102",
       infoPlist: {
-        NSMicrophoneUsageDescription: "InsightAI uses the microphone for voice notes.",
-        NSSpeechRecognitionUsageDescription: "InsightAI uses speech recognition to convert your voice into text for taking notes and searching your content.",
-        NSPhotoLibraryUsageDescription: "Insight needs access to your photo library so you can select a profile picture. For example, you can choose a photo from your library to personalize your account profile shown on the Settings screen. Only the photo you select is uploaded — your other photos are never accessed or stored.",
+        NSMicrophoneUsageDescription: "Zeno uses the microphone for voice notes.",
+        NSSpeechRecognitionUsageDescription: "Zeno uses speech recognition to convert your voice into text for taking notes and searching your content.",
+        NSPhotoLibraryUsageDescription: "Zeno needs access to your photo library so you can select a profile picture. For example, you can choose a photo from your library to personalize your account profile shown on the Settings screen. Only the photo you select is uploaded — your other photos are never accessed or stored.",
         ITSAppUsesNonExemptEncryption: false,
-        NSFaceIDUsageDescription: "Insight uses Face ID to quickly unlock your journal so only you can access your entries."
+        NSFaceIDUsageDescription: "Zeno uses Face ID to quickly unlock your journal so only you can access your entries."
       },
       bundleIdentifier: "com.crupid.mobile"
     },
@@ -93,7 +93,7 @@ module.exports = {
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "Insight uses Face ID to quickly unlock your journal so only you can access your entries."
+          "faceIDPermission": "Zeno uses Face ID to quickly unlock your journal so only you can access your entries."
         }
       ]
     ]

@@ -28,6 +28,7 @@ import PinnedRoutineCard from '../components/dashboard/PinnedRoutineCard';
 import PlaybookQuickAccessCard from '../components/dashboard/PlaybookQuickAccessCard';
 import { isTablet, sf, ss, si, iPadContentStyle } from '../utils/responsive';
 import { getTodayPrompt, DailyPrompt } from '../data/dailyPrompts';
+import { APP_NAME } from '../constants/branding';
 // Temporarily disabled for Expo Go testing
 // import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 const insightLogo = require('../public/Insight-Logo-nobg.webp');
@@ -449,7 +450,7 @@ export default function DashboardScreenNew() {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Image source={insightLogo} style={styles.headerLogo} resizeMode="contain" />
-            <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>Insight</Text>
+            <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>{APP_NAME}</Text>
           </View>
           <View style={styles.headerIcons}>
             <TouchableOpacity 
@@ -779,7 +780,7 @@ export default function DashboardScreenNew() {
                   source={require('../public/Insight-Logo-nobg.webp')} 
                   style={styles.streakModalLogo}
                 />
-                <Text style={[styles.streakModalBrandText, { color: theme.colors.primaryText }]}>Insight</Text>
+                <Text style={[styles.streakModalBrandText, { color: theme.colors.primaryText }]}>{APP_NAME}</Text>
               </View>
               <View style={styles.streakModalStreakBadge}>
                 <Text style={styles.streakModalStreakEmoji}>🔥</Text>

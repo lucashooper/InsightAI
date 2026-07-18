@@ -45,7 +45,7 @@ export const componentTranslations: Partial<Record<AppLanguage, TranslationTree>
         errorMessage: 'Could not send reset email. Please try again later.',
       },
       intro: {
-        title: 'Welcome to Insight!',
+        title: 'Welcome to Zeno!',
         subtitle: "Here's a quick overview of your new space for reflection and growth",
         journalTitle: 'Journal Your Thoughts',
         journalDescription: 'Tap the + button to create entries and track your emotions',
@@ -102,7 +102,7 @@ export const componentTranslations: Partial<Record<AppLanguage, TranslationTree>
         errorTitle: 'Error', errorMessage: 'No se pudo enviar el correo de restablecimiento. Inténtalo de nuevo más tarde.',
       },
       intro: {
-        title: '¡Te damos la bienvenida a Insight!', subtitle: 'Aquí tienes un breve resumen de tu nuevo espacio para reflexionar y crecer',
+        title: '¡Te damos la bienvenida a Zeno!', subtitle: 'Aquí tienes un breve resumen de tu nuevo espacio para reflexionar y crecer',
         journalTitle: 'Escribe tus pensamientos', journalDescription: 'Toca el botón + para crear entradas y registrar tus emociones',
         progressTitle: 'Sigue tu progreso', progressDescription: 'Consulta información y patrones de tu recorrido emocional',
         habitsTitle: 'Crea hábitos saludables', habitsDescription: 'Accede a herramientas de meditación, gratitud y bienestar', getStarted: 'Comenzar',
@@ -136,7 +136,7 @@ export const componentTranslations: Partial<Record<AppLanguage, TranslationTree>
         errorTitle: '错误', errorMessage: '无法发送重置邮件，请稍后重试。',
       },
       intro: {
-        title: '欢迎使用 Insight！', subtitle: '快速了解这个用于反思和成长的新空间',
+        title: '欢迎使用 Zeno！', subtitle: '快速了解这个用于反思和成长的新空间',
         journalTitle: '记录你的想法', journalDescription: '轻触 + 按钮创建日记并追踪情绪',
         progressTitle: '追踪你的进展', progressDescription: '查看情绪历程中的洞察和模式',
         habitsTitle: '培养健康习惯', habitsDescription: '使用冥想、感恩和健康工具', getStarted: '开始使用',
@@ -170,7 +170,7 @@ export const componentTranslations: Partial<Record<AppLanguage, TranslationTree>
         errorTitle: 'त्रुटि', errorMessage: 'रीसेट ईमेल नहीं भेजा जा सका। कृपया बाद में फिर कोशिश करें।',
       },
       intro: {
-        title: 'Insight में आपका स्वागत है!', subtitle: 'मनन और विकास के लिए अपनी नई जगह का एक संक्षिप्त परिचय',
+        title: 'Zeno में आपका स्वागत है!', subtitle: 'मनन और विकास के लिए अपनी नई जगह का एक संक्षिप्त परिचय',
         journalTitle: 'अपने विचार लिखें', journalDescription: 'प्रविष्टियाँ बनाने और भावनाओं पर नज़र रखने के लिए + बटन टैप करें',
         progressTitle: 'अपनी प्रगति देखें', progressDescription: 'अपनी भावनात्मक यात्रा की अंतर्दृष्टियाँ और पैटर्न देखें',
         habitsTitle: 'स्वस्थ आदतें बनाएँ', habitsDescription: 'ध्यान, कृतज्ञता और स्वास्थ्य टूल इस्तेमाल करें', getStarted: 'शुरू करें',
@@ -204,7 +204,7 @@ export const componentTranslations: Partial<Record<AppLanguage, TranslationTree>
         errorTitle: 'Erreur', errorMessage: 'Impossible d’envoyer l’e-mail de réinitialisation. Veuillez réessayer plus tard.',
       },
       intro: {
-        title: 'Bienvenue dans Insight !', subtitle: 'Voici un aperçu de votre nouvel espace de réflexion et de progression',
+        title: 'Bienvenue dans Zeno !', subtitle: 'Voici un aperçu de votre nouvel espace de réflexion et de progression',
         journalTitle: 'Notez vos pensées', journalDescription: 'Touchez le bouton + pour créer des entrées et suivre vos émotions',
         progressTitle: 'Suivez vos progrès', progressDescription: 'Consultez les analyses et les schémas de votre parcours émotionnel',
         habitsTitle: 'Adoptez des habitudes saines', habitsDescription: 'Accédez à des outils de méditation, de gratitude et de bien-être', getStarted: 'Commencer',
@@ -238,7 +238,7 @@ export const componentTranslations: Partial<Record<AppLanguage, TranslationTree>
         errorTitle: 'Fehler', errorMessage: 'Die E-Mail zum Zurücksetzen konnte nicht gesendet werden. Bitte versuche es später erneut.',
       },
       intro: {
-        title: 'Willkommen bei Insight!', subtitle: 'Hier ist ein kurzer Überblick über deinen neuen Raum für Reflexion und Wachstum',
+        title: 'Willkommen bei Zeno!', subtitle: 'Hier ist ein kurzer Überblick über deinen neuen Raum für Reflexion und Wachstum',
         journalTitle: 'Halte deine Gedanken fest', journalDescription: 'Tippe auf +, um Einträge zu erstellen und deine Emotionen zu verfolgen',
         progressTitle: 'Verfolge deinen Fortschritt', progressDescription: 'Sieh dir Erkenntnisse und Muster deiner emotionalen Entwicklung an',
         habitsTitle: 'Baue gesunde Gewohnheiten auf', habitsDescription: 'Nutze Tools für Meditation, Dankbarkeit und Wohlbefinden', getStarted: 'Loslegen',
@@ -272,7 +272,7 @@ export const componentTranslations: Partial<Record<AppLanguage, TranslationTree>
         errorTitle: 'Ошибка', errorMessage: 'Не удалось отправить письмо для сброса. Повторите попытку позже.',
       },
       intro: {
-        title: 'Добро пожаловать в Insight!', subtitle: 'Краткий обзор вашего нового пространства для размышлений и развития',
+        title: 'Добро пожаловать в Zeno!', subtitle: 'Краткий обзор вашего нового пространства для размышлений и развития',
         journalTitle: 'Записывайте свои мысли', journalDescription: 'Нажмите +, чтобы создавать записи и отслеживать эмоции',
         progressTitle: 'Следите за прогрессом', progressDescription: 'Просматривайте аналитику и закономерности своего эмоционального пути',
         habitsTitle: 'Формируйте полезные привычки', habitsDescription: 'Используйте инструменты для медитации, благодарности и благополучия', getStarted: 'Начать',
@@ -306,7 +306,7 @@ export const componentTranslations: Partial<Record<AppLanguage, TranslationTree>
         errorTitle: 'Erro', errorMessage: 'Não foi possível enviar o e-mail de redefinição. Tente novamente mais tarde.',
       },
       intro: {
-        title: 'Boas-vindas ao Insight!', subtitle: 'Veja uma breve visão geral do seu novo espaço de reflexão e crescimento',
+        title: 'Boas-vindas ao Zeno!', subtitle: 'Veja uma breve visão geral do seu novo espaço de reflexão e crescimento',
         journalTitle: 'Registre seus pensamentos', journalDescription: 'Toque no botão + para criar entradas e acompanhar suas emoções',
         progressTitle: 'Acompanhe seu progresso', progressDescription: 'Veja insights e padrões da sua jornada emocional',
         habitsTitle: 'Crie hábitos saudáveis', habitsDescription: 'Acesse ferramentas de meditação, gratidão e bem-estar', getStarted: 'Começar',
@@ -340,7 +340,7 @@ export const componentTranslations: Partial<Record<AppLanguage, TranslationTree>
         errorTitle: 'Errore', errorMessage: 'Impossibile inviare l’e-mail di reimpostazione. Riprova più tardi.',
       },
       intro: {
-        title: 'Benvenuto in Insight!', subtitle: 'Ecco una breve panoramica del tuo nuovo spazio di riflessione e crescita',
+        title: 'Benvenuto in Zeno!', subtitle: 'Ecco una breve panoramica del tuo nuovo spazio di riflessione e crescita',
         journalTitle: 'Scrivi i tuoi pensieri', journalDescription: 'Tocca il pulsante + per creare voci e tenere traccia delle tue emozioni',
         progressTitle: 'Segui i tuoi progressi', progressDescription: 'Visualizza insight e schemi del tuo percorso emotivo',
         habitsTitle: 'Crea abitudini sane', habitsDescription: 'Accedi a strumenti per meditazione, gratitudine e benessere', getStarted: 'Inizia',
@@ -374,7 +374,7 @@ export const componentTranslations: Partial<Record<AppLanguage, TranslationTree>
         errorTitle: 'Eroare', errorMessage: 'E-mailul de resetare nu a putut fi trimis. Încearcă din nou mai târziu.',
       },
       intro: {
-        title: 'Bine ai venit în Insight!', subtitle: 'Iată o prezentare rapidă a noului tău spațiu pentru reflecție și dezvoltare',
+        title: 'Bine ai venit în Zeno!', subtitle: 'Iată o prezentare rapidă a noului tău spațiu pentru reflecție și dezvoltare',
         journalTitle: 'Notează-ți gândurile', journalDescription: 'Atinge butonul + pentru a crea înregistrări și a-ți urmări emoțiile',
         progressTitle: 'Urmărește-ți progresul', progressDescription: 'Vezi perspectivele și tiparele din parcursul tău emoțional',
         habitsTitle: 'Construiește obiceiuri sănătoase', habitsDescription: 'Accesează instrumente pentru meditație, recunoștință și stare de bine', getStarted: 'Începe',
@@ -408,7 +408,7 @@ export const componentTranslations: Partial<Record<AppLanguage, TranslationTree>
         errorTitle: 'Xəta', errorMessage: 'Sıfırlama e-poçtu göndərilə bilmədi. Sonra yenidən cəhd edin.',
       },
       intro: {
-        title: 'Insight-a xoş gəlmisiniz!', subtitle: 'Düşüncə və inkişaf üçün yeni məkanınızın qısa icmalı',
+        title: 'Zeno-ya xoş gəlmisiniz!', subtitle: 'Düşüncə və inkişaf üçün yeni məkanınızın qısa icmalı',
         journalTitle: 'Düşüncələrinizi yazın', journalDescription: 'Qeydlər yaratmaq və emosiyalarınızı izləmək üçün + düyməsinə toxunun',
         progressTitle: 'İrəliləyişinizi izləyin', progressDescription: 'Emosional yolunuzdakı təhlillərə və nümunələrə baxın',
         habitsTitle: 'Sağlam vərdişlər yaradın', habitsDescription: 'Meditasiya, minnətdarlıq və sağlamlıq alətlərindən istifadə edin', getStarted: 'Başlayın',
@@ -442,7 +442,7 @@ export const componentTranslations: Partial<Record<AppLanguage, TranslationTree>
         errorTitle: 'Fout', errorMessage: 'De e-mail voor het opnieuw instellen kon niet worden verzonden. Probeer het later opnieuw.',
       },
       intro: {
-        title: 'Welkom bij Insight!', subtitle: 'Hier is een kort overzicht van je nieuwe plek voor reflectie en groei',
+        title: 'Welkom bij Zeno!', subtitle: 'Hier is een kort overzicht van je nieuwe plek voor reflectie en groei',
         journalTitle: 'Schrijf je gedachten op', journalDescription: 'Tik op de knop + om items te maken en je emoties bij te houden',
         progressTitle: 'Volg je voortgang', progressDescription: 'Bekijk inzichten en patronen in je emotionele ontwikkeling',
         habitsTitle: 'Bouw gezonde gewoonten op', habitsDescription: 'Gebruik hulpmiddelen voor meditatie, dankbaarheid en welzijn', getStarted: 'Aan de slag',

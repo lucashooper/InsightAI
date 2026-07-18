@@ -25,6 +25,9 @@ import LockScreen from './components/LockScreen';
 import SunoGradient from './components/onboarding/SunoGradient';
 import { analytics } from './services/analytics';
 
+import { APP_NAME } from './constants/branding';
+import { PAYWALL_PHONE_IMAGES, PRODUCT_REVEAL_PHONE } from './constants/phoneMockups';
+
 const insightLogo = require('./public/Insight-Logo-nobg.webp');
 
 // RevenueCat API Keys
@@ -159,11 +162,8 @@ export default function App() {
         Promise.all([
           Asset.fromModule(require('./public/InsightAI-New-Logo.png')).downloadAsync(),
           Asset.fromModule(require('./public/cool-gradient-bg.png')).downloadAsync(),
-          Asset.fromModule(require('./public/new-phone-images/Insight-Main-Phone 1.png')).downloadAsync(),
-          Asset.fromModule(require('./public/new-phone-images/Insight-Dashboard-Phone (2) 1.png')).downloadAsync(),
-          Asset.fromModule(require('./public/new-phone-images/Insight-Insights-Phone-Black-Better 1.png')).downloadAsync(),
-          Asset.fromModule(require('./public/new-phone-images/Insight-Playbook-Phone 1.png')).downloadAsync(),
-          Asset.fromModule(require('./public/new-phone-images/Mira-Insight-Marketing-Phone.png')).downloadAsync(),
+          ...PAYWALL_PHONE_IMAGES.map((image) => Asset.fromModule(image).downloadAsync()),
+          Asset.fromModule(PRODUCT_REVEAL_PHONE).downloadAsync(),
           Asset.fromModule(require('./public/noisy-image.webp')).downloadAsync(),
           Asset.fromModule(require('./public/clarity-image.webp')).downloadAsync(),
           Asset.fromModule(require('./public/onboarding-icons/BellIcon.webp')).downloadAsync(),
@@ -251,7 +251,7 @@ export default function App() {
               resizeMode="cover"
             />
             <Text style={{ fontSize: 44, fontWeight: '700', color: themeConfig.textColor, letterSpacing: -1.2 }}>
-              Insight
+              {APP_NAME}
             </Text>
           </View>
         </Animated.View>

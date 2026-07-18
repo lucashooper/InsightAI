@@ -1,13 +1,14 @@
 import React from 'react';
 import PhoneCarousel from './PhoneCarousel';
+import { MARKETING_PHONE_IMAGES } from '../../constants/marketingPhoneImages';
 
 const HeroSection: React.FC = () => {
-  // Phone mockup images from mobile app
   const phoneImages = [
-    '/phone-images/Insight-Main-Page-Phone.png',
-    '/phone-images/Insight-Journal-Page-Phone.png',
-    '/phone-images/Insight-Dashboard-Page-Phone.png',
-    '/phone-images/Insight-Playbook-Page-Phone.png',
+    MARKETING_PHONE_IMAGES.main,
+    MARKETING_PHONE_IMAGES.dashboard,
+    MARKETING_PHONE_IMAGES.insights,
+    MARKETING_PHONE_IMAGES.miraChat,
+    MARKETING_PHONE_IMAGES.playbook,
   ];
 
   return (

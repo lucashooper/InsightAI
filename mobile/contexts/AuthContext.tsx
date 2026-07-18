@@ -392,7 +392,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               displayName = email.split('@')[0].replace(/[._]/g, ' ');
               displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
             } else if (!displayName) {
-              displayName = 'Insight User';
+              displayName = 'Zeno User';
             }
             
             console.log('[AUTH] Google Sign-In - saving username:', displayName);

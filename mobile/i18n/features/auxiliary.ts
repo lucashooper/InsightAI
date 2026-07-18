@@ -97,7 +97,7 @@ const en: TranslationTree = {
       title: 'Gratitude Practice', promptSmile: 'What made you smile today?',
       promptPerson: 'Who are you grateful for right now?', promptJoy: 'What small moment brought you joy?',
       noResponses: 'No responses', noResponsesMessage: 'Please write at least one gratitude response.',
-      insight: 'Insight', savedMessage: 'Your gratitude practice has been saved to your journal.',
+      insight: 'Reflection', savedMessage: 'Your gratitude practice has been saved to your journal.',
       saveFailed: 'Failed to save your gratitude practice. {{error}}', progress: '{{current}} of {{total}}',
       placeholder: 'Write your thoughts...',
     },
@@ -3569,7 +3569,7 @@ const generatedTranslations: Partial<Record<AppLanguage, TranslationTree>> = {
       "gratitude": {
         "promptJoy": "Ce mic moment ți-a adus bucurie?",
         "title": "Practica recunoștinței",
-        "insight": "Insight",
+        "insight": "Reflecție",
         "noResponses": "Niciun răspuns",
         "promptSmile": "Ce te-a făcut să zâmbești astăzi?",
         "promptPerson": "Pentru cine ești recunoscător acum?",

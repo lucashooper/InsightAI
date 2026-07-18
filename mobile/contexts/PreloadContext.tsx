@@ -11,6 +11,7 @@ import { prewarmChatSuggestions, clearChatSuggestionsCache } from '../utils/chat
 import { yieldToUI } from '../utils/yieldToUI';
 import { perfLog, perfStart } from '../utils/perfLog';
 import { useAppLock } from './AppLockContext';
+import { PRO_DISPLAY_NAME } from '../constants/branding';
 
 const NOTES_REFRESH_STALE_MS = 90_000;
 
@@ -128,7 +129,7 @@ export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children })
     const hasAnyActiveEntitlement = Object.keys(customerInfo.entitlements.active).length > 0;
 
     return {
-      subscriptionPlan: hasAnyActiveEntitlement ? 'Insight Pro' : 'Free',
+      subscriptionPlan: hasAnyActiveEntitlement ? PRO_DISPLAY_NAME : 'Free',
       entriesLimit: hasAnyActiveEntitlement ? 2 : 0,
       entriesCount: usageResult.error || usageResult.count === null ? 0 : usageResult.count,
     };

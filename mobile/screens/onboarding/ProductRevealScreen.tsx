@@ -6,13 +6,16 @@ import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import LanguagePicker from '../../components/LanguagePicker';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { PRODUCT_REVEAL_PHONE } from '../../constants/phoneMockups';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const PHONE_IMAGE_WIDTH = isTablet ? SCREEN_WIDTH * 0.74 : SCREEN_WIDTH * 0.98;
-const PHONE_FULL_HEIGHT = PHONE_IMAGE_WIDTH * 2.08;
-const PHONE_VISIBLE_HEIGHT = PHONE_FULL_HEIGHT * 0.70;
+const PHONE_ASPECT_RATIO = 1350 / 2922;
+const PHONE_IMAGE_WIDTH = isTablet ? SCREEN_WIDTH * 0.74 : SCREEN_WIDTH * 0.84;
+const PHONE_FULL_HEIGHT = PHONE_IMAGE_WIDTH / PHONE_ASPECT_RATIO;
+const PHONE_VISIBLE_HEIGHT = PHONE_FULL_HEIGHT * 0.58;
+const PHONE_FADE_HEIGHT = PHONE_VISIBLE_HEIGHT * 0.44;
 
-const phoneMockup = require('../../public/new-phone-images/Insight-Main-Phone 1.png');
+const phoneMockup = PRODUCT_REVEAL_PHONE;
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 export default function ProductRevealScreen({ navigation }: any) {
@@ -41,21 +44,23 @@ export default function ProductRevealScreen({ navigation }: any) {
                 <Text style={styles.welcomeText}>{t('onboarding.welcome')}</Text>
             </View>
 
-            {/* Phone image — large, bottom ~30% cropped for screen content focus */}
-            <View style={styles.phoneSection}>
+            <View style={styles.spacer} />
+
+            {/* Phone — anchored just above CTA, fades at bottom of device */}
+            <View style={styles.phoneWrapper}>
                 <View style={styles.phoneCrop}>
                     <Image
                         source={phoneMockup}
                         style={styles.phoneMockup}
                         resizeMode="contain"
                     />
+                    <LinearGradient
+                        colors={['rgba(254,247,242,0)', 'rgba(254,247,242,0.5)', '#fef7f2']}
+                        locations={[0, 0.55, 1]}
+                        pointerEvents="none"
+                        style={[styles.phoneFadeOverlay, { height: PHONE_FADE_HEIGHT }]}
+                    />
                 </View>
-                <LinearGradient
-                    colors={['rgba(254,247,242,0)', '#fef7f2']}
-                    locations={[0, 1]}
-                    pointerEvents="none"
-                    style={styles.phoneFadeOverlay}
-                />
             </View>
 
             {/* Footer */}
@@ -113,7 +118,7 @@ const styles = StyleSheet.create({
     /* ── Welcome ───────────────────────────────────────────────── */
     welcomeContainer: {
         alignItems: 'center',
-        marginBottom: isTablet ? 4 : 0,
+        marginBottom: isTablet ? 8 : 4,
         paddingHorizontal: 24,
     },
     welcomeText: {
@@ -124,20 +129,23 @@ const styles = StyleSheet.create({
         letterSpacing: -0.6,
     },
 
-    /* ── Phone image ───────────────────────────────────────────── */
-    phoneSection: {
+    spacer: {
         flex: 1,
+        minHeight: isTablet ? 12 : 4,
+    },
+
+    /* ── Phone image ───────────────────────────────────────────── */
+    phoneWrapper: {
         alignItems: 'center',
-        justifyContent: 'flex-start',
-        overflow: 'hidden',
-        paddingHorizontal: isTablet ? 32 : 8,
-        marginTop: isTablet ? -4 : -8,
+        paddingHorizontal: isTablet ? 32 : 12,
+        marginBottom: isTablet ? 20 : 12,
     },
     phoneCrop: {
         width: PHONE_IMAGE_WIDTH,
         height: PHONE_VISIBLE_HEIGHT,
         overflow: 'hidden',
         alignItems: 'center',
+        position: 'relative',
     },
     phoneMockup: {
         width: PHONE_IMAGE_WIDTH,
@@ -148,13 +156,13 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        height: isTablet ? 64 : 52,
     },
 
     /* ── Footer ────────────────────────────────────────────────── */
     footer: {
         alignItems: 'center',
         paddingHorizontal: isTablet ? 48 : 24,
+        marginTop: 0,
         ...(iPadContentStyle as any),
     },
     button: {

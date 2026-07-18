@@ -9,6 +9,7 @@ try {
   console.log('[AppLock] expo-local-authentication not available (Expo Go)');
 }
 import { supabase } from '../lib/supabase';
+import { APP_NAME } from '../constants/branding';
 
 // Helper to get user-specific keys - REQUIRES a userId, never falls back to bare key
 const getUserKey = (baseKey: string, userId: string): string => {
@@ -195,7 +196,7 @@ export function AppLockProvider({ children }: { children: React.ReactNode }) {
     if (!isBiometricEnabled || !isBiometricAvailable || !LocalAuthentication) return false;
     
     const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: 'Unlock Insight',
+      promptMessage: `Unlock ${APP_NAME}`,
       cancelLabel: 'Use PIN',
       disableDeviceFallback: true,
     });

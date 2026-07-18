@@ -3,7 +3,7 @@ import { AppLanguage, TranslationTree } from '../types';
 export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree>> = {
   "zh": {
     "onboarding": {
-      "welcome": "欢迎来到Insight",
+      "welcome": "欢迎来到Zeno",
       "getStarted": "开始使用",
       "alreadyHaveAccount": "已经有帐户？",
       "signIn": "登入",
@@ -14,7 +14,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "skip": "跳过",
       "skipForNow": "暂时跳过",
       "valueProp": {
-        "title": "Insight 将想法变得清晰",
+        "title": "Zeno 将想法变得清晰",
         "mentalNoise": "精神噪音",
         "understanding": "理解",
         "captureFeelings": "捕捉您的感受",
@@ -24,7 +24,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "patterns": {
         "eyebrow": "由人工智能提供支持",
         "title": "长期追踪\n你的模式",
-        "subtitle": "Insight 找出阻碍您前进的因素，并指出您需要优先处理的事项。",
+        "subtitle": "Zeno 找出阻碍您前进的因素，并指出您需要优先处理的事项。",
         "adjustSleep": "调整睡眠时间表",
         "selfCompassion": "多练习自我关怀",
         "reduceScreenTime": "减少睡前看屏幕的时间",
@@ -36,7 +36,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "wins": {
         "eyebrow": "庆祝成长",
         "title": "也要庆祝你的\n成就",
-        "subtitle": "Insight 还可以发现进展顺利的事情，以便您可以发挥自己的优势。",
+        "subtitle": "Zeno 还可以发现进展顺利的事情，以便您可以发挥自己的优势。",
         "gym": "坚持去健身房",
         "reading": "这周每天都读书",
         "openingUp": "对人更加开放",
@@ -99,7 +99,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "title": "以心理学为基础",
           "subtitle": "研究表明，反思性日记可以提高情绪意识和长期幸福感。",
           "badge": "Cambridge University",
-          "screenTitle": "Insight 以心理学为基础",
+          "screenTitle": "Zeno 以心理学为基础",
           "body": "写日记与更好的情绪意识和心理健康有关。"
         },
         "frequency": {
@@ -267,14 +267,14 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "procrastinating": "我总是拖延事情，但我不知道为什么",
           "grateful": "今天发生的一件事让我非常感激"
         },
-        "thinking": "Insight 正在思考...",
-        "aiLabel": "Insight AI",
+        "thinking": "Zeno 正在思考...",
+        "aiLabel": "Zeno",
         "responses": {
-          "overwhelmed": "听起来你现在背负着很多东西。认识到这种感觉是第一步 - Insight 可以帮助您跟踪这些模式并找到让您放松的东西。 💜",
-          "positive": "这是一个美丽的观察。注意到什么能提升你的情绪是很强大的——Insight 将帮助你随着时间的推移建立这些积极的模式。 ✨",
-          "procrastination": "拖延症的根源往往比我们想象的更深。日记可以揭示其背后隐藏的情绪 - Insight 将帮助您理解并克服这些障碍。 🔑",
-          "sadness": "感谢您分享这一点。表达困难的感受是勇敢和治愈的。 Insight 在这里倾听并帮助您度过这些时刻。 💙",
-          "default": "谢谢您的分享。每一篇文章都是朝着更深层次的自我理解迈出的一步。 Insight 将帮助您发现模式、跟踪您的成长并随着时间的推移获得清晰的思路。 💜"
+          "overwhelmed": "听起来你现在背负着很多东西。认识到这种感觉是第一步 - Zeno 可以帮助您跟踪这些模式并找到让您放松的东西。 💜",
+          "positive": "这是一个美丽的观察。注意到什么能提升你的情绪是很强大的——Zeno 将帮助你随着时间的推移建立这些积极的模式。 ✨",
+          "procrastination": "拖延症的根源往往比我们想象的更深。日记可以揭示其背后隐藏的情绪 - Zeno 将帮助您理解并克服这些障碍。 🔑",
+          "sadness": "感谢您分享这一点。表达困难的感受是勇敢和治愈的。 Zeno 在这里倾听并帮助您度过这些时刻。 💙",
+          "default": "谢谢您的分享。每一篇文章都是朝着更深层次的自我理解迈出的一步。 Zeno 将帮助您发现模式、跟踪您的成长并随着时间的推移获得清晰的思路。 💜"
         }
       },
       "privacy": {
@@ -286,11 +286,11 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       },
       "notifications": {
         "title": "打开通知",
-        "subtitle": "及时了解最新动态，充分利用 Insight。",
+        "subtitle": "及时了解最新动态，充分利用 Zeno。",
         "allow": "允许通知",
         "skip": "暂时跳过 →",
         "permissionTitle": "记得通过通知反映",
-        "permissionRequest": "Insight AI 想发给您",
+        "permissionRequest": "Zeno 想发给您",
         "permissionType": "通知",
         "dontAllow": "不允许"
       },
@@ -298,7 +298,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
         "title": "给我们评分 5 星",
         "subtitle": "帮助我们传播正念生活和个人成长的信息",
         "testimonials": {
-          "first": "Insight 彻底改变了我对情绪的理解。人工智能的见解非常准确且很有帮助。",
+          "first": "Zeno 彻底改变了我对情绪的理解。人工智能的见解非常准确且很有帮助。",
           "second": "这个应用程序帮助我识别了我以前从未注意到的模式。这就像我的口袋里有一个治疗师。",
           "third": "日常反思和见解已成为我日常自我保健的重要组成部分。"
         },
@@ -310,7 +310,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       },
       "paywall": {
         "headings": {
-          "understand": "借助 Insight\n了解自己",
+          "understand": "借助 Zeno\n了解自己",
           "growth": "追踪你的成长\n与进步",
           "reflect": "深度反思\n生活更美好",
           "mira": "与 Mira 对话",
@@ -333,7 +333,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "playbook": "增长手册和行动计划"
         },
         "testimonials": {
-          "first": "Insight 彻底改变了我对情绪的理解。人工智能的见解非常准确且很有帮助。",
+          "first": "Zeno 彻底改变了我对情绪的理解。人工智能的见解非常准确且很有帮助。",
           "second": "日记提示很周到，模式跟踪帮助我看到自己随着时间的推移的成长。",
           "third": "我用过的最好的心理健康应用程序。人工智能感觉就像是在和一位真正理解我的治疗师交谈。",
           "fourth": "我喜欢它将我的日常习惯与我的情绪模式联系起来。每周都有令人大开眼界的见解。",
@@ -378,7 +378,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
         }
       },
       "postPurchase": {
-        "title": "欢迎来到Insight",
+        "title": "欢迎来到Zeno",
         "subtitle": "Pro 已全部设置完毕",
         "analysis": "AI 驱动的日记分析",
         "privateEntries": "私有和加密条目",
@@ -418,7 +418,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
   },
   "hi": {
     "onboarding": {
-      "welcome": "Insight में आपका स्वागत है",
+      "welcome": "Zeno में आपका स्वागत है",
       "getStarted": "शुरू हो जाओ",
       "alreadyHaveAccount": "क्या आपके पास पहले से एक खाता मौजूद है?",
       "signIn": "दाखिल करना",
@@ -429,7 +429,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "skip": "छोडना",
       "skipForNow": "अभी के लिए छोड़ दे",
       "valueProp": {
-        "title": "Insight विचारों को स्पष्टता में बदल देता है",
+        "title": "Zeno विचारों को स्पष्टता में बदल देता है",
         "mentalNoise": "मानसिक शोर",
         "understanding": "समझ",
         "captureFeelings": "आप कैसा महसूस करते हैं उसे कैद करें",
@@ -439,7 +439,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "patterns": {
         "eyebrow": "एआई द्वारा संचालित",
         "title": "अपने पैटर्न ट्रैक करें\nसमय के साथ",
-        "subtitle": "Insight यह पहचानता है कि कौन सी चीज़ आपको रोक रही है और काम करने के लिए आपकी सर्वोच्च प्राथमिकताओं को सामने लाती है।",
+        "subtitle": "Zeno यह पहचानता है कि कौन सी चीज़ आपको रोक रही है और काम करने के लिए आपकी सर्वोच्च प्राथमिकताओं को सामने लाती है।",
         "adjustSleep": "नींद का शेड्यूल समायोजित करें",
         "selfCompassion": "आत्म-करुणा का अधिक अभ्यास करें",
         "reduceScreenTime": "सोने से पहले स्क्रीन का समय कम करें",
@@ -451,7 +451,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "wins": {
         "eyebrow": "विकास का जश्न मनाएं",
         "title": "अपनी उपलब्धियों का भी\nजश्न मनाएँ",
-        "subtitle": "Insight यह भी पता लगाता है कि क्या अच्छा चल रहा है ताकि आप अपनी ताकत पर निर्माण कर सकें।",
+        "subtitle": "Zeno यह भी पता लगाता है कि क्या अच्छा चल रहा है ताकि आप अपनी ताकत पर निर्माण कर सकें।",
         "gym": "लगातार जिम जाना",
         "reading": "इस सप्ताह हर दिन पढ़ना",
         "openingUp": "लोगों के लिए और अधिक खुलना",
@@ -514,7 +514,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "title": "मनोविज्ञान पर आधारित",
           "subtitle": "शोध से पता चलता है कि चिंतनशील जर्नलिंग भावनात्मक जागरूकता और दीर्घकालिक कल्याण में सुधार करती है।",
           "badge": "Cambridge University",
-          "screenTitle": "Insight मनोविज्ञान पर आधारित है",
+          "screenTitle": "Zeno मनोविज्ञान पर आधारित है",
           "body": "जर्नलिंग बेहतर भावनात्मक जागरूकता और मानसिक भलाई से जुड़ी हुई है।"
         },
         "frequency": {
@@ -682,14 +682,14 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "procrastinating": "मैं चीजों को टालता रहता हूं और मुझे यकीन नहीं है कि क्यों",
           "grateful": "आज कुछ ऐसा हुआ जिसने मुझे सचमुच आभारी बना दिया"
         },
-        "thinking": "Insight सोच रहा है...",
-        "aiLabel": "Insight AI",
+        "thinking": "Zeno सोच रहा है...",
+        "aiLabel": "Zeno",
         "responses": {
-          "overwhelmed": "ऐसा लगता है जैसे आप अभी बहुत कुछ लेकर चल रहे हैं। उस भावना को पहचानना पहला कदम है - Insight आपको इन पैटर्न को ट्रैक करने और यह पता लगाने में मदद कर सकता है कि आपको क्या राहत मिलती है। 💜",
-          "positive": "यह एक सुंदर अवलोकन है. आपके मूड को बेहतर बनाने वाली चीज़ों पर ध्यान देना शक्तिशाली है - Insight आपको समय के साथ इन सकारात्मक पैटर्न को बनाने में मदद करेगा। ✨",
-          "procrastination": "टालमटोल की जड़ें अक्सर जितना हम सोचते हैं उससे अधिक गहरी होती हैं। जर्नलिंग इसके पीछे छिपी भावनाओं को उजागर कर सकती है - Insight आपको उन अवरोधों को समझने और दूर करने में मदद करेगा। 🔑",
-          "sadness": "इसे साझा करने के लिए धन्यवाद। कठिन भावनाओं को व्यक्त करना साहसपूर्ण और उपचारात्मक है। Insight इन क्षणों को सुनने और आपकी मदद करने के लिए यहां है। 💙",
-          "default": "जानकारी के लिए धन्यवाद। प्रत्येक प्रविष्टि गहरी आत्म-समझ की ओर एक कदम है। Insight आपको पैटर्न को उजागर करने, आपके विकास को ट्रैक करने और समय के साथ स्पष्टता हासिल करने में मदद करेगा। 💜"
+          "overwhelmed": "ऐसा लगता है जैसे आप अभी बहुत कुछ लेकर चल रहे हैं। उस भावना को पहचानना पहला कदम है - Zeno आपको इन पैटर्न को ट्रैक करने और यह पता लगाने में मदद कर सकता है कि आपको क्या राहत मिलती है। 💜",
+          "positive": "यह एक सुंदर अवलोकन है. आपके मूड को बेहतर बनाने वाली चीज़ों पर ध्यान देना शक्तिशाली है - Zeno आपको समय के साथ इन सकारात्मक पैटर्न को बनाने में मदद करेगा। ✨",
+          "procrastination": "टालमटोल की जड़ें अक्सर जितना हम सोचते हैं उससे अधिक गहरी होती हैं। जर्नलिंग इसके पीछे छिपी भावनाओं को उजागर कर सकती है - Zeno आपको उन अवरोधों को समझने और दूर करने में मदद करेगा। 🔑",
+          "sadness": "इसे साझा करने के लिए धन्यवाद। कठिन भावनाओं को व्यक्त करना साहसपूर्ण और उपचारात्मक है। Zeno इन क्षणों को सुनने और आपकी मदद करने के लिए यहां है। 💙",
+          "default": "जानकारी के लिए धन्यवाद। प्रत्येक प्रविष्टि गहरी आत्म-समझ की ओर एक कदम है। Zeno आपको पैटर्न को उजागर करने, आपके विकास को ट्रैक करने और समय के साथ स्पष्टता हासिल करने में मदद करेगा। 💜"
         }
       },
       "privacy": {
@@ -701,11 +701,11 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       },
       "notifications": {
         "title": "सूचनाओं पर मुड़ें",
-        "subtitle": "क्या हो रहा है इसके बारे में अपडेट रहकर Insight का अधिकतम लाभ उठाएं।",
+        "subtitle": "क्या हो रहा है इसके बारे में अपडेट रहकर Zeno का अधिकतम लाभ उठाएं।",
         "allow": "सूचनाओं की अनुमति दें",
         "skip": "अभी के लिए छोड़ें →",
         "permissionTitle": "सूचनाओं के साथ प्रतिबिंबित करना याद रखें",
-        "permissionRequest": "Insight AI आपको भेजना चाहता हूँ",
+        "permissionRequest": "Zeno आपको भेजना चाहता हूँ",
         "permissionType": "सूचनाएं",
         "dontAllow": "अनुमति न दें"
       },
@@ -713,7 +713,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
         "title": "हमें 5 स्टार रेटिंग दें",
         "subtitle": "सचेत जीवन और व्यक्तिगत विकास का संदेश फैलाने में हमारी मदद करें",
         "testimonials": {
-          "first": "Insight ने मेरी भावनाओं को समझने के तरीके को पूरी तरह से बदल दिया है। एआई अंतर्दृष्टि अविश्वसनीय रूप से सटीक और सहायक हैं।",
+          "first": "Zeno ने मेरी भावनाओं को समझने के तरीके को पूरी तरह से बदल दिया है। एआई अंतर्दृष्टि अविश्वसनीय रूप से सटीक और सहायक हैं।",
           "second": "इस ऐप ने मुझे उन पैटर्न को पहचानने में मदद की जिन पर मैंने पहले कभी ध्यान नहीं दिया था। यह मेरी जेब में एक चिकित्सक होने जैसा है।",
           "third": "दैनिक चिंतन और अंतर्दृष्टि मेरी आत्म-देखभाल दिनचर्या का एक अनिवार्य हिस्सा बन गए हैं।"
         },
@@ -725,7 +725,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       },
       "paywall": {
         "headings": {
-          "understand": "Insight के साथ\nखुद को समझें",
+          "understand": "Zeno के साथ\nखुद को समझें",
           "growth": "अपनी प्रगति और\nविकास को ट्रैक करें",
           "reflect": "गहराई से चिंतन करें,\nबेहतर जीवन जिएँ",
           "mira": "Mira से बात करें",
@@ -748,7 +748,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "playbook": "विकास प्लेबुक और कार्य योजनाएँ"
         },
         "testimonials": {
-          "first": "Insight ने मेरी भावनाओं को समझने के तरीके को पूरी तरह से बदल दिया है। एआई अंतर्दृष्टि अविश्वसनीय रूप से सटीक और सहायक हैं।",
+          "first": "Zeno ने मेरी भावनाओं को समझने के तरीके को पूरी तरह से बदल दिया है। एआई अंतर्दृष्टि अविश्वसनीय रूप से सटीक और सहायक हैं।",
           "second": "जर्नलिंग संकेत विचारशील हैं और पैटर्न ट्रैकिंग मुझे समय के साथ अपने विकास को देखने में मदद करती है।",
           "third": "मेरे द्वारा उपयोग किया गया सर्वश्रेष्ठ मानसिक स्वास्थ्य ऐप। एआई को ऐसा महसूस होता है जैसे मैं किसी थेरेपिस्ट से बात कर रहा हूं जो वास्तव में मुझसे मिलता है।",
           "fourth": "मुझे यह पसंद है कि यह कैसे मेरी दैनिक आदतों को मेरे मूड पैटर्न से जोड़ता है। हर सप्ताह आंखें खोल देने वाली अंतर्दृष्टि।",
@@ -793,7 +793,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
         }
       },
       "postPurchase": {
-        "title": "Insight में आपका स्वागत है",
+        "title": "Zeno में आपका स्वागत है",
         "subtitle": "आप प्रो के साथ पूरी तरह तैयार हैं",
         "analysis": "एआई-संचालित जर्नल विश्लेषण",
         "privateEntries": "निजी एवं एन्क्रिप्टेड प्रविष्टियाँ",
@@ -833,7 +833,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
   },
   "fr": {
     "onboarding": {
-      "welcome": "Bienvenue à Insight",
+      "welcome": "Bienvenue à Zeno",
       "getStarted": "Commencer",
       "alreadyHaveAccount": "Vous avez déjà un compte ?",
       "signIn": "Se connecter",
@@ -844,7 +844,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "skip": "Sauter",
       "skipForNow": "Passer pour l'instant",
       "valueProp": {
-        "title": "Insight transforme les pensées en clarté",
+        "title": "Zeno transforme les pensées en clarté",
         "mentalNoise": "Bruit mental",
         "understanding": "Compréhension",
         "captureFeelings": "Capturez ce que vous ressentez",
@@ -854,7 +854,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "patterns": {
         "eyebrow": "Propulsé par l'IA",
         "title": "Suivez vos modèles\nau fil du temps",
-        "subtitle": "Insight identifie ce qui vous retient et présente vos principales priorités sur lesquelles travailler.",
+        "subtitle": "Zeno identifie ce qui vous retient et présente vos principales priorités sur lesquelles travailler.",
         "adjustSleep": "Ajuster l'horaire de sommeil",
         "selfCompassion": "Pratiquez davantage l’auto-compassion",
         "reduceScreenTime": "Réduire le temps passé devant un écran avant de se coucher",
@@ -866,7 +866,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "wins": {
         "eyebrow": "Célébrez la croissance",
         "title": "Célébrez aussi\nvos réussites",
-        "subtitle": "Insight repère également ce qui se passe bien afin que vous puissiez tirer parti de vos points forts.",
+        "subtitle": "Zeno repère également ce qui se passe bien afin que vous puissiez tirer parti de vos points forts.",
         "gym": "Aller régulièrement à la salle de sport",
         "reading": "Lire tous les jours cette semaine",
         "openingUp": "S'ouvrir davantage aux gens",
@@ -929,7 +929,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "title": "Fondé sur la psychologie",
           "subtitle": "La recherche montre que la tenue d’un journal réflexif améliore la conscience émotionnelle et le bien-être à long terme.",
           "badge": "Cambridge University",
-          "screenTitle": "Insight est fondé sur la psychologie",
+          "screenTitle": "Zeno est fondé sur la psychologie",
           "body": "La tenue d'un journal est liée à une meilleure conscience émotionnelle et à un meilleur bien-être mental."
         },
         "frequency": {
@@ -1097,14 +1097,14 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "procrastinating": "Je continue de remettre les choses à plus tard et je ne sais pas pourquoi",
           "grateful": "Il s'est passé quelque chose aujourd'hui qui m'a rendu vraiment reconnaissant"
         },
-        "thinking": "Insight pense...",
-        "aiLabel": "Insight AI",
+        "thinking": "Zeno pense...",
+        "aiLabel": "Zeno",
         "responses": {
-          "overwhelmed": "On dirait que vous en transportez beaucoup en ce moment. Reconnaître ce sentiment est la première étape – Insight peut vous aider à suivre ces schémas et à trouver ce qui vous soulage. 💜",
-          "positive": "C'est une belle observation. Remarquer ce qui vous remonte le moral est puissant – Insight vous aidera à développer ces modèles positifs au fil du temps. ✨",
-          "procrastination": "La procrastination a souvent des racines plus profondes qu’on ne le pense. La tenue d'un journal peut révéler les émotions cachées derrière cela - Insight vous aidera à comprendre et à surmonter ces blocages. 🔑",
-          "sadness": "Merci d'avoir partagé cela. Exprimer des sentiments difficiles est courageux et guérisseur. Insight est là pour vous écouter et vous aider à traverser ces moments. 💙",
-          "default": "Merci pour le partage. Chaque entrée est une étape vers une compréhension de soi plus profonde. Insight vous aidera à découvrir des modèles, à suivre votre croissance et à gagner en clarté au fil du temps. 💜"
+          "overwhelmed": "On dirait que vous en transportez beaucoup en ce moment. Reconnaître ce sentiment est la première étape – Zeno peut vous aider à suivre ces schémas et à trouver ce qui vous soulage. 💜",
+          "positive": "C'est une belle observation. Remarquer ce qui vous remonte le moral est puissant – Zeno vous aidera à développer ces modèles positifs au fil du temps. ✨",
+          "procrastination": "La procrastination a souvent des racines plus profondes qu’on ne le pense. La tenue d'un journal peut révéler les émotions cachées derrière cela - Zeno vous aidera à comprendre et à surmonter ces blocages. 🔑",
+          "sadness": "Merci d'avoir partagé cela. Exprimer des sentiments difficiles est courageux et guérisseur. Zeno est là pour vous écouter et vous aider à traverser ces moments. 💙",
+          "default": "Merci pour le partage. Chaque entrée est une étape vers une compréhension de soi plus profonde. Zeno vous aidera à découvrir des modèles, à suivre votre croissance et à gagner en clarté au fil du temps. 💜"
         }
       },
       "privacy": {
@@ -1116,11 +1116,11 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       },
       "notifications": {
         "title": "Activer les notifications",
-        "subtitle": "Tirez le meilleur parti de Insight en restant au courant de ce qui se passe.",
+        "subtitle": "Tirez le meilleur parti de Zeno en restant au courant de ce qui se passe.",
         "allow": "Autoriser les notifications",
         "skip": "Passer pour l'instant →",
         "permissionTitle": "N'oubliez pas de réfléchir avec les notifications",
-        "permissionRequest": "Insight AI souhaite vous envoyer",
+        "permissionRequest": "Zeno souhaite vous envoyer",
         "permissionType": "Notifications",
         "dontAllow": "Ne pas autoriser"
       },
@@ -1128,7 +1128,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
         "title": "Donnez-nous 5 étoiles",
         "subtitle": "Aidez-nous à diffuser le message de vie consciente et de croissance personnelle",
         "testimonials": {
-          "first": "Insight a complètement changé la façon dont je comprends mes émotions. Les informations de l’IA sont incroyablement précises et utiles.",
+          "first": "Zeno a complètement changé la façon dont je comprends mes émotions. Les informations de l’IA sont incroyablement précises et utiles.",
           "second": "Cette application m'a aidé à identifier des modèles que je n'avais jamais remarqués auparavant. C'est comme avoir un thérapeute dans ma poche.",
           "third": "Les réflexions et idées quotidiennes sont devenues une partie essentielle de ma routine de soins personnels."
         },
@@ -1140,7 +1140,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       },
       "paywall": {
         "headings": {
-          "understand": "Mieux vous comprendre\navec Insight",
+          "understand": "Mieux vous comprendre\navec Zeno",
           "growth": "Suivez votre évolution\net vos progrès",
           "reflect": "Réfléchissez davantage,\nvivez mieux",
           "mira": "Parlez à Mira",
@@ -1163,7 +1163,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "playbook": "Manuel de croissance et plans d'action"
         },
         "testimonials": {
-          "first": "Insight a complètement changé la façon dont je comprends mes émotions. Les informations de l’IA sont incroyablement précises et utiles.",
+          "first": "Zeno a complètement changé la façon dont je comprends mes émotions. Les informations de l’IA sont incroyablement précises et utiles.",
           "second": "Les invites de journalisation sont réfléchies et le suivi des modèles m'aide à suivre ma croissance au fil du temps.",
           "third": "Meilleure application de santé mentale que j'ai utilisée. L'IA, c'est comme parler à un thérapeute qui me comprend vraiment.",
           "fourth": "J'aime la façon dont cela relie mes habitudes quotidiennes à mes humeurs. Des informations révélatrices chaque semaine.",
@@ -1208,7 +1208,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
         }
       },
       "postPurchase": {
-        "title": "Bienvenue à Insight",
+        "title": "Bienvenue à Zeno",
         "subtitle": "Vous êtes prêt avec Pro",
         "analysis": "Analyse du journal optimisée par l’IA",
         "privateEntries": "Entrées privées et cryptées",
@@ -1248,7 +1248,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
   },
   "de": {
     "onboarding": {
-      "welcome": "Willkommen bei Insight",
+      "welcome": "Willkommen bei Zeno",
       "getStarted": "Legen Sie los",
       "alreadyHaveAccount": "Sie haben bereits ein Konto?",
       "signIn": "Anmelden",
@@ -1259,7 +1259,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "skip": "Überspringen",
       "skipForNow": "Überspringen Sie es vorerst",
       "valueProp": {
-        "title": "Insight verwandelt Gedanken in Klarheit",
+        "title": "Zeno verwandelt Gedanken in Klarheit",
         "mentalNoise": "Geistiger Lärm",
         "understanding": "Verständnis",
         "captureFeelings": "Erfassen Sie, wie Sie sich fühlen",
@@ -1269,7 +1269,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "patterns": {
         "eyebrow": "Angetrieben durch KI",
         "title": "Verfolgen Sie Ihre Muster\nim Laufe der Zeit",
-        "subtitle": "Insight identifiziert, was Sie zurückhält, und zeigt Ihre wichtigsten Prioritäten auf, an denen Sie arbeiten müssen.",
+        "subtitle": "Zeno identifiziert, was Sie zurückhält, und zeigt Ihre wichtigsten Prioritäten auf, an denen Sie arbeiten müssen.",
         "adjustSleep": "Passen Sie den Schlafplan an",
         "selfCompassion": "Übe mehr Selbstmitgefühl",
         "reduceScreenTime": "Reduzieren Sie die Bildschirmzeit vor dem Schlafengehen",
@@ -1281,7 +1281,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "wins": {
         "eyebrow": "Feiern Sie Wachstum",
         "title": "Feiern Sie auch\nIhre Erfolge",
-        "subtitle": "Insight erkennt auch, was gut läuft, sodass Sie Ihre Stärken ausbauen können.",
+        "subtitle": "Zeno erkennt auch, was gut läuft, sodass Sie Ihre Stärken ausbauen können.",
         "gym": "Regelmäßig ins Fitnessstudio gehen",
         "reading": "Ich lese diese Woche jeden Tag",
         "openingUp": "Sich den Menschen mehr öffnen",
@@ -1344,7 +1344,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "title": "Auf der Grundlage der Psychologie",
           "subtitle": "Untersuchungen zeigen, dass reflektierendes Journaling das emotionale Bewusstsein und das langfristige Wohlbefinden verbessert.",
           "badge": "Cambridge University",
-          "screenTitle": "Insight basiert auf Psychologie",
+          "screenTitle": "Zeno basiert auf Psychologie",
           "body": "Journaling ist mit einem besseren emotionalen Bewusstsein und geistigem Wohlbefinden verbunden."
         },
         "frequency": {
@@ -1512,14 +1512,14 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "procrastinating": "Ich schiebe Dinge ständig auf und weiß nicht, warum",
           "grateful": "Heute ist etwas passiert, das mich wirklich dankbar gemacht hat"
         },
-        "thinking": "Insight denkt...",
-        "aiLabel": "Insight AI",
+        "thinking": "Zeno denkt...",
+        "aiLabel": "Zeno",
         "responses": {
-          "overwhelmed": "Es hört sich so an, als ob du im Moment viel mit dir herumträgst. Das Erkennen dieses Gefühls ist der erste Schritt – Insight kann Ihnen dabei helfen, diese Muster aufzuspüren und herauszufinden, was Ihnen Erleichterung bringt. 💜",
-          "positive": "Das ist eine schöne Beobachtung. Zu bemerken, was Ihre Stimmung hebt, ist kraftvoll – Insight wird Ihnen dabei helfen, mit der Zeit auf diesen positiven Mustern aufzubauen. ✨",
-          "procrastination": "Aufschub hat oft tiefere Wurzeln als wir denken. Journaling kann die verborgenen Emotionen dahinter offenbaren – Insight hilft Ihnen, diese Blockaden zu verstehen und zu überwinden. 🔑",
-          "sadness": "Vielen Dank, dass Sie das geteilt haben. Schwierige Gefühle auszudrücken ist mutig und heilsam. Insight ist hier, um Ihnen zuzuhören und Ihnen zu helfen, durch diese Momente zu navigieren. 💙",
-          "default": "Vielen Dank fürs Teilen. Jeder Eintrag ist ein Schritt zu einem tieferen Selbstverständnis. Insight hilft Ihnen dabei, Muster aufzudecken, Ihr Wachstum zu verfolgen und mit der Zeit Klarheit zu gewinnen. 💜"
+          "overwhelmed": "Es hört sich so an, als ob du im Moment viel mit dir herumträgst. Das Erkennen dieses Gefühls ist der erste Schritt – Zeno kann Ihnen dabei helfen, diese Muster aufzuspüren und herauszufinden, was Ihnen Erleichterung bringt. 💜",
+          "positive": "Das ist eine schöne Beobachtung. Zu bemerken, was Ihre Stimmung hebt, ist kraftvoll – Zeno wird Ihnen dabei helfen, mit der Zeit auf diesen positiven Mustern aufzubauen. ✨",
+          "procrastination": "Aufschub hat oft tiefere Wurzeln als wir denken. Journaling kann die verborgenen Emotionen dahinter offenbaren – Zeno hilft Ihnen, diese Blockaden zu verstehen und zu überwinden. 🔑",
+          "sadness": "Vielen Dank, dass Sie das geteilt haben. Schwierige Gefühle auszudrücken ist mutig und heilsam. Zeno ist hier, um Ihnen zuzuhören und Ihnen zu helfen, durch diese Momente zu navigieren. 💙",
+          "default": "Vielen Dank fürs Teilen. Jeder Eintrag ist ein Schritt zu einem tieferen Selbstverständnis. Zeno hilft Ihnen dabei, Muster aufzudecken, Ihr Wachstum zu verfolgen und mit der Zeit Klarheit zu gewinnen. 💜"
         }
       },
       "privacy": {
@@ -1531,11 +1531,11 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       },
       "notifications": {
         "title": "Aktivieren Sie Benachrichtigungen",
-        "subtitle": "Holen Sie das Beste aus Insight heraus, indem Sie über das Geschehen auf dem Laufenden bleiben.",
+        "subtitle": "Holen Sie das Beste aus Zeno heraus, indem Sie über das Geschehen auf dem Laufenden bleiben.",
         "allow": "Benachrichtigungen zulassen",
         "skip": "Vorerst überspringen →",
         "permissionTitle": "Denken Sie daran, bei Benachrichtigungen nachzudenken",
-        "permissionRequest": "Insight AI möchte Ihnen senden",
+        "permissionRequest": "Zeno möchte Ihnen senden",
         "permissionType": "Benachrichtigungen",
         "dontAllow": "Nicht zulassen"
       },
@@ -1543,7 +1543,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
         "title": "Bewerten Sie uns mit 5 Sternen",
         "subtitle": "Helfen Sie uns, die Botschaft eines achtsamen Lebens und persönlichen Wachstums zu verbreiten",
         "testimonials": {
-          "first": "Insight hat die Art und Weise, wie ich meine Gefühle verstehe, völlig verändert. Die KI-Erkenntnisse sind unglaublich genau und hilfreich.",
+          "first": "Zeno hat die Art und Weise, wie ich meine Gefühle verstehe, völlig verändert. Die KI-Erkenntnisse sind unglaublich genau und hilfreich.",
           "second": "Diese App hat mir geholfen, Muster zu erkennen, die mir vorher nie aufgefallen waren. Es ist, als hätte ich einen Therapeuten in der Tasche.",
           "third": "Die täglichen Reflexionen und Erkenntnisse sind zu einem wesentlichen Bestandteil meiner Selbstfürsorgeroutine geworden."
         },
@@ -1555,7 +1555,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       },
       "paywall": {
         "headings": {
-          "understand": "Verstehen Sie sich\nmit Insight besser",
+          "understand": "Verstehen Sie sich\nmit Zeno besser",
           "growth": "Verfolgen Sie Wachstum\nund Fortschritte",
           "reflect": "Reflektieren Sie tiefer,\nleben Sie besser",
           "mira": "Sprich mit Mira",
@@ -1578,7 +1578,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "playbook": "Wachstums-Playbook und Aktionspläne"
         },
         "testimonials": {
-          "first": "Insight hat die Art und Weise, wie ich meine Gefühle verstehe, völlig verändert. Die KI-Erkenntnisse sind unglaublich genau und hilfreich.",
+          "first": "Zeno hat die Art und Weise, wie ich meine Gefühle verstehe, völlig verändert. Die KI-Erkenntnisse sind unglaublich genau und hilfreich.",
           "second": "Die Aufforderungen zum Journaling sind durchdacht und die Musterverfolgung hilft mir, mein Wachstum im Laufe der Zeit zu erkennen.",
           "third": "Beste App für psychische Gesundheit, die ich je verwendet habe. Die KI hat das Gefühl, mit einem Therapeuten zu sprechen, der mich wirklich versteht.",
           "fourth": "Ich liebe es, wie es meine täglichen Gewohnheiten mit meinen Stimmungsmustern verbindet. Jede Woche aufschlussreiche Einblicke.",
@@ -1623,7 +1623,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
         }
       },
       "postPurchase": {
-        "title": "Willkommen bei Insight",
+        "title": "Willkommen bei Zeno",
         "subtitle": "Mit Pro sind Sie startklar",
         "analysis": "KI-gestützte Journalanalyse",
         "privateEntries": "Private und verschlüsselte Einträge",
@@ -1663,7 +1663,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
   },
   "ru": {
     "onboarding": {
-      "welcome": "Добро пожаловать в Insight",
+      "welcome": "Добро пожаловать в Zeno",
       "getStarted": "Начать",
       "alreadyHaveAccount": "У вас уже есть аккаунт?",
       "signIn": "Войти",
@@ -1674,7 +1674,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "skip": "Пропускать",
       "skipForNow": "Пропустить сейчас",
       "valueProp": {
-        "title": "Insight превращает мысли в ясность",
+        "title": "Zeno превращает мысли в ясность",
         "mentalNoise": "Ментальный шум",
         "understanding": "Понимание",
         "captureFeelings": "Запечатлейте, как вы себя чувствуете",
@@ -1684,7 +1684,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "patterns": {
         "eyebrow": "Работает на базе ИИ",
         "title": "Отслеживайте свои шаблоны\nсо временем",
-        "subtitle": "Insight определяет, что вас сдерживает, и выявляет ваши главные приоритеты, над которыми нужно работать.",
+        "subtitle": "Zeno определяет, что вас сдерживает, и выявляет ваши главные приоритеты, над которыми нужно работать.",
         "adjustSleep": "Настройте график сна",
         "selfCompassion": "Больше практикуйте сострадание к себе",
         "reduceScreenTime": "Сократите время перед экраном перед сном",
@@ -1696,7 +1696,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "wins": {
         "eyebrow": "Празднуйте рост",
         "title": "Отмечайте и\nсвои успехи",
-        "subtitle": "Insight также определяет, что происходит хорошо, чтобы вы могли развивать свои сильные стороны.",
+        "subtitle": "Zeno также определяет, что происходит хорошо, чтобы вы могли развивать свои сильные стороны.",
         "gym": "Постоянное посещение спортзала",
         "reading": "Читаем каждый день на этой неделе",
         "openingUp": "Больше открываться людям",
@@ -1759,7 +1759,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "title": "Основано на психологии",
           "subtitle": "Исследования показывают, что рефлексивное ведение дневника улучшает эмоциональное осознание и долгосрочное благополучие.",
           "badge": "Cambridge University",
-          "screenTitle": "Insight основан на психологии.",
+          "screenTitle": "Zeno основан на психологии.",
           "body": "Ведение дневника связано с улучшением эмоциональной осведомленности и психического благополучия."
         },
         "frequency": {
@@ -1927,14 +1927,14 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "procrastinating": "Я продолжаю откладывать дела и не понимаю, почему",
           "grateful": "Сегодня произошло что-то, что заставило меня быть очень благодарным"
         },
-        "thinking": "Insight думает...",
-        "aiLabel": "Insight AI",
+        "thinking": "Zeno думает...",
+        "aiLabel": "Zeno",
         "responses": {
-          "overwhelmed": "Похоже, ты сейчас несешь много. Признание этого чувства — первый шаг. Insight может помочь вам отследить эти закономерности и найти то, что приносит вам облегчение. 💜",
-          "positive": "Это прекрасное наблюдение. Замечать то, что поднимает ваше настроение, очень важно — Insight поможет вам со временем развить эти положительные закономерности. ✨",
-          "procrastination": "Прокрастинация часто имеет более глубокие корни, чем мы думаем. Ведение дневника может выявить скрытые за ним эмоции — Insight поможет вам понять и преодолеть эти блоки. 🔑",
-          "sadness": "Спасибо, что поделились этим. Выражать трудные чувства смело и исцеляюще. Insight здесь, чтобы выслушать и помочь вам пережить эти моменты. 💙",
-          "default": "Спасибо, что поделились. Каждая запись – это шаг к более глубокому пониманию себя. Insight поможет вам выявить закономерности, отслеживать свой рост и со временем обрести ясность. 💜"
+          "overwhelmed": "Похоже, ты сейчас несешь много. Признание этого чувства — первый шаг. Zeno может помочь вам отследить эти закономерности и найти то, что приносит вам облегчение. 💜",
+          "positive": "Это прекрасное наблюдение. Замечать то, что поднимает ваше настроение, очень важно — Zeno поможет вам со временем развить эти положительные закономерности. ✨",
+          "procrastination": "Прокрастинация часто имеет более глубокие корни, чем мы думаем. Ведение дневника может выявить скрытые за ним эмоции — Zeno поможет вам понять и преодолеть эти блоки. 🔑",
+          "sadness": "Спасибо, что поделились этим. Выражать трудные чувства смело и исцеляюще. Zeno здесь, чтобы выслушать и помочь вам пережить эти моменты. 💙",
+          "default": "Спасибо, что поделились. Каждая запись – это шаг к более глубокому пониманию себя. Zeno поможет вам выявить закономерности, отслеживать свой рост и со временем обрести ясность. 💜"
         }
       },
       "privacy": {
@@ -1946,11 +1946,11 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       },
       "notifications": {
         "title": "Включить уведомления",
-        "subtitle": "Получите максимальную отдачу от Insight, оставаясь в курсе происходящего.",
+        "subtitle": "Получите максимальную отдачу от Zeno, оставаясь в курсе происходящего.",
         "allow": "Разрешить уведомления",
         "skip": "Пропустить пока →",
         "permissionTitle": "Не забудьте отразить это с помощью уведомлений",
-        "permissionRequest": "Insight AI хотел бы отправить вам",
+        "permissionRequest": "Zeno хотел бы отправить вам",
         "permissionType": "Уведомления",
         "dontAllow": "Не разрешать"
       },
@@ -1958,7 +1958,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
         "title": "Оцените нас 5 звезд",
         "subtitle": "Помогите нам распространить идею осознанной жизни и личностного роста.",
         "testimonials": {
-          "first": "Insight полностью изменил мое понимание своих эмоций. Данные искусственного интеллекта невероятно точны и полезны.",
+          "first": "Zeno полностью изменил мое понимание своих эмоций. Данные искусственного интеллекта невероятно точны и полезны.",
           "second": "Это приложение помогло мне выявить закономерности, которые я раньше не замечал. Это как будто у меня в кармане терапевт.",
           "third": "Ежедневные размышления и идеи стали неотъемлемой частью моего ухода за собой."
         },
@@ -1970,7 +1970,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       },
       "paywall": {
         "headings": {
-          "understand": "Лучше поймите себя\nс Insight",
+          "understand": "Лучше поймите себя\nс Zeno",
           "growth": "Отслеживайте рост\nи прогресс",
           "reflect": "Размышляйте глубже,\nживите лучше",
           "mira": "Поговорите с Mira",
@@ -1993,7 +1993,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "playbook": "Руководство по развитию и планы действий"
         },
         "testimonials": {
-          "first": "Insight полностью изменил мое понимание своих эмоций. Данные искусственного интеллекта невероятно точны и полезны.",
+          "first": "Zeno полностью изменил мое понимание своих эмоций. Данные искусственного интеллекта невероятно точны и полезны.",
           "second": "Подсказки для ведения журнала продуманы, а отслеживание закономерностей помогает мне увидеть мой рост с течением времени.",
           "third": "Лучшее приложение для психического здоровья, которое я когда-либо использовал. ИИ чувствует себя так, будто разговаривает с терапевтом, который меня действительно понимает.",
           "fourth": "Мне нравится, как это связывает мои повседневные привычки с моим настроением. Потрясающие идеи каждую неделю.",
@@ -2038,7 +2038,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
         }
       },
       "postPurchase": {
-        "title": "Добро пожаловать в Insight",
+        "title": "Добро пожаловать в Zeno",
         "subtitle": "У вас все готово с Pro",
         "analysis": "Анализ журналов с помощью искусственного интеллекта",
         "privateEntries": "Частные и зашифрованные записи",
@@ -2078,7 +2078,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
   },
   "pt": {
     "onboarding": {
-      "welcome": "Bem-vindo ao Insight",
+      "welcome": "Bem-vindo ao Zeno",
       "getStarted": "Comece",
       "alreadyHaveAccount": "Já tem uma conta?",
       "signIn": "Entrar",
@@ -2089,7 +2089,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "skip": "Pular",
       "skipForNow": "Pular por enquanto",
       "valueProp": {
-        "title": "Insight transforma pensamentos em clareza",
+        "title": "Zeno transforma pensamentos em clareza",
         "mentalNoise": "Ruído mental",
         "understanding": "Entendimento",
         "captureFeelings": "Capture como você se sente",
@@ -2099,7 +2099,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "patterns": {
         "eyebrow": "Alimentado por IA",
         "title": "Acompanhe seus padrões\ncom o tempo",
-        "subtitle": "Insight identifica o que está impedindo você e revela suas principais prioridades para trabalhar.",
+        "subtitle": "Zeno identifica o que está impedindo você e revela suas principais prioridades para trabalhar.",
         "adjustSleep": "Ajuste o horário de sono",
         "selfCompassion": "Pratique mais a autocompaixão",
         "reduceScreenTime": "Reduza o tempo de tela antes de dormir",
@@ -2111,7 +2111,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "wins": {
         "eyebrow": "Comemore o crescimento",
         "title": "Comemore também\nsuas conquistas",
-        "subtitle": "Insight também identifica o que está indo bem para que você possa desenvolver seus pontos fortes.",
+        "subtitle": "Zeno também identifica o que está indo bem para que você possa desenvolver seus pontos fortes.",
         "gym": "Ir à academia de forma consistente",
         "reading": "Lendo todos os dias desta semana",
         "openingUp": "Abrindo mais para as pessoas",
@@ -2174,7 +2174,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "title": "Fundamentado em psicologia",
           "subtitle": "A pesquisa mostra que o diário reflexivo melhora a consciência emocional e o bem-estar a longo prazo.",
           "badge": "Cambridge University",
-          "screenTitle": "Insight é baseado em psicologia",
+          "screenTitle": "Zeno é baseado em psicologia",
           "body": "O registro no diário está ligado a uma melhor consciência emocional e bem-estar mental."
         },
         "frequency": {
@@ -2342,14 +2342,14 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "procrastinating": "Eu continuo adiando as coisas e não sei por que",
           "grateful": "Algo aconteceu hoje que me deixou muito grato"
         },
-        "thinking": "Insight está pensando...",
-        "aiLabel": "Insight AI",
+        "thinking": "Zeno está pensando...",
+        "aiLabel": "Zeno",
         "responses": {
-          "overwhelmed": "Parece que você está carregando muita coisa agora. Reconhecer esse sentimento é o primeiro passo – Insight pode ajudá-lo a rastrear esses padrões e encontrar o que lhe traz alívio. 💜",
-          "positive": "Essa é uma bela observação. Perceber o que melhora seu humor é poderoso - Insight o ajudará a desenvolver esses padrões positivos ao longo do tempo. ✨",
-          "procrastination": "A procrastinação muitas vezes tem raízes mais profundas do que pensamos. O registro no diário pode revelar as emoções ocultas por trás dele – Insight o ajudará a compreender e superar esses bloqueios. 🔑",
-          "sadness": "Obrigado por compartilhar isso. Expressar sentimentos difíceis é corajoso e curativo. Insight está aqui para ouvir e ajudar você a navegar por esses momentos. 💙",
-          "default": "Obrigado por compartilhar. Cada entrada é um passo em direção a uma autocompreensão mais profunda. Insight o ajudará a descobrir padrões, acompanhar seu crescimento e obter clareza ao longo do tempo. 💜"
+          "overwhelmed": "Parece que você está carregando muita coisa agora. Reconhecer esse sentimento é o primeiro passo – Zeno pode ajudá-lo a rastrear esses padrões e encontrar o que lhe traz alívio. 💜",
+          "positive": "Essa é uma bela observação. Perceber o que melhora seu humor é poderoso - Zeno o ajudará a desenvolver esses padrões positivos ao longo do tempo. ✨",
+          "procrastination": "A procrastinação muitas vezes tem raízes mais profundas do que pensamos. O registro no diário pode revelar as emoções ocultas por trás dele – Zeno o ajudará a compreender e superar esses bloqueios. 🔑",
+          "sadness": "Obrigado por compartilhar isso. Expressar sentimentos difíceis é corajoso e curativo. Zeno está aqui para ouvir e ajudar você a navegar por esses momentos. 💙",
+          "default": "Obrigado por compartilhar. Cada entrada é um passo em direção a uma autocompreensão mais profunda. Zeno o ajudará a descobrir padrões, acompanhar seu crescimento e obter clareza ao longo do tempo. 💜"
         }
       },
       "privacy": {
@@ -2361,11 +2361,11 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       },
       "notifications": {
         "title": "Ative as notificações",
-        "subtitle": "Aproveite ao máximo o Insight mantendo-se atualizado com o que está acontecendo.",
+        "subtitle": "Aproveite ao máximo o Zeno mantendo-se atualizado com o que está acontecendo.",
         "allow": "Permitir notificações",
         "skip": "Pule por enquanto →",
         "permissionTitle": "Lembre-se de refletir com notificações",
-        "permissionRequest": "Insight AI gostaria de lhe enviar",
+        "permissionRequest": "Zeno gostaria de lhe enviar",
         "permissionType": "Notificações",
         "dontAllow": "Não permita"
       },
@@ -2373,7 +2373,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
         "title": "Avalie-nos com 5 estrelas",
         "subtitle": "Ajude-nos a espalhar a mensagem de uma vida consciente e de crescimento pessoal",
         "testimonials": {
-          "first": "Insight mudou completamente a forma como entendo minhas emoções. Os insights de IA são incrivelmente precisos e úteis.",
+          "first": "Zeno mudou completamente a forma como entendo minhas emoções. Os insights de IA são incrivelmente precisos e úteis.",
           "second": "Este aplicativo me ajudou a identificar padrões que nunca havia notado antes. É como ter um terapeuta no bolso.",
           "third": "As reflexões e insights diários tornaram-se uma parte essencial da minha rotina de autocuidado."
         },
@@ -2385,7 +2385,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       },
       "paywall": {
         "headings": {
-          "understand": "Entenda-se melhor\ncom o Insight",
+          "understand": "Entenda-se melhor\ncom o Zeno",
           "growth": "Acompanhe seu crescimento\ne progresso",
           "reflect": "Reflita mais,\nviva melhor",
           "mira": "Fale com a Mira",
@@ -2408,7 +2408,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "playbook": "Manual de crescimento e planos de ação"
         },
         "testimonials": {
-          "first": "Insight mudou completamente a forma como entendo minhas emoções. Os insights de IA são incrivelmente precisos e úteis.",
+          "first": "Zeno mudou completamente a forma como entendo minhas emoções. Os insights de IA são incrivelmente precisos e úteis.",
           "second": "As instruções de registro no diário são atenciosas e o rastreamento de padrões me ajuda a ver meu crescimento ao longo do tempo.",
           "third": "Melhor aplicativo de saúde mental que usei. A IA tem vontade de conversar com um terapeuta que realmente me entende.",
           "fourth": "Adoro como isso conecta meus hábitos diários aos meus padrões de humor. Insights reveladores todas as semanas.",
@@ -2453,7 +2453,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
         }
       },
       "postPurchase": {
-        "title": "Bem-vindo ao Insight",
+        "title": "Bem-vindo ao Zeno",
         "subtitle": "Está tudo pronto com o Pro",
         "analysis": "Análise de diário com tecnologia de IA",
         "privateEntries": "Entradas privadas e criptografadas",
@@ -2493,7 +2493,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
   },
   "it": {
     "onboarding": {
-      "welcome": "Benvenuti in Insight",
+      "welcome": "Benvenuti in Zeno",
       "getStarted": "Inizia",
       "alreadyHaveAccount": "Hai già un account?",
       "signIn": "Registrazione",
@@ -2504,7 +2504,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "skip": "Saltare",
       "skipForNow": "Salta per ora",
       "valueProp": {
-        "title": "Insight trasforma i pensieri in chiarezza",
+        "title": "Zeno trasforma i pensieri in chiarezza",
         "mentalNoise": "Rumore mentale",
         "understanding": "Comprensione",
         "captureFeelings": "Cattura come ti senti",
@@ -2514,7 +2514,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "patterns": {
         "eyebrow": "Alimentato dall'intelligenza artificiale",
         "title": "Tieni traccia dei tuoi schemi\nnel tempo",
-        "subtitle": "Insight identifica cosa ti trattiene e fa emergere le tue principali priorità su cui lavorare.",
+        "subtitle": "Zeno identifica cosa ti trattiene e fa emergere le tue principali priorità su cui lavorare.",
         "adjustSleep": "Regola il programma del sonno",
         "selfCompassion": "Pratica di più l’autocompassione",
         "reduceScreenTime": "Riduci il tempo trascorso davanti allo schermo prima di andare a letto",
@@ -2526,7 +2526,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "wins": {
         "eyebrow": "Festeggia la crescita",
         "title": "Festeggia anche\ni tuoi successi",
-        "subtitle": "Insight individua anche ciò che sta andando bene in modo che tu possa sfruttare i tuoi punti di forza.",
+        "subtitle": "Zeno individua anche ciò che sta andando bene in modo che tu possa sfruttare i tuoi punti di forza.",
         "gym": "Andare in palestra con costanza",
         "reading": "Leggendo ogni giorno questa settimana",
         "openingUp": "Aprirsi di più alle persone",
@@ -2589,7 +2589,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "title": "Radicato nella psicologia",
           "subtitle": "La ricerca mostra che il journaling riflessivo migliora la consapevolezza emotiva e il benessere a lungo termine.",
           "badge": "Cambridge University",
-          "screenTitle": "Insight ha radici psicologiche",
+          "screenTitle": "Zeno ha radici psicologiche",
           "body": "Il journaling è collegato a una migliore consapevolezza emotiva e al benessere mentale."
         },
         "frequency": {
@@ -2757,14 +2757,14 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "procrastinating": "Continuo a rimandare le cose e non so perché",
           "grateful": "Oggi è successo qualcosa che mi ha reso davvero grato"
         },
-        "thinking": "Insight sta pensando...",
-        "aiLabel": "Insight AI",
+        "thinking": "Zeno sta pensando...",
+        "aiLabel": "Zeno",
         "responses": {
-          "overwhelmed": "Sembra che tu stia trasportando molto in questo momento. Riconoscere quella sensazione è il primo passo: Insight può aiutarti a tenere traccia di questi schemi e trovare cosa ti dà sollievo. 💜",
-          "positive": "È una bellissima osservazione. Notare ciò che solleva il tuo umore è potente: Insight ti aiuterà a sviluppare questi modelli positivi nel tempo. ✨",
-          "procrastination": "La procrastinazione ha spesso radici più profonde di quanto pensiamo. L'inserimento nel diario può rivelare le emozioni nascoste dietro di esso: Insight ti aiuterà a comprendere e superare questi blocchi. 🔑",
-          "sadness": "Grazie per averlo condiviso. Esprimere sentimenti difficili è coraggioso e curativo. Insight è qui per ascoltarti e aiutarti a superare questi momenti. 💙",
-          "default": "Grazie per la condivisione. Ogni voce è un passo verso una più profonda comprensione di sé. Insight ti aiuterà a scoprire modelli, monitorare la tua crescita e acquisire chiarezza nel tempo. 💜"
+          "overwhelmed": "Sembra che tu stia trasportando molto in questo momento. Riconoscere quella sensazione è il primo passo: Zeno può aiutarti a tenere traccia di questi schemi e trovare cosa ti dà sollievo. 💜",
+          "positive": "È una bellissima osservazione. Notare ciò che solleva il tuo umore è potente: Zeno ti aiuterà a sviluppare questi modelli positivi nel tempo. ✨",
+          "procrastination": "La procrastinazione ha spesso radici più profonde di quanto pensiamo. L'inserimento nel diario può rivelare le emozioni nascoste dietro di esso: Zeno ti aiuterà a comprendere e superare questi blocchi. 🔑",
+          "sadness": "Grazie per averlo condiviso. Esprimere sentimenti difficili è coraggioso e curativo. Zeno è qui per ascoltarti e aiutarti a superare questi momenti. 💙",
+          "default": "Grazie per la condivisione. Ogni voce è un passo verso una più profonda comprensione di sé. Zeno ti aiuterà a scoprire modelli, monitorare la tua crescita e acquisire chiarezza nel tempo. 💜"
         }
       },
       "privacy": {
@@ -2776,11 +2776,11 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       },
       "notifications": {
         "title": "Attiva le notifiche",
-        "subtitle": "Ottieni il massimo da Insight rimanendo aggiornato su ciò che accade.",
+        "subtitle": "Ottieni il massimo da Zeno rimanendo aggiornato su ciò che accade.",
         "allow": "Consenti notifiche",
         "skip": "Salta per ora →",
         "permissionTitle": "Ricordati di riflettere con le notifiche",
-        "permissionRequest": "Insight AI vorrebbe inviarti",
+        "permissionRequest": "Zeno vorrebbe inviarti",
         "permissionType": "Notifiche",
         "dontAllow": "Non consentire"
       },
@@ -2788,7 +2788,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
         "title": "Valutaci 5 stelle",
         "subtitle": "Aiutaci a diffondere il messaggio di una vita consapevole e di crescita personale",
         "testimonials": {
-          "first": "Insight ha completamente cambiato il modo in cui comprendo le mie emozioni. Gli approfondimenti dell’intelligenza artificiale sono incredibilmente accurati e utili.",
+          "first": "Zeno ha completamente cambiato il modo in cui comprendo le mie emozioni. Gli approfondimenti dell’intelligenza artificiale sono incredibilmente accurati e utili.",
           "second": "Questa app mi ha aiutato a identificare modelli che non avevo mai notato prima. È come avere un terapista in tasca.",
           "third": "Le riflessioni e gli approfondimenti quotidiani sono diventati una parte essenziale della mia routine di cura di me stessa."
         },
@@ -2800,7 +2800,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       },
       "paywall": {
         "headings": {
-          "understand": "Comprenditi meglio\ncon Insight",
+          "understand": "Comprenditi meglio\ncon Zeno",
           "growth": "Segui la tua crescita\ne i tuoi progressi",
           "reflect": "Rifletti più a fondo,\nvivi meglio",
           "mira": "Parla con Mira",
@@ -2823,7 +2823,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "playbook": "Playbook per la crescita e piani d’azione"
         },
         "testimonials": {
-          "first": "Insight ha completamente cambiato il modo in cui comprendo le mie emozioni. Gli approfondimenti dell’intelligenza artificiale sono incredibilmente accurati e utili.",
+          "first": "Zeno ha completamente cambiato il modo in cui comprendo le mie emozioni. Gli approfondimenti dell’intelligenza artificiale sono incredibilmente accurati e utili.",
           "second": "Le istruzioni per l'inserimento nel journal sono ponderate e il monitoraggio dei modelli mi aiuta a vedere la mia crescita nel tempo.",
           "third": "La migliore app per la salute mentale che abbia mai usato. L'intelligenza artificiale mi dà la sensazione di parlare con un terapista che mi capisce davvero.",
           "fourth": "Adoro il modo in cui collega le mie abitudini quotidiane ai miei schemi di umore. Approfondimenti illuminanti ogni settimana.",
@@ -2868,7 +2868,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
         }
       },
       "postPurchase": {
-        "title": "Benvenuti in Insight",
+        "title": "Benvenuti in Zeno",
         "subtitle": "È tutto pronto con Pro",
         "analysis": "Analisi del diario basata sull’intelligenza artificiale",
         "privateEntries": "Voci private e crittografate",
@@ -2908,7 +2908,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
   },
   "ro": {
     "onboarding": {
-      "welcome": "Bun venit la Insight",
+      "welcome": "Bun venit la Zeno",
       "getStarted": "Începeți",
       "alreadyHaveAccount": "Aveți deja un cont?",
       "signIn": "Conectare",
@@ -2919,7 +2919,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "skip": "Sari peste",
       "skipForNow": "Sari peste moment",
       "valueProp": {
-        "title": "Insight transformă gândurile în claritate",
+        "title": "Zeno transformă gândurile în claritate",
         "mentalNoise": "Zgomot mental",
         "understanding": "Înţelegere",
         "captureFeelings": "Surprindeți cum vă simțiți",
@@ -2929,7 +2929,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "patterns": {
         "eyebrow": "Alimentat de AI",
         "title": "Urmăriți-vă modelele\nde-a lungul timpului",
-        "subtitle": "Insight identifică ceea ce te ține pe spate și evidențiază prioritățile tale principale la care să lucrezi.",
+        "subtitle": "Zeno identifică ceea ce te ține pe spate și evidențiază prioritățile tale principale la care să lucrezi.",
         "adjustSleep": "Ajustați programul de somn",
         "selfCompassion": "Exersează mai mult autocompasiunea",
         "reduceScreenTime": "Reduceți timpul petrecut înainte de culcare",
@@ -2941,7 +2941,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "wins": {
         "eyebrow": "Sărbătorește creșterea",
         "title": "Sărbătorește și\ntoate reușitele",
-        "subtitle": "Insight observă, de asemenea, ceea ce merge bine, astfel încât să vă puteți dezvolta punctele forte.",
+        "subtitle": "Zeno observă, de asemenea, ceea ce merge bine, astfel încât să vă puteți dezvolta punctele forte.",
         "gym": "Mergând constant la sală",
         "reading": "Citind în fiecare zi în această săptămână",
         "openingUp": "Deschiderea către oameni mai mult",
@@ -3004,7 +3004,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "title": "Întemeiat pe psihologie",
           "subtitle": "Cercetările arată că jurnalul reflectiv îmbunătățește conștientizarea emoțională și bunăstarea pe termen lung.",
           "badge": "Cambridge University",
-          "screenTitle": "Insight se bazează pe psihologie",
+          "screenTitle": "Zeno se bazează pe psihologie",
           "body": "Jurnalul este legat de o mai bună conștientizare emoțională și de bunăstare mentală."
         },
         "frequency": {
@@ -3172,14 +3172,14 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "procrastinating": "Continui să amân lucrurile și nu știu sigur de ce",
           "grateful": "Azi s-a întâmplat ceva care m-a făcut cu adevărat recunoscător"
         },
-        "thinking": "Insight se gândește...",
-        "aiLabel": "Insight AI",
+        "thinking": "Zeno se gândește...",
+        "aiLabel": "Zeno",
         "responses": {
-          "overwhelmed": "Se pare că porți multe acum. Recunoașterea acestui sentiment este primul pas — Insight vă poate ajuta să urmăriți aceste tipare și să găsiți ceea ce vă aduce ușurare. 💜",
-          "positive": "E o observație frumoasă. Observați ceea ce vă ridică starea de spirit este puternic – Insight vă va ajuta să construiți pe aceste modele pozitive în timp. ✨",
-          "procrastination": "Amânarea are adesea rădăcini mai adânci decât credem. Jurnalul poate dezvălui emoțiile ascunse din spatele ei — Insight vă va ajuta să înțelegeți și să depășiți aceste blocaje. 🔑",
-          "sadness": "Vă mulțumesc că ați împărtășit asta. Exprimarea sentimentelor dificile este curajos și vindecător. Insight este aici pentru a vă asculta și pentru a vă ajuta să navigați prin aceste momente. 💙",
-          "default": "Vă mulțumim pentru împărtășire. Fiecare intrare este un pas către o mai profundă înțelegere de sine. Insight vă va ajuta să descoperiți modele, să vă urmăriți creșterea și să obțineți claritate în timp. 💜"
+          "overwhelmed": "Se pare că porți multe acum. Recunoașterea acestui sentiment este primul pas — Zeno vă poate ajuta să urmăriți aceste tipare și să găsiți ceea ce vă aduce ușurare. 💜",
+          "positive": "E o observație frumoasă. Observați ceea ce vă ridică starea de spirit este puternic – Zeno vă va ajuta să construiți pe aceste modele pozitive în timp. ✨",
+          "procrastination": "Amânarea are adesea rădăcini mai adânci decât credem. Jurnalul poate dezvălui emoțiile ascunse din spatele ei — Zeno vă va ajuta să înțelegeți și să depășiți aceste blocaje. 🔑",
+          "sadness": "Vă mulțumesc că ați împărtășit asta. Exprimarea sentimentelor dificile este curajos și vindecător. Zeno este aici pentru a vă asculta și pentru a vă ajuta să navigați prin aceste momente. 💙",
+          "default": "Vă mulțumim pentru împărtășire. Fiecare intrare este un pas către o mai profundă înțelegere de sine. Zeno vă va ajuta să descoperiți modele, să vă urmăriți creșterea și să obțineți claritate în timp. 💜"
         }
       },
       "privacy": {
@@ -3191,11 +3191,11 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       },
       "notifications": {
         "title": "Activați notificările",
-        "subtitle": "Profitați la maximum de Insight rămânând la curent cu ceea ce se întâmplă.",
+        "subtitle": "Profitați la maximum de Zeno rămânând la curent cu ceea ce se întâmplă.",
         "allow": "Permite notificări",
         "skip": "Sari peste moment →",
         "permissionTitle": "Nu uitați să reflectați cu notificări",
-        "permissionRequest": "Insight AI ar dori să vă trimită",
+        "permissionRequest": "Zeno ar dori să vă trimită",
         "permissionType": "Notificări",
         "dontAllow": "Nu permite"
       },
@@ -3203,7 +3203,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
         "title": "Evaluează-ne cu 5 stele",
         "subtitle": "Ajută-ne să răspândim mesajul vieții conștiente și al creșterii personale",
         "testimonials": {
-          "first": "Insight a schimbat complet modul în care îmi înțeleg emoțiile. Perspectivele AI sunt incredibil de precise și utile.",
+          "first": "Zeno a schimbat complet modul în care îmi înțeleg emoțiile. Perspectivele AI sunt incredibil de precise și utile.",
           "second": "Această aplicație m-a ajutat să identific modele pe care nu le-am observat niciodată înainte. E ca și cum aș avea un terapeut în buzunar.",
           "third": "Reflecțiile și intuițiile zilnice au devenit o parte esențială a rutinei mele de îngrijire personală."
         },
@@ -3215,7 +3215,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       },
       "paywall": {
         "headings": {
-          "understand": "Înțelege-te mai bine\ncu Insight",
+          "understand": "Înțelege-te mai bine\ncu Zeno",
           "growth": "Urmărește-ți evoluția\nși progresul",
           "reflect": "Reflectează mai profund,\ntrăiește mai bine",
           "mira": "Vorbește cu Mira",
@@ -3238,7 +3238,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "playbook": "Manual de creștere și planuri de acțiune"
         },
         "testimonials": {
-          "first": "Insight a schimbat complet modul în care îmi înțeleg emoțiile. Perspectivele AI sunt incredibil de precise și utile.",
+          "first": "Zeno a schimbat complet modul în care îmi înțeleg emoțiile. Perspectivele AI sunt incredibil de precise și utile.",
           "second": "Solicitările de jurnal sunt atent, iar urmărirea modelelor mă ajută să-mi văd creșterea în timp.",
           "third": "Cea mai bună aplicație de sănătate mintală pe care am folosit-o. AI-ul simte că vorbesc cu un terapeut care mă înțelege cu adevărat.",
           "fourth": "Îmi place cum leagă obiceiurile mele zilnice de tiparele mele de dispoziție. Perspective revelatoare în fiecare săptămână.",
@@ -3283,7 +3283,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
         }
       },
       "postPurchase": {
-        "title": "Bun venit la Insight",
+        "title": "Bun venit la Zeno",
         "subtitle": "Ești gata cu Pro",
         "analysis": "Analiza jurnalului bazată pe inteligență artificială",
         "privateEntries": "Intrări private și criptate",
@@ -3323,7 +3323,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
   },
   "az": {
     "onboarding": {
-      "welcome": "Insight-ə xoş gəlmisiniz",
+      "welcome": "Zeno-ya xoş gəlmisiniz",
       "getStarted": "Başlayın",
       "alreadyHaveAccount": "Artıq hesabınız var?",
       "signIn": "Daxil ol",
@@ -3334,7 +3334,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "skip": "Keç",
       "skipForNow": "Hələlik keçin",
       "valueProp": {
-        "title": "Insight düşüncələri aydınlığa çevirir",
+        "title": "Zeno düşüncələri aydınlığa çevirir",
         "mentalNoise": "Zehni səs-küy",
         "understanding": "Anlamaq",
         "captureFeelings": "Nə hiss etdiyinizi çəkin",
@@ -3344,7 +3344,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "patterns": {
         "eyebrow": "AI ilə təchiz edilmişdir",
         "title": "Nümunələrinizi izləyin\nzamanla",
-        "subtitle": "Insight sizə nəyin mane olduğunu müəyyənləşdirir və üzərində işləmək üçün əsas prioritetlərinizi ortaya qoyur.",
+        "subtitle": "Zeno sizə nəyin mane olduğunu müəyyənləşdirir və üzərində işləmək üçün əsas prioritetlərinizi ortaya qoyur.",
         "adjustSleep": "Yuxu cədvəlini tənzimləyin",
         "selfCompassion": "Özünüzə şəfqət göstərməyi daha çox məşq edin",
         "reduceScreenTime": "Yatmadan əvvəl ekranda qalma vaxtını azaldın",
@@ -3356,7 +3356,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "wins": {
         "eyebrow": "Böyüməyi qeyd edin",
         "title": "Uğurlarınızı da\nqeyd edin",
-        "subtitle": "Insight həmçinin nəyin yaxşı getdiyini görür ki, siz öz güclü tərəflərinizi inkişaf etdirə biləsiniz.",
+        "subtitle": "Zeno həmçinin nəyin yaxşı getdiyini görür ki, siz öz güclü tərəflərinizi inkişaf etdirə biləsiniz.",
         "gym": "Davamlı olaraq idman zalına getmək",
         "reading": "Bu həftə hər gün oxuyun",
         "openingUp": "İnsanlara daha çox açılır",
@@ -3419,7 +3419,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "title": "Psixologiyaya əsaslanır",
           "subtitle": "Tədqiqatlar göstərir ki, əks etdirən jurnallar emosional şüur ​​və uzunmüddətli rifahı yaxşılaşdırır.",
           "badge": "Cambridge University",
-          "screenTitle": "Insight psixologiyaya əsaslanır",
+          "screenTitle": "Zeno psixologiyaya əsaslanır",
           "body": "Jurnal daha yaxşı emosional şüur ​​və zehni rifahla əlaqələndirilir."
         },
         "frequency": {
@@ -3587,14 +3587,14 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "procrastinating": "Mən hər şeyi təxirə salmağa davam edirəm və səbəbini bilmirəm",
           "grateful": "Bu gün məni həqiqətən minnətdar edən bir şey oldu"
         },
-        "thinking": "Insight düşünür...",
-        "aiLabel": "Insight AI",
+        "thinking": "Zeno düşünür...",
+        "aiLabel": "Zeno",
         "responses": {
-          "overwhelmed": "Deyəsən, indi çox şey daşıyırsan. Bu hissi tanımaq ilk addımdır — Insight bu nümunələri izləməyə və sizə rahatlıq gətirənləri tapmağa kömək edə bilər. 💜",
-          "positive": "Bu gözəl müşahidədir. Əhval-ruhiyyənizi nəyin qaldırdığını fərq etmək güclüdür — Insight zamanla bu müsbət nümunələr üzərində qurmağınıza kömək edəcək. ✨",
-          "procrastination": "Süründürməçilik çox vaxt düşündüyümüzdən daha dərin köklərə malikdir. Jurnallar onun arxasında gizlənmiş emosiyaları aşkar edə bilər — Insight sizə bu blokları anlamağa və aradan qaldırmağa kömək edəcək. 🔑",
-          "sadness": "Bunu paylaşdığınız üçün təşəkkür edirik. Çətin hissləri ifadə etmək cəsarətli və şəfalıdır. Insight bu anları dinləmək və sizə kömək etmək üçün buradadır. 💙",
-          "default": "Paylaşdığınız üçün təşəkkür edirik. Hər giriş daha dərin özünü dərk etməyə doğru bir addımdır. Insight sizə nümunələri aşkar etməyə, böyümənizi izləməyə və zamanla aydınlıq əldə etməyə kömək edəcək. 💜"
+          "overwhelmed": "Deyəsən, indi çox şey daşıyırsan. Bu hissi tanımaq ilk addımdır — Zeno bu nümunələri izləməyə və sizə rahatlıq gətirənləri tapmağa kömək edə bilər. 💜",
+          "positive": "Bu gözəl müşahidədir. Əhval-ruhiyyənizi nəyin qaldırdığını fərq etmək güclüdür — Zeno zamanla bu müsbət nümunələr üzərində qurmağınıza kömək edəcək. ✨",
+          "procrastination": "Süründürməçilik çox vaxt düşündüyümüzdən daha dərin köklərə malikdir. Jurnallar onun arxasında gizlənmiş emosiyaları aşkar edə bilər — Zeno sizə bu blokları anlamağa və aradan qaldırmağa kömək edəcək. 🔑",
+          "sadness": "Bunu paylaşdığınız üçün təşəkkür edirik. Çətin hissləri ifadə etmək cəsarətli və şəfalıdır. Zeno bu anları dinləmək və sizə kömək etmək üçün buradadır. 💙",
+          "default": "Paylaşdığınız üçün təşəkkür edirik. Hər giriş daha dərin özünü dərk etməyə doğru bir addımdır. Zeno sizə nümunələri aşkar etməyə, böyümənizi izləməyə və zamanla aydınlıq əldə etməyə kömək edəcək. 💜"
         }
       },
       "privacy": {
@@ -3606,11 +3606,11 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       },
       "notifications": {
         "title": "Bildirişləri yandırın",
-        "subtitle": "Baş verənlərdən xəbərdar olmaqla Insight-dən maksimum yararlanın.",
+        "subtitle": "Baş verənlərdən xəbərdar olmaqla Zeno-dən maksimum yararlanın.",
         "allow": "Bildirişlərə icazə verin",
         "skip": "Hələlik keçin →",
         "permissionTitle": "Bildirişlərlə əks etdirməyi unutmayın",
-        "permissionRequest": "Insight AI sizə göndərmək istəyir",
+        "permissionRequest": "Zeno sizə göndərmək istəyir",
         "permissionType": "Bildirişlər",
         "dontAllow": "İcazə verməyin"
       },
@@ -3618,7 +3618,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
         "title": "Bizi 5 Ulduzla qiymətləndirin",
         "subtitle": "Bizə şüurlu həyat və şəxsi inkişaf mesajını yaymağa kömək edin",
         "testimonials": {
-          "first": "Insight mənim duyğularımı başa düşməyimi tamamilə dəyişdi. AI anlayışları inanılmaz dərəcədə dəqiq və faydalıdır.",
+          "first": "Zeno mənim duyğularımı başa düşməyimi tamamilə dəyişdi. AI anlayışları inanılmaz dərəcədə dəqiq və faydalıdır.",
           "second": "Bu proqramlar əvvəllər heç görmədiyim nümunələri müəyyən etməyə kömək etdi. Sanki cibimdə terapevt var.",
           "third": "Gündəlik düşüncələr və fikirlər mənim özümə qulluq rutinimin vacib hissəsinə çevrildi."
         },
@@ -3630,7 +3630,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       },
       "paywall": {
         "headings": {
-          "understand": "Insight ilə\nözünüzü daha yaxşı anlayın",
+          "understand": "Zeno ilə\nözünüzü daha yaxşı anlayın",
           "growth": "İnkişafınızı və\ntərəqqinizi izləyin",
           "reflect": "Daha dərindən düşünün,\ndaha yaxşı yaşayın",
           "mira": "Mira ilə danışın",
@@ -3653,7 +3653,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "playbook": "Böyümə kitabı və fəaliyyət planları"
         },
         "testimonials": {
-          "first": "Insight mənim duyğularımı başa düşməyimi tamamilə dəyişdi. AI anlayışları inanılmaz dərəcədə dəqiq və faydalıdır.",
+          "first": "Zeno mənim duyğularımı başa düşməyimi tamamilə dəyişdi. AI anlayışları inanılmaz dərəcədə dəqiq və faydalıdır.",
           "second": "Jurnal yazmaq istəkləri düşünülmüşdür və nümunə izləmə mənə zamanla böyüməmi görməyə kömək edir.",
           "third": "İstifadə etdiyim ən yaxşı psixi sağlamlıq proqramı. Süni intellekt məni həqiqətən qəbul edən bir terapevtlə danışmaq kimi hiss edir.",
           "fourth": "Bunun gündəlik vərdişlərimi əhvalımla necə əlaqələndirdiyini sevirəm. Hər həftə göz açan fikirlər.",
@@ -3698,7 +3698,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
         }
       },
       "postPurchase": {
-        "title": "Insight-ə xoş gəlmisiniz",
+        "title": "Zeno-ya xoş gəlmisiniz",
         "subtitle": "Pro ilə hər şey hazırsınız",
         "analysis": "AI ilə işləyən jurnal təhlili",
         "privateEntries": "Şəxsi və şifrəli girişlər",
@@ -3738,7 +3738,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
   },
   "nl": {
     "onboarding": {
-      "welcome": "Welkom bij Insight",
+      "welcome": "Welkom bij Zeno",
       "getStarted": "Aan de slag",
       "alreadyHaveAccount": "Heeft u al een account?",
       "signIn": "Inloggen",
@@ -3749,7 +3749,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "skip": "Overslaan",
       "skipForNow": "Overslaan voor nu",
       "valueProp": {
-        "title": "Insight zet gedachten om in helderheid",
+        "title": "Zeno zet gedachten om in helderheid",
         "mentalNoise": "Geestelijk lawaai",
         "understanding": "Begrip",
         "captureFeelings": "Leg vast hoe je je voelt",
@@ -3759,7 +3759,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "patterns": {
         "eyebrow": "Aangedreven door AI",
         "title": "Volg uw patronen\nna verloop van tijd",
-        "subtitle": "Insight identificeert wat u tegenhoudt en brengt uw topprioriteiten aan het licht om aan te werken.",
+        "subtitle": "Zeno identificeert wat u tegenhoudt en brengt uw topprioriteiten aan het licht om aan te werken.",
         "adjustSleep": "Pas het slaapschema aan",
         "selfCompassion": "Oefen meer met zelfcompassie",
         "reduceScreenTime": "Verminder de schermtijd voor het slapengaan",
@@ -3771,7 +3771,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       "wins": {
         "eyebrow": "Vier de groei",
         "title": "Vier ook\nje successen",
-        "subtitle": "Insight signaleert ook wat goed gaat, zodat u kunt voortbouwen op uw sterke punten.",
+        "subtitle": "Zeno signaleert ook wat goed gaat, zodat u kunt voortbouwen op uw sterke punten.",
         "gym": "Regelmatig naar de sportschool gaan",
         "reading": "Deze week elke dag lezen",
         "openingUp": "Meer openstaan ​​voor mensen",
@@ -3834,7 +3834,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "title": "Geworteld in de psychologie",
           "subtitle": "Onderzoek toont aan dat reflectief dagboekschrijven het emotionele bewustzijn en het welzijn op de lange termijn verbetert.",
           "badge": "Cambridge University",
-          "screenTitle": "Insight is geworteld in de psychologie",
+          "screenTitle": "Zeno is geworteld in de psychologie",
           "body": "Een dagboek bijhouden is gekoppeld aan een beter emotioneel bewustzijn en mentaal welzijn."
         },
         "frequency": {
@@ -4002,14 +4002,14 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "procrastinating": "Ik stel dingen steeds uit en ik weet niet zeker waarom",
           "grateful": "Er gebeurde vandaag iets waar ik heel dankbaar voor was"
         },
-        "thinking": "Insight denkt...",
-        "aiLabel": "Insight AI",
+        "thinking": "Zeno denkt...",
+        "aiLabel": "Zeno",
         "responses": {
-          "overwhelmed": "Het klinkt alsof je momenteel veel meedraagt. Het herkennen van dat gevoel is de eerste stap. Insight kan u helpen deze patronen op te sporen en te ontdekken wat u verlichting geeft. 💜",
-          "positive": "Dat is een mooie observatie. Het is krachtig om op te merken wat uw humeur verbetert: Insight helpt u in de loop van de tijd op deze positieve patronen voort te bouwen. ✨",
-          "procrastination": "Uitstelgedrag heeft vaak diepere wortels dan we denken. Door een dagboek bij te houden kunnen de verborgen emoties erachter worden onthuld. Insight helpt u deze blokkades te begrijpen en te overwinnen. 🔑",
-          "sadness": "Bedankt dat je dat deelt. Het uiten van moeilijke gevoelens is moedig en helend. Insight is hier om te luisteren en u te helpen bij het navigeren door deze momenten. 💙",
-          "default": "Bedankt voor het delen. Elke inzending is een stap naar een dieper zelfinzicht. Insight helpt u patronen te ontdekken, uw groei te volgen en in de loop van de tijd duidelijkheid te krijgen. 💜"
+          "overwhelmed": "Het klinkt alsof je momenteel veel meedraagt. Het herkennen van dat gevoel is de eerste stap. Zeno kan u helpen deze patronen op te sporen en te ontdekken wat u verlichting geeft. 💜",
+          "positive": "Dat is een mooie observatie. Het is krachtig om op te merken wat uw humeur verbetert: Zeno helpt u in de loop van de tijd op deze positieve patronen voort te bouwen. ✨",
+          "procrastination": "Uitstelgedrag heeft vaak diepere wortels dan we denken. Door een dagboek bij te houden kunnen de verborgen emoties erachter worden onthuld. Zeno helpt u deze blokkades te begrijpen en te overwinnen. 🔑",
+          "sadness": "Bedankt dat je dat deelt. Het uiten van moeilijke gevoelens is moedig en helend. Zeno is hier om te luisteren en u te helpen bij het navigeren door deze momenten. 💙",
+          "default": "Bedankt voor het delen. Elke inzending is een stap naar een dieper zelfinzicht. Zeno helpt u patronen te ontdekken, uw groei te volgen en in de loop van de tijd duidelijkheid te krijgen. 💜"
         }
       },
       "privacy": {
@@ -4021,11 +4021,11 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       },
       "notifications": {
         "title": "Schakel meldingen in",
-        "subtitle": "Haal het meeste uit Insight door op de hoogte te blijven van wat er gebeurt.",
+        "subtitle": "Haal het meeste uit Zeno door op de hoogte te blijven van wat er gebeurt.",
         "allow": "Meldingen toestaan",
         "skip": "Voor nu overslaan →",
         "permissionTitle": "Vergeet niet om te reflecteren met meldingen",
-        "permissionRequest": "Insight AI wil u graag sturen",
+        "permissionRequest": "Zeno wil u graag sturen",
         "permissionType": "Meldingen",
         "dontAllow": "Niet toestaan"
       },
@@ -4033,7 +4033,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
         "title": "Beoordeel ons met 5 sterren",
         "subtitle": "Help ons de boodschap van bewust leven en persoonlijke groei te verspreiden",
         "testimonials": {
-          "first": "Insight heeft de manier waarop ik mijn emoties begrijp volledig veranderd. De AI-inzichten zijn ongelooflijk nauwkeurig en nuttig.",
+          "first": "Zeno heeft de manier waarop ik mijn emoties begrijp volledig veranderd. De AI-inzichten zijn ongelooflijk nauwkeurig en nuttig.",
           "second": "Deze app hielp me patronen te identificeren die ik nog nooit eerder had opgemerkt. Het is alsof ik een therapeut in mijn zak heb.",
           "third": "De dagelijkse reflecties en inzichten zijn een essentieel onderdeel geworden van mijn zelfzorgroutine."
         },
@@ -4045,7 +4045,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
       },
       "paywall": {
         "headings": {
-          "understand": "Begrijp jezelf beter\nmet Insight",
+          "understand": "Begrijp jezelf beter\nmet Zeno",
           "growth": "Volg je groei\nen vooruitgang",
           "reflect": "Reflecteer dieper,\nleef beter",
           "mira": "Praat met Mira",
@@ -4068,7 +4068,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "playbook": "Groeidraaiboek en actieplannen"
         },
         "testimonials": {
-          "first": "Insight heeft de manier waarop ik mijn emoties begrijp volledig veranderd. De AI-inzichten zijn ongelooflijk nauwkeurig en nuttig.",
+          "first": "Zeno heeft de manier waarop ik mijn emoties begrijp volledig veranderd. De AI-inzichten zijn ongelooflijk nauwkeurig en nuttig.",
           "second": "De dagboekaanwijzingen zijn attent en het volgen van patronen helpt me mijn groei in de loop van de tijd te zien.",
           "third": "Beste app voor geestelijke gezondheidszorg die ik heb gebruikt. De AI voelt alsof je met een therapeut praat die mij echt begrijpt.",
           "fourth": "Ik vind het geweldig hoe het mijn dagelijkse gewoonten verbindt met mijn stemmingspatronen. Elke week verrassende inzichten.",
@@ -4113,7 +4113,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
         }
       },
       "postPurchase": {
-        "title": "Welkom bij Insight",
+        "title": "Welkom bij Zeno",
         "subtitle": "Je bent helemaal klaar met Pro",
         "analysis": "AI-analyse van je dagboek",
         "privateEntries": "Privé en gecodeerde vermeldingen",

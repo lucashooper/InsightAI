@@ -20,6 +20,7 @@ import { supabase } from '../lib/supabase';
 import { EncryptionService } from '../services/encryptionService';
 import { sf, ss } from '../utils/responsive';
 import { useLanguage } from '../contexts/LanguageContext';
+import { formatJournalPromptContent } from '../constants/branding';
 
 export default function PromptEntryScreen({ navigation, route }: any) {
   const { promptText } = route?.params || {};
@@ -58,7 +59,7 @@ export default function PromptEntryScreen({ navigation, route }: any) {
       const encryptionKey = await EncryptionService.getKey();
       
       // Prepend prompt as metadata for AI analysis
-      const fullContent = `[Insight Prompt: ${promptText}]\n\n${content.trim()}`;
+      const fullContent = formatJournalPromptContent(promptText, content.trim());
       const contentToSave = encryptionKey 
         ? await EncryptionService.encrypt(fullContent, encryptionKey)
         : fullContent;

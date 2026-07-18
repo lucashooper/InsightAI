@@ -26,6 +26,7 @@ import { withContentLocale } from '../i18n/contentLocale';
 import { translateEmotion } from '../i18n/labels';
 import GoDeeperThread from '../components/editor/GoDeeperThread';
 import InsightCompanionMark from '../components/companion/InsightCompanionMark';
+import { formatJournalPromptContent, extractJournalPromptText, stripJournalPromptTag } from '../constants/branding';
 import { useEditorKeyboardPadding } from '../hooks/useEditorKeyboardPadding';
 import { useTypewriterReveal } from '../hooks/useTypewriterReveal';
 import {
@@ -644,9 +645,9 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
   };
 
   const getJournalBodyForGoDeeper = () => {
-    const promptMatch = editableContent.match(/\[Insight Prompt: ([^\]]+)\]/);
-    if (promptMatch && entry?.entry_type === 'prompt') {
-      return editableContent.replace(/\[Insight Prompt: [^\]]+\]\n\n/, '').trim();
+    const promptText = extractJournalPromptText(editableContent);
+    if (promptText && entry?.entry_type === 'prompt') {
+      return stripJournalPromptTag(editableContent);
     }
     return editableContent.trim();
   };
@@ -914,10 +915,9 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
 
           {/* Beautiful Prompt Display for prompt entries */}
           {(() => {
-            const promptMatch = editableContent.match(/\[Insight Prompt: ([^\]]+)\]/);
-            if (promptMatch && entry?.entry_type === 'prompt') {
-              const promptText = promptMatch[1];
-              const userResponse = editableContent.replace(/\[Insight Prompt: [^\]]+\]\n\n/, '');
+            const promptText = extractJournalPromptText(editableContent);
+            if (promptText && entry?.entry_type === 'prompt') {
+              const userResponse = stripJournalPromptTag(editableContent);
               return (
                 <>
                   <View style={[styles.promptDisplayCard, { 
@@ -940,7 +940,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                   <TextInput
                     style={[styles.contentInput, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}
                     value={userResponse}
-                    onChangeText={(text) => setEditableContent(`[Insight Prompt: ${promptText}]\n\n${text}`)}
+                    onChangeText={(text) => setEditableContent(formatJournalPromptContent(promptText, text))}
                     multiline
                     textAlignVertical="top"
                     placeholder={t('editor.yourThoughts')}

@@ -1,0 +1,83 @@
+00:00:01 - 00:01:09
+Today, we're breaking down three AB tests for maps. Paywalls, ride-hailing, bookings, that will completely change how you think about interface design. You're going to love it. For each one, we're going to show you two screens, A and B. They look really similar. Both look fine, but one of them performs dramatically better. Pause the video on each one and see if you can spot which one won before we explain it. If you want, keep track of how many you guess right and let us know in the comments at the end.
+
+00:00:36 - 00:01:46
+Look at these two screens. Same app, same price, same $19 a month, same free trial. One of them converts much better than the other. Pause the video and tell me which one you think is better. Okay, let's go. It's B. And here's the crazy part. B doesn't even try to sell you. That's exactly why it wins. Let me show you what's happening. Screen A is a classic paywall. Big hero image with some space art, a bold headline, "Get access to 1,000 plus futuristic and fun games." Then the price, $19 per month.
+
+00:01:11 - 00:02:17
+Then three feature bullets with icons. Instant unlimited access, new games added weekly, members-only rewards. And at the bottom, a big purple button that says, "Subscribe and start 7 days for free." It's a perfectly reasonable screen. You've seen this layout a hundred times. And that's the problem. Because the moment a user sees this screen, the brain asks one question. Is this worth $19 a month? And that is a brutal question to land on someone who opened your app 30 seconds ago. They
+
+00:01:45 - 00:02:44
+haven't played a single game. They haven't felt any value. And now you're asking them to evaluate three bullet points and decide if that's worth $19 every month for the foreseeable future. That's not a decision. That's homework. And the easiest answer to homework is, I'll think about it later, which means never. Now, look at screen B. Same price, same trial, but a completely different question. The headline says, how your free trial works, not here's what you get, not here's why you should pay, just
+
+00:02:14 - 00:03:17
+[music] here's how the free thing works. And the user's brain immediately shifts from is this worth $19 to can I try this for free? And the answer to that question is obviously yes. You've gone from a hard question to an easy one. That's the entire game. But the way B delivers this is where it gets really smart. There's a timeline. Three steps: today, day five, day seven. And each one tells you exactly what happens. Today, you unlock the full library. Day five, we send you a reminder that your trial is
+
+00:02:46 - 00:03:43
+ending soon. Day seven, your first charge begins. Cancel anytime before. Now, that day five line, that single line is doing more psychological work than all three feature bullets on screen A combined. Because it says, we will warn you before we charge you. Think about what that communicates. It says, we're not trying to trap you. We're actually going to remind you so you can make an informed decision. This triggers something called transparency bias. When a company proactively reveals a
+
+00:03:15 - 00:04:14
+potential downside, users trust them more, not less. It feels like the company is on your side. And a user who trusts you is a user who converts. Now, look at the buttons. This seems like a tiny difference, but it's massive. The word subscribe carries commitment's weight. Your brain hears subscribe and thinks recurring payment, hard to cancel, I'm locked in. And then the button tries to soften it with and start 7 days for free, but it's too late. Screen B uses start. Start is light.
+
+00:03:44 - 00:04:45
+Start implies a beginning, not a commitment. [music] And notice it says, my free trial, not your free trial. My, that one word creates a sense of ownership before you've even tapped the button. And then underneath, start in two taps. This is brilliant because your brain hates uncertainty. Will there be a form? Do I need my credit card? How many steps? Start in two taps kills every single one of those questions with a number. Not quick setup, not easy setup, the number does the convincing. It's the
+
+00:04:14 - 00:05:19
+same reason delivery in 23 minutes converts better than fast delivery. Specificity is trust. Look at the hero images. Screen A has this beautiful space illustration with planets and meteors. It's gorgeous, but it's decorative. It does not answer the question, what am I actually getting? Screen B shows actual game characters. Different games, different styles, all visible. The user can immediately see what they're subscribing to, and you can't commit to something you can't visualize. So, here's the full picture.
+
+00:04:46 - 00:05:53
+Screen A asks a hard question. Screen B asks an easy one. Screen A lists features. Screen B shows a timeline. Screen A says subscribe, Screen B says start. Screen A hopes you'll trust them, Screen B proves they're trustworthy by promising to remind you before they charge you. Same app, same price, same offer. But one feels like a sales pitch and the other feels like a safety net. And users don't buy from sales pitches, they buy from safety nets. The best paywall is the one that makes the user
+
+00:05:20 - 00:06:19
+feel safe, not sold. Today we have something exciting to share. We are launching UX Peak Plus, a new design learning platform that teaches the advanced UX and UI skills designers actually need today. Most design education still teaches the same basics, how to pick a typeface, how to space your buttons, and how to use Figma. And those things matter, but they're not what's actually holding designers back. You don't need another lesson on typography. You need to understand how top e-commerce sites design product
+
+00:05:49 - 00:06:57
+pages that actually convert. How the best apps onboard new users so they stick around past day one. The pricing psychology top SaaS companies use to drive conversion. And how to use AI the way top designers use it to move faster, design better, and stay ahead. The real advanced stuff designers need to know in 2026 that nobody else is teaching. That's what UX Peak Plus is. We break down how top companies like Spotify, Notion, Airbnb, and Duolingo actually design their products. It's the kind of learning that
+
+00:06:23 - 00:07:16
+makes you genuinely better. The kind that gets you promoted, makes your designs convert, and gets people to actually use what you built. We're also releasing a new course every week. So, for every month you're a member, you get four new courses added to your library. But, you don't have to decide blindly. You can start for free at uxpeak.com with free course and no credit card required. And if you decide to join, use code UX Peak 20 to get 20% off with our launch offer. You'll also have a 7-day
+
+00:06:50 - 00:07:48
+money-back guarantee. So, if it's not for you, there's no risk. Now, let's get back into the second example. Okay, so in the last tip, we talked about how the words on your paywall change whether someone subscribes or bounces. But, what happens when the problem isn't the words? It's the number. Not how much you charge, how you show it. Look at these two ride-hailing screens. Same ride, same route, same Tuesday afternoon. One of them gets significantly more bookings. The other
+
+00:07:19 - 00:08:25
+one was actually losing the company money. And this time it's tricky because the one that looks more honest is the one that fails. Pause the video and tell me which one you think won. It's B. And no, it's not because it's cheaper. The average fare is almost identical. The difference is entirely in how the price is presented. Version A shows price ranges. Go X $13 to $17, Comfort $17 to $22, Go XL $16 to $21. Feels honest, right? Except your brain doesn't process ranges the way you think
+
+00:07:54 - 00:09:04
+it does. When you see 13 to 17, you don't think probably 15. You grab the high number, 17. That's called anchoring. Now Go X feels like a $17 ride you might get lucky and pay 13 for. And you're doing that mental negotiation on three options simultaneously. Go X could be 17, Comfort could be 22, Go XL could be 21. Too many unknowns, too many what ifs. And the easiest decision becomes no decision. Close the app, just walk. Version A asks, "How much are you willing to risk?" Version B asks, "Which
+
+00:08:28 - 00:09:34
+one do you want?" Easy questions get fast answers. One number per ride, no range, no negotiation. Your brain compares three clear prices in about 2 seconds. Researchers call this evaluative ease. The less work a decision requires, the more likely someone is to make it. But B does more. Under Go X it says 12:53 p.m., 2 minutes away. This reframes a cost decision into a convenience decision. You're not evaluating a price anymore. A car is 2 minutes away and it costs less than lunch. Then there's a tiny green badge that
+
+00:09:01 - 00:09:59
+says cheaper. One word. Doesn't say cheaper than what. Your brain reads it and immediately categorizes this as the smart choice. A single green word did the thinking for you. And one more. There's a destination card on the map before you even see the ride options. The Westin St. Francis, San Francisco. That's commitment consistency. You already decided where you're going. The only question left is which car. And that's a much smaller decision than should I take a ride at all. If you're
+
+00:09:30 - 00:10:20
+showing users a range when you could [music] show them a number, you're not being transparent. You're creating doubt, and doubt is the most expensive thing in your interface. You probably know this feeling. You need to design something, maybe a paywall, checkout flow, onboarding screen, booking flow. So, you go looking for inspiration. Maybe you open Dribbble and everything looks beautiful, but the problem is you don't know if it was actually shipped, tested, or used in the real world.
+
+00:09:55 - 00:10:47
+Pretty UI can inspire how something looks, but real product screens can teach you if something really works. That's why we used Mobbin for creating this video. We've looked at hundreds of different paywall screens and booking screens to give you the best tips. Mobbin gives you a huge library of real mobile and web app screens. You can search for paywalls, onboarding, checkout flows, cancellation flows, and compare how different apps structure the same moment. So, if you're a designer,
+
+00:10:21 - 00:11:17
+founder, or product person, Mobbin is genuinely one of the best tools for that. We use it ourselves, and that's why we partnered with Mobbin to give you an exclusive 20% discount on your first year. You can get 20% off simply by clicking the link in the description. So far we've talked about how the words on your screen change behavior and how the way you show a number changes whether someone buys or bounces. But, what happens when the words are fine and the numbers are fine, and it still doesn't convert?
+
+00:10:52 - 00:11:51
+>> [music] >> That's when the problem isn't what you're showing, it's how it makes them feel. Look at these two booking screens. Same villa, same price, 89 euros a night, same dates, same beds, same bathroom. One of these gets dramatically more bookings than the other. Pause the video and tell us which one. Got it? It's B. And this one is important because screen A does absolutely nothing wrong. The title is clear, the rating is visible, the price is big, the dates are
+
+00:11:22 - 00:12:22
+there, the reserve button works. If you showed this to a designer, they'd say, "Yeah, that's fine." And that's exactly the problem. Fine doesn't book villas. Look at what screen A actually gives you. A nice photo of the villa but tucked into a small thumbnail at the top, almost like it's afraid to take up space. Beach house with garden, 4.82 stars, 89 euros per night, check in March 28, check out April 2, two guests, reserve. That's a form. You're filling out a form and nobody has ever felt
+
+00:11:52 - 00:12:55
+excited about filling out a form. Now look at screen B. Same exact photo but the photo isn't squeezed into a small thumbnail anymore taking over the top half of the screen. You're not looking at a listing card. You're looking at a place you might actually go. There are navigation badges, super host, guest favorite, one of 24 photos. You haven't read a single word and you already feel something. [music] That's the difference. Screen A informs you, screen B transports you. Then the title. Screen A says beach
+
+00:12:23 - 00:13:28
+house with garden. Screen B says beach side escape steps from the sand. Same place but beach side escape activates emotional imagination. Steps from the sand gives you a specific spatial detail. You don't have to walk for 10 minutes to reach the beach. This is sensory language. It makes you feel like you're already on holiday before you've even checked the price. Now the price. Screen A just shows 89 euros. There's no reference point. Screen B shows 129 euros crossed out then 89 with a green
+
+00:12:56 - 00:13:58
+minus 31% [music] badge. Same price but now it feels like a deal. That's anchoring working for you instead of against you which is exactly what we talked about in the last tip. The dates. Screen A shows two input fields, March 28 and April 2. Screen B shows Friday, March 28 to Wednesday, April 2 with the purple badge that says five nights. Day names make the trip feel real. You're already planning your Friday arrival and the night count saves you the mental math. Every piece of friction you remove
+
+00:13:27 - 00:14:35
+is a reason to keep going. The button. Screen A [music] says reserve. Reserve what? For how much total? Screen B says reserve 445 euros total. The total is right there. No anxiety about hidden fees on the next screen. And underneath, a green shield that says free cancellation before March 26. The number one booking objection is what if my plans change? That single line answers it before the user even asks. Three tips in and the pattern is the same every time. That is all for today. If you take one thing from this video,
+
+00:14:01 - 00:14:44
+take this. Every element on your screen is asking the user a question. And the question you're asking determines whether they act or hesitate. That's the whole thing. Once you start seeing it, you can't unsee it. And your designs get better immediately. If one of these tips surprised you, we'd love to hear which one. Also, let us know in the comments if you'd like to see more of these. Thanks for watching.

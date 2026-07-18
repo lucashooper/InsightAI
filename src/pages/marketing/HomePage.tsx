@@ -7,6 +7,7 @@ import FeatureShowcase from '../../components/marketing/FeatureShowcase';
 import FAQSection from '../../components/marketing/FAQSection';
 import Footer from '../../components/marketing/Footer';
 import { useScrollReveal } from '../../hooks/marketing/useScrollReveal';
+import { MARKETING_PHONE_IMAGES } from '../../constants/marketingPhoneImages';
 import '../../styles/marketing.css';
 
 const typewriterPhrases = [
@@ -47,13 +48,13 @@ const HomePage: React.FC = () => {
           </div>
           <div className="hero-v2-phones hero-premium-phones">
             <img
-              src="/new-phone-images/Main-Insight.png"
-              alt="Insight App"
+              src={MARKETING_PHONE_IMAGES.main}
+              alt="Zeno app home screen"
               className="hero-phone-main"
             />
             <img
-              src="/new-phone-images/Insight-Dashboard.png"
-              alt="Insight Dashboard"
+              src={MARKETING_PHONE_IMAGES.dashboard}
+              alt="Zeno dashboard"
               className="hero-phone-secondary"
             />
           </div>

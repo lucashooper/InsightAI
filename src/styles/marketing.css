@@ -2123,26 +2123,32 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 500px;
+  min-height: 440px;
+  max-height: 78vh;
 }
 
 .hero-phone-main {
-  width: 300px;
+  width: 360px;
+  max-width: min(360px, 38vw);
+  max-height: min(680px, 72vh);
   height: auto;
+  object-fit: contain;
   filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.5));
   position: relative;
   z-index: 2;
 }
 
 .hero-phone-secondary {
-  width: 86.67%;
-  max-width: 260px;
+  width: 290px;
+  max-width: min(290px, 32vw);
+  max-height: min(580px, 62vh);
   height: auto;
+  object-fit: contain;
   filter: drop-shadow(0 20px 50px rgba(0, 0, 0, 0.4));
   position: absolute;
   left: 50%;
-  top: 20%;
-  transform: translateX(-10%);
+  top: 18%;
+  transform: translateX(-8%);
   z-index: 1;
   opacity: 0.85;
 }
@@ -2163,17 +2169,21 @@ h1, h2, h3, h4, h5, h6 {
     justify-content: center;
   }
   .hero-v2-phones {
-    min-height: 400px;
+    min-height: 320px;
+    max-height: none;
   }
   .hero-phone-main {
-    width: 240px;
+    width: 260px;
+    max-width: 260px;
+    max-height: 540px;
   }
   .hero-phone-secondary {
-    width: 87.5%;
+    width: 210px;
     max-width: 210px;
+    max-height: 460px;
     left: 50%;
-    top: 25%;
-    transform: translateX(-10%);
+    top: 22%;
+    transform: translateX(-8%);
   }
 }
 
@@ -2188,10 +2198,14 @@ h1, h2, h3, h4, h5, h6 {
     justify-content: center;
   }
   .hero-phone-main {
-    width: 200px;
+    width: 210px;
+    max-width: 58vw;
+    max-height: 480px;
   }
   .hero-phone-secondary {
-    width: 170px;
+    width: 175px;
+    max-width: 48vw;
+    max-height: 400px;
   }
 }
 
@@ -2287,12 +2301,12 @@ h1, h2, h3, h4, h5, h6 {
 
 .showcase-layout {
   display: grid;
-  grid-template-columns: 1fr 1.3fr;
-  gap: 6rem;
-  max-width: 1200px;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 4rem;
+  max-width: 1400px;
   margin: 0 auto;
   align-items: flex-start;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .showcase-phone-container {
@@ -2303,19 +2317,38 @@ h1, h2, h3, h4, h5, h6 {
   position: sticky;
   top: 80px;
   margin-top: -1.5rem;
+  min-width: 0;
 }
 
 .showcase-phone {
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  width: 100%;
 }
 
 .showcase-phone-img {
-  width: 525px;
+  width: 572px;
+  max-width: none;
+  max-height: min(1060px, 85vh);
   height: auto;
+  object-fit: contain;
   filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.5));
   animation: showcaseFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (min-width: 1025px) {
+  .showcase-layout {
+    grid-template-columns: 1.35fr 1fr;
+    gap: 4rem;
+    max-width: 1400px;
+  }
+
+  .showcase-phone-img {
+    width: 572px;
+    max-width: none;
+    max-height: min(1060px, 85vh);
+  }
 }
 
 @keyframes showcaseFadeIn {
@@ -2436,7 +2469,9 @@ h1, h2, h3, h4, h5, h6 {
     position: static;
   }
   .showcase-phone-img {
-    width: 320px;
+    width: 300px;
+    max-width: 100%;
+    max-height: 580px;
   }
 }
 
@@ -3221,13 +3256,15 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .hero-phone-main {
-  width: 475px !important;
-  max-width: none !important;
+  width: 380px !important;
+  max-width: min(380px, 40vw) !important;
+  max-height: min(700px, 72vh) !important;
 }
 
 .hero-phone-secondary {
-  width: 410px !important;
-  max-width: none !important;
+  width: 310px !important;
+  max-width: min(310px, 34vw) !important;
+  max-height: min(600px, 62vh) !important;
 }
 
 /* Download badge styling */
@@ -3248,10 +3285,14 @@ h1, h2, h3, h4, h5, h6 {
 
 @media (max-width: 1024px) {
   .hero-phone-main {
-    width: 375px !important;
+    width: 260px !important;
+    max-width: 260px !important;
+    max-height: 540px !important;
   }
   .hero-phone-secondary {
-    width: 325px !important;
+    width: 210px !important;
+    max-width: 210px !important;
+    max-height: 460px !important;
   }
 }
 
@@ -3260,10 +3301,14 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 1.0625rem !important;
   }
   .hero-phone-main {
-    width: 240px !important;
+    width: 210px !important;
+    max-width: 58vw !important;
+    max-height: 480px !important;
   }
   .hero-phone-secondary {
-    width: 200px !important;
+    width: 175px !important;
+    max-width: 48vw !important;
+    max-height: 400px !important;
   }
   .download-badge {
     height: 54px;

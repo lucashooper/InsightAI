@@ -18,7 +18,7 @@ const es: TranslationTree = {
     settingDescription: 'Texto de la app e insights de IA',
   },
   onboarding: {
-    welcome: 'Bienvenido a Insight',
+    welcome: 'Bienvenido a Zeno',
     getStarted: 'Empezar',
     alreadyHaveAccount: '¿Ya tienes una cuenta?',
     signIn: 'Iniciar sesión',
@@ -29,7 +29,7 @@ const es: TranslationTree = {
     skip: 'Omitir',
     skipForNow: 'Omitir por ahora',
     valueProp: {
-      title: 'Insight convierte tus pensamientos en claridad',
+      title: 'Zeno convierte tus pensamientos en claridad',
       mentalNoise: 'Ruido mental',
       understanding: 'Comprensión',
       captureFeelings: 'Registra cómo te sientes',
@@ -39,7 +39,7 @@ const es: TranslationTree = {
     patterns: {
       eyebrow: 'Impulsado por IA',
       title: 'Sigue tus patrones\na lo largo del tiempo',
-      subtitle: 'Insight identifica lo que te frena y destaca tus principales prioridades.',
+      subtitle: 'Zeno identifica lo que te frena y destaca tus principales prioridades.',
       adjustSleep: 'Ajustar el horario de sueño',
       selfCompassion: 'Practicar más la autocompasión',
       reduceScreenTime: 'Reducir el tiempo de pantalla antes de dormir',
@@ -51,7 +51,7 @@ const es: TranslationTree = {
     wins: {
       eyebrow: 'Celebra tu crecimiento',
       title: 'Celebra también\ntus logros',
-      subtitle: 'Insight también detecta lo que va bien para que puedas potenciar tus fortalezas.',
+      subtitle: 'Zeno también detecta lo que va bien para que puedas potenciar tus fortalezas.',
       gym: 'Ir al gimnasio con constancia',
       reading: 'Leer todos los días esta semana',
       openingUp: 'Abrirme más a los demás',
@@ -114,7 +114,7 @@ const es: TranslationTree = {
         title: 'Basado en psicología',
         subtitle: 'Las investigaciones muestran que escribir un diario reflexivo mejora la conciencia emocional y el bienestar a largo plazo.',
         badge: 'Universidad de Cambridge',
-        screenTitle: 'Insight se basa en la psicología',
+        screenTitle: 'Zeno se basa en la psicología',
         body: 'Escribir un diario está relacionado con una mayor conciencia emocional y bienestar mental.',
       },
       frequency: {
@@ -282,14 +282,14 @@ const es: TranslationTree = {
         procrastinating: 'Sigo posponiendo las cosas y no sé por qué',
         grateful: 'Hoy ocurrió algo que me hizo sentir mucha gratitud',
       },
-      thinking: 'Insight está pensando...',
-      aiLabel: 'Insight AI',
+      thinking: 'Zeno está pensando...',
+      aiLabel: 'Zeno',
       responses: {
-        overwhelmed: 'Parece que ahora mismo llevas mucho peso. Reconocerlo es el primer paso: Insight puede ayudarte a seguir estos patrones y descubrir qué te alivia. 💜',
-        positive: 'Es una observación preciosa. Notar qué mejora tu ánimo es muy valioso: Insight te ayudará a potenciar estos patrones positivos. ✨',
-        procrastination: 'La procrastinación suele tener raíces más profundas de lo que pensamos. Escribir puede revelar las emociones ocultas: Insight te ayudará a comprenderlas y superar esos bloqueos. 🔑',
-        sadness: 'Gracias por compartirlo. Expresar sentimientos difíciles requiere valentía y ayuda a sanar. Insight está aquí para escucharte y ayudarte en estos momentos. 💙',
-        default: 'Gracias por compartirlo. Cada entrada es un paso hacia un mayor autoconocimiento. Insight te ayudará a descubrir patrones, seguir tu crecimiento y ganar claridad. 💜',
+        overwhelmed: 'Parece que ahora mismo llevas mucho peso. Reconocerlo es el primer paso: Zeno puede ayudarte a seguir estos patrones y descubrir qué te alivia. 💜',
+        positive: 'Es una observación preciosa. Notar qué mejora tu ánimo es muy valioso: Zeno te ayudará a potenciar estos patrones positivos. ✨',
+        procrastination: 'La procrastinación suele tener raíces más profundas de lo que pensamos. Escribir puede revelar las emociones ocultas: Zeno te ayudará a comprenderlas y superar esos bloqueos. 🔑',
+        sadness: 'Gracias por compartirlo. Expresar sentimientos difíciles requiere valentía y ayuda a sanar. Zeno está aquí para escucharte y ayudarte en estos momentos. 💙',
+        default: 'Gracias por compartirlo. Cada entrada es un paso hacia un mayor autoconocimiento. Zeno te ayudará a descubrir patrones, seguir tu crecimiento y ganar claridad. 💜',
       },
     },
     privacy: {
@@ -301,11 +301,11 @@ const es: TranslationTree = {
     },
     notifications: {
       title: 'Activa las notificaciones',
-      subtitle: 'Aprovecha Insight al máximo y mantente al día de las novedades.',
+      subtitle: 'Aprovecha Zeno al máximo y mantente al día de las novedades.',
       allow: 'Permitir notificaciones',
       skip: 'Omitir por ahora →',
       permissionTitle: 'Recuerda reflexionar con notificaciones',
-      permissionRequest: 'Insight AI quiere enviarte',
+      permissionRequest: 'Zeno quiere enviarte',
       permissionType: 'Notificaciones',
       dontAllow: 'No permitir',
     },
@@ -313,7 +313,7 @@ const es: TranslationTree = {
       title: 'Danos 5 estrellas',
       subtitle: 'Ayúdanos a difundir una vida consciente y el crecimiento personal',
       testimonials: {
-        first: 'Insight ha cambiado por completo mi forma de entender mis emociones. Los insights de IA son increíblemente precisos y útiles.',
+        first: 'Zeno ha cambiado por completo mi forma de entender mis emociones. Los insights de IA son increíblemente precisos y útiles.',
         second: 'Esta app me ayudó a identificar patrones que nunca había notado. Es como llevar un terapeuta en el bolsillo.',
         third: 'Las reflexiones e insights diarios se han convertido en una parte esencial de mi rutina de autocuidado.',
       },
@@ -325,7 +325,7 @@ const es: TranslationTree = {
     },
     paywall: {
       headings: {
-        understand: 'Compréndete mejor\ncon Insight',
+        understand: 'Compréndete mejor\ncon Zeno',
         growth: 'Sigue tu crecimiento\ny progreso',
         reflect: 'Reflexiona más,\nvive mejor',
         mira: 'Habla con Mira',
@@ -348,7 +348,7 @@ const es: TranslationTree = {
         playbook: 'Playbook de crecimiento y planes de acción',
       },
       testimonials: {
-        first: 'Insight ha cambiado por completo mi forma de entender mis emociones. Los insights de IA son increíblemente precisos y útiles.',
+        first: 'Zeno ha cambiado por completo mi forma de entender mis emociones. Los insights de IA son increíblemente precisos y útiles.',
         second: 'Las sugerencias del diario invitan a reflexionar y el seguimiento de patrones me ayuda a ver mi progreso.',
         third: 'La mejor app de salud mental que he usado. La IA parece un terapeuta que de verdad me entiende.',
         fourth: 'Me encanta cómo conecta mis hábitos diarios con mi estado de ánimo. Cada semana descubro algo nuevo.',
@@ -393,7 +393,7 @@ const es: TranslationTree = {
       },
     },
     postPurchase: {
-      title: 'Bienvenido a Insight',
+      title: 'Bienvenido a Zeno',
       subtitle: 'Ya tienes todo listo con Pro',
       analysis: 'Análisis del diario con IA',
       privateEntries: 'Entradas privadas y cifradas',
@@ -508,7 +508,7 @@ const es: TranslationTree = {
     highImpact: 'ALTO IMPACTO',
   },
   companion: {
-    headerTitle: 'Insight',
+    headerTitle: 'Mira',
     emptySubtitle: 'Conozco tu diario al detalle.\nPregúntame sobre tus patrones, emociones o crecimiento.',
     inputPlaceholder: 'Pregúntame lo que quieras...',
     messagesToday: '{{count}}/{{limit}} mensajes hoy',
