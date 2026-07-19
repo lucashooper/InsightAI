@@ -134,8 +134,8 @@ export default function DashboardScreenNew() {
               [
                 {
                   text: t('home.addEmail'),
-                  onPress: () => {
-                    // Navigate to email signup
+                  onPress: async () => {
+                    await AsyncStorage.setItem('HAS_SEEN_DASHBOARD_INTRO', 'true');
                     navigation.navigate('Profile');
                   }
                 },
@@ -144,7 +144,6 @@ export default function DashboardScreenNew() {
                   style: 'cancel',
                   onPress: async () => {
                     await AsyncStorage.removeItem('NEEDS_EMAIL_SIGNUP');
-                    await AsyncStorage.setItem('HAS_SEEN_DASHBOARD_INTRO', 'true');
                     setShowIntroOverlay(true);
                   }
                 }

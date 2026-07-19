@@ -13,6 +13,7 @@ import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
+import EmptyState from '../components/shared/EmptyState';
 
 interface GratitudeEntry {
   id: string;
@@ -96,13 +97,13 @@ export default function GratitudeHistoryScreen({ navigation }: any) {
           <ActivityIndicator size="large" color="#8b5cf6" />
         </View>
       ) : entries.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="heart-outline" size={64} color={dark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.2)'} />
-          <Text style={[styles.emptyTitle, { color: dark ? '#ffffff' : theme.colors.primaryText }]}>{t('auxiliary.gratitudeHistory.emptyTitle')}</Text>
-          <Text style={[styles.emptyText, { color: dark ? 'rgba(255, 255, 255, 0.6)' : theme.colors.secondaryText }]}>
-            {t('auxiliary.gratitudeHistory.emptyMessage')}
-          </Text>
-        </View>
+        <EmptyState
+          icon="heart-outline"
+          title={t('auxiliary.gratitudeHistory.emptyTitle')}
+          subtitle={t('auxiliary.gratitudeHistory.emptyMessage')}
+          actionLabel={t('auxiliary.gratitude.title')}
+          onAction={() => navigation.navigate('Gratitude')}
+        />
       ) : (
         <FlatList
           data={entries}

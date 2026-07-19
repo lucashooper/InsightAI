@@ -83,7 +83,7 @@ const en: TranslationTree = {
       saveFailed: 'Failed to save profile', changePhoto: 'Change Photo', firstName: 'First Name', lastName: 'Last Name',
     },
     promptEntry: {
-      emptyTitle: 'Empty Entry', emptyMessage: 'Please write something before saving.',
+      emptyTitle: 'Nothing to save yet', emptyMessage: 'Jot down a thought or two, then tap Save.',
       defaultTitle: 'Prompt Response', saveFailed: 'Failed to save entry. Please try again.',
       todayPrompt: "Today's Prompt", yourReflection: 'Your Reflection',
       placeholder: 'Start writing your thoughts...', character: '{{count}} character',
@@ -102,8 +102,8 @@ const en: TranslationTree = {
       placeholder: 'Write your thoughts...',
     },
     gratitudeHistory: {
-      title: 'Gratitude History', emptyTitle: 'No Gratitude Entries Yet',
-      emptyMessage: 'Start your gratitude practice to see your entries here',
+      title: 'Gratitude History', emptyTitle: 'Nothing here yet',
+      emptyMessage: 'A quick gratitude note can shift your whole day. Start with one thing that made you smile.',
     },
     meditation: {
       breatheIn: 'Breathe in', hold: 'Hold', breatheOut: 'Breathe out',
@@ -158,9 +158,9 @@ const en: TranslationTree = {
       deleteStrategy: 'Delete strategy', strategyOptions: 'Strategy options', todayProgress: "TODAY'S PROGRESS",
       protocolsCompleted: 'protocols completed', completion: '{{percentage}}% Completion',
       dailyProtocols: 'Daily Protocols', suggested: 'Suggested', createNew: 'Create New Strategy',
-      noSuggestions: 'No suggested strategies yet.', noProtocols: 'No daily protocols yet.',
-      noSuggestionsMessage: 'Analyze a few entries to get personalized recommendations.',
-      noProtocolsMessage: 'Add strategies to your daily protocols to build a routine.',
+      noSuggestions: 'Mira is still learning your patterns', noProtocols: 'No routines yet',
+      noSuggestionsMessage: 'Write and analyze a few entries — personalized strategies will appear here.',
+      noProtocolsMessage: 'Add a strategy to build a daily routine that sticks.',
       moreCount: '+{{count}} more', showLess: 'Show Less',
       moreSuggested: '💡 More Suggested Strategies ({{count}})', newStrategy: 'New Strategy',
       titleRequired: 'Title *', titleExample: 'e.g., Morning Meditation',

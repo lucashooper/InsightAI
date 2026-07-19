@@ -54,6 +54,7 @@ import InsightCompanionMark from '../components/companion/InsightCompanionMark';
 import MiraVoicePicker from '../components/companion/MiraVoicePicker';
 import MiraVoiceOverlay from '../components/companion/MiraVoiceOverlay';
 import Purchases from 'react-native-purchases';
+import * as Haptics from 'expo-haptics';
 import { ROAST_GRADIENT, ROAST_PALETTE, useRoastTransition } from '../utils/companionTheme';
 import { getMiraScreenshotMode, SCREENSHOT_MIRA_CHAT } from '../data/screenshotMiraChat';
 import { AppLanguage } from '../i18n/types';
@@ -513,6 +514,7 @@ export default function AIChatScreen({ navigation }: any) {
   };
 
   const startNewChat = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     clearTypingEffect();
     setMessages([]);
     setCurrentChatId(null);
@@ -727,6 +729,8 @@ export default function AIChatScreen({ navigation }: any) {
   const sendMessage = useCallback(async (text?: string) => {
     const messageText = (text || inputText).trim();
     if (!messageText || isLoading) return;
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     // PREMIUM GATE: Only Pro users can use AI chat
     if (!isProUser) {
@@ -951,7 +955,10 @@ export default function AIChatScreen({ navigation }: any) {
                       borderColor: isDark ? 'rgba(196,181,253,0.2)' : 'rgba(139,92,246,0.18)',
                     },
               ]}
-              onPress={() => sendMessage(suggestion)}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                sendMessage(suggestion);
+              }}
               activeOpacity={0.8}
             >
               {isRoast ? (
@@ -1175,7 +1182,11 @@ export default function AIChatScreen({ navigation }: any) {
             </View>
             <ScrollView style={styles.chatList} showsVerticalScrollIndicator={false}>
               {savedChats.length === 0 ? (
-                <Text style={styles.noChatText}>{t('companion.noSavedChats')}</Text>
+                <View style={styles.historyEmpty}>
+                  <Ionicons name="chatbubbles-outline" size={40} color="rgba(139,92,246,0.6)" />
+                  <Text style={styles.historyEmptyTitle}>{t('companion.noSavedChats')}</Text>
+                  <Text style={styles.historyEmptySubtitle}>{t('companion.noSavedChatsSubtitle')}</Text>
+                </View>
               ) : (
                 savedChats.map(chat => (
                   <TouchableOpacity
@@ -1499,6 +1510,27 @@ const styles = StyleSheet.create({
   },
   modalTitle: { fontSize: sf(22), fontWeight: '700', color: '#ffffff' },
   chatList: { paddingHorizontal: 20 },
+  historyEmpty: {
+    alignItems: 'center',
+    paddingTop: 48,
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+  },
+  historyEmptyTitle: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: sf(17),
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  historyEmptySubtitle: {
+    color: 'rgba(255,255,255,0.45)',
+    fontSize: sf(14),
+    lineHeight: 20,
+    textAlign: 'center',
+    marginTop: 8,
+    maxWidth: 260,
+  },
   noChatText: { color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginTop: 40, fontSize: sf(15) },
   chatHistoryItem: {
     flexDirection: 'row', alignItems: 'center', padding: 16,

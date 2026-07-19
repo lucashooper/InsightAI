@@ -10,6 +10,8 @@ import { supabase } from '../lib/supabase';
 import { protocolCompletionService } from '../services/protocolCompletionService';
 import PageHeader from '../components/shared/PageHeader';
 import StandardContainer from '../components/shared/StandardContainer';
+import EmptyState from '../components/shared/EmptyState';
+import * as Haptics from 'expo-haptics';
 import { useLanguage } from '../contexts/LanguageContext';
 import { filterByContentLocale, withContentLocale } from '../i18n/contentLocale';
 
@@ -219,6 +221,7 @@ export default function PlaybookScreen() {
   };
 
   const handleStrategyTap = (strategy: Strategy) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setEditingStrategy(strategy);
     setEditDraft({
       title: strategy.title,
@@ -433,7 +436,10 @@ export default function PlaybookScreen() {
         <View style={[styles.tabContainer, { backgroundColor: isDarkTheme(theme.name) ? '#0f0f0f' : 'rgba(0,0,0,0.06)', borderColor: isDarkTheme(theme.name) ? '#1a1a1a' : 'rgba(0,0,0,0.08)' }]}>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'protocols' && styles.tabActive]}
-            onPress={() => setActiveTab('protocols')}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setActiveTab('protocols');
+            }}
           >
             <Text style={[styles.tabText, { color: theme.colors.secondaryText }, activeTab === 'protocols' && { color: '#ffffff', fontWeight: '600' }]}>
               {t('auxiliary.playbook.dailyProtocols')}
@@ -441,7 +447,10 @@ export default function PlaybookScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'strategies' && styles.tabActive]}
-            onPress={() => setActiveTab('strategies')}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setActiveTab('strategies');
+            }}
           >
             <Text style={[styles.tabText, { color: theme.colors.secondaryText }, activeTab === 'strategies' && { color: '#ffffff', fontWeight: '600' }]}>
               {t('auxiliary.playbook.suggested')}
@@ -478,19 +487,16 @@ export default function PlaybookScreen() {
             : filteredStrategies;
           
           return displayStrategies.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyIcon}>📚</Text>
-              <Text style={[styles.emptyText, { color: theme.colors.primaryText }]}>
-                {activeTab === 'strategies'
-                  ? t('auxiliary.playbook.noSuggestions')
-                  : t('auxiliary.playbook.noProtocols')}
-              </Text>
-              <Text style={[styles.emptySubtext, { color: theme.colors.secondaryText }]}>
-                {activeTab === 'strategies'
-                  ? t('auxiliary.playbook.noSuggestionsMessage')
-                  : t('auxiliary.playbook.noProtocolsMessage')}
-              </Text>
-            </View>
+            <EmptyState
+              icon={activeTab === 'strategies' ? 'sparkles-outline' : 'repeat-outline'}
+              title={activeTab === 'strategies'
+                ? t('auxiliary.playbook.noSuggestions')
+                : t('auxiliary.playbook.noProtocols')}
+              subtitle={activeTab === 'strategies'
+                ? t('auxiliary.playbook.noSuggestionsMessage')
+                : t('auxiliary.playbook.noProtocolsMessage')}
+              compact
+            />
           ) : (
             <>
             {displayStrategies.map((strategy) => (

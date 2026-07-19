@@ -51,7 +51,7 @@ const vibeOptions: VibeOption[] = [
   {
     name: 'ocean',
     labelKey: 'ocean',
-    emoji: '�',
+    emoji: '🌊',
     orbColors: ['rgba(59, 130, 246, 0.95)', 'rgba(37, 99, 235, 0.85)', 'rgba(29, 78, 216, 0.75)'],
     glowColor: 'rgba(59, 130, 246, 0.4)',
   },

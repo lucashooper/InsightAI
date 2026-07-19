@@ -27,6 +27,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import { invalidateCachedNote } from '../utils/decryptCache';
 import PageHeader from '../components/shared/PageHeader';
 import StandardContainer from '../components/shared/StandardContainer';
+import EmptyState from '../components/shared/EmptyState';
+import { JournalListSkeleton } from '../components/shared/SkeletonBlock';
+import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePreloadedData } from '../contexts/PreloadContext';
 import { getMoodIndicator, MoodIndicator } from '../utils/moodIndicators';
@@ -674,7 +677,10 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
               styles.filterChip,
               filter === chip.key && styles.filterChipActive,
             ]}
-            onPress={() => setFilter(chip.key as any)}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setFilter(chip.key as any);
+            }}
           >
             <Text
               style={[
@@ -691,21 +697,18 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
 
       {/* Entries List */}
       {loading ? (
-        <View style={styles.emptyContainer} />
+        <JournalListSkeleton />
       ) : filteredEntries.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>📝</Text>
-          <Text style={[styles.emptyTitle, { color: isDarkTheme(theme.name) ? '#ffffff' : '#000000' }]}>{t('journal.noEntriesTitle')}</Text>
-          <Text style={[styles.emptyText, { color: isDarkTheme(theme.name) ? '#9ca3af' : '#4b5563' }]}>
-            {t('journal.noEntriesSubtitle')}
-          </Text>
-          <TouchableOpacity
-            style={styles.createButton}
-            onPress={() => navigation.navigate('CreateEntry')}
-          >
-            <Text style={styles.createButtonText}>{t('journal.createEntry')}</Text>
-          </TouchableOpacity>
-        </View>
+        <EmptyState
+          icon="journal-outline"
+          title={t('journal.noEntriesTitle')}
+          subtitle={t('journal.noEntriesSubtitle')}
+          actionLabel={t('journal.createEntry')}
+          onAction={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            navigation.navigate('CreateEntry');
+          }}
+        />
       ) : (
         <FlatList
           data={filteredEntries}

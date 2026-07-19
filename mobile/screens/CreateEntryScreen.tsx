@@ -19,6 +19,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
@@ -260,6 +261,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
   };
 
   const handleMoodSelect = (selectedMood: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setMood(selectedMood);
     setShowMoodPicker(false);
     
@@ -280,6 +282,8 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       console.log('[CreateEntry] Content too short, aborting');
       return;
     }
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     // Cancel any pending auto-save to prevent race conditions
     if (saveTimeoutRef.current) {

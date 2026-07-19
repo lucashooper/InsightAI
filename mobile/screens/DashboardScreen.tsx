@@ -29,6 +29,8 @@ import StandardContainer from '../components/shared/StandardContainer';
 import PremiumButton from '../components/shared/PremiumButton';
 import PremiumGradientText from '../components/shared/PremiumGradientText';
 import PageHeader from '../components/shared/PageHeader';
+import EmptyState from '../components/shared/EmptyState';
+import { DashboardSkeleton } from '../components/shared/SkeletonBlock';
 import { isTablet, sf, ss, iPadWideContentStyle } from '../utils/responsive';
 import { yieldToUI } from '../utils/yieldToUI';
 import { notesSignature, computeDeferredDashboardData, filterNotesForDisplayLocale } from '../utils/computeDashboardData';
@@ -772,7 +774,7 @@ export default function DashboardScreen() {
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         {loading ? (
-          <View style={styles.loadingContainer} />
+          <DashboardSkeleton />
         ) : stats ? (
           <>
             {/* Emotion Bubble Map - Enhanced */}
@@ -1234,10 +1236,13 @@ export default function DashboardScreen() {
 
           </>
         ) : (
-          <View style={styles.emptyContainer}>
-            <Ionicons name="stats-chart" size={64} color="#666" />
-            <Text style={styles.emptyText}>{t('dashboard.noData')}</Text>
-          </View>
+          <EmptyState
+            icon="analytics-outline"
+            title={t('dashboard.noData')}
+            subtitle={t('dashboard.noDataSubtitle')}
+            actionLabel={t('journal.createEntry')}
+            onAction={() => navigation.navigate('CreateEntry' as never)}
+          />
         )}
       </ScrollView>
 
