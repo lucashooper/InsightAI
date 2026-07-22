@@ -25,7 +25,7 @@ module.exports = {
   expo: {
     name: "Zeno",
     slug: "insight-app",
-    version: "1.0.7",
+    version: "1.0.9",
     orientation: "portrait",
     icon: "./assets/InsightAI-New-Logo.png",
     userInterfaceStyle: "automatic",
