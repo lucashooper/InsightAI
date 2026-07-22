@@ -11,6 +11,7 @@ import {
   Image,
   TouchableWithoutFeedback,
   Keyboard,
+  StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,6 +20,8 @@ import OTPInput from '../components/OTPInput';
 import { useOnboarding } from '../contexts/OnboardingContext';
 import SunoGradient from '../components/onboarding/SunoGradient';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
+import { onboardingAuthStyles as auth, ONBOARDING_AUTH_COLORS as colors } from '../constants/onboardingAuthStyles';
 
 interface VerifyEmailScreenProps {
   navigation: any;
@@ -34,6 +37,7 @@ interface VerifyEmailScreenProps {
 
 export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScreenProps) {
   const { t } = useLanguage();
+  const { theme } = useTheme();
   const { email, type, username, password } = route.params;
   const { userName, setUserName } = useOnboarding();
   const [loading, setLoading] = useState(false);
@@ -268,23 +272,24 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.container}>
-        <SunoGradient />
+      <View style={auth.containerPadded}>
+        <StatusBar barStyle="light-content" />
+        <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
+          style={auth.keyboardView}
         >
           {/* Back Button */}
           <TouchableOpacity
-            style={styles.backButton}
+            style={auth.backButtonCompact}
             onPress={() => navigation.goBack()}
           >
-            <View style={styles.backArrowCircle}>
-              <Ionicons name="arrow-back" size={20} color="#1a1a2e" />
+            <View style={auth.backArrowCircle}>
+              <Ionicons name="arrow-back" size={20} color="#ffffff" />
             </View>
           </TouchableOpacity>
 
-          <View style={styles.content}>
+          <View style={auth.contentCentered}>
           <View style={styles.iconContainer}>
             <Image
               source={require('../public/onboarding-icons/Email-Icon2.webp')}
@@ -294,10 +299,10 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
           </View>
 
           {/* Title */}
-          <Text style={styles.title}>{t('auxiliary.verifyEmail.title')}</Text>
+          <Text style={auth.titleCentered}>{t('auxiliary.verifyEmail.title')}</Text>
 
           {/* Subtitle */}
-          <Text style={styles.subtitle}>
+          <Text style={auth.subtitleCentered}>
             {t('auxiliary.verifyEmail.sentCodeTo')}{' '}
             <Text style={styles.emailInline}>{email}</Text>
           </Text>
@@ -312,22 +317,22 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
           </View>
 
           {loading && (
-            <ActivityIndicator size="small" color="#1a1a1a" style={styles.loader} />
+            <ActivityIndicator size="small" color="#ffffff" style={styles.loader} />
           )}
 
           {/* Resend Button */}
           <TouchableOpacity
-            style={[styles.resendButton, resendCooldown > 0 && styles.resendButtonDisabled]}
+            style={[auth.secondaryButton, resendCooldown > 0 && styles.resendButtonDisabled]}
             onPress={handleResendCode}
             disabled={loading || resendCooldown > 0}
           >
             <Ionicons 
               name="refresh-outline" 
               size={18} 
-              color={resendCooldown > 0 ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.6)'} 
+              color={resendCooldown > 0 ? 'rgba(255, 255, 255, 0.3)' : colors.icon} 
               style={styles.resendIcon}
             />
-            <Text style={[styles.resendButtonText, resendCooldown > 0 && styles.resendButtonTextDisabled]}>
+            <Text style={[auth.secondaryButtonText, resendCooldown > 0 && styles.resendButtonTextDisabled]}>
               {resendCooldown > 0
                 ? t('auxiliary.verifyEmail.resendCountdown', { seconds: resendCooldown })
                 : t('auxiliary.verifyEmail.resend')}
@@ -339,7 +344,7 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
             style={styles.changeEmailButton}
             onPress={() => navigation.goBack()}
           >
-            <Text style={styles.changeEmailText}>{t('auxiliary.verifyEmail.changeEmail')}</Text>
+            <Text style={auth.linkText}>{t('auxiliary.verifyEmail.changeEmail')}</Text>
           </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -349,36 +354,6 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fef7f2',
-    paddingTop: 60,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 16,
-    left: 20,
-    zIndex: 10,
-    padding: 4,
-  },
-  backArrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   iconContainer: {
     marginBottom: 8,
   },
@@ -386,23 +361,8 @@ const styles = StyleSheet.create({
     width: 180,
     height: 180,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: '600',
-    color: '#1a1a2e',
-    marginBottom: 10,
-    textAlign: 'center',
-    letterSpacing: -0.6,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: 'rgba(0, 0, 0, 0.5)',
-    marginBottom: 28,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
   emailInline: {
-    color: '#1a1a2e',
+    color: colors.linkBold,
     fontWeight: '500',
   },
   otpContainer: {
@@ -411,38 +371,16 @@ const styles = StyleSheet.create({
   loader: {
     marginBottom: 16,
   },
-  resendButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.15)',
-  },
   resendButtonDisabled: {
     opacity: 0.5,
   },
   resendIcon: {
     marginRight: 8,
   },
-  resendButtonText: {
-    color: 'rgba(0, 0, 0, 0.6)',
-    fontSize: 15,
-    fontWeight: '600',
-  },
   resendButtonTextDisabled: {
-    color: 'rgba(0, 0, 0, 0.3)',
+    color: 'rgba(255, 255, 255, 0.3)',
   },
   changeEmailButton: {
     paddingVertical: 12,
-  },
-  changeEmailText: {
-    color: 'rgba(0, 0, 0, 0.5)',
-    fontSize: 14,
-    textAlign: 'center',
   },
 });

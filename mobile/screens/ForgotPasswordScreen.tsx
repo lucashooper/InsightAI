@@ -21,6 +21,8 @@ import SunoGradient from '../components/onboarding/SunoGradient';
 import OTPInput from '../components/OTPInput';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
+import { onboardingAuthStyles as auth, ONBOARDING_AUTH_COLORS as colors } from '../constants/onboardingAuthStyles';
 
 type RecoveryStep = 'email' | 'code' | 'password' | 'success';
 const PASSWORD_RECOVERY_ACTIVE_KEY = 'PASSWORD_RECOVERY_ACTIVE';
@@ -29,6 +31,7 @@ const PASSWORD_RECOVERY_EMAIL_KEY = 'PASSWORD_RECOVERY_EMAIL';
 
 export default function ForgotPasswordScreen({ navigation }: any) {
   const { t } = useLanguage();
+  const { theme } = useTheme();
   const [step, setStep] = useState<RecoveryStep>('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -235,7 +238,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
     if (step === 'password') {
       return (
         <View style={styles.inlineIconCircle}>
-          <Ionicons name="key-outline" size={34} color="#1a1a2e" />
+          <Ionicons name="key-outline" size={34} color="#ffffff" />
         </View>
       );
     }
@@ -243,7 +246,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
     if (step === 'success') {
       return (
         <View style={styles.inlineIconCircle}>
-          <Ionicons name="checkmark" size={34} color="#1a1a2e" />
+          <Ionicons name="checkmark" size={34} color="#ffffff" />
         </View>
       );
     }
@@ -309,17 +312,17 @@ export default function ForgotPasswordScreen({ navigation }: any) {
           </View>
           {loading && <ActivityIndicator size="small" color="#1a1a1a" style={styles.loader} />}
           <TouchableOpacity
-            style={[styles.secondaryButton, resendCooldown > 0 && styles.secondaryButtonDisabled]}
+            style={[auth.secondaryButton, resendCooldown > 0 && styles.secondaryButtonDisabled]}
             onPress={sendRecoveryCode}
             disabled={loading || resendCooldown > 0}
           >
             <Ionicons
               name="refresh-outline"
               size={18}
-              color={resendCooldown > 0 ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.6)'}
+              color={resendCooldown > 0 ? 'rgba(255, 255, 255, 0.3)' : colors.icon}
               style={styles.secondaryButtonIcon}
             />
-            <Text style={[styles.secondaryButtonText, resendCooldown > 0 && styles.secondaryButtonTextDisabled]}>
+            <Text style={[auth.secondaryButtonText, resendCooldown > 0 && styles.secondaryButtonTextDisabled]}>
               {resendCooldown > 0 ? t('auxiliary.verifyEmail.resendCountdown', { seconds: resendCooldown }) : t('auxiliary.verifyEmail.resend')}
             </Text>
           </TouchableOpacity>
@@ -344,9 +347,9 @@ export default function ForgotPasswordScreen({ navigation }: any) {
         <>
           <View style={styles.passwordContainer}>
             <TextInput
-              style={styles.passwordInput}
+              style={auth.passwordInput}
               placeholder={t('auxiliary.forgotPassword.newPassword')}
-              placeholderTextColor="rgba(0, 0, 0, 0.4)"
+              placeholderTextColor={colors.placeholder}
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
@@ -358,16 +361,16 @@ export default function ForgotPasswordScreen({ navigation }: any) {
               <Ionicons
                 name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                 size={20}
-                color="rgba(0, 0, 0, 0.6)"
+                color={colors.icon}
               />
             </TouchableOpacity>
           </View>
 
           <View style={styles.passwordContainer}>
             <TextInput
-              style={styles.passwordInput}
+              style={auth.passwordInput}
               placeholder={t('auxiliary.forgotPassword.confirmPassword')}
-              placeholderTextColor="rgba(0, 0, 0, 0.4)"
+              placeholderTextColor={colors.placeholder}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry={!showConfirmPassword}
@@ -383,7 +386,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
               <Ionicons
                 name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
                 size={20}
-                color="rgba(0, 0, 0, 0.6)"
+                color={colors.icon}
               />
             </TouchableOpacity>
           </View>
@@ -397,9 +400,9 @@ export default function ForgotPasswordScreen({ navigation }: any) {
 
     return (
       <TextInput
-        style={styles.input}
+        style={auth.input}
         placeholder={t('auxiliary.common.email')}
-        placeholderTextColor="rgba(0, 0, 0, 0.4)"
+        placeholderTextColor={colors.placeholder}
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
@@ -433,14 +436,14 @@ export default function ForgotPasswordScreen({ navigation }: any) {
 
     return (
         <TouchableOpacity
-        style={[styles.continueButton, disabled && styles.continueButtonDisabled]}
+        style={[auth.continueButton, disabled && auth.continueButtonDisabled]}
         onPress={onPress}
         disabled={disabled}
       >
         {loading && step !== 'code' ? (
           <ActivityIndicator size="small" color="#fff" />
         ) : (
-          <Text style={styles.continueButtonText}>{buttonText}</Text>
+          <Text style={auth.continueButtonText}>{buttonText}</Text>
         )}
       </TouchableOpacity>
     );
@@ -448,17 +451,17 @@ export default function ForgotPasswordScreen({ navigation }: any) {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={false} />
-        <SunoGradient />
+      <View style={auth.container}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={false} />
+        <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
-          style={styles.keyboardView}
+          style={auth.keyboardView}
         >
-          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <View style={styles.backArrowCircle}>
-              <Ionicons name="arrow-back" size={20} color="#1a1a2e" />
+          <TouchableOpacity style={auth.backButton} onPress={handleBack}>
+            <View style={auth.backArrowCircle}>
+              <Ionicons name="arrow-back" size={20} color="#ffffff" />
             </View>
           </TouchableOpacity>
 
@@ -470,14 +473,14 @@ export default function ForgotPasswordScreen({ navigation }: any) {
           >
             <View style={styles.content}>
               <View style={styles.iconContainer}>{renderIcon()}</View>
-              <Text style={styles.title}>{renderTitle()}</Text>
+              <Text style={auth.titleCentered}>{renderTitle()}</Text>
               {renderSubtitle()}
               {renderBody()}
               {step === 'password' && <View style={styles.inlineButtonWrap}>{renderPrimaryButton()}</View>}
             </View>
           </ScrollView>
 
-          {step !== 'password' && <View style={styles.bottomContainer}>{renderPrimaryButton()}</View>}
+          {step !== 'password' && <View style={auth.bottomContainer}>{renderPrimaryButton()}</View>}
         </KeyboardAvoidingView>
       </View>
     </TouchableWithoutFeedback>
@@ -485,33 +488,11 @@ export default function ForgotPasswordScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fef7f2',
-  },
-  keyboardView: {
-    flex: 1,
-  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 60,
-    left: 20,
-    zIndex: 10,
-    padding: 4,
-  },
-  backArrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   content: {
     flex: 1,
@@ -534,41 +515,23 @@ const styles = StyleSheet.create({
     width: 92,
     height: 92,
     borderRadius: 46,
-    backgroundColor: 'rgba(255,255,255,0.7)',
+    backgroundColor: 'rgba(255,255,255,0.12)',
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.08)',
+    borderColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: {
-    fontSize: 32,
-    fontWeight: '600',
-    color: '#1a1a2e',
-    marginBottom: 10,
-    textAlign: 'center',
-    letterSpacing: -0.6,
-  },
   subtitle: {
     fontSize: 15,
-    color: 'rgba(0, 0, 0, 0.5)',
+    color: colors.subtitle,
     marginBottom: 28,
     textAlign: 'center',
     lineHeight: 22,
     maxWidth: 320,
   },
   emailInline: {
-    color: '#1a1a2e',
+    color: colors.linkBold,
     fontWeight: '500',
-  },
-  input: {
-    width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.15)',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: '#1a1a2e',
   },
   otpContainer: {
     marginBottom: 24,
@@ -576,37 +539,20 @@ const styles = StyleSheet.create({
   loader: {
     marginBottom: 16,
   },
-  secondaryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.15)',
-  },
   secondaryButtonDisabled: {
     opacity: 0.5,
   },
   secondaryButtonIcon: {
     marginRight: 8,
   },
-  secondaryButtonText: {
-    color: 'rgba(0, 0, 0, 0.6)',
-    fontSize: 15,
-    fontWeight: '600',
-  },
   secondaryButtonTextDisabled: {
-    color: 'rgba(0, 0, 0, 0.3)',
+    color: 'rgba(255, 255, 255, 0.3)',
   },
   linkButton: {
     paddingVertical: 12,
   },
   linkButtonText: {
-    color: 'rgba(0, 0, 0, 0.5)',
+    color: colors.link,
     fontSize: 14,
     textAlign: 'center',
   },
@@ -614,16 +560,6 @@ const styles = StyleSheet.create({
     width: '100%',
     position: 'relative',
     marginBottom: 16,
-  },
-  passwordInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.15)',
-    borderRadius: 12,
-    padding: 16,
-    paddingRight: 50,
-    fontSize: 16,
-    color: '#1a1a2e',
   },
   eyeButton: {
     position: 'absolute',
@@ -634,29 +570,5 @@ const styles = StyleSheet.create({
   inlineButtonWrap: {
     width: '100%',
     marginTop: 12,
-  },
-  bottomContainer: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-  },
-  continueButton: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 28,
-    paddingVertical: 22,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  continueButtonDisabled: {
-    opacity: 0.45,
-  },
-  continueButtonText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '600',
-    letterSpacing: 0.2,
   },
 });

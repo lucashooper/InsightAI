@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import PrePaywallLayout from '../../components/onboarding/PrePaywallLayout';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { isTablet, sf } from '../../utils/responsive';
+import { ONBOARDING_SURFACE } from '../../constants/onboardingTheme';
 
 const BENEFIT_KEYS = ['emotions', 'habit', 'steps', 'mira'] as const;
 const BENEFIT_ICONS: Record<(typeof BENEFIT_KEYS)[number], keyof typeof Ionicons.glyphMap> = {
@@ -20,7 +21,8 @@ export default function PaywallBenefitsScreen({ navigation }: any) {
   return (
     <PrePaywallLayout
       step={1}
-      onContinue={() => navigation.navigate('PaywallTestimonial')}
+      ctaLabel={t('onboarding.prePaywall.testimonial.cta')}
+      onContinue={() => navigation.navigate('Paywall')}
       onBack={() => navigation.goBack()}
     >
       <Text style={styles.eyebrow}>{t('onboarding.prePaywall.benefits.eyebrow')}</Text>
@@ -60,12 +62,18 @@ const styles = StyleSheet.create({
     marginBottom: isTablet ? 36 : 28,
   },
   list: {
-    gap: 18,
+    gap: 12,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 14,
+    backgroundColor: ONBOARDING_SURFACE.fillElevated,
+    borderWidth: 1,
+    borderColor: ONBOARDING_SURFACE.border,
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
   },
   iconCircle: {
     width: 44,

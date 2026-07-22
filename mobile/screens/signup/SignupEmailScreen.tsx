@@ -4,61 +4,55 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   ActivityIndicator,
   StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import SunoGradient from '../../components/onboarding/SunoGradient';
-import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import { onboardingAuthStyles as auth, ONBOARDING_AUTH_COLORS as colors } from '../../constants/onboardingAuthStyles';
 
-export default function SignupEmailScreen({ navigation, route }: any) {
+export default function SignupEmailScreen({ navigation }: any) {
   const { t } = useLanguage();
+  const { theme } = useTheme();
   const [email, setEmail] = useState('');
-  const [checking, setChecking] = useState(false);
+  const [checking] = useState(false);
 
   const handleContinue = async () => {
     if (!email.trim() || !email.includes('@')) {
       return;
     }
-
-    // Proceed directly to password screen
-    // Duplicate email detection will happen during actual signup
     navigation.navigate('SignupPassword', { email: email.trim() });
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={false} />
-      <SunoGradient />
+    <View style={auth.containerPadded}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={false} />
+      <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
+        style={auth.keyboardView}
       >
-        {/* Back Button */}
         <TouchableOpacity
-          style={styles.backButton}
+          style={auth.backButtonCompact}
           onPress={() => navigation.goBack()}
         >
-          <View style={styles.backArrowCircle}>
-            <Ionicons name="arrow-back" size={20} color="#1a1a2e" />
+          <View style={auth.backArrowCircle}>
+            <Ionicons name="arrow-back" size={20} color="#ffffff" />
           </View>
         </TouchableOpacity>
 
-        <View style={styles.content}>
-          {/* Title */}
-          <Text style={styles.title}>{t('auxiliary.signup.emailTitle')}</Text>
-          <Text style={styles.subtitle}>{t('auxiliary.signup.emailSubtitle')}</Text>
+        <View style={auth.contentCompact}>
+          <Text style={auth.title}>{t('auxiliary.signup.emailTitle')}</Text>
+          <Text style={auth.subtitle}>{t('auxiliary.signup.emailSubtitle')}</Text>
 
-          {/* Email Input */}
           <TextInput
-            style={styles.input}
+            style={[auth.input, { marginBottom: 0 }]}
             placeholder={t('auxiliary.common.email')}
-            placeholderTextColor="rgba(0, 0, 0, 0.4)"
+            placeholderTextColor={colors.placeholder}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -69,17 +63,16 @@ export default function SignupEmailScreen({ navigation, route }: any) {
           />
         </View>
 
-        {/* Continue Button at Bottom */}
-        <View style={styles.bottomContainer}>
+        <View style={auth.bottomContainer}>
           <TouchableOpacity
-            style={[styles.continueButton, (!email.trim() || !email.includes('@') || checking) && styles.continueButtonDisabled]}
+            style={[auth.continueButton, (!email.trim() || !email.includes('@') || checking) && auth.continueButtonDisabled]}
             onPress={handleContinue}
             disabled={!email.trim() || !email.includes('@') || checking}
           >
             {checking ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.continueButtonText}>{t('auxiliary.common.continue')}</Text>
+              <Text style={auth.continueButtonText}>{t('auxiliary.common.continue')}</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -87,97 +80,3 @@ export default function SignupEmailScreen({ navigation, route }: any) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fef7f2',
-    paddingTop: 60,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 16,
-    left: 20,
-    zIndex: 10,
-    padding: 4,
-  },
-  backArrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 60,
-  },
-  progressContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 40,
-  },
-  progressDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  progressDotActive: {
-    backgroundColor: '#8b5cf6',
-  },
-  progressDotComplete: {
-    backgroundColor: '#10b981',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '600',
-    color: '#1a1a2e',
-    marginBottom: 12,
-    letterSpacing: -0.6,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: 'rgba(0, 0, 0, 0.5)',
-    marginBottom: 32,
-  },
-  input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.15)',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: '#1a1a2e',
-  },
-  bottomContainer: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-  },
-  continueButton: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 28,
-    paddingVertical: 22,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  continueButtonDisabled: {
-    opacity: 0.5,
-  },
-  continueButtonText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '600',
-    letterSpacing: 0.2,
-  },
-});

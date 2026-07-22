@@ -12,11 +12,11 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Circle } from 'react-native-svg';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { translateEmotion } from '../../i18n/labels';
 import StandardContainer from './StandardContainer';
+import InsightsHeroCard from '../insights/InsightsHeroCard';
 import PremiumButton from './PremiumButton';
 
 type LoadingProps = {
@@ -107,7 +107,6 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
   const cardBg = theme.colors.cardBackground;
   const cardBorder = theme.colors.border;
   const subtleBg = dark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)';
-  const ringTrack = dark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)';
 
   if (!props.visible) return null;
 
@@ -151,84 +150,23 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
               </StandardContainer>
             )}
 
-            {/* Primary Emotion & Wellbeing Score */}
-            <StandardContainer variant="nested" style={[styles.glassmorphicCard, { borderColor: cardBorder }]}>
-              <View style={styles.emotionWellbeingRow}>
-                <View style={styles.emotionSection}>
-                  <Text style={[styles.resultsLabel, { color: textTertiary }]}>{t('insights.primaryEmotion')}</Text>
-                  <Text style={[styles.resultsValue, { color: textPrimary }]}>
-                    {translateEmotion(t, props.insights?.mood_analysis?.primary_emotion) || '—'}
-                  </Text>
-                </View>
-                {props.insights?.wellbeingScore !== undefined && (() => {
-                  const score = editedWellbeing ?? props.insights!.wellbeingScore!;
-                  const ringSize = 90;
-                  const strokeWidth = 6;
-                  const radius = (ringSize - strokeWidth) / 2;
-                  const circumference = 2 * Math.PI * radius;
-                  const progress = (score / 10) * circumference;
-                  const ringColor = score >= 7 ? '#10b981' : score >= 4 ? '#f59e0b' : '#ef4444';
-
-                  const handleIncrement = () => {
-                    const newScore = Math.min(10, score + 1);
-                    setEditedWellbeing(newScore);
-                    if (props.variant === 'results' && props.onWellbeingChange) {
-                      props.onWellbeingChange(newScore);
-                    }
-                  };
-                  const handleDecrement = () => {
-                    const newScore = Math.max(1, score - 1);
-                    setEditedWellbeing(newScore);
-                    if (props.variant === 'results' && props.onWellbeingChange) {
-                      props.onWellbeingChange(newScore);
-                    }
-                  };
-
-                  return (
-                    <View style={styles.scoreSection}>
-                      <Text style={[styles.resultsLabel, { color: textTertiary }]}>{t('insights.wellbeing')}</Text>
-                      <View style={styles.scoreRingContainer}>
-                        <Svg width={ringSize} height={ringSize} style={styles.scoreRingSvg}>
-                          <Circle
-                            cx={ringSize / 2}
-                            cy={ringSize / 2}
-                            r={radius}
-                            stroke={ringTrack}
-                            strokeWidth={strokeWidth}
-                            fill="transparent"
-                          />
-                          <Circle
-                            cx={ringSize / 2}
-                            cy={ringSize / 2}
-                            r={radius}
-                            stroke={ringColor}
-                            strokeWidth={strokeWidth}
-                            fill="transparent"
-                            strokeDasharray={`${progress} ${circumference - progress}`}
-                            strokeDashoffset={circumference * 0.25}
-                            strokeLinecap="round"
-                            transform={`rotate(-90 ${ringSize / 2} ${ringSize / 2})`}
-                          />
-                        </Svg>
-                        <View style={styles.scoreRingInner}>
-                          <Text style={[styles.scoreText, { color: ringColor }]}>{score}</Text>
-                          <Text style={[styles.scoreMax, { color: textTertiary }]}>/10</Text>
-                        </View>
-                      </View>
-                      <View style={styles.scoreAdjustRow}>
-                        <TouchableOpacity onPress={handleDecrement} style={styles.scoreAdjustBtn} activeOpacity={0.7}>
-                          <Text style={[styles.scoreAdjustText, { color: textSecondary }]}>−</Text>
-                        </TouchableOpacity>
-                        <Text style={[styles.scoreAdjustLabel, { color: textTertiary }]}>{t('analysis.adjust')}</Text>
-                        <TouchableOpacity onPress={handleIncrement} style={styles.scoreAdjustBtn} activeOpacity={0.7}>
-                          <Text style={[styles.scoreAdjustText, { color: textSecondary }]}>+</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  );
-                })()}
-              </View>
-            </StandardContainer>
+            {/* Primary Emotion & Wellbeing Hero Card */}
+            {(props.insights?.mood_analysis?.primary_emotion || props.insights?.wellbeingScore !== undefined) && (
+              <InsightsHeroCard
+                emotionLabel={t('insights.primaryEmotion')}
+                emotion={translateEmotion(t, props.insights?.mood_analysis?.primary_emotion)}
+                wellbeingLabel={t('insights.wellbeing')}
+                wellbeingScore={editedWellbeing ?? props.insights?.wellbeingScore}
+                onWellbeingChange={
+                  props.variant === 'results' && props.onWellbeingChange
+                    ? (newScore) => {
+                        setEditedWellbeing(newScore);
+                        props.onWellbeingChange!(newScore);
+                      }
+                    : undefined
+                }
+              />
+            )}
 
             {/* Strengths & Wins Accordion */}
             {(() => {
@@ -624,69 +562,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(245, 158, 11, 0.06)',
     borderColor: 'rgba(245, 158, 11, 0.25)',
   },
-  emotionWellbeingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 16,
-  },
-  emotionSection: {
-    flex: 1,
-  },
-  scoreSection: {
-    alignItems: 'center',
-  },
-  scoreRingContainer: {
-    width: 90,
-    height: 90,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
-  },
-  scoreRingSvg: {
-    position: 'absolute',
-  },
-  scoreRingInner: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scoreText: {
-    fontSize: 32,
-    fontWeight: '800',
-    lineHeight: 36,
-  },
-  scoreMax: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.5)',
-    marginTop: -2,
-  },
-  scoreAdjustRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 8,
-  },
-  scoreAdjustBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scoreAdjustText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.8)',
-    lineHeight: 20,
-  },
-  scoreAdjustLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: 'rgba(255, 255, 255, 0.5)',
-    letterSpacing: 0.3,
-  },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -741,19 +616,6 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: 'rgba(255, 255, 255, 0.85)',
     lineHeight: 22,
-  },
-  resultsLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-    color: 'rgba(255, 255, 255, 0.55)',
-  },
-  resultsValue: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.95)',
-    marginTop: 8,
-    textTransform: 'capitalize',
   },
   doneButton: {
     alignSelf: 'center',

@@ -332,8 +332,8 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
     const currentStep = STEPS[currentIndex];
     const totalQuestionSteps = STEPS.length;
     const useDarkOnboardingAccent = theme.name === 'dark' || theme.name === 'midnight';
-    const primaryButtonColor = useDarkOnboardingAccent ? theme.colors.primary : '#1a1a1a';
-    const primaryButtonShadow = useDarkOnboardingAccent ? theme.colors.primary : '#000';
+    const primaryButtonColor = '#1a1a1a';
+    const primaryButtonShadow = '#000';
 
     // CRITICAL: Skip name step ONLY if user explicitly used Apple/Google Sign-In
     useEffect(() => {
@@ -512,12 +512,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
         <View style={styles.container}>
             <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent={true} />
 
-            {/* Use solid background for dark themes, gradient for others */}
-            {isDarkTheme(theme.name) ? (
-                <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
-            ) : (
-                <SunoGradient themeColors={theme.colors.backgroundGradient as any} />
-            )}
+            <SunoGradient themeColors={theme.colors.backgroundGradient as any} />
 
             {/* Back Arrow + Progress Bar Row (Left-aligned like CAL AI) */}
             <View style={styles.topRow}>
@@ -953,7 +948,7 @@ const styles = StyleSheet.create({
     // ========================================
     container: {
         flex: 1,
-        backgroundColor: '#fef7f2',
+        backgroundColor: 'transparent',
     },
     topRow: {
         flexDirection: 'row',

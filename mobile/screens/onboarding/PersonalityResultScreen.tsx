@@ -323,13 +323,9 @@ export default function PersonalityResultScreen({ navigation, route }: any) {
   }, []);
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={styles.container}>
             <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent={false} />
-            {isDarkTheme(theme.name) ? (
-                <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
-            ) : (
-                <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
-            )}
+            <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
 
       {/* Close button */}
       <TouchableOpacity

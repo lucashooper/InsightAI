@@ -13,6 +13,7 @@ import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import ImmersiveAnalysisOverlay from '../components/shared/ImmersiveAnalysisOverlay';
 import StandardContainer from '../components/shared/StandardContainer';
+import InsightsHeroCard from '../components/insights/InsightsHeroCard';
 import PremiumUpsellOverlay from '../components/PremiumUpsellOverlay';
 import * as Haptics from 'expo-haptics';
 import { isTablet, sf, ss, si } from '../utils/responsive';
@@ -999,50 +1000,24 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                 </TouchableOpacity>
               </View>
               
-              {/* Primary Emotion & Wellbeing Row */}
+              {/* Primary Emotion & Wellbeing Hero Card */}
               {(moodAnalysis || structuredInsights?.wellbeingScore != null) && (
-                <View style={styles.emotionWellbeingRow}>
-                  {moodAnalysis && (
-                    <StandardContainer variant="nested" style={[styles.inlineMoodCard, styles.inlineMoodCardTop, { flex: 1, borderColor: theme.colors.border }]}>
-                      <View style={styles.emotionBadge}>
-                        <Text style={[styles.inlineMoodLabel, { color: theme.colors.secondaryText }]}>{t('entry.primaryEmotion')}</Text>
-                        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[styles.inlineMoodEmotion, { color: theme.colors.primaryText }]}>{translateEmotion(t, moodAnalysis.primary_emotion)}</Text>
-                      </View>
-                    </StandardContainer>
-                  )}
-                  {structuredInsights?.wellbeingScore != null && (
-                    <StandardContainer variant="nested" style={[styles.inlineWellbeingCard, { borderColor: theme.colors.border }]}>
-                      <Text style={[styles.inlineMoodLabel, { color: theme.colors.secondaryText }]}>{t('entry.wellbeing')}</Text>
-                      <Text style={[styles.inlineWellbeingScore, { color: theme.colors.primaryText }]}>{structuredInsights.wellbeingScore}<Text style={[styles.inlineWellbeingScore, { color: theme.colors.secondaryText }]}>/10</Text></Text>
-                      <View style={styles.inlineWellbeingAdjust}>
-                        <TouchableOpacity
-                          onPress={async () => {
-                            const newScore = Math.max(1, (structuredInsights.wellbeingScore || 5) - 1);
-                            const updatedInsights = { ...structuredInsights, wellbeingScore: newScore };
-                            const updatedEntry = { ...entry, ai_structured_insights: updatedInsights };
-                            setEntry(updatedEntry);
-                            await supabase.from('notes').update({ ai_structured_insights: updatedInsights }).eq('id', entry.id);
-                          }}
-                          style={styles.wellbeingAdjustBtn}
-                        >
-                          <Ionicons name="remove-circle-outline" size={20} color={isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : '#6B6B6B'} />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          onPress={async () => {
-                            const newScore = Math.min(10, (structuredInsights.wellbeingScore || 5) + 1);
-                            const updatedInsights = { ...structuredInsights, wellbeingScore: newScore };
-                            const updatedEntry = { ...entry, ai_structured_insights: updatedInsights };
-                            setEntry(updatedEntry);
-                            await supabase.from('notes').update({ ai_structured_insights: updatedInsights }).eq('id', entry.id);
-                          }}
-                          style={styles.wellbeingAdjustBtn}
-                        >
-                          <Ionicons name="add-circle-outline" size={20} color={isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : '#6B6B6B'} />
-                        </TouchableOpacity>
-                      </View>
-                    </StandardContainer>
-                  )}
-                </View>
+                <InsightsHeroCard
+                  emotionLabel={t('entry.primaryEmotion')}
+                  emotion={moodAnalysis ? translateEmotion(t, moodAnalysis.primary_emotion) : undefined}
+                  wellbeingLabel={t('entry.wellbeing')}
+                  wellbeingScore={structuredInsights?.wellbeingScore ?? undefined}
+                  onWellbeingChange={
+                    structuredInsights?.wellbeingScore != null
+                      ? async (newScore) => {
+                          const updatedInsights = { ...structuredInsights, wellbeingScore: newScore };
+                          const updatedEntry = { ...entry, ai_structured_insights: updatedInsights };
+                          setEntry(updatedEntry);
+                          await supabase.from('notes').update({ ai_structured_insights: updatedInsights }).eq('id', entry.id);
+                        }
+                      : undefined
+                  }
+                />
               )}
               
               {/* Summary */}

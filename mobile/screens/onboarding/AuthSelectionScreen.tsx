@@ -10,11 +10,12 @@ import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { ONBOARDING_SURFACE } from '../../constants/onboardingTheme';
 
 const GoogleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>`;
 
 export default function AuthSelectionScreen({ navigation, route }: any) {
-  const { setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const { t } = useLanguage();
   const { user, signInWithGoogle, signInWithApple } = useAuth();
   const [socialLoading, setSocialLoading] = useState(false);
@@ -23,13 +24,13 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
   // Note: Onboarding completion is now handled in AuthContext for Apple/Google sign-ins
   // to ensure compliance with Apple's Sign in with Apple guidelines
 
-  const applyDefaultLightTheme = async () => {
-    await setTheme('light');
+  const applyDefaultTheme = async () => {
+    await setTheme('dark');
   };
 
   const handleSkip = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    await applyDefaultLightTheme();
+    await applyDefaultTheme();
     navigation.navigate('OnboardingQuestion');
   };
 
@@ -49,7 +50,7 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
       await AsyncStorage.removeItem('REVENUECAT_ANONYMOUS_ID');
     } else {
       // Normal onboarding: set resume flag so navigator continues at onboarding questions
-      await applyDefaultLightTheme();
+      await applyDefaultTheme();
       await AsyncStorage.setItem('ONBOARDING_RESUME_SCREEN', 'OnboardingQuestion');
     }
     const { error } = await signInWithApple();
@@ -76,7 +77,7 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
       await AsyncStorage.removeItem('REVENUECAT_ANONYMOUS_ID');
     } else {
       // Normal onboarding: set resume flag so navigator continues at onboarding questions
-      await applyDefaultLightTheme();
+      await applyDefaultTheme();
       await AsyncStorage.setItem('ONBOARDING_RESUME_SCREEN', 'OnboardingQuestion');
     }
     const { error } = await signInWithGoogle();
@@ -106,9 +107,8 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
 
   return (
     <View style={styles.container}>
-      {/* Always use light theme background during onboarding */}
-      <SunoGradient />
-      <StatusBar barStyle="dark-content" />
+      <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+      <StatusBar barStyle="light-content" />
       
       {/* Back Button - only show if can go back */}
       {navigation.canGoBack() && (
@@ -116,8 +116,8 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <View style={styles.backArrowCircle}>
-            <Ionicons name="arrow-back" size={20} color="#1a1a2e" />
+          <View style={[styles.backArrowCircle, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
+            <Ionicons name="arrow-back" size={20} color="#ffffff" />
           </View>
         </TouchableOpacity>
       )}
@@ -125,37 +125,37 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
       <View style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>{t(postPurchase ? 'onboarding.auth.createYourAccount' : 'onboarding.auth.createAccount')}</Text>
-          <Text style={styles.subtitle}>{t(postPurchase ? 'onboarding.auth.postPurchaseSubtitle' : 'onboarding.auth.subtitle')}</Text>
+          <Text style={[styles.title, { color: theme.colors.primaryText }]}>{t(postPurchase ? 'onboarding.auth.createYourAccount' : 'onboarding.auth.createAccount')}</Text>
+          <Text style={[styles.subtitle, { color: theme.colors.secondaryText }]}>{t(postPurchase ? 'onboarding.auth.postPurchaseSubtitle' : 'onboarding.auth.subtitle')}</Text>
         </View>
 
         {/* Auth Options */}
         <View style={styles.authOptions}>
           {/* Apple Sign In */}
           <TouchableOpacity
-            style={styles.authButton}
+            style={[styles.authButton, { backgroundColor: ONBOARDING_SURFACE.fillElevated, borderColor: ONBOARDING_SURFACE.border }]}
             onPress={handleAppleAuth}
           >
-            <Ionicons name="logo-apple" size={24} color="#1a1a2e" />
-            <Text style={styles.authButtonText}>{t('onboarding.auth.apple')}</Text>
+            <Ionicons name="logo-apple" size={24} color="#ffffff" />
+            <Text style={[styles.authButtonText, { color: theme.colors.primaryText }]}>{t('onboarding.auth.apple')}</Text>
           </TouchableOpacity>
 
           {/* Google Sign In */}
           <TouchableOpacity
-            style={styles.authButton}
+            style={[styles.authButton, { backgroundColor: ONBOARDING_SURFACE.fillElevated, borderColor: ONBOARDING_SURFACE.border }]}
             onPress={handleGoogleAuth}
           >
             <SvgXml xml={GoogleSvg} width={20} height={20} />
-            <Text style={styles.authButtonText}>{t('onboarding.auth.google')}</Text>
+            <Text style={[styles.authButtonText, { color: theme.colors.primaryText }]}>{t('onboarding.auth.google')}</Text>
           </TouchableOpacity>
 
           {/* Email Sign Up */}
           <TouchableOpacity
-            style={styles.authButton}
+            style={[styles.authButton, { backgroundColor: ONBOARDING_SURFACE.fillElevated, borderColor: ONBOARDING_SURFACE.border }]}
             onPress={handleEmailAuth}
           >
-            <Ionicons name="mail-outline" size={20} color="#1a1a2e" />
-            <Text style={styles.authButtonText}>{t('onboarding.auth.email')}</Text>
+            <Ionicons name="mail-outline" size={20} color="#ffffff" />
+            <Text style={[styles.authButtonText, { color: theme.colors.primaryText }]}>{t('onboarding.auth.email')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -164,8 +164,8 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
           style={styles.signInLink}
           onPress={handleSignIn}
         >
-          <Text style={styles.signInText}>
-            {t('onboarding.auth.signInPrompt')} <Text style={styles.signInTextBold}>{t('onboarding.signIn')}</Text>
+          <Text style={[styles.signInText, { color: theme.colors.secondaryText }]}>
+            {t('onboarding.auth.signInPrompt')} <Text style={[styles.signInTextBold, { color: theme.colors.primaryText }]}>{t('onboarding.signIn')}</Text>
           </Text>
         </TouchableOpacity>
 
@@ -175,7 +175,7 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
             style={styles.skipButton}
             onPress={handleSkip}
           >
-            <Text style={styles.skipButtonText}>{t('onboarding.skipForNow')}</Text>
+            <Text style={[styles.skipButtonText, { color: theme.colors.tertiaryText }]}>{t('onboarding.skipForNow')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -186,7 +186,7 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fef7f2',
+    backgroundColor: 'transparent',
   },
   backButton: {
     position: 'absolute',

@@ -45,13 +45,9 @@ export default function ValuePropWinsScreen({ navigation }: any) {
   }, []);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={styles.container}>
       <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} />
-      {dark ? (
-        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
-      ) : (
-        <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
-      )}
+      <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
 
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <View style={[styles.backArrowCircle, { backgroundColor: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>

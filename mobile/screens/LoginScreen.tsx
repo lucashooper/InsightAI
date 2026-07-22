@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
   Alert,
@@ -12,18 +11,20 @@ import {
   StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as AppleAuthentication from 'expo-apple-authentication';
 import { SvgXml } from 'react-native-svg';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import SunoGradient from '../components/onboarding/SunoGradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
+import { onboardingAuthStyles as auth, ONBOARDING_AUTH_COLORS as colors } from '../constants/onboardingAuthStyles';
 
 const GoogleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>`;
 
 export default function LoginScreen({ navigation }: any) {
   const { t } = useLanguage();
+  const { theme } = useTheme();
   const [emailOrUsername, setEmailOrUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -38,51 +39,38 @@ export default function LoginScreen({ navigation }: any) {
     }
 
     setLoading(true);
-    
-    // Check if input is email or username
     let loginEmail = emailOrUsername;
-    
-    // If it doesn't contain @, assume it's a username
+
     if (!emailOrUsername.includes('@')) {
       try {
-        // Query user_profiles table to get email from username
         const { data, error } = await supabase
           .from('user_profiles')
           .select('email')
           .eq('username', emailOrUsername)
           .single();
-        
+
         if (error || !data) {
           setLoading(false);
           Alert.alert(t('auxiliary.login.failed'), t('auxiliary.login.usernameNotFound'));
           return;
         }
-        
+
         loginEmail = data.email;
-      } catch (err) {
+      } catch {
         setLoading(false);
         Alert.alert(t('auxiliary.login.failed'), t('auxiliary.login.usernameLookupFailed'));
         return;
       }
     }
-    
-    // Set onboarding flag BEFORE sign-in so navigator picks it up immediately
+
     await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
-    
     const { error } = await signIn(loginEmail, password);
     setLoading(false);
 
     if (error) {
-      // Revert the flag if sign-in failed
       await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
       Alert.alert(t('auxiliary.login.failed'), error.message);
     }
-    // On success, navigator automatically switches to authenticated stack
-    // with initialRouteName='MainTabs' because HAS_COMPLETED_ONBOARDING is set
-  };
-
-  const handleForgotPassword = () => {
-    navigation.navigate('ForgotPassword');
   };
 
   const handleGoogleSignIn = async () => {
@@ -104,16 +92,15 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={false} />
-      <SunoGradient />
+    <View style={auth.container}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={false} />
+      <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
+        style={auth.keyboardView}
       >
-        {/* Back Button */}
-        <TouchableOpacity 
-          style={styles.backButton}
+        <TouchableOpacity
+          style={auth.backButton}
           onPress={() => {
             if (navigation.canGoBack()) {
               navigation.goBack();
@@ -122,18 +109,18 @@ export default function LoginScreen({ navigation }: any) {
             }
           }}
         >
-          <View style={styles.backArrowCircle}>
-            <Ionicons name="arrow-back" size={20} color="#1a1a2e" />
+          <View style={auth.backArrowCircle}>
+            <Ionicons name="arrow-back" size={20} color="#ffffff" />
           </View>
         </TouchableOpacity>
 
-        <View style={styles.content}>
-          <Text style={styles.title}>{t('auxiliary.common.signIn')}</Text>
+        <View style={auth.content}>
+          <Text style={[auth.title, { marginBottom: 32 }]}>{t('auxiliary.common.signIn')}</Text>
 
           <TextInput
-            style={styles.input}
+            style={auth.input}
             placeholder={t('auxiliary.login.emailOrUsername')}
-            placeholderTextColor="rgba(0, 0, 0, 0.4)"
+            placeholderTextColor={colors.placeholder}
             value={emailOrUsername}
             onChangeText={setEmailOrUsername}
             autoCapitalize="none"
@@ -142,11 +129,11 @@ export default function LoginScreen({ navigation }: any) {
             returnKeyType="next"
           />
 
-          <View style={styles.passwordContainer}>
+          <View style={auth.passwordContainer}>
             <TextInput
-              style={styles.passwordInput}
+              style={auth.passwordInput}
               placeholder={t('auxiliary.common.password')}
-              placeholderTextColor="rgba(0, 0, 0, 0.4)"
+              placeholderTextColor={colors.placeholder}
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
@@ -156,70 +143,71 @@ export default function LoginScreen({ navigation }: any) {
               onSubmitEditing={handleLogin}
             />
             <TouchableOpacity
-              style={styles.eyeButton}
+              style={auth.eyeButton}
               onPress={() => setShowPassword(!showPassword)}
             >
               <Ionicons
                 name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                 size={20}
-                color="rgba(0, 0, 0, 0.6)"
+                color={colors.icon}
               />
             </TouchableOpacity>
           </View>
 
           <TouchableOpacity
-            style={styles.forgotPasswordButton}
-            onPress={handleForgotPassword}
+            style={{ alignSelf: 'flex-end', marginTop: 4 }}
+            onPress={() => navigation.navigate('ForgotPassword')}
           >
-            <Text style={styles.forgotPasswordText}>{t('auxiliary.login.forgotPassword')}</Text>
+            <Text style={auth.linkText}>{t('auxiliary.login.forgotPassword')}</Text>
           </TouchableOpacity>
 
-          <View style={styles.socialSection}>
-            <View style={styles.dividerContainer}>
-              <View style={styles.divider} />
-              <Text style={styles.dividerText}>{t('auxiliary.common.or')}</Text>
-              <View style={styles.divider} />
+          <View style={{ marginTop: 24 }}>
+            <View style={auth.dividerContainer}>
+              <View style={auth.divider} />
+              <Text style={auth.dividerText}>{t('auxiliary.common.or')}</Text>
+              <View style={auth.divider} />
             </View>
 
             <TouchableOpacity
-              style={styles.appleButton}
+              style={auth.socialButton}
               onPress={handleAppleSignIn}
               disabled={socialLoading}
             >
-              <Ionicons name="logo-apple" size={24} color="#000" />
-              <Text style={styles.appleButtonText}>{t('auxiliary.login.apple')}</Text>
+              <Ionicons name="logo-apple" size={24} color="#ffffff" />
+              <Text style={auth.socialButtonText}>{t('auxiliary.login.apple')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.googleButton}
+              style={[auth.socialButton, { marginBottom: 0 }]}
               onPress={handleGoogleSignIn}
               disabled={socialLoading}
             >
               <SvgXml xml={GoogleSvg} width={20} height={20} />
-              <Text style={styles.googleButtonText}>{t('auxiliary.login.google')}</Text>
+              <Text style={auth.socialButtonText}>{t('auxiliary.login.google')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.signupButton}
+              style={{ alignItems: 'center', marginTop: 24 }}
               onPress={() => navigation.navigate('Signup')}
             >
-              <Text style={styles.signupText}>
-                {t('auxiliary.login.noAccount')}{' '}<Text style={styles.signupTextBold}>{t('auxiliary.login.signUp')}</Text>
+              <Text style={auth.linkText}>
+                {t('auxiliary.login.noAccount')}{' '}
+                <Text style={auth.linkTextBold}>{t('auxiliary.login.signUp')}</Text>
               </Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        <View style={styles.bottomContainer}>
+        <View style={auth.bottomContainer}>
           <TouchableOpacity
-            style={styles.continueButton}
+            style={auth.continueButton}
             onPress={handleLogin}
             disabled={loading}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.continueButtonText}>{t('auxiliary.common.continue')}</Text>
+              <Text style={auth.continueButtonText}>{t('auxiliary.common.continue')}</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -227,163 +215,3 @@ export default function LoginScreen({ navigation }: any) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fef7f2',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 60,
-    left: 20,
-    zIndex: 10,
-    padding: 4,
-  },
-  backArrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 120,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '600',
-    color: '#1a1a2e',
-    marginBottom: 32,
-    letterSpacing: -0.6,
-  },
-  input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.15)',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    fontSize: 16,
-    color: '#1a1a2e',
-  },
-  passwordContainer: {
-    position: 'relative',
-    marginBottom: 16,
-  },
-  passwordInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.15)',
-    borderRadius: 12,
-    padding: 16,
-    paddingRight: 50,
-    fontSize: 16,
-    color: '#1a1a2e',
-  },
-  eyeButton: {
-    position: 'absolute',
-    right: 16,
-    top: 16,
-    padding: 4,
-  },
-  forgotPasswordButton: {
-    alignSelf: 'flex-end',
-    marginTop: 4,
-  },
-  forgotPasswordText: {
-    color: 'rgba(0, 0, 0, 0.5)',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  socialSection: {
-    marginTop: 24,
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
-  },
-  dividerText: {
-    color: 'rgba(0, 0, 0, 0.5)',
-    paddingHorizontal: 16,
-    fontSize: 14,
-  },
-  appleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: 12,
-    padding: 14,
-    gap: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-  },
-  appleButtonText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: 12,
-    padding: 14,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-  },
-  googleButtonText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  signupButton: {
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  signupText: {
-    color: 'rgba(0, 0, 0, 0.5)',
-    fontSize: 14,
-  },
-  signupTextBold: {
-    color: '#1a1a2e',
-    fontWeight: '600',
-  },
-  bottomContainer: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-  },
-  continueButton: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 28,
-    paddingVertical: 22,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  continueButtonText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '600',
-    letterSpacing: 0.2,
-  },
-});

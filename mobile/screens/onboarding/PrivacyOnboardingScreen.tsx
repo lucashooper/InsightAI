@@ -37,12 +37,8 @@ export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardin
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {isDarkTheme(theme.name) ? (
-        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
-      ) : (
-        <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
-      )}
+    <View style={styles.container}>
+      <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
       
       {/* Back Button - Circular style matching other onboarding pages */}
       {navigation.canGoBack() && (
@@ -108,7 +104,7 @@ export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardin
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fef7f2',
+    backgroundColor: 'transparent',
     paddingHorizontal: isTablet ? 40 : 24,
     paddingTop: isTablet ? 116 : 140,
     alignItems: 'center',

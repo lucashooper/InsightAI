@@ -6,11 +6,13 @@ import * as Haptics from 'expo-haptics';
 import LottieView from 'lottie-react-native';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const meditationLottie = require('../../public/animations/Stress Management.json');
 
 export default function ResearchInfoScreen({ navigation }: any) {
   const { t } = useLanguage();
+  const { theme } = useTheme();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
 
@@ -31,7 +33,7 @@ export default function ResearchInfoScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <SunoGradient />
+      <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
 
       {/* Back Button - only show if can go back */}
       {navigation.canGoBack() && (
@@ -39,7 +41,7 @@ export default function ResearchInfoScreen({ navigation }: any) {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="chevron-back" size={28} color="#6b7280" />
+          <Ionicons name="chevron-back" size={28} color="#ffffff" />
         </TouchableOpacity>
       )}
 
@@ -110,7 +112,7 @@ export default function ResearchInfoScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fef7f2',
+    backgroundColor: 'transparent',
   },
   backButton: {
     position: 'absolute',

@@ -8,21 +8,24 @@ import {
   Animated,
   ScrollView,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import AuroraOrb from '../shared/AuroraOrb';
+import SunoGradient from './SunoGradient';
 import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import { ONBOARDING_CTA } from '../../constants/onboardingTheme';
 
 type Props = {
-  step: 0 | 1 | 2;
+  step: 0 | 1;
   onContinue: () => void;
   children: React.ReactNode;
   ctaLabel?: string;
   showBack?: boolean;
   onBack?: () => void;
 };
+
+const TOTAL_STEPS = 2;
 
 export default function PrePaywallLayout({
   step,
@@ -33,6 +36,7 @@ export default function PrePaywallLayout({
   onBack,
 }: Props) {
   const { t } = useLanguage();
+  const { theme } = useTheme();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(24)).current;
 
@@ -52,14 +56,7 @@ export default function PrePaywallLayout({
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={['#0c0c14', '#08080d', '#050508']}
-        style={StyleSheet.absoluteFillObject}
-      />
-      <View style={styles.orbWrap} pointerEvents="none">
-        <AuroraOrb size={isTablet ? 340 : 300} isDark animate />
-      </View>
-
+      <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
       <StatusBar barStyle="light-content" />
 
       {showBack && onBack && (
@@ -82,7 +79,7 @@ export default function PrePaywallLayout({
 
       <View style={styles.footer}>
         <View style={styles.progressRow}>
-          {[0, 1, 2].map((index) => (
+          {Array.from({ length: TOTAL_STEPS }, (_, index) => (
             <View
               key={index}
               style={[styles.progressDot, step === index && styles.progressDotActive]}
@@ -101,13 +98,7 @@ export default function PrePaywallLayout({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#08080d',
-  },
-  orbWrap: {
-    position: 'absolute',
-    top: isTablet ? 40 : 20,
-    alignSelf: 'center',
-    opacity: 0.85,
+    backgroundColor: 'transparent',
   },
   backButton: {
     position: 'absolute',
@@ -130,7 +121,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: isTablet ? 64 : 28,
-    paddingTop: isTablet ? 120 : 100,
+    paddingTop: isTablet ? 108 : 96,
     paddingBottom: 24,
     justifyContent: 'center',
     ...(iPadContentStyle as object),
@@ -154,23 +145,23 @@ const styles = StyleSheet.create({
   },
   progressDotActive: {
     width: 22,
-    backgroundColor: '#a855f7',
+    backgroundColor: 'rgba(255,255,255,0.85)',
   },
   ctaButton: {
-    backgroundColor: '#ffffff',
-    borderRadius: 28,
-    paddingVertical: 20,
+    backgroundColor: ONBOARDING_CTA.background,
+    borderRadius: ONBOARDING_CTA.borderRadius,
+    paddingVertical: ONBOARDING_CTA.paddingVertical,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: ONBOARDING_CTA.shadow,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.22,
     shadowRadius: 12,
     elevation: 8,
   },
   ctaText: {
     fontSize: sf(17),
-    fontWeight: '700',
-    color: '#1a1a2e',
+    fontWeight: '600',
+    color: ONBOARDING_CTA.text,
     letterSpacing: 0.2,
   },
 });

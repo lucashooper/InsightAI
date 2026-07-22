@@ -14,6 +14,7 @@ import EmptyState from '../components/shared/EmptyState';
 import * as Haptics from 'expo-haptics';
 import { useLanguage } from '../contexts/LanguageContext';
 import { filterByContentLocale, withContentLocale } from '../i18n/contentLocale';
+import { consumePlaybookPrefill } from '../utils/playbookPrefill';
 
 type TabType = 'protocols' | 'strategies';
 
@@ -69,6 +70,16 @@ export default function PlaybookScreen() {
   useFocusEffect(
     useCallback(() => {
       loadStrategies();
+      consumePlaybookPrefill().then((prefill) => {
+        if (!prefill) return;
+        setNewStrategy((prev) => ({
+          ...prev,
+          title: prefill.title,
+          description: prefill.description,
+        }));
+        setActiveTab('strategies');
+        setShowCreateModal(true);
+      });
     }, [user, language])
   );
 

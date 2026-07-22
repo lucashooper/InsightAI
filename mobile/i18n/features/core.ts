@@ -477,7 +477,14 @@ const en = {
     "patternFrom": "from \"{{label}}\"",
     "patternMentionedAcross": "Mentioned across {{count}} entries",
     "viewMoreFocusAreas": "View {{count}} more focus areas",
-    "balance": "balance"
+    "balance": "balance",
+    "patternWorkingOn": "Working on it",
+    "patternAddPlaybook": "Add to Playbook",
+    "patternDismiss": "Dismiss for 30 days",
+    "patternResolved": "Mark resolved",
+    "patternActionsTitle": "Pattern options",
+    "patternsWorkingSection": "Working on ({{count}})",
+    "patternRestore": "Restore"
   },
   "settings": {
     "reminderSetMessage": "You'll receive a daily reminder at {{time}}.\n\nNote: Make sure notifications are enabled in your iPhone settings.",

@@ -1,70 +1,62 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar, Image } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
 import SunoGradient from '../../components/onboarding/SunoGradient';
 import LanguagePicker from '../../components/LanguagePicker';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { PRODUCT_REVEAL_PHONE } from '../../constants/phoneMockups';
+import { useTheme } from '../../contexts/ThemeContext';
+import { ZENO_MAIN_PHONE_FULL } from '../../constants/phoneMockups';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const PHONE_ASPECT_RATIO = 1350 / 2922;
 const PHONE_IMAGE_WIDTH = isTablet ? SCREEN_WIDTH * 0.74 : SCREEN_WIDTH * 0.84;
 const PHONE_FULL_HEIGHT = PHONE_IMAGE_WIDTH / PHONE_ASPECT_RATIO;
-const PHONE_VISIBLE_HEIGHT = PHONE_FULL_HEIGHT * 0.58;
-const PHONE_FADE_HEIGHT = PHONE_VISIBLE_HEIGHT * 0.44;
+const PHONE_VISIBLE_HEIGHT = PHONE_FULL_HEIGHT * 0.68;
 
-const phoneMockup = PRODUCT_REVEAL_PHONE;
+const phoneMockup = ZENO_MAIN_PHONE_FULL;
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 export default function ProductRevealScreen({ navigation }: any) {
     const { t } = useLanguage();
+    const { theme } = useTheme();
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={false} />
-            <SunoGradient />
+            <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={false} />
+            <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
 
             <View style={styles.languageAnchor}>
                 <LanguagePicker variant="pill" />
             </View>
 
-            {/* Centered logo */}
-            <View style={styles.brandRow}>
-                <Image
-                    source={insightLogo}
-                    style={styles.logo}
-                    resizeMode="contain"
-                />
-            </View>
-
-            {/* Welcome text */}
-            <View style={styles.welcomeContainer}>
-                <Text style={styles.welcomeText}>{t('onboarding.welcome')}</Text>
-            </View>
-
-            <View style={styles.spacer} />
-
-            {/* Phone — anchored just above CTA, fades at bottom of device */}
-            <View style={styles.phoneWrapper}>
-                <View style={styles.phoneCrop}>
+            <View style={styles.header}>
+                <View style={styles.brandRow}>
                     <Image
-                        source={phoneMockup}
-                        style={styles.phoneMockup}
+                        source={insightLogo}
+                        style={styles.logo}
                         resizeMode="contain"
                     />
-                    <LinearGradient
-                        colors={['rgba(254,247,242,0)', 'rgba(254,247,242,0.5)', '#fef7f2']}
-                        locations={[0, 0.55, 1]}
-                        pointerEvents="none"
-                        style={[styles.phoneFadeOverlay, { height: PHONE_FADE_HEIGHT }]}
-                    />
+                </View>
+                <View style={styles.welcomeContainer}>
+                    <Text style={[styles.welcomeText, { color: theme.colors.primaryText }]}>
+                        {t('onboarding.welcome')}
+                    </Text>
                 </View>
             </View>
 
-            {/* Footer */}
-            <View style={styles.footer}>
+            {/* Phone + CTA anchored together at the bottom (Oasis-style) */}
+            <View style={styles.bottomBlock}>
+                <View style={styles.phoneWrapper}>
+                    <View style={styles.phoneCrop}>
+                        <Image
+                            source={phoneMockup}
+                            style={styles.phoneMockup}
+                            resizeMode="contain"
+                        />
+                    </View>
+                </View>
+
                 <TouchableOpacity
                     style={styles.button}
                     activeOpacity={0.9}
@@ -82,7 +74,9 @@ export default function ProductRevealScreen({ navigation }: any) {
                     onPress={() => navigation.navigate('Login')}
                     style={styles.signInLink}
                 >
-                    <Text style={styles.signInText}>{t('onboarding.alreadyHaveAccount')}</Text>
+                    <Text style={[styles.signInText, { color: theme.colors.secondaryText }]}>
+                        {t('onboarding.alreadyHaveAccount')}
+                    </Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -92,9 +86,9 @@ export default function ProductRevealScreen({ navigation }: any) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fef7f2',
+        backgroundColor: 'transparent',
         paddingTop: isTablet ? 80 : 60,
-        paddingBottom: isTablet ? 70 : 50,
+        paddingBottom: isTablet ? 48 : 36,
     },
     languageAnchor: {
         position: 'absolute',
@@ -102,8 +96,9 @@ const styles = StyleSheet.create({
         right: 20,
         zIndex: 10,
     },
-
-    /* ── Brand row ─────────────────────────────────────────────── */
+    header: {
+        flexShrink: 0,
+    },
     brandRow: {
         alignItems: 'center',
         justifyContent: 'center',
@@ -114,8 +109,6 @@ const styles = StyleSheet.create({
         width: isTablet ? 160 : 130,
         height: isTablet ? 160 : 130,
     },
-
-    /* ── Welcome ───────────────────────────────────────────────── */
     welcomeContainer: {
         alignItems: 'center',
         marginBottom: isTablet ? 8 : 4,
@@ -124,21 +117,20 @@ const styles = StyleSheet.create({
     welcomeText: {
         fontSize: sf(32),
         fontWeight: '600',
-        color: '#1a1a2e',
         textAlign: 'center',
         letterSpacing: -0.6,
     },
-
-    spacer: {
+    bottomBlock: {
         flex: 1,
-        minHeight: isTablet ? 12 : 4,
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        paddingHorizontal: isTablet ? 48 : 24,
+        ...(iPadContentStyle as any),
     },
-
-    /* ── Phone image ───────────────────────────────────────────── */
     phoneWrapper: {
         alignItems: 'center',
-        paddingHorizontal: isTablet ? 32 : 12,
-        marginBottom: isTablet ? 20 : 12,
+        paddingHorizontal: isTablet ? 8 : 0,
+        marginBottom: 0,
     },
     phoneCrop: {
         width: PHONE_IMAGE_WIDTH,
@@ -151,24 +143,11 @@ const styles = StyleSheet.create({
         width: PHONE_IMAGE_WIDTH,
         height: PHONE_FULL_HEIGHT,
     },
-    phoneFadeOverlay: {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        bottom: 0,
-    },
-
-    /* ── Footer ────────────────────────────────────────────────── */
-    footer: {
-        alignItems: 'center',
-        paddingHorizontal: isTablet ? 48 : 24,
-        marginTop: 0,
-        ...(iPadContentStyle as any),
-    },
     button: {
         width: '100%',
         borderRadius: 28,
         backgroundColor: '#1a1a1a',
+        marginTop: -4,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.22,
@@ -188,12 +167,11 @@ const styles = StyleSheet.create({
         letterSpacing: 0.2,
     },
     signInLink: {
-        marginTop: isTablet ? 24 : 18,
+        marginTop: isTablet ? 20 : 14,
         paddingVertical: 6,
     },
     signInText: {
         fontSize: sf(15),
-        color: 'rgba(0,0,0,0.45)',
         textAlign: 'center',
     },
 });

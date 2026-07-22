@@ -7,12 +7,11 @@ LogBox.ignoreAllLogs();
 
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState, useRef } from 'react';
-import { View, Text, Image, Animated } from 'react-native';
+import { View, Animated } from 'react-native';
 import React from 'react';
 import Purchases from 'react-native-purchases';
 import { Asset } from 'expo-asset';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { LinearGradient } from 'expo-linear-gradient';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, normalizeThemeName, useTheme, isDarkTheme } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
@@ -22,13 +21,10 @@ import { OnboardingProvider } from './contexts/OnboardingContext';
 import { AppLockProvider, useAppLock } from './contexts/AppLockContext';
 import AppNavigator from './navigation/AppNavigator';
 import LockScreen from './components/LockScreen';
-import SunoGradient from './components/onboarding/SunoGradient';
+import PremiumSplashOverlay from './components/shared/PremiumSplashOverlay';
 import { analytics } from './services/analytics';
 
-import { APP_NAME } from './constants/branding';
 import { PAYWALL_PHONE_IMAGES, PRODUCT_REVEAL_PHONE } from './constants/phoneMockups';
-
-const insightLogo = require('./public/Insight-Logo-nobg.webp');
 
 // RevenueCat API Keys
 // Test Store: Bypasses Apple sandbox, works in simulator, instant testing
@@ -39,25 +35,26 @@ const REVENUECAT_PRODUCTION_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API
 // Use Test Store in development for easier testing, Production for releases
 const REVENUECAT_API_KEY = __DEV__ ? REVENUECAT_TEST_STORE_API_KEY : REVENUECAT_PRODUCTION_API_KEY;
 
-// Theme background colors for splash screen (light + dark only)
-const splashThemeColors: Record<string, { bg: string[], textColor: string, isDark: boolean }> = {
-  dark: { bg: ['#0e0e12', '#0a0a0c', '#060608'], textColor: '#ffffff', isDark: true },
-  light: { bg: ['#fef5f8', '#fef0f5', '#fef7f2'], textColor: '#1a1a2e', isDark: false },
-};
-
 export default function App() {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [savedTheme, setSavedTheme] = useState<string>('dark');
   const [themeLoaded, setThemeLoaded] = useState(false);
+  const [splashAssetsReady, setSplashAssetsReady] = useState(false);
 
   useEffect(() => {
     async function loadResourcesAndDataAsync() {
       try {
-        // CRITICAL: Load theme FIRST before anything else to prevent splash screen flash
+        // Load theme + splash/dashboard hero images first so the splash never jolts in
         const storedTheme = await AsyncStorage.getItem('@insightai_theme');
         if (storedTheme) {
           setSavedTheme(normalizeThemeName(storedTheme));
         }
+
+        await Promise.all([
+          Asset.fromModule(require('./public/abstract-dark-background.jpg')).downloadAsync(),
+          Asset.fromModule(require('./public/Zeno-Dashboard-background.webp')).downloadAsync(),
+        ]);
+        setSplashAssetsReady(true);
         setThemeLoaded(true);
         // STEP 1: Configure RevenueCat
         console.log('[REVENUECAT] 🚀 Configuring RevenueCat...');
@@ -176,7 +173,6 @@ export default function App() {
           Asset.fromModule(require('./public/research-images/APA-LOGO.png')).downloadAsync(),
           Asset.fromModule(require('./assets/Cambridge-logo.png')).downloadAsync(),
           Asset.fromModule(require('./public/ambient-stuff/rain-image.jpg')).downloadAsync(),
-          Asset.fromModule(require('./public/ambient-stuff/campfire-image.jpg')).downloadAsync(),
         ]).catch(() => {});
       } catch (e: any) {
         console.error('[APP] ❌ Error in loadResourcesAndDataAsync:', e);
@@ -194,11 +190,25 @@ export default function App() {
   const [appReady, setAppReady] = useState(false);
   const [splashVisible, setSplashVisible] = useState(true);
   const fadeAnim = useRef(new Animated.Value(1)).current;
+  const splashShownAtRef = useRef<number | null>(null);
 
-  // Fade out splash when app is ready
+  const SPLASH_MIN_MS = 2800;
+
   useEffect(() => {
-    if (appReady) {
-      console.log('[APP] App ready, fading out splash...');
+    if (splashAssetsReady && splashShownAtRef.current == null) {
+      splashShownAtRef.current = Date.now();
+    }
+  }, [splashAssetsReady]);
+
+  // Fade out splash when app is ready, respecting minimum display time
+  useEffect(() => {
+    if (!appReady) return;
+
+    const elapsed = Date.now() - (splashShownAtRef.current ?? Date.now());
+    const remaining = Math.max(0, SPLASH_MIN_MS - elapsed);
+
+    console.log('[APP] App ready, fading out splash after', remaining, 'ms...');
+    const timer = setTimeout(() => {
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 400,
@@ -207,8 +217,10 @@ export default function App() {
         console.log('[APP] Splash fade complete, hiding splash');
         setSplashVisible(false);
       });
-    }
-  }, [appReady]);
+    }, remaining);
+
+    return () => clearTimeout(timer);
+  }, [appReady, fadeAnim]);
 
   console.log('[APP RENDER] assetsLoaded:', assetsLoaded, 'appReady:', appReady, 'splashVisible:', splashVisible);
 
@@ -231,32 +243,15 @@ export default function App() {
           </LanguageProvider>
         </ThemeProvider>
       ) : (
-        <View style={{ flex: 1 }} />
+        <View style={{ flex: 1, backgroundColor: '#050508' }} />
       )}
 
       {/* Single splash overlay - stays on top until app is fully ready, then fades out */}
-      {splashVisible && themeLoaded && (() => {
-        const themeConfig = splashThemeColors[savedTheme] || splashThemeColors.dark;
-        return (
+      {splashVisible && themeLoaded && splashAssetsReady && (
         <Animated.View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, opacity: fadeAnim }}>
-          {themeConfig.isDark ? (
-            <LinearGradient colors={themeConfig.bg as any} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
-          ) : (
-            <SunoGradient />
-          )}
-          <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
-            <Image
-              source={insightLogo}
-              style={{ width: 64, height: 64, borderRadius: 16, marginRight: 14 }}
-              resizeMode="cover"
-            />
-            <Text style={{ fontSize: 44, fontWeight: '700', color: themeConfig.textColor, letterSpacing: -1.2 }}>
-              {APP_NAME}
-            </Text>
-          </View>
+          <PremiumSplashOverlay />
         </Animated.View>
-        );
-      })()}
+      )}
     </GestureHandlerRootView>
   );
 }

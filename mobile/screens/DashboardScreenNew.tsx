@@ -959,6 +959,7 @@ const styles = StyleSheet.create({
     height: isTablet ? 640 : 360,
     position: 'relative',
     marginBottom: isTablet ? 40 : 20,
+    overflow: 'visible',
   },
   orbLoader: {
     position: 'absolute',

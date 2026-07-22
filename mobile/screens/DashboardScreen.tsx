@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useIsFocused } from '@react-navigation/native';
 import {
   View,
@@ -11,6 +11,9 @@ import {
   Animated,
   Modal,
   ImageBackground,
+  ActionSheetIOS,
+  Platform,
+  Alert,
   InteractionManager,
 } from 'react-native';
 import MaskedView from '@react-native-masked-view/masked-view';
@@ -28,7 +31,7 @@ import { usePreloadedData } from '../contexts/PreloadContext';
 import StandardContainer from '../components/shared/StandardContainer';
 import PremiumButton from '../components/shared/PremiumButton';
 import PremiumGradientText from '../components/shared/PremiumGradientText';
-import PageHeader from '../components/shared/PageHeader';
+import DashboardHeaderHero from '../components/dashboard/DashboardHeaderHero';
 import EmptyState from '../components/shared/EmptyState';
 import { DashboardSkeleton } from '../components/shared/SkeletonBlock';
 import { isTablet, sf, ss, iPadWideContentStyle } from '../utils/responsive';
@@ -40,7 +43,18 @@ import {
   setDashboardDeferredCache,
 } from '../utils/dashboardCache';
 import { navigateToPlaybook } from '../utils/navigateToPlaybook';
+import { setPlaybookPrefill } from '../utils/playbookPrefill';
+import {
+  clearPatternAction,
+  getPatternKey,
+  isPatternHidden,
+  isPatternWorking,
+  loadPatternActions,
+  setPatternAction,
+  type PatternAction,
+} from '../services/patternActionsService';
 import { translateEmotion } from '../i18n/labels';
+import * as Haptics from 'expo-haptics';
 
 const screenWidth = Dimensions.get('window').width;
 const SHOW_DASHBOARD_STORY_SECTIONS = false;
@@ -129,6 +143,8 @@ export default function DashboardScreen() {
   const [patternsToAddress, setPatternsToAddress] = useState<any[]>([]);
   const [whatsWorking, setWhatsWorking] = useState<any[]>([]);
   const [patternsExpanded, setPatternsExpanded] = useState(false);
+  const [workingPatternsExpanded, setWorkingPatternsExpanded] = useState(false);
+  const [patternActions, setPatternActions] = useState<Record<string, PatternAction>>({});
   const [workingExpanded, setWorkingExpanded] = useState(false);
   const [aggregateStrengths, setAggregateStrengths] = useState<any[]>([]);
   const [aggregateGrowth, setAggregateGrowth] = useState<any[]>([]);
@@ -152,6 +168,80 @@ export default function DashboardScreen() {
   const loadGenRef = useRef(0);
   const deferredLoadedRef = useRef(false);
   const lastLoadedSigRef = useRef<string | null>(null);
+
+  const reloadPatternActions = useCallback(async () => {
+    setPatternActions(await loadPatternActions());
+  }, []);
+
+  useEffect(() => {
+    if (isFocused) {
+      reloadPatternActions();
+    }
+  }, [isFocused, reloadPatternActions]);
+
+  const visiblePatternsToAddress = patternsToAddress.filter(
+    (pattern) => !isPatternHidden(patternActions[getPatternKey(pattern.summary)]),
+  );
+  const workingPatterns = patternsToAddress.filter((pattern) =>
+    isPatternWorking(patternActions[getPatternKey(pattern.summary)]),
+  );
+
+  const handlePatternWorkingToggle = async (pattern: any) => {
+    const key = getPatternKey(pattern.summary);
+    const current = patternActions[key];
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (isPatternWorking(current)) {
+      setPatternActions(await clearPatternAction(pattern.summary));
+      return;
+    }
+    setPatternActions(await setPatternAction(pattern.summary, 'working'));
+  };
+
+  const handleAddPatternToPlaybook = async (pattern: any) => {
+    await setPlaybookPrefill(pattern.summary, pattern.description || pattern.summary);
+    await setPatternAction(pattern.summary, 'working');
+    setPatternActions(await loadPatternActions());
+    navigateToPlaybook(navigation);
+  };
+
+  const handleDismissPattern = async (pattern: any) => {
+    setPatternActions(await setPatternAction(pattern.summary, 'dismissed'));
+  };
+
+  const handleResolvePattern = async (pattern: any) => {
+    setPatternActions(await setPatternAction(pattern.summary, 'resolved'));
+  };
+
+  const showPatternActionMenu = (pattern: any) => {
+    const options = [
+      t('dashboard.patternAddPlaybook'),
+      t('dashboard.patternDismiss'),
+      t('dashboard.patternResolved'),
+      t('common.cancel'),
+    ];
+    const cancelIndex = 3;
+
+    const onSelect = (index: number) => {
+      if (index === 0) handleAddPatternToPlaybook(pattern);
+      if (index === 1) handleDismissPattern(pattern);
+      if (index === 2) handleResolvePattern(pattern);
+    };
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options, cancelButtonIndex: cancelIndex },
+        onSelect,
+      );
+      return;
+    }
+
+    Alert.alert(t('dashboard.patternActionsTitle'), pattern.summary, [
+      { text: options[0], onPress: () => onSelect(0) },
+      { text: options[1], onPress: () => onSelect(1) },
+      { text: options[2], onPress: () => onSelect(2) },
+      { text: options[3], style: 'cancel' },
+    ]);
+  };
 
   const applyDeferredCache = (cached: ReturnType<typeof getDashboardDeferredCache>) => {
     if (!cached) return;
@@ -769,10 +859,10 @@ export default function DashboardScreen() {
         style={styles.backgroundGradient}
       />
 
-      {/* Header */}
-      <PageHeader title={t('dashboard.title')} />
-
+      {/* Header image lives inside scroll for full-bleed fade */}
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
+        <DashboardHeaderHero title={t('dashboard.title')} />
+        <View style={styles.dashboardBody}>
         {loading ? (
           <DashboardSkeleton />
         ) : stats ? (
@@ -911,7 +1001,7 @@ export default function DashboardScreen() {
             </Animated.View>
 
             {/* Patterns to Address */}
-            {patternsToAddress.length > 0 && (
+            {visiblePatternsToAddress.length > 0 && (
               <StandardContainer tint="coral" style={[styles.patternsCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
                 <TouchableOpacity 
                   style={styles.patternsHeader}
@@ -920,7 +1010,7 @@ export default function DashboardScreen() {
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Ionicons name="leaf-outline" size={20} color="#10b981" />
-                    <Text style={[styles.patternsTitle, { color: theme.colors.primaryText }]}>{t('dashboard.patternsToAddressCount', { count: patternsToAddress.length })}</Text>
+                    <Text style={[styles.patternsTitle, { color: theme.colors.primaryText }]}>{t('dashboard.patternsToAddressCount', { count: visiblePatternsToAddress.length })}</Text>
                   </View>
                   <Ionicons 
                     name={patternsExpanded ? "chevron-up" : "chevron-down"} 
@@ -929,69 +1019,99 @@ export default function DashboardScreen() {
                   />
                 </TouchableOpacity>
                 <Text style={[styles.patternSubtitle, { color: theme.colors.tertiaryText }]}>
-                  {sectionSubtitleForItems(patternsToAddress, t('dashboard.prioritiesSubtitle'))}
+                  {sectionSubtitleForItems(visiblePatternsToAddress, t('dashboard.prioritiesSubtitle'))}
                 </Text>
                 
                 <View style={styles.patternsContent}>
-                  {patternsToAddress.slice(0, patternsExpanded ? patternsToAddress.length : 2).map((pattern) => (
-                    <TouchableOpacity
-                      key={pattern.id}
-                      style={styles.patternCardWrap}
-                      onPress={() => {
-                        const entry = allNotes.find((n: any) => n.id === pattern.entryId);
-                        if (entry) {
-                          navigation.navigate('EntryDetail', { entry, highlightText: pattern.summary });
-                        }
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <StandardContainer variant="nested" style={styles.patternCard}>
-                      <View style={styles.patternCardHeader}>
-                        <View style={styles.frequencyBadge}>
-                          <Ionicons name="flame" size={13} color="#ef4444" />
-                          <Text style={styles.frequencyText}>x{pattern.rawCount || pattern.count}</Text>
+                  {visiblePatternsToAddress.slice(0, patternsExpanded ? visiblePatternsToAddress.length : 2).map((pattern) => (
+                    <View key={pattern.id} style={styles.patternCardWrap}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          const entry = allNotes.find((n: any) => n.id === pattern.entryId);
+                          if (entry) {
+                            navigation.navigate('EntryDetail', { entry, highlightText: pattern.summary });
+                          }
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <StandardContainer variant="nested" style={styles.patternCard}>
+                        <View style={styles.patternCardHeader}>
+                          <View style={styles.frequencyBadge}>
+                            <Ionicons name="flame" size={13} color="#ef4444" />
+                            <Text style={styles.frequencyText}>x{pattern.rawCount || pattern.count}</Text>
+                          </View>
+                          {pattern.priority === 'HIGH' && (
+                            <View style={[styles.priorityBadge, styles.priorityBadgeHighGlow]}>
+                              <Text style={styles.priorityBadgeText}>{t('dashboard.highPriority')}</Text>
+                            </View>
+                          )}
+                          {pattern.priority === 'MEDIUM' && (
+                            <View style={[styles.priorityBadge, styles.priorityBadgeMedium]}>
+                              <Text style={[styles.priorityBadgeText, styles.priorityBadgeTextMedium]}>{t('dashboard.medium')}</Text>
+                            </View>
+                          )}
                         </View>
-                        {pattern.priority === 'HIGH' && (
-                          <View style={[styles.priorityBadge, styles.priorityBadgeHighGlow]}>
-                            <Text style={styles.priorityBadgeText}>{t('dashboard.highPriority')}</Text>
+                        <Text style={[styles.patternSummary, { color: theme.colors.primaryText }]}>{pattern.summary}</Text>
+                        {pattern.description ? (
+                          <Text style={[styles.patternDescription, { color: theme.colors.secondaryText }]} numberOfLines={3}>
+                            {pattern.description}
+                          </Text>
+                        ) : null}
+                        {pattern.originLabel && !pattern.originLabel.includes('related entries') ? (
+                          <Text style={[styles.patternOrigin, { color: theme.colors.tertiaryText }]} numberOfLines={1}>
+                            {t('dashboard.patternFrom', { label: pattern.originLabel })}
+                          </Text>
+                        ) : pattern.count > 1 ? (
+                          <Text style={[styles.patternOrigin, { color: theme.colors.tertiaryText }]} numberOfLines={1}>
+                            {t('dashboard.patternMentionedAcross', { count: pattern.count })}
+                          </Text>
+                        ) : null}
+                        </StandardContainer>
+                      </TouchableOpacity>
+                      <View style={styles.patternActionRow}>
+                        <TouchableOpacity
+                          style={[
+                            styles.patternCheckRow,
+                            isPatternWorking(patternActions[getPatternKey(pattern.summary)]) && styles.patternCheckRowActive,
+                          ]}
+                          onPress={() => handlePatternWorkingToggle(pattern)}
+                          activeOpacity={0.7}
+                        >
+                          <View style={[
+                            styles.patternCheckbox,
+                            { borderColor: theme.colors.border },
+                            isPatternWorking(patternActions[getPatternKey(pattern.summary)]) && styles.patternCheckboxActive,
+                          ]}>
+                            {isPatternWorking(patternActions[getPatternKey(pattern.summary)]) ? (
+                              <Ionicons name="checkmark" size={14} color="#ffffff" />
+                            ) : null}
                           </View>
-                        )}
-                        {pattern.priority === 'MEDIUM' && (
-                          <View style={[styles.priorityBadge, styles.priorityBadgeMedium]}>
-                            <Text style={[styles.priorityBadgeText, styles.priorityBadgeTextMedium]}>{t('dashboard.medium')}</Text>
-                          </View>
-                        )}
+                          <Text style={[styles.patternCheckLabel, { color: theme.colors.secondaryText }]}>
+                            {t('dashboard.patternWorkingOn')}
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => showPatternActionMenu(pattern)}
+                          style={styles.patternMenuBtn}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                          <Ionicons name="ellipsis-horizontal" size={18} color={theme.colors.secondaryText} />
+                        </TouchableOpacity>
                       </View>
-                      <Text style={[styles.patternSummary, { color: theme.colors.primaryText }]}>{pattern.summary}</Text>
-                      {pattern.description ? (
-                        <Text style={[styles.patternDescription, { color: theme.colors.secondaryText }]} numberOfLines={3}>
-                          {pattern.description}
-                        </Text>
-                      ) : null}
-                      {pattern.originLabel && !pattern.originLabel.includes('related entries') ? (
-                        <Text style={[styles.patternOrigin, { color: theme.colors.tertiaryText }]} numberOfLines={1}>
-                          {t('dashboard.patternFrom', { label: pattern.originLabel })}
-                        </Text>
-                      ) : pattern.count > 1 ? (
-                        <Text style={[styles.patternOrigin, { color: theme.colors.tertiaryText }]} numberOfLines={1}>
-                          {t('dashboard.patternMentionedAcross', { count: pattern.count })}
-                        </Text>
-                      ) : null}
-                      </StandardContainer>
-                    </TouchableOpacity>
+                    </View>
                   ))}
 
-                  {!patternsExpanded && patternsToAddress.length > 2 && (
+                  {!patternsExpanded && visiblePatternsToAddress.length > 2 && (
                     <TouchableOpacity
                       style={[styles.viewAllButton, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
                       onPress={() => setPatternsExpanded(true)}
                       activeOpacity={0.7}
                     >
-                      <Text style={[styles.viewAllText, { color: theme.colors.secondaryText }]}>{t('dashboard.viewMoreFocusAreas', { count: patternsToAddress.length - 2 })}</Text>
+                      <Text style={[styles.viewAllText, { color: theme.colors.secondaryText }]}>{t('dashboard.viewMoreFocusAreas', { count: visiblePatternsToAddress.length - 2 })}</Text>
                       <Ionicons name="chevron-forward" size={14} color={theme.colors.secondaryText} />
                     </TouchableOpacity>
                   )}
-                  {patternsExpanded && patternsToAddress.length > 2 && (
+                  {patternsExpanded && visiblePatternsToAddress.length > 2 && (
                     <TouchableOpacity
                       style={[styles.viewAllButton, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
                       onPress={() => setPatternsExpanded(false)}
@@ -1001,6 +1121,39 @@ export default function DashboardScreen() {
                     </TouchableOpacity>
                   )}
                 </View>
+              </StandardContainer>
+            )}
+
+            {workingPatterns.length > 0 && (
+              <StandardContainer variant="nested" style={[styles.workingPatternsCard, { borderColor: theme.colors.border, backgroundColor: theme.colors.cardBackground }]}>
+                <TouchableOpacity
+                  style={styles.workingPatternsHeader}
+                  onPress={() => setWorkingPatternsExpanded(!workingPatternsExpanded)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.workingPatternsTitle, { color: theme.colors.secondaryText }]}>
+                    {t('dashboard.patternsWorkingSection', { count: workingPatterns.length })}
+                  </Text>
+                  <Ionicons
+                    name={workingPatternsExpanded ? 'chevron-up' : 'chevron-down'}
+                    size={16}
+                    color={theme.colors.secondaryText}
+                  />
+                </TouchableOpacity>
+                {workingPatternsExpanded ? (
+                  <View style={styles.workingPatternsList}>
+                    {workingPatterns.map((pattern) => (
+                      <View key={`working-${pattern.id}`} style={styles.workingPatternItem}>
+                        <Text style={[styles.workingPatternText, { color: theme.colors.primaryText }]} numberOfLines={2}>
+                          {pattern.summary}
+                        </Text>
+                        <TouchableOpacity onPress={() => handlePatternWorkingToggle(pattern)}>
+                          <Text style={styles.workingPatternRestore}>{t('dashboard.patternRestore')}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
               </StandardContainer>
             )}
 
@@ -1244,6 +1397,7 @@ export default function DashboardScreen() {
             onAction={() => navigation.navigate('CreateEntry' as never)}
           />
         )}
+        </View>
       </ScrollView>
 
       {/* Full Story Modal - Premium Enhanced */}
@@ -1611,8 +1765,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: isTablet ? 40 : 20,
     paddingBottom: 100,
+  },
+  dashboardBody: {
+    paddingHorizontal: isTablet ? 40 : 20,
+    paddingTop: 8,
   },
   loadingContainer: {
     flex: 1,
@@ -2913,6 +3070,75 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontStyle: 'italic',
     marginTop: 2,
+  },
+  patternActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    paddingHorizontal: 4,
+  },
+  patternCheckRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  patternCheckRowActive: {
+    opacity: 1,
+  },
+  patternCheckbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  patternCheckboxActive: {
+    backgroundColor: '#10b981',
+    borderColor: '#10b981',
+  },
+  patternCheckLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  patternMenuBtn: {
+    padding: 4,
+  },
+  workingPatternsCard: {
+    marginBottom: 12,
+    borderRadius: 16,
+    padding: 14,
+  },
+  workingPatternsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  workingPatternsTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  workingPatternsList: {
+    marginTop: 10,
+    gap: 10,
+  },
+  workingPatternItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  workingPatternText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  workingPatternRestore: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#8b5cf6',
   },
   patternCategory: {
     fontSize: 11,

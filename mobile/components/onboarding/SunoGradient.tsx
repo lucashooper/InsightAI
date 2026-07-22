@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Defs, Pattern, Rect, Circle, RadialGradient, Stop, Circle as SvgCircle } from 'react-native-svg';
+import Svg, { Defs, Pattern, Rect, Circle, RadialGradient, Stop } from 'react-native-svg';
 
-const { width, height } = Dimensions.get('window');
+const DARK_BASE = ['#101019', '#09090f', '#050508'] as const;
 
 interface SunoGradientProps {
   themeColors?: string[];
@@ -15,29 +15,50 @@ interface SunoGradientProps {
   };
 }
 
+function isDarkPalette(colors?: string[]): boolean {
+  if (!colors?.length) return true;
+  const hex = colors[0].replace('#', '');
+  if (hex.length < 6) return true;
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  return (r + g + b) / 3 < 96;
+}
+
 /**
- * Premium pastel multi-gradient background
- * Inspired by Unchained — soft pink, peach, lavender, cream tones
- * Can be customized with theme colors
+ * Premium onboarding background — moody base + soft color blobs.
+ * Always use as the first child of a flex:1 screen; keep the screen container transparent.
  */
 export default function SunoGradient({ themeColors, themeBlobColors }: SunoGradientProps = {}) {
-  const baseColors = themeColors || ['#fef5f8', '#fef0f5', '#f5f0fe', '#f0f9ff', '#fef7f2'];
-  const blobColors = themeBlobColors || {
-    pink: '#ffc9d9',
-    lavender: '#ddd6fe',
-    peach: '#fed7aa',
-    blue: '#bfdbfe',
-  };
+  const { width, height } = useWindowDimensions();
+  const dark = isDarkPalette(themeColors);
+  const baseColors = themeColors?.length ? themeColors : [...DARK_BASE];
+  const blobColors = themeBlobColors || (dark
+    ? {
+        pink: 'rgba(139, 92, 246, 0.55)',
+        lavender: 'rgba(99, 102, 241, 0.45)',
+        peach: 'rgba(240, 101, 79, 0.30)',
+        blue: 'rgba(45, 212, 191, 0.28)',
+      }
+    : {
+        pink: '#ffc9d9',
+        lavender: '#ddd6fe',
+        peach: '#fed7aa',
+        blue: '#bfdbfe',
+      });
 
-  // Dynamically generate evenly-spaced locations to always match the colors array length
   const rawLocations = baseColors.map((_, i) =>
-    baseColors.length === 1 ? 0 : i / (baseColors.length - 1)
+    baseColors.length === 1 ? 0 : i / (baseColors.length - 1),
   );
   const locations = rawLocations as unknown as readonly [number, number, ...number[]];
 
+  const pinkOpacity = dark ? [0.55, 0] : [0.45, 0];
+  const lavenderOpacity = dark ? [0.48, 0] : [0.4, 0];
+  const peachOpacity = dark ? [0.38, 0] : [0.4, 0];
+  const blueOpacity = dark ? [0.34, 0] : [0.35, 0];
+
   return (
-    <View style={styles.container}>
-      {/* Base warm cream gradient - enhanced for more vibrant pastel tones */}
+    <View style={styles.container} pointerEvents="none">
       <LinearGradient
         colors={baseColors as [string, string, ...string[]]}
         locations={locations}
@@ -46,28 +67,23 @@ export default function SunoGradient({ themeColors, themeBlobColors }: SunoGradi
         style={StyleSheet.absoluteFillObject}
       />
 
-      {/* Enhanced radial color accents via SVG - more vibrant like Unchained */}
       <Svg width={width} height={height} style={StyleSheet.absoluteFillObject}>
         <Defs>
-          {/* Vibrant pink blob top-right */}
-          <RadialGradient id="pinkBlob" cx="85%" cy="10%" rx="55%" ry="45%">
-            <Stop offset="0%" stopColor="#ffc9d9" stopOpacity="0.45" />
-            <Stop offset="100%" stopColor="#ffc9d9" stopOpacity="0" />
+          <RadialGradient id="pinkBlob" cx="82%" cy="12%" rx="55%" ry="45%">
+            <Stop offset="0%" stopColor={blobColors.pink} stopOpacity={pinkOpacity[0]} />
+            <Stop offset="100%" stopColor={blobColors.pink} stopOpacity={pinkOpacity[1]} />
           </RadialGradient>
-          {/* Vibrant lavender blob center-left */}
-          <RadialGradient id="lavenderBlob" cx="10%" cy="50%" rx="50%" ry="40%">
-            <Stop offset="0%" stopColor="#ddd6fe" stopOpacity="0.4" />
-            <Stop offset="100%" stopColor="#ddd6fe" stopOpacity="0" />
+          <RadialGradient id="lavenderBlob" cx="12%" cy="48%" rx="50%" ry="40%">
+            <Stop offset="0%" stopColor={blobColors.lavender} stopOpacity={lavenderOpacity[0]} />
+            <Stop offset="100%" stopColor={blobColors.lavender} stopOpacity={lavenderOpacity[1]} />
           </RadialGradient>
-          {/* Vibrant peach/orange blob bottom */}
-          <RadialGradient id="peachBlob" cx="65%" cy="90%" rx="60%" ry="35%">
-            <Stop offset="0%" stopColor="#fed7aa" stopOpacity="0.4" />
-            <Stop offset="100%" stopColor="#fed7aa" stopOpacity="0" />
+          <RadialGradient id="peachBlob" cx="68%" cy="88%" rx="58%" ry="38%">
+            <Stop offset="0%" stopColor={blobColors.peach} stopOpacity={peachOpacity[0]} />
+            <Stop offset="100%" stopColor={blobColors.peach} stopOpacity={peachOpacity[1]} />
           </RadialGradient>
-          {/* Vibrant blue blob top-left */}
-          <RadialGradient id="blueBlob" cx="20%" cy="5%" rx="45%" ry="30%">
-            <Stop offset="0%" stopColor="#bfdbfe" stopOpacity="0.35" />
-            <Stop offset="100%" stopColor="#bfdbfe" stopOpacity="0" />
+          <RadialGradient id="blueBlob" cx="22%" cy="8%" rx="45%" ry="32%">
+            <Stop offset="0%" stopColor={blobColors.blue} stopOpacity={blueOpacity[0]} />
+            <Stop offset="100%" stopColor={blobColors.blue} stopOpacity={blueOpacity[1]} />
           </RadialGradient>
         </Defs>
         <Rect x="0" y="0" width={width} height={height} fill="url(#pinkBlob)" />
@@ -76,13 +92,12 @@ export default function SunoGradient({ themeColors, themeBlobColors }: SunoGradi
         <Rect x="0" y="0" width={width} height={height} fill="url(#blueBlob)" />
       </Svg>
 
-      {/* Subtle grain overlay for texture */}
       <Svg width={width} height={height} style={styles.grainOverlay}>
         <Defs>
           <Pattern id="grain" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
-            <Circle cx="1" cy="1" r="0.3" fill="rgba(0,0,0,0.01)" />
-            <Circle cx="3" cy="2" r="0.3" fill="rgba(0,0,0,0.007)" />
-            <Circle cx="2" cy="3" r="0.3" fill="rgba(0,0,0,0.012)" />
+            <Circle cx="1" cy="1" r="0.3" fill={dark ? 'rgba(255,255,255,0.015)' : 'rgba(0,0,0,0.01)'} />
+            <Circle cx="3" cy="2" r="0.3" fill={dark ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.007)'} />
+            <Circle cx="2" cy="3" r="0.3" fill={dark ? 'rgba(255,255,255,0.012)' : 'rgba(0,0,0,0.012)'} />
           </Pattern>
         </Defs>
         <Rect x="0" y="0" width={width} height={height} fill="url(#grain)" />
@@ -94,7 +109,7 @@ export default function SunoGradient({ themeColors, themeBlobColors }: SunoGradi
 const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#fef7f2',
+    zIndex: 0,
   },
   grainOverlay: {
     ...StyleSheet.absoluteFillObject,

@@ -364,8 +364,8 @@ export default function AppNavigator() {
     dark: true,
     colors: {
       primary: '#8b5cf6',
-      background: '#000000',
-      card: '#0a0a0a',
+      background: '#101019',
+      card: 'transparent',
       text: '#ffffff',
       border: '#1a1a1a',
       notification: '#8b5cf6',
@@ -411,6 +411,7 @@ export default function AppNavigator() {
             animation: 'none',
             gestureEnabled: true,
             animationDuration: 650,
+            contentStyle: { backgroundColor: 'transparent' },
           }}
         >
           {/* CRITICAL FIX: Always include ALL screens in authenticated stack
@@ -500,6 +501,7 @@ export default function AppNavigator() {
             animation: 'none',
             gestureEnabled: true,
             animationDuration: 650,
+            contentStyle: { backgroundColor: 'transparent' },
           }}
         >
           {/* Onboarding Flow for new users */}
@@ -563,6 +565,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fef7f2',
+    backgroundColor: '#08080d',
   },
 });

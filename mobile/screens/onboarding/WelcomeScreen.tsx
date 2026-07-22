@@ -20,7 +20,7 @@ export default function WelcomeScreen({ navigation }: any) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fef7f2',
+        backgroundColor: 'transparent',
     },
     content: {
         flex: 1,

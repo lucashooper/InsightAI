@@ -1,11 +1,14 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform, StatusBar } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Haptics from 'expo-haptics';
+import SunoGradient from '../../components/onboarding/SunoGradient';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function NotificationPermissionScreen({ navigation }: any) {
     const { t } = useLanguage();
+    const { theme } = useTheme();
     const pointerAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
@@ -47,8 +50,10 @@ export default function NotificationPermissionScreen({ navigation }: any) {
 
     return (
         <View style={styles.container}>
+            <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+            <StatusBar barStyle="light-content" />
             <View style={styles.content}>
-                <Text style={styles.title}>{t('onboarding.notifications.permissionTitle')}</Text>
+                <Text style={[styles.title, { color: theme.colors.primaryText }]}>{t('onboarding.notifications.permissionTitle')}</Text>
 
                 <View style={styles.permissionCard}>
                     <Text style={styles.permissionTitle}>{t('onboarding.notifications.permissionRequest')}</Text>
@@ -91,7 +96,7 @@ export default function NotificationPermissionScreen({ navigation }: any) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fef7f2',
+        backgroundColor: 'transparent',
     },
     content: {
         flex: 1,

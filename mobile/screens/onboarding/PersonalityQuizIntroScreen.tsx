@@ -122,13 +122,9 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={styles.container}>
       <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent={false} />
-      {dark ? (
-        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
-      ) : (
-        <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
-      )}
+      <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
 
       {/* Decorative Blossoms */}
       <DecorativeBlossoms dark={dark} />

@@ -119,12 +119,8 @@ export default function AnalysisCompleteScreen({ navigation }: Props) {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-            {isDarkTheme(theme.name) ? (
-                <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
-            ) : (
-                <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
-            )}
+        <View style={styles.container}>
+            <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
             
             <View style={styles.content}>
                 {/* Check + Headline Unit */}
@@ -156,7 +152,7 @@ export default function AnalysisCompleteScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fef7f2',
+        backgroundColor: 'transparent',
     },
     content: {
         flex: 1,

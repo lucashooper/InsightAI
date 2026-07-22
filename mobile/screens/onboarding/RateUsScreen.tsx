@@ -40,12 +40,8 @@ export default function RateUsScreen({ navigation }: any) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {dark ? (
-        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
-      ) : (
-        <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
-      )}
+    <View style={styles.container}>
+      <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
 
       {/* Back Button */}
       <TouchableOpacity 
@@ -116,7 +112,7 @@ export default function RateUsScreen({ navigation }: any) {
           onPress={handleSkip}
           style={styles.skipButton}
         >
-          <Text style={[styles.skipText, dark && styles.skipTextDark]}>{t('onboarding.skip')}</Text>
+          <Text style={[styles.skipText, dark && styles.skipTextDark]}>{t('onboarding.skipForNow')}</Text>
         </TouchableOpacity>
       </View>
     </View>

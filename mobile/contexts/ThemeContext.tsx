@@ -304,18 +304,18 @@ const LIGHT_THEMES: ThemeName[] = ['light', 'vibrant', 'ocean', 'sunset'];
 
 /** Collapse legacy palette themes into light or dark. */
 export const normalizeThemeName = (stored: string | null): ThemeName => {
-  if (!stored) return 'light';
+  if (!stored) return 'dark';
   if (stored === 'light' || stored === 'dark') return stored;
   if (DARK_THEMES.includes(stored as ThemeName)) return 'dark';
   if (LIGHT_THEMES.includes(stored as ThemeName)) return 'light';
-  return 'light';
+  return 'dark';
 };
 
 /** Themes shown in Appearance settings. */
 export const selectableThemes: ThemeName[] = ['light', 'dark'];
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [themeName, setThemeName] = useState<ThemeName>('light');
+  const [themeName, setThemeName] = useState<ThemeName>('dark');
   const [containerStyle, setContainerStyleState] = useState<ContainerStyle>('modern-gray');
 
   useEffect(() => {

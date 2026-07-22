@@ -48,6 +48,20 @@ const DARK_BLOBS: Blob[] = [
   { rgb: '129,99,220', alpha: 0.58, diameter: 0.58, cx: 0.64, cy: 0.34, driftX: 6, driftY: -5, scaleFrom: 0.98, scaleTo: 1.04, duration: 12500 },
 ];
 
+/** Soft base wash — wide enough for greeting text, no hard outer ring. */
+const HERO_AMBIENT: Blob = {
+  rgb: '81,57,119',
+  alpha: 0.42,
+  diameter: 0.88,
+  cx: 0.5,
+  cy: 0.5,
+  driftX: 2,
+  driftY: -1,
+  scaleFrom: 0.99,
+  scaleTo: 1.02,
+  duration: 15000,
+};
+
 const WARM_RGB = new Set(['255,123,101', '255,190,105', '240,101,79']);
 
 function AuroraBlob({
@@ -56,12 +70,14 @@ function AuroraBlob({
   index,
   motionEnabled,
   vivid = false,
+  softEdge = false,
 }: {
   blob: Blob;
   size: number;
   index: number;
   motionEnabled: boolean;
   vivid?: boolean;
+  softEdge?: boolean;
 }) {
   const progress = useRef(new Animated.Value(0)).current;
   const gradientId = `aurora-${index}-${blob.rgb.replace(/,/g, '-')}`;
@@ -112,8 +128,16 @@ function AuroraBlob({
         <Defs>
           <RadialGradient id={gradientId} cx="50%" cy="50%" r="50%">
             <Stop offset="0%" stopColor={`rgb(${blob.rgb})`} stopOpacity={vivid ? Math.min(blob.alpha * 1.15, 1) : blob.alpha} />
-            <Stop offset={vivid ? '32%' : '48%'} stopColor={`rgb(${blob.rgb})`} stopOpacity={vivid ? blob.alpha * 0.82 : blob.alpha * 0.58} />
-            <Stop offset={vivid ? '58%' : '76%'} stopColor={`rgb(${blob.rgb})`} stopOpacity={vivid ? blob.alpha * 0.42 : blob.alpha * 0.18} />
+            <Stop
+              offset={softEdge ? '28%' : vivid ? '32%' : '48%'}
+              stopColor={`rgb(${blob.rgb})`}
+              stopOpacity={softEdge ? blob.alpha * 0.55 : vivid ? blob.alpha * 0.82 : blob.alpha * 0.58}
+            />
+            <Stop
+              offset={softEdge ? '62%' : vivid ? '58%' : '76%'}
+              stopColor={`rgb(${blob.rgb})`}
+              stopOpacity={softEdge ? blob.alpha * 0.18 : vivid ? blob.alpha * 0.42 : blob.alpha * 0.18}
+            />
             <Stop offset="100%" stopColor={`rgb(${blob.rgb})`} stopOpacity={0} />
           </RadialGradient>
         </Defs>
@@ -153,6 +177,23 @@ function scaleBlobsForSize(
     });
 }
 
+function buildHeroBlobs(sourceBlobs: Blob[], size: number): Blob[] {
+  const scaled = scaleBlobsForSize(sourceBlobs, size, false, false, false)
+    .filter((blob) => blob.diameter < 1.0)
+    .map((blob) => {
+      const sizeBoost = blob.diameter >= 0.7 ? 1.14 : blob.diameter >= 0.55 ? 1.02 : 0.94;
+      return {
+        ...blob,
+        diameter: blob.diameter * sizeBoost,
+        alpha: blob.alpha * 0.93,
+        driftX: blob.driftX * 0.78,
+        driftY: blob.driftY * 0.78,
+      };
+    });
+
+  return [HERO_AMBIENT, ...scaled];
+}
+
 type Props = {
   size: number;
   isDark?: boolean;
@@ -167,6 +208,8 @@ type Props = {
   variant?: 'default' | 'roast';
   /** When false, blobs stay static (e.g. voice overlay driven by external audio level). */
   animate?: boolean;
+  /** Home hero: soft ambient + layered color without a hard outer ring. */
+  hero?: boolean;
 };
 
 /**
@@ -182,10 +225,13 @@ export default function AuroraOrb({
   vivid = false,
   variant = 'default',
   animate = true,
+  hero = false,
 }: Props) {
   const isCompact = compact || size <= 72;
   const sourceBlobs = variant === 'roast' ? ROAST_BLOBS : isDark ? DARK_BLOBS : LIGHT_BLOBS;
-  const blobs = scaleBlobsForSize(sourceBlobs, size, isCompact, !!clipToCircle, vivid || variant === 'roast');
+  const blobs = hero
+    ? buildHeroBlobs(sourceBlobs, size)
+    : scaleBlobsForSize(sourceBlobs, size, isCompact, !!clipToCircle, vivid || variant === 'roast');
   const [motionEnabled, setMotionEnabled] = React.useState(true);
 
   React.useEffect(() => {
@@ -201,7 +247,15 @@ export default function AuroraOrb({
   const content = (
     <>
       {blobs.map((blob, i) => (
-        <AuroraBlob key={i} blob={blob} size={size} index={i} motionEnabled={allowMotion} vivid={vivid} />
+        <AuroraBlob
+          key={i}
+          blob={blob}
+          size={size}
+          index={i}
+          motionEnabled={allowMotion}
+          vivid={vivid}
+          softEdge={hero && i === 0}
+        />
       ))}
     </>
   );
@@ -209,6 +263,7 @@ export default function AuroraOrb({
   const boxStyle: ViewStyle = {
     width: size,
     height: size,
+    overflow: 'visible',
     ...(clipToCircle ? { borderRadius: size / 2, overflow: 'hidden' as const } : null),
   };
 

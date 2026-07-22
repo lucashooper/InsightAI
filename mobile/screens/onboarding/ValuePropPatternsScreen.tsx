@@ -45,13 +45,9 @@ export default function ValuePropPatternsScreen({ navigation }: any) {
   }, []);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={styles.container}>
       <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} />
-      {dark ? (
-        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
-      ) : (
-        <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
-      )}
+      <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
 
       {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>

@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { SvgXml } from 'react-native-svg';
 import { useTheme } from '../../contexts/ThemeContext';
+import { ONBOARDING_SURFACE } from '../../constants/onboardingTheme';
 
 // SVG logo strings (inline for proper rendering)
 const InstagramSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><defs><radialGradient id="ig-grad-1" cx="19.38" cy="42.035" r="44.899"><stop offset="0" stop-color="#fd5"/><stop offset=".328" stop-color="#ff543f"/><stop offset=".348" stop-color="#fc5245"/><stop offset=".504" stop-color="#e64771"/><stop offset=".643" stop-color="#d53e91"/><stop offset=".761" stop-color="#cc39a4"/><stop offset=".841" stop-color="#c837ab"/></radialGradient><radialGradient id="ig-grad-2" cx="42.318" cy="34.137" r="65.039"><stop offset="0" stop-color="#4168c9"/><stop offset=".999" stop-color="#4168c9" stop-opacity="0"/></radialGradient></defs><path fill="url(#ig-grad-1)" d="M34.017 41.99l-20 .019c-4.4.004-8.003-3.592-8.008-7.992l-.019-20c-.004-4.4 3.592-8.003 7.992-8.008l20-.019c4.4-.004 8.003 3.592 8.008 7.992l.019 20c.005 4.401-3.592 8.004-7.992 8.008z"/><path fill="url(#ig-grad-2)" d="M34.017 41.99l-20 .019c-4.4.004-8.003-3.592-8.008-7.992l-.019-20c-.004-4.4 3.592-8.003 7.992-8.008l20-.019c4.4-.004 8.003 3.592 8.008 7.992l.019 20c.005 4.401-3.592 8.004-7.992 8.008z"/><path fill="#fff" d="M24 31c-3.859 0-7-3.14-7-7s3.141-7 7-7 7 3.14 7 7-3.141 7-7 7zm0-11.5c-2.481 0-4.5 2.019-4.5 4.5s2.019 4.5 4.5 4.5 4.5-2.019 4.5-4.5-2.019-4.5-4.5-4.5z"/><circle cx="31.5" cy="16.5" r="1.5" fill="#fff"/><path fill="#fff" d="M30 37H18c-3.859 0-7-3.14-7-7V18c0-3.86 3.141-7 7-7h12c3.859 0 7 3.14 7 7v12c0 3.86-3.141 7-7 7zM18 13.5c-2.481 0-4.5 2.019-4.5 4.5v12c0 2.481 2.019 4.5 4.5 4.5h12c2.481 0 4.5-2.019 4.5-4.5V18c0-2.481-2.019-4.5-4.5-4.5H18z"/></svg>`;
@@ -55,14 +56,17 @@ export default function PillOption({ label, icon, selected, onPress }: PillOptio
       <View
         style={[
           styles.pill,
-          selected ? styles.pillSelected : styles.pillDefault,
-          useDarkOnboardingAccent && styles.pillDefaultDarkTheme,
-          useDarkOnboardingAccent && selected && {
-            backgroundColor: theme.name === 'midnight' ? 'rgba(99, 102, 241, 0.30)' : 'rgba(139, 92, 246, 0.30)',
-            borderColor: theme.name === 'midnight' ? 'rgba(129, 140, 248, 0.55)' : 'rgba(168, 85, 247, 0.55)',
-            shadowColor: theme.colors.primary,
-            shadowOpacity: 0.24,
-          },
+          useDarkOnboardingAccent
+            ? [
+                styles.pillDefaultDarkTheme,
+                selected && {
+                  backgroundColor: ONBOARDING_SURFACE.fillSelected,
+                  borderColor: ONBOARDING_SURFACE.borderSelected,
+                },
+              ]
+            : selected
+              ? styles.pillSelected
+              : styles.pillDefault,
         ]}
       >
         <View style={styles.leftGroup}>
@@ -151,9 +155,14 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   pillDefaultDarkTheme: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    borderColor: 'rgba(255, 255, 255, 0.10)',
+    backgroundColor: ONBOARDING_SURFACE.fill,
+    borderWidth: 1,
+    borderColor: ONBOARDING_SURFACE.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   label: {
     flex: 1,
@@ -169,9 +178,9 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.92)',
   },
   iconChipDarkTheme: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: ONBOARDING_SURFACE.iconChip,
   },
   iconChipSelectedDarkTheme: {
-    backgroundColor: 'rgba(255, 255, 255, 0.14)',
+    backgroundColor: ONBOARDING_SURFACE.iconChipSelected,
   },
 });

@@ -558,13 +558,9 @@ export default function PaywallScreen({ navigation, route }: any) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={styles.container}>
       <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent={false} />
-      {isDarkTheme(theme.name) ? (
-        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
-      ) : (
-        <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
-      )}
+      <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
 
       {/* Back Button - Circular style matching other onboarding pages */}
       <TouchableOpacity 
@@ -700,7 +696,7 @@ export default function PaywallScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fef7f2',
+    backgroundColor: 'transparent',
   },
   loadingContainer: {
     flex: 1,
@@ -723,18 +719,18 @@ const styles = StyleSheet.create({
   },
   topContent: {
     flex: 1,
-    paddingTop: isTablet ? 62 : 44,
+    paddingTop: isTablet ? 72 : 56,
   },
   scrollContent: {
     paddingBottom: isTablet ? 200 : 176,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: isTablet ? 6 : 2,
+    marginBottom: isTablet ? 8 : 4,
   },
   logo: {
-    width: isTablet ? 96 : 88,
-    height: isTablet ? 96 : 88,
+    width: isTablet ? 88 : 80,
+    height: isTablet ? 88 : 80,
   },
   header: {
     alignItems: 'center',

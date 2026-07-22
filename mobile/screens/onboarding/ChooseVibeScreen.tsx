@@ -7,13 +7,13 @@ interface Props {
   onVibeSelected?: (vibe: 'light') => void;
 }
 
-/** Deprecated screen — onboarding now defaults to light theme without a picker. */
+/** Deprecated screen — onboarding now defaults to dark theme without a picker. */
 export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) {
   const { setTheme } = useTheme();
 
   useEffect(() => {
     const forward = async () => {
-      await setTheme('light');
+      await setTheme('dark');
       onVibeSelected?.('light');
       navigation.replace('OnboardingQuestion');
     };
@@ -22,7 +22,7 @@ export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) 
 
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color="#8b5cf6" />
+      <ActivityIndicator size="large" color="#a855f7" />
     </View>
   );
 }
@@ -32,6 +32,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fef7f2',
+    backgroundColor: 'transparent',
   },
 });
