@@ -52,6 +52,9 @@ import AnalyzingScreen from '../screens/onboarding/AnalyzingScreen';
 import AnalysisCompleteScreen from '../screens/onboarding/AnalysisCompleteScreen';
 import InteractiveShowcaseScreen from '../screens/onboarding/InteractiveShowcaseScreen';
 import PaywallScreen from '../screens/onboarding/PaywallScreen';
+import PaywallPersonalizedScreen from '../screens/onboarding/PaywallPersonalizedScreen';
+import PaywallBenefitsScreen from '../screens/onboarding/PaywallBenefitsScreen';
+import PaywallTestimonialScreen from '../screens/onboarding/PaywallTestimonialScreen';
 import RateUsScreen from '../screens/onboarding/RateUsScreen';
 import ValuePropPatternsScreen from '../screens/onboarding/ValuePropPatternsScreen';
 import ValuePropWinsScreen from '../screens/onboarding/ValuePropWinsScreen';
@@ -432,7 +435,26 @@ export default function AppNavigator() {
           <Stack.Screen name="ValuePropPatterns" component={ValuePropPatternsScreen} />
           <Stack.Screen name="ValuePropWins" component={ValuePropWinsScreen} />
           <Stack.Screen name="RateUs" component={RateUsScreen} />
-          <Stack.Screen name="Paywall" component={PaywallScreen} />
+          <Stack.Screen
+            name="PaywallPersonalized"
+            component={PaywallPersonalizedScreen}
+            options={{ animation: 'slide_from_right', animationDuration: 380 }}
+          />
+          <Stack.Screen
+            name="PaywallBenefits"
+            component={PaywallBenefitsScreen}
+            options={{ animation: 'slide_from_right', animationDuration: 380 }}
+          />
+          <Stack.Screen
+            name="PaywallTestimonial"
+            component={PaywallTestimonialScreen}
+            options={{ animation: 'slide_from_right', animationDuration: 380 }}
+          />
+          <Stack.Screen
+            name="Paywall"
+            component={PaywallScreen}
+            options={{ animation: 'slide_from_right', animationDuration: 380 }}
+          />
           <Stack.Screen name="PostPurchaseWelcome" component={PostPurchaseWelcomeScreen} />
           <Stack.Screen name="OnboardingSummary" component={OnboardingSummaryScreen} />
           <Stack.Screen name="InteractiveShowcase" component={InteractiveShowcaseScreen} />
@@ -500,7 +522,26 @@ export default function AppNavigator() {
           <Stack.Screen name="ValuePropPatterns" component={ValuePropPatternsScreen} />
           <Stack.Screen name="ValuePropWins" component={ValuePropWinsScreen} />
           <Stack.Screen name="RateUs" component={RateUsScreen} />
-          <Stack.Screen name="Paywall" component={PaywallScreen} />
+          <Stack.Screen
+            name="PaywallPersonalized"
+            component={PaywallPersonalizedScreen}
+            options={{ animation: 'slide_from_right', animationDuration: 380 }}
+          />
+          <Stack.Screen
+            name="PaywallBenefits"
+            component={PaywallBenefitsScreen}
+            options={{ animation: 'slide_from_right', animationDuration: 380 }}
+          />
+          <Stack.Screen
+            name="PaywallTestimonial"
+            component={PaywallTestimonialScreen}
+            options={{ animation: 'slide_from_right', animationDuration: 380 }}
+          />
+          <Stack.Screen
+            name="Paywall"
+            component={PaywallScreen}
+            options={{ animation: 'slide_from_right', animationDuration: 380 }}
+          />
           <Stack.Screen name="PostPurchaseWelcome" component={PostPurchaseWelcomeScreen} />
           
           {/* Auth screens */}

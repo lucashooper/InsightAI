@@ -6,10 +6,12 @@ import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function EmailVerifiedScreen({ navigation }: any) {
   const { user, loading } = useAuth();
   const { t } = useLanguage();
+  const { setTheme } = useTheme();
   const [isReady, setIsReady] = useState(false);
 
   // CRITICAL FIX: Wait for auth state to update after email verification
@@ -60,13 +62,13 @@ export default function EmailVerifiedScreen({ navigation }: any) {
           routes: [{ name: 'MainTabs' }],
         });
       } else {
-        // Normal signup flow: user needs to complete onboarding (start with theme selection)
-        console.log('[EmailVerified] Normal flow - navigating to ChooseVibe');
-        // Set the resume screen so navigation knows where to go after ChooseVibe
-        await AsyncStorage.setItem('ONBOARDING_RESUME_SCREEN', 'ChooseVibe');
+        // Normal signup flow: skip theme picker and start onboarding questions on light theme
+        console.log('[EmailVerified] Normal flow - navigating to OnboardingQuestion');
+        await setTheme('light');
+        await AsyncStorage.setItem('ONBOARDING_RESUME_SCREEN', 'OnboardingQuestion');
         navigation.reset({
           index: 0,
-          routes: [{ name: 'ChooseVibe' }],
+          routes: [{ name: 'OnboardingQuestion' }],
         });
       }
     } else {

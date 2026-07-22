@@ -1,40 +1,24 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, ActivityIndicator, Alert, Image, Dimensions, FlatList, NativeSyntheticEvent, NativeScrollEvent, Linking } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Alert, Linking, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Asset } from 'expo-asset';
 import SunoGradient from '../../components/onboarding/SunoGradient';
-import PlanCard from '../../components/onboarding/PlanCard';
+import AnimatedBenefitList from '../../components/onboarding/AnimatedBenefitList';
+import BreathingLogo from '../../components/onboarding/BreathingLogo';
+import PaywallHeroPhone from '../../components/onboarding/PaywallHeroPhone';
+import PaywallPlanCard from '../../components/onboarding/PaywallPlanCard';
 import Purchases, { PurchasesOffering, PurchasesPackage, CustomerInfo } from 'react-native-purchases';
 import { useAuth } from '../../contexts/AuthContext';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { supabase } from '../../lib/supabase';
-import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
+import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { analytics } from '../../services/analytics';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { PAYWALL_PHONE_IMAGES } from '../../constants/phoneMockups';
+import { getFirstName } from '../../utils/paywallPersonalization';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
-
-const phoneImages = [...PAYWALL_PHONE_IMAGES];
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const CAROUSEL_IMAGE_WIDTH = SCREEN_WIDTH;
-const PHONE_SCALE = 0.80;
-const PHONE_IMAGE_WIDTH = (isTablet ? SCREEN_WIDTH * 0.74 : SCREEN_WIDTH * 0.98) * PHONE_SCALE;
-const PHONE_FULL_HEIGHT = PHONE_IMAGE_WIDTH * 2.08;
-const PHONE_DISPLAY_HEIGHT = PHONE_FULL_HEIGHT * 0.70;
-
-const slideHeadings = [
-  'understand',
-  'growth',
-  'reflect',
-  'mira',
-  'findWhatWorks',
-];
 
 const ENTITLEMENT_ID = 'Insight Pro';
 
@@ -47,10 +31,16 @@ export default function PaywallScreen({ navigation, route }: any) {
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'weekly' | 'monthly' | 'yearly'>('yearly');
-  const [activeCarouselIndex, setActiveCarouselIndex] = useState(0);
-  const [activeReviewIndex, setActiveReviewIndex] = useState(0);
-  const [imagesLoaded, setImagesLoaded] = useState(true); // Images preloaded globally in App.tsx
-  const carouselRef = useRef<FlatList>(null);
+  const benefitItems = [
+    t('onboarding.paywall.benefits.unlimited'),
+    t('onboarding.paywall.benefits.patterns'),
+    t('onboarding.paywall.benefits.summaries'),
+    t('onboarding.paywall.benefits.playbook'),
+  ];
+  const firstName = getFirstName(userName);
+  const paywallTitle = firstName
+    ? t('onboarding.paywall.pricingTitleNamed', { name: firstName })
+    : t('onboarding.paywall.pricingTitleGeneric');
 
   useEffect(() => {
     console.log('[Paywall] 🔄 UPDATED VERSION LOADED - Subscription boxes now dark gray for dark theme compatibility');
@@ -567,11 +557,6 @@ export default function PaywallScreen({ navigation, route }: any) {
     }
   };
 
-  const onCarouselScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const index = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
-    setActiveCarouselIndex(index);
-  };
-
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent={false} />
@@ -595,218 +580,78 @@ export default function PaywallScreen({ navigation, route }: any) {
         </View>
       </TouchableOpacity>
 
-      {/* Show loading spinner until images are preloaded */}
-      {!imagesLoaded ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#8b5cf6" />
-        </View>
-      ) : (
-        <>
-      {/* Scrollable top content */}
       <ScrollView
         style={styles.topContent}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         nestedScrollEnabled
       >
-        {/* Logo */}
         <View style={styles.logoContainer}>
-          <Image source={insightLogo} style={styles.logo} resizeMode="cover" />
+          <BreathingLogo source={insightLogo} style={styles.logo} />
         </View>
 
-        {/* Dynamic heading that changes per slide */}
         <View style={styles.header}>
-          <Text style={[styles.title, !isDarkTheme(theme.name) && styles.titleLight]}>{t(`onboarding.paywall.headings.${slideHeadings[activeCarouselIndex]}`)}</Text>
+          <Text style={[styles.title, !isDarkTheme(theme.name) && styles.titleLight]}>
+            {paywallTitle}
+          </Text>
         </View>
 
-        {/* Phone Image Carousel - half phone with fade */}
-        <View style={styles.carouselContainer}>
-          <FlatList
-            ref={carouselRef}
-            data={phoneImages}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={onCarouselScroll}
-            scrollEventThrottle={16}
-            snapToInterval={SCREEN_WIDTH}
-            decelerationRate="fast"
-            renderItem={({ item }) => (
-              <View style={styles.carouselSlide}>
-                <Image source={item} style={styles.carouselImage} resizeMode="contain" />
-              </View>
-            )}
-            keyExtractor={(_, index) => index.toString()}
-          />
-          {/* Subtle fade at bottom of phone to soften cutoff */}
-          <LinearGradient
-            colors={(() => {
-              // Use rgba with matching hue to avoid black line from 'transparent' (which is rgba(0,0,0,0))
-              const bg = theme.colors.background;
-              // Parse hex to rgb
-              const r = parseInt(bg.slice(1, 3), 16) || 0;
-              const g = parseInt(bg.slice(3, 5), 16) || 0;
-              const b = parseInt(bg.slice(5, 7), 16) || 0;
-              return [
-                `rgba(${r},${g},${b},0)`,
-                `rgba(${r},${g},${b},0.2)`,
-                `rgba(${r},${g},${b},1)`,
-              ];
-            })()}
-            style={styles.phoneFade}
-            pointerEvents="none"
-          />
-        </View>
+        <PaywallHeroPhone />
 
         <View style={styles.pricingSection}>
-        {/* Pagination Dots - Now Clickable */}
-        <View style={styles.dotsContainer}>
-          {phoneImages.map((_, index) => (
-            <TouchableOpacity
-              key={index}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                carouselRef.current?.scrollToIndex({ index, animated: true });
-                setActiveCarouselIndex(index);
-              }}
-              activeOpacity={0.7}
-            >
-              <View
-                style={[
-                  styles.dot,
-                  activeCarouselIndex === index && styles.dotActive,
-                ]}
-              />
-            </TouchableOpacity>
-          ))}
-        </View>
-
         {/* Compact 3-in-a-row Pricing */}
         <View style={styles.plansRow}>
-          {/* Weekly */}
-          <TouchableOpacity
-            style={[styles.compactPlan, !isDarkTheme(theme.name) && { backgroundColor: 'rgba(0, 0, 0, 0.06)', borderColor: 'rgba(0, 0, 0, 0.1)' }, selectedPlan === 'weekly' && styles.compactPlanSelected]}
+          <PaywallPlanCard
+            selected={selectedPlan === 'weekly'}
+            light={!isDarkTheme(theme.name)}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setSelectedPlan('weekly');
             }}
-            activeOpacity={0.8}
+            badge={
+              <View style={styles.trialBadge}>
+                <Text style={styles.trialBadgeText}>{t('onboarding.paywall.trial')}</Text>
+              </View>
+            }
           >
-            <View style={styles.trialBadge}>
-              <Text style={styles.trialBadgeText}>{t('onboarding.paywall.trial')}</Text>
-            </View>
-            <Text style={[styles.compactPlanName, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'weekly' && styles.compactPlanNameSelected]}>{t('onboarding.paywall.weekly')}</Text>
-            <Text style={[styles.compactPlanDaily, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'weekly' && styles.compactPlanDailySelected]}>{t('onboarding.paywall.perDay', { price: '$0.71' })}</Text>
-            <Text style={[styles.compactPlanPrice, !isDarkTheme(theme.name) && { color: 'rgba(0,0,0,0.5)' }, selectedPlan === 'weekly' && styles.compactPlanPriceSelected]}>{t('onboarding.paywall.perWeek', { price: '$4.99' })}</Text>
-          </TouchableOpacity>
+            <Text style={[styles.compactPlanName, !isDarkTheme(theme.name) && styles.compactPlanNameLight, selectedPlan === 'weekly' && styles.compactPlanNameSelected]}>{t('onboarding.paywall.weekly')}</Text>
+            <Text style={[styles.compactPlanPriceMain, !isDarkTheme(theme.name) && styles.compactPlanPriceMainLight, selectedPlan === 'weekly' && styles.compactPlanPriceMainSelected]}>{t('onboarding.paywall.priceWeekly')}</Text>
+          </PaywallPlanCard>
 
-          {/* Yearly - Best Value */}
-          <TouchableOpacity
-            style={[styles.compactPlan, !isDarkTheme(theme.name) && { backgroundColor: 'rgba(0, 0, 0, 0.06)', borderColor: 'rgba(0, 0, 0, 0.1)' }, selectedPlan === 'yearly' && styles.compactPlanSelected]}
+          <PaywallPlanCard
+            selected={selectedPlan === 'yearly'}
+            light={!isDarkTheme(theme.name)}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setSelectedPlan('yearly');
             }}
-            activeOpacity={0.8}
+            badge={
+              <View style={styles.saveBadge}>
+                <Text style={styles.saveBadgeText}>{t('onboarding.paywall.save')}</Text>
+              </View>
+            }
           >
-            <View style={styles.saveBadge}>
-              <Text style={styles.saveBadgeText}>{t('onboarding.paywall.save')}</Text>
-            </View>
-            <Text style={[styles.compactPlanName, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'yearly' && styles.compactPlanNameSelected]}>{t('onboarding.paywall.yearly')}</Text>
-            <Text style={[styles.compactPlanDaily, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'yearly' && styles.compactPlanDailySelected]}>{t('onboarding.paywall.perDay', { price: '$0.19' })}</Text>
-            <Text style={[styles.compactPlanPrice, !isDarkTheme(theme.name) && { color: 'rgba(0,0,0,0.5)' }, selectedPlan === 'yearly' && styles.compactPlanPriceSelected]}>{t('onboarding.paywall.perYear', { price: '$69.99' })}</Text>
-          </TouchableOpacity>
+            <Text style={[styles.compactPlanName, !isDarkTheme(theme.name) && styles.compactPlanNameLight, selectedPlan === 'yearly' && styles.compactPlanNameSelected]}>{t('onboarding.paywall.yearly')}</Text>
+            <Text style={[styles.compactPlanPriceMain, !isDarkTheme(theme.name) && styles.compactPlanPriceMainLight, selectedPlan === 'yearly' && styles.compactPlanPriceMainSelected]}>{t('onboarding.paywall.priceYearly')}</Text>
+          </PaywallPlanCard>
 
-          {/* Monthly */}
-          <TouchableOpacity
-            style={[styles.compactPlan, !isDarkTheme(theme.name) && { backgroundColor: 'rgba(0, 0, 0, 0.06)', borderColor: 'rgba(0, 0, 0, 0.1)' }, selectedPlan === 'monthly' && styles.compactPlanSelected]}
+          <PaywallPlanCard
+            selected={selectedPlan === 'monthly'}
+            light={!isDarkTheme(theme.name)}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setSelectedPlan('monthly');
             }}
-            activeOpacity={0.8}
           >
-            <Text style={[styles.compactPlanName, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'monthly' && styles.compactPlanNameSelected]}>{t('onboarding.paywall.monthly')}</Text>
-            <Text style={[styles.compactPlanDaily, !isDarkTheme(theme.name) && { color: '#1a1a2e' }, selectedPlan === 'monthly' && styles.compactPlanDailySelected]}>{t('onboarding.paywall.perDay', { price: '$0.60' })}</Text>
-            <Text style={[styles.compactPlanPrice, !isDarkTheme(theme.name) && { color: 'rgba(0,0,0,0.5)' }, selectedPlan === 'monthly' && styles.compactPlanPriceSelected]}>{t('onboarding.paywall.perMonth', { price: '$17.99' })}</Text>
-          </TouchableOpacity>
+            <Text style={[styles.compactPlanName, !isDarkTheme(theme.name) && styles.compactPlanNameLight, selectedPlan === 'monthly' && styles.compactPlanNameSelected]}>{t('onboarding.paywall.monthly')}</Text>
+            <Text style={[styles.compactPlanPriceMain, !isDarkTheme(theme.name) && styles.compactPlanPriceMainLight, selectedPlan === 'monthly' && styles.compactPlanPriceMainSelected]}>{t('onboarding.paywall.priceMonthly')}</Text>
+          </PaywallPlanCard>
         </View>
         </View>
 
-        {/* What you get */}
         <View style={styles.whatYouGetContainer}>
           <Text style={[styles.whatYouGetTitle, !isDarkTheme(theme.name) && styles.whatYouGetTitleLight]}>{t('onboarding.paywall.whatYouGet')}</Text>
-          <View style={styles.whatYouGetList}>
-            {[
-              'unlimited',
-              'patterns',
-              'summaries',
-              'playbook',
-            ].map((itemKey, i) => (
-              <View key={i} style={styles.whatYouGetItem}>
-                <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-                <Text style={[styles.whatYouGetText, !isDarkTheme(theme.name) && styles.whatYouGetTextLight]}>{t(`onboarding.paywall.benefits.${itemKey}`)}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Testimonials Carousel */}
-        <View style={styles.testimonialContainer}>
-          <FlatList
-            data={[
-              { id: '1', textKey: 'first' },
-              { id: '2', textKey: 'second' },
-              { id: '3', textKey: 'third' },
-              { id: '4', textKey: 'fourth' },
-              { id: '5', textKey: 'fifth' },
-            ]}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            snapToInterval={SCREEN_WIDTH}
-            decelerationRate="fast"
-            onScroll={(e) => {
-              const index = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
-              setActiveReviewIndex(index);
-            }}
-            scrollEventThrottle={16}
-            renderItem={({ item }) => (
-              <View style={styles.testimonialSlide}>
-                <View style={[
-                  styles.testimonialCard, 
-                  isDarkTheme(theme.name) 
-                    ? styles.testimonialCardDark 
-                    : styles.testimonialCardLight
-                ]}>
-                  <View style={styles.starsRow}>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Ionicons key={star} name="star" size={16} color="#fbbf24" />
-                    ))}
-                  </View>
-                  <Text style={[styles.testimonialText, !isDarkTheme(theme.name) && styles.testimonialTextLight]}>
-                    “{t(`onboarding.paywall.testimonials.${item.textKey}`)}”
-                  </Text>
-                  <Text style={[styles.testimonialAuthor, !isDarkTheme(theme.name) && styles.testimonialAuthorLight]}>— {t(`onboarding.paywall.authors.${item.textKey}`)}</Text>
-                </View>
-              </View>
-            )}
-            keyExtractor={(item) => item.id}
-          />
-          {/* Review Pagination Dots */}
-          <View style={styles.reviewDotsContainer}>
-            {[0, 1, 2, 3, 4].map((index) => (
-              <View
-                key={index}
-                style={[
-                  styles.reviewDot,
-                  activeReviewIndex === index && styles.reviewDotActive,
-                  !isDarkTheme(theme.name) && styles.reviewDotLight,
-                  !isDarkTheme(theme.name) && activeReviewIndex === index && styles.reviewDotActiveLight,
-                ]}
-              />
-            ))}
-          </View>
+          <AnimatedBenefitList items={benefitItems} light={!isDarkTheme(theme.name)} />
         </View>
       </ScrollView>
 
@@ -818,21 +663,20 @@ export default function PaywallScreen({ navigation, route }: any) {
           <Text style={styles.commitmentText}>{t('onboarding.paywall.noCommitment')}</Text>
         </View>
 
-        {/* CTA Button - Purple gradient */}
-        <TouchableOpacity
-          style={[styles.ctaButton, isPurchasing && { opacity: 0.7 }]}
-          activeOpacity={0.9}
-          onPress={handleStartJourney}
-          disabled={isPurchasing || isLoading}
-        >
-          <View style={styles.ctaGradient}>
+        <View style={styles.ctaWrap}>
+          <TouchableOpacity
+            style={[styles.ctaButton, (isPurchasing || isLoading) && styles.ctaButtonDisabled]}
+            activeOpacity={0.9}
+            onPress={handleStartJourney}
+            disabled={isPurchasing || isLoading}
+          >
             {isPurchasing ? (
               <ActivityIndicator color="#fff" />
             ) : (
               <Text style={styles.ctaText}>{t('onboarding.paywall.startJourney')}</Text>
             )}
-          </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        </View>
 
         {/* Footer Links */}
         <View style={styles.footer}>
@@ -849,8 +693,6 @@ export default function PaywallScreen({ navigation, route }: any) {
           </TouchableOpacity>
         </View>
       </View>
-      </>
-      )}
     </View>
   );
 }
@@ -881,110 +723,46 @@ const styles = StyleSheet.create({
   },
   topContent: {
     flex: 1,
-    paddingTop: isTablet ? 70 : 50,
+    paddingTop: isTablet ? 62 : 44,
   },
   scrollContent: {
-    paddingBottom: isTablet ? 190 : 160,
+    paddingBottom: isTablet ? 200 : 176,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: isTablet ? 12 : 6,
+    marginBottom: isTablet ? 6 : 2,
   },
   logo: {
-    width: isTablet ? 110 : 105,
-    height: isTablet ? 110 : 105,
-    opacity: 0.9,
+    width: isTablet ? 96 : 88,
+    height: isTablet ? 96 : 88,
   },
   header: {
     alignItems: 'center',
-    marginBottom: isTablet ? 16 : 4,
+    marginBottom: isTablet ? 8 : 2,
     paddingHorizontal: 24,
-    minHeight: isTablet ? sf(100) : sf(80),
-    justifyContent: 'center',
   },
   title: {
-    fontSize: isTablet ? sf(38) : sf(36),
+    fontSize: isTablet ? sf(30) : sf(28),
     fontWeight: '600',
     color: '#ffffff',
     letterSpacing: -0.5,
     textAlign: 'center',
-    lineHeight: isTablet ? sf(46) : sf(43),
+    lineHeight: isTablet ? sf(38) : sf(36),
   },
   titleLight: {
     color: '#1a1a2e',
   },
-  // Carousel
-  carouselContainer: {
-    height: PHONE_DISPLAY_HEIGHT,
-    overflow: 'hidden',
-    position: 'relative',
-    marginTop: isTablet ? -40 : -28,
-    marginBottom: isTablet ? -4 : -2,
-  },
-  carouselSlide: {
-    width: SCREEN_WIDTH,
-    height: PHONE_DISPLAY_HEIGHT,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-  },
-  carouselImage: {
-    width: PHONE_IMAGE_WIDTH,
-    height: PHONE_FULL_HEIGHT,
-  },
-  phoneFade: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 60,
-  },
-  dotsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: 0,
-    marginBottom: 12,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.15)',
-  },
-  dotActive: {
-    backgroundColor: '#8b5cf6',
-    width: 20,
-  },
-  // Compact pricing
   pricingSection: {
-    marginTop: isTablet ? 10 : 18,
+    marginTop: isTablet ? 4 : 2,
+    overflow: 'visible',
   },
   plansRow: {
     flexDirection: 'row',
     gap: 10,
-    marginBottom: 16,
+    marginBottom: isTablet ? 14 : 10,
+    paddingTop: 12,
     paddingHorizontal: isTablet ? 80 : 24,
-  },
-  compactPlan: {
-    flex: 1,
-    backgroundColor: 'rgba(30, 30, 40, 0.85)',
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 6,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    position: 'relative',
-  },
-  compactPlanSelected: {
-    backgroundColor: 'rgba(139, 92, 246, 0.2)',
-    borderColor: '#8b5cf6',
-    borderWidth: 2.5,
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+    overflow: 'visible',
   },
   compactPlanName: {
     fontSize: sf(14),
@@ -992,36 +770,30 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     marginBottom: 4,
   },
+  compactPlanNameLight: {
+    color: '#1a1a2e',
+  },
   compactPlanNameSelected: {
     opacity: 0.9,
     fontWeight: '700',
   },
-  compactPlanDaily: {
-    fontSize: sf(15),
+  compactPlanPriceMain: {
+    fontSize: sf(16),
     fontWeight: '800',
     color: '#ffffff',
-    marginBottom: 2,
+    marginTop: 2,
   },
-  compactPlanDailySelected: {
-    opacity: 0.85,
+  compactPlanPriceMainLight: {
+    color: '#1a1a2e',
   },
-  compactPlanPrice: {
-    fontSize: sf(10),
-    color: '#ffffff',
-    fontWeight: '500',
-  },
-  compactPlanPriceSelected: {
-    opacity: 0.8,
+  compactPlanPriceMainSelected: {
+    opacity: 0.9,
   },
   saveBadge: {
-    position: 'absolute',
-    top: -10,
-    alignSelf: 'center',
     backgroundColor: '#8b5cf6',
     borderRadius: 999,
-    paddingVertical: 3,
+    paddingVertical: 4,
     paddingHorizontal: 10,
-    zIndex: 10,
   },
   saveBadgeText: {
     fontSize: 10,
@@ -1030,14 +802,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   trialBadge: {
-    position: 'absolute',
-    top: -10,
-    alignSelf: 'center',
     backgroundColor: '#8b5cf6',
     borderRadius: 999,
-    paddingVertical: 3,
+    paddingVertical: 4,
     paddingHorizontal: 10,
-    zIndex: 10,
   },
   trialBadgeText: {
     fontSize: 10,
@@ -1047,118 +815,30 @@ const styles = StyleSheet.create({
   },
   // What you get
   whatYouGetContainer: {
-    marginBottom: 8,
+    marginTop: isTablet ? 12 : 8,
+    marginBottom: 4,
     paddingHorizontal: isTablet ? 80 : 24,
+    paddingBottom: isTablet ? 28 : 24,
   },
   whatYouGetTitle: {
     fontSize: sf(18),
     fontWeight: '700',
     color: '#ffffff',
-    marginBottom: 12,
+    marginTop: isTablet ? 4 : 2,
+    marginBottom: isTablet ? 14 : 12,
     textAlign: 'center',
   },
   whatYouGetTitleLight: {
     color: '#1a1a2e',
   },
-  whatYouGetList: {
-    gap: 10,
-  },
-  whatYouGetItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  whatYouGetText: {
-    fontSize: sf(16),
-    color: '#ffffff',
-    fontWeight: '600',
-    flex: 1,
-  },
-  whatYouGetTextLight: {
-    color: '#1a1a2e',
-  },
-  // Testimonial
-  testimonialContainer: {
-    marginTop: 24,
-    marginBottom: 16,
-  },
-  testimonialSlide: {
-    width: SCREEN_WIDTH,
-    paddingHorizontal: isTablet ? 80 : 24,
-    alignItems: 'center',
-  },
-  testimonialCard: {
-    width: SCREEN_WIDTH - (isTablet ? 160 : 48),
-    padding: 20,
-    borderRadius: 16,
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  testimonialCardDark: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  testimonialCardLight: {
-    backgroundColor: 'rgba(0, 0, 0, 0.03)',
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-  },
-  starsRow: {
-    flexDirection: 'row',
-    gap: 4,
-    marginBottom: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  testimonialText: {
-    fontSize: sf(15),
-    color: '#ffffff',
-    lineHeight: sf(22),
-    fontWeight: '500',
-    fontStyle: 'italic',
-    marginBottom: 8,
-  },
-  testimonialTextLight: {
-    color: '#374151',
-  },
-  testimonialAuthor: {
-    fontSize: sf(14),
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontWeight: '700',
-  },
-  testimonialAuthorLight: {
-    color: 'rgba(0, 0, 0, 0.5)',
-  },
-  reviewDotsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: 16,
-  },
-  reviewDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  reviewDotActive: {
-    backgroundColor: '#8b5cf6',
-    width: 20,
-  },
-  reviewDotLight: {
-    backgroundColor: 'rgba(0, 0, 0, 0.15)',
-  },
-  reviewDotActiveLight: {
-    backgroundColor: '#8b5cf6',
-  },
-  // Sticky footer
   stickyFooter: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
     paddingHorizontal: isTablet ? 80 : 24,
-    paddingBottom: isTablet ? 30 : 20,
-    paddingTop: 14,
+    paddingBottom: isTablet ? 26 : 18,
+    paddingTop: 10,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
@@ -1173,7 +853,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   commitmentEmoji: {
     fontSize: 14,
@@ -1183,29 +863,31 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     fontWeight: '400',
   },
+  ctaWrap: {
+    width: '100%',
+    marginBottom: 8,
+  },
   ctaButton: {
     width: '100%',
     borderRadius: 28,
-    marginBottom: 12,
     backgroundColor: '#1a1a1a',
+    paddingVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 12,
     elevation: 8,
   },
-  ctaGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 22,
-    borderRadius: 28,
+  ctaButtonDisabled: {
+    opacity: 0.7,
   },
   ctaText: {
     fontSize: sf(17),
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#fff',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
   footer: {
     flexDirection: 'row',

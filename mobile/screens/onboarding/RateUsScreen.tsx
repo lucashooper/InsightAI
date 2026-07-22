@@ -31,12 +31,12 @@ export default function RateUsScreen({ navigation }: any) {
     }
     
     // Navigate to next screen regardless
-    navigation.navigate('Paywall');
+    navigation.navigate('PaywallPersonalized');
   };
 
   const handleSkip = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate('Paywall');
+    navigation.navigate('PaywallPersonalized');
   };
 
   return (
