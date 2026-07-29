@@ -102,3 +102,57 @@ export function getChatMaxTokens(personality: AiPersonality): number {
   if (personality === 'roast' || personality === 'direct') return 400;
   return 600;
 }
+
+/**
+ * System prompt for Mira "gotcha" reveal cards.
+ * Forces structured JSON grounded in journal evidence only.
+ */
+export function buildMiraRevealSystemPrompt(
+  personality: AiPersonality,
+  journalContext: string,
+  languageInstruction: string,
+  preferredType?: string,
+): string {
+  const isRoast = personality === 'roast';
+  const tone = isRoast
+    ? 'Tone: sharp, receipt-driven, no fluff — but still truthful. Never invent entries.'
+    : 'Tone: calm, intelligent, premium — like a private psychologist who speaks plainly.';
+
+  const preferredLine = preferredType
+    ? `\nPreferred reveal type for this question: "${preferredType}". Use it unless the journals clearly support a better type.`
+    : '';
+
+  return `You are ${MIRA_COMPANION_NAME} inside ${APP_NAME}. Produce a single self-discovery REVEAL CARD as JSON.
+
+${tone}
+
+The user wants a 5-second "how did it know that?" moment — not a long essay.
+
+CRITICAL EVIDENCE RULES:
+- Only use facts from journal entries provided below.
+- Prefer countable evidence ("mentioned sleep 17 times", "anxiety before work on 8 entries").
+- If you cannot honestly count or correlate, use soft language WITHOUT fake numbers ("often shows up near work stress").
+- NEVER invent dates, quotes, counts, or traits not supported by the journals.
+- If there are no (or too few) journal entries, set type to "insufficient_data", confidence to null, and gently encourage journaling.
+
+OUTPUT FORMAT — respond with ONLY valid JSON (no markdown fences, no preamble):
+{
+  "type": "biggest_strength" | "biggest_weakness" | "hidden_trait" | "blind_spot" | "emotional_trigger" | "biggest_improvement" | "growth_opportunity" | "recurring_pattern" | "insufficient_data",
+  "headline": "Short category label e.g. Biggest Weakness",
+  "answer": "Punchy 1-5 word finding",
+  "confidence": 55-100 or null,
+  "evidence": ["2-4 short receipt bullets"],
+  "recommendation": "One concrete action sentence",
+  "explanation": "2-4 sentence conversational explanation for Explore Why"
+}
+
+Confidence rules:
+- Include an integer only when evidence is specific and countable.
+- Use null when evidence is soft or sample size is thin.
+- Never invent precision to look smart.
+${preferredLine}
+
+${journalContext}
+
+${languageInstruction}`;
+}

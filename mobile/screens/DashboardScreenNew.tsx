@@ -23,18 +23,21 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePreloadedData } from '../contexts/PreloadContext';
 import StandardContainer from '../components/shared/StandardContainer';
 import HeroHomeOrb from '../components/shared/HeroHomeOrb';
+import { PREMIUM, TYPE } from '../constants/premiumUI';
 import FirstTimeIntroOverlay from '../components/FirstTimeIntroOverlay';
 import PinnedRoutineCard from '../components/dashboard/PinnedRoutineCard';
 import PlaybookQuickAccessCard from '../components/dashboard/PlaybookQuickAccessCard';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { isTablet, sf, ss, si, iPadContentStyle } from '../utils/responsive';
 import { getTodayPrompt, DailyPrompt } from '../data/dailyPrompts';
 import { APP_NAME } from '../constants/branding';
+
 // Temporarily disabled for Expo Go testing
 // import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 const insightLogo = require('../public/Insight-Logo-nobg.webp');
 
 const { width } = Dimensions.get('window');
-const HERO_ORB_SIZE = isTablet ? 600 : 340;
+const HERO_ORB_SIZE = isTablet ? 520 : 380;
 
 interface EmotionalState {
   mood: string;
@@ -46,6 +49,8 @@ export default function DashboardScreenNew() {
   const { user } = useAuth();
   const { theme } = useTheme();
   const { t, language } = useLanguage();
+  const insets = useSafeAreaInsets();
+
   const { data: preloaded } = usePreloadedData();
   const navigation = useNavigation<any>();
   const introCheckedRef = useRef(false);
@@ -434,11 +439,8 @@ export default function DashboardScreenNew() {
   // Using MindseraOrb with built-in palette and blur; no explicit colors required
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <LinearGradient
-        colors={theme.colors.backgroundGradient as any}
-        style={styles.backgroundGradient}
-      />
+    <View style={[styles.container, { backgroundColor: 'transparent' }]}>
+
 
       <ScrollView 
         style={styles.scrollView}
@@ -446,7 +448,7 @@ export default function DashboardScreenNew() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + PREMIUM.layout.headerTop }]}>
           <View style={styles.headerLeft}>
             <Image source={insightLogo} style={styles.headerLogo} resizeMode="contain" />
             <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>{APP_NAME}</Text>
@@ -589,7 +591,7 @@ export default function DashboardScreenNew() {
               onPress={() => navigation.navigate('CreateEntry')}
               activeOpacity={0.7}
             >
-              <StandardContainer style={[styles.insightCard, { borderColor: theme.colors.border }]}>
+              <StandardContainer style={[styles.insightCard]}>
               <View style={styles.insightHeader}>
                 <Ionicons name="create-outline" size={24} color={theme.colors.secondaryText} />
                 <Text style={[styles.insightTitle, { color: theme.colors.primaryText, fontSize: sf(18) }]}>{t('home.noCheckIn')}</Text>
@@ -628,7 +630,7 @@ export default function DashboardScreenNew() {
             onPress={() => navigation.navigate('PromptEntry', { promptText: dailyPrompt.prompt + (dailyPrompt.followUp ? `\n\n${dailyPrompt.followUp}` : '') })}
             activeOpacity={0.7}
           >
-            <StandardContainer style={[styles.insightCard, { borderColor: theme.colors.border }]}>
+            <StandardContainer style={[styles.insightCard]}>
             <View style={styles.insightHeader}>
               <Text style={{ fontSize: 22 }}>{dailyPrompt.emoji}</Text>
               <View style={{ flex: 1, marginLeft: 4 }}>
@@ -641,29 +643,6 @@ export default function DashboardScreenNew() {
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
               <View style={[styles.compactCta, { borderColor: theme.colors.border, backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
                 <Text style={[styles.compactCtaText, { color: theme.colors.primaryText }]}>{t('home.startWriting')}</Text>
-              </View>
-              <View
-                style={{
-                  marginLeft: 12,
-                  backgroundColor: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.15)' : 'rgba(17, 24, 39, 0.08)',
-                  paddingHorizontal: 10,
-                  paddingVertical: 5,
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.2)' : 'rgba(17, 24, 39, 0.14)',
-                }}
-              >
-                <Text
-                  style={{
-                    color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.9)' : 'rgba(17, 24, 39, 0.85)',
-                    fontSize: sf(11),
-                    fontWeight: '700',
-                    textTransform: 'capitalize',
-                    letterSpacing: 0.5,
-                  }}
-                >
-                  {dailyPrompt.category.replace('-', ' ')}
-                </Text>
               </View>
             </View>
             </StandardContainer>
@@ -855,9 +834,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: isTablet ? 32 : 8,
-    paddingTop: isTablet ? 60 : 50,
-    paddingBottom: isTablet ? 28 : 20,
+    paddingHorizontal: isTablet ? 32 : PREMIUM.layout.screenPadH,
+    paddingBottom: isTablet ? 28 : PREMIUM.space[2],
   },
   headerLeft: {
     flexDirection: 'row',
@@ -956,9 +934,9 @@ const styles = StyleSheet.create({
   orbSection: {
     alignItems: 'center',
     justifyContent: 'center',
-    height: isTablet ? 640 : 360,
+    height: isTablet ? 560 : 360,
     position: 'relative',
-    marginBottom: isTablet ? 40 : 20,
+    marginBottom: isTablet ? 48 : 28,
     overflow: 'visible',
   },
   orbLoader: {
@@ -1022,7 +1000,7 @@ const styles = StyleSheet.create({
   },
   actionsSection: {
     flexDirection: 'row',
-    paddingHorizontal: isTablet ? 60 : 36,
+    paddingHorizontal: isTablet ? 48 : PREMIUM.layout.screenPadH,
     gap: isTablet ? 40 : 24,
     marginBottom: isTablet ? 48 : 32,
     justifyContent: 'center',
@@ -1035,11 +1013,11 @@ const styles = StyleSheet.create({
     width: isTablet ? 88 : 64,
     height: isTablet ? 88 : 64,
     borderRadius: isTablet ? 44 : 32,
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 18,
-    elevation: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28,
+    shadowRadius: 12,
+    elevation: 8,
   },
   glassmorphicButton: {
     width: '100%',
@@ -1070,7 +1048,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   patternsSection: {
-    paddingHorizontal: isTablet ? 56 : 24,
+    paddingHorizontal: isTablet ? 40 : PREMIUM.layout.screenPadH,
   },
   sectionTitle: {
     fontSize: sf(20),
@@ -1129,7 +1107,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   recentTopicsSection: {
-    paddingHorizontal: isTablet ? 56 : 24,
+    paddingHorizontal: isTablet ? 40 : PREMIUM.layout.screenPadH,
     marginBottom: isTablet ? 40 : 32,
   },
   topicsScroll: {
@@ -1164,33 +1142,34 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   insightsSection: {
-    paddingHorizontal: isTablet ? 56 : 24,
+    paddingHorizontal: isTablet ? 40 : PREMIUM.layout.screenPadH,
     marginBottom: isTablet ? 40 : 32,
     gap: 4,
   },
   insightCard: {
-    padding: isTablet ? 20 : 18,
+    padding: PREMIUM.layout.cardPad,
     marginTop: 8,
-    borderRadius: 18,
+    borderRadius: PREMIUM.radius.card,
   },
   insightHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 8,
+    gap: 12,
+    marginBottom: 12,
   },
   insightTitle: {
     fontSize: sf(17),
     fontWeight: '600',
     letterSpacing: -0.3,
-    lineHeight: sf(21),
+    lineHeight: sf(22),
   },
   insightText: {
-    fontSize: sf(13),
-    lineHeight: sf(19),
+    fontSize: sf(15),
+    lineHeight: sf(22),
+    color: 'rgba(255,255,255,0.58)',
   },
   challengesSection: {
-    paddingHorizontal: isTablet ? 56 : 24,
+    paddingHorizontal: isTablet ? 40 : PREMIUM.layout.screenPadH,
     marginBottom: isTablet ? 40 : 32,
   },
   challengeCard: {
@@ -1379,11 +1358,11 @@ const styles = StyleSheet.create({
   },
   // Patterns to Address & What's Working
   ptaSection: {
-    paddingHorizontal: isTablet ? 32 : 20,
+    paddingHorizontal: isTablet ? 32 : PREMIUM.layout.screenPadH,
     marginTop: 8,
   },
   wkSection: {
-    paddingHorizontal: isTablet ? 32 : 20,
+    paddingHorizontal: isTablet ? 32 : PREMIUM.layout.screenPadH,
     marginTop: 8,
   },
   patternsSectionHeader: {

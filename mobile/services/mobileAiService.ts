@@ -7,9 +7,16 @@ import { getAiLanguageInstruction, getChatLanguageInstruction, translate } from 
 import {
   AiPersonality,
   buildMiraChatSystemPrompt,
+  buildMiraRevealSystemPrompt,
   getChatMaxTokens,
   getChatTemperature,
 } from '../utils/aiPersonalities';
+import { MiraRevealPayload } from '../constants/miraReveal';
+import {
+  parseMiraRevealResponse,
+  preferredRevealTypeForQuery,
+  softRevealFromPlainText,
+} from '../utils/miraReveal';
 
 export interface MoodAnalysis {
   primary_emotion: string;
@@ -805,6 +812,98 @@ Write in second person ("you"). Keep it under 60 words.`;
       }
       console.error('[mobileAiService] ❌ Chat error:', error);
       console.error('[mobileAiService] Error details:', JSON.stringify(error, null, 2));
+      throw error;
+    }
+  },
+
+  /**
+   * Discovery reveal — structured "gotcha" card grounded in journal history.
+   * Falls back to a soft reveal if the model returns plain text.
+   */
+  async chatReveal(
+    messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+    options?: { signal?: AbortSignal; personality?: AiPersonality },
+  ): Promise<{ reveal: MiraRevealPayload; raw: string }> {
+    console.log('[mobileAiService] ✨ chatReveal called');
+    await waitForRateLimit();
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+    if (userError || !currentUser) throw new Error('Authentication verification failed');
+
+    const userId = currentUser.id;
+    const { data: entries, error: entriesError } = await supabase
+      .from('notes')
+      .select('content, created_at, ai_structured_insights')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(40);
+
+    if (entriesError) {
+      console.error('[mobileAiService] chatReveal entries error:', entriesError);
+    }
+
+    let journalContext = '';
+    if (entries && entries.length > 0) {
+      const summaries = entries.map((e: any) => {
+        const date = new Date(e.created_at).toLocaleDateString(getCurrentLocale(), {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        });
+        const emotion = e.ai_structured_insights?.mood_analysis?.primary_emotion || '';
+        const themes =
+          e.ai_structured_insights?.key_themes?.slice(0, 3).map((t: any) => t.theme).join(', ') ||
+          '';
+        const snippet = e.content?.substring(0, 360) || '';
+        return `[${date}]${emotion ? ` (${emotion})` : ''}${themes ? ` Themes: ${themes}` : ''}\n${snippet}`;
+      });
+      journalContext = `\n\nHere are the user's recent journal entries (most recent first). Entry count: ${entries.length}.\n\n${summaries.join('\n\n---\n\n')}`;
+    } else {
+      journalContext =
+        '\n\nIMPORTANT: This user has NO journal entries yet. Return type "insufficient_data". Do NOT invent journal content.';
+    }
+
+    const personality = (options?.personality || 'balanced') as AiPersonality;
+    const lastUser = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
+    const preferredType = preferredRevealTypeForQuery(lastUser);
+
+    const systemMessage = buildMiraRevealSystemPrompt(
+      personality,
+      journalContext,
+      getChatLanguageInstruction(getCurrentLanguage()),
+      preferredType,
+    );
+
+    try {
+      const apiMessages = [
+        { role: 'system', content: systemMessage },
+        ...messages.map((m) => ({ role: m.role, content: m.content })),
+      ];
+
+      const response = await callGroqProxy(apiMessages, {
+        temperature: personality === 'roast' ? 0.7 : 0.55,
+        max_tokens: 900,
+        model: 'llama-3.3-70b-versatile',
+      });
+
+      const raw = (response || '').trim();
+      const parsed = parseMiraRevealResponse(raw);
+      if (parsed) {
+        return { reveal: parsed, raw };
+      }
+
+      console.warn('[mobileAiService] chatReveal JSON parse failed — soft fallback');
+      // If JSON failed but we got prose, try one more time with a repair prompt via soft wrap
+      return {
+        reveal: softRevealFromPlainText(raw || 'I need a few more journal entries to go deeper.', preferredType),
+        raw,
+      };
+    } catch (error: any) {
+      if (error?.name === 'AbortError') throw error;
+      console.error('[mobileAiService] ❌ chatReveal error:', error);
       throw error;
     }
   },

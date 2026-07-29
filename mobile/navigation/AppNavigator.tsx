@@ -72,6 +72,9 @@ import ExploreScreen from '../screens/ExploreScreen';
 import TodoScreen from '../screens/TodoScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isTablet, sf, si } from '../utils/responsive';
+import AmbientBackground from '../components/shared/AmbientBackground';
+import { PREMIUM } from '../constants/premiumUI';
+import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -79,17 +82,27 @@ const Tab = createBottomTabNavigator();
 // Bottom Tab Navigator for main app screens
 function MainTabs() {
   const { t } = useLanguage();
+  const { theme } = useTheme();
+  const dark = isDarkTheme(theme.name);
 
   return (
-    <Tab.Navigator
+    <View style={[tabShell.root, !dark && { backgroundColor: theme.colors.background }]}>
+      {/* Dark ambient only — light theme keeps its own soft gradient */}
+      {dark ? <AmbientBackground intensity="rich" /> : null}
+      {!dark ? (
+        <LinearGradient
+          colors={(theme.colors.backgroundGradient as [string, string, ...string[]]) || ['#f5f0ff', '#fce8f0', '#fff5f0']}
+          style={StyleSheet.absoluteFillObject}
+          pointerEvents="none"
+        />
+      ) : null}
+      <Tab.Navigator
       initialRouteName="Home"
-      detachInactiveScreens
+      detachInactiveScreens={false}
       tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        lazy: true,
-        // Screens already reserve scroll space for the floating bar. Keeping the
-        // scene full-height lets each screen gradient continue behind the navbar.
+        lazy: false,
         sceneStyle: { backgroundColor: 'transparent' },
         tabBarShowLabel: false,
         tabBarStyle: {
@@ -177,8 +190,16 @@ function MainTabs() {
         })}
       />
     </Tab.Navigator>
+    </View>
   );
 }
+
+const tabShell = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: PREMIUM.bg,
+  },
+});
 
 export default function AppNavigator() {
   const { user, loading } = useAuth();

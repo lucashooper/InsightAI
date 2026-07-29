@@ -32,10 +32,12 @@ import StandardContainer from '../components/shared/StandardContainer';
 import PremiumButton from '../components/shared/PremiumButton';
 import PremiumGradientText from '../components/shared/PremiumGradientText';
 import DashboardHeaderHero from '../components/dashboard/DashboardHeaderHero';
+import { PREMIUM } from '../constants/premiumUI';
 import EmptyState from '../components/shared/EmptyState';
 import { DashboardSkeleton } from '../components/shared/SkeletonBlock';
 import { isTablet, sf, ss, iPadWideContentStyle } from '../utils/responsive';
 import { yieldToUI } from '../utils/yieldToUI';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { notesSignature, computeDeferredDashboardData, filterNotesForDisplayLocale } from '../utils/computeDashboardData';
 import { sectionSubtitleForItems } from '../utils/patternGrouping';
 import {
@@ -79,6 +81,7 @@ export default function DashboardScreen() {
   const { user } = useAuth();
   const { theme, themeName } = useTheme();
   const { t, formatDate, language } = useLanguage();
+  const insets = useSafeAreaInsets();
   const labelEmotion = (emotion: string) => translateEmotion(t, emotion);
   const isFocused = useIsFocused();
   const { data: preloaded } = usePreloadedData();
@@ -272,6 +275,15 @@ export default function DashboardScreen() {
     const localeSig = `${sig}:${language}`;
     if (lastLoadedSigRef.current === localeSig && stats) {
       setLoading(false);
+      // Recover if deferred work was aborted mid-flight
+      if (!deferredLoadedRef.current) {
+        const gen = ++loadGenRef.current;
+        const notes = preloaded.notes || [];
+        InteractionManager.runAfterInteractions(() => {
+          if (gen !== loadGenRef.current) return;
+          runDeferredDashboardWork(notes, gen, sig);
+        });
+      }
       return;
     }
 
@@ -817,10 +829,11 @@ export default function DashboardScreen() {
 
       lastLoadedSigRef.current = sig;
 
-      // Defer heavy work until after tab transition / interactions complete
+      // Defer heavy work — use notes signature (not localeSig) for cache keys
+      const notesSig = notesSignature(notes || []);
       InteractionManager.runAfterInteractions(() => {
         if (gen !== loadGenRef.current) return;
-        runDeferredDashboardWork(notes || [], gen, sig);
+        runDeferredDashboardWork(notes || [], gen, notesSig);
       });
 
     } catch (error) {
@@ -831,13 +844,15 @@ export default function DashboardScreen() {
 
   const runDeferredDashboardWork = async (notes: any[], gen: number, sig: string) => {
     try {
-      const hasDeferredCache = !!(user?.id && getDashboardDeferredCache(user.id, sig));
+      const cached = user?.id ? getDashboardDeferredCache(user.id, sig) : null;
 
       await yieldToUI();
       if (gen !== loadGenRef.current) return;
       checkRememberWhen(notes).catch(e => console.error('[Dashboard] Remember when error:', e));
 
-      if (!hasDeferredCache) {
+      if (cached) {
+        applyDeferredCache(cached);
+      } else {
         await yieldToUI();
         if (gen !== loadGenRef.current) return;
         await loadPatternsData(notes, gen, sig);
@@ -852,16 +867,13 @@ export default function DashboardScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {/* Active Theme Background */}
-      <LinearGradient
-        colors={theme.colors.backgroundGradient as any}
-        style={styles.backgroundGradient}
-      />
+    <View style={[styles.container, { backgroundColor: 'transparent' }]}>
 
-      {/* Header image lives inside scroll for full-bleed fade */}
+      {/* Typographic header — content is the hero */}
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
-        <DashboardHeaderHero title={t('dashboard.title')} />
+        <View style={[styles.dashboardHeaderPad, { paddingTop: insets.top + PREMIUM.layout.headerTop }]}>
+          <DashboardHeaderHero title={t('dashboard.title')} />
+        </View>
         <View style={styles.dashboardBody}>
         {loading ? (
           <DashboardSkeleton />
@@ -869,7 +881,11 @@ export default function DashboardScreen() {
           <>
             {/* Emotion Bubble Map - Enhanced */}
             <Animated.View style={{ opacity: cardAnimations[1], transform: [{ translateY: cardAnimations[1].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
-              <StandardContainer variant="hero" style={[styles.bubbleMapCard, { backgroundColor: theme.colors.cardBackground }]}>
+              <StandardContainer
+                variant="hero"
+                tint="violet"
+                style={[styles.bubbleMapCard]}
+              >
                 <View style={styles.bubbleMapHeader}>
                   <Text style={[styles.bubbleMapTitle, { color: theme.colors.primaryText }]}>{t('dashboard.emotionalLandscape')}</Text>
                   <Text style={[styles.bubbleMapSubtitle, { color: theme.colors.secondaryText }]}>
@@ -880,6 +896,7 @@ export default function DashboardScreen() {
                 {dominantEmotions.length > 0 ? (
                   <>
                     <View style={styles.bubbleMapContainer}>
+                      {/* removed bubbleAtmosphere — was reading as a hard purple ring */}
                       {dominantEmotions.map((item, index) => {
                         const baseSize = 60;
                         const size = baseSize + (item.percentage * 0.8);
@@ -972,7 +989,7 @@ export default function DashboardScreen() {
                     </View>
 
                     {/* Enhanced Insights Below Bubbles */}
-                    <View style={[styles.emotionInsightSection, { borderTopColor: theme.colors.divider }]}>
+                    <View style={[styles.emotionInsightSection, { borderTopColor: 'rgba(255,255,255,0.08)' }]}>
                       <Text style={[styles.emotionInsightText, { color: theme.colors.secondaryText }]}>
                         {t('dashboard.mostRecurring')}: <Text style={[styles.emotionInsightEmphasis, { color: theme.colors.primaryText }]}>{labelEmotion(dominantEmotions[0].emotion)}</Text> ({dominantEmotions[0].percentage}%)
                       </Text>
@@ -1002,7 +1019,7 @@ export default function DashboardScreen() {
 
             {/* Patterns to Address */}
             {visiblePatternsToAddress.length > 0 && (
-              <StandardContainer tint="coral" style={[styles.patternsCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+              <StandardContainer tint="coral" style={[styles.patternsCard]}>
                 <TouchableOpacity 
                   style={styles.patternsHeader}
                   onPress={() => setPatternsExpanded(!patternsExpanded)}
@@ -1159,7 +1176,7 @@ export default function DashboardScreen() {
 
             {/* What's Working */}
             {whatsWorking.length > 0 && (
-              <StandardContainer tint="aqua" style={[styles.workingCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+              <StandardContainer tint="aqua" style={[styles.workingCard]}>
                 <TouchableOpacity 
                   style={styles.workingHeader}
                   onPress={() => setWorkingExpanded(!workingExpanded)}
@@ -1248,7 +1265,7 @@ export default function DashboardScreen() {
 
             {/* Refined This Week Card - Horizontal Layout */}
             {SHOW_DASHBOARD_STORY_SECTIONS && (
-              <StandardContainer tint="gold" style={[styles.heroCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+              <StandardContainer tint="gold" style={[styles.heroCard]}>
                 <Text style={[styles.heroTitle, { color: theme.colors.primaryText }]}>{t('dashboard.weekGlance')}</Text>
                 
                 <View style={styles.metricsRow}>
@@ -1768,8 +1785,13 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   dashboardBody: {
-    paddingHorizontal: isTablet ? 40 : 20,
-    paddingTop: 8,
+    paddingHorizontal: isTablet ? 40 : PREMIUM.layout.screenPadH,
+    paddingTop: PREMIUM.space[1],
+    gap: 8,
+  },
+  dashboardHeaderPad: {
+    paddingHorizontal: isTablet ? 40 : PREMIUM.layout.screenPadH,
+    paddingTop: 0,
   },
   loadingContainer: {
     flex: 1,
@@ -2242,8 +2264,8 @@ const styles = StyleSheet.create({
   // Bubble Map Styles
   bubbleMapCard: {
     marginBottom: 16,
-    borderRadius: 20,
-    padding: isTablet ? 24 : 20,
+    borderRadius: PREMIUM.radius.card,
+    padding: PREMIUM.layout.cardPad,
   },
   bubbleSheen: {
     position: 'absolute',
@@ -2261,17 +2283,21 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.22)',
   },
   bubbleMapHeader: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   bubbleMapTitle: {
-    fontSize: sf(18),
+    fontSize: sf(20),
     fontWeight: '700',
-    marginBottom: 4,
+    letterSpacing: -0.4,
+    marginBottom: 6,
+    color: 'rgba(255,255,255,0.96)',
   },
   bubbleMapSubtitle: {
-    fontSize: sf(13),
-    fontWeight: '500',
+    fontSize: sf(15),
+    fontWeight: '400',
+    color: 'rgba(255,255,255,0.48)',
   },
+  bubbleAtmosphere: {},
   bubbleMapContainer: {
     height: 240,
     position: 'relative',
@@ -2445,17 +2471,17 @@ const styles = StyleSheet.create({
   emotionInsightSection: {
     marginTop: 20,
     paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
   },
   emotionInsightText: {
-    fontSize: sf(14),
-    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: sf(15),
+    color: 'rgba(255, 255, 255, 0.58)',
     marginBottom: 12,
   },
   emotionInsightEmphasis: {
     fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.95)',
+    color: 'rgba(255, 255, 255, 0.96)',
   },
   emotionPromptText: {
     fontSize: sf(14),
@@ -2957,7 +2983,7 @@ const styles = StyleSheet.create({
   // Patterns to Address Section
   patternsCard: {
     marginBottom: 16,
-    borderRadius: 20,
+    borderRadius: PREMIUM.radius.card,
     padding: 0,
     overflow: 'hidden',
     maxWidth: 400,
@@ -2968,7 +2994,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 20,
+    padding: PREMIUM.layout.cardPad,
   },
   patternsTitle: {
     fontSize: 17,
@@ -2977,13 +3003,13 @@ const styles = StyleSheet.create({
   patternSubtitle: {
     fontSize: 13,
     fontWeight: '400',
-    paddingHorizontal: 20,
+    paddingHorizontal: PREMIUM.layout.cardPad,
     marginTop: -8,
     marginBottom: 12,
   },
   patternsContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: PREMIUM.layout.cardPad,
+    paddingBottom: PREMIUM.layout.cardPad,
   },
   patternCard: {
     padding: 16,
@@ -3195,7 +3221,7 @@ const styles = StyleSheet.create({
   // What's Working Section
   workingCard: {
     marginBottom: 16,
-    borderRadius: 20,
+    borderRadius: PREMIUM.radius.card,
     padding: 0,
     overflow: 'hidden',
     maxWidth: 400,
@@ -3206,7 +3232,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 20,
+    padding: PREMIUM.layout.cardPad,
   },
   workingTitle: {
     fontSize: 17,

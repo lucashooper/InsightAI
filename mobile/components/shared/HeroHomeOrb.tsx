@@ -8,10 +8,16 @@ type Props = {
   style?: StyleProp<ViewStyle>;
 };
 
-/** Soft aurora home hero — tight glow, no ring or hard container edge. */
+/**
+ * Soft aurora home hero — equal width/height keeps a spherical silhouette
+ * while soft glow can bleed slightly outside (no hard ring).
+ */
 export default function HeroHomeOrb({ size, isDark = true, style }: Props) {
   return (
-    <View style={[{ width: size, height: size, overflow: 'visible' }, style]} pointerEvents="none">
+    <View
+      style={[{ width: size, height: size, overflow: 'visible' }, style]}
+      pointerEvents="none"
+    >
       <AuroraOrb size={size} isDark={isDark} animate hero />
     </View>
   );

@@ -31,38 +31,64 @@ const ROAST_BLOBS: Blob[] = [
 ];
 
 const LIGHT_BLOBS: Blob[] = [
-  { rgb: '178,125,230', alpha: 0.64, diameter: 1.06, cx: 0.5, cy: 0.5, driftX: 3, driftY: -2, scaleFrom: 0.99, scaleTo: 1.02, duration: 15000 },
-  { rgb: '168,85,247', alpha: 0.88, diameter: 0.68, cx: 0.44, cy: 0.4, driftX: 7, driftY: -6, scaleFrom: 0.99, scaleTo: 1.04, duration: 10000 },
-  { rgb: '255,123,101', alpha: 0.80, diameter: 0.60, cx: 0.6, cy: 0.52, driftX: -7, driftY: 5, scaleFrom: 1.03, scaleTo: 0.98, duration: 12000 },
-  { rgb: '255,190,105', alpha: 0.64, diameter: 0.49, cx: 0.53, cy: 0.63, driftX: 5, driftY: 6, scaleFrom: 0.97, scaleTo: 1.02, duration: 13500 },
-  { rgb: '89,183,216', alpha: 0.58, diameter: 0.52, cx: 0.38, cy: 0.59, driftX: -5, driftY: -4, scaleFrom: 1.02, scaleTo: 0.99, duration: 11500 },
-  { rgb: '167,139,250', alpha: 0.52, diameter: 0.56, cx: 0.63, cy: 0.34, driftX: 4, driftY: -3, scaleFrom: 0.98, scaleTo: 1.03, duration: 12500 },
+  // No diameter≥1 wash — that creates the blurry halo over Mira on light theme
+  { rgb: '168,85,247', alpha: 0.88, diameter: 0.72, cx: 0.46, cy: 0.46, driftX: 7, driftY: -6, scaleFrom: 0.99, scaleTo: 1.04, duration: 10000 },
+  { rgb: '255,123,101', alpha: 0.78, diameter: 0.58, cx: 0.58, cy: 0.52, driftX: -7, driftY: 5, scaleFrom: 1.03, scaleTo: 0.98, duration: 12000 },
+  { rgb: '255,190,105', alpha: 0.62, diameter: 0.5, cx: 0.52, cy: 0.62, driftX: 5, driftY: 6, scaleFrom: 0.97, scaleTo: 1.02, duration: 13500 },
+  { rgb: '89,183,216', alpha: 0.58, diameter: 0.52, cx: 0.4, cy: 0.58, driftX: -5, driftY: -4, scaleFrom: 1.02, scaleTo: 0.99, duration: 11500 },
+  { rgb: '167,139,250', alpha: 0.55, diameter: 0.54, cx: 0.6, cy: 0.38, driftX: 4, driftY: -3, scaleFrom: 0.98, scaleTo: 1.03, duration: 12500 },
 ];
 
 const DARK_BLOBS: Blob[] = [
-  { rgb: '81,57,119', alpha: 0.72, diameter: 1.06, cx: 0.5, cy: 0.5, driftX: 3, driftY: -2, scaleFrom: 0.99, scaleTo: 1.02, duration: 15000 },
-  { rgb: '139,92,246', alpha: 0.92, diameter: 0.76, cx: 0.42, cy: 0.4, driftX: 12, driftY: -10, scaleFrom: 0.97, scaleTo: 1.07, duration: 10000 },
-  { rgb: '240,101,79', alpha: 0.76, diameter: 0.66, cx: 0.61, cy: 0.51, driftX: -12, driftY: 9, scaleFrom: 1.05, scaleTo: 0.96, duration: 12000 },
-  { rgb: '45,212,191', alpha: 0.67, diameter: 0.57, cx: 0.52, cy: 0.65, driftX: 9, driftY: 11, scaleFrom: 0.94, scaleTo: 1.04, duration: 13500 },
-  { rgb: '99,102,241', alpha: 0.64, diameter: 0.58, cx: 0.37, cy: 0.59, driftX: -9, driftY: -8, scaleFrom: 1.04, scaleTo: 0.97, duration: 11500 },
-  { rgb: '129,99,220', alpha: 0.58, diameter: 0.58, cx: 0.64, cy: 0.34, driftX: 6, driftY: -5, scaleFrom: 0.98, scaleTo: 1.04, duration: 12500 },
+  { rgb: '81,57,119', alpha: 0.72, diameter: 1.02, cx: 0.5, cy: 0.5, driftX: 1.5, driftY: -1, scaleFrom: 0.99, scaleTo: 1.015, duration: 22000 },
+  { rgb: '139,92,246', alpha: 0.88, diameter: 0.72, cx: 0.46, cy: 0.44, driftX: 4, driftY: -3, scaleFrom: 0.99, scaleTo: 1.02, duration: 18000 },
+  { rgb: '240,101,79', alpha: 0.62, diameter: 0.58, cx: 0.56, cy: 0.52, driftX: -3.5, driftY: 3, scaleFrom: 1.01, scaleTo: 0.99, duration: 20000 },
+  { rgb: '45,212,191', alpha: 0.55, diameter: 0.52, cx: 0.5, cy: 0.58, driftX: 3, driftY: 3.5, scaleFrom: 0.985, scaleTo: 1.015, duration: 21000 },
+  { rgb: '99,102,241', alpha: 0.55, diameter: 0.54, cx: 0.42, cy: 0.55, driftX: -3, driftY: -2.5, scaleFrom: 1.01, scaleTo: 0.99, duration: 19000 },
+  { rgb: '129,99,220', alpha: 0.5, diameter: 0.54, cx: 0.58, cy: 0.4, driftX: 2.5, driftY: -2, scaleFrom: 0.99, scaleTo: 1.015, duration: 20500 },
 ];
 
 /** Soft base wash — wide enough for greeting text, no hard outer ring. */
-const HERO_AMBIENT: Blob = {
+const HERO_AMBIENT_DARK: Blob = {
   rgb: '81,57,119',
-  alpha: 0.42,
-  diameter: 0.88,
+  alpha: 0.38,
+  diameter: 0.92,
   cx: 0.5,
   cy: 0.5,
-  driftX: 2,
-  driftY: -1,
-  scaleFrom: 0.99,
-  scaleTo: 1.02,
-  duration: 15000,
+  driftX: 0.8,
+  driftY: -0.4,
+  scaleFrom: 0.996,
+  scaleTo: 1.01,
+  duration: 28000,
 };
 
-const WARM_RGB = new Set(['255,123,101', '255,190,105', '240,101,79']);
+/** Light hero ambient — same sphere geometry, softer so it reads on pale bg */
+const HERO_AMBIENT_LIGHT: Blob = {
+  rgb: '167,139,250',
+  alpha: 0.42,
+  diameter: 0.92,
+  cx: 0.5,
+  cy: 0.5,
+  driftX: 0.8,
+  driftY: -0.4,
+  scaleFrom: 0.996,
+  scaleTo: 1.01,
+  duration: 28000,
+};
+
+/**
+ * Light-theme hero uses the same centered geometry as dark
+ * (so the orb isn't top-heavy under the greeting), with brighter pigments.
+ */
+const LIGHT_HERO_BLOBS: Blob[] = [
+  { rgb: '168,85,247', alpha: 0.72, diameter: 0.72, cx: 0.46, cy: 0.46, driftX: 4, driftY: -3, scaleFrom: 0.99, scaleTo: 1.02, duration: 18000 },
+  { rgb: '244,122,104', alpha: 0.58, diameter: 0.58, cx: 0.56, cy: 0.54, driftX: -3.5, driftY: 3, scaleFrom: 1.01, scaleTo: 0.99, duration: 20000 },
+  { rgb: '45,212,191', alpha: 0.48, diameter: 0.52, cx: 0.5, cy: 0.6, driftX: 3, driftY: 3.5, scaleFrom: 0.985, scaleTo: 1.015, duration: 21000 },
+  { rgb: '99,102,241', alpha: 0.5, diameter: 0.54, cx: 0.42, cy: 0.56, driftX: -3, driftY: -2.5, scaleFrom: 1.01, scaleTo: 0.99, duration: 19000 },
+  { rgb: '251,191,36', alpha: 0.4, diameter: 0.48, cx: 0.58, cy: 0.62, driftX: 2.5, driftY: 2, scaleFrom: 0.99, scaleTo: 1.015, duration: 20500 },
+];
+
+const WARM_RGB = new Set(['255,123,101', '255,190,105', '240,101,79', '244,122,104', '251,191,36']);
 
 function AuroraBlob({
   blob,
@@ -159,7 +185,8 @@ function scaleBlobsForSize(
   const diameterScale = compact && size < 72 && !vivid ? 0.94 : 1;
 
   return blobs
-    .filter((blob) => !(compact && clipToCircle && blob.diameter >= 1.0 && !vivid))
+    // Always drop the oversized wash blob when clipped — it reads as a halo on light bg
+    .filter((blob) => !(compact && clipToCircle && blob.diameter >= 1.0))
     .map((blob) => {
       const warm = WARM_RGB.has(blob.rgb);
       const warmDim = compact && clipToCircle && warm && !vivid ? 0.55 : 1;
@@ -177,21 +204,26 @@ function scaleBlobsForSize(
     });
 }
 
-function buildHeroBlobs(sourceBlobs: Blob[], size: number): Blob[] {
+function buildHeroBlobs(sourceBlobs: Blob[], size: number, isDark: boolean): Blob[] {
   const scaled = scaleBlobsForSize(sourceBlobs, size, false, false, false)
     .filter((blob) => blob.diameter < 1.0)
     .map((blob) => {
-      const sizeBoost = blob.diameter >= 0.7 ? 1.14 : blob.diameter >= 0.55 ? 1.02 : 0.94;
+      const sizeBoost = blob.diameter >= 0.7 ? 1.08 : blob.diameter >= 0.55 ? 1.0 : 0.94;
       return {
         ...blob,
-        diameter: blob.diameter * sizeBoost,
-        alpha: blob.alpha * 0.93,
-        driftX: blob.driftX * 0.78,
-        driftY: blob.driftY * 0.78,
+        diameter: Math.min(0.92, blob.diameter * sizeBoost),
+        alpha: blob.alpha * (isDark ? 0.9 : 0.95),
+        // Keep nearly spherical — tiny organic drift only
+        driftX: Math.max(-4, Math.min(4, blob.driftX * 0.35)),
+        driftY: Math.max(-4, Math.min(4, blob.driftY * 0.35)),
+        scaleFrom: 0.99,
+        scaleTo: 1.015,
+        duration: Math.max(blob.duration, 22000),
       };
     });
 
-  return [HERO_AMBIENT, ...scaled];
+  const ambient = isDark ? HERO_AMBIENT_DARK : HERO_AMBIENT_LIGHT;
+  return [ambient, ...scaled];
 }
 
 type Props = {
@@ -228,9 +260,15 @@ export default function AuroraOrb({
   hero = false,
 }: Props) {
   const isCompact = compact || size <= 72;
-  const sourceBlobs = variant === 'roast' ? ROAST_BLOBS : isDark ? DARK_BLOBS : LIGHT_BLOBS;
+  const sourceBlobs = variant === 'roast'
+    ? ROAST_BLOBS
+    : hero
+      ? (isDark ? DARK_BLOBS : LIGHT_HERO_BLOBS)
+      : isDark
+        ? DARK_BLOBS
+        : LIGHT_BLOBS;
   const blobs = hero
-    ? buildHeroBlobs(sourceBlobs, size)
+    ? buildHeroBlobs(sourceBlobs, size, isDark)
     : scaleBlobsForSize(sourceBlobs, size, isCompact, !!clipToCircle, vivid || variant === 'roast');
   const [motionEnabled, setMotionEnabled] = React.useState(true);
 

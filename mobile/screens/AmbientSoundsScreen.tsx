@@ -6,6 +6,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Asset } from 'expo-asset';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
+import AmbientBackground from '../components/shared/AmbientBackground';
+import { PREMIUM } from '../constants/premiumUI';
 
 const { width, height } = Dimensions.get('window');
 
@@ -40,6 +43,8 @@ AMBIENT_SOUNDS.forEach((sound) => {
 
 export default function AmbientSoundsScreen({ navigation }: any) {
   const { t } = useLanguage();
+  const { theme } = useTheme();
+  const dark = isDarkTheme(theme.name);
   const [selectedSound, setSelectedSound] = useState<AmbientSound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -204,22 +209,26 @@ export default function AmbientSoundsScreen({ navigation }: any) {
   }
 
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={['#0f172a', '#1e1b4b', '#312e81']}
-        style={styles.gradientBackground}
-      />
+    <View style={[styles.container, !dark && { backgroundColor: theme.colors.background }]}>
+      {dark ? (
+        <AmbientBackground intensity="rich" />
+      ) : (
+        <LinearGradient
+          colors={(theme.colors.backgroundGradient as any) || ['#f5f0ff', '#fce8f0', '#fff5f0']}
+          style={styles.gradientBackground}
+        />
+      )}
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="rgba(255,255,255,0.9)" />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, !dark && { backgroundColor: 'rgba(0,0,0,0.06)' }]}>
+          <Ionicons name="arrow-back" size={24} color={dark ? 'rgba(255,255,255,0.9)' : '#1a1a1a'} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('auxiliary.ambient.title')}</Text>
+        <Text style={[styles.headerTitle, !dark && { color: '#1a1a1a' }]}>{t('auxiliary.ambient.title')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <View style={styles.soundsGrid}>
-        <Text style={styles.sectionTitle}>{t('auxiliary.ambient.choose')}</Text>
+        <Text style={[styles.sectionTitle, !dark && { color: 'rgba(26,26,26,0.55)' }]}>{t('auxiliary.ambient.choose')}</Text>
         {AMBIENT_SOUNDS.map((sound) => (
           <TouchableOpacity
             key={sound.id}
@@ -246,7 +255,7 @@ export default function AmbientSoundsScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: PREMIUM.bg,
   },
   gradientBackground: {
     ...StyleSheet.absoluteFillObject,

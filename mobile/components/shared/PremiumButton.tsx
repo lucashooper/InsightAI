@@ -1,6 +1,17 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle, StyleProp, ActivityIndicator } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  ViewStyle,
+  StyleProp,
+  View,
+  Platform,
+} from 'react-native';
+import { BlurView } from 'expo-blur';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { PREMIUM, TYPE } from '../../constants/premiumUI';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 
 type Variant = 'primary' | 'secondary' | 'ghost';
@@ -9,132 +20,128 @@ type Props = {
   label: string;
   onPress: () => void;
   variant?: Variant;
-  disabled?: boolean;
-  loading?: boolean;
+  icon?: keyof typeof Ionicons.glyphMap;
   style?: StyleProp<ViewStyle>;
-  fullWidth?: boolean;
+  disabled?: boolean;
+  /** Slightly larger tap target for reveal actions */
   large?: boolean;
 };
 
+/**
+ * Only three button types: Primary · Secondary Glass · Ghost
+ */
 export default function PremiumButton({
   label,
   onPress,
   variant = 'primary',
-  disabled = false,
-  loading = false,
+  icon,
   style,
-  fullWidth = true,
+  disabled,
   large = false,
 }: Props) {
   const { theme } = useTheme();
-  const isDark = isDarkTheme(theme.name);
+  const dark = isDarkTheme(theme.name);
+  const isPrimary = variant === 'primary';
+  const isSecondary = variant === 'secondary';
+  const isGhost = variant === 'ghost';
 
-  if (variant === 'primary') {
-    return (
-      <TouchableOpacity
-        onPress={onPress}
-        disabled={disabled || loading}
-        activeOpacity={0.85}
-        style={[fullWidth && styles.fullWidth, style, (disabled || loading) && styles.disabled]}
-      >
-        <LinearGradient
-          colors={
-            isDark
-              ? ['rgba(255,255,255,0.96)', 'rgba(245,245,248,0.92)']
-              : ['rgba(17,24,39,0.94)', 'rgba(31,41,55,0.90)']
-          }
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.primaryGradient, large && styles.primaryGradientLarge]}
-        >
-          {loading ? (
-            <ActivityIndicator color={isDark ? '#111827' : '#ffffff'} />
-          ) : (
-            <Text style={[styles.primaryText, large && styles.primaryTextLarge, { color: isDark ? '#111827' : '#ffffff' }]}>{label}</Text>
-          )}
-        </LinearGradient>
-      </TouchableOpacity>
-    );
-  }
-
-  if (variant === 'secondary') {
-    return (
-      <TouchableOpacity
-        onPress={onPress}
-        disabled={disabled || loading}
-        activeOpacity={0.85}
-        style={[
-          styles.secondary,
-          {
-            borderColor: isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.10)',
-            backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-          },
-          fullWidth && styles.fullWidth,
-          style,
-          (disabled || loading) && styles.disabled,
-        ]}
-      >
-        {loading ? (
-          <ActivityIndicator color={theme.colors.primaryText} />
-        ) : (
-          <Text style={[styles.secondaryText, { color: theme.colors.primaryText }]}>{label}</Text>
-        )}
-      </TouchableOpacity>
-    );
-  }
+  const iconColor = isPrimary
+    ? '#fff'
+    : isGhost
+      ? (dark ? PREMIUM.text.secondary : 'rgba(26,26,26,0.55)')
+      : (dark ? '#c4b5fd' : '#6d28d9');
 
   return (
     <TouchableOpacity
-      onPress={onPress}
-      disabled={disabled || loading}
-      activeOpacity={0.7}
-      style={[styles.ghost, fullWidth && styles.fullWidth, style]}
+      onPress={() => {
+        if (disabled) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        onPress();
+      }}
+      activeOpacity={0.8}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={[
+        styles.base,
+        large && styles.large,
+        isPrimary && styles.primary,
+        isSecondary && (dark ? styles.secondaryDark : styles.secondaryLight),
+        isGhost && styles.ghost,
+        disabled && styles.disabled,
+        style,
+      ]}
     >
-      <Text style={[styles.ghostText, { color: theme.colors.secondaryText }]}>{label}</Text>
+      {isSecondary && Platform.OS === 'ios' && dark ? (
+        <BlurView intensity={PREMIUM.glass.blur} tint="dark" style={StyleSheet.absoluteFill} />
+      ) : null}
+      <View style={styles.row}>
+        {icon ? (
+          <Ionicons name={icon} size={large ? 16 : 15} color={iconColor} />
+        ) : null}
+        <Text
+          style={[
+            styles.label,
+            large && styles.labelLarge,
+            isPrimary && styles.labelPrimary,
+            isSecondary && (dark ? styles.labelSecondaryDark : styles.labelSecondaryLight),
+            isGhost && (dark ? styles.labelGhostDark : styles.labelGhostLight),
+          ]}
+        >
+          {label}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  fullWidth: { width: '100%' },
-  disabled: { opacity: 0.5 },
-  primaryGradient: {
-    paddingVertical: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+  base: {
+    borderRadius: PREMIUM.radius.button,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+    overflow: 'hidden',
+    alignSelf: 'flex-start',
   },
-  primaryGradientLarge: {
-    paddingVertical: 18,
-    borderRadius: 18,
+  large: {
+    paddingHorizontal: 18,
+    paddingVertical: 13,
+    borderRadius: PREMIUM.radius.button,
   },
-  primaryText: {
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: 0.2,
+  primary: {
+    backgroundColor: PREMIUM.accent,
   },
-  primaryTextLarge: {
-    fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: 0.3,
+  secondaryDark: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: PREMIUM.glass.border,
+    backgroundColor: PREMIUM.glass.fill,
   },
-  secondary: {
-    paddingVertical: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  secondaryText: {
-    fontSize: 15,
-    fontWeight: '600',
+  secondaryLight: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(122, 86, 160, 0.18)',
+    backgroundColor: 'rgba(255,255,255,0.85)',
   },
   ghost: {
-    paddingVertical: 12,
+    backgroundColor: 'transparent',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  disabled: { opacity: 0.4 },
+  row: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 7,
   },
-  ghostText: {
-    fontSize: 14,
-    fontWeight: '500',
+  label: {
+    ...TYPE.caption,
+    fontWeight: '600',
   },
+  labelLarge: {
+    fontSize: TYPE.caption.fontSize + 1,
+  },
+  labelPrimary: { color: '#fff' },
+  labelSecondaryDark: { color: 'rgba(255,255,255,0.88)' },
+  labelSecondaryLight: { color: '#5b21b6' },
+  labelGhostDark: { color: PREMIUM.text.secondary },
+  labelGhostLight: { color: 'rgba(26,26,26,0.55)' },
 });

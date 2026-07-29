@@ -424,7 +424,7 @@ export default function PlaybookScreen() {
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         {/* Today's Progress */}
-        <StandardContainer style={[styles.progressCard, { borderColor: theme.colors.border }]}>
+        <StandardContainer style={[styles.progressCard, { padding: 0, borderColor: theme.colors.border }]}>
           <View style={styles.progressCardInner}>
             <Text style={[styles.progressTitle, { color: theme.colors.tertiaryText }]}>{t('auxiliary.playbook.todayProgress')}</Text>
             <View style={styles.progressStats}>
@@ -518,7 +518,7 @@ export default function PlaybookScreen() {
               onPress={() => handleStrategyTap(strategy)}
               onLongPress={() => handleStrategyLongPress(strategy)}
             >
-              <StandardContainer style={[styles.premiumCard, { borderColor: theme.colors.border }]}>
+              <StandardContainer style={[styles.premiumCard, { padding: 0, borderColor: theme.colors.border }]}>
               <View style={styles.cardGradient}>
                 <View style={styles.cardHeader}>
                   <View style={[styles.emojiContainer, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : 'rgba(139, 92, 246, 0.1)' }]}>
@@ -991,7 +991,7 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   progressCardInner: {
-    padding: 24,
+    padding: 16,
   },
   progressTitle: {
     fontSize: 14,
@@ -1117,7 +1117,7 @@ const styles = StyleSheet.create({
   premiumCard: {
   },
   cardGradient: {
-    padding: 20,
+    padding: 14,
   },
   cardHeader: {
     flexDirection: 'row',

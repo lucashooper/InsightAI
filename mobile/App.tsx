@@ -53,6 +53,7 @@ export default function App() {
         await Promise.all([
           Asset.fromModule(require('./public/abstract-dark-background.jpg')).downloadAsync(),
           Asset.fromModule(require('./public/Zeno-Dashboard-background.webp')).downloadAsync(),
+          Asset.fromModule(require('./public/gradient-ellipse.png')).downloadAsync(),
         ]);
         setSplashAssetsReady(true);
         setThemeLoaded(true);
@@ -153,12 +154,14 @@ export default function App() {
         await Promise.all([
           Asset.fromModule(require('./public/Insight-Logo-nobg.webp')).downloadAsync(),
           Asset.fromModule(require('./public/InsightAI-Orb.png')).downloadAsync(),
+          Asset.fromModule(require('./public/gradient-ellipse.png')).downloadAsync(),
         ]);
 
         // Non-blocking background preload
         Promise.all([
           Asset.fromModule(require('./public/InsightAI-New-Logo.png')).downloadAsync(),
           Asset.fromModule(require('./public/cool-gradient-bg.png')).downloadAsync(),
+          Asset.fromModule(require('./public/gradient-ellipse.png')).downloadAsync(),
           ...PAYWALL_PHONE_IMAGES.map((image) => Asset.fromModule(image).downloadAsync()),
           Asset.fromModule(PRODUCT_REVEAL_PHONE).downloadAsync(),
           Asset.fromModule(require('./public/noisy-image.webp')).downloadAsync(),
@@ -189,29 +192,32 @@ export default function App() {
 
   const [appReady, setAppReady] = useState(false);
   const [splashVisible, setSplashVisible] = useState(true);
+  /** Ancient wisdom brand splash — only for returning/logged-in users */
+  const [showBrandSplash, setShowBrandSplash] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const splashShownAtRef = useRef<number | null>(null);
 
   const SPLASH_MIN_MS = 2800;
 
   useEffect(() => {
-    if (splashAssetsReady && splashShownAtRef.current == null) {
+    if (showBrandSplash && splashShownAtRef.current == null) {
       splashShownAtRef.current = Date.now();
     }
-  }, [splashAssetsReady]);
+  }, [showBrandSplash]);
 
-  // Fade out splash when app is ready, respecting minimum display time
+  // Fade out splash when app is ready, respecting minimum display time for brand splash only
   useEffect(() => {
     if (!appReady) return;
 
+    const minMs = showBrandSplash ? SPLASH_MIN_MS : 0;
     const elapsed = Date.now() - (splashShownAtRef.current ?? Date.now());
-    const remaining = Math.max(0, SPLASH_MIN_MS - elapsed);
+    const remaining = Math.max(0, minMs - elapsed);
 
-    console.log('[APP] App ready, fading out splash after', remaining, 'ms...');
+    console.log('[APP] App ready, fading splash after', remaining, 'ms (brand=', showBrandSplash, ')');
     const timer = setTimeout(() => {
       Animated.timing(fadeAnim, {
         toValue: 0,
-        duration: 400,
+        duration: showBrandSplash ? 400 : 0,
         useNativeDriver: true,
       }).start(() => {
         console.log('[APP] Splash fade complete, hiding splash');
@@ -220,9 +226,9 @@ export default function App() {
     }, remaining);
 
     return () => clearTimeout(timer);
-  }, [appReady, fadeAnim]);
+  }, [appReady, fadeAnim, showBrandSplash]);
 
-  console.log('[APP RENDER] assetsLoaded:', assetsLoaded, 'appReady:', appReady, 'splashVisible:', splashVisible);
+  console.log('[APP RENDER] assetsLoaded:', assetsLoaded, 'appReady:', appReady, 'splashVisible:', splashVisible, 'brand:', showBrandSplash);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -234,7 +240,12 @@ export default function App() {
             <AuthProvider>
               <PreloadProvider>
                 <OnboardingProvider>
-                  <AppContent onReady={() => setAppReady(true)} />
+                  <AppContent
+                    onReady={({ showBrandSplash: brand }) => {
+                      setShowBrandSplash(brand);
+                      setAppReady(true);
+                    }}
+                  />
                   <ThemedStatusBar />
                 </OnboardingProvider>
               </PreloadProvider>
@@ -246,10 +257,14 @@ export default function App() {
         <View style={{ flex: 1, backgroundColor: '#050508' }} />
       )}
 
-      {/* Single splash overlay - stays on top until app is fully ready, then fades out */}
+      {/* Brand splash only for logged-in users; logged-out see a blank hold then Welcome */}
       {splashVisible && themeLoaded && splashAssetsReady && (
         <Animated.View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, opacity: fadeAnim }}>
-          <PremiumSplashOverlay />
+          {showBrandSplash ? (
+            <PremiumSplashOverlay />
+          ) : (
+            <View style={{ flex: 1, backgroundColor: '#050508' }} />
+          )}
         </Animated.View>
       )}
     </GestureHandlerRootView>
@@ -261,7 +276,11 @@ function ThemedStatusBar() {
   return <StatusBar style={isDarkTheme(theme.name) ? 'light' : 'dark'} />;
 }
 
-function AppContent({ onReady }: { onReady: () => void }) {
+function AppContent({
+  onReady,
+}: {
+  onReady: (opts: { showBrandSplash: boolean }) => void;
+}) {
   const { isLocked, isLockEnabled, isLockReady } = useAppLock();
   const { loading: authLoading, user } = useAuth();
   const { preloadForUser, resetData } = usePreloadedData();
@@ -291,13 +310,15 @@ function AppContent({ onReady }: { onReady: () => void }) {
 
   const isStartupReady = !authLoading && isLockReady;
 
-  // Dismiss splash once auth + lock settings are ready — data preload continues underneath.
+  // Dismiss splash once auth + lock settings are ready — brand splash only if logged in
   useEffect(() => {
     if (!isStartupReady || hasSignaledReadyRef.current) return;
     hasSignaledReadyRef.current = true;
-    const timer = setTimeout(onReady, 120);
+    const showBrandSplash = !!user;
+    console.log('[APP] Startup ready, showBrandSplash=', showBrandSplash);
+    const timer = setTimeout(() => onReady({ showBrandSplash }), 120);
     return () => clearTimeout(timer);
-  }, [isStartupReady, onReady]);
+  }, [isStartupReady, onReady, user]);
 
   return (
     <View style={{ flex: 1 }}>

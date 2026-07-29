@@ -53,6 +53,13 @@ import { getCachedChatSuggestions, setCachedChatSuggestions } from '../utils/cha
 import InsightCompanionMark from '../components/companion/InsightCompanionMark';
 import MiraVoicePicker from '../components/companion/MiraVoicePicker';
 import MiraVoiceOverlay from '../components/companion/MiraVoiceOverlay';
+import MiraDiscoveryEmpty from '../components/companion/MiraDiscoveryEmpty';
+import MiraRevealCard from '../components/companion/MiraRevealCard';
+import MiraAnalysisStatus from '../components/companion/MiraAnalysisStatus';
+import AmbientBackground from '../components/shared/AmbientBackground';
+import { PREMIUM } from '../constants/premiumUI';
+import { MiraRevealPayload } from '../constants/miraReveal';
+import { isDiscoveryQuery, formatRevealShareText, normalizePersistedReveal } from '../utils/miraReveal';
 import Purchases from 'react-native-purchases';
 import * as Haptics from 'expo-haptics';
 import { ROAST_GRADIENT, ROAST_PALETTE, useRoastTransition } from '../utils/companionTheme';
@@ -66,6 +73,45 @@ function buildScreenshotMessages(language: AppLanguage): ChatMessage[] {
     ...m,
     timestamp: new Date(now - (seed.length - i) * 60_000),
   }));
+}
+
+function hydrateMessages(rawMessages: any[]): ChatMessage[] {
+  return (rawMessages || []).map((m) => ({
+    id: String(m.id || `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`),
+    role: (m.role === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+    content: typeof m.content === 'string' ? m.content : '',
+    timestamp: new Date(m.timestamp || Date.now()),
+    reveal: normalizePersistedReveal(m.reveal),
+    displayedContent: undefined,
+    isTyping: false,
+  }));
+}
+
+/** Soft fade-in once Mira's reply is ready — no growing typewriter bubble */
+function AssistantFadeIn({ children }: { children: React.ReactNode }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(8)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 380,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 380,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [opacity, translateY]);
+
+  return (
+    <Animated.View style={{ opacity, transform: [{ translateY }] }}>
+      {children}
+    </Animated.View>
+  );
 }
 
 function PulsingRoastDot() {
@@ -114,7 +160,7 @@ const FREE_USER_DAILY_LIMIT = 50;
 
 /** Fixed layout slots — prevents jolt when roast badge toggles. */
 const HEADER_BODY_HEIGHT = 40;
-const EMPTY_ORB_SLOT = 90;
+const EMPTY_ORB_SLOT = 140;
 const EMPTY_SUBTITLE_HEIGHT = 56;
 const ROAST_BADGE_SLOT = 42;
 
@@ -132,6 +178,8 @@ interface ChatMessage {
   displayedContent?: string;
   isTyping?: boolean;
   timestamp: Date;
+  /** Structured discovery reveal (gotcha card) */
+  reveal?: MiraRevealPayload;
 }
 
 interface SavedChat {
@@ -150,6 +198,10 @@ export default function AIChatScreen({ navigation }: any) {
   const isScreenshotBlank = screenshotMode === 'blank';
   const isScreenshotMessages = screenshotMode === 'messages';
   const isScreenshotActive = screenshotMode !== 'off';
+
+  useEffect(() => {
+    console.log('[AIChat] screenshotMode=', screenshotMode, 'isScreenshotActive=', isScreenshotActive);
+  }, [screenshotMode, isScreenshotActive]);
   const { theme } = useTheme();
   const { t, language } = useLanguage();
   const personalities: { key: Personality; label: string; emoji: string; desc: string }[] = CHAT_PERSONALITIES.map((key) => ({
@@ -185,7 +237,14 @@ export default function AIChatScreen({ navigation }: any) {
   const [isProUser, setIsProUser] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [expandedRevealIds, setExpandedRevealIds] = useState<Record<string, boolean>>({});
   const flatListRef = useRef<FlatList>(null);
+  const currentChatIdRef = useRef<string | null>(null);
+  const persistChainRef = useRef<Promise<void>>(Promise.resolve());
+  const persistGenRef = useRef(0);
+  const isTemporaryRef = useRef(isTemporary);
+  const messagesRef = useRef<ChatMessage[]>(messages);
   const inputRef = useRef<TextInput>(null);
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const speechSyncRef = useRef<MiraSpeechSyncHandle | null>(null);
@@ -199,6 +258,14 @@ export default function AIChatScreen({ navigation }: any) {
   );
 
   useEffect(() => {
+    isTemporaryRef.current = isTemporary;
+  }, [isTemporary]);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  useEffect(() => {
     if (!isScreenshotActive) return;
     if (isScreenshotMessages) {
       setMessages(buildScreenshotMessages(language));
@@ -208,6 +275,7 @@ export default function AIChatScreen({ navigation }: any) {
     setShowSuggestions(false);
     setIsTemporary(true);
     setCurrentChatId(null);
+    currentChatIdRef.current = null;
   }, [isScreenshotActive, isScreenshotMessages, language]);
 
   useEffect(() => {
@@ -288,8 +356,18 @@ export default function AIChatScreen({ navigation }: any) {
     }
     setMessages([]);
     setCurrentChatId(null);
+    currentChatIdRef.current = null;
     setShowSuggestions(true);
+    setIsAnalyzing(false);
   }, [user?.id, isScreenshotActive, isScreenshotMessages, language]);
+
+  // Ensure discovery landing is visible whenever the thread is empty
+  useEffect(() => {
+    if (isScreenshotActive) return;
+    if (messages.length === 0 && !isAnalyzing) {
+      setShowSuggestions(true);
+    }
+  }, [messages.length, isAnalyzing, isScreenshotActive]);
 
   // Reload current chat when screen comes into focus - only if messages are empty
   useFocusEffect(
@@ -303,7 +381,7 @@ export default function AIChatScreen({ navigation }: any) {
               const chats: SavedChat[] = JSON.parse(raw);
               const currentChat = chats.find(c => c.id === currentChatId);
               if (currentChat && currentChat.messages.length > 0) {
-                setMessages(currentChat.messages.map(m => ({ ...m, timestamp: new Date(m.timestamp) })));
+                setMessages(hydrateMessages(currentChat.messages as any[]));
               }
             }
           } catch (e) {
@@ -320,12 +398,63 @@ export default function AIChatScreen({ navigation }: any) {
           }
         });
       }
-    }, [currentChatId, user])
+
+      return () => {
+        const msgs = messagesRef.current;
+        if (isScreenshotActive || isTemporaryRef.current || msgs.length === 0) return;
+        console.log('[AIChat] blur persist', { count: msgs.length, chatId: currentChatIdRef.current });
+        // Fire-and-forget — chain keeps order
+        void (async () => {
+          try {
+            const key = getChatHistoryKey();
+            const persistable = msgs.filter((m) => !m.isTyping);
+            if (persistable.length === 0) return;
+            let chatId = currentChatIdRef.current;
+            if (!chatId) {
+              chatId = `chat-${Date.now()}`;
+              currentChatIdRef.current = chatId;
+            }
+            const raw = await AsyncStorage.getItem(key);
+            let chats: SavedChat[] = raw ? JSON.parse(raw) : [];
+            if (!Array.isArray(chats)) chats = [];
+            const firstUserMsg = persistable.find((m) => m.role === 'user');
+            const title = firstUserMsg
+              ? firstUserMsg.content.substring(0, 50) + (firstUserMsg.content.length > 50 ? '…' : '')
+              : 'Chat';
+            const existing = chats.findIndex((c) => c.id === chatId);
+            const chatData: SavedChat = {
+              id: chatId!,
+              title,
+              messages: persistable.map((m) => ({
+                id: m.id,
+                role: m.role,
+                content: m.content,
+                timestamp:
+                  m.timestamp instanceof Date
+                    ? m.timestamp.toISOString()
+                    : (m.timestamp as any),
+                ...(m.reveal ? { reveal: m.reveal } : {}),
+              })) as ChatMessage[],
+              createdAt: existing >= 0 ? chats[existing].createdAt : new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            };
+            if (existing >= 0) chats[existing] = chatData;
+            else chats.unshift(chatData);
+            if (chats.length > 30) chats = chats.slice(0, 30);
+            await AsyncStorage.setItem(key, JSON.stringify(chats));
+            console.log('[AIChat] ✅ blur saved', chatId, chatData.messages.length);
+          } catch (e) {
+            console.error('[AIChat] ❌ blur save failed', e);
+          }
+        })();
+      };
+    }, [currentChatId, user, isScreenshotActive, getChatHistoryKey])
   );
 
   const clearTypingEffect = useCallback(() => {
     if (typingIntervalRef.current) {
       clearInterval(typingIntervalRef.current);
+      clearTimeout(typingIntervalRef.current as unknown as ReturnType<typeof setTimeout>);
       typingIntervalRef.current = null;
     }
     speechSyncRef.current = null;
@@ -337,14 +466,6 @@ export default function AIChatScreen({ navigation }: any) {
       clearTypingEffect();
     };
   }, [clearTypingEffect]);
-
-  // Auto-save chat when messages change (only when typing is complete)
-  useEffect(() => {
-    if (isScreenshotActive) return;
-    if (messages.length > 0 && !isTemporary) {
-      saveChatToHistory();
-    }
-  }, [messages.filter(m => !m.isTyping).length]);
 
   const loadSuggestions = async () => {
     if (personality === 'roast') {
@@ -431,69 +552,212 @@ export default function AIChatScreen({ navigation }: any) {
     console.log('[AIChatScreen] Voice mode enabled for', selection.label);
   };
 
-  const shareMessage = async (content: string) => {
+  const shareMessage = useCallback(async (content: string, reveal?: MiraRevealPayload) => {
     try {
-      await Share.share({ message: `${t('companion.sharePrefix')} "${content}"` });
+      const prefix = t('companion.sharePrefix');
+      const message = reveal
+        ? formatRevealShareText(reveal, prefix)
+        : `${prefix} "${content}"`;
+      await Share.share({ message });
     } catch (e) {
       console.warn('[AIChat] Share failed', e);
     }
-  };
+  }, [t]);
 
 
   const loadChatHistory = async () => {
+    const key = getChatHistoryKey();
+    console.log('[AIChat] loadChatHistory key=', key);
     try {
-      const raw = await AsyncStorage.getItem(getChatHistoryKey());
+      const raw = await AsyncStorage.getItem(key);
       if (raw) {
         const chats: SavedChat[] = JSON.parse(raw);
-        setSavedChats(chats.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()));
+        const sorted = chats
+          .filter((c) => Array.isArray(c.messages) && c.messages.length > 0)
+          .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        console.log('[AIChat] loadChatHistory found', sorted.length, 'chats');
+        setSavedChats(sorted);
+      } else {
+        console.log('[AIChat] loadChatHistory empty — no key');
+        setSavedChats([]);
       }
     } catch (e) {
       console.error('[AIChat] Error loading history', e);
+      setSavedChats([]);
     }
   };
 
-  const saveChatToHistory = async () => {
-    if (isTemporary || messages.length === 0) return;
-    try {
-      const raw = await AsyncStorage.getItem(getChatHistoryKey());
-      let chats: SavedChat[] = raw ? JSON.parse(raw) : [];
+  const persistChat = useCallback(async (
+    msgs: ChatMessage[],
+    opts?: { force?: boolean; reason?: string },
+  ) => {
+    const reason = opts?.reason || 'unspecified';
+    const key = getChatHistoryKey();
+    console.log('[AIChat] persistChat start', {
+      reason,
+      force: !!opts?.force,
+      msgCount: msgs.length,
+      isTemporary: isTemporaryRef.current,
+      isScreenshotActive,
+      chatId: currentChatIdRef.current,
+      key,
+      userId: user?.id || 'anonymous',
+    });
 
-      const firstUserMsg = messages.find(m => m.role === 'user');
-      const title = firstUserMsg ? firstUserMsg.content.substring(0, 50) + (firstUserMsg.content.length > 50 ? '…' : '') : t('companion.newChat');
-      const chatId = currentChatId || `chat-${Date.now()}`;
-
-      if (!currentChatId) setCurrentChatId(chatId);
-
-      const existing = chats.findIndex(c => c.id === chatId);
-      const chatData: SavedChat = {
-        id: chatId,
-        title,
-        messages: messages.map(m => ({ ...m, displayedContent: undefined, isTyping: undefined })),
-        createdAt: existing >= 0 ? chats[existing].createdAt : new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      if (existing >= 0) {
-        chats[existing] = chatData;
-      } else {
-        chats.unshift(chatData);
-      }
-
-      // Keep max 30 chats
-      if (chats.length > 30) chats = chats.slice(0, 30);
-      await AsyncStorage.setItem(getChatHistoryKey(), JSON.stringify(chats));
-    } catch (e) {
-      console.error('[AIChat] Error saving chat', e);
+    if (isScreenshotActive || msgs.length === 0) {
+      console.log('[AIChat] persistChat abort — screenshot or empty');
+      return;
     }
+    if (!opts?.force && isTemporaryRef.current) {
+      console.log('[AIChat] persistChat abort — temporary chat');
+      return;
+    }
+
+    // Keep typing bubbles out of storage, but keep their final content if present
+    const persistable = msgs
+      .filter((m) => !m.isTyping)
+      .map((m) => ({
+        ...m,
+        displayedContent: undefined,
+        isTyping: undefined,
+      }));
+    if (persistable.length === 0) {
+      console.log('[AIChat] persistChat abort — only typing bubbles');
+      return;
+    }
+
+    let chatId = currentChatIdRef.current;
+    if (!chatId) {
+      chatId = `chat-${Date.now()}`;
+      currentChatIdRef.current = chatId;
+      setCurrentChatId(chatId);
+      console.log('[AIChat] persistChat minted chatId', chatId);
+    }
+    const boundId = chatId;
+
+    const run = async () => {
+      try {
+        const raw = await AsyncStorage.getItem(key);
+        // Only abort if the user switched to a *different* thread
+        if (currentChatIdRef.current && currentChatIdRef.current !== boundId) {
+          console.log('[AIChat] persistChat abort — thread switched', {
+            boundId,
+            current: currentChatIdRef.current,
+          });
+          return;
+        }
+
+        let chats: SavedChat[] = [];
+        if (raw) {
+          try {
+            chats = JSON.parse(raw);
+            if (!Array.isArray(chats)) chats = [];
+          } catch (parseErr) {
+            console.error('[AIChat] persistChat corrupt history, resetting', parseErr);
+            chats = [];
+          }
+        }
+
+        const firstUserMsg = persistable.find((m) => m.role === 'user');
+        const title = firstUserMsg
+          ? firstUserMsg.content.substring(0, 50) + (firstUserMsg.content.length > 50 ? '…' : '')
+          : t('companion.newChat');
+
+        const existing = chats.findIndex((c) => c.id === boundId);
+        const serializableMessages = persistable.map((m) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          timestamp:
+            m.timestamp instanceof Date
+              ? m.timestamp.toISOString()
+              : (m.timestamp as any),
+          ...(m.reveal ? { reveal: m.reveal } : {}),
+        })) as ChatMessage[];
+
+        const chatData: SavedChat = {
+          id: boundId,
+          title,
+          messages: serializableMessages,
+          createdAt: existing >= 0 ? chats[existing].createdAt : new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        if (chatData.messages.length === 0) {
+          console.log('[AIChat] persistChat abort — serialized empty');
+          return;
+        }
+
+        if (existing >= 0) {
+          chats[existing] = chatData;
+        } else {
+          chats.unshift(chatData);
+        }
+
+        if (chats.length > 30) chats = chats.slice(0, 30);
+
+        const payload = JSON.stringify(chats);
+        await AsyncStorage.setItem(key, payload);
+
+        // Verify write
+        const verify = await AsyncStorage.getItem(key);
+        const verifyCount = verify ? (JSON.parse(verify) as SavedChat[]).length : 0;
+        console.log('[AIChat] ✅ Saved chat', {
+          boundId,
+          msgs: chatData.messages.length,
+          totalChats: verifyCount,
+          bytes: payload.length,
+          reason,
+        });
+
+        setSavedChats(
+          [...chats].sort(
+            (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+          ),
+        );
+      } catch (e) {
+        console.error('[AIChat] ❌ Error saving chat', { reason, boundId, error: e });
+      }
+    };
+
+    persistChainRef.current = persistChainRef.current.then(run, run);
+    await persistChainRef.current;
+  }, [getChatHistoryKey, isScreenshotActive, t, user?.id]);
+
+  // Auto-save when messages settle (skip while typing animation runs)
+  useEffect(() => {
+    if (isScreenshotActive) return;
+    if (messages.length === 0 || isTemporary) {
+      console.log('[AIChat] auto-save skipped', {
+        empty: messages.length === 0,
+        isTemporary,
+        isScreenshotActive,
+      });
+      return;
+    }
+    if (messages.some((m) => m.isTyping)) {
+      console.log('[AIChat] auto-save wait — typing in progress');
+      return;
+    }
+    console.log('[AIChat] auto-save trigger', { count: messages.length, chatId: currentChatIdRef.current });
+    void persistChat(messages, { force: true, reason: 'auto-save' });
+  }, [messages, isTemporary, isScreenshotActive, persistChat]);
+
+  const saveChatToHistory = async () => {
+    await persistChat(messages, { force: true, reason: 'manual' });
   };
 
   const loadChat = (chat: SavedChat) => {
     clearTypingEffect();
-    setMessages(chat.messages.map(m => ({ ...m, timestamp: new Date(m.timestamp) })));
+    persistGenRef.current += 1;
+    setMessages(hydrateMessages(chat.messages as any[]));
     setCurrentChatId(chat.id);
+    currentChatIdRef.current = chat.id;
     setShowSuggestions(false);
     setShowHistory(false);
     setIsTemporary(false);
+    setIsAnalyzing(false);
+    setExpandedRevealIds({});
   };
 
   const deleteChat = async (chatId: string) => {
@@ -516,11 +780,15 @@ export default function AIChatScreen({ navigation }: any) {
   const startNewChat = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     clearTypingEffect();
+    persistGenRef.current += 1;
     setMessages([]);
     setCurrentChatId(null);
-    setShowSuggestions(false);
+    currentChatIdRef.current = null;
+    setShowSuggestions(true);
     setIsTemporary(false);
     setShowHistory(false);
+    setIsAnalyzing(false);
+    setExpandedRevealIds({});
   };
 
   const startSyncedTypingEffect = (messageId: string, fullContent: string) => {
@@ -594,9 +862,13 @@ export default function AIChatScreen({ navigation }: any) {
           if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
           typingIntervalRef.current = null;
           speechSyncRef.current = null;
-          setMessages(prev => prev.map(m =>
-            m.id === messageId ? { ...m, displayedContent: fullContent, isTyping: false } : m
-          ));
+          setMessages(prev => {
+            const next = prev.map(m =>
+              m.id === messageId ? { ...m, displayedContent: fullContent, isTyping: false } : m
+            );
+            void persistChat(next, { force: true, reason: 'typing-complete-voice' });
+            return next;
+          });
         } else {
           setMessages(prev => prev.map(m =>
             m.id === messageId ? { ...m, displayedContent: currentText } : m
@@ -608,28 +880,24 @@ export default function AIChatScreen({ navigation }: any) {
       return;
     }
 
-    const FAST_TICK_MS = 8;
-    const CHARS_PER_TICK = 4;
-    let charIndex = 0;
-
-    typingIntervalRef.current = setInterval(() => {
-      charIndex = Math.min(fullContent.length, charIndex + CHARS_PER_TICK);
-      const currentText = fullContent.slice(0, charIndex);
-
-      if (charIndex >= fullContent.length) {
-        if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
-        typingIntervalRef.current = null;
-        setMessages(prev => prev.map(m =>
-          m.id === messageId ? { ...m, displayedContent: fullContent, isTyping: false } : m
-        ));
-      } else {
-        setMessages(prev => prev.map(m =>
-          m.id === messageId ? { ...m, displayedContent: currentText } : m
-        ));
-      }
-
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, FAST_TICK_MS);
+    // Non-voice: hold typing dots briefly, then fade in the full bubble
+    // (no character-by-character expansion — that felt robotic)
+    const holdMs = Math.min(1400, Math.max(450, fullContent.length * 8));
+    const timeoutId = setTimeout(() => {
+      typingIntervalRef.current = null;
+      setMessages((prev) => {
+        const next = prev.map((m) =>
+          m.id === messageId
+            ? { ...m, displayedContent: fullContent, isTyping: false }
+            : m,
+        );
+        void persistChat(next, { force: true, reason: 'typing-complete' });
+        return next;
+      });
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 40);
+    }, holdMs);
+    // Reuse interval ref slot to clear on interrupt
+    typingIntervalRef.current = timeoutId as unknown as ReturnType<typeof setInterval>;
   };
 
   // Rate limiting check function
@@ -728,11 +996,10 @@ export default function AIChatScreen({ navigation }: any) {
 
   const sendMessage = useCallback(async (text?: string) => {
     const messageText = (text || inputText).trim();
-    if (!messageText || isLoading) return;
+    if (!messageText || isLoading || isAnalyzing) return;
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    // PREMIUM GATE: Only Pro users can use AI chat
     if (!isProUser) {
       try {
         const customerInfo = await Purchases.getCustomerInfo();
@@ -754,7 +1021,6 @@ export default function AIChatScreen({ navigation }: any) {
       }
     }
 
-    // CHECK RATE LIMIT BEFORE SENDING
     const canSend = await checkAndUpdateUsage();
     if (!canSend) return;
 
@@ -762,6 +1028,7 @@ export default function AIChatScreen({ navigation }: any) {
 
     setInputText('');
     setShowSuggestions(false);
+    setIsTemporary(false);
     Keyboard.dismiss();
 
     const userMessage: ChatMessage = {
@@ -771,36 +1038,74 @@ export default function AIChatScreen({ navigation }: any) {
       timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages(prev => {
+      const next = [...prev, userMessage];
+      void persistChat(next, { force: true, reason: 'user-send' });
+      return next;
+    });
+    const useReveal = isDiscoveryQuery(messageText);
     setIsLoading(true);
+    if (useReveal) setIsAnalyzing(true);
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
 
+    const minAnalysisMs = useReveal ? 2200 : 0;
+    const analysisStartedAt = Date.now();
+
     try {
-      console.log('[AIChatScreen] 📤 Sending message to AI...');
       const allMessages = [...messages, userMessage].map(m => ({
         role: m.role,
         content: m.content,
       }));
 
-      console.log('[AIChatScreen] Message count:', allMessages.length);
-      const response = await mobileAiService.chat(allMessages, { personality });
-      console.log('[AIChatScreen] ✅ Received AI response, length:', response?.length);
+      if (useReveal) {
+        const { reveal } = await mobileAiService.chatReveal(allMessages, { personality });
+        const elapsed = Date.now() - analysisStartedAt;
+        if (elapsed < minAnalysisMs) {
+          await new Promise((r) => setTimeout(r, minAnalysisMs - elapsed));
+        }
 
-      const assistantMessage: ChatMessage = {
-        id: `assistant-${Date.now()}`,
-        role: 'assistant',
-        content: response,
-        displayedContent: '',
-        isTyping: true,
-        timestamp: new Date(),
-      };
+        const assistantMessage: ChatMessage = {
+          id: `assistant-${Date.now()}`,
+          role: 'assistant',
+          content: reveal.explanation,
+          displayedContent: reveal.explanation,
+          isTyping: false,
+          timestamp: new Date(),
+          reveal,
+        };
 
-      setMessages(prev => [...prev, assistantMessage]);
-      setIsLoading(false);
-      startSyncedTypingEffect(assistantMessage.id, response);
+        setIsAnalyzing(false);
+        setMessages((prev) => {
+          const next = [...prev, assistantMessage];
+          void persistChat(next, { force: true, reason: 'reveal-reply' });
+          return next;
+        });
+        setIsLoading(false);
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 120);
+      } else {
+        const response = await mobileAiService.chat(allMessages, { personality });
+
+        const assistantMessage: ChatMessage = {
+          id: `assistant-${Date.now()}`,
+          role: 'assistant',
+          content: response,
+          displayedContent: '',
+          isTyping: true,
+          timestamp: new Date(),
+        };
+
+        setMessages(prev => {
+          const next = [...prev, assistantMessage];
+          // Persist user turn + assistant stub content (typing filtered out → user msgs saved)
+          void persistChat(next, { force: true, reason: 'assistant-start' });
+          return next;
+        });
+        setIsLoading(false);
+        startSyncedTypingEffect(assistantMessage.id, response);
+      }
     } catch (error: any) {
       console.error('[AIChatScreen] ❌ Error sending message:', error);
-      console.error('[AIChatScreen] Error details:', JSON.stringify(error, null, 2));
+      setIsAnalyzing(false);
       const errorMsg: ChatMessage = {
         id: `error-${Date.now()}`,
         role: 'assistant',
@@ -810,26 +1115,32 @@ export default function AIChatScreen({ navigation }: any) {
       setMessages(prev => [...prev, errorMsg]);
       setIsLoading(false);
     }
-  }, [inputText, isLoading, messages, personality, isVoiceEnabled]);
+  }, [inputText, isLoading, isAnalyzing, messages, personality, isVoiceEnabled, isProUser, t, navigation, persistChat]);
 
-  const MessageBubble = ({ item }: { item: ChatMessage }) => {
+  const revealLabels = React.useMemo(() => ({
+    confidence: t('companion.revealConfidence'),
+    evidence: t('companion.revealEvidence'),
+    recommendation: t('companion.revealRecommendation'),
+    exploreWhy: t('companion.revealExploreWhy'),
+    askFollowUp: t('companion.revealAskFollowUp'),
+    share: t('companion.revealShare'),
+    fromJournals: t('companion.revealFromJournals'),
+  }), [t]);
+
+  // Stable renderItem — must NOT be a nested component (that remounts on every keystroke)
+  const renderMessage = useCallback(({ item }: { item: ChatMessage }) => {
     const isUser = item.role === 'user';
-    const displayText = isUser
-      ? item.content
-      : item.isTyping
-        ? (item.displayedContent ?? '')
-        : item.content;
 
     if (isUser) {
       return (
         <View style={[styles.messageBubbleContainer, styles.userBubbleContainer]}>
           <LinearGradient
-            colors={isRoast ? ROAST_PALETTE.sendGradient : ['#9f7aea', '#8b5cf6', '#7c3aed']}
+            colors={isRoast ? ROAST_PALETTE.sendGradient : ['#7c6aef', '#6d5ce7']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={[styles.messageBubble, styles.userBubble]}
           >
-            <Text style={[styles.messageText, styles.userMessageText]}>{displayText}</Text>
+            <Text style={[styles.messageText, styles.userMessageText]}>{item.content}</Text>
           </LinearGradient>
           <View style={styles.userAvatarWrap}>
             {profilePicture && !profilePictureError ? (
@@ -847,152 +1158,220 @@ export default function AIChatScreen({ navigation }: any) {
       );
     }
 
-    return (
-      <View style={[styles.messageBubbleContainer, styles.assistantBubbleContainer]}>
-        <View style={styles.avatarWrap}>
-          <InsightCompanionMark size={26} isDark={isDark || isRoast} roast={isRoast} />
+    const explanationOpen = !!expandedRevealIds[item.id];
+
+    if (item.reveal) {
+      return (
+        <AssistantFadeIn>
+          <View style={[styles.messageBubbleContainer, styles.assistantBubbleContainer, styles.revealRow]}>
+            <View style={styles.avatarWrap}>
+              <InsightCompanionMark size={26} isDark={isDark || isRoast} roast={isRoast} />
+            </View>
+            <View style={styles.revealColumn}>
+              <MiraRevealCard
+                reveal={item.reveal}
+                isDark={isDark}
+                isRoast={isRoast}
+                explanationExpanded={explanationOpen}
+                sharePrefix={t('companion.sharePrefix')}
+                labels={revealLabels}
+                onExploreWhy={() => {
+                  setExpandedRevealIds((prev) => ({
+                    ...prev,
+                    [item.id]: !prev[item.id],
+                  }));
+                  setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 80);
+                }}
+                onAskFollowUp={() => {
+                  inputRef.current?.focus();
+                }}
+              />
+              {explanationOpen ? (
+                isRoast ? (
+                  <View style={[
+                    styles.messageBubble,
+                    styles.assistantBubble,
+                    styles.revealExplanationBubble,
+                    {
+                      backgroundColor: ROAST_PALETTE.bubbleAssistant,
+                      borderWidth: 1,
+                      borderColor: ROAST_PALETTE.bubbleAssistantBorder,
+                    },
+                  ]}>
+                    <Text style={[styles.messageText, styles.assistantMessageText, { color: ROAST_PALETTE.textPrimary, fontWeight: '600' }]}>
+                      {item.reveal.explanation}
+                    </Text>
+                  </View>
+                ) : (
+                  <LinearGradient
+                    colors={isDark
+                      ? ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.06)', 'rgba(139,92,246,0.05)']
+                      : ['rgba(255,255,255,0.95)', 'rgba(248,242,255,0.88)', 'rgba(255,241,247,0.82)']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={[
+                      styles.messageBubble,
+                      styles.assistantBubble,
+                      styles.revealExplanationBubble,
+                      {
+                        borderWidth: 1,
+                        borderColor: isDark ? 'rgba(196,181,253,0.14)' : 'rgba(139,92,246,0.12)',
+                      },
+                    ]}
+                  >
+                    <Text style={[
+                      styles.messageText,
+                      styles.assistantMessageText,
+                      { color: isDark ? 'rgba(255,255,255,0.94)' : theme.colors.primaryText },
+                    ]}>
+                      {item.reveal.explanation}
+                    </Text>
+                  </LinearGradient>
+                )
+              ) : null}
+            </View>
+          </View>
+        </AssistantFadeIn>
+      );
+    }
+
+    // While Mira is "speaking" — compact typing dots (no expanding bubble)
+    if (item.isTyping) {
+      return (
+        <View style={[styles.messageBubbleContainer, styles.assistantBubbleContainer]}>
+          <View style={styles.avatarWrap}>
+            <InsightCompanionMark size={26} isDark={isDark || isRoast} roast={isRoast} />
+          </View>
+          <View style={styles.typingDotsContainer}>
+            <View style={styles.dotsRow}>
+              <View style={[styles.dot, { opacity: 0.35 }]} />
+              <View style={[styles.dot, { opacity: 0.6 }]} />
+              <View style={[styles.dot, { opacity: 1 }]} />
+            </View>
+          </View>
         </View>
-        <View style={styles.assistantBubbleColumn}>
-          <Pressable
-            onPress={() => setActiveMessageId((prev) => (prev === item.id ? null : item.id))}
-            style={({ pressed }) => [pressed && { opacity: 0.92 }]}
-          >
-            {isRoast ? (
-              <View style={[
-                styles.messageBubble,
-                styles.assistantBubble,
-                {
-                  backgroundColor: ROAST_PALETTE.bubbleAssistant,
-                  borderWidth: 1,
-                  borderColor: ROAST_PALETTE.bubbleAssistantBorder,
-                },
-              ]}>
-                <Text style={[styles.messageText, styles.assistantMessageText, { color: ROAST_PALETTE.textPrimary, fontWeight: '600' }]}>
-                  {displayText}
-                </Text>
-              </View>
-            ) : (
-              <LinearGradient
-                colors={isDark
-                  ? ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.06)', 'rgba(139,92,246,0.05)']
-                  : ['rgba(255,255,255,0.95)', 'rgba(248,242,255,0.88)', 'rgba(255,241,247,0.82)']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={[
+      );
+    }
+
+    // Finished — full bubble (fades in via AssistantFadeIn)
+    return (
+      <AssistantFadeIn>
+        <View style={[styles.messageBubbleContainer, styles.assistantBubbleContainer]}>
+          <View style={styles.avatarWrap}>
+            <InsightCompanionMark size={26} isDark={isDark || isRoast} roast={isRoast} />
+          </View>
+          <View style={styles.assistantBubbleColumn}>
+            <Pressable
+              onPress={() => setActiveMessageId((prev) => (prev === item.id ? null : item.id))}
+              style={({ pressed }) => [pressed && { opacity: 0.92 }]}
+            >
+              {isRoast ? (
+                <View style={[
                   styles.messageBubble,
                   styles.assistantBubble,
                   {
+                    backgroundColor: ROAST_PALETTE.bubbleAssistant,
                     borderWidth: 1,
-                    borderColor: isDark ? 'rgba(196,181,253,0.14)' : 'rgba(139,92,246,0.12)',
+                    borderColor: ROAST_PALETTE.bubbleAssistantBorder,
                   },
-                ]}
-              >
-                <Text style={[
-                  styles.messageText,
-                  styles.assistantMessageText,
-                  { color: isDark ? 'rgba(255,255,255,0.94)' : theme.colors.primaryText },
                 ]}>
-                  {displayText}
-                </Text>
-              </LinearGradient>
-            )}
-          </Pressable>
-          {!item.isTyping && activeMessageId === item.id && (
-            <View style={styles.messageActions}>
-              <TouchableOpacity
-                style={styles.messageActionBtn}
-                onPress={() => shareMessage(item.content)}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="share-outline" size={15} color={isRoast ? ROAST_PALETTE.icon : 'rgba(196,181,253,0.9)'} />
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-      </View>
-    );
-  };
-
-  const renderMessage = ({ item }: { item: ChatMessage }) => <MessageBubble item={item} />;
-
-  const renderEmptyState = () => (
-    <View style={styles.emptyState}>
-      <View style={styles.orbContainer}>
-        <View style={styles.orb}>
-          <InsightCompanionMark size={68} isDark={isDark || isRoast} roast={isRoast} />
-        </View>
-      </View>
-
-      <View style={styles.emptySubtitleSlot}>
-        <Text style={[
-          styles.emptySubtitle,
-          { color: isRoast ? ROAST_PALETTE.textSecondary : (isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)') },
-          isRoast && { fontWeight: '500' },
-        ]}>
-          {t('companion.emptySubtitle')}
-        </Text>
-      </View>
-
-      <View style={styles.roastBadgeSlot}>
-        {isRoast ? (
-          <View style={styles.roastBadge}>
-            <Text style={styles.roastBadgeText}>💀 {t('editor.personalities.roast')} Mode</Text>
-          </View>
-        ) : null}
-      </View>
-
-      {showSuggestions && suggestions.length > 0 && (
-        <View style={[styles.suggestionsContainer, isRoast && styles.suggestionsContainerRoast]}>
-          {suggestions.map((suggestion, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.suggestionChip,
-                isRoast
-                  ? { borderColor: ROAST_PALETTE.chipBorder, backgroundColor: ROAST_PALETTE.chipBg, shadowOpacity: 0 }
-                  : {
-                      shadowOpacity: isDark ? 0.22 : 0.14,
-                      borderColor: isDark ? 'rgba(196,181,253,0.2)' : 'rgba(139,92,246,0.18)',
-                    },
-              ]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                sendMessage(suggestion);
-              }}
-              activeOpacity={0.8}
-            >
-              {isRoast ? (
-                <View style={styles.suggestionChipInnerRoast}>
-                  <Text style={[styles.suggestionText, { color: ROAST_PALETTE.textPrimary, fontWeight: '600' }]} numberOfLines={2}>
-                    {suggestion}
+                  <Text style={[styles.messageText, styles.assistantMessageText, { color: ROAST_PALETTE.textPrimary, fontWeight: '600' }]}>
+                    {item.content}
                   </Text>
-                  <Ionicons name="arrow-forward" size={14} color={ROAST_PALETTE.accent} style={{ marginLeft: 12, flexShrink: 0 }} />
                 </View>
               ) : (
                 <LinearGradient
                   colors={isDark
-                    ? ['rgba(139,92,246,0.2)', 'rgba(72,48,116,0.16)', 'rgba(18,16,28,0.3)']
-                    : ['rgba(255,255,255,0.88)', 'rgba(244,235,255,0.82)', 'rgba(255,241,247,0.72)']}
-                  style={styles.suggestionChipInner}
+                    ? ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.06)', 'rgba(139,92,246,0.05)']
+                    : ['rgba(255,255,255,0.95)', 'rgba(248,242,255,0.88)', 'rgba(255,241,247,0.82)']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
+                  style={[
+                    styles.messageBubble,
+                    styles.assistantBubble,
+                    {
+                      borderWidth: 1,
+                      borderColor: isDark ? 'rgba(196,181,253,0.14)' : 'rgba(139,92,246,0.12)',
+                    },
+                  ]}
                 >
-                  <View style={[styles.suggestionHighlight, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.72)' }]} />
-                  <Text style={[styles.suggestionText, { color: isDark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.7)' }]} numberOfLines={2}>{suggestion}</Text>
-                  <Ionicons name="arrow-forward" size={14} color="rgba(167,139,250,0.7)" style={{ marginLeft: 12, flexShrink: 0 }} />
+                  <Text style={[
+                    styles.messageText,
+                    styles.assistantMessageText,
+                    { color: isDark ? 'rgba(255,255,255,0.94)' : theme.colors.primaryText },
+                  ]}>
+                    {item.content}
+                  </Text>
                 </LinearGradient>
               )}
-            </TouchableOpacity>
-          ))}
+            </Pressable>
+            {activeMessageId === item.id && (
+              <View style={styles.messageActions}>
+                <TouchableOpacity
+                  style={styles.messageActionBtn}
+                  onPress={() => shareMessage(item.content)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="share-outline" size={15} color={isRoast ? ROAST_PALETTE.icon : 'rgba(196,181,253,0.9)'} />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
         </View>
-      )}
-    </View>
+      </AssistantFadeIn>
+    );
+  }, [
+    isRoast,
+    isDark,
+    theme.colors.secondaryText,
+    theme.colors.primaryText,
+    profilePicture,
+    profilePictureError,
+    expandedRevealIds,
+    activeMessageId,
+    revealLabels,
+    t,
+    shareMessage,
+  ]);
+
+  const renderEmptyState = () => (
+    <MiraDiscoveryEmpty
+      isDark={isDark}
+      isRoast={isRoast}
+      title={t('companion.discoveryTitle')}
+      subtitle={t('companion.discoverySubtitle')}
+      roastPrompts={isRoast ? [
+        t('companion.suggestionDoingWrong'),
+        t('companion.suggestionRoastWeek'),
+        t('companion.suggestionCallOut'),
+        t('companion.suggestionAvoiding'),
+      ] : undefined}
+      onSelectPrompt={(prompt) => sendMessage(prompt)}
+    />
   );
 
+  const analysisLines = [
+    t('companion.analyzingJournal'),
+    t('companion.analyzingPatterns'),
+    t('companion.analyzingEvidence'),
+  ];
+
+
   return (
-    <View style={[styles.container, { backgroundColor: isRoast ? ROAST_GRADIENT[0] : theme.colors.background }]}>
+    <View style={[styles.container, { backgroundColor: isRoast ? ROAST_GRADIENT[0] : 'transparent' }]}>
+      {!isRoast && isDark ? <AmbientBackground intensity="rich" /> : null}
+      {!isRoast && !isDark ? (
+        <LinearGradient
+          colors={(theme.colors.backgroundGradient as [string, string, ...string[]]) || ['#f5f0ff', '#fce8f0', '#fff5f0']}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
+        />
+      ) : null}
       <Animated.View style={[StyleSheet.absoluteFill, { opacity: normalOpacity }]}>
-        <LinearGradient colors={normalGradient} style={StyleSheet.absoluteFill} />
+        <LinearGradient
+          colors={isRoast ? normalGradient : ['transparent', 'transparent', 'transparent']}
+          style={StyleSheet.absoluteFill}
+        />
       </Animated.View>
       <Animated.View style={[StyleSheet.absoluteFill, { opacity: roastOpacity }]}>
         <LinearGradient colors={[...ROAST_GRADIENT]} style={StyleSheet.absoluteFill} />
@@ -1002,9 +1381,9 @@ export default function AIChatScreen({ navigation }: any) {
       <View style={[
         styles.header,
         {
-          paddingTop: insets.top + 8,
-          minHeight: insets.top + 8 + HEADER_BODY_HEIGHT,
-          borderBottomColor: isRoast ? 'rgba(239,68,68,0.2)' : 'rgba(139,92,246,0.1)',
+          paddingTop: insets.top + PREMIUM.layout.headerTop,
+          minHeight: insets.top + PREMIUM.layout.headerTop + HEADER_BODY_HEIGHT,
+          borderBottomColor: isRoast ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.06)',
         },
       ]}>
         <View style={styles.headerSide}>
@@ -1059,16 +1438,27 @@ export default function AIChatScreen({ navigation }: any) {
           data={messages}
           renderItem={renderMessage}
           keyExtractor={item => item.id}
-          extraData={messages}
+          extraData={{ expandedRevealIds, activeMessageId, isAnalyzing }}
           contentContainerStyle={[
             styles.messagesList,
-            messages.length === 0 && showSuggestions && styles.emptyMessagesList,
+            messages.length === 0 && styles.emptyMessagesList,
           ]}
-          ListEmptyComponent={showSuggestions ? renderEmptyState : null}
+          ListEmptyComponent={
+            !isAnalyzing ? renderEmptyState : null
+          }
+          ListFooterComponent={
+            isAnalyzing ? (
+              <MiraAnalysisStatus
+                isDark={isDark}
+                isRoast={isRoast}
+                lines={analysisLines}
+              />
+            ) : null
+          }
           showsVerticalScrollIndicator={false}
           onScrollBeginDrag={() => setActiveMessageId(null)}
           onContentSizeChange={() => {
-            if (messages.length > 0) {
+            if (messages.length > 0 || isAnalyzing) {
               flatListRef.current?.scrollToEnd({ animated: true });
             }
           }}
@@ -1109,10 +1499,15 @@ export default function AIChatScreen({ navigation }: any) {
             styles.inputCard,
             isRoast
               ? { backgroundColor: ROAST_PALETTE.inputBg, borderColor: ROAST_PALETTE.inputBorder }
-              : {
-                  backgroundColor: isDark ? '#1c1c22' : '#f3f3f4',
-                  borderColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)',
-                },
+              : isDark
+                ? {
+                    backgroundColor: PREMIUM.glass.fill,
+                    borderColor: PREMIUM.glass.border,
+                  }
+                : {
+                    backgroundColor: 'rgba(255,255,255,0.92)',
+                    borderColor: 'rgba(122, 86, 160, 0.14)',
+                  },
           ]}>
             <TextInput
               ref={inputRef}
@@ -1141,21 +1536,21 @@ export default function AIChatScreen({ navigation }: any) {
                 />
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.sendButton, (!inputText.trim() || isLoading) && styles.sendButtonDisabled]}
+                style={[styles.sendButton, (!inputText.trim() || isLoading || isAnalyzing) && styles.sendButtonDisabled]}
                 onPress={() => sendMessage()}
-                disabled={!inputText.trim() || isLoading}
+                disabled={!inputText.trim() || isLoading || isAnalyzing}
                 activeOpacity={0.7}
               >
                 <View style={[
                   styles.sendButtonInner,
-                  inputText.trim() && !isLoading
+                  inputText.trim() && !isLoading && !isAnalyzing
                     ? { backgroundColor: isRoast ? ROAST_PALETTE.accent : '#8b5cf6' }
                     : { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' },
                 ]}>
                   <Ionicons
                     name="arrow-up"
                     size={18}
-                    color={inputText.trim() && !isLoading ? '#fff' : (isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)')}
+                    color={inputText.trim() && !isLoading && !isAnalyzing ? '#fff' : (isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)')}
                   />
                 </View>
               </TouchableOpacity>
@@ -1307,10 +1702,10 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: PREMIUM.layout.screenPadH,
     paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(139,92,246,0.1)',
+    borderBottomColor: 'rgba(255,255,255,0.06)',
   },
   headerSide: { width: 80, flexDirection: 'row', alignItems: 'center' },
   headerSideRight: { justifyContent: 'flex-end' },
@@ -1331,6 +1726,9 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: sf(17), fontWeight: '600', letterSpacing: 0.2 },
   assistantBubbleColumn: { flex: 1, maxWidth: '82%' },
+  revealRow: { alignItems: 'flex-start' },
+  revealColumn: { flex: 1, maxWidth: '88%' },
+  revealExplanationBubble: { maxWidth: '100%', marginTop: 4 },
   messageActions: { flexDirection: 'row', gap: 4, marginTop: 6, marginLeft: 2 },
   messageActionBtn: {
     padding: 8,
@@ -1356,7 +1754,11 @@ const styles = StyleSheet.create({
   roastBadgeText: { color: '#fca5a5', fontSize: sf(12), fontWeight: '600' },
   chatContainer: { flex: 1 },
   messagesList: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
-  emptyMessagesList: { flexGrow: 1, justifyContent: 'center' },
+  emptyMessagesList: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingBottom: 12,
+  },
 
   // Empty state
   emptyState: { alignItems: 'center', paddingHorizontal: 24, width: '100%' },
@@ -1468,8 +1870,10 @@ const styles = StyleSheet.create({
   },
   tempToggleText: { fontSize: 11, letterSpacing: 0.2 },
   inputCard: {
-    borderRadius: 22,
-    borderWidth: 1,
+    borderRadius: PREMIUM.radius.input,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: PREMIUM.glass.border,
+    backgroundColor: PREMIUM.glass.fill,
     minHeight: INPUT_CARD_MIN_HEIGHT,
     overflow: 'hidden',
   },
@@ -1533,11 +1937,25 @@ const styles = StyleSheet.create({
   },
   noChatText: { color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginTop: 40, fontSize: sf(15) },
   chatHistoryItem: {
-    flexDirection: 'row', alignItems: 'center', padding: 16,
-    borderRadius: 14, marginBottom: 8, borderWidth: 1, borderColor: 'transparent',
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 18,
+    borderRadius: PREMIUM.radius.card,
+    marginBottom: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: PREMIUM.glass.border,
+    backgroundColor: PREMIUM.glass.fill,
   },
-  chatHistoryTitle: { fontSize: sf(15), fontWeight: '600', marginBottom: 4 },
-  chatHistoryDate: { fontSize: sf(12), color: 'rgba(255,255,255,0.35)' },
+  chatHistoryTitle: {
+    fontSize: sf(17),
+    fontWeight: '600',
+    letterSpacing: -0.3,
+    marginBottom: 6,
+  },
+  chatHistoryDate: {
+    fontSize: sf(13),
+    color: 'rgba(255,255,255,0.38)',
+  },
 
   // Personality modal
   personalityOverlay: {

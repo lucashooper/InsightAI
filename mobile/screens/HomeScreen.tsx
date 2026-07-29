@@ -34,6 +34,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePreloadedData } from '../contexts/PreloadContext';
 import { getMoodIndicator, MoodIndicator } from '../utils/moodIndicators';
 import { isTablet, sf, ss, iPadWideContentStyle } from '../utils/responsive';
+import { PREMIUM } from '../constants/premiumUI';
 
 const insightLogo = require('../assets/192px-Insight-ICON.png');
 
@@ -554,7 +555,7 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
       onLongPress={() => handleEntryLongPress(item)}
       activeOpacity={0.7}
     >
-      <StandardContainer style={[styles.premiumCard, { borderColor: theme.colors.border }]}>
+      <StandardContainer style={[styles.premiumCard, { padding: 0 }]}>
         <View style={styles.cardGradient}>
           <View style={styles.entryTitleRow}>
             <View style={styles.entryTitleWithIndicator}>
@@ -625,12 +626,16 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
   );
   };
 
+  const isDark = isDarkTheme(theme.name);
+
   return (
-  <View style={styles.container}>
-    <LinearGradient
-      colors={theme.colors.backgroundGradient as any}
-      style={styles.backgroundGradient}
-    />
+  <View style={[styles.container, isDark && { backgroundColor: 'transparent' }]}>
+    {!isDark ? (
+      <LinearGradient
+        colors={theme.colors.backgroundGradient as any}
+        style={styles.backgroundGradient}
+      />
+    ) : null}
 
     <PageHeader
       title={t('journal.title')}
@@ -647,10 +652,16 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
     />
 
     <View style={styles.searchSection}>
-      <View style={styles.searchBar}>
-        <Ionicons name="search" size={16} color="#6b7280" style={styles.searchIcon} />
+      <View style={[
+        styles.searchBar,
+        !isDark && {
+          backgroundColor: 'rgba(255,255,255,0.92)',
+          borderColor: 'rgba(122, 86, 160, 0.14)',
+        },
+      ]}>
+        <Ionicons name="search" size={16} color={isDark ? '#6b7280' : '#6b7280'} style={styles.searchIcon} />
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, !isDark && { color: '#1a1a1a' }]}
           placeholder={t('journal.searchPlaceholder')}
           placeholderTextColor="#6b7280"
           value={searchQuery}
@@ -670,12 +681,22 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
           { key: 'unanalyzed', label: t('journal.filterUnanalyzed') },
           { key: 'favorites', label: t('journal.filterFavorites') },
           { key: 'prompts', label: t('journal.filterPrompts') },
-        ].map((chip) => (
+        ].map((chip) => {
+          const active = filter === chip.key;
+          return (
           <TouchableOpacity
             key={chip.key}
             style={[
               styles.filterChip,
-              filter === chip.key && styles.filterChipActive,
+              !isDark && {
+                backgroundColor: active ? undefined : 'rgba(255,255,255,0.85)',
+                borderColor: active ? undefined : 'rgba(122, 86, 160, 0.16)',
+              },
+              active && styles.filterChipActive,
+              !isDark && active && {
+                backgroundColor: 'rgba(139, 92, 246, 0.16)',
+                borderColor: 'rgba(139, 92, 246, 0.28)',
+              },
             ]}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -685,13 +706,16 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
             <Text
               style={[
                 styles.filterChipText,
-                filter === chip.key && styles.filterChipTextActive,
+                !isDark && !active && { color: 'rgba(26,26,26,0.62)' },
+                active && styles.filterChipTextActive,
+                !isDark && active && { color: '#6d28d9' },
               ]}
             >
               {chip.label}
             </Text>
           </TouchableOpacity>
-        ))}
+          );
+        })}
       </ScrollView>
     </View>
 
@@ -1060,18 +1084,18 @@ const styles = StyleSheet.create({
   },
   // Search & Filter styles
   searchSection: {
-    paddingHorizontal: 20,
+    paddingHorizontal: PREMIUM.layout.screenPadH,
     marginBottom: 8,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 999,
-    backgroundColor: 'rgba(139, 92, 246, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.2)',
+    paddingVertical: 13,
+    borderRadius: PREMIUM.radius.pill,
+    backgroundColor: PREMIUM.glass.fill,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: PREMIUM.glass.border,
   },
   searchIcon: {
     marginRight: 8,
@@ -1087,20 +1111,20 @@ const styles = StyleSheet.create({
   },
   filterChipsRow: {
     marginTop: 10,
-    paddingRight: 20,
+    paddingRight: PREMIUM.layout.screenPadH,
     gap: 8,
   },
   filterChip: {
     paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.4)',
-    backgroundColor: 'transparent',
+    paddingVertical: 8,
+    borderRadius: PREMIUM.radius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: PREMIUM.glass.border,
+    backgroundColor: PREMIUM.glass.fill,
   },
   filterChipActive: {
-    backgroundColor: 'rgba(139, 92, 246, 0.25)',
-    borderColor: 'rgba(139, 92, 246, 0.9)',
+    backgroundColor: PREMIUM.accentMuted,
+    borderColor: 'rgba(139, 92, 246, 0.32)',
   },
   filterChipText: {
     fontSize: 12,
@@ -1343,10 +1367,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   premiumCard: {
-    borderRadius: 18,
+    borderRadius: PREMIUM.radius.card,
   },
   cardGradient: {
-    padding: 16,
+    padding: 14,
   },
   entryHeader: {
     marginBottom: 8,

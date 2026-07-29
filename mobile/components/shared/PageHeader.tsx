@@ -1,28 +1,41 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { isTablet, sf, si } from '../../utils/responsive';
+import { isTablet, si, sf } from '../../utils/responsive';
+import { PREMIUM, TYPE } from '../../constants/premiumUI';
 
 type Props = {
   title: string;
   onBack?: () => void;
   right?: React.ReactNode;
   style?: ViewStyle;
+  /** Match Dashboard large heading */
+  large?: boolean;
 };
 
-export default function PageHeader({ title, onBack, right, style }: Props) {
+export default function PageHeader({ title, onBack, right, style, large = true }: Props) {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  
-  // Dark and midnight themes use white text, all other themes use dark text
+  const insets = useSafeAreaInsets();
+
   const isThemeDark = isDarkTheme(theme.name);
-  const textColor = isThemeDark ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a';
+  const textColor = isThemeDark ? PREMIUM.text.primary : '#1a1a1a';
   const iconColor = isThemeDark ? 'rgba(255, 255, 255, 0.85)' : '#1a1a1a';
-  
+
   return (
-    <View style={[styles.container, style]}>
+    <View
+      style={[
+        styles.container,
+        {
+          paddingTop: insets.top + PREMIUM.layout.headerTop,
+          paddingHorizontal: isTablet ? 32 : PREMIUM.layout.screenPadH,
+        },
+        style,
+      ]}
+    >
       <View style={styles.left}>
         {onBack ? (
           <TouchableOpacity
@@ -37,7 +50,9 @@ export default function PageHeader({ title, onBack, right, style }: Props) {
         ) : (
           <View style={styles.backPlaceholder} />
         )}
-        <Text style={[styles.title, { color: textColor }]}>{title}</Text>
+        <Text style={[large ? styles.titleLarge : styles.title, { color: textColor }]}>
+          {title}
+        </Text>
       </View>
       <View style={styles.right}>{right}</View>
     </View>
@@ -46,9 +61,7 @@ export default function PageHeader({ title, onBack, right, style }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: isTablet ? 70 : 60,
-    paddingBottom: isTablet ? 18 : 14,
-    paddingHorizontal: isTablet ? 28 : 16,
+    paddingBottom: PREMIUM.space[2],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -71,11 +84,16 @@ const styles = StyleSheet.create({
     width: 0,
     height: 0,
   },
+  titleLarge: {
+    fontSize: sf(32),
+    fontWeight: '700' as const,
+    letterSpacing: -0.7,
+    lineHeight: sf(38),
+    color: PREMIUM.text.primary,
+  },
   title: {
-    fontSize: sf(22),
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.95)',
-    letterSpacing: -0.3,
+    ...TYPE.section,
+    color: PREMIUM.text.primary,
   },
   right: {
     alignItems: 'flex-end',

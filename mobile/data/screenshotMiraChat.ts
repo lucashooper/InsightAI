@@ -72,10 +72,29 @@ export const SCREENSHOT_MIRA_CHAT: Record<AppLanguage, ScreenshotChatMessage[]> 
 
 export type MiraScreenshotMode = 'off' | 'messages' | 'blank';
 
+/**
+ * HARD OFF for normal builds.
+ * Expo caches EXPO_PUBLIC_* aggressively — env alone is unreliable.
+ * Flip this to 'messages' | 'blank' only when capturing App Store screenshots,
+ * then set back to 'off'.
+ */
+const MIRA_SCREENSHOT_MODE: MiraScreenshotMode = 'off';
+
 export function getMiraScreenshotMode(): MiraScreenshotMode {
+  // In-code flag wins — never trust a stale Metro-inlined env value for this
+  if (MIRA_SCREENSHOT_MODE !== 'off') return MIRA_SCREENSHOT_MODE;
+
   const flag = (process.env.EXPO_PUBLIC_MIRA_SCREENSHOT || '').trim().toLowerCase();
-  if (flag === '1' || flag === 'true' || flag === 'messages') return 'messages';
-  if (flag === 'blank' || flag === 'empty') return 'blank';
+  if (!flag || flag === '0' || flag === 'false' || flag === 'off' || flag === 'no') {
+    return 'off';
+  }
+  // Even if env says messages/blank, ignore unless the in-code constant is enabled
+  // (prevents the exact bug where blank was stuck after .env change)
+  console.warn(
+    '[Mira] EXPO_PUBLIC_MIRA_SCREENSHOT is set to',
+    flag,
+    'but MIRA_SCREENSHOT_MODE is off — ignoring env. Flip the constant in screenshotMiraChat.ts for screenshots.',
+  );
   return 'off';
 }
 

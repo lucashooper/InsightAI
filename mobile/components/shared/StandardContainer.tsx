@@ -1,129 +1,111 @@
 import React from 'react';
-import { View, StyleSheet, ViewStyle, StyleProp, Platform } from 'react-native';
+import { StyleProp, ViewStyle } from 'react-native';
+import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
+import GlassSurface, { GlassVariant } from './GlassSurface';
+import { View, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
+import { Platform } from 'react-native';
+import { PREMIUM } from '../../constants/premiumUI';
 
 type Props = {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   variant?: 'default' | 'nested' | 'hero';
   tint?: 'violet' | 'coral' | 'aqua' | 'gold';
+  /** @deprecated — coloured outline halos removed */
+  ambient?: string;
 };
 
-const TINT_COLORS = {
-  violet: '160, 108, 255',
-  coral: '244, 122, 104',
-  aqua: '53, 185, 173',
-  gold: '241, 177, 91',
+const TINT_WASH = {
+  violet: 'rgba(139, 92, 246, 0.06)',
+  coral: 'rgba(244, 122, 104, 0.05)',
+  aqua: 'rgba(53, 185, 173, 0.05)',
+  gold: 'rgba(241, 177, 91, 0.05)',
 } as const;
 
-export default function StandardContainer({ children, style, variant = 'default', tint }: Props) {
+/**
+ * Card shell for screens that still import StandardContainer.
+ * Dark mode → GlassSurface. Light mode keeps a simple frosted panel.
+ */
+export default function StandardContainer({
+  children,
+  style,
+  variant = 'default',
+  tint,
+}: Props) {
   const { theme } = useTheme();
   const dark = isDarkTheme(theme.name);
-  const isNested = variant === 'nested';
-  const isHero = variant === 'hero';
 
-  const gradientColors = isHero
-    ? dark
-      ? ['rgba(6, 6, 9, 0.90)', 'rgba(2, 2, 5, 0.94)']
-      : ['rgba(244, 226, 255, 0.94)', 'rgba(255, 229, 224, 0.90)', 'rgba(229, 248, 246, 0.88)']
-    : isNested
-      ? dark
-        ? ['rgba(6, 6, 9, 0.86)', 'rgba(2, 2, 5, 0.91)']
-        : ['rgba(255, 255, 255, 0.74)', 'rgba(249, 242, 255, 0.64)']
-      : dark
-        ? ['rgba(14, 14, 22, 0.88)', 'rgba(9, 9, 15, 0.94)']
-        : ['rgba(255, 255, 255, 0.86)', 'rgba(251, 248, 253, 0.76)'];
-
-  const borderColor = isHero
-    ? dark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(150, 100, 190, 0.16)'
-    : isNested
-      ? dark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(122, 86, 160, 0.10)'
-      : dark ? 'rgba(255, 255, 255, 0.09)' : 'rgba(122, 86, 160, 0.13)';
-
-  const flatStyle = StyleSheet.flatten(style) || {};
+  const flat = StyleSheet.flatten(style) || {};
   const {
-    backgroundColor: _ignored,
+    backgroundColor: _bg,
+    borderColor: _bc,
+    borderWidth: _bw,
     flexDirection,
     alignItems,
     justifyContent,
-    ...containerStyle
-  } = flatStyle;
+    padding,
+    paddingTop,
+    paddingBottom,
+    paddingLeft,
+    paddingRight,
+    paddingHorizontal,
+    paddingVertical,
+    ...rest
+  } = flat as ViewStyle & Record<string, unknown>;
 
-  const blurIntensity = isHero ? (dark ? 42 : 46) : isNested ? (dark ? 24 : 30) : (dark ? 34 : 40);
-  const radius = typeof flatStyle.borderRadius === 'number' ? flatStyle.borderRadius : isNested ? 14 : 16;
-  const materialLayerStyle = { borderRadius: radius, overflow: 'hidden' as const };
-  const shadowStyle = isHero
-    ? dark ? styles.heroShadowDark : styles.heroShadowLight
-    : isNested ? styles.nestedShadow
-    : dark ? styles.defaultShadowDark : styles.defaultShadowLight;
+  const contentPad = {
+    padding: padding ?? PREMIUM.layout.cardPad,
+    paddingTop,
+    paddingBottom,
+    paddingLeft,
+    paddingRight,
+    paddingHorizontal,
+    paddingVertical,
+  };
 
+  const glassVariant: GlassVariant =
+    variant === 'hero' ? 'elevated' : variant === 'nested' ? 'overlay' : 'surface';
+
+  if (dark) {
+    return (
+      <GlassSurface
+        style={rest as StyleProp<ViewStyle>}
+        variant={glassVariant}
+        wash={tint ? TINT_WASH[tint] : undefined}
+        noPad
+        contentStyle={[
+          contentPad,
+          flexDirection ? { flexDirection, alignItems, justifyContent } : null,
+        ]}
+      >
+        {children}
+      </GlassSurface>
+    );
+  }
+
+  // Light theme fallback
   return (
     <View
       style={[
-        styles.container,
-        isNested && styles.nested,
-        isHero && styles.hero,
-        shadowStyle,
-        { borderColor },
-        containerStyle,
+        styles.lightShell,
+        rest as ViewStyle,
+        { borderRadius: PREMIUM.radius.card },
       ]}
     >
       {Platform.OS === 'ios' ? (
-        <BlurView
-          intensity={blurIntensity}
-          tint={dark ? 'dark' : 'light'}
-          style={[StyleSheet.absoluteFill, materialLayerStyle]}
-        />
+        <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
       ) : null}
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.86)' }]} />
       <LinearGradient
-        colors={gradientColors as any}
-        start={{ x: 0.05, y: 0 }}
-        end={{ x: 0.95, y: 1 }}
-        style={[styles.gradient, materialLayerStyle]}
-      />
-      <LinearGradient
-        colors={
-          dark
-            ? ['rgba(255,255,255,0.045)', 'rgba(255,255,255,0.012)', 'rgba(255,255,255,0)']
-            : ['rgba(255,255,255,0.88)', 'rgba(255,255,255,0.22)', 'rgba(255,255,255,0)']
-        }
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0.75, y: 0.8 }}
-        style={[styles.innerLight, materialLayerStyle]}
+        colors={['rgba(255,255,255,0.9)', 'rgba(255,255,255,0.2)', 'rgba(255,255,255,0)']}
+        style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
-      {tint && (
-        <LinearGradient
-          colors={
-            dark
-              ? [`rgba(${TINT_COLORS[tint]}, 0.035)`, `rgba(${TINT_COLORS[tint]}, 0.012)`, 'rgba(0,0,0,0)']
-              : [`rgba(${TINT_COLORS[tint]}, 0.22)`, `rgba(${TINT_COLORS[tint]}, 0.07)`, 'rgba(255,255,255,0)']
-          }
-          locations={[0, 0.48, 1]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0.95, y: 1 }}
-          style={[styles.tintLight, materialLayerStyle]}
-          pointerEvents="none"
-        />
-      )}
-      {isHero && (
-        <LinearGradient
-          colors={
-            dark
-              ? ['rgba(180, 124, 255, 0.045)', 'rgba(255, 118, 105, 0.025)', 'rgba(53, 210, 190, 0.018)']
-              : ['rgba(184, 120, 255, 0.22)', 'rgba(255, 137, 114, 0.15)', 'rgba(73, 201, 187, 0.10)']
-          }
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.heroLight, materialLayerStyle]}
-          pointerEvents="none"
-        />
-      )}
       <View
         style={[
-          styles.content,
+          contentPad,
           flexDirection ? { flexDirection, alignItems, justifyContent } : null,
         ]}
       >
@@ -131,69 +113,13 @@ export default function StandardContainer({ children, style, variant = 'default'
       </View>
     </View>
   );
-
 }
 
 const styles = StyleSheet.create({
-  container: {
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  hero: {
-    borderRadius: 16,
-  },
-  nested: {
-    borderRadius: 14,
-  },
-  defaultShadowDark: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.22,
-    shadowRadius: 16,
-    elevation: 6,
-  },
-  defaultShadowLight: {
-    shadowColor: '#8f6aa8',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.16,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  nestedShadow: {
-    shadowColor: '#09070d',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.20,
-    shadowRadius: 5,
-    elevation: 4,
-  },
-  heroShadowDark: {
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.42,
-    shadowRadius: 8,
-    elevation: 9,
-  },
-  heroShadowLight: {
-    shadowColor: '#b266d4',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.22,
-    shadowRadius: 8,
-    elevation: 7,
-  },
-  gradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  innerLight: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  heroLight: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  tintLight: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  content: {
-    position: 'relative',
-    width: '100%',
+  lightShell: {
+    overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(122, 86, 160, 0.12)',
+    backgroundColor: 'transparent',
   },
 });
