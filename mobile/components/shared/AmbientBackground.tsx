@@ -7,6 +7,7 @@ import {
   Image,
   Dimensions,
 } from 'react-native';
+import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import { PREMIUM } from '../../constants/premiumUI';
 
 const GRADIENT_MESH = require('../../public/gradient-ellipse.png');
@@ -18,20 +19,21 @@ type Props = {
 };
 
 /**
- * Soft oversized mesh wash.
- * No rotation (rotated Image + overflow:hidden = sharp diagonal seams).
- * Meshes are large enough that PNG edges stay off-screen.
- * Primary = purple right; warm = orange-heavy bottom (source PNG has orange at bottom).
+ * Purple mesh on the right + true golden-orange radial bloom (bottom-right).
+ * Radial SVG avoids pink stack-up from reusing the purple mesh, and has no hard edges.
  */
 function AmbientBackground({ style, intensity = 'default' }: Props) {
   const opacity =
-    intensity === 'rich' ? 0.52 : intensity === 'subtle' ? 0.34 : 0.42;
+    intensity === 'rich' ? 0.50 : intensity === 'subtle' ? 0.32 : 0.40;
+
+  const goldPeak =
+    intensity === 'rich' ? 0.42 : intensity === 'subtle' ? 0.26 : 0.34;
 
   return (
     <View pointerEvents="none" style={[styles.root, style]}>
       <View style={[styles.base, { backgroundColor: PREMIUM.bg }]} />
 
-      {/* Purple / magenta wash — right side, oversized so edges never clip */}
+      {/* Purple / magenta mesh — right side */}
       <Image
         source={GRADIENT_MESH}
         style={[styles.meshPrimary, { opacity }]}
@@ -39,29 +41,54 @@ function AmbientBackground({ style, intensity = 'default' }: Props) {
         fadeDuration={0}
       />
 
-      {/* Extra purple depth, slightly higher */}
+      {/* Soft left counterbalance */}
       <Image
         source={GRADIENT_MESH}
-        style={[styles.meshPurpleHigh, { opacity: opacity * 0.45 }]}
+        style={[styles.meshLeft, { opacity: opacity * 0.3 }]}
         resizeMode="cover"
         fadeDuration={0}
       />
 
-      {/* Orange / amber bloom — bottom right (PNG orange band sits at bottom) */}
-      <Image
-        source={GRADIENT_MESH}
-        style={[styles.meshOrange, { opacity: opacity * 0.7 }]}
-        resizeMode="cover"
-        fadeDuration={0}
-      />
-
-      {/* Soft left fill so the scene never hard-cuts */}
-      <Image
-        source={GRADIENT_MESH}
-        style={[styles.meshLeft, { opacity: opacity * 0.35 }]}
-        resizeMode="cover"
-        fadeDuration={0}
-      />
+      {/* True golden-orange bloom — not a pink mesh retint */}
+      <Svg
+        width={SCREEN_W}
+        height={SCREEN_H}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      >
+        <Defs>
+          <RadialGradient
+            id="zenoGoldBloom"
+            cx="92%"
+            cy="88%"
+            rx="58%"
+            ry="48%"
+            fx="94%"
+            fy="92%"
+          >
+            <Stop offset="0%" stopColor="#FFC056" stopOpacity={goldPeak} />
+            <Stop offset="28%" stopColor="#FF9A3C" stopOpacity={goldPeak * 0.72} />
+            <Stop offset="55%" stopColor="#F97316" stopOpacity={goldPeak * 0.32} />
+            <Stop offset="100%" stopColor="#F97316" stopOpacity="0" />
+          </RadialGradient>
+          {/* Soft amber lift a bit higher so it meets the purple naturally */}
+          <RadialGradient
+            id="zenoAmberLift"
+            cx="88%"
+            cy="72%"
+            rx="42%"
+            ry="38%"
+            fx="90%"
+            fy="75%"
+          >
+            <Stop offset="0%" stopColor="#FBBF24" stopOpacity={goldPeak * 0.28} />
+            <Stop offset="45%" stopColor="#F59E0B" stopOpacity={goldPeak * 0.12} />
+            <Stop offset="100%" stopColor="#F59E0B" stopOpacity="0" />
+          </RadialGradient>
+        </Defs>
+        <Rect x="0" y="0" width="100%" height="100%" fill="url(#zenoGoldBloom)" />
+        <Rect x="0" y="0" width="100%" height="100%" fill="url(#zenoAmberLift)" />
+      </Svg>
     </View>
   );
 }
@@ -71,7 +98,6 @@ export default React.memo(AmbientBackground);
 const styles = StyleSheet.create({
   root: {
     ...StyleSheet.absoluteFillObject,
-    // Do NOT use overflow:'hidden' with rotated/offset meshes — causes sharp seams
     backgroundColor: PREMIUM.bg,
   },
   base: {
@@ -79,26 +105,10 @@ const styles = StyleSheet.create({
   },
   meshPrimary: {
     position: 'absolute',
-    // ~2.4× screen so the soft falloff covers the whole viewport
     width: SCREEN_W * 2.4,
     height: SCREEN_H * 2.0,
     top: -SCREEN_H * 0.35,
     right: -SCREEN_W * 0.55,
-  },
-  meshPurpleHigh: {
-    position: 'absolute',
-    width: SCREEN_W * 2.0,
-    height: SCREEN_H * 1.6,
-    top: -SCREEN_H * 0.45,
-    right: -SCREEN_W * 0.4,
-  },
-  meshOrange: {
-    position: 'absolute',
-    // Shift so the orange band of the PNG lands in the lower-right
-    width: SCREEN_W * 2.2,
-    height: SCREEN_H * 1.8,
-    bottom: -SCREEN_H * 0.55,
-    right: -SCREEN_W * 0.35,
   },
   meshLeft: {
     position: 'absolute',
