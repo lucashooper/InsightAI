@@ -54,6 +54,7 @@ export default function App() {
           Asset.fromModule(require('./public/abstract-dark-background.jpg')).downloadAsync(),
           Asset.fromModule(require('./public/Zeno-Dashboard-background.webp')).downloadAsync(),
           Asset.fromModule(require('./public/gradient-ellipse.png')).downloadAsync(),
+          Asset.fromModule(require('./public/gradient-ellipse-noise.png')).downloadAsync(),
         ]);
         setSplashAssetsReady(true);
         setThemeLoaded(true);

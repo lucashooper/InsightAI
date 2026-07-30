@@ -16,9 +16,10 @@ export const CHAT_PERSONALITIES: AiPersonality[] = [
   'direct',
   'playful',
   'gentle',
-  'hype',
-  'roast',
 ];
+
+/** Personalities hidden from the vibe picker for now (still valid if persisted). */
+export const HIDDEN_CHAT_PERSONALITIES: AiPersonality[] = ['hype', 'roast'];
 
 export const PERSONALITY_EMOJI: Record<AiPersonality, string> = {
   balanced: '⚖️',

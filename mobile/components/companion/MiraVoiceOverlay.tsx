@@ -5,13 +5,15 @@ import {
   StyleSheet,
   TouchableOpacity,
   Animated,
+  Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AuroraOrb from '../shared/AuroraOrb';
 import { subscribeMiraSpeechLevel } from '../../services/miraVoiceService';
-import { ROAST_GRADIENT, ROAST_PALETTE } from '../../utils/companionTheme';
+import { ROAST_PALETTE } from '../../utils/companionTheme';
+import { PREMIUM } from '../../constants/premiumUI';
 import { sf } from '../../utils/responsive';
 
 const ORB_SIZE = 220;
@@ -30,7 +32,6 @@ export default function MiraVoiceOverlay({
   visible,
   isRoast,
   isDark,
-  normalGradient,
   speakingLabel,
   muteLabel,
   onMute,
@@ -76,11 +77,18 @@ export default function MiraVoiceOverlay({
       pointerEvents={visible ? 'auto' : 'none'}
       style={[styles.overlay, { opacity: fade }]}
     >
-      {isRoast ? (
-        <LinearGradient colors={[...ROAST_GRADIENT]} style={StyleSheet.absoluteFill} />
-      ) : (
-        <LinearGradient colors={normalGradient} style={StyleSheet.absoluteFill} />
-      )}
+      <View
+        style={[
+          StyleSheet.absoluteFill,
+          { backgroundColor: isRoast ? '#1a0a0a' : PREMIUM.bg },
+        ]}
+      />
+      {!isDark ? (
+        <View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.55)' }]}
+        />
+      ) : null}
 
       <View style={[styles.content, { paddingTop: insets.top, paddingBottom: Math.max(insets.bottom, 24) }]}>
         <Animated.View
@@ -111,18 +119,33 @@ export default function MiraVoiceOverlay({
         </Text>
 
         <TouchableOpacity
-          style={[styles.muteButton, isRoast && styles.muteButtonRoast]}
+          style={styles.muteOuter}
           onPress={onMute}
           activeOpacity={0.85}
         >
-          <Ionicons
-            name="volume-mute"
-            size={22}
-            color={isRoast ? ROAST_PALETTE.textPrimary : '#fff'}
-          />
-          <Text style={[styles.muteLabel, isRoast && { color: ROAST_PALETTE.textPrimary }]}>
-            {muteLabel}
-          </Text>
+          <View style={[styles.muteButton, isRoast && styles.muteButtonRoast]}>
+            {Platform.OS === 'ios' && isDark && !isRoast ? (
+              <BlurView intensity={48} tint="dark" style={StyleSheet.absoluteFill} />
+            ) : null}
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                {
+                  backgroundColor: isRoast
+                    ? 'rgba(0,0,0,0.55)'
+                    : PREMIUM.glass.fill,
+                },
+              ]}
+            />
+            <Ionicons
+              name="volume-mute"
+              size={22}
+              color={isRoast ? ROAST_PALETTE.textPrimary : '#fff'}
+            />
+            <Text style={[styles.muteLabel, isRoast && { color: ROAST_PALETTE.textPrimary }]}>
+              {muteLabel}
+            </Text>
+          </View>
         </TouchableOpacity>
       </View>
     </Animated.View>
@@ -171,6 +194,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 48,
   },
+  muteOuter: {
+    borderRadius: 28,
+  },
   muteButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -178,12 +204,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     paddingVertical: 16,
     borderRadius: 28,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.14)',
+    overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: PREMIUM.glass.border,
   },
   muteButtonRoast: {
-    backgroundColor: 'rgba(0,0,0,0.55)',
     borderColor: 'rgba(239,68,68,0.35)',
   },
   muteLabel: {

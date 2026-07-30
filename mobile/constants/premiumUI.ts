@@ -23,17 +23,17 @@ export const PREMIUM = {
    * Do not invent per-screen variants.
    */
   glass: {
-    /** More translucent — closer to floating tab bar frosted feel */
-    fill: 'rgba(18, 18, 22, 0.38)',
-    fillElevated: 'rgba(18, 18, 22, 0.48)',
-    fillOverlay: 'rgba(18, 18, 22, 0.32)',
-    border: 'rgba(255, 255, 255, 0.08)',
+    /** Ultra-transparent frosted glass — background mesh reads through */
+    fill: 'rgba(18, 18, 22, 0.20)',
+    fillElevated: 'rgba(18, 18, 22, 0.28)',
+    fillOverlay: 'rgba(18, 18, 22, 0.16)',
+    border: 'rgba(255, 255, 255, 0.09)',
     /** Near-invisible top sheen — no hard white line */
-    highlight: 'rgba(255, 255, 255, 0.035)',
-    innerShadow: 'rgba(0, 0, 0, 0.18)',
-    washTop: 'rgba(255, 255, 255, 0.015)',
-    washBottom: 'rgba(0, 0, 0, 0.06)',
-    blur: 48,
+    highlight: 'rgba(255, 255, 255, 0.04)',
+    innerShadow: 'rgba(0, 0, 0, 0.14)',
+    washTop: 'rgba(255, 255, 255, 0.02)',
+    washBottom: 'rgba(0, 0, 0, 0.05)',
+    blur: 56,
   },
 
   accent: '#8b5cf6',

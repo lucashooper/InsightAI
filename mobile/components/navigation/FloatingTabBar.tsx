@@ -69,8 +69,8 @@ export default function FloatingTabBar({ state, navigation }: BottomTabBarProps)
     );
   };
 
-  const borderColor = isDark ? 'rgba(255,255,255,0.12)' : theme.colors.border;
-  const barFill = isDark ? 'rgba(18,18,22,0.94)' : 'rgba(255,255,255,0.97)';
+  const borderColor = isDark ? 'rgba(255,255,255,0.10)' : theme.colors.border;
+  const barFill = isDark ? 'rgba(18,18,22,0.22)' : 'rgba(255,255,255,0.97)';
 
   return (
     <View
@@ -79,9 +79,12 @@ export default function FloatingTabBar({ state, navigation }: BottomTabBarProps)
     >
       <View style={[styles.barOuter, isDark ? styles.barOuterDark : styles.barOuterLight]}>
         {Platform.OS === 'ios' && isDark ? (
-          <BlurView intensity={48} tint="dark" style={styles.blurFill} />
+          <>
+            <BlurView intensity={56} tint="dark" style={styles.blurFill} />
+            <View style={[styles.blurFill, { backgroundColor: barFill }]} />
+          </>
         ) : (
-          <View style={[styles.blurFill, { backgroundColor: barFill }]} />
+          <View style={[styles.blurFill, { backgroundColor: isDark ? 'rgba(18,18,22,0.55)' : barFill }]} />
         )}
         <View style={[styles.barBorder, { borderColor }]} />
         <View style={styles.barContent}>

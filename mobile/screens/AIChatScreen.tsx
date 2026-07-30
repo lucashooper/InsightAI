@@ -57,6 +57,7 @@ import MiraDiscoveryEmpty from '../components/companion/MiraDiscoveryEmpty';
 import MiraRevealCard from '../components/companion/MiraRevealCard';
 import MiraAnalysisStatus from '../components/companion/MiraAnalysisStatus';
 import AmbientBackground from '../components/shared/AmbientBackground';
+import GlassSurface from '../components/shared/GlassSurface';
 import { PREMIUM } from '../constants/premiumUI';
 import { MiraRevealPayload } from '../constants/miraReveal';
 import { isDiscoveryQuery, formatRevealShareText, normalizePersistedReveal } from '../utils/miraReveal';
@@ -114,6 +115,52 @@ function AssistantFadeIn({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** Clean typewriter for empty input placeholder */
+function TypewriterPlaceholder({
+  text,
+  visible,
+  color,
+}: {
+  text: string;
+  visible: boolean;
+  color: string;
+}) {
+  const [shown, setShown] = useState('');
+  const fade = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (!visible) {
+      Animated.timing(fade, {
+        toValue: 0,
+        duration: 160,
+        useNativeDriver: true,
+      }).start();
+      return;
+    }
+
+    fade.setValue(1);
+    setShown('');
+    let i = 0;
+    const id = setInterval(() => {
+      i += 1;
+      setShown(text.slice(0, i));
+      if (i >= text.length) clearInterval(id);
+    }, 32);
+
+    return () => clearInterval(id);
+  }, [visible, text, fade]);
+
+  if (!visible && shown.length === 0) return null;
+
+  return (
+    <Animated.View pointerEvents="none" style={[styles.typewriterWrap, { opacity: fade }]}>
+      <Text style={[styles.typewriterText, { color }]} numberOfLines={1}>
+        {shown}
+      </Text>
+    </Animated.View>
+  );
+}
+
 function PulsingRoastDot() {
   const pulse = useRef(new Animated.Value(1)).current;
   const glow = useRef(new Animated.Value(0.5)).current;
@@ -155,7 +202,6 @@ function PulsingRoastDot() {
 const CHAT_HISTORY_KEY_PREFIX = 'AI_CHAT_HISTORY_';
 const AI_PERSONALITY_KEY = 'AI_PERSONALITY';
 const AI_VOICE_READOUT_KEY = 'MIRA_VOICE_READOUT';
-const ROAST_MODE_ACK_KEY = 'ROAST_MODE_ACK';
 const FREE_USER_DAILY_LIMIT = 50;
 
 /** Fixed layout slots — prevents jolt when roast badge toggles. */
@@ -165,11 +211,10 @@ const EMPTY_SUBTITLE_HEIGHT = 56;
 const ROAST_BADGE_SLOT = 42;
 
 /** Fixed input footer slots — prevents jolt when temp row toggles. */
-const INPUT_TEMP_SLOT = 28;
 const INPUT_CARD_MIN_HEIGHT = 88;
 const INPUT_CONTAINER_PADDING_TOP = 10;
 const INPUT_FOOTER_MIN_HEIGHT =
-  INPUT_CONTAINER_PADDING_TOP + INPUT_TEMP_SLOT + INPUT_CARD_MIN_HEIGHT;
+  INPUT_CONTAINER_PADDING_TOP + INPUT_CARD_MIN_HEIGHT;
 
 interface ChatMessage {
   id: string;
@@ -239,6 +284,7 @@ export default function AIChatScreen({ navigation }: any) {
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [expandedRevealIds, setExpandedRevealIds] = useState<Record<string, boolean>>({});
+  const [inputFocused, setInputFocused] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const currentChatIdRef = useRef<string | null>(null);
   const persistChainRef = useRef<Promise<void>>(Promise.resolve());
@@ -299,6 +345,9 @@ export default function AIChatScreen({ navigation }: any) {
         if (cached) setProfilePicture(cached);
         if (savedPersonality && CHAT_PERSONALITIES.includes(savedPersonality as Personality)) {
           setPersonality(savedPersonality as Personality);
+        } else if (savedPersonality === 'hype' || savedPersonality === 'roast') {
+          setPersonality('balanced');
+          await AsyncStorage.setItem(AI_PERSONALITY_KEY, 'balanced');
         }
 
         if (voiceReadout === 'true') {
@@ -509,27 +558,6 @@ export default function AIChatScreen({ navigation }: any) {
   };
 
   const handleSelectPersonality = async (key: Personality) => {
-    if (key === 'roast') {
-      const acked = await AsyncStorage.getItem(ROAST_MODE_ACK_KEY);
-      if (!acked) {
-        Alert.alert(
-          t('companion.roastModeTitle'),
-          t('companion.roastModeWarning'),
-          [
-            { text: t('common.cancel'), style: 'cancel' },
-            {
-              text: t('companion.enableRoast'),
-              style: 'destructive',
-              onPress: async () => {
-                await AsyncStorage.setItem(ROAST_MODE_ACK_KEY, 'true');
-                await applyPersonality('roast');
-              },
-            },
-          ],
-        );
-        return;
-      }
-    }
     await applyPersonality(key);
   };
 
@@ -1357,9 +1385,11 @@ export default function AIChatScreen({ navigation }: any) {
   ];
 
 
+  const showDiscoveryAmbient = isDark && !isRoast && messages.length === 0 && !isAnalyzing;
+
   return (
-    <View style={[styles.container, { backgroundColor: isRoast ? ROAST_GRADIENT[0] : 'transparent' }]}>
-      {!isRoast && isDark ? <AmbientBackground intensity="rich" /> : null}
+    <View style={[styles.container, { backgroundColor: isRoast ? ROAST_GRADIENT[0] : (isDark ? PREMIUM.bg : theme.colors.background) }]}>
+      {showDiscoveryAmbient ? <AmbientBackground intensity="rich" /> : null}
       {!isRoast && !isDark ? (
         <LinearGradient
           colors={(theme.colors.backgroundGradient as [string, string, ...string[]]) || ['#f5f0ff', '#fce8f0', '#fff5f0']}
@@ -1471,30 +1501,8 @@ export default function AIChatScreen({ navigation }: any) {
         ) : (
         <View style={[
           styles.inputContainer,
-          { paddingBottom: Math.max(insets.bottom, 12), minHeight: (messages.length === 0 ? INPUT_FOOTER_MIN_HEIGHT : INPUT_CONTAINER_PADDING_TOP + INPUT_CARD_MIN_HEIGHT) + Math.max(insets.bottom, 12) },
+          { paddingBottom: Math.max(insets.bottom, 12), minHeight: INPUT_FOOTER_MIN_HEIGHT + Math.max(insets.bottom, 12) },
         ]}>
-          {messages.length === 0 && showSuggestions && (
-            <View style={styles.tempSlot}>
-              <TouchableOpacity
-                style={styles.tempToggle}
-                onPress={() => setIsTemporary(!isTemporary)}
-                activeOpacity={0.7}
-              >
-                <Ionicons
-                  name={isTemporary ? 'eye-off-outline' : 'save-outline'}
-                  size={13}
-                  color={isTemporary ? '#ef4444' : (isDark ? 'rgba(255,255,255,0.35)' : theme.colors.tertiaryText)}
-                />
-                <Text style={[
-                  styles.tempToggleText,
-                  { color: isDark ? 'rgba(255,255,255,0.35)' : theme.colors.tertiaryText },
-                  isTemporary && { color: '#ef4444' },
-                ]}>
-                  {isTemporary ? t('companion.temporaryChat') : t('companion.chatSaved')}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
           <View style={[
             styles.inputCard,
             isRoast
@@ -1503,24 +1511,33 @@ export default function AIChatScreen({ navigation }: any) {
                 ? {
                     backgroundColor: PREMIUM.glass.fill,
                     borderColor: PREMIUM.glass.border,
+                    borderWidth: StyleSheet.hairlineWidth,
                   }
                 : {
                     backgroundColor: 'rgba(255,255,255,0.92)',
                     borderColor: 'rgba(122, 86, 160, 0.14)',
                   },
           ]}>
-            <TextInput
-              ref={inputRef}
-              style={[styles.textInput, { color: isRoast ? ROAST_PALETTE.textPrimary : (isDark ? '#fff' : theme.colors.primaryText) }]}
-              placeholder={t('companion.inputPlaceholder')}
-              placeholderTextColor={isRoast ? 'rgba(255,255,255,0.35)' : (isDark ? 'rgba(255,255,255,0.32)' : 'rgba(0,0,0,0.35)')}
-              value={inputText}
-              onChangeText={setInputText}
-              multiline
-              maxLength={2000}
-              returnKeyType="default"
-              blurOnSubmit={false}
-            />
+            <View style={styles.inputFieldWrap}>
+              <TypewriterPlaceholder
+                text={t('companion.inputPlaceholder')}
+                visible={!inputText && !inputFocused}
+                color={isRoast ? 'rgba(255,255,255,0.35)' : (isDark ? 'rgba(255,255,255,0.32)' : 'rgba(0,0,0,0.35)')}
+              />
+              <TextInput
+                ref={inputRef}
+                style={[styles.textInput, { color: isRoast ? ROAST_PALETTE.textPrimary : (isDark ? '#fff' : theme.colors.primaryText) }]}
+                placeholder=""
+                value={inputText}
+                onChangeText={setInputText}
+                onFocus={() => setInputFocused(true)}
+                onBlur={() => setInputFocused(false)}
+                multiline
+                maxLength={2000}
+                returnKeyType="default"
+                blurOnSubmit={false}
+              />
+            </View>
             <View style={styles.inputToolbar}>
               <TouchableOpacity
                 style={styles.toolbarBtn}
@@ -1563,7 +1580,9 @@ export default function AIChatScreen({ navigation }: any) {
       {/* Chat History Modal */}
       <Modal visible={showHistory} animationType="slide" transparent>
         <View style={[styles.modalOverlay, { paddingTop: insets.top }]}>
-          <View style={[styles.modalContent, { backgroundColor: '#111' }]}>
+          <View style={styles.modalContent}>
+            {isDark ? <AmbientBackground intensity="subtle" /> : null}
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? 'rgba(9,9,11,0.55)' : '#111' }]} />
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{t('companion.chats')}</Text>
               <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -1586,11 +1605,6 @@ export default function AIChatScreen({ navigation }: any) {
                 savedChats.map(chat => (
                   <TouchableOpacity
                     key={chat.id}
-                    style={[
-                      styles.chatHistoryItem,
-                      { backgroundColor: 'rgba(255,255,255,0.05)' },
-                      currentChatId === chat.id && { borderColor: '#8b5cf6', borderWidth: 1 },
-                    ]}
                     onPress={() => loadChat(chat)}
                     onLongPress={() => {
                       Alert.alert(t('companion.deleteChat'), t('companion.areYouSure'), [
@@ -1599,16 +1613,26 @@ export default function AIChatScreen({ navigation }: any) {
                       ]);
                     }}
                     activeOpacity={0.7}
+                    style={{ marginBottom: 10 }}
                   >
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.chatHistoryTitle, { color: '#fff' }]} numberOfLines={1}>
-                        {chat.title}
-                      </Text>
-                      <Text style={styles.chatHistoryDate}>
-                        {new Date(chat.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {chat.messages.length} messages
-                      </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.2)" />
+                    <GlassSurface
+                      style={
+                        currentChatId === chat.id
+                          ? { borderColor: 'rgba(139,92,246,0.45)' }
+                          : undefined
+                      }
+                      contentStyle={styles.chatHistoryInner}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.chatHistoryTitle, { color: '#fff' }]} numberOfLines={1}>
+                          {chat.title}
+                        </Text>
+                        <Text style={styles.chatHistoryDate}>
+                          {new Date(chat.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {chat.messages.length} messages
+                        </Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.2)" />
+                    </GlassSurface>
                   </TouchableOpacity>
                 ))
               )}
@@ -1630,25 +1654,38 @@ export default function AIChatScreen({ navigation }: any) {
           activeOpacity={1}
           onPress={() => setShowPersonality(false)}
         >
-          <View style={[styles.personalitySheet, { backgroundColor: '#1a1a1a' }]}>
+          <View style={styles.personalitySheet}>
+            {isDark ? (
+              <>
+                <AmbientBackground intensity="subtle" style={StyleSheet.absoluteFill} />
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(9,9,11,0.45)' }]} />
+              </>
+            ) : (
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: '#1a1a1a' }]} />
+            )}
             <Text style={[styles.personalityTitle, { color: '#fff' }]}>{t('companion.personalityTitle')}</Text>
             {personalities.map(p => (
               <TouchableOpacity
                 key={p.key}
-                style={[
-                  styles.personalityOption,
-                  personality === p.key && { backgroundColor: 'rgba(139,92,246,0.15)', borderColor: '#8b5cf6' },
-                  p.key === 'roast' && { borderColor: 'rgba(239,68,68,0.35)' },
-                ]}
                 onPress={() => handleSelectPersonality(p.key)}
                 activeOpacity={0.7}
+                style={{ marginBottom: 10 }}
               >
-                <Text style={{ fontSize: 20 }}>{p.emoji}</Text>
-                <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={[styles.personalityLabel, { color: '#fff' }]}>{p.label}</Text>
-                  <Text style={styles.personalityDesc}>{p.desc}</Text>
-                </View>
-                {personality === p.key && <Ionicons name="checkmark-circle" size={22} color="#8b5cf6" />}
+                <GlassSurface
+                  style={
+                    personality === p.key
+                      ? { borderColor: 'rgba(139,92,246,0.45)' }
+                      : undefined
+                  }
+                  contentStyle={styles.personalityOptionInner}
+                >
+                  <Text style={{ fontSize: 20 }}>{p.emoji}</Text>
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text style={[styles.personalityLabel, { color: '#fff' }]}>{p.label}</Text>
+                    <Text style={styles.personalityDesc}>{p.desc}</Text>
+                  </View>
+                  {personality === p.key && <Ionicons name="checkmark-circle" size={22} color="#8b5cf6" />}
+                </GlassSurface>
               </TouchableOpacity>
             ))}
           </View>
@@ -1858,17 +1895,6 @@ const styles = StyleSheet.create({
     paddingTop: INPUT_CONTAINER_PADDING_TOP,
     borderTopWidth: 0,
   },
-  tempSlot: {
-    height: INPUT_TEMP_SLOT,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  tempToggle: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6,
-  },
-  tempToggleText: { fontSize: 11, letterSpacing: 0.2 },
   inputCard: {
     borderRadius: PREMIUM.radius.input,
     borderWidth: StyleSheet.hairlineWidth,
@@ -1876,6 +1902,21 @@ const styles = StyleSheet.create({
     backgroundColor: PREMIUM.glass.fill,
     minHeight: INPUT_CARD_MIN_HEIGHT,
     overflow: 'hidden',
+  },
+  inputFieldWrap: {
+    position: 'relative',
+  },
+  typewriterWrap: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    top: 14,
+    zIndex: 1,
+  },
+  typewriterText: {
+    fontSize: sf(16),
+    lineHeight: sf(22),
+    letterSpacing: -0.2,
   },
   textInput: {
     fontSize: sf(16),
@@ -1907,7 +1948,15 @@ const styles = StyleSheet.create({
 
   // History modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
-  modalContent: { flex: 1, borderTopLeftRadius: 24, borderTopRightRadius: 24, marginTop: 60, paddingTop: 20 },
+  modalContent: {
+    flex: 1,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    marginTop: 60,
+    paddingTop: 20,
+    overflow: 'hidden',
+    backgroundColor: PREMIUM.bg,
+  },
   modalHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 20, marginBottom: 16,
@@ -1936,15 +1985,10 @@ const styles = StyleSheet.create({
     maxWidth: 260,
   },
   noChatText: { color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginTop: 40, fontSize: sf(15) },
-  chatHistoryItem: {
+  chatHistoryInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 18,
-    borderRadius: PREMIUM.radius.card,
-    marginBottom: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: PREMIUM.glass.border,
-    backgroundColor: PREMIUM.glass.fill,
+    paddingVertical: 18,
   },
   chatHistoryTitle: {
     fontSize: sf(17),
@@ -1963,14 +2007,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24,
   },
   personalitySheet: {
-    width: '100%', borderRadius: 20, padding: 20,
+    width: '100%',
+    borderRadius: 24,
+    padding: 20,
+    overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: PREMIUM.glass.border,
     shadowColor: '#000', shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3, shadowRadius: 24, elevation: 20,
   },
   personalityTitle: { fontSize: sf(18), fontWeight: '700', marginBottom: 16 },
-  personalityOption: {
-    flexDirection: 'row', alignItems: 'center', padding: 14,
-    borderRadius: 14, marginBottom: 6, borderWidth: 1, borderColor: 'transparent',
+  personalityOptionInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
   },
   personalityLabel: { fontSize: sf(15), fontWeight: '600' },
   personalityDesc: { fontSize: sf(12), color: 'rgba(255,255,255,0.4)', marginTop: 2 },

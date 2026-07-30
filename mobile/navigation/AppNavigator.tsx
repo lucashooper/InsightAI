@@ -72,7 +72,6 @@ import ExploreScreen from '../screens/ExploreScreen';
 import TodoScreen from '../screens/TodoScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isTablet, sf, si } from '../utils/responsive';
-import AmbientBackground from '../components/shared/AmbientBackground';
 import { PREMIUM } from '../constants/premiumUI';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 
@@ -87,8 +86,7 @@ function MainTabs() {
 
   return (
     <View style={[tabShell.root, !dark && { backgroundColor: theme.colors.background }]}>
-      {/* Dark ambient only — light theme keeps its own soft gradient */}
-      {dark ? <AmbientBackground intensity="rich" /> : null}
+      {/* Dark: true black canvas — orb/hero carry atmosphere; no full-screen wash */}
       {!dark ? (
         <LinearGradient
           colors={(theme.colors.backgroundGradient as [string, string, ...string[]]) || ['#f5f0ff', '#fce8f0', '#fff5f0']}
