@@ -14,14 +14,21 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { useLanguage } from '../contexts/LanguageContext';
+import { PREMIUM, TYPE } from '../constants/premiumUI';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 const insightLogo = require('../public/Insight-Logo-nobg.webp');
 
 interface FirstTimeIntroOverlayProps {
   visible: boolean;
   onClose: () => void;
 }
+
+const FEATURES = [
+  { icon: 'create-outline' as const, titleKey: 'journalTitle', descKey: 'journalDescription' },
+  { icon: 'analytics-outline' as const, titleKey: 'progressTitle', descKey: 'progressDescription' },
+  { icon: 'heart-outline' as const, titleKey: 'habitsTitle', descKey: 'habitsDescription' },
+];
 
 export default function FirstTimeIntroOverlay({ visible, onClose }: FirstTimeIntroOverlayProps) {
   const { t } = useLanguage();
@@ -30,12 +37,10 @@ export default function FirstTimeIntroOverlay({ visible, onClose }: FirstTimeInt
 
   useEffect(() => {
     if (visible) {
-      // Trigger confetti when overlay appears
       setTimeout(() => {
         confettiRef.current?.start();
       }, 300);
-      
-      // Fade in animation
+
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 600,
@@ -74,73 +79,41 @@ export default function FirstTimeIntroOverlay({ visible, onClose }: FirstTimeInt
         />
 
         <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-          {/* Welcome Header */}
           <View style={styles.header}>
-            <Image 
+            <Image
               source={insightLogo}
               style={styles.logoImage}
               resizeMode="contain"
             />
             <Text style={styles.title}>{t('components.intro.title')}</Text>
-            <Text style={styles.subtitle}>
-              {t('components.intro.subtitle')}
-            </Text>
+            <Text style={styles.subtitle}>{t('components.intro.subtitle')}</Text>
           </View>
 
-          {/* Feature Cards */}
           <View style={styles.featuresContainer}>
-            <View style={styles.featureCard}>
-              <View style={[styles.featureIcon, { backgroundColor: 'rgba(139, 92, 246, 0.15)' }]}>
-                <Ionicons name="create-outline" size={24} color="#8b5cf6" />
+            {FEATURES.map((f) => (
+              <View key={f.titleKey} style={styles.featureCard}>
+                <View style={styles.featureIcon}>
+                  <Ionicons name={f.icon} size={22} color="#FFFFFF" />
+                </View>
+                <View style={styles.featureText}>
+                  <Text style={styles.featureTitle}>{t(`components.intro.${f.titleKey}`)}</Text>
+                  <Text style={styles.featureDescription}>
+                    {t(`components.intro.${f.descKey}`)}
+                  </Text>
+                </View>
               </View>
-              <View style={styles.featureText}>
-                <Text style={styles.featureTitle}>{t('components.intro.journalTitle')}</Text>
-                <Text style={styles.featureDescription}>
-                  {t('components.intro.journalDescription')}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.featureCard}>
-              <View style={[styles.featureIcon, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-                <Ionicons name="analytics-outline" size={24} color="#10b981" />
-              </View>
-              <View style={styles.featureText}>
-                <Text style={styles.featureTitle}>{t('components.intro.progressTitle')}</Text>
-                <Text style={styles.featureDescription}>
-                  {t('components.intro.progressDescription')}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.featureCard}>
-              <View style={[styles.featureIcon, { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}>
-                <Ionicons name="heart-outline" size={24} color="#3b82f6" />
-              </View>
-              <View style={styles.featureText}>
-                <Text style={styles.featureTitle}>{t('components.intro.habitsTitle')}</Text>
-                <Text style={styles.featureDescription}>
-                  {t('components.intro.habitsDescription')}
-                </Text>
-              </View>
-            </View>
+            ))}
           </View>
 
-          {/* Get Started Button */}
           <TouchableOpacity
             style={styles.getStartedButton}
             onPress={handleGetStarted}
             activeOpacity={0.8}
           >
-            <LinearGradient
-              colors={['#8b5cf6', '#7c3aed']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.buttonGradient}
-            >
+            <View style={styles.buttonInner}>
               <Text style={styles.buttonText}>{t('components.intro.getStarted')}</Text>
-              <Ionicons name="arrow-forward" size={20} color="#fff" />
-            </LinearGradient>
+              <Ionicons name="arrow-forward" size={18} color="#fff" />
+            </View>
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -153,6 +126,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: PREMIUM.layout.screenPadH,
   },
   gradient: {
     position: 'absolute',
@@ -162,88 +136,72 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   content: {
-    width: width - 48,
+    width: '100%',
     maxWidth: 400,
-    backgroundColor: '#0a0a0a',
-    borderRadius: 24,
-    padding: 32,
-    borderWidth: 1.5,
-    borderColor: 'rgba(139, 92, 246, 0.3)',
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 24,
-    elevation: 12,
+    backgroundColor: 'rgba(18, 18, 22, 0.92)',
+    borderRadius: PREMIUM.radius.xl,
+    padding: PREMIUM.space[4],
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: PREMIUM.glass.border,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: PREMIUM.space[4],
   },
   logoImage: {
-    width: 120,
-    height: 120,
-    marginBottom: 8,
+    width: 96,
+    height: 96,
+    marginBottom: PREMIUM.space[1],
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#fff',
-    marginBottom: 8,
+    ...TYPE.heading,
+    color: PREMIUM.text.primary,
+    marginBottom: PREMIUM.space[1],
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 15,
-    color: 'rgba(255, 255, 255, 0.6)',
+    ...TYPE.body,
+    color: PREMIUM.text.tertiary,
     textAlign: 'center',
-    lineHeight: 22,
   },
   featuresContainer: {
-    gap: 16,
-    marginBottom: 32,
+    gap: PREMIUM.space[2],
+    marginBottom: PREMIUM.space[4],
+    alignSelf: 'stretch',
   },
   featureCard: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 16,
+    alignItems: 'center',
+    gap: PREMIUM.space[2],
   },
   featureIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: PREMIUM.glass.fillElevated,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: PREMIUM.glass.border,
   },
   featureText: {
     flex: 1,
   },
   featureTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
+    ...TYPE.cardTitle,
+    color: PREMIUM.text.primary,
     marginBottom: 4,
   },
   featureDescription: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.5)',
-    lineHeight: 20,
+    ...TYPE.caption,
+    color: PREMIUM.text.muted,
   },
   getStartedButton: {
-    borderRadius: 16,
+    borderRadius: PREMIUM.radius.button,
     overflow: 'hidden',
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+    backgroundColor: '#1C1C1E',
   },
-  buttonGradient: {
+  buttonInner: {
     flexDirection: 'row',
     paddingVertical: 16,
     alignItems: 'center',

@@ -1,10 +1,10 @@
-/** Full-frame Zeno main screen (Product Reveal & marketing) */
-export const ZENO_MAIN_PHONE_FULL = require('../public/new-phone-images/Insight-AI-Zeno-Main 1.png');
+/** Full-frame Insight main screen (Product Reveal & marketing) */
+export const ZENO_MAIN_PHONE_FULL = require('../public/Insight-Main-Phone-New.png');
 
-/** Cropped Zeno main — paywall hero */
-export const ZENO_MAIN_PHONE = require('../public/new-phone-images/zeno-main-cut.png');
+/** Paywall hero — same rebranded Insight mockup */
+export const ZENO_MAIN_PHONE = require('../public/Insight-Main-Phone-New.png');
 
-/** Cropped mockups — legacy carousel assets (Zeno main first) */
+/** Cropped mockups — legacy carousel assets */
 export const PAYWALL_PHONE_IMAGES = [
   ZENO_MAIN_PHONE,
   require('../public/new-phone-images/dashboard-cut.png'),
@@ -13,5 +13,4 @@ export const PAYWALL_PHONE_IMAGES = [
   require('../public/new-phone-images/playbook-cut.png'),
 ] as const;
 
-/** Full-frame mockups — onboarding reveal uses Zeno-branded main screen */
 export const PRODUCT_REVEAL_PHONE = ZENO_MAIN_PHONE_FULL;

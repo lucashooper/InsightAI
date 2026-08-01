@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, View, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { SvgXml } from 'react-native-svg';
@@ -59,10 +59,7 @@ export default function PillOption({ label, icon, selected, onPress }: PillOptio
           useDarkOnboardingAccent
             ? [
                 styles.pillDefaultDarkTheme,
-                selected && {
-                  backgroundColor: ONBOARDING_SURFACE.fillSelected,
-                  borderColor: ONBOARDING_SURFACE.borderSelected,
-                },
+                selected && styles.pillSelectedDarkTheme,
               ]
             : selected
               ? styles.pillSelected
@@ -113,9 +110,9 @@ const styles = StyleSheet.create({
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingVertical: 18,
     paddingHorizontal: 20,
-    borderRadius: 16,
+    borderRadius: 999,
   },
   leftGroup: {
     flexDirection: 'row',
@@ -164,6 +161,18 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
+  /** QUITTR-style active: soft violet wash + solid violet border + outer glow */
+  pillSelectedDarkTheme: {
+    backgroundColor: 'rgba(168, 85, 247, 0.22)',
+    borderWidth: 1,
+    borderColor: '#A855F7',
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.45,
+    shadowRadius: 12,
+    elevation: 8,
+    ...(Platform.OS === 'android' ? { borderWidth: 1.5 } : null),
+  },
   label: {
     flex: 1,
     fontSize: 17,
@@ -172,7 +181,8 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   labelSelected: {
-    color: '#ffffff',
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   labelDarkTheme: {
     color: 'rgba(255, 255, 255, 0.92)',
@@ -181,6 +191,6 @@ const styles = StyleSheet.create({
     backgroundColor: ONBOARDING_SURFACE.iconChip,
   },
   iconChipSelectedDarkTheme: {
-    backgroundColor: ONBOARDING_SURFACE.iconChipSelected,
+    backgroundColor: 'rgba(168, 85, 247, 0.35)',
   },
 });

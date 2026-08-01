@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar, Image } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
-import SunoGradient from '../../components/onboarding/SunoGradient';
+import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import LanguagePicker from '../../components/LanguagePicker';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -24,7 +24,7 @@ export default function ProductRevealScreen({ navigation }: any) {
     return (
         <View style={styles.container}>
             <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={false} />
-            <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+            <OnboardingAmbientBackground />
 
             <View style={styles.languageAnchor}>
                 <LanguagePicker variant="pill" />
@@ -62,7 +62,7 @@ export default function ProductRevealScreen({ navigation }: any) {
                     activeOpacity={0.9}
                     onPress={() => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        navigation.navigate('AuthSelection');
+                        navigation.navigate('OnboardingQuestion');
                     }}
                 >
                     <View style={styles.buttonInner}>
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
         fontSize: sf(32),
         fontWeight: '600',
         textAlign: 'center',
-        letterSpacing: -0.6,
+        letterSpacing: -1.28,
     },
     bottomBlock: {
         flex: 1,

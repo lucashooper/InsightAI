@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import SunoGradient from '../../components/onboarding/SunoGradient';
+import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
@@ -120,7 +120,7 @@ export default function AnalysisCompleteScreen({ navigation }: Props) {
 
     return (
         <View style={styles.container}>
-            <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+            <OnboardingAmbientBackground />
             
             <View style={styles.content}>
                 {/* Check + Headline Unit */}
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
         color: '#1a1a2e',
         textAlign: 'center',
         marginBottom: 20,
-        letterSpacing: -0.6,
+        letterSpacing: -1.28,
         lineHeight: 40,
     },
     reassurance: {

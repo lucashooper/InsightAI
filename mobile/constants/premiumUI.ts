@@ -1,5 +1,5 @@
 /**
- * Zeno design system — one material language.
+ * Insight design system — one material language.
  *
  * Glass is defined by translucency + soft lighting, never coloured outlines.
  * Every card / input / widget inherits GlassSurface — content changes, material does not.
@@ -14,21 +14,20 @@ export const PREMIUM = {
 
   text: {
     primary: 'rgba(255,255,255,0.96)',
-    secondary: 'rgba(255,255,255,0.58)',
-    tertiary: 'rgba(255,255,255,0.40)',
+    secondary: 'rgba(255,255,255,0.72)',
+    tertiary: 'rgba(255,255,255,0.55)',
+    muted: 'rgba(255,255,255,0.45)',
   },
 
   /**
-   * Zeno Glass Surface — the ONLY glass recipe.
+   * Insight Glass Surface — the ONLY glass recipe.
    * Do not invent per-screen variants.
    */
   glass: {
-    /** Ultra-transparent frosted glass — background mesh reads through */
     fill: 'rgba(18, 18, 22, 0.20)',
     fillElevated: 'rgba(18, 18, 22, 0.28)',
     fillOverlay: 'rgba(18, 18, 22, 0.16)',
     border: 'rgba(255, 255, 255, 0.09)',
-    /** Near-invisible top sheen — no hard white line */
     highlight: 'rgba(255, 255, 255, 0.04)',
     innerShadow: 'rgba(0, 0, 0, 0.14)',
     washTop: 'rgba(255, 255, 255, 0.02)',
@@ -36,12 +35,20 @@ export const PREMIUM = {
     blur: 56,
   },
 
+  /** Premium reveal card mesh (Figma radials) */
+  revealMesh: {
+    purple: '#B411FF',
+    pink: '#E96161',
+    cyan: '#28D8FF',
+    base: '#0A0A0F',
+  },
+
   accent: '#8b5cf6',
   accentSoft: 'rgba(139, 92, 246, 0.22)',
   accentMuted: 'rgba(139, 92, 246, 0.12)',
 
   layout: {
-    screenPadH: 20,
+    screenPadH: 24,
     headerTop: 8,
     sectionGap: 24,
     cardGap: 16,
@@ -59,7 +66,7 @@ export const PREMIUM = {
   },
 
   space: {
-    /** 8pt grid aliases used across screens */
+    /** 8pt grid */
     1: 8,
     2: 16,
     3: 24,
@@ -93,15 +100,25 @@ export const PREMIUM = {
   },
 } as const;
 
-/** Typography — page titles sit at ~40, not WWDC-scale */
+/**
+ * Typography — Linear / Arc / Apple Intelligence restraint.
+ * Prefer opacity hierarchy over many colors. Stick to these roles.
+ */
 export const TYPE = {
   display: {
-    fontSize: sf(48),
+    fontSize: sf(36),
     fontWeight: '700' as TextStyle['fontWeight'],
-    letterSpacing: -1.2,
-    lineHeight: sf(52),
+    letterSpacing: sf(36) * -0.04,
+    lineHeight: sf(42),
   },
-  /** Main page headings: Dashboard, Journal */
+  /** Card / screen primary title — sole high-emphasis element */
+  heading: {
+    fontSize: sf(28),
+    fontWeight: '700' as TextStyle['fontWeight'],
+    letterSpacing: sf(28) * -0.04,
+    lineHeight: sf(34),
+  },
+  /** Legacy alias used by Dashboard / Journal page titles */
   large: {
     fontSize: sf(40),
     fontWeight: '700' as TextStyle['fontWeight'],
@@ -110,7 +127,7 @@ export const TYPE = {
   },
   section: {
     fontSize: sf(20),
-    fontWeight: '700' as TextStyle['fontWeight'],
+    fontWeight: '600' as TextStyle['fontWeight'],
     letterSpacing: -0.4,
     lineHeight: sf(26),
   },
@@ -121,34 +138,44 @@ export const TYPE = {
     lineHeight: sf(22),
   },
   body: {
-    fontSize: sf(16),
+    fontSize: sf(15),
     fontWeight: '400' as TextStyle['fontWeight'],
-    letterSpacing: -0.2,
-    lineHeight: sf(24),
+    letterSpacing: 0,
+    lineHeight: Math.round(sf(15) * 1.4),
   },
   secondary: {
     fontSize: sf(15),
     fontWeight: '400' as TextStyle['fontWeight'],
-    letterSpacing: -0.1,
-    lineHeight: sf(22),
+    letterSpacing: 0,
+    lineHeight: Math.round(sf(15) * 1.4),
   },
   caption: {
     fontSize: sf(13),
-    fontWeight: '500' as TextStyle['fontWeight'],
+    fontWeight: '400' as TextStyle['fontWeight'],
     letterSpacing: 0,
     lineHeight: sf(18),
   },
-  micro: {
+  /** Section labels — uppercase, medium, +6% tracking, ~80% opacity in use */
+  label: {
     fontSize: sf(11),
-    fontWeight: '600' as TextStyle['fontWeight'],
-    letterSpacing: 1.4,
+    fontWeight: '500' as TextStyle['fontWeight'],
+    letterSpacing: sf(11) * 0.06,
     lineHeight: sf(14),
     textTransform: 'uppercase' as const,
   },
+  /** @deprecated prefer TYPE.label */
+  micro: {
+    fontSize: sf(11),
+    fontWeight: '500' as TextStyle['fontWeight'],
+    letterSpacing: sf(11) * 0.06,
+    lineHeight: sf(14),
+    textTransform: 'uppercase' as const,
+  },
+  /** @deprecated prefer TYPE.label */
   eyebrow: {
     fontSize: sf(11),
-    fontWeight: '600' as TextStyle['fontWeight'],
-    letterSpacing: 1.4,
+    fontWeight: '500' as TextStyle['fontWeight'],
+    letterSpacing: sf(11) * 0.06,
     lineHeight: sf(14),
     textTransform: 'uppercase' as const,
   },

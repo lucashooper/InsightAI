@@ -1,13 +1,13 @@
 /** User-facing app brand name. */
-export const APP_NAME = 'Zeno';
+export const APP_NAME = 'Insight';
 
 /** Display name for the premium tier (RevenueCat entitlement IDs stay unchanged). */
-export const PRO_DISPLAY_NAME = 'Zeno Pro';
+export const PRO_DISPLAY_NAME = 'Insight Pro';
 
 /** Prefix stored in journal entries for guided prompts. */
-export const JOURNAL_PROMPT_PREFIX = 'Zeno Prompt';
+export const JOURNAL_PROMPT_PREFIX = 'Insight Prompt';
 
-/** Matches legacy Insight Prompt tags and new Zeno Prompt tags. */
+/** Matches legacy Insight Prompt tags and Zeno Prompt tags. */
 export const JOURNAL_PROMPT_TAG_REGEX = /\[(?:Insight|Zeno) Prompt: ([^\]]+)\]/g;
 
 export const JOURNAL_PROMPT_STRIP_REGEX = /\[(?:Insight|Zeno) Prompt: [^\]]+\]\n\n/;

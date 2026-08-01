@@ -6,7 +6,7 @@ import LottieView from 'lottie-react-native';
 import { Asset } from 'expo-asset';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import SunoGradient from '../../components/onboarding/SunoGradient';
+import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import ProgressBarNeon from '../../components/onboarding/ProgressBarNeon';
 import PillOption from '../../components/onboarding/PillOption';
 import AnimatedSlider from '../../components/onboarding/AnimatedSlider';
@@ -15,15 +15,10 @@ import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { isTablet, sf, ss, iPadContentStyle, iPadWideContentStyle } from '../../utils/responsive';
 import { analytics } from '../../services/analytics';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { ONBOARDING_SURFACE } from '../../constants/onboardingTheme';
 
-const cambridgeLogo = require('../../assets/Cambridge-logo.png');
+const cambridgeMonoLogo = require('../../public/Cambridge-Logo-No-Background.png');
 const stressManagementLottie = require('../../public/animations/Stress Management.json');
-
-// Research institution logos
-const cambridgeLogoFrame = require('../../public/research-images/Cambridge-Logo-Frame.png');
-const liverpoolLogo = require('../../public/research-images/Liverpool-Logo.jpg');
-const kaiserLogo = require('../../public/research-images/Smaller-Kaiser-Logo.png');
-const apaLogo = require('../../public/research-images/APA-LOGO.png');
 
 const { width } = Dimensions.get('window');
 
@@ -303,6 +298,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
     const [answers, setAnswers] = useState<Record<string, string>>(incomingAnswers);
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
     const [textInputValue, setTextInputValue] = useState('');
+    const [nameInputFocused, setNameInputFocused] = useState(false);
     const [wellbeingValue, setWellbeingValue] = useState(7);
     const isTransitioning = useRef(false);
     const [showLottie, setShowLottie] = useState(false);
@@ -512,7 +508,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
         <View style={styles.container}>
             <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent={true} />
 
-            <SunoGradient themeColors={theme.colors.backgroundGradient as any} />
+            <OnboardingAmbientBackground />
 
             {/* Back Arrow + Progress Bar Row (Left-aligned like CAL AI) */}
             <View style={styles.topRow}>
@@ -549,83 +545,42 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                     {/* Premium Info Page Layout for Journaling */}
                     {currentStep.type === 'info' && currentStep.id === 'research_info' ? (
                         <View style={styles.premiumInfoContainer}>
-                            {/* Title - positioned at same height as quiz pages */}
                             <Animated.View style={{ opacity: infoCardAnim, width: '100%' }}>
                                 <Text style={[styles.researchTitle, isDarkTheme(theme.name) && { color: '#ffffff' }]}>
                                     {t('onboarding.questions.research.screenTitle')}
                                 </Text>
                             </Animated.View>
 
-                            <Animated.View style={{ opacity: infoCardAnim, alignItems: 'center', marginTop: isTablet ? 20 : 12, marginBottom: isTablet ? 24 : 18 }}>
+                            <Animated.View
+                                style={{
+                                    opacity: infoCardAnim,
+                                    width: '100%',
+                                    flex: 1,
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    paddingHorizontal: 4,
+                                    paddingBottom: 12,
+                                }}
+                            >
                                 <LottieView
                                     source={stressManagementLottie}
                                     autoPlay
                                     loop
-                                    style={styles.researchLottie}
+                                    style={styles.researchLottieCompact}
                                 />
-                            </Animated.View>
-
-                            {/* Glassmorphic Card with body text */}
-                            <Animated.View
-                                style={{
-                                    opacity: infoCardAnim,
-                                    transform: [{
-                                        translateY: infoCardAnim.interpolate({
-                                            inputRange: [0, 1],
-                                            outputRange: [20, 0],
-                                        })
-                                    }],
-                                    width: '100%',
-                                }}
-                            >
-                                <View style={[styles.glassCard, isDarkTheme(theme.name) && { borderColor: 'rgba(255, 255, 255, 0.1)' }]}>
-                                    <LinearGradient
-                                        colors={isDarkTheme(theme.name) ? ['rgba(255, 255, 255, 0.08)', 'rgba(255, 255, 255, 0.04)'] : ['rgba(255, 255, 255, 0.6)', 'rgba(255, 255, 255, 0.35)']}
-                                        style={styles.glassCardGradient}
-                                    >
-                                        <Text style={[styles.glassCardBody, isDarkTheme(theme.name) && { color: 'rgba(255, 255, 255, 0.7)' }]}>
-                                            {t('onboarding.questions.research.body')}
-                                        </Text>
-                                    </LinearGradient>
-                                </View>
-                            </Animated.View>
-
-                            {/* Institution Logos Grid */}
-                            <Animated.View
-                                style={{
-                                    opacity: infoCardAnim,
-                                    transform: [{
-                                        translateY: infoCardAnim.interpolate({
-                                            inputRange: [0, 1],
-                                            outputRange: [20, 0],
-                                        })
-                                    }],
-                                    width: '100%',
-                                    marginTop: 22,
-                                }}
-                            >
-                                <View style={styles.logoGrid}>
-                                    <Image 
-                                        source={cambridgeLogoFrame} 
-                                        style={[styles.logoImage, styles.logoTopLeft, isDarkTheme(theme.name) && styles.logoImageDark]} 
-                                        resizeMode="cover" 
-                                    />
-                                    <Image 
-                                        source={liverpoolLogo} 
-                                        style={[styles.logoImage, styles.logoTopRight, isDarkTheme(theme.name) && styles.logoImageDark]} 
-                                        resizeMode="cover" 
-                                    />
-                                    <Image 
-                                        source={kaiserLogo} 
-                                        style={[styles.logoImage, styles.logoBottomLeft, isDarkTheme(theme.name) && styles.logoImageDark]} 
-                                        resizeMode="cover" 
-                                    />
-                                    <Image 
-                                        source={apaLogo} 
-                                        style={[styles.logoImage, styles.logoBottomRight, isDarkTheme(theme.name) && styles.logoImageDark]} 
-                                        resizeMode="cover" 
-                                    />
-                                </View>
+                                <Text style={styles.researchFact}>
+                                    {t('onboarding.questions.research.fact')}
+                                </Text>
+                                <Image
+                                    source={cambridgeMonoLogo}
+                                    style={styles.cambridgeMono}
+                                    resizeMode="contain"
+                                    tintColor="#FFFFFF"
+                                    fadeDuration={0}
+                                />
+                                <Text style={styles.researchCitation}>
+                                    {t('onboarding.questions.research.citation')}
+                                </Text>
                             </Animated.View>
                         </View>
                     ) : (
@@ -641,7 +596,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                 color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e',
                                 textAlign: 'left',
                                 lineHeight: 40,
-                                letterSpacing: -0.6,
+                                letterSpacing: -1.28,
                                 marginBottom: 20,
                             }}>
                                 {t(currentStep.title)}
@@ -760,21 +715,30 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                 style={[
                                     styles.nameInput,
                                     isDarkTheme(theme.name) && {
-                                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                                        borderColor: 'rgba(255, 255, 255, 0.3)',
+                                        backgroundColor: nameInputFocused || textInputValue.trim()
+                                          ? 'rgba(168, 85, 247, 0.22)'
+                                          : ONBOARDING_SURFACE.fill,
+                                        borderColor: nameInputFocused || textInputValue.trim()
+                                          ? '#A855F7'
+                                          : ONBOARDING_SURFACE.border,
                                         color: '#ffffff',
-                                    }
+                                        shadowColor: nameInputFocused || textInputValue.trim() ? '#A855F7' : 'transparent',
+                                        shadowOpacity: nameInputFocused || textInputValue.trim() ? 0.35 : 0,
+                                        shadowRadius: 10,
+                                        shadowOffset: { width: 0, height: 0 },
+                                    },
                                 ]}
                                 placeholder={t('onboarding.questions.name.placeholder')}
                                 placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.5)' : '#6b7280'}
                                 value={textInputValue}
                                 onChangeText={setTextInputValue}
+                                onFocus={() => setNameInputFocused(true)}
+                                onBlur={() => setNameInputFocused(false)}
                                 autoFocus
                                 autoCapitalize="words"
                                 returnKeyType="done"
                                 multiline={false}
                                 onSubmitEditing={() => {
-                                    // Just dismiss the keyboard - user should press Continue button to advance
                                     Keyboard.dismiss();
                                 }}
                             />
@@ -828,12 +792,6 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                         </Animated.View>
                                     ))}
                                 </View>
-
-                                {currentStep.skippable && (
-                                    <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-                                        <Text style={styles.skipText}>{t('onboarding.skipForNow')}</Text>
-                                    </TouchableOpacity>
-                                )}
                             </ScrollView>
 
                             {/* Continue Button - only enabled when option selected */}
@@ -894,7 +852,14 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                     minimumTrackTintColor="transparent"
                                     maximumTrackTintColor="transparent"
                                     thumbTintColor="#ffffff"
-                                    onValueChange={setWellbeingValue}
+                                    onValueChange={(v) => {
+                                        const snapped = Math.round(v);
+                                        if (snapped !== Math.round(wellbeingValue)) {
+                                            Haptics.selectionAsync();
+                                        }
+                                        setWellbeingValue(snapped);
+                                    }}
+                                    onSlidingComplete={(v) => setWellbeingValue(Math.round(v))}
                                 />
                             </View>
 
@@ -953,7 +918,7 @@ const styles = StyleSheet.create({
     topRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
+        paddingHorizontal: 24,
         paddingTop: 60,
         paddingBottom: 20,
         gap: 12,
@@ -1436,9 +1401,39 @@ const styles = StyleSheet.create({
         color: '#1a1a2e',
         textAlign: 'left',
         width: '100%',
-        letterSpacing: -0.6,
+        letterSpacing: -1.28,
         lineHeight: isTablet ? 48 : 40,
-        marginBottom: isTablet ? 24 : 20,
+        marginBottom: isTablet ? 8 : 4,
+    },
+    researchLottieCompact: {
+        width: isTablet ? 200 : 160,
+        height: isTablet ? 200 : 160,
+        marginBottom: isTablet ? 16 : 10,
+    },
+    researchFact: {
+        fontSize: isTablet ? 22 : 19,
+        fontWeight: '500',
+        color: 'rgba(255,255,255,0.90)',
+        textAlign: 'center',
+        lineHeight: isTablet ? 34 : 30,
+        letterSpacing: -0.35,
+        maxWidth: 340,
+        marginBottom: isTablet ? 28 : 22,
+    },
+    cambridgeMono: {
+        width: isTablet ? 350 : 300,
+        height: isTablet ? 85 : 70,
+        opacity: 0.9,
+        marginBottom: 16,
+    },
+    researchCitation: {
+        fontSize: 13,
+        color: '#9CA3AF',
+        textAlign: 'center',
+        lineHeight: 19,
+        letterSpacing: 0.1,
+        maxWidth: 320,
+        fontStyle: 'italic',
     },
     logoGrid: {
         flexDirection: 'row',
@@ -1487,7 +1482,7 @@ const styles = StyleSheet.create({
         fontSize: 26,
         fontWeight: '600',
         color: '#1a1a2e',
-        letterSpacing: -0.5,
+        letterSpacing: -1.28,
         lineHeight: 32,
     },
     glassCardBody: {

@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
-import SunoGradient from '../../components/onboarding/SunoGradient';
+import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { onboardingAuthStyles as auth, ONBOARDING_AUTH_COLORS as colors } from '../../constants/onboardingAuthStyles';
@@ -66,7 +66,7 @@ export default function SignupPasswordScreen({ navigation, route }: any) {
   return (
     <View style={auth.containerPadded}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={false} />
-      <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+      <OnboardingAmbientBackground />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={auth.keyboardView}

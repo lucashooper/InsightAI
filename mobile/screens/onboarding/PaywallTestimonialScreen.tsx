@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#ffffff',
     textAlign: 'center',
-    letterSpacing: -0.4,
+    letterSpacing: -1.28,
     lineHeight: sf(34),
     marginBottom: isTablet ? 32 : 24,
   },

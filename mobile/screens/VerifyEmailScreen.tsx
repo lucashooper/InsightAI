@@ -8,7 +8,6 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
-  Image,
   TouchableWithoutFeedback,
   Keyboard,
   StatusBar,
@@ -18,7 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import OTPInput from '../components/OTPInput';
 import { useOnboarding } from '../contexts/OnboardingContext';
-import SunoGradient from '../components/onboarding/SunoGradient';
+import OnboardingAmbientBackground from '../components/onboarding/OnboardingAmbientBackground';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { onboardingAuthStyles as auth, ONBOARDING_AUTH_COLORS as colors } from '../constants/onboardingAuthStyles';
@@ -115,18 +114,22 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
       if (type === 'signup') {
         if (isPostPurchase) {
           console.log('[OTP VERIFY] Post-purchase signup - setting HAS_COMPLETED_ONBOARDING BEFORE verification');
-          // Set the flag BEFORE verifyOtp so the navigator finds it immediately
           await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
-          // Keep NEEDS_EMAIL_SIGNUP as fallback - navigator also checks this
-        } else {
-          console.log('[OTP VERIFY] New signup - clearing AsyncStorage flags BEFORE verification');
-          await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
           await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
-          // CRITICAL: Set resume screen BEFORE verifyOtp fires onAuthStateChange
-          // The navigator checks this key the moment the user changes, so it must
-          // already be set or the profile check (which finds nothing) will default to Welcome
-          await AsyncStorage.setItem('ONBOARDING_RESUME_SCREEN', 'EmailVerified');
-          console.log('[OTP VERIFY] Set ONBOARDING_RESUME_SCREEN=EmailVerified before auth fires');
+          // Keep NEEDS_EMAIL_SIGNUP until after successful verify so navigators stay consistent
+        } else {
+          // Still treat as post-purchase if onboarding was already marked complete
+          // (covers race where NEEDS_EMAIL_SIGNUP was cleared early)
+          const alreadyComplete = await AsyncStorage.getItem('HAS_COMPLETED_ONBOARDING');
+          if (alreadyComplete === 'true') {
+            console.log('[OTP VERIFY] HAS_COMPLETED already set — keeping post-purchase path');
+          } else {
+            console.log('[OTP VERIFY] New signup - clearing AsyncStorage flags BEFORE verification');
+            await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
+            await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
+            await AsyncStorage.setItem('ONBOARDING_RESUME_SCREEN', 'EmailVerified');
+            console.log('[OTP VERIFY] Set ONBOARDING_RESUME_SCREEN=EmailVerified before auth fires');
+          }
         }
       }
 
@@ -185,23 +188,29 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
         
         if (isPostPurchase) {
           // Post-purchase flow: onboarding is already complete
-          // HAS_COMPLETED_ONBOARDING was set BEFORE verifyOtp above
-          // Clean up NEEDS_EMAIL_SIGNUP now that we're done with it
           console.log('[OTP VERIFY] Post-purchase flow - navigating to EmailVerified');
-          await AsyncStorage.removeItem('NEEDS_EMAIL_SIGNUP');
-          // Ensure flag is still set (belt and suspenders)
           await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+          // Keep NEEDS_EMAIL_SIGNUP until EmailVerified Continue so routing stays correct
           navigation.reset({
             index: 0,
             routes: [{ name: 'EmailVerified' }],
           });
         } else {
-          // Normal signup flow: show email verified confirmation screen
-          console.log('[OTP VERIFY] Navigating to EmailVerified');
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'EmailVerified' }],
-          });
+          // Also promote to complete if flag was already set (paywall path race)
+          const alreadyComplete = await AsyncStorage.getItem('HAS_COMPLETED_ONBOARDING');
+          if (alreadyComplete === 'true') {
+            console.log('[OTP VERIFY] Completing as post-purchase via HAS_COMPLETED flag');
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'EmailVerified' }],
+            });
+          } else {
+            console.log('[OTP VERIFY] Navigating to EmailVerified');
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'EmailVerified' }],
+            });
+          }
         }
       }
     } catch (err: any) {
@@ -274,7 +283,7 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={auth.containerPadded}>
         <StatusBar barStyle="light-content" />
-        <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+        <OnboardingAmbientBackground />
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={auth.keyboardView}
@@ -289,15 +298,7 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
             </View>
           </TouchableOpacity>
 
-          <View style={auth.contentCentered}>
-          <View style={styles.iconContainer}>
-            <Image
-              source={require('../public/onboarding-icons/Email-Icon2.webp')}
-              style={styles.emailIcon}
-              resizeMode="contain"
-            />
-          </View>
-
+          <View style={[auth.contentCentered, styles.contentTop]}>
           {/* Title */}
           <Text style={auth.titleCentered}>{t('auxiliary.verifyEmail.title')}</Text>
 
@@ -354,12 +355,9 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
 }
 
 const styles = StyleSheet.create({
-  iconContainer: {
-    marginBottom: 8,
-  },
-  emailIcon: {
-    width: 180,
-    height: 180,
+  contentTop: {
+    justifyContent: 'flex-start',
+    paddingTop: 72,
   },
   emailInline: {
     color: colors.linkBold,

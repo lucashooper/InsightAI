@@ -55,6 +55,10 @@ export default function App() {
           Asset.fromModule(require('./public/Zeno-Dashboard-background.webp')).downloadAsync(),
           Asset.fromModule(require('./public/gradient-ellipse.png')).downloadAsync(),
           Asset.fromModule(require('./public/gradient-ellipse-noise.png')).downloadAsync(),
+          Asset.fromModule(require('./public/purple-ellipse-blur.png')).downloadAsync(),
+          Asset.fromModule(require('./public/Cambridge-Logo-No-Background.png')).downloadAsync(),
+          Asset.fromModule(require('./public/Mira-Orb-No-Background.png')).downloadAsync(),
+          Asset.fromModule(require('./public/Insight-Logo-nobg.webp')).downloadAsync(),
         ]);
         setSplashAssetsReady(true);
         setThemeLoaded(true);
@@ -193,7 +197,7 @@ export default function App() {
 
   const [appReady, setAppReady] = useState(false);
   const [splashVisible, setSplashVisible] = useState(true);
-  /** Ancient wisdom brand splash — only for returning/logged-in users */
+  /** Brand splash — only for returning/logged-in users */
   const [showBrandSplash, setShowBrandSplash] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const splashShownAtRef = useRef<number | null>(null);

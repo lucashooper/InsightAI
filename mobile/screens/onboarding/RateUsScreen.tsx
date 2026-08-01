@@ -5,7 +5,7 @@ import * as Haptics from 'expo-haptics';
 import * as StoreReview from 'expo-store-review';
 import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
-import SunoGradient from '../../components/onboarding/SunoGradient';
+import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 const testimonials = [
@@ -41,7 +41,7 @@ export default function RateUsScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+      <OnboardingAmbientBackground />
 
       {/* Back Button */}
       <TouchableOpacity 
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     fontSize: sf(32),
     fontWeight: '600',
     color: '#1a1a2e',
-    letterSpacing: -0.6,
+    letterSpacing: -1.28,
     lineHeight: sf(40),
   },
   titleDark: {

@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 type Props = {
   selected?: boolean;
+  recommended?: boolean;
   onPress: () => void;
   children: ReactNode;
   badge?: ReactNode;
@@ -22,6 +23,7 @@ type Props = {
 /** Frosted glass plan card — badge overlaps top edge, glass clipped inside. */
 export default function PaywallPlanCard({
   selected,
+  recommended,
   onPress,
   children,
   badge,
@@ -33,7 +35,11 @@ export default function PaywallPlanCard({
       <TouchableOpacity
         onPress={onPress}
         activeOpacity={0.85}
-        style={[styles.touchable, selected && styles.touchableSelected]}
+        style={[
+          styles.touchable,
+          recommended && styles.touchableRecommended,
+          selected && styles.touchableSelected,
+        ]}
       >
         {Platform.OS === 'ios' ? (
           <BlurView
@@ -109,13 +115,20 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+  touchableRecommended: {
+    borderColor: 'rgba(168, 85, 247, 0.55)',
+    borderWidth: 1,
+    shadowColor: '#A855F7',
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+  },
   touchableSelected: {
-    borderColor: '#8b5cf6',
-    borderWidth: 2,
-    shadowColor: '#8b5cf6',
-    shadowOpacity: 0.22,
-    shadowRadius: 12,
-    elevation: 8,
+    borderColor: '#A855F7',
+    borderWidth: 1.5,
+    shadowColor: '#A855F7',
+    shadowOpacity: 0.45,
+    shadowRadius: 14,
+    elevation: 10,
   },
   badgeOverlay: {
     position: 'absolute',

@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import SunoGradient from '../../components/onboarding/SunoGradient';
+import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { isTablet, sf } from '../../utils/responsive';
 import { analytics } from '../../services/analytics';
@@ -141,7 +141,7 @@ export default function InteractiveShowcaseScreen({ navigation }: Props) {
 
     return (
         <View style={styles.container}>
-            <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+            <OnboardingAmbientBackground />
 
             {/* Back Button */}
             <TouchableOpacity
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: sf(30),
         fontWeight: '700',
-        letterSpacing: -0.5,
+        letterSpacing: -1.28,
         lineHeight: sf(38),
     },
     journalCard: {

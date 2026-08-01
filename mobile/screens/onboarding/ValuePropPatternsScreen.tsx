@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import SunoGradient from '../../components/onboarding/SunoGradient';
+import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
 
 const PATTERNS = [
@@ -47,7 +47,7 @@ export default function ValuePropPatternsScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} />
-      <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+      <OnboardingAmbientBackground />
 
       {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -78,7 +78,9 @@ export default function ValuePropPatternsScreen({ navigation }: any) {
                 styles.pill,
                 {
                   backgroundColor: dark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.75)',
-                  borderColor: dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.07)',
+                  borderColor: i === 0
+                    ? 'rgba(168, 85, 247, 0.4)'
+                    : (dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.07)'),
                   opacity: pillAnims[i].opacity,
                   transform: [{ translateY: pillAnims[i].translateY }],
                 },
@@ -143,7 +145,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: isTablet ? 48 : 28,
+    paddingHorizontal: 24,
     paddingTop: isTablet ? 120 : 110,
     paddingBottom: 20,
   },
@@ -157,7 +159,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: sf(32),
     fontWeight: '600',
-    letterSpacing: -0.6,
+    letterSpacing: -1.28,
     lineHeight: sf(40),
     marginBottom: 14,
   },
@@ -179,7 +181,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   frequencyBadge: {
-    backgroundColor: '#ef4444',
+    backgroundColor: 'rgba(168, 85, 247, 0.2)',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
@@ -188,7 +190,7 @@ const styles = StyleSheet.create({
   frequencyText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#fff',
+    color: '#E9D5FF',
     letterSpacing: 0.3,
   },
   pillEmoji: {
@@ -202,7 +204,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   footer: {
-    paddingHorizontal: isTablet ? 48 : 28,
+    paddingHorizontal: 24,
     paddingBottom: isTablet ? 70 : 50,
   },
   button: {

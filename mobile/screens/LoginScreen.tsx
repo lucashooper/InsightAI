@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SvgXml } from 'react-native-svg';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import SunoGradient from '../components/onboarding/SunoGradient';
+import OnboardingAmbientBackground from '../components/onboarding/OnboardingAmbientBackground';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -94,7 +94,7 @@ export default function LoginScreen({ navigation }: any) {
   return (
     <View style={auth.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={false} />
-      <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+      <OnboardingAmbientBackground />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={auth.keyboardView}

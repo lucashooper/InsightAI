@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import SunoGradient from '../../components/onboarding/SunoGradient';
+import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
 
 const WINS = [
@@ -47,7 +47,7 @@ export default function ValuePropWinsScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} />
-      <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+      <OnboardingAmbientBackground />
 
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <View style={[styles.backArrowCircle, { backgroundColor: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: isTablet ? 48 : 28,
+    paddingHorizontal: 24,
     paddingTop: isTablet ? 120 : 110,
     paddingBottom: 20,
   },
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: sf(32),
     fontWeight: '600',
-    letterSpacing: -0.6,
+    letterSpacing: -1.28,
     lineHeight: sf(40),
     marginBottom: 14,
   },
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   footer: {
-    paddingHorizontal: isTablet ? 48 : 28,
+    paddingHorizontal: 24,
     paddingBottom: isTablet ? 70 : 50,
   },
   button: {

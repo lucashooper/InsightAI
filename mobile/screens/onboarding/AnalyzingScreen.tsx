@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import SunoGradient from '../../components/onboarding/SunoGradient';
+import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { isTablet } from '../../utils/responsive';
 import { analytics } from '../../services/analytics';
@@ -115,7 +115,7 @@ export default function AnalyzingScreen({ navigation, route }: Props) {
 
     return (
         <View style={styles.container}>
-            <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+            <OnboardingAmbientBackground />
 
             {/* Back Button */}
             <TouchableOpacity
@@ -189,12 +189,11 @@ export default function AnalyzingScreen({ navigation, route }: Props) {
                         const answers = route?.params?.answers || {};
                         const skipPersonality = route?.params?.skipPersonality || false;
                         
-                        // If user skipped personality questions, go straight to summary
-                        if (skipPersonality) {
-                            navigation.navigate('OnboardingSummary', { answers });
-                        } else {
-                            navigation.navigate('PersonalityResult', { answers });
-                        }
+                        // Emotional peak: Mira chat with personalized pattern
+                        navigation.navigate('MiraOnboardingChat', {
+                            answers,
+                            skipPersonality,
+                        });
                     }}
                 >
                     <View style={styles.ctaGradient}>

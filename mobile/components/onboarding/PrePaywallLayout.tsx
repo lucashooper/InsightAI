@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import SunoGradient from './SunoGradient';
+import OnboardingAmbientBackground from './OnboardingAmbientBackground';
 import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -56,7 +56,7 @@ export default function PrePaywallLayout({
 
   return (
     <View style={styles.container}>
-      <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+      <OnboardingAmbientBackground />
       <StatusBar barStyle="light-content" />
 
       {showBack && onBack && (
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   backButton: {
     position: 'absolute',
     top: isTablet ? 60 : 50,
-    left: 20,
+    left: 24,
     zIndex: 10,
     padding: 4,
   },
@@ -120,14 +120,14 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: isTablet ? 64 : 28,
+    paddingHorizontal: 24,
     paddingTop: isTablet ? 108 : 96,
     paddingBottom: 24,
     justifyContent: 'center',
     ...(iPadContentStyle as object),
   },
   footer: {
-    paddingHorizontal: isTablet ? 64 : 28,
+    paddingHorizontal: 24,
     paddingBottom: isTablet ? 56 : 44,
     gap: 16,
     ...(iPadContentStyle as object),

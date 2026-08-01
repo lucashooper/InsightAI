@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ConfettiCannon from 'react-native-confetti-cannon';
-import SunoGradient from '../../components/onboarding/SunoGradient';
+import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
@@ -76,7 +76,7 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
         <View style={styles.container}>
             <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} />
 
-            <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+            <OnboardingAmbientBackground />
             
             {/* Back Button - Circular style matching other onboarding pages */}
             {navigation.canGoBack() && (
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
         color: '#1a1a2e',
         marginBottom: 16,
         textAlign: 'center',
-        letterSpacing: -0.6,
+        letterSpacing: -1.28,
         lineHeight: 40,
     },
     subtitle: {

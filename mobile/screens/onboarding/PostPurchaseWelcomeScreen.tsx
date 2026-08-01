@@ -1,76 +1,69 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Image } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import SunoGradient from '../../components/onboarding/SunoGradient';
+import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { ONBOARDING_SURFACE } from '../../constants/onboardingTheme';
+import { sf } from '../../utils/responsive';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 export default function PostPurchaseWelcomeScreen({ navigation }: any) {
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const dark = isDarkTheme(theme.name);
 
   const handleContinue = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate('AuthSelection', { postPurchase: true });
   };
 
+  const features = [
+    { icon: 'sparkles-outline' as const, text: t('onboarding.postPurchase.analysis') },
+    { icon: 'shield-checkmark-outline' as const, text: t('onboarding.postPurchase.privateEntries') },
+    { icon: 'trending-up-outline' as const, text: t('onboarding.postPurchase.growth') },
+  ];
+
   return (
     <View style={styles.container}>
-      <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
-      <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} />
-      
+      <OnboardingAmbientBackground />
+      <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} />
+
       <View style={styles.content}>
-        {/* Logo */}
         <View style={styles.logoContainer}>
           <Image source={insightLogo} style={styles.logo} resizeMode="contain" />
         </View>
 
-        {/* Welcome Text */}
-        <Text style={[styles.title, isDarkTheme(theme.name) && { color: '#ffffff' }]}>{t('onboarding.postPurchase.title')}</Text>
+        <Text style={[styles.title, dark && { color: '#ffffff' }]}>
+          {t('onboarding.postPurchase.title')}
+        </Text>
         <Text style={styles.subtitle}>{t('onboarding.postPurchase.subtitle')}</Text>
 
-        {/* Features */}
         <View style={styles.features}>
-          <View style={styles.featureRow}>
-            <View style={[styles.featureIcon, isDarkTheme(theme.name) && { backgroundColor: 'rgba(168, 85, 247, 0.25)' }]}>
-              <Ionicons name="sparkles" size={20} color="#a855f7" />
+          {features.map((f) => (
+            <View key={f.text} style={styles.featureRow}>
+              <View style={styles.featureIcon}>
+                <Ionicons name={f.icon} size={20} color="rgba(255,255,255,0.8)" />
+              </View>
+              <Text style={[styles.featureText, dark && { color: '#ffffff' }]}>{f.text}</Text>
             </View>
-            <Text style={[styles.featureText, isDarkTheme(theme.name) && { color: '#ffffff' }]}>{t('onboarding.postPurchase.analysis')}</Text>
-          </View>
-          <View style={styles.featureRow}>
-            <View style={[styles.featureIcon, isDarkTheme(theme.name) && { backgroundColor: 'rgba(168, 85, 247, 0.25)' }]}>
-              <Ionicons name="shield-checkmark" size={20} color="#a855f7" />
-            </View>
-            <Text style={[styles.featureText, isDarkTheme(theme.name) && { color: '#ffffff' }]}>{t('onboarding.postPurchase.privateEntries')}</Text>
-          </View>
-          <View style={styles.featureRow}>
-            <View style={[styles.featureIcon, isDarkTheme(theme.name) && { backgroundColor: 'rgba(168, 85, 247, 0.25)' }]}>
-              <Ionicons name="trending-up" size={20} color="#a855f7" />
-            </View>
-            <Text style={[styles.featureText, isDarkTheme(theme.name) && { color: '#ffffff' }]}>{t('onboarding.postPurchase.growth')}</Text>
-          </View>
+          ))}
         </View>
 
-        {/* Info text */}
-        <Text style={[styles.infoText, isDarkTheme(theme.name) && { color: 'rgba(255, 255, 255, 0.45)' }]}>
+        <Text style={[styles.infoText, dark && { color: 'rgba(255, 255, 255, 0.45)' }]}>
           {t('onboarding.postPurchase.accountInfo')}
         </Text>
       </View>
 
-      {/* Continue Button */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.continueButton}
           onPress={handleContinue}
           activeOpacity={0.9}
         >
-          <View style={styles.continueGradient}>
-            <Text style={styles.continueText}>{t('common.continue')}</Text>
-          </View>
+          <Text style={styles.continueText}>{t('common.continue')}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -84,87 +77,89 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 32,
+    paddingHorizontal: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
   logoContainer: {
-    width: 160,
-    height: 160,
-    marginBottom: 40,
+    width: 140,
+    height: 140,
+    marginBottom: 32,
   },
   logo: {
     width: '100%',
     height: '100%',
   },
   title: {
-    fontSize: 32,
+    fontSize: sf(32),
     fontWeight: '600',
     color: '#1a1a2e',
     textAlign: 'center',
     marginBottom: 10,
-    letterSpacing: -0.6,
+    letterSpacing: -1.28,
     lineHeight: 40,
   },
   subtitle: {
-    fontSize: 19,
+    fontSize: sf(18),
     fontWeight: '600',
-    color: '#a855f7',
+    color: '#C4B5FD',
     textAlign: 'center',
-    marginBottom: 48,
+    marginBottom: 40,
   },
   features: {
+    alignSelf: 'center',
     width: '100%',
-    gap: 24,
-    marginBottom: 40,
-    paddingHorizontal: 16,
+    maxWidth: 320,
+    gap: 16,
+    marginBottom: 32,
   },
   featureRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    justifyContent: 'center',
+    gap: 14,
   },
   featureIcon: {
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: 'rgba(168, 85, 247, 0.15)',
+    backgroundColor: ONBOARDING_SURFACE.iconChip,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: ONBOARDING_SURFACE.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
   featureText: {
-    fontSize: 17,
+    fontSize: sf(16),
     fontWeight: '600',
     color: '#374151',
+    flexShrink: 1,
+    textAlign: 'left',
   },
   infoText: {
-    fontSize: 15,
+    fontSize: sf(14),
     color: 'rgba(0, 0, 0, 0.45)',
     textAlign: 'center',
     lineHeight: 22,
-    paddingHorizontal: 16,
   },
   footer: {
     paddingHorizontal: 24,
     paddingBottom: 50,
   },
   continueButton: {
+    height: 56,
     borderRadius: 28,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#1C1C1E',
+    alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 12,
     elevation: 8,
   },
-  continueGradient: {
-    paddingVertical: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 28,
-  },
   continueText: {
-    fontSize: 17,
+    fontSize: sf(17),
     fontWeight: '600',
     color: '#fff',
     letterSpacing: 0.2,

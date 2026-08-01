@@ -1,18 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import SunoGradient from '../../components/onboarding/SunoGradient';
+import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
-const bellIcon = require('../../public/onboarding-icons/BellIcon.webp');
-
-const { width } = Dimensions.get('window');
 
 interface NotificationsOnboardingScreenProps {
   navigation: any;
@@ -49,7 +46,7 @@ export default function NotificationsOnboardingScreen({ navigation }: Notificati
 
   return (
     <View style={styles.container}>
-      <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+      <OnboardingAmbientBackground />
       
       {/* Back Button - Circular style matching other onboarding pages */}
       {navigation.canGoBack() && (
@@ -65,15 +62,6 @@ export default function NotificationsOnboardingScreen({ navigation }: Notificati
 
       {/* Logo */}
       <Image source={insightLogo} style={styles.logo} />
-      
-      {/* Bell Icon */}
-      <View style={styles.iconContainer}>
-        <Image
-          source={bellIcon}
-          style={styles.bellIcon}
-          resizeMode="contain"
-        />
-      </View>
 
       {/* Title */}
       <Text style={[styles.title, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>{t('onboarding.notifications.title')}</Text>
@@ -127,22 +115,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 60,
   },
-  iconContainer: {
-    marginBottom: 48,
-    alignItems: 'center',
-  },
-  bellIcon: {
-    width: 280,
-    height: 280,
-  },
   title: {
     fontSize: 32,
     fontWeight: '600',
     color: '#1a1a2e',
     marginBottom: 16,
     textAlign: 'center',
-    letterSpacing: -0.6,
+    letterSpacing: -1.28,
     lineHeight: 40,
+    paddingHorizontal: 24,
   },
   subtitle: {
     fontSize: 16,

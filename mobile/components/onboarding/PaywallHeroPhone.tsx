@@ -9,7 +9,7 @@ const PHONE_WIDTH = isTablet ? SCREEN_WIDTH * 0.56 : SCREEN_WIDTH * 0.78;
 const PHONE_FULL_HEIGHT = PHONE_WIDTH / PHONE_ASPECT;
 const PHONE_VISIBLE_HEIGHT = PHONE_FULL_HEIGHT * 0.58;
 
-/** Single static paywall hero — full Zeno phone, no white backing box. */
+/** Single static paywall hero — full Insight phone, no white backing box. */
 export default function PaywallHeroPhone() {
   return (
     <View style={styles.wrap}>

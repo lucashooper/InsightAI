@@ -9,7 +9,6 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
-  Image,
   TouchableWithoutFeedback,
   Keyboard,
   StatusBar,
@@ -17,7 +16,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import SunoGradient from '../components/onboarding/SunoGradient';
+import OnboardingAmbientBackground from '../components/onboarding/OnboardingAmbientBackground';
 import OTPInput from '../components/OTPInput';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -234,32 +233,6 @@ export default function ForgotPasswordScreen({ navigation }: any) {
     navigation.goBack();
   };
 
-  const renderIcon = () => {
-    if (step === 'password') {
-      return (
-        <View style={styles.inlineIconCircle}>
-          <Ionicons name="key-outline" size={34} color="#ffffff" />
-        </View>
-      );
-    }
-
-    if (step === 'success') {
-      return (
-        <View style={styles.inlineIconCircle}>
-          <Ionicons name="checkmark" size={34} color="#ffffff" />
-        </View>
-      );
-    }
-
-    return (
-      <Image
-        source={require('../public/onboarding-icons/Email-Icon2.webp')}
-        style={styles.emailIcon}
-        resizeMode="contain"
-      />
-    );
-  };
-
   const renderTitle = () => {
     switch (step) {
       case 'code':
@@ -453,7 +426,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={auth.container}>
         <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={false} />
-        <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+        <OnboardingAmbientBackground />
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
@@ -472,7 +445,6 @@ export default function ForgotPasswordScreen({ navigation }: any) {
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.content}>
-              <View style={styles.iconContainer}>{renderIcon()}</View>
               <Text style={auth.titleCentered}>{renderTitle()}</Text>
               {renderSubtitle()}
               {renderBody()}
@@ -497,29 +469,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 120,
+    paddingTop: 100,
     alignItems: 'center',
     paddingBottom: 24,
-  },
-  iconContainer: {
-    marginBottom: 12,
-    minHeight: 180,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emailIcon: {
-    width: 180,
-    height: 180,
-  },
-  inlineIconCircle: {
-    width: 92,
-    height: 92,
-    borderRadius: 46,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   subtitle: {
     fontSize: 15,

@@ -13,7 +13,6 @@ const BENEFIT_ICONS: Record<(typeof BENEFIT_KEYS)[number], keyof typeof Ionicons
   steps: 'trending-up-outline',
   mira: 'chatbubble-ellipses-outline',
 };
-const BENEFIT_COLORS = ['#60a5fa', '#a78bfa', '#34d399', '#f472b6'];
 
 export default function PaywallBenefitsScreen({ navigation }: any) {
   const { t } = useLanguage();
@@ -29,10 +28,10 @@ export default function PaywallBenefitsScreen({ navigation }: any) {
       <Text style={styles.title}>{t('onboarding.prePaywall.benefits.title')}</Text>
 
       <View style={styles.list}>
-        {BENEFIT_KEYS.map((key, index) => (
+        {BENEFIT_KEYS.map((key) => (
           <View key={key} style={styles.row}>
-            <View style={[styles.iconCircle, { backgroundColor: `${BENEFIT_COLORS[index]}22` }]}>
-              <Ionicons name={BENEFIT_ICONS[key]} size={22} color={BENEFIT_COLORS[index]} />
+            <View style={styles.iconCircle}>
+              <Ionicons name={BENEFIT_ICONS[key]} size={22} color="rgba(255,255,255,0.8)" />
             </View>
             <Text style={styles.rowText}>{t(`onboarding.prePaywall.benefits.items.${key}`)}</Text>
           </View>
@@ -57,7 +56,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#ffffff',
     textAlign: 'center',
-    letterSpacing: -0.5,
+    letterSpacing: -1.28,
     lineHeight: sf(36),
     marginBottom: isTablet ? 36 : 28,
   },
@@ -81,6 +80,9 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: ONBOARDING_SURFACE.iconChip,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: ONBOARDING_SURFACE.border,
   },
   rowText: {
     flex: 1,

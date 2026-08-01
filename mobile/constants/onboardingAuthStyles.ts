@@ -71,7 +71,7 @@ export const onboardingAuthStyles = StyleSheet.create({
     fontWeight: '600',
     color: ONBOARDING_AUTH_COLORS.title,
     marginBottom: 12,
-    letterSpacing: -0.6,
+    letterSpacing: -1.28,
   },
   titleCentered: {
     fontSize: sf(32),
@@ -79,7 +79,7 @@ export const onboardingAuthStyles = StyleSheet.create({
     color: ONBOARDING_AUTH_COLORS.title,
     marginBottom: 10,
     textAlign: 'center',
-    letterSpacing: -0.6,
+    letterSpacing: -1.28,
   },
   subtitle: {
     fontSize: sf(15),

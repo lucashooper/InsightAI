@@ -4,7 +4,7 @@ import Svg, { Polygon, Circle, Line, Text as SvgText } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import SunoGradient from '../../components/onboarding/SunoGradient';
+import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { isTablet, sf } from '../../utils/responsive';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -325,7 +325,7 @@ export default function PersonalityResultScreen({ navigation, route }: any) {
     return (
         <View style={styles.container}>
             <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent={false} />
-            <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+            <OnboardingAmbientBackground />
 
       {/* Close button */}
       <TouchableOpacity
@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
     fontSize: sf(32),
     fontWeight: '600',
     textAlign: 'center',
-    letterSpacing: -0.6,
+    letterSpacing: -1.28,
     marginBottom: isTablet ? 16 : 8,
   },
   description: {

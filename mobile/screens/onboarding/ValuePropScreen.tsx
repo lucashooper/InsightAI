@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import SunoGradient from '../../components/onboarding/SunoGradient';
+import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { sf } from '../../utils/responsive';
@@ -32,7 +32,7 @@ export default function ValuePropScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+      <OnboardingAmbientBackground />
 
       {/* Back Button - Circular style matching other onboarding pages */}
       {navigation.canGoBack() && (
@@ -143,7 +143,7 @@ export default function ValuePropScreen({ navigation }: any) {
 
             <View style={styles.bulletRow}>
               <Text style={styles.bulletDot}>•</Text>
-              <Text style={[styles.bulletText, styles.bulletTextPurple]}>
+              <Text style={[styles.bulletText, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.7)' : '#4a4a4a' }]}>
                 {t('onboarding.valueProp.gainClarity')}
               </Text>
             </View>
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 28,
+    paddingHorizontal: 24,
     paddingTop: 80,
   },
   mainContent: {
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   footer: {
-    paddingHorizontal: 28,
+    paddingHorizontal: 24,
     paddingBottom: 50,
     paddingTop: 16,
   },

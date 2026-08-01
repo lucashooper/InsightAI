@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform, StatusBar } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Haptics from 'expo-haptics';
-import SunoGradient from '../../components/onboarding/SunoGradient';
+import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -50,7 +50,7 @@ export default function NotificationPermissionScreen({ navigation }: any) {
 
     return (
         <View style={styles.container}>
-            <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+            <OnboardingAmbientBackground />
             <StatusBar barStyle="light-content" />
             <View style={styles.content}>
                 <Text style={[styles.title, { color: theme.colors.primaryText }]}>{t('onboarding.notifications.permissionTitle')}</Text>
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginBottom: 60,
         lineHeight: 36,
-        letterSpacing: -0.5,
+        letterSpacing: -1.28,
     },
     permissionCard: {
         backgroundColor: '#d1d5db',

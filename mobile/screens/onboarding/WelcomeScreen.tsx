@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, StatusBar, Image, TouchableWithoutFeedback } from 'react-native';
 import { Asset } from 'expo-asset';
 import { isTablet, sf, ss } from '../../utils/responsive';
-import SunoGradient from '../../components/onboarding/SunoGradient';
+import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
         fontSize: sf(44),
         fontWeight: '700',
         color: '#1a1a2e',
-        letterSpacing: -1.2,
+        letterSpacing: -1.28,
         marginBottom: 0,
     },
     phoneContainer: {

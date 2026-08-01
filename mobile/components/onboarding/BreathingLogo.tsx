@@ -15,7 +15,7 @@ type Props = {
   style?: StyleProp<ImageStyle>;
 };
 
-/** Slow breathing scale + opacity pulse for the Zeno logo mark. */
+/** Slow breathing scale + opacity pulse for the Insight logo mark. */
 export default function BreathingLogo({ source, style }: Props) {
   const scale = useRef(new Animated.Value(1)).current;
   const opacity = useRef(new Animated.Value(0.88)).current;

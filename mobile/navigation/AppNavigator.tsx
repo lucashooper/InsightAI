@@ -49,6 +49,7 @@ import OnboardingSummaryScreen from '../screens/onboarding/OnboardingSummaryScre
 import PrivacyOnboardingScreen from '../screens/onboarding/PrivacyOnboardingScreen';
 import NotificationsOnboardingScreen from '../screens/onboarding/NotificationsOnboardingScreen';
 import AnalyzingScreen from '../screens/onboarding/AnalyzingScreen';
+import MiraOnboardingChatScreen from '../screens/onboarding/MiraOnboardingChatScreen';
 import AnalysisCompleteScreen from '../screens/onboarding/AnalysisCompleteScreen';
 import InteractiveShowcaseScreen from '../screens/onboarding/InteractiveShowcaseScreen';
 import PaywallScreen from '../screens/onboarding/PaywallScreen';
@@ -288,6 +289,19 @@ export default function AppNavigator() {
           const freshResumeScreen = await AsyncStorage.getItem('ONBOARDING_RESUME_SCREEN');
           if (freshResumeScreen) {
             console.log('[NAV] Resume screen found in AsyncStorage:', freshResumeScreen);
+            // EmailVerified is a confirmation stop — if onboarding already completed
+            // (post-paywall), do not bounce the user back into quiz screens.
+            if (freshResumeScreen === 'EmailVerified') {
+              const completedAgain = await AsyncStorage.getItem('HAS_COMPLETED_ONBOARDING');
+              const needsSignup = await AsyncStorage.getItem('NEEDS_EMAIL_SIGNUP');
+              if (completedAgain === 'true' || needsSignup === 'true') {
+                console.log('[NAV] EmailVerified + completed onboarding → MainTabs');
+                await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+                await AsyncStorage.removeItem('ONBOARDING_RESUME_SCREEN');
+                setIsOnboardingCompleted(true);
+                return;
+              }
+            }
             setOnboardingResumeScreen(freshResumeScreen);
             setIsOnboardingCompleted(false);
             await AsyncStorage.removeItem('ONBOARDING_RESUME_SCREEN');
@@ -369,7 +383,7 @@ export default function AppNavigator() {
   React.useEffect(() => {
     if (user && isOnboardingCompleted === true && navigationRef.isReady() && !passwordRecoveryActive) {
       const currentRoute = navigationRef.getCurrentRoute();
-      if (currentRoute && currentRoute.name !== 'MainTabs' && currentRoute.name !== 'Profile' && currentRoute.name !== 'EntryDetail' && currentRoute.name !== 'CreateEntry' && currentRoute.name !== 'AIChat') {
+      if (currentRoute && currentRoute.name !== 'MainTabs' && currentRoute.name !== 'Profile' && currentRoute.name !== 'EntryDetail' && currentRoute.name !== 'CreateEntry' && currentRoute.name !== 'AIChat' && currentRoute.name !== 'EmailVerified') {
         console.log('[NAV] Force navigating to MainTabs from:', currentRoute.name);
         navigationRef.reset({
           index: 0,
@@ -449,6 +463,7 @@ export default function AppNavigator() {
           <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
           <Stack.Screen name="PersonalityQuizIntro" component={PersonalityQuizIntroScreen} />
           <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
+          <Stack.Screen name="MiraOnboardingChat" component={MiraOnboardingChatScreen} />
           <Stack.Screen name="PersonalityResult" component={PersonalityResultScreen} />
           <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
           <Stack.Screen name="ValueProp" component={ValuePropScreen} />
@@ -533,6 +548,7 @@ export default function AppNavigator() {
           <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
           <Stack.Screen name="PersonalityQuizIntro" component={PersonalityQuizIntroScreen} />
           <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
+          <Stack.Screen name="MiraOnboardingChat" component={MiraOnboardingChatScreen} />
           <Stack.Screen name="PersonalityResult" component={PersonalityResultScreen} />
           <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
           <Stack.Screen name="OnboardingSummary" component={OnboardingSummaryScreen} />

@@ -1,22 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Alert, Linking, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, Alert, Linking, ActivityIndicator, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import SunoGradient from '../../components/onboarding/SunoGradient';
-import AnimatedBenefitList from '../../components/onboarding/AnimatedBenefitList';
+import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import BreathingLogo from '../../components/onboarding/BreathingLogo';
-import PaywallHeroPhone from '../../components/onboarding/PaywallHeroPhone';
 import PaywallPlanCard from '../../components/onboarding/PaywallPlanCard';
 import Purchases, { PurchasesOffering, PurchasesPackage, CustomerInfo } from 'react-native-purchases';
 import { useAuth } from '../../contexts/AuthContext';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { supabase } from '../../lib/supabase';
-import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
+import { isTablet, sf } from '../../utils/responsive';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { analytics } from '../../services/analytics';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getFirstName } from '../../utils/paywallPersonalization';
+import { ONBOARDING_SURFACE } from '../../constants/onboardingTheme';
 
 const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
@@ -31,12 +30,34 @@ export default function PaywallScreen({ navigation, route }: any) {
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'weekly' | 'monthly' | 'yearly'>('yearly');
-  const benefitItems = [
-    t('onboarding.paywall.benefits.unlimited'),
-    t('onboarding.paywall.benefits.patterns'),
-    t('onboarding.paywall.benefits.summaries'),
-    t('onboarding.paywall.benefits.playbook'),
+  const [trialEnabled, setTrialEnabled] = useState(true);
+  /** Plan that actually carries an intro/free-trial offer from RevenueCat */
+  const [trialPlan, setTrialPlan] = useState<'weekly' | 'monthly' | 'yearly' | null>('weekly');
+  const [trialDays, setTrialDays] = useState(3);
+  const premiumFeatures = [
+    {
+      icon: 'sparkles-outline' as const,
+      title: t('onboarding.paywall.featureTitles.insights'),
+      body: t('onboarding.paywall.featureBodies.insights'),
+    },
+    {
+      icon: 'chatbubbles-outline' as const,
+      title: t('onboarding.paywall.featureTitles.mira'),
+      body: t('onboarding.paywall.featureBodies.mira'),
+    },
+    {
+      icon: 'lock-closed-outline' as const,
+      title: t('onboarding.paywall.featureTitles.encryption'),
+      body: t('onboarding.paywall.featureBodies.encryption'),
+    },
+    {
+      icon: 'book-outline' as const,
+      title: t('onboarding.paywall.featureTitles.playbooks'),
+      body: t('onboarding.paywall.featureBodies.playbooks'),
+    },
   ];
+  const trialLabel = t('onboarding.paywall.trialEnabledDays', { days: trialDays });
+  const trialBadgeLabel = t('onboarding.paywall.trialDays', { days: trialDays });
   const firstName = getFirstName(userName);
   const paywallTitle = firstName
     ? t('onboarding.paywall.pricingTitleNamed', { name: firstName })
@@ -79,8 +100,56 @@ export default function PaywallScreen({ navigation, route }: any) {
             console.log(`  - Price: ${pkg.product.priceString}`);
             console.log(`  - Title: ${pkg.product.title}`);
             console.log(`  - Description: ${pkg.product.description}`);
+            const intro = (pkg.product as any).introPrice;
+            if (intro) {
+              console.log(`  - Intro:`, intro);
+            }
           });
           setOffering(offerings.current);
+
+          // Detect which package actually has a free trial / intro offer
+          const idToPlan = (id: string): 'weekly' | 'monthly' | 'yearly' | null => {
+            if (id.includes('week') || id === '$rc_weekly') return 'weekly';
+            if (id.includes('month') || id === '$rc_monthly') return 'monthly';
+            if (id.includes('annual') || id.includes('year') || id === '$rc_annual') return 'yearly';
+            return null;
+          };
+          let foundPlan: 'weekly' | 'monthly' | 'yearly' | null = null;
+          let foundDays = 3;
+          for (const pkg of offerings.current.availablePackages) {
+            const intro = (pkg.product as any).introPrice;
+            const isFreeIntro =
+              intro &&
+              (intro.price === 0 ||
+                intro.priceString === 'Free' ||
+                String(intro.priceString || '').toLowerCase().includes('free'));
+            if (!isFreeIntro && !intro) continue;
+            if (!intro) continue;
+            const plan = idToPlan(pkg.identifier) || idToPlan(pkg.product.identifier);
+            if (!plan) continue;
+            let days = 3;
+            const unit = String(intro.periodUnit || intro.period || '').toUpperCase();
+            const n = Number(intro.periodNumberOfUnits || intro.cycles || 1);
+            if (unit.includes('DAY')) days = n;
+            else if (unit.includes('WEEK')) days = n * 7;
+            else if (unit.includes('MONTH')) days = n * 30;
+            foundPlan = plan;
+            foundDays = days;
+            // Prefer weekly if multiple have trials (matches UI badge placement)
+            if (plan === 'weekly') break;
+          }
+          if (foundPlan) {
+            setTrialPlan(foundPlan);
+            setTrialDays(foundDays);
+            setSelectedPlan(foundPlan);
+            setTrialEnabled(true);
+            console.log('[REVENUECAT] Trial plan:', foundPlan, 'days:', foundDays);
+          } else {
+            // Fallback: badge weekly as trial carrier (historical RC config)
+            setTrialPlan('weekly');
+            setTrialDays(3);
+            console.log('[REVENUECAT] No introPrice found — defaulting trial UI to weekly / 3 days');
+          }
         } else {
           console.warn('[REVENUECAT] ⚠️ No current offering available');
           console.log('[REVENUECAT] This usually means products are not configured in RevenueCat dashboard');
@@ -297,6 +366,7 @@ export default function PaywallScreen({ navigation, route }: any) {
             await saveUsernameToProfile();
             console.log('[Paywall] ✅ Username saved to profile');
             await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+            await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
             console.log('[Paywall] ✅ Set HAS_COMPLETED_ONBOARDING flag');
             console.log('[Paywall] 🚀 Navigating to MainTabs via reset');
             navigation.reset({
@@ -560,7 +630,7 @@ export default function PaywallScreen({ navigation, route }: any) {
   return (
     <View style={styles.container}>
       <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent={false} />
-      <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+      <OnboardingAmbientBackground />
 
       {/* Back Button - Circular style matching other onboarding pages */}
       <TouchableOpacity 
@@ -592,7 +662,43 @@ export default function PaywallScreen({ navigation, route }: any) {
           </Text>
         </View>
 
-        <PaywallHeroPhone />
+        <View style={styles.featuresBlock}>
+          <View style={styles.featuresRail}>
+            <View style={styles.iconRail}>
+              {premiumFeatures.map((feature) => (
+                <View key={`icon-${feature.title}`} style={styles.iconRailSlot}>
+                  <Ionicons name={feature.icon} size={18} color="rgba(255,255,255,0.92)" />
+                </View>
+              ))}
+            </View>
+            <View style={styles.featureCopyCol}>
+              {premiumFeatures.map((feature) => (
+                <View key={feature.title} style={styles.featureCopyRow}>
+                  <Text style={styles.featureTitle}>{feature.title}</Text>
+                  <Text style={styles.featureBody}>{feature.body}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.trialToggle}>
+          <Text style={styles.trialToggleLabel}>{trialLabel}</Text>
+          <Switch
+            value={trialEnabled}
+            onValueChange={(v) => {
+              Haptics.selectionAsync();
+              setTrialEnabled(v);
+              // Select the plan that actually carries the trial offer — not yearly by default
+              if (v && trialPlan) {
+                setSelectedPlan(trialPlan);
+              }
+            }}
+            trackColor={{ false: 'rgba(255,255,255,0.18)', true: 'rgba(168, 85, 247, 0.55)' }}
+            thumbColor={trialEnabled ? '#FFFFFF' : '#E5E7EB'}
+            ios_backgroundColor="rgba(255,255,255,0.18)"
+          />
+        </View>
 
         <View style={styles.pricingSection}>
         {/* Compact 3-in-a-row Pricing */}
@@ -605,9 +711,11 @@ export default function PaywallScreen({ navigation, route }: any) {
               setSelectedPlan('weekly');
             }}
             badge={
-              <View style={styles.trialBadge}>
-                <Text style={styles.trialBadgeText}>{t('onboarding.paywall.trial')}</Text>
-              </View>
+              trialEnabled && trialPlan === 'weekly' ? (
+                <View style={styles.trialBadge}>
+                  <Text style={styles.trialBadgeText}>{trialBadgeLabel}</Text>
+                </View>
+              ) : undefined
             }
           >
             <Text style={[styles.compactPlanName, !isDarkTheme(theme.name) && styles.compactPlanNameLight, selectedPlan === 'weekly' && styles.compactPlanNameSelected]}>{t('onboarding.paywall.weekly')}</Text>
@@ -616,15 +724,22 @@ export default function PaywallScreen({ navigation, route }: any) {
 
           <PaywallPlanCard
             selected={selectedPlan === 'yearly'}
+            recommended
             light={!isDarkTheme(theme.name)}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setSelectedPlan('yearly');
             }}
             badge={
-              <View style={styles.saveBadge}>
-                <Text style={styles.saveBadgeText}>{t('onboarding.paywall.save')}</Text>
-              </View>
+              trialEnabled && trialPlan === 'yearly' ? (
+                <View style={styles.trialBadge}>
+                  <Text style={styles.trialBadgeText}>{trialBadgeLabel}</Text>
+                </View>
+              ) : (
+                <View style={styles.saveBadge}>
+                  <Text style={styles.saveBadgeText}>{t('onboarding.paywall.bestValue')}</Text>
+                </View>
+              )
             }
           >
             <Text style={[styles.compactPlanName, !isDarkTheme(theme.name) && styles.compactPlanNameLight, selectedPlan === 'yearly' && styles.compactPlanNameSelected]}>{t('onboarding.paywall.yearly')}</Text>
@@ -638,16 +753,18 @@ export default function PaywallScreen({ navigation, route }: any) {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setSelectedPlan('monthly');
             }}
+            badge={
+              trialEnabled && trialPlan === 'monthly' ? (
+                <View style={styles.trialBadge}>
+                  <Text style={styles.trialBadgeText}>{trialBadgeLabel}</Text>
+                </View>
+              ) : undefined
+            }
           >
             <Text style={[styles.compactPlanName, !isDarkTheme(theme.name) && styles.compactPlanNameLight, selectedPlan === 'monthly' && styles.compactPlanNameSelected]}>{t('onboarding.paywall.monthly')}</Text>
             <Text style={[styles.compactPlanPriceMain, !isDarkTheme(theme.name) && styles.compactPlanPriceMainLight, selectedPlan === 'monthly' && styles.compactPlanPriceMainSelected]}>{t('onboarding.paywall.priceMonthly')}</Text>
           </PaywallPlanCard>
         </View>
-        </View>
-
-        <View style={styles.whatYouGetContainer}>
-          <Text style={[styles.whatYouGetTitle, !isDarkTheme(theme.name) && styles.whatYouGetTitleLight]}>{t('onboarding.paywall.whatYouGet')}</Text>
-          <AnimatedBenefitList items={benefitItems} light={!isDarkTheme(theme.name)} />
         </View>
       </ScrollView>
 
@@ -669,7 +786,11 @@ export default function PaywallScreen({ navigation, route }: any) {
             {isPurchasing ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.ctaText}>{t('onboarding.paywall.startJourney')}</Text>
+              <Text style={styles.ctaText}>
+                {trialEnabled
+                  ? t('onboarding.paywall.startJourney')
+                  : t('common.continue')}
+              </Text>
             )}
           </TouchableOpacity>
         </View>
@@ -706,7 +827,7 @@ const styles = StyleSheet.create({
   backButton: {
     position: 'absolute',
     top: isTablet ? 60 : 50,
-    left: 20,
+    left: 24,
     zIndex: 10,
     padding: 4,
   },
@@ -722,7 +843,8 @@ const styles = StyleSheet.create({
     paddingTop: isTablet ? 72 : 56,
   },
   scrollContent: {
-    paddingBottom: isTablet ? 200 : 176,
+    paddingBottom: isTablet ? 240 : 210,
+    paddingHorizontal: 24,
   },
   logoContainer: {
     alignItems: 'center',
@@ -734,30 +856,97 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: isTablet ? 8 : 2,
-    paddingHorizontal: 24,
+    marginBottom: isTablet ? 28 : 24,
   },
   title: {
     fontSize: isTablet ? sf(30) : sf(28),
     fontWeight: '600',
     color: '#ffffff',
-    letterSpacing: -0.5,
+    letterSpacing: -1.28,
     textAlign: 'center',
     lineHeight: isTablet ? sf(38) : sf(36),
   },
   titleLight: {
     color: '#1a1a2e',
   },
+  featuresBlock: {
+    marginBottom: isTablet ? 32 : 28,
+  },
+  featuresRail: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: 16,
+  },
+  iconRail: {
+    width: 48,
+    borderRadius: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.12)',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 4,
+  },
+  iconRailSlot: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featureCopyCol: {
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+    gap: 16,
+  },
+  featureCopyRow: {
+    minHeight: 40,
+    justifyContent: 'center',
+  },
+  featureTitle: {
+    fontSize: sf(15),
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: -0.2,
+    marginBottom: 2,
+  },
+  featureBody: {
+    fontSize: sf(13),
+    fontWeight: '400',
+    color: 'rgba(255,255,255,0.58)',
+    lineHeight: sf(18),
+  },
+  trialToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: ONBOARDING_SURFACE.fillElevated,
+    borderWidth: 1,
+    borderColor: ONBOARDING_SURFACE.border,
+    borderRadius: 999,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    marginBottom: isTablet ? 28 : 24,
+  },
+  trialToggleLabel: {
+    fontSize: sf(14),
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.92)',
+    flex: 1,
+    paddingRight: 12,
+  },
   pricingSection: {
-    marginTop: isTablet ? 4 : 2,
+    marginTop: isTablet ? 8 : 4,
+    marginBottom: isTablet ? 28 : 24,
     overflow: 'visible',
   },
   plansRow: {
     flexDirection: 'row',
-    gap: 10,
-    marginBottom: isTablet ? 14 : 10,
-    paddingTop: 12,
-    paddingHorizontal: isTablet ? 80 : 24,
+    gap: 12,
+    marginBottom: isTablet ? 20 : 16,
+    paddingTop: 14,
     overflow: 'visible',
   },
   compactPlanName: {
@@ -786,7 +975,7 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   saveBadge: {
-    backgroundColor: '#8b5cf6',
+    backgroundColor: '#A855F7',
     borderRadius: 999,
     paddingVertical: 4,
     paddingHorizontal: 10,
@@ -798,7 +987,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   trialBadge: {
-    backgroundColor: '#8b5cf6',
+    backgroundColor: '#A855F7',
     borderRadius: 999,
     paddingVertical: 4,
     paddingHorizontal: 10,
@@ -809,30 +998,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     letterSpacing: 0.3,
   },
-  // What you get
-  whatYouGetContainer: {
-    marginTop: isTablet ? 12 : 8,
-    marginBottom: 4,
-    paddingHorizontal: isTablet ? 80 : 24,
-    paddingBottom: isTablet ? 28 : 24,
-  },
-  whatYouGetTitle: {
-    fontSize: sf(18),
-    fontWeight: '700',
-    color: '#ffffff',
-    marginTop: isTablet ? 4 : 2,
-    marginBottom: isTablet ? 14 : 12,
-    textAlign: 'center',
-  },
-  whatYouGetTitleLight: {
-    color: '#1a1a2e',
-  },
   stickyFooter: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    paddingHorizontal: isTablet ? 80 : 24,
+    paddingHorizontal: 24,
     paddingBottom: isTablet ? 26 : 18,
     paddingTop: 10,
     borderTopLeftRadius: 24,

@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, View, StyleSheet } from 'react-native';
+import { Animated, View, StyleSheet, Image } from 'react-native';
 import AuroraOrb from '../shared/AuroraOrb';
+
+const MIRA_ORB = require('../../public/Mira-Orb-No-Background.png');
 
 type Props = {
   size?: number;
@@ -10,7 +12,7 @@ type Props = {
   speaking?: boolean;
 };
 
-/** Mira's avatar — pastel aurora in normal mode, pulsing fiery orb in roast mode. */
+/** Mira's avatar — official orb asset; fiery AuroraOrb only in roast mode. */
 export default function InsightCompanionMark({
   size = 64,
   isDark = true,
@@ -67,14 +69,23 @@ export default function InsightCompanionMark({
         />
       )}
       <Animated.View style={animate ? { transform: [{ scale: pulse }] } : undefined}>
-        <AuroraOrb
-          size={size}
-          isDark={isDark}
-          clipToCircle
-          compact
-          vivid
-          variant={roast ? 'roast' : 'default'}
-        />
+        {roast ? (
+          <AuroraOrb
+            size={size}
+            isDark={isDark}
+            clipToCircle
+            compact
+            vivid
+            variant="roast"
+          />
+        ) : (
+          <Image
+            source={MIRA_ORB}
+            style={{ width: size, height: size }}
+            resizeMode="contain"
+            fadeDuration={0}
+          />
+        )}
       </Animated.View>
     </View>
   );

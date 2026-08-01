@@ -306,10 +306,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const needsEmailSignup = await AsyncStorage.getItem('NEEDS_EMAIL_SIGNUP');
         if (needsEmailSignup === 'true') {
-          // Post-purchase flow: user already completed onboarding, preserve the flag
-          // so EmailVerified navigates to MainTabs instead of OnboardingQuestion
-          console.log('[Auth] Post-purchase signup - preserving onboarding flags');
+          // Post-purchase: keep onboarding complete so EmailVerified → MainTabs,
+          // but clear intro so first-time welcome overlay still shows.
+          console.log('[Auth] Post-purchase signup - preserving onboarding, resetting intro');
           await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+          await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
         } else {
           await AsyncStorage.removeItem('HAS_COMPLETED_ONBOARDING');
           await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
@@ -392,7 +393,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               displayName = email.split('@')[0].replace(/[._]/g, ' ');
               displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
             } else if (!displayName) {
-              displayName = 'Zeno User';
+              displayName = 'Insight User';
             }
             
             console.log('[AUTH] Google Sign-In - saving username:', displayName);

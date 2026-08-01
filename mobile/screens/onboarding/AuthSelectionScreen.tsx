@@ -7,7 +7,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SvgXml } from 'react-native-svg';
 import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
-import SunoGradient from '../../components/onboarding/SunoGradient';
+import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ONBOARDING_SURFACE } from '../../constants/onboardingTheme';
@@ -36,8 +36,13 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
 
   const handleEmailAuth = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Navigate to Signup screen for email/password entry
-    navigation.navigate('Signup' as never);
+    if (postPurchase) {
+      // Ensure post-purchase markers survive the email signup chain
+      AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+      AsyncStorage.setItem('NEEDS_EMAIL_SIGNUP', 'true');
+      AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
+    }
+    navigation.navigate('Signup' as never, { postPurchase } as never);
   };
 
   const handleAppleAuth = async () => {
@@ -46,6 +51,7 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
     if (postPurchase) {
       // Post-purchase: mark onboarding complete so navigator routes to MainTabs
       await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+      await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
       await AsyncStorage.removeItem('NEEDS_EMAIL_SIGNUP');
       await AsyncStorage.removeItem('REVENUECAT_ANONYMOUS_ID');
     } else {
@@ -73,6 +79,7 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
     if (postPurchase) {
       // Post-purchase: mark onboarding complete so navigator routes to MainTabs
       await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+      await AsyncStorage.removeItem('HAS_SEEN_DASHBOARD_INTRO');
       await AsyncStorage.removeItem('NEEDS_EMAIL_SIGNUP');
       await AsyncStorage.removeItem('REVENUECAT_ANONYMOUS_ID');
     } else {
@@ -107,7 +114,7 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
 
   return (
     <View style={styles.container}>
-      <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+      <OnboardingAmbientBackground />
       <StatusBar barStyle="light-content" />
       
       {/* Back Button - only show if can go back */}
@@ -125,8 +132,12 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
       <View style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.colors.primaryText }]}>{t(postPurchase ? 'onboarding.auth.createYourAccount' : 'onboarding.auth.createAccount')}</Text>
-          <Text style={[styles.subtitle, { color: theme.colors.secondaryText }]}>{t(postPurchase ? 'onboarding.auth.postPurchaseSubtitle' : 'onboarding.auth.subtitle')}</Text>
+          <Text style={[styles.title, { color: theme.colors.primaryText }]}>
+            {t(postPurchase ? 'onboarding.auth.createYourAccount' : 'onboarding.auth.createAccount')}
+          </Text>
+          <Text style={[styles.subtitle, { color: theme.colors.secondaryText }]}>
+            {t(postPurchase ? 'onboarding.auth.postPurchaseSubtitle' : 'onboarding.auth.createAccountSubtitle')}
+          </Text>
         </View>
 
         {/* Auth Options */}
@@ -216,7 +227,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1a1a2e',
     marginBottom: 8,
-    letterSpacing: -0.6,
+    letterSpacing: -1.28,
   },
   subtitle: {
     fontSize: sf(16),
