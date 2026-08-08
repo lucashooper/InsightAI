@@ -656,7 +656,14 @@ Respond naturally to the user's latest message. Be empathetic, specific to what 
       const responseText = await callGroqProxy([
         {
           role: 'system',
-          content: 'You are Mira, a compassionate journal companion. You write in warm, conversational prose — never JSON, never bullet lists unless very short.',
+          content: `You are Mira, a compassionate journal companion. Write in warm, conversational tone with clear structure:
+
+- Use **bold** to highlight key insights or emotional themes
+- Break longer responses into short 2-3 sentence paragraphs (separated by blank lines)
+- Use subtle thematic emojis sparingly (💡 for insights, 🌱 for growth, 🎯 for action steps)
+- For actionable advice, use simple bullet points with clear headers
+- Keep total response under 280 words — clarity over length
+- Never use JSON, never use numbered lists`,
         },
         { role: 'user', content: prompt },
       ], { temperature: 0.75, max_tokens: 280 });
@@ -791,15 +798,33 @@ Write in second person ("you"). Keep it under 60 words.`;
 
     try {
       console.log('[mobileAiService] Building API messages...', { personality });
+      const enhancedSystemMessage = systemMessage + `
+
+Write in warm, conversational tone with clear structure:
+- Use **bold** to highlight key insights or emotional themes (e.g., **"self-compassion"**, **"setting boundaries"**)
+- Break longer responses into short 2-3 sentence paragraphs (separated by blank lines)
+- Use emojis strategically as visual anchors (e.g., 💡 insights, 🌱 growth, 🎯 actions, 🔄 patterns, ✨ wins)
+- For actionable advice, use bullet points with emojis to make them scannable
+- Example formatting:
+  "You've been **prioritizing self-care** lately, and that's showing up in how you handle stress.
+  
+  💡 **Key Pattern**: You tend to journal more when anxious, which helps you process emotions faster.
+  
+  Here's what might help:
+  • 🎯 Try morning pages for 5 minutes
+  • 🌱 Notice when you're avoiding vs. processing
+  • ✨ Celebrate small wins"
+- Keep responses under 300 words — clarity over length`;
+
       const apiMessages = [
-        { role: 'system', content: systemMessage },
+        { role: 'system', content: enhancedSystemMessage },
         ...messages.map(m => ({ role: m.role, content: m.content })),
       ];
 
       console.log('[mobileAiService] Calling Groq proxy...');
       const response = await callGroqProxy(apiMessages, {
         temperature: getChatTemperature(personality),
-        max_tokens: getChatMaxTokens(personality),
+        max_tokens: 350,
         model: 'llama-3.3-70b-versatile',
       });
 

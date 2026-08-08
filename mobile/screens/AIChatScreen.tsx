@@ -55,6 +55,8 @@ import MiraVoicePicker from '../components/companion/MiraVoicePicker';
 import MiraVoiceOverlay from '../components/companion/MiraVoiceOverlay';
 import MiraDiscoveryEmpty from '../components/companion/MiraDiscoveryEmpty';
 import MiraRevealCard from '../components/companion/MiraRevealCard';
+import MiraMessageBubble from '../components/companion/MiraMessageBubble';
+import MiraTypewriterText from '../components/companion/MiraTypewriterText';
 import MiraAnalysisStatus from '../components/companion/MiraAnalysisStatus';
 import AmbientBackground from '../components/shared/AmbientBackground';
 import GlassSurface from '../components/shared/GlassSurface';
@@ -905,28 +907,23 @@ export default function AIChatScreen({ navigation }: any) {
 
         flatListRef.current?.scrollToEnd({ animated: true });
       }, TICK_MS);
-      return;
     }
-
-    // Non-voice: hold typing dots briefly, then fade in the full bubble
-    // (no character-by-character expansion — that felt robotic)
-    const holdMs = Math.min(1400, Math.max(450, fullContent.length * 8));
-    const timeoutId = setTimeout(() => {
-      typingIntervalRef.current = null;
-      setMessages((prev) => {
-        const next = prev.map((m) =>
-          m.id === messageId
-            ? { ...m, displayedContent: fullContent, isTyping: false }
-            : m,
-        );
-        void persistChat(next, { force: true, reason: 'typing-complete' });
-        return next;
-      });
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 40);
-    }, holdMs);
-    // Reuse interval ref slot to clear on interrupt
-    typingIntervalRef.current = timeoutId as unknown as ReturnType<typeof setInterval>;
   };
+
+  const handleTypewriterComplete = useCallback((messageId: string) => {
+    setMessages((prev) => {
+      const next = prev.map((m) =>
+        m.id === messageId ? { ...m, isTyping: false } : m,
+      );
+      void persistChat(next, { force: true, reason: 'typing-complete' });
+      return next;
+    });
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 40);
+  }, [persistChat]);
+
+  const scrollOnTypewriterProgress = useCallback(() => {
+    flatListRef.current?.scrollToEnd({ animated: true });
+  }, []);
 
   // Rate limiting check function
   const checkAndUpdateUsage = async (): Promise<boolean> => {
@@ -1117,19 +1114,19 @@ export default function AIChatScreen({ navigation }: any) {
           id: `assistant-${Date.now()}`,
           role: 'assistant',
           content: response,
-          displayedContent: '',
           isTyping: true,
           timestamp: new Date(),
         };
 
         setMessages(prev => {
           const next = [...prev, assistantMessage];
-          // Persist user turn + assistant stub content (typing filtered out → user msgs saved)
           void persistChat(next, { force: true, reason: 'assistant-start' });
           return next;
         });
         setIsLoading(false);
-        startSyncedTypingEffect(assistantMessage.id, response);
+        if (isVoiceEnabled) {
+          startSyncedTypingEffect(assistantMessage.id, response);
+        }
       }
     } catch (error: any) {
       console.error('[AIChatScreen] ❌ Error sending message:', error);
@@ -1215,47 +1212,14 @@ export default function AIChatScreen({ navigation }: any) {
                 }}
               />
               {explanationOpen ? (
-                isRoast ? (
-                  <View style={[
-                    styles.messageBubble,
-                    styles.assistantBubble,
-                    styles.revealExplanationBubble,
-                    {
-                      backgroundColor: ROAST_PALETTE.bubbleAssistant,
-                      borderWidth: 1,
-                      borderColor: ROAST_PALETTE.bubbleAssistantBorder,
-                    },
-                  ]}>
-                    <Text style={[styles.messageText, styles.assistantMessageText, { color: ROAST_PALETTE.textPrimary, fontWeight: '600' }]}>
-                      {item.reveal.explanation}
-                    </Text>
-                  </View>
-                ) : (
-                  <LinearGradient
-                    colors={isDark
-                      ? ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.06)', 'rgba(139,92,246,0.05)']
-                      : ['rgba(255,255,255,0.95)', 'rgba(248,242,255,0.88)', 'rgba(255,241,247,0.82)']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={[
-                      styles.messageBubble,
-                      styles.assistantBubble,
-                      styles.revealExplanationBubble,
-                      {
-                        borderWidth: 1,
-                        borderColor: isDark ? 'rgba(196,181,253,0.14)' : 'rgba(139,92,246,0.12)',
-                      },
-                    ]}
-                  >
-                    <Text style={[
-                      styles.messageText,
-                      styles.assistantMessageText,
-                      { color: isDark ? 'rgba(255,255,255,0.94)' : theme.colors.primaryText },
-                    ]}>
-                      {item.reveal.explanation}
-                    </Text>
-                  </LinearGradient>
-                )
+                <View style={styles.revealExplanationCanvas}>
+                  <MiraMessageBubble
+                    content={item.reveal.explanation}
+                    isDark={isDark && !isRoast}
+                    isRoast={isRoast}
+                    roastTextColor={ROAST_PALETTE.textPrimary}
+                  />
+                </View>
               ) : null}
             </View>
           </View>
@@ -1263,75 +1227,68 @@ export default function AIChatScreen({ navigation }: any) {
       );
     }
 
-    // While Mira is "speaking" — compact typing dots (no expanding bubble)
-    if (item.isTyping) {
+    // Streaming typewriter — no thinking dots, straight into canvas reveal
+    if (item.isTyping && !isVoiceEnabled) {
       return (
-        <View style={[styles.messageBubbleContainer, styles.assistantBubbleContainer]}>
+        <View style={styles.assistantCanvasRow}>
           <View style={styles.avatarWrap}>
             <InsightCompanionMark size={26} isDark={isDark || isRoast} roast={isRoast} />
           </View>
-          <View style={styles.typingDotsContainer}>
-            <View style={styles.dotsRow}>
-              <View style={[styles.dot, { opacity: 0.35 }]} />
-              <View style={[styles.dot, { opacity: 0.6 }]} />
-              <View style={[styles.dot, { opacity: 1 }]} />
-            </View>
+          <View style={styles.assistantCanvasContent}>
+            <MiraTypewriterText
+              text={item.content}
+              isDark={isDark}
+              isRoast={isRoast}
+              roastTextColor={ROAST_PALETTE.textPrimary}
+              onComplete={() => handleTypewriterComplete(item.id)}
+              onProgress={scrollOnTypewriterProgress}
+            />
           </View>
         </View>
       );
     }
 
-    // Finished — full bubble (fades in via AssistantFadeIn)
-    return (
-      <AssistantFadeIn>
-        <View style={[styles.messageBubbleContainer, styles.assistantBubbleContainer]}>
+    // Voice sync — partial text on canvas while audio plays
+    if (item.isTyping && isVoiceEnabled) {
+      return (
+        <View style={styles.assistantCanvasRow}>
           <View style={styles.avatarWrap}>
             <InsightCompanionMark size={26} isDark={isDark || isRoast} roast={isRoast} />
           </View>
-          <View style={styles.assistantBubbleColumn}>
+          <View style={styles.assistantCanvasContent}>
+            {item.displayedContent && item.displayedContent !== '…' ? (
+              <MiraMessageBubble
+                content={item.displayedContent}
+                isDark={isDark}
+                isRoast={isRoast}
+                roastTextColor={ROAST_PALETTE.textPrimary}
+              />
+            ) : (
+              <View style={styles.voiceWaitingDot} />
+            )}
+          </View>
+        </View>
+      );
+    }
+
+    // Completed — full-canvas open text (Purpose / ChatGPT style)
+    return (
+      <AssistantFadeIn>
+        <View style={styles.assistantCanvasRow}>
+          <View style={styles.avatarWrap}>
+            <InsightCompanionMark size={26} isDark={isDark || isRoast} roast={isRoast} />
+          </View>
+          <View style={styles.assistantCanvasContent}>
             <Pressable
               onPress={() => setActiveMessageId((prev) => (prev === item.id ? null : item.id))}
               style={({ pressed }) => [pressed && { opacity: 0.92 }]}
             >
-              {isRoast ? (
-                <View style={[
-                  styles.messageBubble,
-                  styles.assistantBubble,
-                  {
-                    backgroundColor: ROAST_PALETTE.bubbleAssistant,
-                    borderWidth: 1,
-                    borderColor: ROAST_PALETTE.bubbleAssistantBorder,
-                  },
-                ]}>
-                  <Text style={[styles.messageText, styles.assistantMessageText, { color: ROAST_PALETTE.textPrimary, fontWeight: '600' }]}>
-                    {item.content}
-                  </Text>
-                </View>
-              ) : (
-                <LinearGradient
-                  colors={isDark
-                    ? ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.06)', 'rgba(139,92,246,0.05)']
-                    : ['rgba(255,255,255,0.95)', 'rgba(248,242,255,0.88)', 'rgba(255,241,247,0.82)']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={[
-                    styles.messageBubble,
-                    styles.assistantBubble,
-                    {
-                      borderWidth: 1,
-                      borderColor: isDark ? 'rgba(196,181,253,0.14)' : 'rgba(139,92,246,0.12)',
-                    },
-                  ]}
-                >
-                  <Text style={[
-                    styles.messageText,
-                    styles.assistantMessageText,
-                    { color: isDark ? 'rgba(255,255,255,0.94)' : theme.colors.primaryText },
-                  ]}>
-                    {item.content}
-                  </Text>
-                </LinearGradient>
-              )}
+              <MiraMessageBubble
+                content={item.content}
+                isDark={isDark}
+                isRoast={isRoast}
+                roastTextColor={ROAST_PALETTE.textPrimary}
+              />
             </Pressable>
             {activeMessageId === item.id && (
               <View style={styles.messageActions}>
@@ -1360,6 +1317,9 @@ export default function AIChatScreen({ navigation }: any) {
     revealLabels,
     t,
     shareMessage,
+    isVoiceEnabled,
+    handleTypewriterComplete,
+    scrollOnTypewriterProgress,
   ]);
 
   const renderEmptyState = () => (
@@ -1763,6 +1723,28 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: sf(17), fontWeight: '600', letterSpacing: 0.2 },
   assistantBubbleColumn: { flex: 1, maxWidth: '82%' },
+  assistantCanvasRow: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    alignItems: 'flex-start',
+    width: '100%',
+  },
+  assistantCanvasContent: {
+    flex: 1,
+    paddingRight: 4,
+  },
+  revealExplanationCanvas: {
+    marginTop: 8,
+    width: '100%',
+  },
+  voiceWaitingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#8b5cf6',
+    opacity: 0.5,
+    marginTop: 8,
+  },
   revealRow: { alignItems: 'flex-start' },
   revealColumn: { flex: 1, maxWidth: '88%' },
   revealExplanationBubble: { maxWidth: '100%', marginTop: 4 },

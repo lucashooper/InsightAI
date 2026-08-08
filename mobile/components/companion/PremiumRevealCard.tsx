@@ -112,7 +112,7 @@ export default function PremiumRevealCard({
               </View>
             ) : null}
             {reveal.fromLabel ? (
-              <Text style={styles.caption}>{reveal.fromLabel}</Text>
+              <Text style={styles.fromLabel}>{reveal.fromLabel}</Text>
             ) : null}
           </View>
 
@@ -120,9 +120,7 @@ export default function PremiumRevealCard({
           <View style={styles.evidenceList}>
             {visibleEvidence.map((item, i) => (
               <View key={`${i}-${item.text.slice(0, 18)}`} style={styles.evidenceRow}>
-                <View style={styles.iconSlot}>
-                  <Text style={styles.evidenceIcon}>{item.icon}</Text>
-                </View>
+                <Text style={styles.evidenceIcon}>{item.icon}</Text>
                 <Text style={styles.body}>{item.text}</Text>
               </View>
             ))}
@@ -172,7 +170,11 @@ const styles = StyleSheet.create({
   wrap: {
     alignSelf: 'stretch',
     width: '100%',
-    ...PREMIUM.shadow.soft,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.38,
+    shadowRadius: 20,
+    elevation: 10,
   },
   card: {
     borderRadius: PREMIUM.radius.xl,
@@ -195,59 +197,68 @@ const styles = StyleSheet.create({
     padding: PREMIUM.space[3],
   },
   label: {
-    ...TYPE.label,
-    color: 'rgba(255,255,255,0.78)',
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase' as const,
+    color: 'rgba(255,255,255,0.7)',
     marginBottom: PREMIUM.space[1],
   },
   heading: {
-    ...TYPE.heading,
-    color: PREMIUM.text.primary,
+    fontSize: 26,
+    fontWeight: '700',
+    letterSpacing: -0.5,
+    lineHeight: 32,
+    color: '#FFFFFF',
     marginBottom: PREMIUM.space[2],
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: PREMIUM.space[1],
+    gap: 10,
     marginBottom: PREMIUM.space[3],
   },
   confidencePill: {
-    backgroundColor: 'rgba(0,0,0,0.28)',
+    backgroundColor: 'rgba(0,0,0,0.32)',
     borderRadius: PREMIUM.radius.pill,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.14)',
+    borderColor: 'rgba(255,255,255,0.18)',
   },
   confidenceText: {
-    ...TYPE.caption,
-    color: PREMIUM.text.primary,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.92)',
   },
-  caption: {
-    ...TYPE.caption,
-    color: PREMIUM.text.muted,
+  fromLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.72)',
+    letterSpacing: 0.2,
+    lineHeight: 18,
   },
   evidenceList: {
-    gap: PREMIUM.space[2],
+    gap: 12,
     marginBottom: PREMIUM.space[2],
   },
   evidenceRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
-  iconSlot: {
-    width: 28,
-    alignItems: 'center',
-    paddingTop: 1,
-  },
   evidenceIcon: {
-    fontSize: 14,
-    lineHeight: TYPE.body.lineHeight,
+    fontSize: 17,
+    lineHeight: 24,
+    marginRight: 8,
+    marginTop: 1,
   },
   body: {
-    ...TYPE.body,
-    color: PREMIUM.text.secondary,
+    fontSize: 15,
+    fontWeight: '400',
+    lineHeight: 24,
+    letterSpacing: 0.2,
+    color: 'rgba(255,255,255,0.88)',
     flex: 1,
   },
   strengthBlock: {
@@ -267,9 +278,10 @@ const styles = StyleSheet.create({
     marginTop: PREMIUM.space[1],
   },
   showMoreText: {
-    ...TYPE.caption,
-    color: PREMIUM.text.secondary,
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.78)',
     fontWeight: '500',
+    letterSpacing: 0.1,
   },
   recBlock: {
     marginTop: PREMIUM.space[2],

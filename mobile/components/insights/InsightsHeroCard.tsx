@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { sf } from '../../utils/responsive';
+import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 
 type Props = {
   emotionLabel: string;
@@ -12,8 +13,6 @@ type Props = {
   onWellbeingChange?: (score: number) => void;
 };
 
-const CARD_BG = '#13131A';
-
 export default function InsightsHeroCard({
   emotionLabel,
   emotion,
@@ -22,6 +21,8 @@ export default function InsightsHeroCard({
   adjustLabel = 'Adjust',
   onWellbeingChange,
 }: Props) {
+  const { theme } = useTheme();
+  const isDark = isDarkTheme(theme.name);
   const showWellbeing = wellbeingScore != null;
   const score = wellbeingScore ?? 0;
   const ringSize = 88;
@@ -30,7 +31,7 @@ export default function InsightsHeroCard({
   const circumference = 2 * Math.PI * radius;
   const progress = (score / 10) * circumference;
   const ringColor = score >= 7 ? '#10b981' : score >= 4 ? '#f59e0b' : '#ef4444';
-  const ringTrack = 'rgba(255,255,255,0.12)';
+  const ringTrack = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
 
   const handleIncrement = () => {
     if (!onWellbeingChange) return;
@@ -43,18 +44,26 @@ export default function InsightsHeroCard({
   };
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, {
+      backgroundColor: isDark ? '#13131A' : theme.colors.cardBackground,
+      borderWidth: isDark ? 0 : 1,
+      borderColor: isDark ? 'transparent' : theme.colors.border,
+    }]}>
       <View style={styles.row}>
         <View style={styles.emotionCol}>
-          <Text style={styles.label}>{emotionLabel}</Text>
-          <Text style={styles.emotionValue} numberOfLines={2}>
+          <Text style={[styles.label, { color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.5)' }]}>
+            {emotionLabel}
+          </Text>
+          <Text style={[styles.emotionValue, { color: isDark ? '#ffffff' : theme.colors.primaryText }]} numberOfLines={2}>
             {emotion || '—'}
           </Text>
         </View>
 
         {showWellbeing ? (
           <View style={styles.wellbeingCol}>
-            <Text style={styles.label}>{wellbeingLabel}</Text>
+            <Text style={[styles.label, { color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.5)' }]}>
+              {wellbeingLabel}
+            </Text>
             <View style={styles.ringWrap}>
               <Svg width={ringSize} height={ringSize} style={styles.ringSvg}>
                 <Circle
@@ -103,7 +112,6 @@ export default function InsightsHeroCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: CARD_BG,
     borderRadius: 16,
     paddingHorizontal: 18,
     paddingVertical: 18,
@@ -128,14 +136,12 @@ const styles = StyleSheet.create({
     fontSize: sf(11),
     fontWeight: '700',
     letterSpacing: 1.1,
-    color: 'rgba(255,255,255,0.45)',
     textTransform: 'uppercase',
     marginBottom: 8,
   },
   emotionValue: {
     fontSize: sf(26),
     fontWeight: '700',
-    color: '#ffffff',
     textTransform: 'capitalize',
     lineHeight: sf(32),
   },

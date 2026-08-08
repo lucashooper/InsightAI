@@ -17,6 +17,7 @@ import {
   DiscoveryPrompt,
 } from '../../constants/miraReveal';
 import InsightCompanionMark from './InsightCompanionMark';
+import AnimatedMiraOrb from './AnimatedMiraOrb';
 import GlassSurface from '../shared/GlassSurface';
 import { PREMIUM, TYPE } from '../../constants/premiumUI';
 import { ROAST_PALETTE } from '../../utils/companionTheme';
@@ -145,7 +146,7 @@ export default function MiraDiscoveryEmpty({
   return (
     <View style={styles.root}>
       <View style={styles.orb}>
-        <InsightCompanionMark size={118} isDark={isDark || isRoast} roast={isRoast} />
+        <AnimatedMiraOrb size={118} showGlow />
       </View>
 
       <Text
