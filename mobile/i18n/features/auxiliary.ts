@@ -158,7 +158,7 @@ const en: TranslationTree = {
       deleteStrategy: 'Delete strategy', strategyOptions: 'Strategy options', todayProgress: "TODAY'S PROGRESS",
       protocolsCompleted: 'protocols completed', completion: '{{percentage}}% Completion',
       dailyProtocols: 'Daily Protocols', suggested: 'Suggested', createNew: 'Create New Strategy',
-      noSuggestions: 'Mira is still learning your patterns', noProtocols: 'No routines yet',
+      noSuggestions: 'Insight is still learning your patterns', noProtocols: 'No routines yet',
       noSuggestionsMessage: 'Write and analyze a few entries — personalized strategies will appear here.',
       noProtocolsMessage: 'Add a strategy to build a daily routine that sticks.',
       moreCount: '+{{count}} more', showLess: 'Show Less',

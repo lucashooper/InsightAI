@@ -147,7 +147,7 @@ export function parseMiraRevealResponse(raw: string): MiraRevealPayload | null {
   const evidence = asStringArray(obj.evidence, 4);
   const recommendation =
     (typeof obj.recommendation === 'string' && obj.recommendation.trim()) ||
-    'Keep journaling — Mira gets sharper with every entry.';
+    'Keep journaling — Insight gets sharper with every entry.';
   const explanation =
     (typeof obj.explanation === 'string' && obj.explanation.trim()) ||
     (typeof obj.analysis === 'string' && obj.analysis.trim()) ||
@@ -166,7 +166,7 @@ export function parseMiraRevealResponse(raw: string): MiraRevealPayload | null {
       evidence.length > 0
         ? evidence
         : [
-            'Not enough journal detail yet for precise receipts — keep writing and Mira will get sharper.',
+            'Not enough journal detail yet for precise receipts — keep writing and Insight will get sharper.',
           ],
     recommendation,
     explanation:
@@ -200,7 +200,7 @@ export function softRevealFromPlainText(
       'Drawn from themes in your recent journal entries',
       'Precise counts unavailable for this response',
     ],
-    recommendation: 'Ask Mira a follow-up to go deeper on this.',
+    recommendation: 'Ask Insight a follow-up to go deeper on this.',
     explanation: plain.trim(),
   };
 }

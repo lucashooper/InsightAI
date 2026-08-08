@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import InsightCompanionMark from '../companion/InsightCompanionMark';
+import { MIRA_COMPANION_NAME } from '../../constants/mira';
 import type { GoDeeperMessage } from '../../services/goDeeperConversationService';
 import { sf } from '../../utils/responsive';
 
@@ -64,7 +65,7 @@ export default function GoDeeperThread({
               <View style={styles.assistantHeader}>
                 <InsightCompanionMark size={24} isDark={isDark} />
                 <Text style={[styles.threadLabel, { color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }]}>
-                  Mira
+                  {MIRA_COMPANION_NAME}
                 </Text>
               </View>
               <Text

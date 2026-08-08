@@ -174,13 +174,12 @@ export default function MiraOnboardingChatScreen({ navigation, route }: any) {
     if (seq !== seqRef.current) return;
     await sleep(280);
     await pushMira(
-      "I'm Mira — your daily sounding board. Write or speak freely, and I'll help you notice patterns over time.",
+      'Insight is your daily sounding board. Write or speak freely, and Insight will help you notice patterns over time.',
     );
     if (seq !== seqRef.current) return;
     setPhase('await_help');
     showReplies([
       { id: 'how_insight', label: 'How does Insight help?' },
-      { id: 'how_help', label: 'How does Mira help?' },
       { id: 'tell_more', label: 'Tell me more' },
     ]);
   }, [firstName, pushMira, showReplies]);
@@ -254,7 +253,6 @@ export default function MiraOnboardingChatScreen({ navigation, route }: any) {
       await sleep(280);
       setPhase('await_help');
       showReplies([
-        { id: 'how_help', label: 'How does Mira help?' },
         { id: 'how_insight', label: 'How does Insight help?' },
         { id: 'show_strength', label: 'What is my greatest strength?' },
         { id: 'build_on', label: 'How does Insight build on this?' },
@@ -278,7 +276,7 @@ export default function MiraOnboardingChatScreen({ navigation, route }: any) {
       return;
     }
 
-    if (pillId === 'how_help' || pillId === 'how_insight' || pillId === 'tell_more' || pillId === 'why_matters') {
+    if (pillId === 'how_insight' || pillId === 'tell_more' || pillId === 'why_matters') {
       setPhase('close');
       if (pillId === 'how_insight') {
         await pushMira(
@@ -293,7 +291,7 @@ export default function MiraOnboardingChatScreen({ navigation, route }: any) {
         await sleep(280);
       }
       await pushMira(
-        "Every day, you can write or speak freely to me. I'll detect your patterns, surface blind spots, and track what's changing.",
+        'Every day, you can write or speak freely. Insight detects your patterns, surfaces blind spots, and tracks what\'s changing.',
       );
       await sleep(280);
       await finishToContinue();

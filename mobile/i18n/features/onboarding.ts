@@ -268,7 +268,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "grateful": "今天发生的一件事让我非常感激"
         },
         "thinking": "Insight 正在思考...",
-        "aiLabel": "Mira",
+        "aiLabel": "Insight",
         "responses": {
           "overwhelmed": "听起来你现在背负着很多东西。认识到这种感觉是第一步 - Insight 可以帮助您跟踪这些模式并找到让您放松的东西。 💜",
           "positive": "这是一个美丽的观察。注意到什么能提升你的情绪是很强大的——Insight 将帮助你随着时间的推移建立这些积极的模式。 ✨",
@@ -313,7 +313,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "understand": "借助 Insight\n了解自己",
           "growth": "追踪你的成长\n与进步",
           "reflect": "深度反思\n生活更美好",
-          "mira": "与 Mira 对话",
+          "mira": "与 Insight 对话",
           "findWhatWorks": "找到适合你的方法"
         },
         "trial": "3 天试用",
@@ -683,7 +683,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "grateful": "आज कुछ ऐसा हुआ जिसने मुझे सचमुच आभारी बना दिया"
         },
         "thinking": "Insight सोच रहा है...",
-        "aiLabel": "Mira",
+        "aiLabel": "Insight",
         "responses": {
           "overwhelmed": "ऐसा लगता है जैसे आप अभी बहुत कुछ लेकर चल रहे हैं। उस भावना को पहचानना पहला कदम है - Insight आपको इन पैटर्न को ट्रैक करने और यह पता लगाने में मदद कर सकता है कि आपको क्या राहत मिलती है। 💜",
           "positive": "यह एक सुंदर अवलोकन है. आपके मूड को बेहतर बनाने वाली चीज़ों पर ध्यान देना शक्तिशाली है - Insight आपको समय के साथ इन सकारात्मक पैटर्न को बनाने में मदद करेगा। ✨",
@@ -728,7 +728,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "understand": "Insight के साथ\nखुद को समझें",
           "growth": "अपनी प्रगति और\nविकास को ट्रैक करें",
           "reflect": "गहराई से चिंतन करें,\nबेहतर जीवन जिएँ",
-          "mira": "Mira से बात करें",
+          "mira": "Insight से बात करें",
           "findWhatWorks": "जो काम करता है उसे खोजें"
         },
         "trial": "3 दिवसीय परीक्षण",
@@ -1097,8 +1097,8 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "procrastinating": "Je continue de remettre les choses à plus tard et je ne sais pas pourquoi",
           "grateful": "Il s'est passé quelque chose aujourd'hui qui m'a rendu vraiment reconnaissant"
         },
-        "thinking": "Mira pense...",
-        "aiLabel": "Mira",
+        "thinking": "Insight pense...",
+        "aiLabel": "Insight",
         "responses": {
           "overwhelmed": "On dirait que vous en transportez beaucoup en ce moment. Reconnaître ce sentiment est la première étape – Insight peut vous aider à suivre ces schémas et à trouver ce qui vous soulage. 💜",
           "positive": "C'est une belle observation. Remarquer ce qui vous remonte le moral est puissant – Insight vous aidera à développer ces modèles positifs au fil du temps. ✨",
@@ -1143,7 +1143,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "understand": "Mieux vous comprendre\navec Insight",
           "growth": "Suivez votre évolution\net vos progrès",
           "reflect": "Réfléchissez davantage,\nvivez mieux",
-          "mira": "Parlez à Mira",
+          "mira": "Parlez à Insight",
           "findWhatWorks": "Trouvez ce qui fonctionne"
         },
         "trial": "Essai de 3 jours",
@@ -1512,8 +1512,8 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "procrastinating": "Ich schiebe Dinge ständig auf und weiß nicht, warum",
           "grateful": "Heute ist etwas passiert, das mich wirklich dankbar gemacht hat"
         },
-        "thinking": "Mira denkt...",
-        "aiLabel": "Mira",
+        "thinking": "Insight denkt...",
+        "aiLabel": "Insight",
         "responses": {
           "overwhelmed": "Es hört sich so an, als ob du im Moment viel mit dir herumträgst. Das Erkennen dieses Gefühls ist der erste Schritt – Insight kann Ihnen dabei helfen, diese Muster aufzuspüren und herauszufinden, was Ihnen Erleichterung bringt. 💜",
           "positive": "Das ist eine schöne Beobachtung. Zu bemerken, was Ihre Stimmung hebt, ist kraftvoll – Insight wird Ihnen dabei helfen, mit der Zeit auf diesen positiven Mustern aufzubauen. ✨",
@@ -1558,7 +1558,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "understand": "Verstehen Sie sich\nmit Insight besser",
           "growth": "Verfolgen Sie Wachstum\nund Fortschritte",
           "reflect": "Reflektieren Sie tiefer,\nleben Sie besser",
-          "mira": "Sprich mit Mira",
+          "mira": "Sprich mit Insight",
           "findWhatWorks": "Finde, was funktioniert"
         },
         "trial": "3-Tage-Testversion",
@@ -1928,7 +1928,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "grateful": "Сегодня произошло что-то, что заставило меня быть очень благодарным"
         },
         "thinking": "Insight думает...",
-        "aiLabel": "Mira",
+        "aiLabel": "Insight",
         "responses": {
           "overwhelmed": "Похоже, ты сейчас несешь много. Признание этого чувства — первый шаг. Insight может помочь вам отследить эти закономерности и найти то, что приносит вам облегчение. 💜",
           "positive": "Это прекрасное наблюдение. Замечать то, что поднимает ваше настроение, очень важно — Insight поможет вам со временем развить эти положительные закономерности. ✨",
@@ -1973,7 +1973,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "understand": "Лучше поймите себя\nс Insight",
           "growth": "Отслеживайте рост\nи прогресс",
           "reflect": "Размышляйте глубже,\nживите лучше",
-          "mira": "Поговорите с Mira",
+          "mira": "Поговорите с Insight",
           "findWhatWorks": "Найдите то, что работает"
         },
         "trial": "3-дневная пробная версия",
@@ -2343,7 +2343,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "grateful": "Algo aconteceu hoje que me deixou muito grato"
         },
         "thinking": "Insight está pensando...",
-        "aiLabel": "Mira",
+        "aiLabel": "Insight",
         "responses": {
           "overwhelmed": "Parece que você está carregando muita coisa agora. Reconhecer esse sentimento é o primeiro passo – Insight pode ajudá-lo a rastrear esses padrões e encontrar o que lhe traz alívio. 💜",
           "positive": "Essa é uma bela observação. Perceber o que melhora seu humor é poderoso - Insight o ajudará a desenvolver esses padrões positivos ao longo do tempo. ✨",
@@ -2388,7 +2388,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "understand": "Entenda-se melhor\ncom o Insight",
           "growth": "Acompanhe seu crescimento\ne progresso",
           "reflect": "Reflita mais,\nviva melhor",
-          "mira": "Fale com a Mira",
+          "mira": "Fale com a Insight",
           "findWhatWorks": "Encontre o que funciona"
         },
         "trial": "Teste de 3 dias",
@@ -2757,8 +2757,8 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "procrastinating": "Continuo a rimandare le cose e non so perché",
           "grateful": "Oggi è successo qualcosa che mi ha reso davvero grato"
         },
-        "thinking": "Mira sta pensando...",
-        "aiLabel": "Mira",
+        "thinking": "Insight sta pensando...",
+        "aiLabel": "Insight",
         "responses": {
           "overwhelmed": "Sembra che tu stia trasportando molto in questo momento. Riconoscere quella sensazione è il primo passo: Insight può aiutarti a tenere traccia di questi schemi e trovare cosa ti dà sollievo. 💜",
           "positive": "È una bellissima osservazione. Notare ciò che solleva il tuo umore è potente: Insight ti aiuterà a sviluppare questi modelli positivi nel tempo. ✨",
@@ -2803,7 +2803,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "understand": "Comprenditi meglio\ncon Insight",
           "growth": "Segui la tua crescita\ne i tuoi progressi",
           "reflect": "Rifletti più a fondo,\nvivi meglio",
-          "mira": "Parla con Mira",
+          "mira": "Parla con Insight",
           "findWhatWorks": "Trova ciò che funziona"
         },
         "trial": "prova di 3 giorni",
@@ -3173,7 +3173,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "grateful": "Azi s-a întâmplat ceva care m-a făcut cu adevărat recunoscător"
         },
         "thinking": "Insight se gândește...",
-        "aiLabel": "Mira",
+        "aiLabel": "Insight",
         "responses": {
           "overwhelmed": "Se pare că porți multe acum. Recunoașterea acestui sentiment este primul pas — Insight vă poate ajuta să urmăriți aceste tipare și să găsiți ceea ce vă aduce ușurare. 💜",
           "positive": "E o observație frumoasă. Observați ceea ce vă ridică starea de spirit este puternic – Insight vă va ajuta să construiți pe aceste modele pozitive în timp. ✨",
@@ -3218,7 +3218,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "understand": "Înțelege-te mai bine\ncu Insight",
           "growth": "Urmărește-ți evoluția\nși progresul",
           "reflect": "Reflectează mai profund,\ntrăiește mai bine",
-          "mira": "Vorbește cu Mira",
+          "mira": "Vorbește cu Insight",
           "findWhatWorks": "Găsește ce funcționează"
         },
         "trial": "Proba de 3 zile",
@@ -3588,7 +3588,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "grateful": "Bu gün məni həqiqətən minnətdar edən bir şey oldu"
         },
         "thinking": "Insight düşünür...",
-        "aiLabel": "Mira",
+        "aiLabel": "Insight",
         "responses": {
           "overwhelmed": "Deyəsən, indi çox şey daşıyırsan. Bu hissi tanımaq ilk addımdır — Insight bu nümunələri izləməyə və sizə rahatlıq gətirənləri tapmağa kömək edə bilər. 💜",
           "positive": "Bu gözəl müşahidədir. Əhval-ruhiyyənizi nəyin qaldırdığını fərq etmək güclüdür — Insight zamanla bu müsbət nümunələr üzərində qurmağınıza kömək edəcək. ✨",
@@ -3633,7 +3633,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "understand": "Insight ilə\nözünüzü daha yaxşı anlayın",
           "growth": "İnkişafınızı və\ntərəqqinizi izləyin",
           "reflect": "Daha dərindən düşünün,\ndaha yaxşı yaşayın",
-          "mira": "Mira ilə danışın",
+          "mira": "Insight ilə danışın",
           "findWhatWorks": "Nəyin işlədiyini tapın"
         },
         "trial": "3 günlük sınaq",
@@ -4002,8 +4002,8 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "procrastinating": "Ik stel dingen steeds uit en ik weet niet zeker waarom",
           "grateful": "Er gebeurde vandaag iets waar ik heel dankbaar voor was"
         },
-        "thinking": "Mira denkt...",
-        "aiLabel": "Mira",
+        "thinking": "Insight denkt...",
+        "aiLabel": "Insight",
         "responses": {
           "overwhelmed": "Het klinkt alsof je momenteel veel meedraagt. Het herkennen van dat gevoel is de eerste stap. Insight kan u helpen deze patronen op te sporen en te ontdekken wat u verlichting geeft. 💜",
           "positive": "Dat is een mooie observatie. Het is krachtig om op te merken wat uw humeur verbetert: Insight helpt u in de loop van de tijd op deze positieve patronen voort te bouwen. ✨",
@@ -4048,7 +4048,7 @@ export const onboardingTranslations: Partial<Record<AppLanguage, TranslationTree
           "understand": "Begrijp jezelf beter\nmet Insight",
           "growth": "Volg je groei\nen vooruitgang",
           "reflect": "Reflecteer dieper,\nleef beter",
-          "mira": "Praat met Mira",
+          "mira": "Praat met Insight",
           "findWhatWorks": "Vind wat werkt"
         },
         "trial": "3 dagen op proef",

@@ -640,10 +640,10 @@ Provide ONLY the JSON, nothing else.`;
     await waitForRateLimit();
 
     const history = messages
-      .map((m) => `${m.role === 'assistant' ? 'Mira' : 'User'}: ${m.content}`)
+      .map((m) => `${m.role === 'assistant' ? 'Insight' : 'User'}: ${m.content}`)
       .join('\n\n');
 
-    const prompt = `You are Mira, a warm and insightful journal companion. The user wrote this journal entry:
+    const prompt = `You are Insight, a warm and insightful journal companion. The user wrote this journal entry:
 
 "${journalContent}"
 
@@ -656,7 +656,8 @@ Respond naturally to the user's latest message. Be empathetic, specific to what 
       const responseText = await callGroqProxy([
         {
           role: 'system',
-          content: `You are Mira, a compassionate journal companion. Write in warm, conversational tone with clear structure:
+          content: `You are Insight, a compassionate journal companion and personal growth mentor. Write in warm, conversational tone with clear structure:
+- If asked your name, you are Insight — never refer to yourself as Mira
 
 - Use **bold** to highlight key insights or emotional themes
 - Break longer responses into short 2-3 sentence paragraphs (separated by blank lines)
@@ -814,7 +815,8 @@ Write in warm, conversational tone with clear structure:
   • 🎯 Try morning pages for 5 minutes
   • 🌱 Notice when you're avoiding vs. processing
   • ✨ Celebrate small wins"
-- Keep responses under 300 words — clarity over length`;
+- Keep responses under 300 words — clarity over length
+- If asked your name or who you are, you are Insight — never refer to yourself as Mira`;
 
       const apiMessages = [
         { role: 'system', content: enhancedSystemMessage },

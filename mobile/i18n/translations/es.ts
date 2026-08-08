@@ -283,7 +283,7 @@ const es: TranslationTree = {
         grateful: 'Hoy ocurrió algo que me hizo sentir mucha gratitud',
       },
       thinking: 'Insight está pensando...',
-      aiLabel: 'Mira',
+      aiLabel: 'Insight',
       responses: {
         overwhelmed: 'Parece que ahora mismo llevas mucho peso. Reconocerlo es el primer paso: Insight puede ayudarte a seguir estos patrones y descubrir qué te alivia. 💜',
         positive: 'Es una observación preciosa. Notar qué mejora tu ánimo es muy valioso: Insight te ayudará a potenciar estos patrones positivos. ✨',
@@ -328,7 +328,7 @@ const es: TranslationTree = {
         understand: 'Compréndete mejor\ncon Insight',
         growth: 'Sigue tu crecimiento\ny progreso',
         reflect: 'Reflexiona más,\nvive mejor',
-        mira: 'Habla con Mira',
+        mira: 'Descubre insights',
         findWhatWorks: 'Encuentra lo que funciona',
       },
       trial: 'Prueba de 3 días',
@@ -347,7 +347,7 @@ const es: TranslationTree = {
       whatYouGet: 'Qué obtienes:',
       featureTitles: {
         insights: 'Insights personalizados',
-        mira: 'Mira AI ilimitada',
+        mira: 'Insight AI ilimitada',
         encryption: 'Cifrado de extremo a extremo',
         playbooks: 'Playbooks de crecimiento',
       },
@@ -524,7 +524,7 @@ const es: TranslationTree = {
     highImpact: 'ALTO IMPACTO',
   },
   companion: {
-    headerTitle: 'Mira',
+    headerTitle: 'Insight',
     emptySubtitle: 'Conozco tu diario al detalle.\nPregúntame sobre tus patrones, emociones o crecimiento.',
     inputPlaceholder: 'Pregúntame lo que quieras...',
     messagesToday: '{{count}}/{{limit}} mensajes hoy',

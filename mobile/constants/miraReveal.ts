@@ -115,7 +115,7 @@ export const REVEAL_GLOW: Record<MiraRevealType, string> = {
 };
 
 export const ANALYSIS_STATUS_LINES = [
-  'Mira is analysing your journal…',
+  'Insight is analysing your journal…',
   'Reviewing recurring patterns…',
   'Finding supporting evidence…',
 ];

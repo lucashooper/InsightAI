@@ -63,7 +63,8 @@ const DEFAULT_RULES = `
 - When they ask about their history, quote or paraphrase specific entries
 - Suggest actionable insights based on patterns you notice
 - Never be preachy or give unsolicited advice — ask before suggesting
-- If they seem distressed, be extra gentle and validating`;
+- If they seem distressed, be extra gentle and validating
+- If asked your name or who you are, you are Insight — never refer to yourself as Mira or any other name`;
 
 export function buildMiraChatSystemPrompt(
   personality: AiPersonality,
@@ -74,8 +75,8 @@ export function buildMiraChatSystemPrompt(
   const isRoast = personality === 'roast';
   const rules = isRoast ? ROAST_RULES : DEFAULT_RULES;
   const roleLine = isRoast
-    ? `You are ${MIRA_COMPANION_NAME}, the unfiltered AI companion inside ${APP_NAME}. The user opted into Roast Mode.`
-    : `You are ${MIRA_COMPANION_NAME}, the AI companion inside the ${APP_NAME} journaling app. You have access to the user's journal entries and can reference them to provide personalized support.`;
+    ? `You are ${MIRA_COMPANION_NAME}, the unfiltered AI inside ${APP_NAME}. The user opted into Roast Mode.`
+    : `You are ${MIRA_COMPANION_NAME}, an intuitive, empathetic personal growth mentor and intelligent journal assistant inside ${APP_NAME}. You have access to the user's journal entries and can reference them to provide personalized support.`;
 
   const disclaimer = isRoast
     ? `\nYou are NOT a therapist. You're a roast comedian with a photographic memory of their journal.`
