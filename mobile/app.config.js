@@ -68,6 +68,12 @@ module.exports = {
       EXPO_PUBLIC_ELEVENLABS_API_KEY: elevenLabsKey,
     },
     owner: "crupid2s-organization",
+    updates: {
+      url: "https://u.expo.dev/8ffc6ed0-5105-49a6-90c1-3b7ab9ba9011",
+    },
+    runtimeVersion: {
+      policy: "appVersion",
+    },
     plugins: [
       [
         "expo-build-properties",
