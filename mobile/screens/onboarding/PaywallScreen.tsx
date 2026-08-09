@@ -11,7 +11,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { supabase } from '../../lib/supabase';
 import { isTablet, sf } from '../../utils/responsive';
-import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { analytics } from '../../services/analytics';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getFirstName } from '../../utils/paywallPersonalization';
@@ -21,10 +20,16 @@ const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 const ENTITLEMENT_ID = 'Insight Pro';
 
+/** Paywall always uses dark-space styling — ignores global theme toggle. */
+const PAYWALL_TEXT = {
+  primary: '#FFFFFF',
+  secondary: 'rgba(255, 255, 255, 0.70)',
+  muted: 'rgba(255, 255, 255, 0.58)',
+} as const;
+
 export default function PaywallScreen({ navigation, route }: any) {
   const { user } = useAuth();
   const { userName } = useOnboarding();
-  const { theme } = useTheme();
   const { t } = useLanguage();
   const [offering, setOffering] = useState<PurchasesOffering | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -629,7 +634,7 @@ export default function PaywallScreen({ navigation, route }: any) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent={false} />
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={false} />
       <OnboardingAmbientBackground />
 
       {/* Back Button - Circular style matching other onboarding pages */}
@@ -641,8 +646,8 @@ export default function PaywallScreen({ navigation, route }: any) {
           }
         }}
       >
-        <View style={[styles.backArrowCircle, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-          <Ionicons name="arrow-back" size={20} color={isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e'} />
+        <View style={styles.backArrowCircle}>
+          <Ionicons name="arrow-back" size={20} color={PAYWALL_TEXT.primary} />
         </View>
       </TouchableOpacity>
 
@@ -657,7 +662,7 @@ export default function PaywallScreen({ navigation, route }: any) {
         </View>
 
         <View style={styles.header}>
-          <Text style={[styles.title, !isDarkTheme(theme.name) && styles.titleLight]}>
+          <Text style={styles.title}>
             {paywallTitle}
           </Text>
         </View>
@@ -705,7 +710,7 @@ export default function PaywallScreen({ navigation, route }: any) {
         <View style={styles.plansRow}>
           <PaywallPlanCard
             selected={selectedPlan === 'weekly'}
-            light={!isDarkTheme(theme.name)}
+            light={false}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setSelectedPlan('weekly');
@@ -718,14 +723,14 @@ export default function PaywallScreen({ navigation, route }: any) {
               ) : undefined
             }
           >
-            <Text style={[styles.compactPlanName, !isDarkTheme(theme.name) && styles.compactPlanNameLight, selectedPlan === 'weekly' && styles.compactPlanNameSelected]}>{t('onboarding.paywall.weekly')}</Text>
-            <Text style={[styles.compactPlanPriceMain, !isDarkTheme(theme.name) && styles.compactPlanPriceMainLight, selectedPlan === 'weekly' && styles.compactPlanPriceMainSelected]}>{t('onboarding.paywall.priceWeekly')}</Text>
+            <Text style={[styles.compactPlanName, selectedPlan === 'weekly' && styles.compactPlanNameSelected]}>{t('onboarding.paywall.weekly')}</Text>
+            <Text style={[styles.compactPlanPriceMain, selectedPlan === 'weekly' && styles.compactPlanPriceMainSelected]}>{t('onboarding.paywall.priceWeekly')}</Text>
           </PaywallPlanCard>
 
           <PaywallPlanCard
             selected={selectedPlan === 'yearly'}
             recommended
-            light={!isDarkTheme(theme.name)}
+            light={false}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setSelectedPlan('yearly');
@@ -742,13 +747,13 @@ export default function PaywallScreen({ navigation, route }: any) {
               )
             }
           >
-            <Text style={[styles.compactPlanName, !isDarkTheme(theme.name) && styles.compactPlanNameLight, selectedPlan === 'yearly' && styles.compactPlanNameSelected]}>{t('onboarding.paywall.yearly')}</Text>
-            <Text style={[styles.compactPlanPriceMain, !isDarkTheme(theme.name) && styles.compactPlanPriceMainLight, selectedPlan === 'yearly' && styles.compactPlanPriceMainSelected]}>{t('onboarding.paywall.priceYearly')}</Text>
+            <Text style={[styles.compactPlanName, selectedPlan === 'yearly' && styles.compactPlanNameSelected]}>{t('onboarding.paywall.yearly')}</Text>
+            <Text style={[styles.compactPlanPriceMain, selectedPlan === 'yearly' && styles.compactPlanPriceMainSelected]}>{t('onboarding.paywall.priceYearly')}</Text>
           </PaywallPlanCard>
 
           <PaywallPlanCard
             selected={selectedPlan === 'monthly'}
-            light={!isDarkTheme(theme.name)}
+            light={false}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setSelectedPlan('monthly');
@@ -761,8 +766,8 @@ export default function PaywallScreen({ navigation, route }: any) {
               ) : undefined
             }
           >
-            <Text style={[styles.compactPlanName, !isDarkTheme(theme.name) && styles.compactPlanNameLight, selectedPlan === 'monthly' && styles.compactPlanNameSelected]}>{t('onboarding.paywall.monthly')}</Text>
-            <Text style={[styles.compactPlanPriceMain, !isDarkTheme(theme.name) && styles.compactPlanPriceMainLight, selectedPlan === 'monthly' && styles.compactPlanPriceMainSelected]}>{t('onboarding.paywall.priceMonthly')}</Text>
+            <Text style={[styles.compactPlanName, selectedPlan === 'monthly' && styles.compactPlanNameSelected]}>{t('onboarding.paywall.monthly')}</Text>
+            <Text style={[styles.compactPlanPriceMain, selectedPlan === 'monthly' && styles.compactPlanPriceMainSelected]}>{t('onboarding.paywall.priceMonthly')}</Text>
           </PaywallPlanCard>
         </View>
         </View>
@@ -837,6 +842,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.10)',
   },
   topContent: {
     flex: 1,
@@ -861,13 +867,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: isTablet ? sf(30) : sf(28),
     fontWeight: '600',
-    color: '#ffffff',
+    color: PAYWALL_TEXT.primary,
     letterSpacing: -1.28,
     textAlign: 'center',
     lineHeight: isTablet ? sf(38) : sf(36),
-  },
-  titleLight: {
-    color: '#1a1a2e',
   },
   featuresBlock: {
     marginBottom: isTablet ? 32 : 28,
@@ -908,14 +911,14 @@ const styles = StyleSheet.create({
   featureTitle: {
     fontSize: sf(15),
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: PAYWALL_TEXT.primary,
     letterSpacing: -0.2,
     marginBottom: 2,
   },
   featureBody: {
     fontSize: sf(13),
     fontWeight: '400',
-    color: 'rgba(255,255,255,0.58)',
+    color: PAYWALL_TEXT.secondary,
     lineHeight: sf(18),
   },
   trialToggle: {
@@ -952,11 +955,8 @@ const styles = StyleSheet.create({
   compactPlanName: {
     fontSize: sf(14),
     fontWeight: '700',
-    color: '#ffffff',
+    color: PAYWALL_TEXT.primary,
     marginBottom: 4,
-  },
-  compactPlanNameLight: {
-    color: '#1a1a2e',
   },
   compactPlanNameSelected: {
     opacity: 0.9,
@@ -965,11 +965,8 @@ const styles = StyleSheet.create({
   compactPlanPriceMain: {
     fontSize: sf(16),
     fontWeight: '800',
-    color: '#ffffff',
+    color: PAYWALL_TEXT.primary,
     marginTop: 2,
-  },
-  compactPlanPriceMainLight: {
-    color: '#1a1a2e',
   },
   compactPlanPriceMainSelected: {
     opacity: 0.9,
@@ -1008,10 +1005,12 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: 'rgba(12, 12, 16, 0.94)',
+    borderTopWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.35,
     shadowRadius: 12,
     elevation: 8,
   },
@@ -1027,7 +1026,7 @@ const styles = StyleSheet.create({
   },
   commitmentText: {
     fontSize: sf(13),
-    color: '#6b7280',
+    color: PAYWALL_TEXT.secondary,
     fontWeight: '400',
   },
   ctaWrap: {
@@ -1066,11 +1065,11 @@ const styles = StyleSheet.create({
   },
   footerLink: {
     fontSize: isTablet ? 14 : 10,
-    color: '#9ca3af',
+    color: PAYWALL_TEXT.secondary,
     fontWeight: '500',
   },
   footerDivider: {
     fontSize: isTablet ? 14 : 10,
-    color: '#d1d5db',
+    color: 'rgba(255,255,255,0.35)',
   },
 });

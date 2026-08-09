@@ -26,7 +26,8 @@ import { supabase } from '../lib/supabase';
 import { useFocusEffect } from '@react-navigation/native';
 import { invalidateCachedNote } from '../utils/decryptCache';
 import PageHeader from '../components/shared/PageHeader';
-import StandardContainer from '../components/shared/StandardContainer';
+import GlassCard from '../components/ui/GlassCard';
+import AppBackdrop from '../components/ui/AppBackdrop';
 import EmptyState from '../components/shared/EmptyState';
 import { JournalListSkeleton } from '../components/shared/SkeletonBlock';
 import * as Haptics from 'expo-haptics';
@@ -555,8 +556,7 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
       onLongPress={() => handleEntryLongPress(item)}
       activeOpacity={0.7}
     >
-      <StandardContainer style={[styles.premiumCard, { padding: 0 }]}>
-        <View style={styles.cardGradient}>
+      <GlassCard style={styles.premiumCard} noPad contentStyle={styles.cardGradient}>
           <View style={styles.entryTitleRow}>
             <View style={styles.entryTitleWithIndicator}>
               {moodIndicatorsEnabled && (() => {
@@ -620,8 +620,7 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
                 </LinearGradient>
               )}
             </View>
-          </View>
-        </StandardContainer>
+        </GlassCard>
       </TouchableOpacity>
   );
   };
@@ -629,14 +628,8 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
   const isDark = isDarkTheme(theme.name);
 
   return (
-  <View style={[styles.container, isDark && { backgroundColor: 'transparent' }]}>
-    {!isDark ? (
-      <LinearGradient
-        colors={theme.colors.backgroundGradient as any}
-        style={styles.backgroundGradient}
-      />
-    ) : null}
-
+  <View style={styles.container}>
+    <AppBackdrop />
     <PageHeader
       title={t('journal.title')}
       right={
@@ -652,23 +645,17 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
     />
 
     <View style={styles.searchSection}>
-      <View style={[
-        styles.searchBar,
-        !isDark && {
-          backgroundColor: 'rgba(255,255,255,0.92)',
-          borderColor: 'rgba(122, 86, 160, 0.14)',
-        },
-      ]}>
+      <GlassCard style={styles.searchBar} noPad contentStyle={styles.searchBarInner}>
         <Ionicons name="search" size={16} color={isDark ? '#6b7280' : '#6b7280'} style={styles.searchIcon} />
         <TextInput
-          style={[styles.searchInput, !isDark && { color: '#1a1a1a' }]}
+          style={[styles.searchInput, { color: theme.colors.primaryText }]}
           placeholder={t('journal.searchPlaceholder')}
-          placeholderTextColor="#6b7280"
+          placeholderTextColor={isDark ? '#6b7280' : 'rgba(0,0,0,0.45)'}
           value={searchQuery}
           onChangeText={setSearchQuery}
           textAlignVertical="center"
         />
-      </View>
+      </GlassCard>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -767,27 +754,25 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
             activeOpacity={1}
             onPress={() => setShowDatePicker(false)}
           >
-            <View
-              style={{
-                backgroundColor: theme.colors.cardBackground,
-                borderRadius: 20,
-                padding: 20,
-                width: '85%',
-                maxWidth: 400,
-              }}
+            <GlassCard
+              style={{ width: '85%', maxWidth: 400 }}
+              contentStyle={{ padding: 20 }}
               onStartShouldSetResponder={() => true}
             >
               <Text style={{ fontSize: 18, fontWeight: '600', color: theme.colors.primaryText, marginBottom: 16 }}>
                 {t('journal.changeEntryDate')}
               </Text>
-              <View style={{ padding: 20, backgroundColor: theme.colors.background, borderRadius: 12, alignItems: 'center' }}>
+              <GlassCard
+                variant="overlay"
+                contentStyle={{ padding: 20, alignItems: 'center' }}
+              >
                 <Text style={{ fontSize: 16, color: theme.colors.primaryText }}>
                   {formatLocalizedDate(selectedDate, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </Text>
                 <Text style={{ fontSize: 12, color: theme.colors.secondaryText, marginTop: 8 }}>
                   {t('journal.datePickerUnavailable')}
                 </Text>
-              </View>
+              </GlassCard>
               {Platform.OS === 'ios' && (
                 <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 16, gap: 12 }}>
                   <TouchableOpacity
@@ -804,7 +789,7 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
                   </TouchableOpacity>
                 </View>
               )}
-            </View>
+            </GlassCard>
           </TouchableOpacity>
         </Modal>
       )}
@@ -1088,21 +1073,19 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   searchBar: {
+    borderRadius: PREMIUM.radius.pill,
+  },
+  searchBarInner: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
     paddingVertical: 13,
-    borderRadius: PREMIUM.radius.pill,
-    backgroundColor: PREMIUM.glass.fill,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: PREMIUM.glass.border,
   },
   searchIcon: {
     marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    color: '#ffffff',
     fontSize: 14,
     paddingVertical: 4,
     includeFontPadding: false,
@@ -1366,9 +1349,7 @@ const styles = StyleSheet.create({
   premiumCardPressable: {
     marginBottom: 16,
   },
-  premiumCard: {
-    borderRadius: PREMIUM.radius.card,
-  },
+  premiumCard: {},
   cardGradient: {
     padding: 14,
   },

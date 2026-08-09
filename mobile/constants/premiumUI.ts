@@ -20,19 +20,29 @@ export const PREMIUM = {
   },
 
   /**
-   * Insight Glass Surface — the ONLY glass recipe.
-   * Do not invent per-screen variants.
+   * Dark-theme glass card — DESIGN_SYSTEM.md
    */
   glass: {
-    fill: 'rgba(18, 18, 22, 0.20)',
-    fillElevated: 'rgba(18, 18, 22, 0.28)',
-    fillOverlay: 'rgba(18, 18, 22, 0.16)',
-    border: 'rgba(255, 255, 255, 0.09)',
+    fill: 'rgba(255, 255, 255, 0.05)',
+    fillElevated: 'rgba(255, 255, 255, 0.05)',
+    fillOverlay: 'rgba(255, 255, 255, 0.05)',
+    border: 'rgba(255, 255, 255, 0.12)',
     highlight: 'rgba(255, 255, 255, 0.04)',
-    innerShadow: 'rgba(0, 0, 0, 0.14)',
+    innerShadow: 'rgba(0, 0, 0, 0.35)',
     washTop: 'rgba(255, 255, 255, 0.02)',
     washBottom: 'rgba(0, 0, 0, 0.05)',
-    blur: 56,
+    blur: 48,
+    shadowOpacity: 0.35,
+  },
+
+  /** Light-theme glass card — DESIGN_SYSTEM.md */
+  lightGlass: {
+    fill: 'rgba(255, 255, 255, 0.45)',
+    gradientStart: 'rgba(255, 255, 255, 0.45)',
+    gradientEnd: 'rgba(255, 255, 255, 0.45)',
+    border: 'rgba(255, 255, 255, 0.65)',
+    blur: 48,
+    shadowOpacity: 0.04,
   },
 
   /** Premium reveal card mesh (Figma radials) */
@@ -48,11 +58,15 @@ export const PREMIUM = {
   accentMuted: 'rgba(139, 92, 246, 0.12)',
 
   layout: {
-    screenPadH: 24,
+    screenPadH: 20,
     headerTop: 8,
-    sectionGap: 24,
+    sectionGap: 28,
+    heroTopPadding: 48,
+    heroToCardGap: 36,
     cardGap: 16,
     cardPad: 24,
+    cardInnerPadH: 20,
+    cardInnerPadV: 16,
   },
 
   radius: {
@@ -126,10 +140,10 @@ export const TYPE = {
     lineHeight: sf(44),
   },
   section: {
-    fontSize: sf(20),
-    fontWeight: '600' as TextStyle['fontWeight'],
-    letterSpacing: -0.4,
-    lineHeight: sf(26),
+    fontSize: sf(18),
+    fontWeight: '700' as TextStyle['fontWeight'],
+    letterSpacing: -0.3,
+    lineHeight: sf(24),
   },
   cardTitle: {
     fontSize: sf(17),

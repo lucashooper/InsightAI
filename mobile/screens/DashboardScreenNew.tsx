@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -21,9 +20,11 @@ import { supabase } from '../lib/supabase';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePreloadedData } from '../contexts/PreloadContext';
-import StandardContainer from '../components/shared/StandardContainer';
-import HeroHomeOrb from '../components/shared/HeroHomeOrb';
-import { PREMIUM, TYPE } from '../constants/premiumUI';
+import { useAppLock } from '../contexts/AppLockContext';
+import GlassCard from '../components/ui/GlassCard';
+import AppBackdrop from '../components/ui/AppBackdrop';
+import HomeStagger from '../components/shared/HomeStagger';
+import { PREMIUM } from '../constants/premiumUI';
 import FirstTimeIntroOverlay from '../components/FirstTimeIntroOverlay';
 import PinnedRoutineCard from '../components/dashboard/PinnedRoutineCard';
 import PlaybookQuickAccessCard from '../components/dashboard/PlaybookQuickAccessCard';
@@ -37,7 +38,15 @@ import { APP_NAME } from '../constants/branding';
 const insightLogo = require('../public/Insight-Logo-nobg.webp');
 
 const { width } = Dimensions.get('window');
-const HERO_ORB_SIZE = isTablet ? 520 : 380;
+
+const STAGGER = {
+  header: 0,
+  greeting: 60,
+  mainCard: 120,
+  actions: 150,
+  prompt: 180,
+  suggested: 240,
+} as const;
 
 interface EmotionalState {
   mood: string;
@@ -52,6 +61,8 @@ export default function DashboardScreenNew() {
   const insets = useSafeAreaInsets();
 
   const { data: preloaded } = usePreloadedData();
+  const { isLocked, isLockEnabled } = useAppLock();
+  const homeAnimationActive = !isLockEnabled || !isLocked;
   const navigation = useNavigation<any>();
   const introCheckedRef = useRef(false);
   const [loading, setLoading] = useState(true);
@@ -60,7 +71,6 @@ export default function DashboardScreenNew() {
     score: 7,
     trend: 'stable'
   });
-  const [streak, setStreak] = useState(0);
   const [recentPatterns, setRecentPatterns] = useState<string[]>([]);
   const [recentTopics, setRecentTopics] = useState<Array<{emoji: string, text: string, keyword: string, searchTerm: string}>>([]);
   const [todayInsights, setTodayInsights] = useState<Array<{icon: string, iconColor: string, title: string, description: string}>>([]);
@@ -70,7 +80,6 @@ export default function DashboardScreenNew() {
   const [isRecording, setIsRecording] = useState(false);
   const [recognizedText, setRecognizedText] = useState('');
   const [showQuickActions, setShowQuickActions] = useState(false);
-  const [showStreakModal, setShowStreakModal] = useState(false);
   const [showIntroOverlay, setShowIntroOverlay] = useState(false);
   const [dailyPrompt] = useState<DailyPrompt>(getTodayPrompt());
 
@@ -251,28 +260,6 @@ export default function DashboardScreenNew() {
         setRecentPatterns(patterns.slice(0, 3));
       }
 
-      // Calculate streak
-      const sortedNotes = [...limited].sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-      
-      let streakCount = 0;
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      for (const note of sortedNotes) {
-        const noteDate = new Date(note.created_at);
-        noteDate.setHours(0, 0, 0, 0);
-        const daysDiff = Math.floor((today.getTime() - noteDate.getTime()) / (1000 * 60 * 60 * 24));
-        
-        if (daysDiff === streakCount) {
-          streakCount++;
-        } else if (daysDiff > streakCount) {
-          break;
-        }
-      }
-
-      setStreak(streakCount);
     } catch (error) {
       console.error('Error processing dashboard notes:', error);
     }
@@ -438,31 +425,37 @@ export default function DashboardScreenNew() {
 
   // Using MindseraOrb with built-in palette and blur; no explicit colors required
 
+  const dark = isDarkTheme(theme.name);
+  const sectionHeadingColor = dark ? '#CBD5E1' : '#334155';
+  const heroDateLabel = new Date().toLocaleDateString(language, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+  const hour = new Date().getHours();
+  const timeGreeting =
+    hour < 12 ? t('home.goodMorning') : hour < 18 ? t('home.goodAfternoon') : t('home.goodEvening');
+  const displayName =
+    userName && userName !== 'there'
+      ? userName.charAt(0).toUpperCase() + userName.slice(1)
+      : null;
+
   return (
-    <View style={[styles.container, { backgroundColor: 'transparent' }]}>
-
-
+    <View style={styles.container}>
+      <AppBackdrop />
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
+        <HomeStagger delay={STAGGER.header} active={homeAnimationActive}>
         <View style={[styles.header, { paddingTop: insets.top + PREMIUM.layout.headerTop }]}>
           <View style={styles.headerLeft}>
             <Image source={insightLogo} style={styles.headerLogo} resizeMode="contain" />
             <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>{APP_NAME}</Text>
           </View>
           <View style={styles.headerIcons}>
-            <TouchableOpacity 
-              onPress={() => setShowStreakModal(true)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.streakInline, !isDarkTheme(theme.name) && { backgroundColor: '#FFFFFF', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16, borderWidth: 1, borderColor: '#E8E5DC', shadowColor: 'rgba(139, 92, 70, 0.08)', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 8 }]}>
-                <Text style={[styles.streakEmoji, { fontSize: !isDarkTheme(theme.name) ? 16 : 18 }]}>🔥</Text>
-                <Text style={[styles.streakCount, { color: theme.colors.primaryText, fontSize: 14, fontWeight: !isDarkTheme(theme.name) ? '700' : '600' }]}>{streak > 0 ? streak : '-'}</Text>
-              </View>
-            </TouchableOpacity>
             <TouchableOpacity
               onPress={() => navigation.navigate('Profile')}
               activeOpacity={0.7}
@@ -478,36 +471,73 @@ export default function DashboardScreenNew() {
             </TouchableOpacity>
           </View>
         </View>
+        </HomeStagger>
 
-        {/* Orb Section with Centered Greeting — taps to AI Chat */}
-        <TouchableOpacity 
-          style={styles.orbSection} 
-          onPress={() => navigation.navigate('AIChat')}
-          activeOpacity={0.85}
-        >
-          <HeroHomeOrb
-            size={HERO_ORB_SIZE}
-            isDark={isDarkTheme(theme.name)}
-            style={[styles.orbImage, { left: (width - HERO_ORB_SIZE) / 2 }]}
-          />
-          <View style={styles.greetingInOrb}>
-            <Text style={[styles.greetingText, {
-              color: '#FFFFFF',
-              textShadowColor: isDarkTheme(theme.name) ? 'rgba(0, 0, 0, 0.42)' : 'rgba(61, 31, 72, 0.32)',
-              textShadowOffset: { width: 0, height: 1 },
-              textShadowRadius: 10,
-            }]}>
-              {(() => {
-                const hour = new Date().getHours();
-                const greeting = hour < 12 ? t('home.goodMorning') : hour < 18 ? t('home.goodAfternoon') : t('home.goodEvening');
-                return `${greeting}${userName && userName !== 'there' ? `,\n${userName.charAt(0).toUpperCase() + userName.slice(1)}` : ''}`;
-              })()}
+        {/* Greeting hero — left-aligned over gradient */}
+        <HomeStagger delay={STAGGER.greeting} active={homeAnimationActive}>
+          <View style={styles.heroZone}>
+            <Text
+              style={[
+                styles.heroDate,
+                { color: dark ? 'rgba(148,163,184,0.70)' : 'rgba(71,85,105,0.70)' },
+              ]}
+            >
+              {heroDateLabel}
+            </Text>
+            <Text
+              style={[
+                styles.greetingText,
+                { color: dark ? '#FFFFFF' : '#1A1520' },
+              ]}
+            >
+              {displayName ? `${timeGreeting},\n${displayName}` : timeGreeting}
             </Text>
           </View>
-        </TouchableOpacity>
+        </HomeStagger>
 
+        {/* Today's Insights — primary glass card beneath greeting */}
+        <HomeStagger delay={STAGGER.mainCard} active={homeAnimationActive}>
+          <View style={styles.insightsSection}>
+          {!hasEntryToday ? (
+            <TouchableOpacity
+              onPress={() => navigation.navigate('CreateEntry')}
+              activeOpacity={0.7}
+            >
+              <GlassCard style={styles.insightCard} noPad contentStyle={styles.insightCardInner}>
+              <View style={styles.insightHeader}>
+                <Ionicons name="create-outline" size={24} color={theme.colors.secondaryText} />
+                <Text style={[styles.insightTitle, { color: theme.colors.primaryText, fontSize: sf(18) }]}>{t('home.noCheckIn')}</Text>
+              </View>
+              <Text style={[styles.insightText, { color: theme.colors.secondaryText }]}>{t('home.unlockInsights')}</Text>
+              <View style={styles.ctaArrow}>
+                <Ionicons name="arrow-forward" size={20} color={theme.colors.tertiaryText} />
+              </View>
+              </GlassCard>
+            </TouchableOpacity>
+          ) : todayInsights.length > 0 ? (
+            todayInsights.map((insight, index) => (
+              <GlassCard key={index} style={styles.insightCard} noPad contentStyle={styles.insightCardInner}>
+                <View style={styles.insightHeader}>
+                  <Ionicons name={insight.icon as any} size={20} color={insight.iconColor} />
+                  <Text style={[styles.insightTitle, { color: theme.colors.primaryText }]}>{insight.title}</Text>
+                </View>
+                <Text style={[styles.insightText, { color: theme.colors.secondaryText }]}>{insight.description}</Text>
+              </GlassCard>
+            ))
+          ) : (
+            <GlassCard style={styles.insightCard} noPad contentStyle={styles.insightCardInner}>
+              <View style={styles.insightHeader}>
+                <Ionicons name="checkmark-circle" size={20} color={theme.colors.success} />
+                <Text style={[styles.insightTitle, { color: theme.colors.primaryText }]}>{t('home.greatStart')}</Text>
+              </View>
+              <Text style={[styles.insightText, { color: theme.colors.secondaryText }]}>{t('home.journaledToday')}</Text>
+            </GlassCard>
+          )}
+        </View>
+        </HomeStagger>
 
         {/* Primary Actions */}
+        <HomeStagger delay={STAGGER.actions} active={homeAnimationActive}>
         <View style={styles.actionsSection}>
           <View style={styles.actionItem}>
             <TouchableOpacity 
@@ -573,6 +603,7 @@ export default function DashboardScreenNew() {
             <Text style={[styles.actionLabel, { color: theme.colors.primaryText }]}>{t('home.scan')}</Text>
           </View>
         </View>
+        </HomeStagger>
 
         {/* Pinned Protocol from Playbook */}
         {user?.id && (
@@ -583,54 +614,15 @@ export default function DashboardScreenNew() {
 
         {/* Recent Topics - REMOVED: Not working correctly, will be reimplemented properly */}
 
-        {/* Today's Insights - Data-driven */}
-        <View style={styles.insightsSection}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>{t('home.todaysInsights')}</Text>
-          {!hasEntryToday ? (
-            <TouchableOpacity 
-              onPress={() => navigation.navigate('CreateEntry')}
-              activeOpacity={0.7}
-            >
-              <StandardContainer style={[styles.insightCard]}>
-              <View style={styles.insightHeader}>
-                <Ionicons name="create-outline" size={24} color={theme.colors.secondaryText} />
-                <Text style={[styles.insightTitle, { color: theme.colors.primaryText, fontSize: sf(18) }]}>{t('home.noCheckIn')}</Text>
-              </View>
-              <Text style={[styles.insightText, { color: theme.colors.secondaryText }]}>{t('home.unlockInsights')}</Text>
-              <View style={styles.ctaArrow}>
-                <Ionicons name="arrow-forward" size={20} color={theme.colors.tertiaryText} />
-              </View>
-              </StandardContainer>
-            </TouchableOpacity>
-          ) : todayInsights.length > 0 ? (
-            todayInsights.map((insight, index) => (
-              <StandardContainer key={index} style={[styles.insightCard, { borderColor: theme.colors.border }]}>
-                <View style={styles.insightHeader}>
-                  <Ionicons name={insight.icon as any} size={20} color={insight.iconColor} />
-                  <Text style={[styles.insightTitle, { color: theme.colors.primaryText }]}>{insight.title}</Text>
-                </View>
-                <Text style={[styles.insightText, { color: theme.colors.secondaryText }]}>{insight.description}</Text>
-              </StandardContainer>
-            ))
-          ) : (
-            <StandardContainer style={[styles.insightCard, { borderColor: theme.colors.border }]}>
-              <View style={styles.insightHeader}>
-                <Ionicons name="checkmark-circle" size={20} color={theme.colors.success} />
-                <Text style={[styles.insightTitle, { color: theme.colors.primaryText }]}>{t('home.greatStart')}</Text>
-              </View>
-              <Text style={[styles.insightText, { color: theme.colors.secondaryText }]}>{t('home.journaledToday')}</Text>
-            </StandardContainer>
-          )}
-        </View>
-
         {/* Daily Prompt */}
+        <HomeStagger delay={STAGGER.prompt} active={homeAnimationActive}>
         <View style={styles.challengesSection}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>{t('home.todaysPrompt')}</Text>
+          <Text style={[styles.sectionTitle, { color: sectionHeadingColor }]}>{t('home.todaysPrompt')}</Text>
           <TouchableOpacity
             onPress={() => navigation.navigate('PromptEntry', { promptText: dailyPrompt.prompt + (dailyPrompt.followUp ? `\n\n${dailyPrompt.followUp}` : '') })}
             activeOpacity={0.7}
           >
-            <StandardContainer style={[styles.insightCard]}>
+            <GlassCard style={styles.insightCard} noPad contentStyle={styles.insightCardInner}>
             <View style={styles.insightHeader}>
               <Text style={{ fontSize: 22 }}>{dailyPrompt.emoji}</Text>
               <View style={{ flex: 1, marginLeft: 4 }}>
@@ -645,29 +637,19 @@ export default function DashboardScreenNew() {
                 <Text style={[styles.compactCtaText, { color: theme.colors.primaryText }]}>{t('home.startWriting')}</Text>
               </View>
             </View>
-            </StandardContainer>
+            </GlassCard>
           </TouchableOpacity>
         </View>
+        </HomeStagger>
 
         {/* Suggested Challenges */}
+        <HomeStagger delay={STAGGER.suggested} active={homeAnimationActive}>
         <View style={styles.challengesSection}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>
+          <Text style={[styles.sectionTitle, { color: sectionHeadingColor }]}>
             {t('home.suggested')}
           </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Meditation')} activeOpacity={0.7}>
-            <StandardContainer style={[styles.challengeCard, { borderColor: theme.colors.border }]}>
-            <View style={styles.challengeContent}>
-              <Text style={styles.challengeEmoji}>🧘</Text>
-              <View style={styles.challengeInfo}>
-                <Text style={[styles.challengeTitle, { color: theme.colors.primaryText }]}>{t('home.meditation')}</Text>
-                <Text style={[styles.challengeSubtext, { color: theme.colors.tertiaryText }]}>{t('home.meditationDesc')}</Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
-            </StandardContainer>
-          </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.navigate('Gratitude')} activeOpacity={0.7}>
-            <StandardContainer style={[styles.challengeCard, { borderColor: theme.colors.border }]}>
+            <GlassCard style={styles.challengeCard} noPad contentStyle={styles.challengeCardInner}>
             <View style={styles.challengeContent}>
               <Text style={styles.challengeEmoji}>📝</Text>
               <View style={styles.challengeInfo}>
@@ -676,10 +658,10 @@ export default function DashboardScreenNew() {
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
-            </StandardContainer>
+            </GlassCard>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.navigate('AmbientSounds')} activeOpacity={0.7}>
-            <StandardContainer style={[styles.challengeCard, { borderColor: theme.colors.border }]}>
+            <GlassCard style={styles.challengeCard} noPad contentStyle={styles.challengeCardInner}>
             <View style={styles.challengeContent}>
               <Text style={styles.challengeEmoji}>🌧️</Text>
               <View style={styles.challengeInfo}>
@@ -688,10 +670,10 @@ export default function DashboardScreenNew() {
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
-            </StandardContainer>
+            </GlassCard>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.navigate('Explore')} activeOpacity={0.7}>
-            <StandardContainer style={[styles.challengeCard, { borderColor: theme.colors.border }]}>
+            <GlassCard style={styles.challengeCard} noPad contentStyle={styles.challengeCardInner}>
             <View style={styles.challengeContent}>
               <Text style={styles.challengeEmoji}>🔍</Text>
               <View style={styles.challengeInfo}>
@@ -700,38 +682,29 @@ export default function DashboardScreenNew() {
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
-            </StandardContainer>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('Todo')} activeOpacity={0.7}>
-            <StandardContainer style={[styles.challengeCard, { borderColor: theme.colors.border }]}>
-            <View style={styles.challengeContent}>
-              <Text style={styles.challengeEmoji}>✅</Text>
-              <View style={styles.challengeInfo}>
-                <Text style={[styles.challengeTitle, { color: theme.colors.primaryText }]}>{t('home.todo')}</Text>
-                <Text style={[styles.challengeSubtext, { color: theme.colors.tertiaryText }]}>{t('home.todoDesc')}</Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
-            </StandardContainer>
+            </GlassCard>
           </TouchableOpacity>
         </View>
+        </HomeStagger>
 
         {/* Recent Patterns */}
         {recentPatterns.length > 0 && (
           <View style={styles.patternsSection}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>
+            <Text style={[styles.sectionTitle, { color: sectionHeadingColor }]}>
               {t('home.recentPatterns')}
             </Text>
             {recentPatterns.map((pattern, index) => (
-              <View 
-                key={index} 
-                style={[styles.patternCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
+              <GlassCard
+                key={index}
+                style={styles.patternCard}
+                noPad
+                contentStyle={styles.patternCardInner}
               >
-                <Ionicons name="bulb-outline" size={20} color={theme.colors.primary} />
-                <Text style={[styles.patternText, { color: theme.colors.secondaryText }]}>
-                  {pattern}
-                </Text>
-              </View>
+                  <Ionicons name="bulb-outline" size={20} color={theme.colors.primary} />
+                  <Text style={[styles.patternText, { color: theme.colors.secondaryText }]}>
+                    {pattern}
+                  </Text>
+              </GlassCard>
             ))}
           </View>
         )}
@@ -743,72 +716,6 @@ export default function DashboardScreenNew() {
         onClose={handleCloseIntro}
       />
 
-      {/* Streak Modal */}
-      {showStreakModal && (
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity 
-            style={styles.modalBackdrop}
-            activeOpacity={1}
-            onPress={() => setShowStreakModal(false)}
-          />
-          <View style={styles.streakModalContainer}>
-            <View style={styles.streakModalHeader}>
-              <View style={styles.streakModalBrand}>
-                <Image 
-                  source={require('../public/Insight-Logo-nobg.webp')} 
-                  style={styles.streakModalLogo}
-                />
-                <Text style={[styles.streakModalBrandText, { color: theme.colors.primaryText }]}>{APP_NAME}</Text>
-              </View>
-              <View style={styles.streakModalStreakBadge}>
-                <Text style={styles.streakModalStreakEmoji}>🔥</Text>
-                <Text style={[styles.streakModalStreakNumber, { color: '#1a1a1a' }]}>{streak}</Text>
-              </View>
-            </View>
-
-            <View style={styles.streakModalContent}>
-              <View style={styles.streakModalIconContainer}>
-                <LinearGradient
-                  colors={['#FFE5CC', '#FFD9B3', '#FFCC99']}
-                  style={styles.streakModalIconGradient}
-                >
-                  <Text style={styles.streakModalFireIcon}>🔥</Text>
-                  <Text style={styles.streakModalSparkle}>✨</Text>
-                  <Text style={styles.streakModalSparkle2}>✨</Text>
-                </LinearGradient>
-              </View>
-
-              <Text style={[styles.streakModalTitle, { color: '#E89B6C' }]}>
-                {t('home.dayStreak', { count: streak })}
-              </Text>
-
-              <View style={styles.streakModalCalendar}>
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
-                  <View key={index} style={styles.streakModalDayContainer}>
-                    <Text style={[styles.streakModalDayLabel, { color: theme.colors.tertiaryText }]}>{day}</Text>
-                    <View style={[
-                      styles.streakModalDayCircle,
-                      index < streak && { backgroundColor: theme.colors.primary }
-                    ]} />
-                  </View>
-                ))}
-              </View>
-
-              <Text style={[styles.streakModalMessage, { color: theme.colors.secondaryText }]}>
-                {t('home.streakMessage')}
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              style={[styles.streakModalButton, { backgroundColor: theme.colors.primaryText }]}
-              onPress={() => setShowStreakModal(false)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.streakModalButtonText}>{t('common.continue')}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
     </View>
   );
 }
@@ -826,6 +733,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    zIndex: 1,
   },
   scrollContent: {
     paddingBottom: 100,
@@ -893,14 +801,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   greetingInOrb: {
-    alignItems: 'center',
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: isTablet ? 20 : 10,
-    height: isTablet ? 600 : 340,
-    justifyContent: 'center',
-    paddingHorizontal: isTablet ? 48 : 32,
+    alignItems: 'flex-start',
+  },
+  heroZone: {
+    paddingHorizontal: isTablet ? 48 : PREMIUM.layout.screenPadH,
+    paddingTop: PREMIUM.layout.heroTopPadding,
+    minHeight: isTablet ? 220 : 176,
+    justifyContent: 'flex-end',
+    marginBottom: 32,
+  },
+  heroDate: {
+    fontSize: sf(12),
+    fontWeight: '500',
+    letterSpacing: 0,
+    lineHeight: sf(16),
+    marginBottom: 4,
   },
   greeting: {
     fontSize: sf(16),
@@ -917,11 +832,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   greetingText: {
-    fontSize: isTablet ? 56 : 33,
+    fontSize: isTablet ? sf(32) : sf(30),
     fontWeight: '600',
-    letterSpacing: isTablet ? -0.4 : -0.25,
-    textAlign: 'center',
-    lineHeight: isTablet ? 68 : 41,
+    letterSpacing: -0.8,
+    textAlign: 'left',
+    lineHeight: isTablet ? sf(40) : sf(36),
+    maxWidth: isTablet ? 480 : width * 0.82,
   },
   iconButton: {
     width: isTablet ? 56 : 44,
@@ -1002,7 +918,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: isTablet ? 48 : PREMIUM.layout.screenPadH,
     gap: isTablet ? 40 : 24,
-    marginBottom: isTablet ? 48 : 32,
+    marginBottom: isTablet ? 36 : 28,
     justifyContent: 'center',
   },
   actionItem: {
@@ -1051,20 +967,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: isTablet ? 40 : PREMIUM.layout.screenPadH,
   },
   sectionTitle: {
-    fontSize: sf(20),
-    fontWeight: '700',
-    letterSpacing: -0.4,
-    lineHeight: sf(24),
-    marginBottom: isTablet ? 20 : 16,
+    fontSize: sf(14),
+    fontWeight: '600',
+    letterSpacing: -0.2,
+    lineHeight: sf(20),
+    textTransform: 'uppercase',
+    marginBottom: 12,
+    opacity: 0.8,
   },
   patternCard: {
+    marginBottom: 12,
+  },
+  patternCardInner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: isTablet ? 16 : 12,
     padding: isTablet ? 20 : 16,
-    borderRadius: isTablet ? 16 : 12,
-    borderWidth: 1,
-    marginBottom: 12,
   },
   patternText: {
     flex: 1,
@@ -1142,14 +1060,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   insightsSection: {
-    paddingHorizontal: isTablet ? 40 : PREMIUM.layout.screenPadH,
-    marginBottom: isTablet ? 40 : 32,
+    paddingHorizontal: isTablet ? 48 : PREMIUM.layout.screenPadH,
+    marginBottom: PREMIUM.layout.sectionGap,
     gap: 4,
   },
   insightCard: {
+    marginTop: 4,
+  },
+  insightCardInner: {
     padding: PREMIUM.layout.cardPad,
-    marginTop: 8,
-    borderRadius: PREMIUM.radius.card,
   },
   insightHeader: {
     flexDirection: 'row',
@@ -1169,15 +1088,21 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.58)',
   },
   challengesSection: {
-    paddingHorizontal: isTablet ? 40 : PREMIUM.layout.screenPadH,
-    marginBottom: isTablet ? 40 : 32,
+    paddingHorizontal: isTablet ? 48 : PREMIUM.layout.screenPadH,
+    marginBottom: PREMIUM.layout.sectionGap,
   },
   challengeCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: isTablet ? 20 : 16,
     marginTop: 12,
+  },
+  challengeCardInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: isTablet ? 20 : 16,
+    flex: 1,
   },
   compactCta: {
     paddingHorizontal: 16,

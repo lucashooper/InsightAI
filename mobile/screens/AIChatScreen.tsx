@@ -59,6 +59,7 @@ import MiraMessageBubble from '../components/companion/MiraMessageBubble';
 import MiraTypewriterText from '../components/companion/MiraTypewriterText';
 import MiraAnalysisStatus from '../components/companion/MiraAnalysisStatus';
 import AmbientBackground from '../components/shared/AmbientBackground';
+import AppBackdrop from '../components/ui/AppBackdrop';
 import GlassSurface from '../components/shared/GlassSurface';
 import { PREMIUM } from '../constants/premiumUI';
 import { MiraRevealPayload } from '../constants/miraReveal';
@@ -1348,15 +1349,9 @@ export default function AIChatScreen({ navigation }: any) {
   const showDiscoveryAmbient = isDark && !isRoast && messages.length === 0 && !isAnalyzing;
 
   return (
-    <View style={[styles.container, { backgroundColor: isRoast ? ROAST_GRADIENT[0] : (isDark ? PREMIUM.bg : theme.colors.background) }]}>
+    <View style={[styles.container, { backgroundColor: isRoast ? ROAST_GRADIENT[0] : 'transparent' }]}>
+      {!isRoast ? <AppBackdrop /> : null}
       {showDiscoveryAmbient ? <AmbientBackground intensity="rich" /> : null}
-      {!isRoast && !isDark ? (
-        <LinearGradient
-          colors={(theme.colors.backgroundGradient as [string, string, ...string[]]) || ['#f5f0ff', '#fce8f0', '#fff5f0']}
-          style={StyleSheet.absoluteFill}
-          pointerEvents="none"
-        />
-      ) : null}
       <Animated.View style={[StyleSheet.absoluteFill, { opacity: normalOpacity }]}>
         <LinearGradient
           colors={isRoast ? normalGradient : ['transparent', 'transparent', 'transparent']}

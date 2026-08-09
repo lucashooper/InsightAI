@@ -1196,7 +1196,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '600',
     paddingHorizontal: 24,
-    paddingTop: 24,
+    paddingTop: 30,
     paddingBottom: 12,
   },
   contentInput: {
@@ -1204,7 +1204,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 26,
     paddingHorizontal: 24,
-    paddingTop: 12,
+    paddingTop: 18,
     paddingBottom: 100,
   },
   aiPromptContainer: {

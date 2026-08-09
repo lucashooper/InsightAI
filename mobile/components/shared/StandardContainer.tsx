@@ -1,19 +1,14 @@
 import React from 'react';
-import { StyleProp, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, ViewStyle } from 'react-native';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
-import GlassSurface, { GlassVariant } from './GlassSurface';
-import { View, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import { Platform } from 'react-native';
-import { PREMIUM } from '../../constants/premiumUI';
+import GlassCard, { GlassVariant } from '../ui/GlassCard';
 
 type Props = {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   variant?: 'default' | 'nested' | 'hero';
   tint?: 'violet' | 'coral' | 'aqua' | 'gold';
-  /** @deprecated — coloured outline halos removed */
+  /** @deprecated */
   ambient?: string;
 };
 
@@ -24,10 +19,7 @@ const TINT_WASH = {
   gold: 'rgba(241, 177, 91, 0.05)',
 } as const;
 
-/**
- * Card shell for screens that still import StandardContainer.
- * Dark mode → GlassSurface. Light mode keeps a simple frosted panel.
- */
+/** @deprecated Prefer GlassCard directly — thin variant wrapper. */
 export default function StandardContainer({
   children,
   style,
@@ -56,7 +48,7 @@ export default function StandardContainer({
   } = flat as ViewStyle & Record<string, unknown>;
 
   const contentPad = {
-    padding: padding ?? PREMIUM.layout.cardPad,
+    padding: padding ?? undefined,
     paddingTop,
     paddingBottom,
     paddingLeft,
@@ -68,58 +60,18 @@ export default function StandardContainer({
   const glassVariant: GlassVariant =
     variant === 'hero' ? 'elevated' : variant === 'nested' ? 'overlay' : 'surface';
 
-  if (dark) {
-    return (
-      <GlassSurface
-        style={rest as StyleProp<ViewStyle>}
-        variant={glassVariant}
-        wash={tint ? TINT_WASH[tint] : undefined}
-        noPad
-        contentStyle={[
-          contentPad,
-          flexDirection ? { flexDirection, alignItems, justifyContent } : null,
-        ]}
-      >
-        {children}
-      </GlassSurface>
-    );
-  }
-
-  // Light theme fallback
   return (
-    <View
-      style={[
-        styles.lightShell,
-        rest as ViewStyle,
-        { borderRadius: PREMIUM.radius.card },
+    <GlassCard
+      style={rest as StyleProp<ViewStyle>}
+      variant={glassVariant}
+      wash={dark && tint ? TINT_WASH[tint] : undefined}
+      noPad
+      contentStyle={[
+        contentPad,
+        flexDirection ? { flexDirection, alignItems, justifyContent } : null,
       ]}
     >
-      {Platform.OS === 'ios' ? (
-        <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
-      ) : null}
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,255,255,0.86)' }]} />
-      <LinearGradient
-        colors={['rgba(255,255,255,0.9)', 'rgba(255,255,255,0.2)', 'rgba(255,255,255,0)']}
-        style={StyleSheet.absoluteFill}
-        pointerEvents="none"
-      />
-      <View
-        style={[
-          contentPad,
-          flexDirection ? { flexDirection, alignItems, justifyContent } : null,
-        ]}
-      >
-        {children}
-      </View>
-    </View>
+      {children}
+    </GlassCard>
   );
 }
-
-const styles = StyleSheet.create({
-  lightShell: {
-    overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(122, 86, 160, 0.12)',
-    backgroundColor: 'transparent',
-  },
-});

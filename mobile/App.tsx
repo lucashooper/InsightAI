@@ -11,6 +11,7 @@ import { View, Animated } from 'react-native';
 import React from 'react';
 import Purchases from 'react-native-purchases';
 import { Asset } from 'expo-asset';
+import { Image } from 'expo-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider, normalizeThemeName, useTheme, isDarkTheme } from './contexts/ThemeContext';
@@ -25,6 +26,7 @@ import PremiumSplashOverlay from './components/shared/PremiumSplashOverlay';
 import { analytics } from './services/analytics';
 
 import { PAYWALL_PHONE_IMAGES, PRODUCT_REVEAL_PHONE } from './constants/phoneMockups';
+import { SPLASH_CRITICAL_ASSETS, HOME_PAGE_GRADIENT } from './constants/appAssets';
 
 // RevenueCat API Keys
 // Test Store: Bypasses Apple sandbox, works in simulator, instant testing
@@ -51,15 +53,14 @@ export default function App() {
         }
 
         await Promise.all([
-          Asset.fromModule(require('./public/abstract-dark-background.jpg')).downloadAsync(),
-          Asset.fromModule(require('./public/Zeno-Dashboard-background.webp')).downloadAsync(),
-          Asset.fromModule(require('./public/gradient-ellipse.png')).downloadAsync(),
-          Asset.fromModule(require('./public/gradient-ellipse-noise.png')).downloadAsync(),
-          Asset.fromModule(require('./public/purple-ellipse-blur.png')).downloadAsync(),
-          Asset.fromModule(require('./public/Cambridge-Logo-No-Background.png')).downloadAsync(),
-          Asset.fromModule(require('./public/Mira-Orb-No-Background.png')).downloadAsync(),
-          Asset.fromModule(require('./public/Insight-Logo-nobg.webp')).downloadAsync(),
+          ...SPLASH_CRITICAL_ASSETS.map((module) => Asset.fromModule(module).downloadAsync()),
         ]);
+        const gradientAsset = Asset.fromModule(HOME_PAGE_GRADIENT);
+        if (gradientAsset.localUri) {
+          await Image.prefetch(gradientAsset.localUri);
+        } else if (gradientAsset.uri) {
+          await Image.prefetch(gradientAsset.uri);
+        }
         setSplashAssetsReady(true);
         setThemeLoaded(true);
         // STEP 1: Configure RevenueCat
@@ -157,6 +158,7 @@ export default function App() {
 
         // Critical assets only — defer the rest so splash clears faster
         await Promise.all([
+          Asset.fromModule(HOME_PAGE_GRADIENT).downloadAsync(),
           Asset.fromModule(require('./public/Insight-Logo-nobg.webp')).downloadAsync(),
           Asset.fromModule(require('./public/InsightAI-Orb.png')).downloadAsync(),
           Asset.fromModule(require('./public/gradient-ellipse.png')).downloadAsync(),

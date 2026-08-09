@@ -28,7 +28,9 @@ import { useNavigation } from '@react-navigation/native';
 import { mobileAiService } from '../services/mobileAiService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePreloadedData } from '../contexts/PreloadContext';
-import StandardContainer from '../components/shared/StandardContainer';
+import GlassCard from '../components/ui/GlassCard';
+import AppBackdrop from '../components/ui/AppBackdrop';
+import GlassCardHeader, { glassCardInnerPad } from '../components/ui/GlassCardHeader';
 import PremiumButton from '../components/shared/PremiumButton';
 import PremiumGradientText from '../components/shared/PremiumGradientText';
 import DashboardHeaderHero from '../components/dashboard/DashboardHeaderHero';
@@ -868,7 +870,7 @@ export default function DashboardScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: 'transparent' }]}>
-
+      <AppBackdrop />
       {/* Typographic header — content is the hero */}
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         <View style={[styles.dashboardHeaderPad, { paddingTop: insets.top + PREMIUM.layout.headerTop }]}>
@@ -881,17 +883,21 @@ export default function DashboardScreen() {
           <>
             {/* Emotion Bubble Map - Enhanced */}
             <Animated.View style={{ opacity: cardAnimations[1], transform: [{ translateY: cardAnimations[1].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
-              <StandardContainer
+              <GlassCard
                 variant="hero"
                 tint="violet"
-                style={[styles.bubbleMapCard]}
+                noPad
+                contentStyle={glassCardInnerPad}
+                style={styles.sectionCard}
               >
-                <View style={styles.bubbleMapHeader}>
-                  <Text style={[styles.bubbleMapTitle, { color: theme.colors.primaryText }]}>{t('dashboard.emotionalLandscape')}</Text>
-                  <Text style={[styles.bubbleMapSubtitle, { color: theme.colors.secondaryText }]}>
-                    {dominantEmotions.length > 0 ? t('dashboard.tapExplore') : t('dashboard.trackEmotions')}
-                  </Text>
-                </View>
+                <GlassCardHeader
+                  title={t('dashboard.emotionalLandscape')}
+                  subtitle={
+                    dominantEmotions.length > 0
+                      ? t('dashboard.tapExplore')
+                      : t('dashboard.trackEmotions')
+                  }
+                />
                 
                 {dominantEmotions.length > 0 ? (
                   <>
@@ -901,11 +907,11 @@ export default function DashboardScreen() {
                         const baseSize = 60;
                         const size = baseSize + (item.percentage * 0.8);
                         const positions = [
-                          { top: 20, left: 30 },
-                          { top: 60, right: 40 },
-                          { top: 120, left: 60 },
-                          { top: 100, right: 80 },
-                          { top: 160, left: 120 },
+                          { top: 16, left: 30 },
+                          { top: 50, right: 40 },
+                          { top: 100, left: 60 },
+                          { top: 84, right: 80 },
+                          { top: 132, left: 120 },
                         ];
                         const position = positions[index] || { top: 80, left: 80 };
 
@@ -978,7 +984,7 @@ export default function DashboardScreen() {
                       })}
                       
                       <TouchableOpacity
-                        style={[styles.emotionBubble, styles.addBubble, { width: 50, height: 50, borderRadius: 25, top: 140, right: 30 }]}
+                        style={[styles.emotionBubble, styles.addBubble, { width: 50, height: 50, borderRadius: 25, top: 116, right: 30 }]}
                         activeOpacity={0.8}
                         onPress={() => console.log('[Dashboard] Add emotion tapped')}
                       >
@@ -1014,32 +1020,21 @@ export default function DashboardScreen() {
                     </Text>
                   </View>
                 )}
-              </StandardContainer>
+              </GlassCard>
             </Animated.View>
 
             {/* Patterns to Address */}
             {visiblePatternsToAddress.length > 0 && (
-              <StandardContainer tint="coral" style={[styles.patternsCard]}>
-                <TouchableOpacity 
-                  style={styles.patternsHeader}
+              <GlassCard tint="coral" noPad contentStyle={glassCardInnerPad} style={styles.sectionCard}>
+                <GlassCardHeader
+                  title={t('dashboard.patternsToAddressCount', { count: visiblePatternsToAddress.length })}
+                  subtitle={sectionSubtitleForItems(visiblePatternsToAddress, t('dashboard.prioritiesSubtitle'))}
                   onPress={() => setPatternsExpanded(!patternsExpanded)}
-                  activeOpacity={0.7}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Ionicons name="leaf-outline" size={20} color="#10b981" />
-                    <Text style={[styles.patternsTitle, { color: theme.colors.primaryText }]}>{t('dashboard.patternsToAddressCount', { count: visiblePatternsToAddress.length })}</Text>
-                  </View>
-                  <Ionicons 
-                    name={patternsExpanded ? "chevron-up" : "chevron-down"} 
-                    size={20} 
-                    color={theme.colors.secondaryText} 
-                  />
-                </TouchableOpacity>
-                <Text style={[styles.patternSubtitle, { color: theme.colors.tertiaryText }]}>
-                  {sectionSubtitleForItems(visiblePatternsToAddress, t('dashboard.prioritiesSubtitle'))}
-                </Text>
+                  expanded={patternsExpanded}
+                  showChevron
+                />
                 
-                <View style={styles.patternsContent}>
+                <View style={styles.sectionCardBody}>
                   {visiblePatternsToAddress.slice(0, patternsExpanded ? visiblePatternsToAddress.length : 2).map((pattern) => (
                     <View key={pattern.id} style={styles.patternCardWrap}>
                       <TouchableOpacity
@@ -1051,7 +1046,7 @@ export default function DashboardScreen() {
                         }}
                         activeOpacity={0.7}
                       >
-                        <StandardContainer variant="nested" style={styles.patternCard}>
+                        <GlassCard variant="nested" style={styles.patternCard}>
                         <View style={styles.patternCardHeader}>
                           <View style={styles.frequencyBadge}>
                             <Ionicons name="flame" size={13} color="#ef4444" />
@@ -1083,7 +1078,7 @@ export default function DashboardScreen() {
                             {t('dashboard.patternMentionedAcross', { count: pattern.count })}
                           </Text>
                         ) : null}
-                        </StandardContainer>
+                        </GlassCard>
                       </TouchableOpacity>
                       <View style={styles.patternActionRow}>
                         <TouchableOpacity
@@ -1138,11 +1133,11 @@ export default function DashboardScreen() {
                     </TouchableOpacity>
                   )}
                 </View>
-              </StandardContainer>
+              </GlassCard>
             )}
 
             {workingPatterns.length > 0 && (
-              <StandardContainer variant="nested" style={[styles.workingPatternsCard, { borderColor: theme.colors.border, backgroundColor: theme.colors.cardBackground }]}>
+              <GlassCard variant="nested" style={styles.workingPatternsCard}>
                 <TouchableOpacity
                   style={styles.workingPatternsHeader}
                   onPress={() => setWorkingPatternsExpanded(!workingPatternsExpanded)}
@@ -1171,32 +1166,21 @@ export default function DashboardScreen() {
                     ))}
                   </View>
                 ) : null}
-              </StandardContainer>
+              </GlassCard>
             )}
 
             {/* What's Working */}
             {whatsWorking.length > 0 && (
-              <StandardContainer tint="aqua" style={[styles.workingCard]}>
-                <TouchableOpacity 
-                  style={styles.workingHeader}
+              <GlassCard tint="aqua" noPad contentStyle={glassCardInnerPad} style={styles.sectionCard}>
+                <GlassCardHeader
+                  title={t('dashboard.whatsWorkingCount', { count: whatsWorking.length })}
+                  subtitle={sectionSubtitleForItems(whatsWorking, t('dashboard.strategiesSubtitle'))}
                   onPress={() => setWorkingExpanded(!workingExpanded)}
-                  activeOpacity={0.7}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Ionicons name="sparkles-outline" size={20} color="#f59e0b" />
-                    <Text style={[styles.workingTitle, { color: theme.colors.primaryText }]}>{t('dashboard.whatsWorkingCount', { count: whatsWorking.length })}</Text>
-                  </View>
-                  <Ionicons 
-                    name={workingExpanded ? "chevron-up" : "chevron-down"} 
-                    size={20} 
-                    color={theme.colors.secondaryText} 
-                  />
-                </TouchableOpacity>
-                <Text style={[styles.patternSubtitle, { color: theme.colors.tertiaryText }]}>
-                  {sectionSubtitleForItems(whatsWorking, t('dashboard.strategiesSubtitle'))}
-                </Text>
+                  expanded={workingExpanded}
+                  showChevron
+                />
                 
-                <View style={styles.workingContent}>
+                <View style={styles.sectionCardBody}>
                   {whatsWorking.slice(0, workingExpanded ? whatsWorking.length : 2).map((item) => (
                     <TouchableOpacity
                       key={item.id}
@@ -1209,7 +1193,7 @@ export default function DashboardScreen() {
                       }}
                       activeOpacity={0.7}
                     >
-                      <StandardContainer variant="nested" style={styles.patternCard}>
+                      <GlassCard variant="nested" style={styles.patternCard}>
                       <View style={styles.patternCardHeader}>
                         <View style={[styles.frequencyBadge, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
                           <Ionicons name="flame" size={13} color="#10b981" />
@@ -1236,7 +1220,7 @@ export default function DashboardScreen() {
                           Mentioned across {item.count} entries
                         </Text>
                       ) : null}
-                      </StandardContainer>
+                      </GlassCard>
                     </TouchableOpacity>
                   ))}
 
@@ -1260,12 +1244,12 @@ export default function DashboardScreen() {
                     </TouchableOpacity>
                   )}
                 </View>
-              </StandardContainer>
+              </GlassCard>
             )}
 
             {/* Refined This Week Card - Horizontal Layout */}
             {SHOW_DASHBOARD_STORY_SECTIONS && (
-              <StandardContainer tint="gold" style={[styles.heroCard]}>
+              <GlassCard tint="gold" style={styles.heroCard}>
                 <Text style={[styles.heroTitle, { color: theme.colors.primaryText }]}>{t('dashboard.weekGlance')}</Text>
                 
                 <View style={styles.metricsRow}>
@@ -1300,13 +1284,13 @@ export default function DashboardScreen() {
                     ? t('dashboard.challengesWeek')
                     : t('dashboard.beginMood')}
                 </Text>
-              </StandardContainer>
+              </GlassCard>
             )}
 
             {/* Progress Story Card - Enhanced with Inline Highlights */}
             {SHOW_DASHBOARD_STORY_SECTIONS && monthlyStory && (
               <Animated.View style={{ opacity: cardAnimations[0], transform: [{ translateY: cardAnimations[0].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
-                <StandardContainer tint="violet" style={[styles.progressStoryCard, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+                <GlassCard tint="violet" style={styles.progressStoryCard}>
                   <PremiumGradientText variant="warm" style={styles.progressStoryTitle}>
                     {t('dashboard.yourMonthStory', { month: formatDate(new Date(), { month: 'long' }) })}
                   </PremiumGradientText>
@@ -1356,32 +1340,27 @@ export default function DashboardScreen() {
                       />
                     </>
                   )}
-                </StandardContainer>
+                </GlassCard>
               </Animated.View>
             )}
 
             {/* Quiet Achievement Milestone */}
             {milestoneStreak && (
               <Animated.View style={{ opacity: cardAnimations[2], transform: [{ translateY: cardAnimations[2].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
-                <LinearGradient
-                  colors={['#4A1F1F', '#5A2A2A', '#3A1515']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 0, y: 1 }}
-                  style={styles.milestoneCard}
-                >
+                <GlassCard style={styles.milestoneCard}>
                   <Ionicons name="leaf" size={28} color="#fbbf24" style={styles.milestoneIconIon} />
                   <Text style={styles.milestoneTitle}>{t('dashboard.achievement')}</Text>
                   <Text style={styles.milestoneMessage}>
                     You've reflected for {milestoneStreak} days in a row. That's a real commitment to understanding yourself.
                   </Text>
-                </LinearGradient>
+                </GlassCard>
               </Animated.View>
             )}
 
             {/* Remember When Callback */}
             {rememberWhenCard && (
               <Animated.View style={{ opacity: cardAnimations[3], transform: [{ translateY: cardAnimations[3].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
-                <StandardContainer tint="violet" style={styles.rememberWhenCard}>
+                <GlassCard tint="violet" style={styles.rememberWhenCard}>
                   <Ionicons name="chatbubble-ellipses-outline" size={24} color="#a78bfa" style={styles.rememberWhenIconIon} />
                   <Text style={[styles.rememberWhenTitle, { color: theme.colors.primaryText }]}>{t('dashboard.rememberWhenTitle')}</Text>
                   <Text style={[styles.rememberWhenMessage, { color: theme.colors.secondaryText }]}>
@@ -1400,7 +1379,7 @@ export default function DashboardScreen() {
                     <Text style={[styles.viewEntryText, { color: theme.colors.primaryText }]}>{t('dashboard.viewThatEntry')}</Text>
                     <Ionicons name="chevron-forward" size={14} color={theme.colors.secondaryText} />
                   </TouchableOpacity>
-                </StandardContainer>
+                </GlassCard>
               </Animated.View>
             )}
 
@@ -1490,12 +1469,7 @@ export default function DashboardScreen() {
                     </LinearGradient>
                   </MaskedView>
                   
-                  <LinearGradient
-                    colors={['rgba(88, 50, 150, 0.4)', 'rgba(60, 30, 100, 0.35)']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.premiumCard}
-                  >
+                  <GlassCard noPad contentStyle={styles.premiumCard}>
                     {narrativeHighlights.strongestResilience && (
                       <TouchableOpacity 
                         style={styles.premiumHighlightRow}
@@ -1555,7 +1529,7 @@ export default function DashboardScreen() {
                         </Text>
                       </View>
                     )}
-                  </LinearGradient>
+                  </GlassCard>
                 </Animated.View>
               )}
 
@@ -1577,14 +1551,13 @@ export default function DashboardScreen() {
                     </LinearGradient>
                   </MaskedView>
                   
-                  <LinearGradient
-                    colors={['rgba(88, 50, 150, 0.4)', 'rgba(60, 30, 100, 0.35)']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.premiumCard}
-                  >
+                  <GlassCard noPad contentStyle={styles.premiumCard}>
                     <View style={styles.premiumStatsGrid}>
-                      <View style={styles.statCompactCard}>
+                      <GlassCard
+                        style={styles.statCompactCard}
+                        noPad
+                        contentStyle={styles.statCompactCardInner}
+                      >
                         <LinearGradient
                           colors={['rgba(80, 120, 200, 0.3)', 'rgba(80, 120, 200, 0.1)']}
                           style={styles.statIconGlow}
@@ -1595,9 +1568,13 @@ export default function DashboardScreen() {
                           <Text style={styles.statValue}>{monthlyStats.totalReflections}</Text>
                           <Text style={styles.statLabel}>{t('dashboard.totalReflections')}</Text>
                         </View>
-                      </View>
+                      </GlassCard>
                       
-                      <View style={styles.statCompactCard}>
+                      <GlassCard
+                        style={styles.statCompactCard}
+                        noPad
+                        contentStyle={styles.statCompactCardInner}
+                      >
                         <LinearGradient
                           colors={['rgba(255, 100, 50, 0.3)', 'rgba(255, 100, 50, 0.1)']}
                           style={styles.statIconGlow}
@@ -1608,10 +1585,14 @@ export default function DashboardScreen() {
                           <Text style={styles.statValue}>{monthlyStats.longestStreak}</Text>
                           <Text style={styles.statLabel}>{t('dashboard.longestStreak')}</Text>
                         </View>
-                      </View>
+                      </GlassCard>
                       
                       {monthlyStats.bestDay && (
-                        <View style={styles.statCompactCard}>
+                        <GlassCard
+                          style={styles.statCompactCard}
+                          noPad
+                          contentStyle={styles.statCompactCardInner}
+                        >
                           <LinearGradient
                             colors={['rgba(255, 200, 80, 0.3)', 'rgba(255, 200, 80, 0.1)']}
                             style={styles.statIconGlow}
@@ -1623,10 +1604,14 @@ export default function DashboardScreen() {
                             <Text style={styles.statLabel}>{t('dashboard.bestDay')}</Text>
                             <Text style={styles.statMeta}>({monthlyStats.bestDay.date})</Text>
                           </View>
-                        </View>
+                        </GlassCard>
                       )}
                       
-                      <View style={styles.statCompactCard}>
+                      <GlassCard
+                        style={styles.statCompactCard}
+                        noPad
+                        contentStyle={styles.statCompactCardInner}
+                      >
                         <LinearGradient
                           colors={['rgba(139, 92, 246, 0.2)', 'rgba(139, 92, 246, 0.05)']}
                           style={styles.statIconGlow}
@@ -1637,9 +1622,9 @@ export default function DashboardScreen() {
                           <Text style={styles.statValue}>{monthlyStats.avgResilience}/10</Text>
                           <Text style={styles.statLabel}>{t('dashboard.averageResilience')}</Text>
                         </View>
-                      </View>
+                      </GlassCard>
                     </View>
-                  </LinearGradient>
+                  </GlassCard>
                 </Animated.View>
               )}
 
@@ -1787,7 +1772,7 @@ const styles = StyleSheet.create({
   dashboardBody: {
     paddingHorizontal: isTablet ? 40 : PREMIUM.layout.screenPadH,
     paddingTop: PREMIUM.space[1],
-    gap: 8,
+    gap: PREMIUM.layout.cardGap,
   },
   dashboardHeaderPad: {
     paddingHorizontal: isTablet ? 40 : PREMIUM.layout.screenPadH,
@@ -2262,10 +2247,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   // Bubble Map Styles
-  bubbleMapCard: {
-    marginBottom: 16,
-    borderRadius: PREMIUM.radius.card,
-    padding: PREMIUM.layout.cardPad,
+  sectionCard: {
+    marginBottom: 0,
+  },
+  sectionCardBody: {
+    gap: PREMIUM.space[1],
   },
   bubbleSheen: {
     position: 'absolute',
@@ -2282,24 +2268,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.22)',
   },
-  bubbleMapHeader: {
-    marginBottom: 20,
-  },
-  bubbleMapTitle: {
-    fontSize: sf(20),
-    fontWeight: '700',
-    letterSpacing: -0.4,
-    marginBottom: 6,
-    color: 'rgba(255,255,255,0.96)',
-  },
-  bubbleMapSubtitle: {
-    fontSize: sf(15),
-    fontWeight: '400',
-    color: 'rgba(255,255,255,0.48)',
-  },
-  bubbleAtmosphere: {},
   bubbleMapContainer: {
-    height: 240,
+    height: 200,
     position: 'relative',
   },
   emotionBubble: {
@@ -2390,7 +2360,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   emptyBubbleContainer: {
-    height: 240,
+    height: 160,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 40,
@@ -2469,8 +2439,8 @@ const styles = StyleSheet.create({
   },
   // Enhanced Emotional Landscape Insights
   emotionInsightSection: {
-    marginTop: 20,
-    paddingTop: 20,
+    marginTop: 12,
+    paddingTop: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: 'rgba(255, 255, 255, 0.06)',
   },
@@ -2488,7 +2458,7 @@ const styles = StyleSheet.create({
     lineHeight: sf(20),
     color: 'rgba(255, 255, 255, 0.65)',
     fontStyle: 'italic',
-    marginBottom: 16,
+    marginBottom: 0,
   },
   explorePatternsButton: {
     alignSelf: 'flex-start',
@@ -2684,17 +2654,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   premiumCard: {
-    borderRadius: 16,
     padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.3)',
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 32,
-    elevation: 8,
-    backgroundColor: 'transparent',
-    overflow: 'hidden',
   },
   premiumHighlightRow: {
     flexDirection: 'row',
@@ -2757,13 +2717,11 @@ const styles = StyleSheet.create({
   },
   statCompactCard: {
     width: '48%',
+  },
+  statCompactCardInner: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: 'rgba(88, 50, 150, 0.2)',
-    borderRadius: 12,
     padding: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.2)',
   },
   statTextContainer: {
     marginLeft: 12,
@@ -2981,36 +2939,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   // Patterns to Address Section
-  patternsCard: {
-    marginBottom: 16,
-    borderRadius: PREMIUM.radius.card,
-    padding: 0,
-    overflow: 'hidden',
-    maxWidth: 400,
-    alignSelf: 'center',
-    width: '100%',
-  },
-  patternsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: PREMIUM.layout.cardPad,
-  },
-  patternsTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  patternSubtitle: {
-    fontSize: 13,
-    fontWeight: '400',
-    paddingHorizontal: PREMIUM.layout.cardPad,
-    marginTop: -8,
-    marginBottom: 12,
-  },
-  patternsContent: {
-    paddingHorizontal: PREMIUM.layout.cardPad,
-    paddingBottom: PREMIUM.layout.cardPad,
-  },
   patternCard: {
     padding: 16,
   },
@@ -3219,29 +3147,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   // What's Working Section
-  workingCard: {
-    marginBottom: 16,
-    borderRadius: PREMIUM.radius.card,
-    padding: 0,
-    overflow: 'hidden',
-    maxWidth: 400,
-    alignSelf: 'center',
-    width: '100%',
-  },
-  workingHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: PREMIUM.layout.cardPad,
-  },
-  workingTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  workingContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
   workingItem: {
     borderRadius: 12,
     padding: 16,

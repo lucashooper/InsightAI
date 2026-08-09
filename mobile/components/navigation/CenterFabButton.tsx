@@ -40,7 +40,6 @@ export default function CenterFabButton({ embedded = false }: Props) {
     { icon: 'create-outline', labelKey: 'fab.journalEntry', screen: 'CreateEntry' },
     { icon: 'sparkles-outline', labelKey: 'fab.aiChat', screen: 'AIChat' },
     { icon: 'heart-outline', labelKey: 'fab.gratitude', screen: 'Gratitude' },
-    { icon: 'musical-notes-outline', labelKey: 'fab.meditation', screen: 'Meditation' },
     { icon: 'book-outline', labelKey: 'fab.playbook', screen: 'Playbook' },
     { icon: 'happy-outline', labelKey: 'checkIn.checkIn', action: 'check-in' },
   ];

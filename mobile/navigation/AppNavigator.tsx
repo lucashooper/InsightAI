@@ -8,7 +8,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { View, StyleSheet, TouchableOpacity, Text, Modal, Image, ActivityIndicator, Platform, InteractionManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -62,7 +61,6 @@ import ValuePropWinsScreen from '../screens/onboarding/ValuePropWinsScreen';
 import PostPurchaseWelcomeScreen from '../screens/onboarding/PostPurchaseWelcomeScreen';
 import PersonalityResultScreen from '../screens/onboarding/PersonalityResultScreen';
 import PersonalityQuizIntroScreen from '../screens/onboarding/PersonalityQuizIntroScreen';
-import MeditationScreen from '../screens/MeditationScreen';
 import GratitudeScreen from '../screens/GratitudeScreen';
 import GratitudeHistoryScreen from '../screens/GratitudeHistoryScreen';
 import EmotionDetailScreen from '../screens/EmotionDetailScreen';
@@ -70,31 +68,20 @@ import AmbientSoundsScreen from '../screens/AmbientSoundsScreen';
 import AIChatScreen from '../screens/AIChatScreen';
 import PromptEntryScreen from '../screens/PromptEntryScreen';
 import ExploreScreen from '../screens/ExploreScreen';
-import TodoScreen from '../screens/TodoScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isTablet, sf, si } from '../utils/responsive';
 import { PREMIUM } from '../constants/premiumUI';
-import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
-
+import AppBackdrop from '../components/ui/AppBackdrop';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 // Bottom Tab Navigator for main app screens
 function MainTabs() {
   const { t } = useLanguage();
-  const { theme } = useTheme();
-  const dark = isDarkTheme(theme.name);
 
   return (
-    <View style={[tabShell.root, !dark && { backgroundColor: theme.colors.background }]}>
-      {/* Dark: true black canvas — orb/hero carry atmosphere; no full-screen wash */}
-      {!dark ? (
-        <LinearGradient
-          colors={(theme.colors.backgroundGradient as [string, string, ...string[]]) || ['#f5f0ff', '#fce8f0', '#fff5f0']}
-          style={StyleSheet.absoluteFillObject}
-          pointerEvents="none"
-        />
-      ) : null}
+    <View style={tabShell.root}>
+      <AppBackdrop />
       <Tab.Navigator
       initialRouteName="Home"
       detachInactiveScreens={false}
@@ -196,7 +183,7 @@ function MainTabs() {
 const tabShell = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: PREMIUM.bg,
+    backgroundColor: 'transparent',
   },
 });
 
@@ -511,7 +498,6 @@ export default function AppNavigator() {
           <Stack.Screen name="CreateEntry" component={CreateEntryScreen} />
           <Stack.Screen name="PromptEntry" component={PromptEntryScreen} options={{ headerShown: false, animation: 'slide_from_bottom' }} />
           <Stack.Screen name="Analytics" component={DashboardScreen} />
-          <Stack.Screen name="Meditation" component={MeditationScreen} />
           <Stack.Screen name="Gratitude" component={GratitudeScreen} />
           <Stack.Screen name="GratitudeHistory" component={GratitudeHistoryScreen} options={{ headerShown: false }} />
           <Stack.Screen name="EmotionDetail" component={EmotionDetailScreen} options={{ headerShown: false }} />
@@ -520,7 +506,6 @@ export default function AppNavigator() {
           <Stack.Screen name="Playbook" component={PlaybookScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="Explore" component={ExploreScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
-          <Stack.Screen name="Todo" component={TodoScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="Appearance" component={AppearanceScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="Security" component={SecurityScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />

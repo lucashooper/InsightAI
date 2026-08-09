@@ -9,7 +9,10 @@ import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { protocolCompletionService } from '../services/protocolCompletionService';
 import PageHeader from '../components/shared/PageHeader';
-import StandardContainer from '../components/shared/StandardContainer';
+import GlassCard from '../components/ui/GlassCard';
+import AppBackdrop from '../components/ui/AppBackdrop';
+import GlassCardHeader, { glassCardInnerPad } from '../components/ui/GlassCardHeader';
+import { PREMIUM } from '../constants/premiumUI';
 import EmptyState from '../components/shared/EmptyState';
 import * as Haptics from 'expo-haptics';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -412,24 +415,20 @@ export default function PlaybookScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {/* Subtle Background Gradient */}
-      <LinearGradient
-        colors={theme.colors.backgroundGradient as any}
-        style={styles.backgroundGradient}
-      />
-
+    <View style={styles.container}>
+      <AppBackdrop />
       {/* Header */}
       <PageHeader title={t('auxiliary.playbook.title')} />
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         {/* Today's Progress */}
-        <StandardContainer style={[styles.progressCard, { padding: 0, borderColor: theme.colors.border }]}>
-          <View style={styles.progressCardInner}>
-            <Text style={[styles.progressTitle, { color: theme.colors.tertiaryText }]}>{t('auxiliary.playbook.todayProgress')}</Text>
+        <GlassCard noPad contentStyle={glassCardInnerPad} style={styles.sectionCard}>
+            <GlassCardHeader
+              title={t('auxiliary.playbook.todayProgress')}
+              subtitle={t('auxiliary.playbook.protocolsCompleted')}
+            />
             <View style={styles.progressStats}>
               <Text style={[styles.progressFraction, { color: theme.colors.primaryText }]}>{protocolProgress.completed}/{protocolProgress.total}</Text>
-              <Text style={[styles.progressLabel, { color: theme.colors.secondaryText }]}>{t('auxiliary.playbook.protocolsCompleted')}</Text>
             </View>
             <View style={[styles.progressBarContainer, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : 'rgba(0,0,0,0.08)' }]}>
               <LinearGradient
@@ -439,12 +438,11 @@ export default function PlaybookScreen() {
                 end={{ x: 1, y: 0 }}
               />
             </View>
-            <Text style={[styles.progressPercentage, { color: theme.colors.primaryText }]}>{t('auxiliary.playbook.completion', { percentage: protocolProgress.percentage })}</Text>
-          </View>
-        </StandardContainer>
+            <Text style={[styles.progressPercentage, { color: '#8b5cf6' }]}>{t('auxiliary.playbook.completion', { percentage: protocolProgress.percentage })}</Text>
+        </GlassCard>
 
         {/* Tabs */}
-        <View style={[styles.tabContainer, { backgroundColor: isDarkTheme(theme.name) ? '#0f0f0f' : 'rgba(0,0,0,0.06)', borderColor: isDarkTheme(theme.name) ? '#1a1a1a' : 'rgba(0,0,0,0.08)' }]}>
+        <GlassCard style={styles.tabContainer} noPad contentStyle={styles.tabContainerInner}>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'protocols' && styles.tabActive]}
             onPress={() => {
@@ -467,7 +465,7 @@ export default function PlaybookScreen() {
               {t('auxiliary.playbook.suggested')}
             </Text>
           </TouchableOpacity>
-        </View>
+        </GlassCard>
 
         {/* Create Button */}
         <TouchableOpacity 
@@ -518,8 +516,7 @@ export default function PlaybookScreen() {
               onPress={() => handleStrategyTap(strategy)}
               onLongPress={() => handleStrategyLongPress(strategy)}
             >
-              <StandardContainer style={[styles.premiumCard, { padding: 0, borderColor: theme.colors.border }]}>
-              <View style={styles.cardGradient}>
+              <GlassCard style={styles.premiumCard} noPad contentStyle={styles.cardGradient}>
                 <View style={styles.cardHeader}>
                   <View style={[styles.emojiContainer, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : 'rgba(139, 92, 246, 0.1)' }]}>
                     <Text style={styles.cardEmoji}>{strategy.emoji}</Text>
@@ -621,8 +618,7 @@ export default function PlaybookScreen() {
                     </View>
                   )}
                 </View>
-              </View>
-              </StandardContainer>
+              </GlassCard>
             </TouchableOpacity>
             ))}
             
@@ -657,7 +653,7 @@ export default function PlaybookScreen() {
         onRequestClose={() => setShowCreateModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a2e' : '#ffffff' }]}>
+          <GlassCard style={styles.modalContent} noPad contentStyle={styles.modalContentInner}>
             <View style={[styles.modalHeader, { borderBottomColor: isDarkTheme(theme.name) ? '#2a2a3e' : '#e5e5e5' }]}>
               <Text style={[styles.modalTitle, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.playbook.newStrategy')}</Text>
               <TouchableOpacity onPress={() => setShowCreateModal(false)}>
@@ -786,7 +782,7 @@ export default function PlaybookScreen() {
                 </LinearGradient>
               </TouchableOpacity>
             </ScrollView>
-          </View>
+          </GlassCard>
         </View>
       </Modal>
 
@@ -801,7 +797,7 @@ export default function PlaybookScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalOverlay}
         >
-          <View style={[styles.modalContent, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a2e' : '#ffffff' }]}>
+          <GlassCard style={styles.modalContent} noPad contentStyle={styles.modalContentInner}>
             <View style={[styles.modalHeader, { borderBottomColor: isDarkTheme(theme.name) ? '#2a2a3e' : '#e5e5e5' }]}>
               <Text style={[styles.modalTitle, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.playbook.editStrategy')}</Text>
               <TouchableOpacity onPress={() => { setShowEditModal(false); setEditingStrategy(null); }}>
@@ -946,7 +942,7 @@ export default function PlaybookScreen() {
                 </TouchableOpacity>
               )}
             </ScrollView>
-          </View>
+          </GlassCard>
         </KeyboardAvoidingView>
       </Modal>
     </View>
@@ -983,50 +979,30 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
+    paddingHorizontal: PREMIUM.layout.screenPadH,
+    paddingTop: PREMIUM.space[1],
     paddingBottom: 100,
+    gap: PREMIUM.layout.cardGap,
   },
-  // Progress Card Styles
-  progressCard: {
-    marginBottom: 28,
-  },
-  progressCardInner: {
-    padding: 16,
-  },
-  progressTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#e5e5e5',
-    marginBottom: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  sectionCard: {
+    marginBottom: 0,
   },
   progressStats: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 8,
-    marginBottom: 12,
+    marginBottom: PREMIUM.space[1],
   },
   progressFraction: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#ffffff',
     letterSpacing: -1,
-  },
-  progressLabel: {
-    fontSize: 14,
-    color: '#999999',
   },
   progressBarContainer: {
     height: 8,
-    backgroundColor: '#1a1a1a',
     borderRadius: 4,
     overflow: 'hidden',
     marginBottom: 8,
   },
   progressBar: {
     height: '100%',
-    backgroundColor: '#8b5cf6',
     borderRadius: 4,
   },
   progressPercentage: {
@@ -1036,18 +1012,17 @@ const styles = StyleSheet.create({
   },
   // Tab Styles
   tabContainer: {
+    borderRadius: PREMIUM.radius.card,
+  },
+  tabContainerInner: {
     flexDirection: 'row',
-    backgroundColor: '#0f0f0f',
-    borderRadius: 12,
     padding: 4,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#1a1a1a',
+    gap: 4,
   },
   tab: {
     flex: 1,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: PREMIUM.radius.md,
     alignItems: 'center',
   },
   tabActive: {
@@ -1063,8 +1038,7 @@ const styles = StyleSheet.create({
   },
   // Create Button Styles
   createButton: {
-    borderRadius: 12,
-    marginBottom: 20,
+    borderRadius: PREMIUM.radius.md,
     overflow: 'hidden',
     shadowColor: '#8b5cf6',
     shadowOffset: { width: 0, height: 4 },
@@ -1112,12 +1086,13 @@ const styles = StyleSheet.create({
   },
   // Premium Card Styles
   premiumCardPressable: {
-    marginBottom: 16,
+    marginBottom: 0,
   },
   premiumCard: {
   },
   cardGradient: {
-    padding: 14,
+    paddingHorizontal: PREMIUM.layout.cardInnerPadH,
+    paddingVertical: PREMIUM.layout.cardInnerPadV,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -1312,9 +1287,10 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
     maxHeight: '85%',
+  },
+  modalContentInner: {
+    flexShrink: 1,
   },
   modalHeader: {
     flexDirection: 'row',
