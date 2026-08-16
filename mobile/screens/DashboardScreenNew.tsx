@@ -26,12 +26,17 @@ import AppBackdrop from '../components/ui/AppBackdrop';
 import HomeStagger from '../components/shared/HomeStagger';
 import { PREMIUM } from '../constants/premiumUI';
 import FirstTimeIntroOverlay from '../components/FirstTimeIntroOverlay';
+import PremiumDialog from '../components/shared/PremiumDialog';
 import PinnedRoutineCard from '../components/dashboard/PinnedRoutineCard';
 import PlaybookQuickAccessCard from '../components/dashboard/PlaybookQuickAccessCard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { isTablet, sf, ss, si, iPadContentStyle } from '../utils/responsive';
 import { getTodayPrompt, DailyPrompt } from '../data/dailyPrompts';
 import { APP_NAME } from '../constants/branding';
+import CheckInFlowModal from '../components/checkin/CheckInFlowModal';
+import { CheckInDraft } from '../components/checkin/types';
+import { hasCheckInToday } from '../utils/checkInToday';
+import { isPromptCompletedToday } from '../utils/promptCompletion';
 
 // Temporarily disabled for Expo Go testing
 // import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
@@ -75,13 +80,32 @@ export default function DashboardScreenNew() {
   const [recentTopics, setRecentTopics] = useState<Array<{emoji: string, text: string, keyword: string, searchTerm: string}>>([]);
   const [todayInsights, setTodayInsights] = useState<Array<{icon: string, iconColor: string, title: string, description: string}>>([]);
   const [hasEntryToday, setHasEntryToday] = useState(false);
+  const [hasCheckInToday, setHasCheckInToday] = useState(false);
   const [userName, setUserName] = useState<string>('there');
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recognizedText, setRecognizedText] = useState('');
   const [showQuickActions, setShowQuickActions] = useState(false);
+  const [showCheckInFlow, setShowCheckInFlow] = useState(false);
   const [showIntroOverlay, setShowIntroOverlay] = useState(false);
+  const [showScanSoon, setShowScanSoon] = useState(false);
   const [dailyPrompt] = useState<DailyPrompt>(getTodayPrompt());
+  const [promptCompletedToday, setPromptCompletedToday] = useState(false);
+
+  const refreshCheckInStatus = async () => {
+    try {
+      const last = await AsyncStorage.getItem('lastMoodCheckIn');
+      if (!last) {
+        setHasCheckInToday(false);
+        return;
+      }
+      const lastDate = new Date(last);
+      const today = new Date();
+      setHasCheckInToday(lastDate.toDateString() === today.toDateString());
+    } catch {
+      setHasCheckInToday(false);
+    }
+  };
 
   // Use preloaded data immediately on mount — no network fetch needed
   useEffect(() => {
@@ -122,6 +146,8 @@ export default function DashboardScreenNew() {
         }
       };
       refreshProfile();
+      refreshCheckInStatus();
+      isPromptCompletedToday().then(setPromptCompletedToday);
     }, [user?.id])
   );
 
@@ -498,17 +524,17 @@ export default function DashboardScreenNew() {
         {/* Today's Insights — primary glass card beneath greeting */}
         <HomeStagger delay={STAGGER.mainCard} active={homeAnimationActive}>
           <View style={styles.insightsSection}>
-          {!hasEntryToday ? (
+          {!hasCheckInToday ? (
             <TouchableOpacity
-              onPress={() => navigation.navigate('CreateEntry')}
+              onPress={() => setShowCheckInFlow(true)}
               activeOpacity={0.7}
             >
               <GlassCard style={styles.insightCard} noPad contentStyle={styles.insightCardInner}>
               <View style={styles.insightHeader}>
-                <Ionicons name="create-outline" size={24} color={theme.colors.secondaryText} />
-                <Text style={[styles.insightTitle, { color: theme.colors.primaryText, fontSize: sf(18) }]}>{t('home.noCheckIn')}</Text>
+                <Ionicons name="happy-outline" size={24} color="#8b5cf6" />
+                <Text style={[styles.insightTitle, { color: theme.colors.primaryText, fontSize: sf(18) }]}>{t('home.howDoYouFeelToday')}</Text>
               </View>
-              <Text style={[styles.insightText, { color: theme.colors.secondaryText }]}>{t('home.unlockInsights')}</Text>
+              <Text style={[styles.insightSubtext, { color: theme.colors.primaryText, fontSize: sf(17), lineHeight: sf(26) }]}>{t('home.checkInSubtext')}</Text>
               <View style={styles.ctaArrow}>
                 <Ionicons name="arrow-forward" size={20} color={theme.colors.tertiaryText} />
               </View>
@@ -585,7 +611,7 @@ export default function DashboardScreenNew() {
           <View style={styles.actionItem}>
             <TouchableOpacity 
               style={styles.actionCircle}
-              onPress={() => Alert.alert(t('home.comingSoon'), t('home.scanSoon'))}
+              onPress={() => setShowScanSoon(true)}
               activeOpacity={0.8}
             >
               <LinearGradient
@@ -618,6 +644,23 @@ export default function DashboardScreenNew() {
         <HomeStagger delay={STAGGER.prompt} active={homeAnimationActive}>
         <View style={styles.challengesSection}>
           <Text style={[styles.sectionTitle, { color: sectionHeadingColor }]}>{t('home.todaysPrompt')}</Text>
+          {promptCompletedToday ? (
+            <GlassCard style={styles.insightCard} noPad contentStyle={styles.insightCardInner}>
+              <View style={styles.insightHeader}>
+                <View style={styles.promptCompleteBadge}>
+                  <Ionicons name="checkmark-circle" size={22} color="#34d399" />
+                </View>
+                <View style={{ flex: 1, marginLeft: 8 }}>
+                  <Text style={[styles.insightTitle, { color: theme.colors.primaryText, fontSize: sf(15) }]}>
+                    {t('home.promptCompleted')}
+                  </Text>
+                  <Text style={[styles.insightText, { color: theme.colors.tertiaryText, fontSize: sf(13), marginTop: 4 }]}>
+                    {t('home.promptCompletedSubtitle')}
+                  </Text>
+                </View>
+              </View>
+            </GlassCard>
+          ) : (
           <TouchableOpacity
             onPress={() => navigation.navigate('PromptEntry', { promptText: dailyPrompt.prompt + (dailyPrompt.followUp ? `\n\n${dailyPrompt.followUp}` : '') })}
             activeOpacity={0.7}
@@ -634,11 +677,12 @@ export default function DashboardScreenNew() {
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
               <View style={[styles.compactCta, { borderColor: theme.colors.border, backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
-                <Text style={[styles.compactCtaText, { color: theme.colors.primaryText }]}>{t('home.startWriting')}</Text>
+                <Text style={[styles.compactCtaText, { color: theme.colors.primaryText }]}>{t('home.getStarted')}</Text>
               </View>
             </View>
             </GlassCard>
           </TouchableOpacity>
+          )}
         </View>
         </HomeStagger>
 
@@ -716,6 +760,29 @@ export default function DashboardScreenNew() {
         onClose={handleCloseIntro}
       />
 
+      <PremiumDialog
+        visible={showScanSoon}
+        title={t('home.comingSoon')}
+        message={t('home.scanSoon')}
+        icon="scan-outline"
+        onDismiss={() => setShowScanSoon(false)}
+        actions={[{ label: t('common.ok'), variant: 'primary', onPress: () => setShowScanSoon(false) }]}
+      />
+
+      <CheckInFlowModal
+        visible={showCheckInFlow && !(isLocked && isLockEnabled)}
+        onDismiss={() => setShowCheckInFlow(false)}
+        onComplete={(draft: CheckInDraft) => {
+          setShowCheckInFlow(false);
+          setHasCheckInToday(true);
+          navigation.getParent()?.navigate('CreateEntry', { checkInDraft: draft });
+        }}
+        onLogMoodOnly={() => {
+          setShowCheckInFlow(false);
+          setHasCheckInToday(true);
+        }}
+      />
+
     </View>
   );
 }
@@ -736,22 +803,22 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   scrollContent: {
-    paddingBottom: 100,
+    paddingBottom: 140,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: isTablet ? 32 : PREMIUM.layout.screenPadH,
-    paddingBottom: isTablet ? 28 : PREMIUM.space[2],
+    paddingBottom: isTablet ? 16 : 8,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   headerLogo: {
-    width: 100,
-    height: 100,
+    width: 72,
+    height: 72,
   },
   headerTitle: {
     fontSize: sf(20),
@@ -806,9 +873,9 @@ const styles = StyleSheet.create({
   heroZone: {
     paddingHorizontal: isTablet ? 48 : PREMIUM.layout.screenPadH,
     paddingTop: PREMIUM.layout.heroTopPadding,
-    minHeight: isTablet ? 220 : 176,
+    minHeight: isTablet ? 180 : 140,
     justifyContent: 'flex-end',
-    marginBottom: 32,
+    marginBottom: 24,
   },
   heroDate: {
     fontSize: sf(12),
@@ -1076,6 +1143,14 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 12,
   },
+  promptCompleteBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(52,211,153,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   insightTitle: {
     fontSize: sf(17),
     fontWeight: '600',
@@ -1086,6 +1161,12 @@ const styles = StyleSheet.create({
     fontSize: sf(15),
     lineHeight: sf(22),
     color: 'rgba(255,255,255,0.58)',
+  },
+  insightSubtext: {
+    fontSize: sf(16),
+    lineHeight: sf(24),
+    fontWeight: '500',
+    marginTop: 4,
   },
   challengesSection: {
     paddingHorizontal: isTablet ? 48 : PREMIUM.layout.screenPadH,

@@ -179,8 +179,7 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: PREMIUM.radius.xl,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 0,
     minHeight: 220,
     backgroundColor: PREMIUM.revealMesh.base,
   },

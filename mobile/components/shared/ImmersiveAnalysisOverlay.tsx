@@ -3,7 +3,7 @@ import {
   ActivityIndicator,
   Animated,
   Dimensions,
-  ImageBackground,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { translateEmotion } from '../../i18n/labels';
+import AppBackdrop from '../ui/AppBackdrop';
 import StandardContainer from './StandardContainer';
 import InsightsHeroCard from '../insights/InsightsHeroCard';
 import PremiumButton from './PremiumButton';
@@ -32,6 +33,7 @@ type ResultsProps = {
   insights?: {
     mood_analysis?: {
       primary_emotion?: string;
+      secondary_emotions?: string[];
     };
     wellbeingScore?: number;
     strengths?: Array<{ strength: string; explanation: string }>;
@@ -57,6 +59,12 @@ type Props = {
   entryTitle?: string;
 } & (LoadingProps | ResultsProps);
 
+function collectEmotions(insights?: ResultsProps['insights']): string[] {
+  const primary = insights?.mood_analysis?.primary_emotion;
+  const secondary = insights?.mood_analysis?.secondary_emotions ?? [];
+  return [primary, ...secondary].filter(Boolean) as string[];
+}
+
 const { width } = Dimensions.get('window');
 
 export default function ImmersiveAnalysisOverlay(props: Props) {
@@ -65,6 +73,7 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
   const opacity = useRef(new Animated.Value(0)).current;
   const [strengthsExpanded, setStrengthsExpanded] = useState(true);
   const [growthExpanded, setGrowthExpanded] = useState(true);
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [editedWellbeing, setEditedWellbeing] = useState<number | null>(null);
 
   // Reset edited wellbeing when insights change
@@ -72,7 +81,10 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
     if (props.variant === 'results' && props.insights?.wellbeingScore !== undefined) {
       setEditedWellbeing(props.insights.wellbeingScore);
     }
-  }, [props.variant === 'results' ? props.insights?.wellbeingScore : undefined]);
+    if (!props.visible) {
+      setSummaryExpanded(false);
+    }
+  }, [props.variant === 'results' ? props.insights?.wellbeingScore : undefined, props.visible]);
 
   useEffect(() => {
     if (!props.visible) {
@@ -112,7 +124,8 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
 
   return (
     <Animated.View style={[styles.overlay, { opacity }]}>
-      <LinearGradient colors={theme.colors.backgroundGradient as any} style={styles.background}>
+      <AppBackdrop />
+      <View style={styles.contentLayer}>
         {props.variant === 'loading' ? (
         <View style={styles.center}>
           <Text style={[styles.loadingText, { color: textPrimary }]}>{props.message}</Text>
@@ -137,26 +150,22 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
             contentContainerStyle={styles.resultsScrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {/* Summary */}
-            {props.insights?.insights_report?.conversationalSummary && (
-              <StandardContainer variant="nested" style={[styles.glassmorphicCard, { borderColor: cardBorder }]}>
-                <View style={styles.cardHeader}>
-                  <Text style={styles.cardHeaderIcon}>📝</Text>
-                  <Text style={[styles.cardHeaderTitle, { color: textPrimary }]}>{t('analysis.summary')}</Text>
-                </View>
-                <Text style={[styles.summaryText, { color: textSecondary }]}>
-                  {props.insights.insights_report.conversationalSummary}
-                </Text>
-              </StandardContainer>
-            )}
-
             {/* Primary Emotion & Wellbeing Hero Card */}
             {(props.insights?.mood_analysis?.primary_emotion || props.insights?.wellbeingScore !== undefined) && (
               <InsightsHeroCard
-                emotionLabel={t('insights.primaryEmotion')}
                 emotion={translateEmotion(t, props.insights?.mood_analysis?.primary_emotion)}
-                wellbeingLabel={t('insights.wellbeing')}
                 wellbeingScore={editedWellbeing ?? props.insights?.wellbeingScore}
+                adjustLabel={t('analysis.adjust')}
+                summarySnippet={props.insights?.insights_report?.conversationalSummary}
+                fullSummary={props.insights?.insights_report?.conversationalSummary}
+                showFullSummary={summaryExpanded}
+                onReadFullSummary={
+                  props.insights?.insights_report?.conversationalSummary
+                    ? () => setSummaryExpanded(true)
+                    : undefined
+                }
+                readFullSummaryLabel={t('analysis.readFullSummary')}
+                emotions={collectEmotions(props.insights)}
                 onWellbeingChange={
                   props.variant === 'results' && props.onWellbeingChange
                     ? (newScore) => {
@@ -308,10 +317,10 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
             )}
           </ScrollView>
 
-          <PremiumButton label={t('common.done')} onPress={props.onDone} style={styles.doneButtonWrap} />
+          <PremiumButton label={t('common.done')} onPress={props.onDone} style={styles.doneButtonWrap} large block />
         </View>
         )}
-      </LinearGradient>
+      </View>
     </Animated.View>
   );
 }
@@ -321,65 +330,8 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     zIndex: 999,
   },
-  background: {
+  contentLayer: {
     ...StyleSheet.absoluteFillObject,
-  },
-  backgroundImage: {
-    width: '100%',
-    height: '100%',
-  },
-  orbsContainer: {
-    ...StyleSheet.absoluteFillObject,
-    overflow: 'hidden',
-  },
-  // Purple orb - top right
-  purpleOrbWrapper: {
-    position: 'absolute',
-    top: -80,
-    right: -60,
-    width: 380,
-    height: 380,
-    opacity: 0.6,
-    transform: [{ scaleX: 1.4 }],
-  },
-  purpleOrb: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 190,
-  },
-  // Green orb - bottom left
-  greenOrbWrapper: {
-    position: 'absolute',
-    bottom: 40,
-    left: -80,
-    width: 340,
-    height: 340,
-    opacity: 0.5,
-    transform: [{ scaleY: 1.3 }],
-  },
-  greenOrb: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 170,
-  },
-  // Amber orb - bottom right for depth
-  amberOrbWrapper: {
-    position: 'absolute',
-    bottom: -60,
-    right: -40,
-    width: 300,
-    height: 300,
-    opacity: 0.45,
-    transform: [{ scaleX: 1.2 }, { scaleY: 1.1 }],
-  },
-  amberOrb: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 150,
-  },
-  scrim: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
   },
   center: {
     flex: 1,
@@ -465,8 +417,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   doneButtonWrap: {
-    marginTop: 8,
-    marginBottom: 24,
+    marginTop: 16,
+    marginBottom: 32,
+    paddingHorizontal: 20,
+    alignSelf: 'stretch',
   },
   accordionHeaderCard: {
     padding: 0,

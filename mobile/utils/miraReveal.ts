@@ -5,6 +5,21 @@ import {
   REVEAL_TYPE_LABELS,
 } from '../constants/miraReveal';
 
+const GENERIC_ANSWER_PATTERNS: RegExp[] = [
+  /^a pattern worth noticing\.?$/i,
+  /^pattern worth noticing\.?$/i,
+  /^still learning about you\.?$/i,
+  /^worth noticing\.?$/i,
+  /^(a |an )?(pattern|trait|strength|weakness|blind spot) worth (noticing|exploring)\.?$/i,
+];
+
+const GENERIC_EVIDENCE_PATTERNS: RegExp[] = [
+  /drawn from themes in your recent journal entries/i,
+  /precise counts unavailable/i,
+  /not enough journal detail yet for precise receipts/i,
+  /keep writing and insight will get sharper/i,
+];
+
 const DISCOVERY_REGEXES: RegExp[] = [
   /biggest\s+weakness/i,
   /greatest\s+strength|biggest\s+strength/i,
@@ -71,6 +86,48 @@ export function shortenEvidenceLine(line: string): { icon: string; text: string 
   };
 }
 
+function isGenericAnswer(answer: string): boolean {
+  const trimmed = answer.trim();
+  if (!trimmed) return true;
+  return GENERIC_ANSWER_PATTERNS.some((pattern) => pattern.test(trimmed));
+}
+
+function isGenericEvidence(line: string): boolean {
+  const trimmed = line.trim();
+  if (!trimmed) return true;
+  return GENERIC_EVIDENCE_PATTERNS.some((pattern) => pattern.test(trimmed));
+}
+
+/** Only show the premium card when the model returned a specific, evidenced finding. */
+export function isRevealCardWorthy(reveal: MiraRevealPayload): boolean {
+  if (reveal.type === 'insufficient_data') return false;
+  if (isGenericAnswer(reveal.answer)) return false;
+
+  const substantiveEvidence = reveal.evidence.filter(
+    (line) => !isGenericEvidence(line) && line.trim().length >= 18,
+  );
+
+  if (substantiveEvidence.length >= 2) return true;
+
+  if (substantiveEvidence.length === 1) {
+    const line = substantiveEvidence[0];
+    return /\d+|"\w|mentioned|wrote|entries?|times|often|when you/i.test(line);
+  }
+
+  return false;
+}
+
+/** Plain-text reply when a card would be misleading or empty. */
+export function buildRevealFallbackText(
+  parsed: MiraRevealPayload | null,
+  raw: string,
+): string {
+  if (parsed?.explanation?.trim()) return parsed.explanation.trim();
+  const trimmed = raw.trim();
+  if (trimmed && !trimmed.startsWith('{')) return trimmed;
+  return '';
+}
+
 function clampConfidence(value: unknown): number | null {
   if (value === null || value === undefined || value === '') return null;
   const n = typeof value === 'number' ? value : Number(value);
@@ -125,10 +182,10 @@ function extractJsonObject(text: string): unknown | null {
 }
 
 /**
- * Parse a model response into a reveal payload.
- * Returns null if the response is not usable structured JSON.
+ * Parse structured JSON from the model (including insufficient_data).
+ * May return payloads that are not card-worthy — use parseMiraRevealResponse for cards only.
  */
-export function parseMiraRevealResponse(raw: string): MiraRevealPayload | null {
+export function parseMiraRevealPayload(raw: string): MiraRevealPayload | null {
   const parsed = extractJsonObject(raw);
   if (!parsed || typeof parsed !== 'object') return null;
 
@@ -138,41 +195,67 @@ export function parseMiraRevealResponse(raw: string): MiraRevealPayload | null {
     (typeof obj.answer === 'string' && obj.answer.trim()) ||
     (typeof obj.title === 'string' && obj.title.trim()) ||
     '';
-  if (!answer && type !== 'insufficient_data') return null;
 
-  const headline =
-    (typeof obj.headline === 'string' && obj.headline.trim()) ||
-    REVEAL_TYPE_LABELS[type];
-
-  const evidence = asStringArray(obj.evidence, 4);
-  const recommendation =
-    (typeof obj.recommendation === 'string' && obj.recommendation.trim()) ||
-    'Keep journaling — Insight gets sharper with every entry.';
   const explanation =
     (typeof obj.explanation === 'string' && obj.explanation.trim()) ||
     (typeof obj.analysis === 'string' && obj.analysis.trim()) ||
     '';
 
-  // Soften fake precision: if evidence looks invented-empty, drop confidence
+  if (type === 'insufficient_data') {
+    return {
+      type,
+      headline: REVEAL_TYPE_LABELS.insufficient_data,
+      answer: answer || '',
+      confidence: null,
+      evidence: [],
+      recommendation: '',
+      explanation:
+        explanation ||
+        'I need a few more journal entries before I can name a specific pattern with confidence. Keep writing — especially when something feels off — and ask me again.',
+    };
+  }
+
+  if (!answer) {
+    if (!explanation) return null;
+    return {
+      type: 'insufficient_data',
+      headline: REVEAL_TYPE_LABELS.insufficient_data,
+      answer: '',
+      confidence: null,
+      evidence: [],
+      recommendation: '',
+      explanation,
+    };
+  }
+
+  const headline =
+    (typeof obj.headline === 'string' && obj.headline.trim()) ||
+    REVEAL_TYPE_LABELS[type];
+
+  const evidence = asStringArray(obj.evidence, 4).filter((line) => !isGenericEvidence(line));
+  const recommendation =
+    (typeof obj.recommendation === 'string' && obj.recommendation.trim()) ||
+    '';
+
   let confidence = clampConfidence(obj.confidence);
   if (evidence.length === 0) confidence = null;
 
   return {
     type,
     headline,
-    answer: answer || 'Still learning about you',
+    answer,
     confidence,
-    evidence:
-      evidence.length > 0
-        ? evidence
-        : [
-            'Not enough journal detail yet for precise receipts — keep writing and Insight will get sharper.',
-          ],
+    evidence,
     recommendation,
-    explanation:
-      explanation ||
-      'I looked through what you have shared so far. Ask a follow-up and we can go deeper.',
+    explanation,
   };
+}
+
+/** Parse only when the payload meets card quality bar. */
+export function parseMiraRevealResponse(raw: string): MiraRevealPayload | null {
+  const parsed = parseMiraRevealPayload(raw);
+  if (!parsed || !isRevealCardWorthy(parsed)) return null;
+  return parsed;
 }
 
 export function formatRevealShareText(
@@ -185,23 +268,20 @@ export function formatRevealShareText(
   return `${prefix}\n\n${reveal.headline}\n${reveal.answer}${conf}\n\nEvidence\n${evidence}\n\nRecommendation\n${reveal.recommendation}`;
 }
 
-/** Soft fallback when the model fails to return JSON. */
+/** @deprecated Cards are no longer synthesized from failed JSON — use buildRevealFallbackText. */
 export function softRevealFromPlainText(
   plain: string,
   preferredType?: MiraRevealType,
 ): MiraRevealPayload {
-  const type = preferredType || 'recurring_pattern';
+  void preferredType;
   return {
-    type,
-    headline: REVEAL_TYPE_LABELS[type],
-    answer: 'A pattern worth noticing',
+    type: 'insufficient_data',
+    headline: REVEAL_TYPE_LABELS.insufficient_data,
+    answer: '',
     confidence: null,
-    evidence: [
-      'Drawn from themes in your recent journal entries',
-      'Precise counts unavailable for this response',
-    ],
-    recommendation: 'Ask Insight a follow-up to go deeper on this.',
-    explanation: plain.trim(),
+    evidence: [],
+    recommendation: '',
+    explanation: plain.trim() || buildRevealFallbackText(null, plain),
   };
 }
 
@@ -211,7 +291,7 @@ export function normalizePersistedReveal(raw: unknown): MiraRevealPayload | unde
   const obj = raw as Record<string, unknown>;
   if (typeof obj.answer !== 'string' || !obj.answer.trim()) return undefined;
   const type = normalizeType(obj.type);
-  return {
+  const reveal: MiraRevealPayload = {
     type,
     headline:
       (typeof obj.headline === 'string' && obj.headline.trim()) ||
@@ -224,4 +304,7 @@ export function normalizePersistedReveal(raw: unknown): MiraRevealPayload | unde
     explanation:
       (typeof obj.explanation === 'string' && obj.explanation.trim()) || '',
   };
+
+  if (!isRevealCardWorthy(reveal)) return undefined;
+  return reveal;
 }

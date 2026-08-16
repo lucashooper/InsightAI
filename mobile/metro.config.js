@@ -23,6 +23,9 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (moduleName === 'react-native-worklets') {
     return { type: 'sourceFile', filePath: workletsEntry };
   }
+  if (platform === 'web' && moduleName === '@lottiefiles/dotlottie-react') {
+    return { type: 'sourceFile', filePath: path.resolve(__dirname, 'shims/dotlottie-react.js') };
+  }
   if (defaultResolveRequest) {
     return defaultResolveRequest(context, moduleName, platform);
   }

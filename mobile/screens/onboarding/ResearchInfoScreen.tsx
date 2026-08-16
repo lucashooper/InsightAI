@@ -7,14 +7,16 @@ import LottieView from 'lottie-react-native';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
 
-const meditationLottie = require('../../public/animations/Stress Management.json');
+import { ONBOARDING_MEDITATION_LOTTIE } from '../../constants/appAssets';
 
 export default function ResearchInfoScreen({ navigation }: any) {
   const { t } = useLanguage();
   const { theme } = useTheme();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
+  const bottomInset = useOnboardingBottomInset();
 
   useEffect(() => {
     Animated.parallel([
@@ -58,7 +60,7 @@ export default function ResearchInfoScreen({ navigation }: any) {
           {/* Illustration */}
           <View style={styles.illustrationContainer}>
             <LottieView
-              source={meditationLottie}
+              source={ONBOARDING_MEDITATION_LOTTIE}
               autoPlay
               loop
               style={styles.illustration}
@@ -91,7 +93,7 @@ export default function ResearchInfoScreen({ navigation }: any) {
       </View>
 
       {/* Continue Button */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: bottomInset }]}>
         <TouchableOpacity
           style={styles.button}
           activeOpacity={0.9}
@@ -177,13 +179,12 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: 28,
-    paddingBottom: 50,
     paddingTop: 16,
   },
   button: {
     width: '100%',
     borderRadius: 28,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#7B5EA7',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,

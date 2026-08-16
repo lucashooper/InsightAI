@@ -24,6 +24,7 @@ import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { invalidateCachedNote } from '../utils/decryptCache';
 import PageHeader from '../components/shared/PageHeader';
 import GlassCard from '../components/ui/GlassCard';
@@ -36,6 +37,9 @@ import { usePreloadedData } from '../contexts/PreloadContext';
 import { getMoodIndicator, MoodIndicator } from '../utils/moodIndicators';
 import { isTablet, sf, ss, iPadWideContentStyle } from '../utils/responsive';
 import { PREMIUM } from '../constants/premiumUI';
+import JournalEntryOptionsSheet from '../components/journal/JournalEntryOptionsSheet';
+import { isGratitudeEntry } from '../utils/journalEntryFilters';
+import { stripJournalPromptTag, isPromptDrivenEntry, getPromptTextForEntry } from '../constants/branding';
 
 const insightLogo = require('../assets/192px-Insight-ICON.png');
 
@@ -66,6 +70,7 @@ interface UserProfile {
 export default function HomeScreen({ navigation, route }: any) {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const { t, formatDate: formatLocalizedDate } = useLanguage();
   const { data: preloaded, refreshNotes, removeNoteById } = usePreloadedData();
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
@@ -81,6 +86,7 @@ export default function HomeScreen({ navigation, route }: any) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [datePickerEntryId, setDatePickerEntryId] = useState<string | null>(null);
+  const [optionsEntry, setOptionsEntry] = useState<DiaryEntry | null>(null);
 
   const calculateStreak = (notes: DiaryEntry[]) => {
     if (!notes || notes.length === 0) return { currentStreak: 0, longestStreak: 0 };
@@ -140,6 +146,8 @@ export default function HomeScreen({ navigation, route }: any) {
   };
 
   const filteredEntries = entries.filter((entry) => {
+    if (isGratitudeEntry(entry, t('auxiliary.gratitude.title'))) return false;
+
     const matchesSearch =
       !searchQuery.trim() ||
       entry.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -201,59 +209,28 @@ export default function HomeScreen({ navigation, route }: any) {
   };
 
   const showEntryOptions = (entry: DiaryEntry) => {
-    const options = [
-      t('journal.viewInsights'),
-      t('journal.rename'),
-      t('journal.changeDate'),
-      entry.is_favorite ? t('journal.removeFavorite') : t('journal.addFavorite'),
-      t('journal.hideEntry'),
-      t('journal.share'),
-      t('common.delete'),
-      t('common.cancel'),
-    ];
-    const cancelButtonIndex = 7;
-    const destructiveButtonIndex = 6;
+    setOptionsEntry(entry);
+  };
 
-    const handleSelection = (buttonIndex: number) => {
-      if (buttonIndex === 0) {
-        navigation.navigate('EntryDetail', { entry, openInsights: true });
-      } else if (buttonIndex === 1) {
-        handleRenameEntry(entry);
-      } else if (buttonIndex === 2) {
-        handleChangeDateEntry(entry);
-      } else if (buttonIndex === 3) {
-        toggleFavorite(entry);
-      } else if (buttonIndex === 4) {
-        toggleHidden(entry.id);
-      } else if (buttonIndex === 5) {
-        handleShareEntry(entry);
-      } else if (buttonIndex === 6) {
-        console.log('[Journal] Deleted entry:', entry.id);
-        handleDeleteEntry(entry);
-        Alert.alert(t('journal.deleted'), t('journal.entryRemoved'), [{ text: t('common.ok') }]);
-      }
-    };
+  const handleEntryOptionSelect = (key: string) => {
+    const entry = optionsEntry;
+    if (!entry) return;
 
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options,
-          cancelButtonIndex,
-          destructiveButtonIndex,
-        },
-        handleSelection,
-      );
-    } else {
-      Alert.alert(t('journal.options'), undefined, [
-        { text: options[0], onPress: () => handleSelection(0) },
-        { text: options[1], onPress: () => handleSelection(1) },
-        { text: options[2], onPress: () => handleSelection(2) },
-        { text: options[3], onPress: () => handleSelection(3) },
-        { text: options[4], onPress: () => handleSelection(4) },
-        { text: options[5], onPress: () => handleSelection(5) },
-        { text: options[6], style: 'destructive', onPress: () => handleSelection(6) },
-        { text: options[7], style: 'cancel' },
-      ]);
+    if (key === 'insights') {
+      navigation.navigate('EntryDetail', { entry, openInsights: true });
+    } else if (key === 'rename') {
+      handleRenameEntry(entry);
+    } else if (key === 'date') {
+      handleChangeDateEntry(entry);
+    } else if (key === 'favorite') {
+      toggleFavorite(entry);
+    } else if (key === 'hide') {
+      toggleHidden(entry.id);
+    } else if (key === 'share') {
+      handleShareEntry(entry);
+    } else if (key === 'delete') {
+      handleDeleteEntry(entry);
+      Alert.alert(t('journal.deleted'), t('journal.entryRemoved'), [{ text: t('common.ok') }]);
     }
   };
 
@@ -533,6 +510,19 @@ const highlightText = (text: string, query: string) => {
 const renderEntry = ({ item }: { item: DiaryEntry }) => {
   const hasInsights = item.ai_structured_insights?.wellbeingScore;
   const isHidden = hiddenEntryIds.has(item.id);
+  const isPromptEntry = isPromptDrivenEntry(item, item.content);
+  const promptPreview = isPromptEntry ? getPromptTextForEntry(item, item.content) : null;
+  const displayContent = isHidden
+    ? t('journal.lockedBody')
+    : isPromptEntry
+      ? stripJournalPromptTag(item.content) || item.content
+      : item.content;
+  const isGratitudeEntry =
+    item.title === t('auxiliary.gratitude.title') ||
+    item.mood === '🙏' ||
+    (item.content?.includes('🙏') && item.content?.includes(t('auxiliary.gratitude.title')));
+  const entryDark = isDarkTheme(theme.name);
+  const badgeIconColor = entryDark ? 'rgba(255, 255, 255, 0.82)' : '#6d28d9';
   
   return (
     <TouchableOpacity
@@ -556,7 +546,19 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
       onLongPress={() => handleEntryLongPress(item)}
       activeOpacity={0.7}
     >
-      <GlassCard style={styles.premiumCard} noPad contentStyle={styles.cardGradient}>
+      <GlassCard
+        style={[styles.premiumCard, isGratitudeEntry && styles.gratitudeCard]}
+        noPad
+        contentStyle={[styles.cardGradient, isGratitudeEntry && styles.gratitudeCardInner]}
+      >
+          {renderEntryCardBody()}
+      </GlassCard>
+    </TouchableOpacity>
+  );
+
+  function renderEntryCardBody() {
+    return (
+      <>
           <View style={styles.entryTitleRow}>
             <View style={styles.entryTitleWithIndicator}>
               {moodIndicatorsEnabled && (() => {
@@ -576,22 +578,32 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
             )}
           </View>
           <View style={styles.entryHeader}>
-            {item.entry_type === 'prompt' && (
-              <View style={[styles.insightBadge, { backgroundColor: 'rgba(139, 92, 246, 0.18)' }]}>
-                <Ionicons name="bulb" size={12} color="rgba(255,255,255,0.85)" />
-                <Text style={styles.insightBadgeText}>{t('journal.prompt')}</Text>
+            {isPromptEntry && (
+              <View style={[styles.metaBadge, !entryDark && styles.metaBadgeLight]}>
+                <Ionicons name="bulb-outline" size={12} color={badgeIconColor} />
+                <Text style={[styles.metaBadgeText, !entryDark && styles.metaBadgeTextLight]}>
+                  {t('journal.badgePrompt')}
+                </Text>
               </View>
             )}
             {hasInsights && (
-              <View style={styles.insightBadge}>
-                <Ionicons name="sparkles" size={12} color="#ffffff" />
-                <Text style={styles.insightBadgeText}>{t('journal.analyzed')}</Text>
+              <View style={[styles.metaBadge, !entryDark && styles.metaBadgeLight]}>
+                <Ionicons name="sparkles" size={12} color={badgeIconColor} />
+                <Text style={[styles.metaBadgeText, !entryDark && styles.metaBadgeTextLight]}>
+                  {t('journal.analyzed')}
+                </Text>
               </View>
             )}
           </View>
 
+          {isPromptEntry && promptPreview ? (
+            <Text style={styles.promptQuestionPreview} numberOfLines={2}>
+              {promptPreview}
+            </Text>
+          ) : null}
+
             <Text style={[styles.entryContent, { color: theme.colors.secondaryText }]} numberOfLines={3}>
-              {isHidden ? t('journal.lockedBody') : searchQuery.trim() ? highlightText(item.content, searchQuery) : item.content}
+              {searchQuery.trim() ? highlightText(displayContent, searchQuery) : displayContent}
             </Text>
 
             <View style={styles.entryFooter}>
@@ -620,9 +632,9 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
                 </LinearGradient>
               )}
             </View>
-        </GlassCard>
-      </TouchableOpacity>
-  );
+      </>
+    );
+  }
   };
 
   const isDark = isDarkTheme(theme.name);
@@ -633,14 +645,12 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
     <PageHeader
       title={t('journal.title')}
       right={
-        <View style={styles.headerRight}>
-          {streak.currentStreak > 0 && (
-            <View style={styles.streakContainerClean}>
-              <Text style={styles.flameEmoji}>🔥</Text>
-              <Text style={[styles.streakNumber, { color: theme.colors.primaryText }]}>{streak.currentStreak}</Text>
-            </View>
-          )}
-        </View>
+        streak.currentStreak > 0 ? (
+          <View style={styles.streakContainerClean}>
+            <Text style={styles.flameEmoji}>🔥</Text>
+            <Text style={[styles.streakNumber, { color: theme.colors.primaryText }]}>{streak.currentStreak}</Text>
+          </View>
+        ) : undefined
       }
     />
 
@@ -660,7 +670,7 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.filterChipsRow}
-        style={{ marginTop: 12 }}
+        style={styles.filterScroll}
       >
         {[
           { key: 'all', label: t('journal.filterAll') },
@@ -736,6 +746,21 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
         />
       )}
 
+      <TouchableOpacity
+        style={[styles.newEntryFab, { bottom: insets.bottom + 75 }]}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          navigation.navigate('CreateEntry');
+        }}
+        activeOpacity={0.85}
+        accessibilityLabel={t('journal.createEntry')}
+      >
+        <LinearGradient colors={['#A855F7', '#7c3aed']} style={styles.newEntryFabGradient}>
+          <Ionicons name="add" size={20} color="#fff" />
+          <Text style={styles.newEntryFabText}>{t('journal.createEntry')}</Text>
+        </LinearGradient>
+      </TouchableOpacity>
+
       {/* Modern Date Picker Modal */}
       {showDatePicker && (
         <Modal
@@ -793,6 +818,30 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
           </TouchableOpacity>
         </Modal>
       )}
+
+      <JournalEntryOptionsSheet
+        visible={!!optionsEntry}
+        title={t('journal.options')}
+        options={
+          optionsEntry
+            ? [
+                { key: 'insights', label: t('journal.viewInsights'), icon: 'sparkles-outline' },
+                { key: 'rename', label: t('journal.rename'), icon: 'create-outline' },
+                { key: 'date', label: t('journal.changeDate'), icon: 'calendar-outline' },
+                {
+                  key: 'favorite',
+                  label: optionsEntry.is_favorite ? t('journal.removeFavorite') : t('journal.addFavorite'),
+                  icon: optionsEntry.is_favorite ? 'heart' : 'heart-outline',
+                },
+                { key: 'hide', label: t('journal.hideEntry'), icon: 'eye-off-outline' },
+                { key: 'share', label: t('journal.share'), icon: 'share-outline' },
+                { key: 'delete', label: t('common.delete'), icon: 'trash-outline', destructive: true },
+              ]
+            : []
+        }
+        onSelect={handleEntryOptionSelect}
+        onClose={() => setOptionsEntry(null)}
+      />
     </View>
   );
 }
@@ -838,6 +887,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  headerCreateBtn: {
+    borderRadius: 14,
+    overflow: 'hidden',
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  headerCreateBtnGradient: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
   },
   streakPill: {
     flexDirection: 'row',
@@ -1093,9 +1158,13 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   filterChipsRow: {
-    marginTop: 10,
-    paddingRight: PREMIUM.layout.screenPadH,
+    paddingRight: 32,
     gap: 8,
+  },
+  filterScroll: {
+    marginTop: 12,
+    marginHorizontal: -PREMIUM.layout.screenPadH,
+    paddingHorizontal: PREMIUM.layout.screenPadH,
   },
   filterChip: {
     paddingHorizontal: 14,
@@ -1349,11 +1418,77 @@ const styles = StyleSheet.create({
   premiumCardPressable: {
     marginBottom: 16,
   },
+  metaBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: 'rgba(139, 92, 246, 0.16)',
+  },
+  metaBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.82)',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  metaBadgeLight: {
+    backgroundColor: 'rgba(139, 92, 246, 0.12)',
+  },
+  metaBadgeTextLight: {
+    color: '#6d28d9',
+  },
+  promptCardContent: {
+    borderWidth: 0,
+  },
+  promptQuestionPreview: {
+    fontStyle: 'italic',
+    color: '#A1A1AA',
+    fontSize: sf(14),
+    lineHeight: sf(20),
+    marginBottom: 8,
+  },
+  newEntryFab: {
+    position: 'absolute',
+    right: 20,
+    zIndex: 50,
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  newEntryFabGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    height: 48,
+    paddingHorizontal: 18,
+    borderRadius: 24,
+  },
+  newEntryFabText: {
+    color: '#fff',
+    fontSize: sf(15),
+    fontWeight: '700',
+  },
   premiumCard: {},
+  gratitudeCard: {
+    borderWidth: 1,
+    borderColor: 'rgba(251,191,36,0.35)',
+  },
+  gratitudeCardInner: {
+    backgroundColor: 'rgba(251,191,36,0.08)',
+  },
   cardGradient: {
     padding: 14,
   },
   entryHeader: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
     marginBottom: 8,
   },
   entryTitleRow: {
@@ -1399,23 +1534,6 @@ const styles = StyleSheet.create({
   },
   moodEmoji: {
     fontSize: 20,
-  },
-  insightBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    backgroundColor: 'rgba(139, 92, 246, 0.16)',
-    alignSelf: 'flex-start',
-  },
-  insightBadgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.82)',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
   },
   entryContent: {
     fontSize: sf(14),

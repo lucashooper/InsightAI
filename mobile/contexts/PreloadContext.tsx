@@ -2,7 +2,6 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { InteractionManager } from 'react-native';
 import { supabase } from '../lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Purchases from 'react-native-purchases';
 import { decryptEntriesInChunks, decryptNotesLazy } from '../utils/decryptBatch';
 import { ensureDecryptCacheLoaded } from '../utils/decryptCache';
 import { notesSignature } from '../utils/computeDashboardData';
@@ -12,6 +11,7 @@ import { yieldToUI } from '../utils/yieldToUI';
 import { perfLog, perfStart } from '../utils/perfLog';
 import { useAppLock } from './AppLockContext';
 import { PRO_DISPLAY_NAME } from '../constants/branding';
+import { getAccountStatsForUser } from '../utils/entitlements';
 
 const NOTES_REFRESH_STALE_MS = 90_000;
 
@@ -116,8 +116,8 @@ export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children })
   const loadAccountStats = useCallback(async (userId: string) => {
     const today = new Date().toISOString().split('T')[0];
 
-    const [customerInfo, usageResult] = await Promise.all([
-      Purchases.getCustomerInfo(),
+    const [accountStats, usageResult] = await Promise.all([
+      getAccountStatsForUser(userId),
       supabase
         .from('usage_tracking')
         .select('*', { count: 'exact', head: true })
@@ -126,11 +126,9 @@ export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children })
         .gte('created_at', today),
     ]);
 
-    const hasAnyActiveEntitlement = Object.keys(customerInfo.entitlements.active).length > 0;
-
     return {
-      subscriptionPlan: hasAnyActiveEntitlement ? PRO_DISPLAY_NAME : 'Free',
-      entriesLimit: hasAnyActiveEntitlement ? 2 : 0,
+      subscriptionPlan: accountStats.subscriptionPlan,
+      entriesLimit: accountStats.entriesLimit,
       entriesCount: usageResult.error || usageResult.count === null ? 0 : usageResult.count,
     };
   }, []);

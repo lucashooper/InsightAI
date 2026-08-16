@@ -1,10 +1,17 @@
 import Aes from 'react-native-aes-crypto';
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
+import { looksEncryptedContent } from '../utils/encryptionFormat';
 
 const SECURE_STORE_KEY = 'insight_encryption_key';
+const LEGACY_SECURE_STORE_KEY = 'insight_encryption_key';
+
+function secureStoreKeyForUser(userId: string): string {
+  return `${SECURE_STORE_KEY}_${userId}`;
+}
 
 let cachedKey: string | null | undefined;
+let cachedKeyUserId: string | null | undefined;
 
 export class EncryptionService {
   /**
@@ -24,10 +31,12 @@ export class EncryptionService {
    * Store encryption key in secure storage
    * Uses expo-secure-store (encrypted, protected by device security)
    */
-  static async storeKey(key: string): Promise<void> {
+  static async storeKey(key: string, userId?: string): Promise<void> {
     try {
-      await SecureStore.setItemAsync(SECURE_STORE_KEY, key);
+      const storeKey = userId ? secureStoreKeyForUser(userId) : LEGACY_SECURE_STORE_KEY;
+      await SecureStore.setItemAsync(storeKey, key);
       cachedKey = key;
+      cachedKeyUserId = userId ?? null;
       console.log('[Encryption] Key stored in secure storage');
     } catch (error) {
       console.error('[Encryption] Failed to store key:', error);
@@ -36,12 +45,33 @@ export class EncryptionService {
   }
 
   /**
-   * Retrieve encryption key from secure storage
+   * Retrieve encryption key from secure storage (scoped per user when userId provided).
    */
-  static async getKey(): Promise<string | null> {
-    if (cachedKey !== undefined) return cachedKey;
+  static async getKey(userId?: string): Promise<string | null> {
+    if (userId && cachedKeyUserId === userId && cachedKey !== undefined) {
+      return cachedKey;
+    }
+    if (!userId && cachedKey !== undefined) {
+      return cachedKey;
+    }
+
     try {
-      const key = await SecureStore.getItemAsync(SECURE_STORE_KEY);
+      if (userId) {
+        let key = await SecureStore.getItemAsync(secureStoreKeyForUser(userId));
+        if (!key) {
+          key = await SecureStore.getItemAsync(LEGACY_SECURE_STORE_KEY);
+        }
+        if (cachedKeyUserId === userId || !cachedKeyUserId) {
+          cachedKey = key;
+          cachedKeyUserId = userId;
+        }
+        if (!key) {
+          console.warn('[Encryption] No key found in secure storage for user', userId);
+        }
+        return key;
+      }
+
+      const key = await SecureStore.getItemAsync(LEGACY_SECURE_STORE_KEY);
       cachedKey = key;
       if (!key) {
         console.warn('[Encryption] No key found in secure storage');
@@ -59,7 +89,7 @@ export class EncryptionService {
    */
   static async initializeKey(password: string, userId: string): Promise<void> {
     const key = await this.generateKey(password, userId);
-    await this.storeKey(key);
+    await this.storeKey(key, userId);
   }
 
   /**
@@ -89,65 +119,57 @@ export class EncryptionService {
    * Decrypt text using AES-256-CBC
    * Handles both encrypted entries and legacy plain text entries
    */
-  static async decrypt(encryptedText: string, key: string): Promise<string> {
+  static async decrypt(encryptedText: string, key: string, isEncryptedFlag?: boolean): Promise<string> {
     if (!encryptedText) {
-      console.log('[Encryption] Empty content, returning empty string');
       return '';
     }
 
-    // Check if content looks encrypted (format: iv:encrypted)
-    const looksEncrypted = encryptedText.includes(':') && encryptedText.length > 32;
-    
-    if (!looksEncrypted) {
-      console.log('[Encryption] Content does not look encrypted, treating as legacy plain text');
-      return encryptedText; // Legacy entry, return as-is
+    if (!looksEncryptedContent(encryptedText, isEncryptedFlag)) {
+      return encryptedText;
     }
 
     try {
-      // Split IV and encrypted data
       const parts = encryptedText.split(':');
       if (parts.length !== 2) {
         console.warn('[Encryption] Invalid encrypted format, returning as plain text');
         return encryptedText;
       }
-      
+
       const [iv, encrypted] = parts;
-      
-      // Decrypt using native AES-256-CBC
       const decrypted = await Aes.decrypt(encrypted, key, iv, 'aes-256-cbc');
-      
+
       if (!decrypted) {
         console.warn('[Encryption] Decryption produced empty string, returning original');
         return encryptedText;
       }
-      
-      console.log('[Encryption] Successfully decrypted entry');
+
       return decrypted;
     } catch (error) {
-      console.error('[Encryption] Decryption failed:', error);
-      console.log('[Encryption] Returning original content as fallback (likely legacy plain text)');
-      return encryptedText; // Fallback to original content
+      console.warn('[Encryption] Decryption failed, using original content:', error);
+      return encryptedText;
     }
   }
 
   /**
    * Clear encryption key from secure storage (call on logout)
    */
-  static async clearKey(): Promise<void> {
+  static async clearKey(userId?: string): Promise<void> {
     try {
-      await SecureStore.deleteItemAsync(SECURE_STORE_KEY);
+      if (userId) {
+        await SecureStore.deleteItemAsync(secureStoreKeyForUser(userId));
+      } else {
+        await SecureStore.deleteItemAsync(LEGACY_SECURE_STORE_KEY);
+      }
       cachedKey = undefined;
+      cachedKeyUserId = undefined;
       console.log('[Encryption] Key cleared from secure storage');
     } catch (error) {
       console.error('[Encryption] Failed to clear key:', error);
     }
   }
 
-  /**
-   * Check if encryption key exists
-   */
-  static async hasKey(): Promise<boolean> {
-    const key = await this.getKey();
+  static async hasKey(userId?: string): Promise<boolean> {
+    const key = await this.getKey(userId);
     return key !== null;
   }
 

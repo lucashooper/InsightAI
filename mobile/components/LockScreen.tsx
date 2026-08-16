@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   Animated,
-  Image,
   Dimensions,
   StatusBar,
   Alert,
@@ -13,10 +12,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import CachedImage from './shared/CachedImage';
+import { INSIGHT_LOGO } from '../constants/appAssets';
 import { useAppLock } from '../contexts/AppLockContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
-const insightLogo = require('../public/Insight-Logo-nobg.webp');
 const { width } = Dimensions.get('window');
 
 export default function LockScreen() {
@@ -186,7 +186,7 @@ export default function LockScreen() {
       <StatusBar barStyle="light-content" />
       
       <View style={styles.content}>
-        <Image source={insightLogo} style={styles.logo} resizeMode="contain" />
+        <CachedImage source={INSIGHT_LOGO} style={styles.logo} contentFit="contain" recyclingKey="lock-screen-logo" />
         
         <Text style={styles.title}>{t('components.lock.welcome')}</Text>
         <Text style={styles.subtitle}>{t('components.lock.enterPin')}</Text>

@@ -10,7 +10,7 @@ export const JOURNAL_PROMPT_PREFIX = 'Insight Prompt';
 /** Matches legacy Insight Prompt tags and Zeno Prompt tags. */
 export const JOURNAL_PROMPT_TAG_REGEX = /\[(?:Insight|Zeno) Prompt: ([^\]]+)\]/g;
 
-export const JOURNAL_PROMPT_STRIP_REGEX = /\[(?:Insight|Zeno) Prompt: [^\]]+\]\n\n/;
+export const JOURNAL_PROMPT_STRIP_REGEX = /\[(?:Insight|Zeno) Prompt: [\s\S]*?\]\n*/;
 
 export function formatJournalPromptContent(promptText: string, content: string): string {
   return `[${JOURNAL_PROMPT_PREFIX}: ${promptText}]\n\n${content}`;
@@ -21,6 +21,24 @@ export function stripJournalPromptTag(content: string): string {
 }
 
 export function extractJournalPromptText(content: string): string | null {
-  const match = content.match(/\[(?:Insight|Zeno) Prompt: ([^\]]+)\]/);
-  return match?.[1] ?? null;
+  const match = content.match(/\[(?:Insight|Zeno) Prompt: ([\s\S]*?)\]/);
+  return match?.[1]?.trim() ?? null;
+}
+
+export function isPromptDrivenEntry(
+  entry: { entry_type?: string; prompt_text?: string | null } | null | undefined,
+  content: string,
+): boolean {
+  if (entry?.entry_type === 'prompt') return true;
+  if (entry?.prompt_text?.trim()) return true;
+  return !!extractJournalPromptText(content);
+}
+
+export function getPromptTextForEntry(
+  entry: { prompt_text?: string | null } | null | undefined,
+  content: string,
+): string | null {
+  const fromField = entry?.prompt_text?.trim();
+  if (fromField) return fromField;
+  return extractJournalPromptText(content);
 }

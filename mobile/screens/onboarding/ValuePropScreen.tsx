@@ -1,15 +1,17 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
+import CachedImage from '../../components/shared/CachedImage';
+import { INSIGHT_LOGO } from '../../constants/appAssets';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { sf } from '../../utils/responsive';
+import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
 
 const noisyImage = require('../../public/noisy-image.webp');
 const clarityImage = require('../../public/clarity-image.webp');
-const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 export default function ValuePropScreen({ navigation }: any) {
   const { theme } = useTheme();
@@ -19,6 +21,7 @@ export default function ValuePropScreen({ navigation }: any) {
   const clarityAnim = useRef(new Animated.Value(0)).current;
   const bulletAnim = useRef(new Animated.Value(0)).current;
   const footerAnim = useRef(new Animated.Value(0)).current;
+  const bottomInset = useOnboardingBottomInset();
 
   useEffect(() => {
     Animated.sequence([
@@ -47,7 +50,7 @@ export default function ValuePropScreen({ navigation }: any) {
       )}
 
       {/* Logo */}
-      <Image source={insightLogo} style={styles.logo} />
+      <CachedImage source={INSIGHT_LOGO} style={styles.logo} contentFit="contain" recyclingKey="value-prop-logo" />
 
       <View style={styles.content}>
         <View style={styles.mainContent}>
@@ -70,10 +73,11 @@ export default function ValuePropScreen({ navigation }: any) {
               },
             ]}>
               <View style={styles.imageContainer}>
-                <Image 
-                  source={noisyImage} 
+                <CachedImage
+                  source={noisyImage}
                   style={styles.contrastImage}
-                  resizeMode="cover"
+                  contentFit="cover"
+                  recyclingKey="value-prop-noisy"
                 />
               </View>
               <Text style={[styles.contrastLabel, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}>{t('onboarding.valueProp.mentalNoise')}</Text>
@@ -106,10 +110,11 @@ export default function ValuePropScreen({ navigation }: any) {
               },
             ]}>
               <View style={styles.imageContainer}>
-                <Image 
-                  source={clarityImage} 
+                <CachedImage
+                  source={clarityImage}
                   style={styles.contrastImage}
-                  resizeMode="cover"
+                  contentFit="cover"
+                  recyclingKey="value-prop-clarity"
                 />
               </View>
               <Text style={[styles.contrastLabel, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}>{t('onboarding.valueProp.understanding')}</Text>
@@ -156,6 +161,7 @@ export default function ValuePropScreen({ navigation }: any) {
       <Animated.View
         style={[
           styles.footer,
+          { paddingBottom: bottomInset },
           {
             opacity: footerAnim,
             transform: [{
@@ -297,13 +303,12 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: 24,
-    paddingBottom: 50,
     paddingTop: 16,
   },
   button: {
     width: '100%',
     borderRadius: 28,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#7B5EA7',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,

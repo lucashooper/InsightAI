@@ -6,17 +6,17 @@ import {
   TouchableOpacity,
   Modal,
   Dimensions,
-  Image,
   Animated,
   ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import CachedImage from './shared/CachedImage';
+import { INSIGHT_LOGO } from '../constants/appAssets';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
-const insightLogo = require('../public/Insight-Logo-nobg.webp');
 
 interface PremiumUpsellOverlayProps {
   visible: boolean;
@@ -88,10 +88,11 @@ export default function PremiumUpsellOverlay({ visible, onUpgrade, onDismiss }: 
           >
             {/* Logo and Header */}
             <View style={styles.header}>
-              <Image 
-                source={insightLogo}
+              <CachedImage
+                source={INSIGHT_LOGO}
                 style={styles.logoImage}
-                resizeMode="contain"
+                contentFit="contain"
+                recyclingKey="premium-upsell-logo"
               />
               <Text style={styles.title}>{t('components.premium.title')}</Text>
               <Text style={styles.subtitle}>

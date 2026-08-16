@@ -25,6 +25,8 @@ type Props = {
   disabled?: boolean;
   /** Slightly larger tap target for reveal actions */
   large?: boolean;
+  /** Full-width CTA (check-in flows) */
+  block?: boolean;
 };
 
 /**
@@ -38,6 +40,7 @@ export default function PremiumButton({
   style,
   disabled,
   large = false,
+  block = false,
 }: Props) {
   const { theme } = useTheme();
   const dark = isDarkTheme(theme.name);
@@ -65,6 +68,7 @@ export default function PremiumButton({
       style={[
         styles.base,
         large && styles.large,
+        block && styles.block,
         isPrimary && styles.primary,
         isSecondary && (dark ? styles.secondaryDark : styles.secondaryLight),
         isGhost && styles.ghost,
@@ -105,8 +109,12 @@ const styles = StyleSheet.create({
   },
   large: {
     paddingHorizontal: 18,
-    paddingVertical: 13,
+    paddingVertical: 15,
     borderRadius: PREMIUM.radius.button,
+  },
+  block: {
+    alignSelf: 'stretch',
+    width: '100%',
   },
   primary: {
     backgroundColor: PREMIUM.accent,

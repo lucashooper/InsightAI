@@ -1,15 +1,16 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Image, Animated, Easing } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
+import { OrbSlot } from '../../components/companion/OrbOverlayProvider';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { isTablet, sf, iPadWideContentStyle } from '../../utils/responsive';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 
-const miraOrb = require('../../public/Mira-Orb-No-Background.png');
+const ORB_SIZE = 110;
 
 export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
   const { theme } = useTheme();
@@ -21,51 +22,9 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
   const answers = route?.params?.answers || {};
   const returnIndex = route?.params?.returnIndex || 0;
 
-  const pulse = useRef(new Animated.Value(1)).current;
-  const rotate = useRef(new Animated.Value(0)).current;
-
   useEffect(() => {
     analytics.trackOnboardingScreen('personality_quiz_intro', 'viewed', userName || undefined);
   }, []);
-
-  useEffect(() => {
-    // Very slow, restrained breath — no aggressive motion
-    const pulseLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, {
-          toValue: 1.02,
-          duration: 5200,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulse, {
-          toValue: 1,
-          duration: 5200,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-    const rotateLoop = Animated.loop(
-      Animated.timing(rotate, {
-        toValue: 1,
-        duration: 90000,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      }),
-    );
-    pulseLoop.start();
-    rotateLoop.start();
-    return () => {
-      pulseLoop.stop();
-      rotateLoop.stop();
-    };
-  }, [pulse, rotate]);
-
-  const spin = rotate.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
 
   const handleContinue = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -98,9 +57,7 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
 
       <View style={styles.content}>
         <View style={styles.heroWrap}>
-          <Animated.View style={{ transform: [{ scale: pulse }, { rotate: spin }] }}>
-            <Image source={miraOrb} style={styles.miraOrb} resizeMode="contain" />
-          </Animated.View>
+          <OrbSlot size={ORB_SIZE} personality="default" />
         </View>
 
         <Text style={[styles.title, { color: dark ? '#fff' : '#1a1a2e' }]}>
@@ -210,19 +167,16 @@ const styles = StyleSheet.create({
   heroWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: isTablet ? 12 : 4,
-    width: isTablet ? 200 : 168,
-    height: isTablet ? 200 : 168,
-  },
-  miraOrb: {
-    width: isTablet ? 168 : 132,
-    height: isTablet ? 168 : 132,
+    marginTop: 24,
+    marginBottom: 28,
+    width: ORB_SIZE,
+    height: ORB_SIZE,
   },
   title: {
     fontSize: sf(32),
     fontWeight: '600',
     textAlign: 'center',
-    marginTop: 4,
+    marginTop: 0,
     marginBottom: 14,
     letterSpacing: -1.28,
   },
@@ -294,7 +248,7 @@ const styles = StyleSheet.create({
   continueButton: {
     width: '100%',
     borderRadius: 28,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#7B5EA7',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,

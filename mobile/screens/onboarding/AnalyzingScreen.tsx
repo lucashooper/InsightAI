@@ -11,6 +11,7 @@ import { isTablet } from '../../utils/responsive';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
 
 const { width } = Dimensions.get('window');
 
@@ -32,6 +33,7 @@ export default function AnalyzingScreen({ navigation, route }: Props) {
     const { theme } = useTheme();
     const { userName } = useOnboarding();
     const { t } = useLanguage();
+    const bottomInset = useOnboardingBottomInset();
     const answers = route?.params?.answers ?? {};
     const skipPersonality = route?.params?.skipPersonality ?? false;
     const [percentage, setPercentage] = useState(0);
@@ -178,7 +180,7 @@ export default function AnalyzingScreen({ navigation, route }: Props) {
             </View>
 
             {/* Continue button — fades in only after reaching 100% */}
-            <Animated.View style={[styles.ctaContainer, { opacity: ctaFade }]}>
+            <Animated.View style={[styles.ctaContainer, { opacity: ctaFade, paddingBottom: bottomInset }]}>
                 <TouchableOpacity
                     style={styles.ctaButton}
                     activeOpacity={0.9}
@@ -190,7 +192,7 @@ export default function AnalyzingScreen({ navigation, route }: Props) {
                         const skipPersonality = route?.params?.skipPersonality || false;
                         
                         // Emotional peak: Mira chat with personalized pattern
-                        navigation.navigate('MiraOnboardingChat', {
+                        navigation.navigate('InsightIntro', {
                             answers,
                             skipPersonality,
                         });
@@ -280,12 +282,11 @@ const styles = StyleSheet.create({
     },
     ctaContainer: {
         paddingHorizontal: 24,
-        paddingBottom: 50,
     },
     ctaButton: {
         width: '100%',
         borderRadius: 28,
-        backgroundColor: '#1a1a1a',
+        backgroundColor: '#7B5EA7',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,

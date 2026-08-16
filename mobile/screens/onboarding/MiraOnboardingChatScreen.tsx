@@ -12,8 +12,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
-import InsightCompanionMark from '../../components/companion/InsightCompanionMark';
+import { OrbSlot } from '../../components/companion/OrbOverlayProvider';
 import PremiumRevealCard from '../../components/companion/PremiumRevealCard';
+import OnboardingButton from '../../components/onboarding/OnboardingButton';
 import {
   buildOnboardingReveal,
   computePersonality,
@@ -21,7 +22,7 @@ import {
 } from '../../utils/onboardingPersonality';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useOnboarding } from '../../contexts/OnboardingContext';
-import { ONBOARDING_SURFACE, ONBOARDING_BG } from '../../constants/onboardingTheme';
+import { ONBOARDING_SURFACE, ONBOARDING_BG, ONBOARDING_TEXT } from '../../constants/onboardingTheme';
 import { MIRA_COMPANION_NAME } from '../../constants/mira';
 import { sf } from '../../utils/responsive';
 
@@ -179,8 +180,9 @@ export default function MiraOnboardingChatScreen({ navigation, route }: any) {
     if (seq !== seqRef.current) return;
     setPhase('await_help');
     showReplies([
-      { id: 'how_insight', label: 'How does Insight help?' },
+      { id: 'how_insight', label: 'How does that work?' },
       { id: 'tell_more', label: 'Tell me more' },
+      { id: 'why_matters', label: 'Why does that matter?' },
     ]);
   }, [firstName, pushMira, showReplies]);
 
@@ -213,9 +215,9 @@ export default function MiraOnboardingChatScreen({ navigation, route }: any) {
     if (seq !== seqRef.current) return;
     setPhase('await_pattern');
     showReplies([
-      { id: 'show_pattern', label: 'Show my pattern' },
+      { id: 'show_pattern', label: 'Yeah, show me' },
       { id: 'what_stands_out', label: 'What stands out?' },
-      { id: 'whats_baseline', label: "What's my baseline?" },
+      { id: 'whats_baseline', label: 'Is that normal?' },
     ]);
   }, [firstName, profile.primaryPattern, pushMira, showReplies]);
 
@@ -253,9 +255,9 @@ export default function MiraOnboardingChatScreen({ navigation, route }: any) {
       await sleep(280);
       setPhase('await_help');
       showReplies([
-        { id: 'how_insight', label: 'How does Insight help?' },
-        { id: 'show_strength', label: 'What is my greatest strength?' },
-        { id: 'build_on', label: 'How does Insight build on this?' },
+        { id: 'how_insight', label: 'How does that work?' },
+        { id: 'show_strength', label: 'What am I doing well?' },
+        { id: 'build_on', label: 'Can Insight help with this?' },
       ]);
       return;
     }
@@ -309,11 +311,11 @@ export default function MiraOnboardingChatScreen({ navigation, route }: any) {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="dark-content" />
       <OnboardingAmbientBackground />
 
       <View style={styles.header}>
-        <InsightCompanionMark size={36} isDark />
+        <OrbSlot size={40} personality="balanced" />
         <View style={styles.headerText}>
           <Text style={styles.headerName}>{MIRA_COMPANION_NAME}</Text>
           <View style={styles.onlineRow}>
@@ -418,9 +420,7 @@ export default function MiraOnboardingChatScreen({ navigation, route }: any) {
 
       {showBottomContinue ? (
         <View style={[styles.bottomCtaWrap, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-          <TouchableOpacity style={styles.bottomCta} activeOpacity={0.9} onPress={onBottomContinue}>
-            <Text style={styles.bottomCtaText}>Continue</Text>
-          </TouchableOpacity>
+          <OnboardingButton label="Continue" onPress={onBottomContinue} />
         </View>
       ) : null}
     </View>
@@ -439,11 +439,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: 'rgba(200, 185, 255, 0.25)',
   },
   headerText: { flex: 1 },
   headerName: {
-    color: '#fff',
+    color: ONBOARDING_TEXT.primary,
     fontSize: sf(17),
     fontWeight: '700',
     letterSpacing: -0.68,
@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
   },
   miraText: {
-    color: 'rgba(255,255,255,0.92)',
+    color: ONBOARDING_TEXT.primary,
     fontSize: sf(16),
     lineHeight: sf(23),
     letterSpacing: -0.2,
@@ -501,7 +501,7 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 3.5,
-    backgroundColor: 'rgba(255,255,255,0.45)',
+    backgroundColor: 'rgba(123, 94, 167, 0.45)',
   },
   repliesBlock: {
     alignSelf: 'stretch',
@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
   },
   repliesHint: {
     alignSelf: 'center',
-    color: 'rgba(255,255,255,0.38)',
+    color: ONBOARDING_TEXT.secondary,
     fontSize: sf(12),
     marginBottom: 4,
   },
@@ -535,23 +535,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 10,
     backgroundColor: 'transparent',
-  },
-  bottomCta: {
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#1C1C1E',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.22,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  bottomCtaText: {
-    color: '#FFFFFF',
-    fontSize: sf(17),
-    fontWeight: '600',
-    letterSpacing: 0.2,
   },
 });

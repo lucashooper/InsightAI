@@ -1,19 +1,19 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Image } from 'react-native';
+import { View, Text, StyleSheet, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
-import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
+import OnboardingButton from '../../components/onboarding/OnboardingButton';
+import CachedImage from '../../components/shared/CachedImage';
+import { INSIGHT_LOGO } from '../../constants/appAssets';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { ONBOARDING_SURFACE } from '../../constants/onboardingTheme';
+import { ONBOARDING_SURFACE, ONBOARDING_TEXT } from '../../constants/onboardingTheme';
 import { sf } from '../../utils/responsive';
-
-const insightLogo = require('../../public/Insight-Logo-nobg.webp');
+import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
 
 export default function PostPurchaseWelcomeScreen({ navigation }: any) {
-  const { theme } = useTheme();
   const { t } = useLanguage();
-  const dark = isDarkTheme(theme.name);
+  const bottomInset = useOnboardingBottomInset();
 
   const handleContinue = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -29,42 +29,32 @@ export default function PostPurchaseWelcomeScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <OnboardingAmbientBackground />
-      <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} />
+      <StatusBar barStyle="dark-content" />
 
       <View style={styles.content}>
         <View style={styles.logoContainer}>
-          <Image source={insightLogo} style={styles.logo} resizeMode="contain" />
+          <CachedImage source={INSIGHT_LOGO} style={styles.logo} contentFit="contain" recyclingKey="post-purchase-logo" />
         </View>
 
-        <Text style={[styles.title, dark && { color: '#ffffff' }]}>
-          {t('onboarding.postPurchase.title')}
-        </Text>
+        <Text style={styles.title}>{t('onboarding.postPurchase.title')}</Text>
         <Text style={styles.subtitle}>{t('onboarding.postPurchase.subtitle')}</Text>
 
         <View style={styles.features}>
           {features.map((f) => (
             <View key={f.text} style={styles.featureRow}>
               <View style={styles.featureIcon}>
-                <Ionicons name={f.icon} size={20} color="rgba(255,255,255,0.8)" />
+                <Ionicons name={f.icon} size={20} color="#7B5EA7" />
               </View>
-              <Text style={[styles.featureText, dark && { color: '#ffffff' }]}>{f.text}</Text>
+              <Text style={styles.featureText}>{f.text}</Text>
             </View>
           ))}
         </View>
 
-        <Text style={[styles.infoText, dark && { color: 'rgba(255, 255, 255, 0.45)' }]}>
-          {t('onboarding.postPurchase.accountInfo')}
-        </Text>
+        <Text style={styles.infoText}>{t('onboarding.postPurchase.accountInfo')}</Text>
       </View>
 
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={styles.continueButton}
-          onPress={handleContinue}
-          activeOpacity={0.9}
-        >
-          <Text style={styles.continueText}>{t('common.continue')}</Text>
-        </TouchableOpacity>
+      <View style={[styles.footer, { paddingBottom: bottomInset }]}>
+        <OnboardingButton label={t('common.continue')} onPress={handleContinue} />
       </View>
     </View>
   );
@@ -93,7 +83,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: sf(32),
     fontWeight: '600',
-    color: '#1a1a2e',
+    color: ONBOARDING_TEXT.primary,
     textAlign: 'center',
     marginBottom: 10,
     letterSpacing: -1.28,
@@ -102,7 +92,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: sf(18),
     fontWeight: '600',
-    color: '#C4B5FD',
+    color: ONBOARDING_TEXT.secondary,
     textAlign: 'center',
     marginBottom: 40,
   },
@@ -132,36 +122,17 @@ const styles = StyleSheet.create({
   featureText: {
     fontSize: sf(16),
     fontWeight: '600',
-    color: '#374151',
+    color: ONBOARDING_TEXT.body,
     flexShrink: 1,
     textAlign: 'left',
   },
   infoText: {
     fontSize: sf(14),
-    color: 'rgba(0, 0, 0, 0.45)',
+    color: ONBOARDING_TEXT.secondary,
     textAlign: 'center',
     lineHeight: 22,
   },
   footer: {
     paddingHorizontal: 24,
-    paddingBottom: 50,
-  },
-  continueButton: {
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#1C1C1E',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  continueText: {
-    fontSize: sf(17),
-    fontWeight: '600',
-    color: '#fff',
-    letterSpacing: 0.2,
   },
 });

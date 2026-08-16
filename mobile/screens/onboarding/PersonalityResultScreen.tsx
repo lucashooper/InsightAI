@@ -8,6 +8,7 @@ import OnboardingAmbientBackground from '../../components/onboarding/OnboardingA
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { isTablet, sf } from '../../utils/responsive';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
 
 const { width } = Dimensions.get('window');
 
@@ -317,6 +318,7 @@ export default function PersonalityResultScreen({ navigation, route }: any) {
   const dark = isDarkTheme(theme.name);
   const answers = route?.params?.answers || {};
   const profile = computePersonality(answers, t);
+  const bottomInset = useOnboardingBottomInset();
 
   useEffect(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -379,7 +381,7 @@ export default function PersonalityResultScreen({ navigation, route }: any) {
       </ScrollView>
 
       {/* Continue button */}
-      <View style={styles.ctaContainer}>
+      <View style={[styles.ctaContainer, { paddingBottom: bottomInset }]}>
         <TouchableOpacity
           style={styles.ctaButton}
           activeOpacity={0.9}
@@ -452,7 +454,6 @@ const styles = StyleSheet.create({
   },
   ctaContainer: {
     paddingHorizontal: 24,
-    paddingBottom: 50,
     paddingTop: 18,
   },
   backArrowCircle: {
@@ -465,7 +466,7 @@ const styles = StyleSheet.create({
   ctaButton: {
     width: '100%',
     borderRadius: 28,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#7B5EA7',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,

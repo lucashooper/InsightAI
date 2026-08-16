@@ -10,39 +10,68 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
-import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
-import { useAuth } from '../../contexts/AuthContext';
 import { useAppLock } from '../../contexts/AppLockContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import CheckInFlowModal from '../checkin/CheckInFlowModal';
+import PremiumDialog from '../shared/PremiumDialog';
 import { CheckInDraft } from '../checkin/types';
 import { navigateToPlaybook } from '../../utils/navigateToPlaybook';
+import { hasCheckInToday } from '../../utils/checkInToday';
+import { FAB_MENU_BACKGROUNDS } from '../../constants/fabMenuAssets';
 
 type Props = {
   embedded?: boolean;
 };
 
+type MenuOption = {
+  id: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  labelKey: string;
+  background: number;
+  screen?: string;
+  action?: 'check-in';
+};
+
+const MENU_OPTIONS: MenuOption[] = [
+  { id: 'journal', icon: 'create-outline', labelKey: 'fab.journalEntry', background: FAB_MENU_BACKGROUNDS.journal, screen: 'CreateEntry' },
+  { id: 'ai', icon: 'sparkles-outline', labelKey: 'fab.aiChat', background: FAB_MENU_BACKGROUNDS.aiChat, screen: 'AIChat' },
+  { id: 'playbook', icon: 'book-outline', labelKey: 'fab.playbook', background: FAB_MENU_BACKGROUNDS.playbook, screen: 'Playbook' },
+  { id: 'checkin', icon: 'happy-outline', labelKey: 'checkIn.checkIn', background: FAB_MENU_BACKGROUNDS.checkIn, action: 'check-in' },
+];
+
 export default function CenterFabButton({ embedded = false }: Props) {
   const navigation = useNavigation<any>();
-  const { theme } = useTheme();
   const { t } = useLanguage();
-  const isDark = isDarkTheme(theme.name);
   const [showMenu, setShowMenu] = React.useState(false);
   const [showDailyMoodCheckIn, setShowDailyMoodCheckIn] = React.useState(false);
-  const { user } = useAuth();
+  const [showAlreadyCheckedIn, setShowAlreadyCheckedIn] = React.useState(false);
   const { isLocked, isLockEnabled } = useAppLock();
 
-  const menuOptions: Array<
-    | { icon: string; labelKey: string; screen: string }
-    | { icon: string; labelKey: string; action: 'check-in' }
-  > = [
-    { icon: 'create-outline', labelKey: 'fab.journalEntry', screen: 'CreateEntry' },
-    { icon: 'sparkles-outline', labelKey: 'fab.aiChat', screen: 'AIChat' },
-    { icon: 'heart-outline', labelKey: 'fab.gratitude', screen: 'Gratitude' },
-    { icon: 'book-outline', labelKey: 'fab.playbook', screen: 'Playbook' },
-    { icon: 'happy-outline', labelKey: 'checkIn.checkIn', action: 'check-in' },
-  ];
+  const openCheckInFlow = async () => {
+    const alreadyCheckedIn = await hasCheckInToday();
+    if (alreadyCheckedIn) {
+      setShowAlreadyCheckedIn(true);
+      return;
+    }
+    setShowDailyMoodCheckIn(true);
+  };
+
+  const handleOptionPress = (option: MenuOption) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShowMenu(false);
+    if (option.action === 'check-in') {
+      openCheckInFlow();
+      return;
+    }
+    if (option.screen === 'Playbook') {
+      navigateToPlaybook(navigation);
+      return;
+    }
+    const rootNav = navigation.getParent?.() ?? navigation;
+    rootNav.navigate(option.screen!);
+  };
 
   return (
     <>
@@ -68,31 +97,31 @@ export default function CenterFabButton({ embedded = false }: Props) {
 
       <Modal visible={showMenu} transparent animationType="fade" onRequestClose={() => setShowMenu(false)}>
         <Pressable style={styles.menuOverlay} onPress={() => setShowMenu(false)}>
-          <View style={styles.menuContainer}>
+          <View style={styles.menuContainer} pointerEvents="box-none">
             <View style={styles.menuGrid}>
-              {menuOptions.map((option) => (
+              {MENU_OPTIONS.map((option) => (
                 <TouchableOpacity
-                  key={'screen' in option ? option.screen : option.action}
-                  style={[styles.menuCard, { backgroundColor: isDark ? '#1a1a1a' : '#FFFFFF' }]}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setShowMenu(false);
-                    if ('action' in option) {
-                      setShowDailyMoodCheckIn(true);
-                      return;
-                    }
-                    if (option.screen === 'Playbook') {
-                      navigateToPlaybook(navigation);
-                      return;
-                    }
-                    navigation.navigate(option.screen);
-                  }}
-                  activeOpacity={0.7}
+                  key={option.id}
+                  style={styles.menuCard}
+                  onPress={() => handleOptionPress(option)}
+                  activeOpacity={0.88}
                 >
-                  <View style={styles.menuCardIconContainer}>
-                    <Ionicons name={option.icon as any} size={28} color="#8b5cf6" />
+                  <Image
+                    source={option.background}
+                    style={StyleSheet.absoluteFill}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                    transition={0}
+                    recyclingKey={`fab-menu-${option.id}`}
+                  />
+                  <LinearGradient
+                    colors={['rgba(0,0,0,0.12)', 'rgba(0,0,0,0.72)']}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <View style={styles.menuCardContent}>
+                    <Ionicons name={option.icon} size={26} color="#ffffff" />
+                    <Text style={styles.menuCardLabel}>{t(option.labelKey)}</Text>
                   </View>
-                  <Text style={[styles.menuCardLabel, { color: theme.colors.primaryText }]}>{t(option.labelKey)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -108,6 +137,25 @@ export default function CenterFabButton({ embedded = false }: Props) {
           navigation.navigate('CreateEntry', { checkInDraft: draft });
         }}
         onLogMoodOnly={() => setShowDailyMoodCheckIn(false)}
+      />
+
+      <PremiumDialog
+        visible={showAlreadyCheckedIn}
+        title={t('checkIn.alreadyCheckedInTitle')}
+        message={t('checkIn.alreadyCheckedInMessage')}
+        icon="happy-outline"
+        onDismiss={() => setShowAlreadyCheckedIn(false)}
+        actions={[
+          { label: t('common.cancel'), variant: 'secondary', onPress: () => setShowAlreadyCheckedIn(false) },
+          {
+            label: t('checkIn.checkInAgain'),
+            variant: 'primary',
+            onPress: () => {
+              setShowAlreadyCheckedIn(false);
+              setShowDailyMoodCheckIn(true);
+            },
+          },
+        ]}
       />
     </>
   );
@@ -134,47 +182,41 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   menuOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'rgba(0, 0, 0, 0.88)',
     justifyContent: 'flex-end',
   },
   menuContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
     paddingBottom: 110,
   },
   menuGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    gap: 12,
   },
   menuCard: {
     width: '48%',
-    height: 140,
-    borderRadius: 20,
-    padding: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+    height: 128,
+    borderRadius: 22,
+    overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.14)',
   },
-  menuCardIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(139, 92, 246, 0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
+  menuCardContent: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    padding: 16,
+    gap: 8,
   },
   menuCardLabel: {
     fontSize: 15,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: -0.2,
   },
 });

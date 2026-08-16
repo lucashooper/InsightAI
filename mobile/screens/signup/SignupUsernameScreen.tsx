@@ -28,7 +28,7 @@ export default function SignupUsernameScreen({ navigation }: any) {
 
   return (
     <View style={auth.containerPadded}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="dark-content" />
       <OnboardingAmbientBackground />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -39,7 +39,7 @@ export default function SignupUsernameScreen({ navigation }: any) {
           onPress={() => navigation.goBack()}
         >
           <View style={auth.backArrowCircle}>
-            <Ionicons name="arrow-back" size={20} color="#ffffff" />
+            <Ionicons name="arrow-back" size={20} color="#1a1a2e" />
           </View>
         </TouchableOpacity>
 

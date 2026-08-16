@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar, Animated, ScrollView, Image, Easing, Linking, TextInput, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar, Animated, ScrollView, Easing, Linking, TextInput, Keyboard, Platform } from 'react-native';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
@@ -15,10 +16,11 @@ import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { isTablet, sf, ss, iPadContentStyle, iPadWideContentStyle } from '../../utils/responsive';
 import { analytics } from '../../services/analytics';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { ONBOARDING_SURFACE } from '../../constants/onboardingTheme';
-
-const cambridgeMonoLogo = require('../../public/Cambridge-Logo-No-Background.png');
-const stressManagementLottie = require('../../public/animations/Stress Management.json');
+import { ONBOARDING_SURFACE, ONBOARDING_TEXT, ONBOARDING_CTA } from '../../constants/onboardingTheme';
+import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
+import { loadOnboardingQuizProgress, saveOnboardingQuizProgress, saveOnboardingLastScreen } from '../../utils/onboardingProgress';
+import { ONBOARDING_MEDITATION_LOTTIE } from '../../constants/appAssets';
+const cambridgeColorLogo = require('../../public/Cambridge-Logo-No-Background.png');
 
 const { width } = Dimensions.get('window');
 
@@ -327,9 +329,37 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
 
     const currentStep = STEPS[currentIndex];
     const totalQuestionSteps = STEPS.length;
+    const bottomInset = useOnboardingBottomInset();
     const useDarkOnboardingAccent = theme.name === 'dark' || theme.name === 'midnight';
-    const primaryButtonColor = '#1a1a1a';
-    const primaryButtonShadow = '#000';
+    const primaryButtonColor = ONBOARDING_CTA.background;
+    const primaryButtonShadow = ONBOARDING_CTA.shadow;
+    const [lottieReady, setLottieReady] = useState(true);
+
+    useEffect(() => {
+        // Lottie JSON is bundled synchronously — only image assets need Asset.loadAsync.
+        Asset.loadAsync([cambridgeColorLogo]).catch(() => {});
+    }, []);
+
+    useEffect(() => {
+        saveOnboardingLastScreen('OnboardingQuestion');
+    }, []);
+
+    useEffect(() => {
+        let mounted = true;
+        loadOnboardingQuizProgress().then((saved) => {
+            if (!mounted || !saved) return;
+            if (Object.keys(incomingAnswers).length === 0 && saved.index > 0) {
+                setCurrentIndex(saved.index);
+                setAnswers(saved.answers);
+            }
+        });
+        return () => { mounted = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useEffect(() => {
+        saveOnboardingQuizProgress(currentIndex, answers);
+    }, [currentIndex, answers]);
 
     // CRITICAL: Skip name step ONLY if user explicitly used Apple/Google Sign-In
     useEffect(() => {
@@ -492,7 +522,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
             return (
                 <View style={styles.animationContainer}>
                     <LottieView
-                        source={stressManagementLottie}
+                        source={ONBOARDING_MEDITATION_LOTTIE}
                         autoPlay
                         loop
                         style={styles.lottieAnimation}
@@ -505,8 +535,8 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
     };
 
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent={true} />
+        <View style={[styles.container, { paddingBottom: bottomInset }]}>
+            <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
 
             <OnboardingAmbientBackground />
 
@@ -525,11 +555,11 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                     }}
                     style={styles.backArrow}
                 >
-                    <View style={[styles.backArrowCircle, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+                    <View style={styles.backArrowCircle}>
                         <Ionicons
                             name="arrow-back"
                             size={20}
-                            color={isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e'}
+                            color="#1a1a2e"
                         />
                     </View>
                 </TouchableOpacity>
@@ -546,7 +576,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                     {currentStep.type === 'info' && currentStep.id === 'research_info' ? (
                         <View style={styles.premiumInfoContainer}>
                             <Animated.View style={{ opacity: infoCardAnim, width: '100%' }}>
-                                <Text style={[styles.researchTitle, isDarkTheme(theme.name) && { color: '#ffffff' }]}>
+                                <Text style={styles.researchTitle}>
                                     {t('onboarding.questions.research.screenTitle')}
                                 </Text>
                             </Animated.View>
@@ -562,21 +592,25 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                     paddingBottom: 12,
                                 }}
                             >
+                                {lottieReady ? (
                                 <LottieView
-                                    source={stressManagementLottie}
+                                    source={ONBOARDING_MEDITATION_LOTTIE}
                                     autoPlay
                                     loop
                                     style={styles.researchLottieCompact}
                                 />
+                                ) : (
+                                <View style={styles.researchLottieCompact} />
+                                )}
                                 <Text style={styles.researchFact}>
                                     {t('onboarding.questions.research.fact')}
                                 </Text>
                                 <Image
-                                    source={cambridgeMonoLogo}
-                                    style={styles.cambridgeMono}
-                                    resizeMode="contain"
-                                    tintColor="#FFFFFF"
-                                    fadeDuration={0}
+                                    source={cambridgeColorLogo}
+                                    style={styles.cambridgeLogo}
+                                    contentFit="contain"
+                                    cachePolicy="memory-disk"
+                                    transition={0}
                                 />
                                 <Text style={styles.researchCitation}>
                                     {t('onboarding.questions.research.citation')}
@@ -590,20 +624,12 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                             {renderAnimationPlaceholder()}
 
                             {/* Title */}
-                            <Text style={{
-                                fontSize: 32,
-                                fontWeight: '600',
-                                color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e',
-                                textAlign: 'left',
-                                lineHeight: 40,
-                                letterSpacing: -1.28,
-                                marginBottom: 20,
-                            }}>
+                            <Text style={styles.onboardingTitle}>
                                 {t(currentStep.title)}
                             </Text>
 
                             {currentStep.subtitle && (
-                                <Text style={[styles.subtitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : '#555555' }]}>{t(currentStep.subtitle)}</Text>
+                                <Text style={styles.onboardingSubtitle}>{t(currentStep.subtitle)}</Text>
                             )}
 
                             {/* Slim Pill APA Study Tag for Patterns Page */}
@@ -717,7 +743,9 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                     isDarkTheme(theme.name) && {
                                         backgroundColor: nameInputFocused || textInputValue.trim()
                                           ? 'rgba(168, 85, 247, 0.22)'
-                                          : ONBOARDING_SURFACE.fill,
+                                          : Platform.OS === 'android'
+                                            ? '#14141A'
+                                            : ONBOARDING_SURFACE.fill,
                                         borderColor: nameInputFocused || textInputValue.trim()
                                           ? '#A855F7'
                                           : ONBOARDING_SURFACE.border,
@@ -728,6 +756,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                         shadowOffset: { width: 0, height: 0 },
                                     },
                                 ]}
+                                underlineColorAndroid="transparent"
                                 placeholder={t('onboarding.questions.name.placeholder')}
                                 placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.5)' : '#6b7280'}
                                 value={textInputValue}
@@ -932,6 +961,9 @@ const styles = StyleSheet.create({
         borderRadius: 18,
         alignItems: 'center',
         justifyContent: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.75)',
+        borderWidth: 1,
+        borderColor: 'rgba(200, 185, 255, 0.35)',
     },
     progressBarContainer: {
         flex: 1,
@@ -1032,9 +1064,11 @@ const styles = StyleSheet.create({
         marginBottom: 32,
     },
     cambridgeLogo: {
-        width: 180,
-        height: 50,
-        opacity: 0.85,
+        width: 300,
+        height: 72,
+        alignSelf: 'center',
+        marginTop: 8,
+        marginBottom: 16,
     },
     cambridgeReference: {
         fontSize: 11,
@@ -1174,13 +1208,13 @@ const styles = StyleSheet.create({
     },
     continueButton: {
         width: '100%',
-        borderRadius: 28,
+        borderRadius: ONBOARDING_CTA.borderRadius,
         marginTop: 16,
         marginBottom: 24,
-        backgroundColor: '#1a1a1a',
-        shadowColor: '#000',
+        backgroundColor: ONBOARDING_CTA.background,
+        shadowColor: ONBOARDING_CTA.shadow,
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
+        shadowOpacity: 1,
         shadowRadius: 12,
         elevation: 8,
     },
@@ -1226,11 +1260,11 @@ const styles = StyleSheet.create({
     },
     primaryButton: {
         width: '100%',
-        borderRadius: 28,
-        backgroundColor: '#1a1a1a',
-        shadowColor: '#000',
+        borderRadius: ONBOARDING_CTA.borderRadius,
+        backgroundColor: ONBOARDING_CTA.background,
+        shadowColor: ONBOARDING_CTA.shadow,
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
+        shadowOpacity: 1,
         shadowRadius: 12,
         elevation: 8,
     },
@@ -1322,7 +1356,7 @@ const styles = StyleSheet.create({
     sliderContinueButton: {
         width: '100%',
         borderRadius: 28,
-        backgroundColor: '#1a1a1a',
+        backgroundColor: '#7B5EA7',
         marginTop: 24,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
@@ -1398,12 +1432,27 @@ const styles = StyleSheet.create({
     researchTitle: {
         fontSize: isTablet ? 40 : 32,
         fontWeight: '600',
-        color: '#1a1a2e',
+        color: ONBOARDING_TEXT.primary,
         textAlign: 'left',
         width: '100%',
         letterSpacing: -1.28,
         lineHeight: isTablet ? 48 : 40,
         marginBottom: isTablet ? 8 : 4,
+    },
+    onboardingTitle: {
+        fontSize: 28,
+        fontWeight: '700',
+        color: ONBOARDING_TEXT.primary,
+        textAlign: 'left',
+        lineHeight: 36,
+        letterSpacing: -1.12,
+        marginBottom: 20,
+    },
+    onboardingSubtitle: {
+        fontSize: 16,
+        color: ONBOARDING_TEXT.secondary,
+        lineHeight: 24,
+        marginBottom: 20,
     },
     researchLottieCompact: {
         width: isTablet ? 200 : 160,
@@ -1413,22 +1462,31 @@ const styles = StyleSheet.create({
     researchFact: {
         fontSize: isTablet ? 22 : 19,
         fontWeight: '500',
-        color: 'rgba(255,255,255,0.90)',
+        color: ONBOARDING_TEXT.primary,
         textAlign: 'center',
         lineHeight: isTablet ? 34 : 30,
         letterSpacing: -0.35,
         maxWidth: 340,
         marginBottom: isTablet ? 28 : 22,
     },
-    cambridgeMono: {
-        width: isTablet ? 350 : 300,
-        height: isTablet ? 85 : 70,
-        opacity: 0.9,
+    cambridgeLogoWrap: {
+        backgroundColor: 'rgba(255, 255, 255, 0.75)',
+        borderRadius: 16,
+        paddingVertical: 14,
+        paddingHorizontal: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
+        alignSelf: 'center',
         marginBottom: 16,
+        overflow: 'hidden',
+    },
+    cambridgeLogoImage: {
+        height: 56,
+        width: 260,
     },
     researchCitation: {
         fontSize: 13,
-        color: '#9CA3AF',
+        color: '#6b6b8a',
         textAlign: 'center',
         lineHeight: 19,
         letterSpacing: 0.1,

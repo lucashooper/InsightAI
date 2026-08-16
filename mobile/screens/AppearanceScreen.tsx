@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../contexts/ThemeContext';
 import PageHeader from '../components/shared/PageHeader';
+import StandardContainer from '../components/shared/StandardContainer';
 import { sf } from '../utils/responsive';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -35,16 +36,16 @@ export default function AppearanceScreen({ navigation }: any) {
           {t('auxiliary.appearance.theme')}
         </Text>
 
-        <View style={styles.optionsList}>
-          {themes.map((themeOption) => (
+        <StandardContainer variant="nested" noPad style={styles.themeCard}>
+          {themes.map((themeOption, index) => (
             <TouchableOpacity
               key={themeOption.id}
               style={[
                 styles.optionItem,
-                { 
-                  backgroundColor: theme.colors.cardBackground,
-                  borderColor: theme.colors.border,
-                }
+                index < themes.length - 1 && {
+                  borderBottomWidth: StyleSheet.hairlineWidth,
+                  borderBottomColor: theme.colors.border,
+                },
               ]}
               onPress={() => handleThemeSelect(themeOption.id)}
               activeOpacity={0.7}
@@ -64,7 +65,7 @@ export default function AppearanceScreen({ navigation }: any) {
               </View>
             </TouchableOpacity>
           ))}
-        </View>
+        </StandardContainer>
       </View>
     </View>
   );
@@ -93,13 +94,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: 12,
   },
-  optionsList: {
-    gap: 0,
+  themeCard: {
+    overflow: 'hidden',
   },
   optionItem: {
     paddingVertical: 16,
     paddingHorizontal: 16,
-    borderBottomWidth: 1,
   },
   optionContent: {
     flexDirection: 'row',
@@ -109,6 +109,7 @@ const styles = StyleSheet.create({
   optionTextContainer: {
     flex: 1,
     gap: 4,
+    marginRight: 12,
   },
   optionTitle: {
     fontSize: sf(16),

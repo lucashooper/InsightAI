@@ -1,16 +1,16 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar, Animated, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
+import CachedImage from '../../components/shared/CachedImage';
+import { INSIGHT_LOGO } from '../../constants/appAssets';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-
-const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 const { width } = Dimensions.get('window');
 
@@ -91,7 +91,7 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
             )}
 
             {/* Logo */}
-            <Image source={insightLogo} style={styles.logo} />
+            <CachedImage source={INSIGHT_LOGO} style={styles.logo} contentFit="contain" recyclingKey="summary-logo" />
             
             {/* Confetti */}
             <ConfettiCannon
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     button: {
         width: '100%',
         borderRadius: 28,
-        backgroundColor: '#1a1a1a',
+        backgroundColor: '#7B5EA7',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,

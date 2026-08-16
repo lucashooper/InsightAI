@@ -13,10 +13,64 @@ import {
 } from '../utils/aiPersonalities';
 import { MiraRevealPayload } from '../constants/miraReveal';
 import {
+  buildRevealFallbackText,
+  parseMiraRevealPayload,
   parseMiraRevealResponse,
   preferredRevealTypeForQuery,
-  softRevealFromPlainText,
 } from '../utils/miraReveal';
+import { decryptEntriesInChunks } from '../utils/decryptBatch';
+import { looksEncryptedContent } from '../utils/encryptionFormat';
+
+async function fetchDecryptedJournalEntries(userId: string, limit: number) {
+  const { data: entries, error } = await supabase
+    .from('notes')
+    .select('id, user_id, content, created_at, ai_structured_insights, is_encrypted, title')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('[mobileAiService] journal entries error:', error);
+    return [];
+  }
+
+  if (!entries?.length) return [];
+
+  const decrypted = await decryptEntriesInChunks(entries, 4, userId);
+  return decrypted.filter((entry) => {
+    const snippet = entry.content?.trim() ?? '';
+    if (snippet.length < 20) return false;
+    if (looksEncryptedContent(snippet, entry.is_encrypted)) return false;
+    if (/unable to decrypt|encrypted entry/i.test(snippet)) return false;
+    return true;
+  });
+}
+
+function buildJournalContextFromEntries(entries: Array<{
+  content?: string | null;
+  created_at: string;
+  ai_structured_insights?: any;
+}>): string {
+  if (!entries.length) {
+    return '\n\nIMPORTANT: This user has NO readable journal entries yet. Return type "insufficient_data". Do NOT invent journal content.';
+  }
+
+  const summaries = entries.map((e) => {
+    const date = new Date(e.created_at).toLocaleDateString(getCurrentLocale(), {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+    const emotion = e.ai_structured_insights?.mood_analysis?.primary_emotion || '';
+    const themes =
+      e.ai_structured_insights?.key_themes?.slice(0, 3).map((t: any) => t.theme).join(', ') ||
+      '';
+    const snippet = e.content?.substring(0, 360) || '';
+    return `[${date}]${emotion ? ` (${emotion})` : ''}${themes ? ` Themes: ${themes}` : ''}\n${snippet}`;
+  });
+
+  return `\n\nHere are the user's recent journal entries (most recent first). Readable entry count: ${entries.length}.\n\n${summaries.join('\n\n---\n\n')}`;
+}
 
 export interface MoodAnalysis {
   primary_emotion: string;
@@ -123,7 +177,10 @@ async function callGroqProxy(messages: Array<{role: string; content: string}>, o
   if (!response.ok) {
     const err = await response.json().catch(() => ({ error: 'Unknown error' }));
     console.error('[callGroqProxy] Error response:', err);
-    throw new Error(err.error || `Groq proxy error (${response.status})`);
+    if (response.status === 402) {
+      throw new Error(err.message || 'Subscription required to use AI features.');
+    }
+    throw new Error(err.error || err.message || `Groq proxy error (${response.status})`);
   }
 
   const data = await response.json();
@@ -269,145 +326,24 @@ Entry text: ${content}`;
        - BAD: "Social anxiety and self-perception", "Missed opportunities and self-doubt", "Accidental loss of personal data"
     9. Even when addressing struggles, use empowering language that highlights their awareness and potential for growth.${getAiLanguageInstruction(getCurrentLanguage())}`;
 
-    // Get user session for authentication - use multiple strategies with timeouts
-    console.log('[mobileAiService] Getting user session...');
-    let session: any = null;
-    
-    // Strategy 1: Try getSession with a tight timeout (most reliable, reads from storage)
     try {
-      console.log('[mobileAiService] Strategy 1: getSession...');
-      const getSessionResult = await Promise.race([
-        supabase.auth.getSession(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('getSession timeout')), 5000))
-      ]) as any;
-      session = getSessionResult?.data?.session;
-      console.log('[mobileAiService] Strategy 1 result:', session ? 'found' : 'null');
-    } catch (e: any) {
-      console.warn('[mobileAiService] Strategy 1 failed:', e.message);
-    }
-    
-    // Strategy 2: If getSession failed, try refreshSession
-    if (!session) {
-      try {
-        console.log('[mobileAiService] Strategy 2: refreshSession...');
-        const refreshResult = await Promise.race([
-          supabase.auth.refreshSession(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('refreshSession timeout')), 5000))
-        ]) as any;
-        session = refreshResult?.data?.session;
-        console.log('[mobileAiService] Strategy 2 result:', session ? 'found' : 'null');
-      } catch (e: any) {
-        console.warn('[mobileAiService] Strategy 2 failed:', e.message);
-      }
-    }
-    
-    // Strategy 3: Last resort - read token from AsyncStorage directly
-    if (!session) {
-      try {
-        console.log('[mobileAiService] Strategy 3: Reading token from storage...');
-        const AS = require('@react-native-async-storage/async-storage').default;
-        const allKeys: string[] = await AS.getAllKeys();
-        const authKeys = allKeys.filter((k: string) => k.includes('auth') || k.includes('supabase'));
-        console.log('[mobileAiService] Auth-related storage keys:', authKeys);
-        
-        for (const key of authKeys) {
-          try {
-            const value = await AS.getItem(key);
-            if (value) {
-              const parsed = JSON.parse(value);
-              if (parsed?.access_token) {
-                console.log('[mobileAiService] Strategy 3: Found token in key:', key);
-                session = parsed;
-                break;
-              }
-            }
-          } catch {} // Skip non-JSON values
-        }
-        console.log('[mobileAiService] Strategy 3 result:', session ? 'found' : 'null');
-      } catch (e: any) {
-        console.warn('[mobileAiService] Strategy 3 failed:', e.message);
-      }
-    }
-    
-    if (!session) {
-      console.error('[mobileAiService] ❌ No session found after all 3 strategies');
-      throw new Error('Not authenticated. Please sign in to use AI features.');
-    }
-
-    console.log('[mobileAiService] ✅ Session confirmed, user ID:', session.user?.id || 'unknown');
-    console.log('[mobileAiService] Token present:', !!session.access_token);
-    console.log('[mobileAiService] Calling Edge Function:', `${SUPABASE_FUNCTION_URL}/clever-api`);
-
-    try {
-      console.log('[mobileAiService] 🚀 Starting Edge Function call...');
-      console.log('[mobileAiService] Content length:', content.length);
-      
-      // Add timeout to prevent infinite hanging - use Promise.race for more reliable timeout
-      const controller = new AbortController();
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          console.error('[mobileAiService] ⏰ Request timeout after 45 seconds');
-          controller.abort();
-          reject(new Error('Analysis request timed out. Please try again.'));
-        }, 45000); // 45 second timeout (more aggressive)
-      });
-      
-      const combinedSignal = options?.signal || controller.signal;
-      
-      console.log('[mobileAiService] Fetching from Edge Function...');
-      // Call Supabase Edge Function instead of Groq directly
-      const fetchPromise = fetch(`${SUPABASE_FUNCTION_URL}/clever-api`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        signal: combinedSignal,
-        body: JSON.stringify({
-          content,
-          systemInstruction,
-          enhancedPrompt,
-        }),
-      });
-
-      const response = await Promise.race([fetchPromise, timeoutPromise]) as Response;
-
-      console.log('[mobileAiService] ✅ Edge Function response received');
-      console.log('[mobileAiService] Response status:', response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('[mobileAiService] Edge function error', response.status, errorData);
-        
-        // Handle subscription-specific errors
-        if (response.status === 402) {
-          throw new Error(errorData.message || 'Subscription required to use AI features.');
-        }
-        
-        // Provide specific error messages based on status code
-        let errorMessage = errorData.error || `AI analysis failed (Status ${response.status})`;
-        
-        if (response.status === 401) {
-          errorMessage = 'Authentication failed. Please sign in again.';
-        } else if (response.status === 429) {
-          errorMessage = 'Rate limit exceeded. Please try again later.';
-        } else if (response.status === 500 || response.status === 503) {
-          errorMessage = 'AI service temporarily unavailable. Please try again in a few moments.';
-        }
-        
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
-      console.log('[mobileAiService] ✅ Edge Function success, parsing response...');
-      
-      const analysisText: string = data.choices?.[0]?.message?.content || '';
+      console.log('[mobileAiService] Calling groq-proxy for journal analysis...');
+      const analysisText = await callGroqProxy(
+        [
+          {
+            role: 'system',
+            content: `${systemInstruction}\n\nRespond with valid JSON only.`,
+          },
+          { role: 'user', content: enhancedPrompt },
+        ],
+        { temperature: 0.7, max_tokens: 4096 },
+      );
 
       if (!analysisText || analysisText.trim() === '') {
         console.error('[mobileAiService] Empty AI response received');
         throw new Error('Empty AI response');
       }
-      
+
       console.log('[mobileAiService] AI response length:', analysisText.length);
 
       let parsed: any;
@@ -598,7 +534,7 @@ Provide ONLY the JSON, nothing else.`;
       const responseText = await callGroqProxy([
         {
           role: 'system',
-          content: 'You are a compassionate therapist who asks thoughtful, specific questions that help people understand themselves better. You write in a warm, conversational style like Mindsera.',
+          content: `You are a compassionate therapist who asks thoughtful, specific questions that help people understand themselves better. You write in warm, conversational markdown with short paragraphs, **bold** highlights, and subtle emojis (💡 🌱 ✨).`,
         },
         {
           role: 'user',
@@ -677,8 +613,12 @@ Respond naturally to the user's latest message. Be empathetic, specific to what 
   },
 
   formatGoDeeperReflection(reflection: string, questions: string[]): string {
-    const qs = questions.filter(Boolean).map((q) => q.trim()).join('\n\n');
-    return qs ? `${reflection}\n\n${qs}` : reflection;
+    const cleaned = reflection.trim();
+    const qs = questions.filter(Boolean).map((q) => q.trim());
+    if (qs.length === 0) return cleaned;
+
+    const bullets = qs.map((q) => `- ${q}`).join('\n');
+    return `${cleaned}\n\n**💭 Things to explore**\n\n${bullets}`;
   },
 
   async generateMonthlyStory(entries: any[]): Promise<string> {
@@ -775,18 +715,14 @@ Write in second person ("you"). Keep it under 60 words.`;
 
     // Build journal context summary
     console.log('[mobileAiService] Entries found for user:', entries?.length ?? 0);
-    let journalContext = '';
-    if (entries && entries.length > 0) {
-      const summaries = entries.map((e: any) => {
-        const date = new Date(e.created_at).toLocaleDateString(getCurrentLocale(), { month: 'short', day: 'numeric', year: 'numeric' });
-        const emotion = e.ai_structured_insights?.mood_analysis?.primary_emotion || '';
-        const themes = e.ai_structured_insights?.key_themes?.slice(0, 3).map((t: any) => t.theme).join(', ') || '';
-        const snippet = e.content?.substring(0, 300) || '';
-        return `[${date}]${emotion ? ` (${emotion})` : ''}${themes ? ` Themes: ${themes}` : ''}\n${snippet}`;
-      });
-      journalContext = `\n\nHere are the user's recent journal entries (most recent first):\n\n${summaries.join('\n\n---\n\n')}`;
-    } else {
-      journalContext = '\n\nIMPORTANT: This user has NO journal entries yet. Do NOT reference, summarize, or pretend to have access to any journal entries. If they ask about entries, patterns, or their journal history, let them know they haven\'t written any entries yet and encourage them to start journaling. Do NOT make up or hallucinate any journal content.';
+    const readableEntries = await fetchDecryptedJournalEntries(userId, 20);
+    let journalContext = buildJournalContextFromEntries(readableEntries);
+    if (readableEntries.length === 0 && entries && entries.length > 0) {
+      journalContext =
+        '\n\nIMPORTANT: This user has journal entries, but none are readable on this device (likely encrypted). Do NOT invent journal content. Encourage them to unlock encryption on this device or write new entries.';
+    } else if (readableEntries.length === 0) {
+      journalContext =
+        '\n\nIMPORTANT: This user has NO journal entries yet. Do NOT reference, summarize, or pretend to have access to any journal entries. If they ask about entries, patterns, or their journal history, let them know they haven\'t written any entries yet and encourage them to start journaling. Do NOT make up or hallucinate any journal content.';
     }
 
     const personality = (options?.personality || 'balanced') as AiPersonality;
@@ -850,7 +786,7 @@ Write in warm, conversational tone with clear structure:
   async chatReveal(
     messages: Array<{ role: 'user' | 'assistant'; content: string }>,
     options?: { signal?: AbortSignal; personality?: AiPersonality },
-  ): Promise<{ reveal: MiraRevealPayload; raw: string }> {
+  ): Promise<{ reveal: MiraRevealPayload | null; raw: string; fallbackText?: string }> {
     console.log('[mobileAiService] ✨ chatReveal called');
     await waitForRateLimit();
 
@@ -861,37 +797,8 @@ Write in warm, conversational tone with clear structure:
     if (userError || !currentUser) throw new Error('Authentication verification failed');
 
     const userId = currentUser.id;
-    const { data: entries, error: entriesError } = await supabase
-      .from('notes')
-      .select('content, created_at, ai_structured_insights')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(40);
-
-    if (entriesError) {
-      console.error('[mobileAiService] chatReveal entries error:', entriesError);
-    }
-
-    let journalContext = '';
-    if (entries && entries.length > 0) {
-      const summaries = entries.map((e: any) => {
-        const date = new Date(e.created_at).toLocaleDateString(getCurrentLocale(), {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        });
-        const emotion = e.ai_structured_insights?.mood_analysis?.primary_emotion || '';
-        const themes =
-          e.ai_structured_insights?.key_themes?.slice(0, 3).map((t: any) => t.theme).join(', ') ||
-          '';
-        const snippet = e.content?.substring(0, 360) || '';
-        return `[${date}]${emotion ? ` (${emotion})` : ''}${themes ? ` Themes: ${themes}` : ''}\n${snippet}`;
-      });
-      journalContext = `\n\nHere are the user's recent journal entries (most recent first). Entry count: ${entries.length}.\n\n${summaries.join('\n\n---\n\n')}`;
-    } else {
-      journalContext =
-        '\n\nIMPORTANT: This user has NO journal entries yet. Return type "insufficient_data". Do NOT invent journal content.';
-    }
+    const readableEntries = await fetchDecryptedJournalEntries(userId, 40);
+    const journalContext = buildJournalContextFromEntries(readableEntries);
 
     const personality = (options?.personality || 'balanced') as AiPersonality;
     const lastUser = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
@@ -917,16 +824,18 @@ Write in warm, conversational tone with clear structure:
       });
 
       const raw = (response || '').trim();
-      const parsed = parseMiraRevealResponse(raw);
-      if (parsed) {
-        return { reveal: parsed, raw };
+      const parsed = parseMiraRevealPayload(raw);
+      const card = parseMiraRevealResponse(raw);
+
+      if (card) {
+        return { reveal: card, raw };
       }
 
-      console.warn('[mobileAiService] chatReveal JSON parse failed — soft fallback');
-      // If JSON failed but we got prose, try one more time with a repair prompt via soft wrap
+      console.warn('[mobileAiService] chatReveal — no card-worthy reveal, using plain text');
       return {
-        reveal: softRevealFromPlainText(raw || 'I need a few more journal entries to go deeper.', preferredType),
+        reveal: null,
         raw,
+        fallbackText: buildRevealFallbackText(parsed, raw),
       };
     } catch (error: any) {
       if (error?.name === 'AbortError') throw error;

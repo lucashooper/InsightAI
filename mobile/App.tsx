@@ -1,20 +1,21 @@
 import 'react-native-gesture-handler';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { LogBox } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { LogBox, Platform } from 'react-native';
+import * as SplashScreen from 'expo-splash-screen';
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // CRITICAL: Suppress all warnings BEFORE any other imports to prevent yellow warning bar
 LogBox.ignoreAllLogs();
 
-import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState, useRef } from 'react';
 import { View, Animated } from 'react-native';
 import React from 'react';
 import Purchases from 'react-native-purchases';
-import { Asset } from 'expo-asset';
-import { Image } from 'expo-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { ThemeProvider, normalizeThemeName, useTheme, isDarkTheme } from './contexts/ThemeContext';
+import { ThemeProvider, normalizeThemeName } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { PreloadProvider, usePreloadedData } from './contexts/PreloadContext';
 import type { ThemeName } from './contexts/ThemeContext';
@@ -25,17 +26,43 @@ import LockScreen from './components/LockScreen';
 import PremiumSplashOverlay from './components/shared/PremiumSplashOverlay';
 import { analytics } from './services/analytics';
 
-import { PAYWALL_PHONE_IMAGES, PRODUCT_REVEAL_PHONE } from './constants/phoneMockups';
-import { SPLASH_CRITICAL_ASSETS, HOME_PAGE_GRADIENT } from './constants/appAssets';
+import OnboardingLottieWarmup from './components/onboarding/OnboardingLottieWarmup';
+import AppImageWarmup from './components/shared/AppImageWarmup';
+import OnboardingHeroWarmup from './components/onboarding/OnboardingHeroWarmup';
+import OrbOverlayProvider from './components/companion/OrbOverlayProvider';
+import { getRevenueCatApiKey, isRevenueCatEnabled } from './utils/revenueCatConfig';
+import { preloadAllAppAssets } from './utils/preloadAssets';
 
-// RevenueCat API Keys
-// Test Store: Bypasses Apple sandbox, works in simulator, instant testing
-// Production: Real Apple StoreKit integration for production builds
-const REVENUECAT_TEST_STORE_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_TEST_STORE_API_KEY || 'test_wuTAwQKYtsAjXmbyqtuVVRCMWGF';
-const REVENUECAT_PRODUCTION_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY || 'appl_kqCbylJegHaNzqoGMLhkrprqibn';
+// RevenueCat: platform keys resolved in utils/revenueCatConfig.ts
 
-// Use Test Store in development for easier testing, Production for releases
-const REVENUECAT_API_KEY = __DEV__ ? REVENUECAT_TEST_STORE_API_KEY : REVENUECAT_PRODUCTION_API_KEY;
+async function configureRevenueCatInBackground() {
+  if (!isRevenueCatEnabled()) {
+    console.log('[REVENUECAT] Skipped on Android — subscriptions not configured yet');
+    return;
+  }
+
+  try {
+    const REVENUECAT_API_KEY = getRevenueCatApiKey();
+    console.log('[REVENUECAT] 🚀 Configuring RevenueCat...');
+    Purchases.configure({ apiKey: REVENUECAT_API_KEY });
+    Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
+
+    const needsEmailSignup = await AsyncStorage.getItem('NEEDS_EMAIL_SIGNUP');
+    const savedAnonymousId = await AsyncStorage.getItem('REVENUECAT_ANONYMOUS_ID');
+
+    if (needsEmailSignup === 'true' && savedAnonymousId) {
+      await Purchases.logIn(savedAnonymousId).catch(() => {});
+    } else {
+      await Purchases.logOut().catch(() => {});
+      await AsyncStorage.removeItem('REVENUECAT_ANONYMOUS_ID');
+      await Purchases.invalidateCustomerInfoCache().catch(() => {});
+    }
+
+    await Purchases.getCustomerInfo().catch(() => {});
+  } catch (e) {
+    console.warn('[REVENUECAT] Background configure failed:', e);
+  }
+}
 
 export default function App() {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
@@ -46,150 +73,26 @@ export default function App() {
   useEffect(() => {
     async function loadResourcesAndDataAsync() {
       try {
-        // Load theme + splash/dashboard hero images first so the splash never jolts in
         const storedTheme = await AsyncStorage.getItem('@insightai_theme');
         if (storedTheme) {
           setSavedTheme(normalizeThemeName(storedTheme));
         }
-
-        await Promise.all([
-          ...SPLASH_CRITICAL_ASSETS.map((module) => Asset.fromModule(module).downloadAsync()),
-        ]);
-        const gradientAsset = Asset.fromModule(HOME_PAGE_GRADIENT);
-        if (gradientAsset.localUri) {
-          await Image.prefetch(gradientAsset.localUri);
-        } else if (gradientAsset.uri) {
-          await Image.prefetch(gradientAsset.uri);
-        }
-        setSplashAssetsReady(true);
         setThemeLoaded(true);
-        // STEP 1: Configure RevenueCat
-        console.log('[REVENUECAT] 🚀 Configuring RevenueCat...');
-        console.log('[REVENUECAT] Environment:', __DEV__ ? 'DEVELOPMENT (Test Store)' : 'PRODUCTION');
-        console.log('[REVENUECAT] API Key:', REVENUECAT_API_KEY.substring(0, 20) + '...');
-        
-        Purchases.configure({
-          apiKey: REVENUECAT_API_KEY,
-        });
-        
-        console.log('[REVENUECAT] ✅ Configuration complete');
-        Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
-        console.log('[REVENUECAT] Debug logging enabled');
-        
-        // STEP 2: Check if user has pending anonymous purchase (NEEDS_EMAIL_SIGNUP flag)
-        // If they do, we MUST preserve their anonymous RevenueCat ID to keep their subscription
-        const needsEmailSignup = await AsyncStorage.getItem('NEEDS_EMAIL_SIGNUP');
-        const savedAnonymousId = await AsyncStorage.getItem('REVENUECAT_ANONYMOUS_ID');
-        
-        if (needsEmailSignup === 'true') {
-          console.log('[REVENUECAT] 🔒 Anonymous purchaser detected - preserving RevenueCat ID to keep subscription');
-          
-          // Restore the saved anonymous ID if we have one (critical for Expo Go where Keychain is cleared on reload)
-          if (savedAnonymousId) {
-            console.log('[REVENUECAT] 🔄 Restoring saved anonymous ID:', savedAnonymousId);
-            try {
-              await Purchases.logIn(savedAnonymousId);
-              console.log('[REVENUECAT] ✅ Anonymous ID restored successfully');
-            } catch (loginError: any) {
-              console.error('[REVENUECAT] ❌ Failed to restore anonymous ID:', loginError.message);
-            }
-          } else {
-            console.log('[REVENUECAT] ⚠️ No saved anonymous ID found - subscription may be lost');
-          }
-        } else {
-          // STEP 2: CRITICAL - Logout to clear any persisted anonymous user from Keychain
-          // iOS Keychain persists across app deletions, so old subscription data remains
-          // We MUST logout immediately after configure to clear stale data
-          console.log('[REVENUECAT] 🔄 Logging out to clear any persisted anonymous user from Keychain...');
-          try {
-            await Purchases.logOut();
-            console.log('[REVENUECAT] ✅ Logged out - Keychain cleared');
-          } catch (logoutError: any) {
-            console.log('[REVENUECAT] ℹ️ Logout completed (no previous user):', logoutError.message);
-          }
-          
-          // Clear saved anonymous ID since we're starting fresh
-          await AsyncStorage.removeItem('REVENUECAT_ANONYMOUS_ID');
-          
-          // STEP 3: Invalidate cache to force fresh validation against Apple servers
-          console.log('[REVENUECAT] 🔄 Invalidating cache to force fresh validation...');
-          try {
-            await Purchases.invalidateCustomerInfoCache();
-            console.log('[REVENUECAT] ✅ Cache invalidated');
-          } catch (cacheError: any) {
-            console.log('[REVENUECAT] ℹ️ Cache invalidation completed:', cacheError.message);
-          }
-        }
-        
-        // STEP 4: Get fresh customer info from Apple servers
-        console.log('[REVENUECAT] 📡 Fetching fresh customer info from Apple servers...');
-        try {
-          const customerInfo = await Purchases.getCustomerInfo();
-          
-          // Comprehensive debug logging
-          console.log('=== REVENUECAT STARTUP DEBUG ===');
-          console.log('Request Date:', new Date().toISOString());
-          console.log('Original App User ID:', customerInfo.originalAppUserId);
-          console.log('All Entitlements:', Object.keys(customerInfo.entitlements.all));
-          console.log('Active Entitlements:', Object.keys(customerInfo.entitlements.active));
-          console.log('Active Subscriptions:', customerInfo.activeSubscriptions);
-          console.log('All Purchased Product IDs:', customerInfo.allPurchasedProductIdentifiers);
-          console.log('Management URL:', customerInfo.managementURL);
-          
-          if (customerInfo.latestExpirationDate) {
-            const expDate = new Date(customerInfo.latestExpirationDate);
-            const now = new Date();
-            console.log('Latest Expiration Date:', expDate.toISOString());
-            console.log('Current Time:', now.toISOString());
-            console.log('Is Expired:', expDate < now);
-            console.log('Minutes Until Expiry:', Math.round((expDate.getTime() - now.getTime()) / 1000 / 60));
-          } else {
-            console.log('Latest Expiration Date: null (no subscription)');
-          }
-          console.log('================================');
-        } catch (customerInfoError: any) {
-          console.error('[REVENUECAT] ❌ Failed to get customer info:', customerInfoError);
-          console.error('[REVENUECAT] Error details:', customerInfoError.message);
-        }
 
-        // Initialize analytics
-        console.log('[ANALYTICS] Initializing PostHog...');
-        await analytics.initialize();
+        // Block until every screen/onboarding asset is decoded — no post-load flashes.
+        console.log('[APP] Preloading all visual assets...');
+        await preloadAllAppAssets();
+        console.log('[APP] ✅ All visual assets preloaded');
+        setSplashAssetsReady(true);
+        setAssetsLoaded(true);
 
-        // Critical assets only — defer the rest so splash clears faster
-        await Promise.all([
-          Asset.fromModule(HOME_PAGE_GRADIENT).downloadAsync(),
-          Asset.fromModule(require('./public/Insight-Logo-nobg.webp')).downloadAsync(),
-          Asset.fromModule(require('./public/InsightAI-Orb.png')).downloadAsync(),
-          Asset.fromModule(require('./public/gradient-ellipse.png')).downloadAsync(),
-        ]);
-
-        // Non-blocking background preload
-        Promise.all([
-          Asset.fromModule(require('./public/InsightAI-New-Logo.png')).downloadAsync(),
-          Asset.fromModule(require('./public/cool-gradient-bg.png')).downloadAsync(),
-          Asset.fromModule(require('./public/gradient-ellipse.png')).downloadAsync(),
-          ...PAYWALL_PHONE_IMAGES.map((image) => Asset.fromModule(image).downloadAsync()),
-          Asset.fromModule(PRODUCT_REVEAL_PHONE).downloadAsync(),
-          Asset.fromModule(require('./public/noisy-image.webp')).downloadAsync(),
-          Asset.fromModule(require('./public/clarity-image.webp')).downloadAsync(),
-          Asset.fromModule(require('./public/onboarding-icons/BellIcon.webp')).downloadAsync(),
-          Asset.fromModule(require('./public/onboarding-icons/Email-Icon2.webp')).downloadAsync(),
-          Asset.fromModule(require('./public/onboarding-icons/LockIcon2.webp')).downloadAsync(),
-          Asset.fromModule(require('./public/Book-Icon-Insight.webp')).downloadAsync(),
-          Asset.fromModule(require('./public/research-images/Cambridge-Logo-Frame.png')).downloadAsync(),
-          Asset.fromModule(require('./public/research-images/Liverpool-Logo.jpg')).downloadAsync(),
-          Asset.fromModule(require('./public/research-images/Smaller-Kaiser-Logo.png')).downloadAsync(),
-          Asset.fromModule(require('./public/research-images/APA-LOGO.png')).downloadAsync(),
-          Asset.fromModule(require('./assets/Cambridge-logo.png')).downloadAsync(),
-          Asset.fromModule(require('./public/ambient-stuff/rain-image.jpg')).downloadAsync(),
-        ]).catch(() => {});
+        void configureRevenueCatInBackground();
+        void analytics.initialize();
       } catch (e: any) {
         console.error('[APP] ❌ Error in loadResourcesAndDataAsync:', e);
-        console.error('[APP] Error message:', e.message);
-        console.error('[APP] Error stack:', e.stack);
       } finally {
-        console.log('[APP] ✅ Assets loaded, rendering app');
+        setThemeLoaded(true);
+        setSplashAssetsReady(true);
         setAssetsLoaded(true);
       }
     }
@@ -205,12 +108,35 @@ export default function App() {
   const splashShownAtRef = useRef<number | null>(null);
 
   const SPLASH_MIN_MS = 2800;
+  const SPLASH_MAX_MS = 10000;
 
   useEffect(() => {
     if (showBrandSplash && splashShownAtRef.current == null) {
       splashShownAtRef.current = Date.now();
     }
   }, [showBrandSplash]);
+
+  // Hide native splash once assets are decoded and JS splash is ready.
+  useEffect(() => {
+    if (!assetsLoaded || Platform.OS === 'web') return;
+
+    try {
+      SplashScreen.setOptions({ fade: true, duration: 300 });
+    } catch {
+      // setOptions unavailable on some builds
+    }
+    SplashScreen.hideAsync().catch(() => {});
+  }, [assetsLoaded]);
+
+  // Hard cap — never leave the splash overlay blocking the app indefinitely.
+  useEffect(() => {
+    const maxTimer = setTimeout(() => {
+      console.log('[APP] Splash max duration reached — forcing dismiss');
+      fadeAnim.setValue(0);
+      setSplashVisible(false);
+    }, SPLASH_MAX_MS);
+    return () => clearTimeout(maxTimer);
+  }, [fadeAnim]);
 
   // Fade out splash when app is ready, respecting minimum display time for brand splash only
   useEffect(() => {
@@ -239,6 +165,15 @@ export default function App() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <OrbOverlayProvider>
+      {splashAssetsReady ? (
+        <>
+          <OnboardingLottieWarmup />
+          <AppImageWarmup />
+          <OnboardingHeroWarmup />
+        </>
+      ) : null}
+      <SafeAreaProvider>
       {/* Providers and navigator render underneath from the start */}
       {assetsLoaded ? (
         <ThemeProvider>
@@ -253,34 +188,34 @@ export default function App() {
                       setAppReady(true);
                     }}
                   />
-                  <ThemedStatusBar />
                 </OnboardingProvider>
               </PreloadProvider>
             </AuthProvider>
           </AppLockProvider>
           </LanguageProvider>
         </ThemeProvider>
-      ) : (
-        <View style={{ flex: 1, backgroundColor: '#050508' }} />
-      )}
+      ) : null}
 
-      {/* Brand splash only for logged-in users; logged-out see a blank hold then Welcome */}
-      {splashVisible && themeLoaded && splashAssetsReady && (
-        <Animated.View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, opacity: fadeAnim }}>
-          {showBrandSplash ? (
-            <PremiumSplashOverlay />
-          ) : (
-            <View style={{ flex: 1, backgroundColor: '#050508' }} />
-          )}
+      {/* Gradient splash — only after assets decoded so background never pops in late */}
+      {assetsLoaded && splashVisible && themeLoaded && (
+        <Animated.View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 9999,
+            opacity: fadeAnim,
+          }}
+        >
+          <PremiumSplashOverlay />
         </Animated.View>
       )}
+      </SafeAreaProvider>
+      </OrbOverlayProvider>
     </GestureHandlerRootView>
   );
-}
-
-function ThemedStatusBar() {
-  const { theme } = useTheme();
-  return <StatusBar style={isDarkTheme(theme.name) ? 'light' : 'dark'} />;
 }
 
 function AppContent({
@@ -326,6 +261,17 @@ function AppContent({
     const timer = setTimeout(() => onReady({ showBrandSplash }), 120);
     return () => clearTimeout(timer);
   }, [isStartupReady, onReady, user]);
+
+  // Safety net if auth or lock settings hang on a slow device/network.
+  useEffect(() => {
+    const fallbackTimer = setTimeout(() => {
+      if (hasSignaledReadyRef.current) return;
+      hasSignaledReadyRef.current = true;
+      console.warn('[APP] Startup fallback — auth/lock took too long, unblocking app');
+      onReady({ showBrandSplash: !!user });
+    }, 8000);
+    return () => clearTimeout(fallbackTimer);
+  }, [onReady, user]);
 
   return (
     <View style={{ flex: 1 }}>

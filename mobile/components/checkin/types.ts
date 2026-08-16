@@ -14,7 +14,7 @@ export const MOOD_STOPS: MoodStop[] = [
   { score: 5, tier: 'amazing', label: 'Amazing' },
 ];
 
-export type CheckInStep = 'mood' | 'feelings' | 'context' | 'journal';
+export type CheckInStep = 'mood' | 'feelings' | 'context' | 'complete' | 'journal';
 
 export type CheckInDraft = {
   moodScore: number;

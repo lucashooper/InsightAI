@@ -1,6 +1,12 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { StyleSheet, Animated, View, Text } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, LayoutAnimation, Platform, StyleSheet, Text, UIManager, View } from 'react-native';
 import Markdown from 'react-native-markdown-display';
+import { buildMiraMarkdownStyles } from './miraMarkdownStyles';
+import { sanitizePartialMarkdown } from '../../utils/sanitizePartialMarkdown';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 type Props = {
   text: string;
@@ -10,99 +16,175 @@ type Props = {
   isDark?: boolean;
   isRoast?: boolean;
   roastTextColor?: string;
+  plain?: boolean;
 };
 
-const CHAR_INTERVAL_MS = 20;
-const FADE_DURATION_MS = 80;
-const CHUNK_MIN = 2;
-const CHUNK_MAX = 3;
+const WORD_INTERVAL_MS = 48;
+const BODY_FONT = 16;
+const BODY_LINE = 24;
 
-function findTailSplitIndex(str: string, maxTail: number): number {
-  if (str.length <= maxTail) return 0;
-  const minSplit = str.length - maxTail;
-  let split = str.lastIndexOf(' ', str.length - 1);
-  if (split < minSplit) split = minSplit;
-  return Math.max(0, split);
+/** Split into word tokens — spaces stay attached to the preceding word. */
+function tokenizeWords(input: string): string[] {
+  if (!input) return [];
+  const tokens: string[] = [];
+  const re = /\S+\s*/g;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(input)) !== null) {
+    tokens.push(match[0]);
+  }
+  return tokens;
 }
 
-/**
- * Native character-by-character typewriter with per-chunk fade-in.
- * File: mobile/components/companion/MiraTypewriterText.tsx
- *
- * Stable prefix → Markdown (formatted). Latest word/chunk → plain Text
- * with opacity 0→1 over ~80ms so markdown tokens are never torn apart.
- */
+function BlinkingCaret({ color, visible }: { color: string; visible: boolean }) {
+  const opacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (!visible) {
+      opacity.setValue(0);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: 0.12,
+          duration: 520,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 520,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [opacity, visible]);
+
+  if (!visible) return null;
+
+  return (
+    <Animated.Text style={[styles.caret, { color, opacity }]} accessibilityElementsHidden>
+      |
+    </Animated.Text>
+  );
+}
+
+function StreamingText({
+  content,
+  color,
+  showCaret,
+}: {
+  content: string;
+  color: string;
+  showCaret: boolean;
+}) {
+  const parts = content.split(/(\*\*[^*]+\*\*)/g).filter(Boolean);
+  return (
+    <Text style={[styles.streamText, { color, lineHeight: BODY_LINE, fontSize: BODY_FONT }]}>
+      {parts.map((part, index) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return (
+            <Text key={index} style={styles.streamBold}>
+              {part.slice(2, -2)}
+            </Text>
+          );
+        }
+        return <Text key={index}>{part}</Text>;
+      })}
+      <BlinkingCaret color={color} visible={showCaret} />
+    </Text>
+  );
+}
+
 export default function MiraTypewriterText({
   text,
   onComplete,
   onProgress,
-  charIntervalMs = CHAR_INTERVAL_MS,
+  charIntervalMs = WORD_INTERVAL_MS,
   isDark = true,
   isRoast = false,
   roastTextColor,
 }: Props) {
-  const [displayedLength, setDisplayedLength] = useState(0);
-  const indexRef = useRef(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const tailOpacity = useRef(new Animated.Value(1)).current;
+  const [revealedWordCount, setRevealedWordCount] = useState(0);
+  const [isComplete, setIsComplete] = useState(false);
+  const wordsRef = useRef<string[]>([]);
+  const revealedCountRef = useRef(0);
+  const lastAdvanceRef = useRef(0);
+  const rafRef = useRef<number | null>(null);
   const completedRef = useRef(false);
   const onCompleteRef = useRef(onComplete);
   const onProgressRef = useRef(onProgress);
+  const prevHeightRef = useRef(0);
+  const lockedHeightRef = useRef<number | null>(null);
 
   onCompleteRef.current = onComplete;
   onProgressRef.current = onProgress;
 
+  const words = useMemo(() => tokenizeWords(text || ''), [text]);
+
   useEffect(() => {
-    indexRef.current = 0;
+    wordsRef.current = words;
+    revealedCountRef.current = 0;
     completedRef.current = false;
-    setDisplayedLength(0);
-    tailOpacity.setValue(1);
+    lastAdvanceRef.current = 0;
+    lockedHeightRef.current = null;
+    setRevealedWordCount(0);
+    setIsComplete(false);
 
     if (!text) {
+      setIsComplete(true);
       onCompleteRef.current?.();
       return;
     }
 
-    const tick = () => {
-      if (indexRef.current >= text.length) {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        intervalRef.current = null;
-        if (!completedRef.current) {
-          completedRef.current = true;
-          setDisplayedLength(text.length);
-          onCompleteRef.current?.();
+    const tick = (timestamp: number) => {
+      if (!lastAdvanceRef.current) lastAdvanceRef.current = timestamp;
+
+      while (
+        revealedCountRef.current < wordsRef.current.length
+        && timestamp - lastAdvanceRef.current >= charIntervalMs
+      ) {
+        revealedCountRef.current += 1;
+        lastAdvanceRef.current += charIntervalMs;
+        if (revealedCountRef.current % 4 === 0) {
+          onProgressRef.current?.();
         }
+      }
+
+      setRevealedWordCount(revealedCountRef.current);
+
+      if (revealedCountRef.current < wordsRef.current.length) {
+        rafRef.current = requestAnimationFrame(tick);
         return;
       }
 
-      const chunk = CHUNK_MIN + Math.floor(Math.random() * (CHUNK_MAX - CHUNK_MIN + 1));
-      indexRef.current = Math.min(indexRef.current + chunk, text.length);
-      setDisplayedLength(indexRef.current);
-
-      tailOpacity.setValue(0);
-      Animated.timing(tailOpacity, {
-        toValue: 1,
-        duration: FADE_DURATION_MS,
-        useNativeDriver: true,
-      }).start();
-
-      if (indexRef.current % 24 === 0) {
+      if (!completedRef.current) {
+        completedRef.current = true;
+        setIsComplete(true);
         onProgressRef.current?.();
+        onCompleteRef.current?.();
       }
     };
 
-    intervalRef.current = setInterval(tick, charIntervalMs);
-
+    rafRef.current = requestAnimationFrame(tick);
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      intervalRef.current = null;
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
     };
-  }, [text, charIntervalMs, tailOpacity]);
+  }, [text, words, charIntervalMs]);
 
-  const displayed = text.slice(0, displayedLength);
-  const splitAt = findTailSplitIndex(displayed, 4);
-  const stableText = displayed.slice(0, splitAt);
-  const tailText = displayed.slice(splitAt);
+  const displayed = useMemo(
+    () => words.slice(0, revealedWordCount).join(''),
+    [words, revealedWordCount],
+  );
+
+  const sanitizedDisplay = useMemo(
+    () => sanitizePartialMarkdown(displayed),
+    [displayed],
+  );
 
   const baseColor = isRoast
     ? roastTextColor || '#FFFFFF'
@@ -111,104 +193,54 @@ export default function MiraTypewriterText({
       : '#1a1a1a';
 
   const markdownStyles = useMemo(
-    () =>
-      StyleSheet.create({
-        body: { color: baseColor },
-        paragraph: {
-          fontSize: 16,
-          fontWeight: '400',
-          color: baseColor,
-          marginTop: 0,
-          marginBottom: 16,
-          lineHeight: 26,
-          letterSpacing: 0.1,
-        },
-        strong: {
-          fontWeight: '700',
-          fontSize: 16.5,
-          color: baseColor,
-        },
-        em: {
-          fontStyle: 'italic',
-          color: baseColor,
-        },
-        heading3: {
-          fontSize: 17,
-          fontWeight: '700',
-          color: baseColor,
-          marginTop: 10,
-          marginBottom: 10,
-          lineHeight: 24,
-        },
-        bullet_list: {
-          marginTop: 4,
-          marginBottom: 12,
-        },
-        bullet_list_icon: {
-          color: isDark ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.55)',
-          marginRight: 10,
-          fontSize: 17,
-          lineHeight: 26,
-        },
-        ordered_list_icon: {
-          color: isDark ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.55)',
-          marginRight: 10,
-          fontSize: 16,
-          lineHeight: 26,
-        },
-        list_item: {
-          marginTop: 10,
-          marginBottom: 2,
-          flexDirection: 'row',
-          alignItems: 'flex-start',
-        },
-        bullet_list_content: {
-          flex: 1,
-          fontSize: 16,
-          lineHeight: 26,
-        },
-        blockquote: {
-          backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-          borderLeftWidth: 3,
-          borderLeftColor: isDark ? 'rgba(168,85,247,0.5)' : 'rgba(139,92,246,0.4)',
-          paddingLeft: 12,
-          paddingVertical: 8,
-          marginVertical: 8,
-        },
-        code_inline: {
-          backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-          paddingHorizontal: 6,
-          paddingVertical: 2,
-          borderRadius: 4,
-          fontFamily: 'Courier',
-          fontSize: 15,
-        },
-      }),
+    () => buildMiraMarkdownStyles(baseColor, isDark),
     [baseColor, isDark],
   );
 
-  const tailStyle = useMemo(
+  const ghostStyles = useMemo(
     () => ({
-      fontSize: 16,
-      lineHeight: 26,
-      letterSpacing: 0.1,
-      color: baseColor,
+      ...markdownStyles,
+      body: { ...markdownStyles.body, opacity: 0, lineHeight: BODY_LINE, fontSize: BODY_FONT },
+      paragraph: { ...markdownStyles.paragraph, opacity: 0, lineHeight: BODY_LINE, fontSize: BODY_FONT },
     }),
-    [baseColor],
+    [markdownStyles],
   );
 
-  if (!displayed) return <View style={styles.placeholder} />;
+  const onGhostLayout = (event: { nativeEvent: { layout: { height: number } } }) => {
+    const h = event.nativeEvent.layout.height;
+    if (lockedHeightRef.current == null) {
+      lockedHeightRef.current = h;
+    }
+    if (Math.abs(h - prevHeightRef.current) > 2) {
+      LayoutAnimation.configureNext(
+        LayoutAnimation.create(200, LayoutAnimation.Types.spring, LayoutAnimation.Properties.opacity),
+      );
+      prevHeightRef.current = h;
+    }
+  };
+
+  if (!text) return null;
+
+  const minHeight = lockedHeightRef.current ?? undefined;
 
   return (
-    <View style={styles.wrap}>
-      {stableText.length > 0 ? (
-        <Markdown style={markdownStyles}>{stableText}</Markdown>
-      ) : null}
-      {tailText.length > 0 ? (
-        <Animated.Text style={[tailStyle, { opacity: tailOpacity }]}>
-          {tailText}
-        </Animated.Text>
-      ) : null}
+    <View style={[styles.wrap, minHeight ? { minHeight } : null]} pointerEvents="none">
+      <View
+        style={styles.ghost}
+        pointerEvents="none"
+        importantForAccessibility="no-hide-descendants"
+        onLayout={onGhostLayout}
+      >
+        <Markdown style={ghostStyles}>{text}</Markdown>
+      </View>
+
+      <View style={styles.visibleLayer} pointerEvents="none">
+        {isComplete ? (
+          <Markdown style={markdownStyles}>{text}</Markdown>
+        ) : (
+          <StreamingText content={sanitizedDisplay} color={baseColor} showCaret />
+        )}
+      </View>
     </View>
   );
 }
@@ -216,8 +248,28 @@ export default function MiraTypewriterText({
 const styles = StyleSheet.create({
   wrap: {
     width: '100%',
+    position: 'relative',
   },
-  placeholder: {
-    minHeight: 4,
+  ghost: {
+    width: '100%',
+  },
+  visibleLayer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+  },
+  streamText: {
+    fontWeight: '400',
+  },
+  streamBold: {
+    fontWeight: '700',
+    fontSize: BODY_FONT,
+    lineHeight: BODY_LINE,
+  },
+  caret: {
+    fontSize: BODY_FONT,
+    lineHeight: BODY_LINE,
+    fontWeight: '300',
   },
 });

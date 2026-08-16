@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,9 @@ import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
+import GratitudeSavedOverlay from '../components/gratitude/GratitudeSavedOverlay';
+import AppBackdrop from '../components/ui/AppBackdrop';
+import { useSpeechToText } from '../hooks/useSpeechToText';
 
 export default function GratitudeScreen({ navigation }: any) {
   const { theme } = useTheme();
@@ -29,6 +32,20 @@ export default function GratitudeScreen({ navigation }: any) {
   const [currentPrompt, setCurrentPrompt] = useState(0);
   const [responses, setResponses] = useState(['', '', '']);
   const [saving, setSaving] = useState(false);
+  const [showSavedOverlay, setShowSavedOverlay] = useState(false);
+
+  const handleVoiceTranscript = useCallback((text: string) => {
+    const newResponses = [...responses];
+    newResponses[currentPrompt] = text;
+    setResponses(newResponses);
+  }, [currentPrompt, responses]);
+
+  const { isRecording, toggleRecording } = useSpeechToText({
+    locale: 'en-US',
+    onTranscript: handleVoiceTranscript,
+    getBaseText: () => responses[currentPrompt],
+    t,
+  });
 
   const handleResponseChange = (text: string) => {
     const newResponses = [...responses];
@@ -77,9 +94,7 @@ export default function GratitudeScreen({ navigation }: any) {
 
       if (error) throw error;
 
-      Alert.alert(t('auxiliary.common.saved'), t('auxiliary.gratitude.savedMessage'), [
-        { text: t('auxiliary.common.ok'), onPress: () => navigation.goBack() }
-      ]);
+      setShowSavedOverlay(true);
     } catch (error: any) {
       console.error('[Gratitude] Error saving gratitude:', error);
       console.error('[Gratitude] Error details:', JSON.stringify(error, null, 2));
@@ -91,11 +106,8 @@ export default function GratitudeScreen({ navigation }: any) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <LinearGradient
-        colors={theme.colors.backgroundGradient as any}
-        style={styles.backgroundGradient}
-      />
+    <View style={styles.container}>
+      <AppBackdrop />
 
       {/* Header */}
       <View style={styles.header}>
@@ -151,6 +163,13 @@ export default function GratitudeScreen({ navigation }: any) {
               textAlignVertical="top"
               autoFocus={false}
             />
+            <TouchableOpacity
+              style={[styles.voiceBtn, isRecording && styles.voiceBtnActive]}
+              onPress={toggleRecording}
+              activeOpacity={0.8}
+            >
+              <Ionicons name={isRecording ? 'mic' : 'mic-outline'} size={22} color={isRecording ? '#ef4444' : '#c4b5fd'} />
+            </TouchableOpacity>
           </View>
 
           {/* Navigation Buttons */}
@@ -192,6 +211,17 @@ export default function GratitudeScreen({ navigation }: any) {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <GratitudeSavedOverlay
+        visible={showSavedOverlay}
+        title={t('auxiliary.common.saved')}
+        message={t('auxiliary.gratitude.savedMessage')}
+        buttonLabel={t('auxiliary.common.ok')}
+        onClose={() => {
+          setShowSavedOverlay(false);
+          navigation.goBack();
+        }}
+      />
     </View>
   );
 }
@@ -274,17 +304,33 @@ const styles = StyleSheet.create({
     lineHeight: 38,
   },
   inputContainer: {
-    marginBottom: 40,
+    position: 'relative',
+    marginBottom: 24,
+  },
+  voiceBtn: {
+    position: 'absolute',
+    right: 12,
+    bottom: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(139,92,246,0.12)',
+  },
+  voiceBtnActive: {
+    backgroundColor: 'rgba(239,68,68,0.18)',
   },
   input: {
     fontSize: 17,
     lineHeight: 26,
     minHeight: 200,
     padding: 20,
+    paddingRight: 56,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.2)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(139, 92, 246, 0.18)',
   },
   buttonContainer: {
     flexDirection: 'row',

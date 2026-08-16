@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { protocolCompletionService } from '../services/protocolCompletionService';
+import ProtocolCompleteButton from '../components/shared/ProtocolCompleteButton';
 import PageHeader from '../components/shared/PageHeader';
 import GlassCard from '../components/ui/GlassCard';
 import AppBackdrop from '../components/ui/AppBackdrop';
@@ -16,8 +18,13 @@ import { PREMIUM } from '../constants/premiumUI';
 import EmptyState from '../components/shared/EmptyState';
 import * as Haptics from 'expo-haptics';
 import { useLanguage } from '../contexts/LanguageContext';
-import { filterByContentLocale, withContentLocale } from '../i18n/contentLocale';
+import { filterByContentLocale } from '../i18n/contentLocale';
 import { consumePlaybookPrefill } from '../utils/playbookPrefill';
+import { consumeProtocolEditRequest } from '../utils/protocolEditRequest';
+import CollapsibleEmojiPicker from '../components/shared/CollapsibleEmojiPicker';
+import { loadProtocolReminder, saveProtocolReminder, type ProtocolReminder } from '../utils/protocolReminders';
+import ProtocolOptionsSheet from '../components/playbook/ProtocolOptionsSheet';
+import { emojiForProtocol, resolveProtocolTasks } from '../utils/protocolEmoji';
 
 type TabType = 'protocols' | 'strategies';
 
@@ -36,16 +43,26 @@ interface Strategy {
 
 export default function PlaybookScreen() {
   console.log('[Playbook] 🔄 UPDATED VERSION LOADED - Suggestion count badges added to strategies');
+  const navigation = useNavigation<any>();
   const { user } = useAuth();
   const { theme } = useTheme();
   const { t, language } = useLanguage();
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<TabType>('protocols');
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingStrategy, setEditingStrategy] = useState<Strategy | null>(null);
-  const [editDraft, setEditDraft] = useState({ title: '', description: '', emoji: '✨', category: 'general', tasks: [] as string[] });
+  const [editDraft, setEditDraft] = useState({
+    title: '',
+    description: '',
+    emoji: '✨',
+    category: 'general',
+    tasks: [] as string[],
+    reminderEnabled: false,
+    reminderTime: '09:00',
+  });
   const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   const [newStrategy, setNewStrategy] = useState({
     title: '',
@@ -64,6 +81,8 @@ export default function PlaybookScreen() {
   const [completedToday, setCompletedToday] = useState<string[]>([]);
   const [protocolStats, setProtocolStats] = useState<Record<string, { currentStreak: number; longestStreak: number }>>({});
   const [pinnedProtocolId, setPinnedProtocolId] = useState<string | null>(null);
+  const [expandedProtocolIds, setExpandedProtocolIds] = useState<Set<string>>(new Set());
+  const [optionsSheet, setOptionsSheet] = useState<Strategy | null>(null);
 
   useEffect(() => {
     loadStrategies();
@@ -83,7 +102,23 @@ export default function PlaybookScreen() {
         setActiveTab('strategies');
         setShowCreateModal(true);
       });
-    }, [user, language])
+      consumeProtocolEditRequest().then((editId) => {
+        if (!editId) return;
+        const match = strategies.find((s) => s.id === editId);
+        if (match) {
+          openEditModal(match);
+          return;
+        }
+        supabase
+          .from('actionable_insights')
+          .select('*')
+          .eq('id', editId)
+          .maybeSingle()
+          .then(({ data }) => {
+            if (data) openEditModal(data as Strategy);
+          });
+      });
+    }, [user, language, strategies])
   );
 
   const loadStrategies = async () => {
@@ -177,7 +212,7 @@ export default function PlaybookScreen() {
           difficulty: newStrategy.difficulty,
           emoji: newStrategy.emoji,
           status: 'active',
-          source: withContentLocale('user_created', language),
+          source: 'user_created',
           tasks: newStrategy.tasks,
         })
         .select()
@@ -234,17 +269,8 @@ export default function PlaybookScreen() {
     }
   };
 
-  const handleStrategyTap = (strategy: Strategy) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setEditingStrategy(strategy);
-    setEditDraft({
-      title: strategy.title,
-      description: strategy.description || '',
-      emoji: strategy.emoji || '✨',
-      category: strategy.category,
-      tasks: strategy.tasks || [],
-    });
-    setShowEditModal(true);
+  const handleStrategyTap = async (strategy: Strategy) => {
+    toggleProtocolExpanded(strategy.id);
   };
 
   const handleUpdateStrategy = async () => {
@@ -271,6 +297,10 @@ export default function PlaybookScreen() {
 
       setShowEditModal(false);
       setEditingStrategy(null);
+      await saveProtocolReminder(editingStrategy.id, editDraft.title.trim(), {
+        enabled: editDraft.reminderEnabled,
+        time: editDraft.reminderTime,
+      });
       await loadStrategies();
     } catch (error) {
       console.error('Error updating strategy:', error);
@@ -313,44 +343,34 @@ export default function PlaybookScreen() {
     }
   };
 
-  const handleStrategyLongPress = (strategy: Strategy) => {
-    const isPinned = pinnedProtocolId === strategy.id;
-    const isActiveProtocol = strategy.status === 'active';
-    
-    const options: any[] = [
-      { text: t('auxiliary.common.cancel'), style: 'cancel' },
-      {
-        text: t('auxiliary.common.edit'),
-        onPress: () => handleStrategyTap(strategy),
-      },
-    ];
-    
-    // Add pin/unpin option for active protocols
-    if (isActiveProtocol) {
-      if (isPinned) {
-        options.push({
-          text: t('auxiliary.playbook.unpinFromHome'),
-          onPress: () => handleUnpinProtocol(),
-        });
-      } else {
-        options.push({
-          text: t('auxiliary.playbook.pinToHome'),
-          onPress: () => handlePinProtocol(strategy.id),
-        });
-      }
-    }
-    
-    options.push({
-      text: t('auxiliary.playbook.deleteStrategy'),
-      style: 'destructive',
-      onPress: () => deleteStrategy(strategy.id),
+  const toggleProtocolExpanded = (strategyId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setExpandedProtocolIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(strategyId)) next.delete(strategyId);
+      else next.add(strategyId);
+      return next;
     });
-    
-    Alert.alert(
-      t('auxiliary.playbook.strategyOptions'),
-      `"${strategy.title}"`,
-      options,
-    );
+  };
+
+  const handleStrategyLongPress = (strategy: Strategy) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setOptionsSheet(strategy);
+  };
+
+  const openEditModal = async (strategy: Strategy) => {
+    setEditingStrategy(strategy);
+    const reminder = await loadProtocolReminder(strategy.id);
+    setEditDraft({
+      title: strategy.title,
+      description: strategy.description || '',
+      emoji: emojiForProtocol(strategy.title, strategy.category, strategy.emoji),
+      category: strategy.category,
+      tasks: strategy.tasks || [],
+      reminderEnabled: reminder.enabled,
+      reminderTime: reminder.time,
+    });
+    setShowEditModal(true);
   };
 
   const handleActivateSuggestion = async (strategyId: string) => {
@@ -418,7 +438,10 @@ export default function PlaybookScreen() {
     <View style={styles.container}>
       <AppBackdrop />
       {/* Header */}
-      <PageHeader title={t('auxiliary.playbook.title')} />
+      <PageHeader
+        title={t('auxiliary.playbook.title')}
+        onBack={() => navigation.goBack()}
+      />
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         {/* Today's Progress */}
@@ -508,7 +531,12 @@ export default function PlaybookScreen() {
             />
           ) : (
             <>
-            {displayStrategies.map((strategy) => (
+            {displayStrategies.map((strategy) => {
+            const isExpanded = expandedProtocolIds.has(strategy.id);
+            const displayEmoji = emojiForProtocol(strategy.title, strategy.category, strategy.emoji);
+            const displayTasks = resolveProtocolTasks(strategy.tasks, strategy.description, strategy.title)
+              .filter((task) => task.trim() !== (strategy.description?.trim() ?? ''));
+            return (
             <TouchableOpacity
               key={strategy.id}
               style={styles.premiumCardPressable}
@@ -519,11 +547,11 @@ export default function PlaybookScreen() {
               <GlassCard style={styles.premiumCard} noPad contentStyle={styles.cardGradient}>
                 <View style={styles.cardHeader}>
                   <View style={[styles.emojiContainer, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : 'rgba(139, 92, 246, 0.1)' }]}>
-                    <Text style={styles.cardEmoji}>{strategy.emoji}</Text>
+                    <Text style={styles.cardEmoji}>{displayEmoji}</Text>
                   </View>
                   <View style={styles.cardInfo}>
                     <View style={styles.titleRow}>
-                      <Text style={[styles.cardTitle, { color: theme.colors.primaryText }]} numberOfLines={2} ellipsizeMode="tail">{strategy.title}</Text>
+                      <Text style={[styles.cardTitle, { color: theme.colors.primaryText }]} numberOfLines={isExpanded ? 4 : 2} ellipsizeMode="tail">{strategy.title}</Text>
                       {/* Show suggestion count for suggested strategies */}
                       {strategy.status === 'suggested' && strategy.suggestion_count && strategy.suggestion_count > 1 && (
                         <View style={styles.suggestionCountBadge}>
@@ -545,22 +573,21 @@ export default function PlaybookScreen() {
                       )}
                     </View>
                     {strategy.description ? (
-                      <Text style={[styles.cardDescription, { color: theme.colors.secondaryText }]} numberOfLines={2}>{strategy.description}</Text>
+                      <Text style={[styles.cardDescription, { color: theme.colors.secondaryText }]} numberOfLines={isExpanded ? undefined : 2}>{strategy.description}</Text>
                     ) : null}
-                    {/* Display tasks if they exist */}
-                    {strategy.tasks && strategy.tasks.length > 0 && (
+                    {displayTasks.length > 0 && (
                       <View style={styles.taskPreview}>
-                        {strategy.tasks.slice(0, 2).map((task, index) => (
+                        {(isExpanded ? displayTasks : displayTasks.slice(0, 2)).map((task, index) => (
                           <View key={index} style={styles.taskPreviewItem}>
                             <Ionicons name="checkbox-outline" size={14} color={theme.colors.tertiaryText} />
-                            <Text style={[styles.taskPreviewText, { color: theme.colors.secondaryText }]} numberOfLines={1}>
+                            <Text style={[styles.taskPreviewText, { color: theme.colors.secondaryText }]} numberOfLines={isExpanded ? 3 : 1}>
                               {task}
                             </Text>
                           </View>
                         ))}
-                        {strategy.tasks.length > 2 && (
+                        {!isExpanded && displayTasks.length > 2 && (
                           <Text style={[styles.taskPreviewMore, { color: theme.colors.tertiaryText }]}>
-                            {t('auxiliary.playbook.moreCount', { count: strategy.tasks.length - 2 })}
+                            {t('auxiliary.playbook.moreCount', { count: displayTasks.length - 2 })}
                           </Text>
                         )}
                       </View>
@@ -584,20 +611,10 @@ export default function PlaybookScreen() {
                   
                   {/* Checkbox for active protocols */}
                   {strategy.status === 'active' && (
-                    <TouchableOpacity 
-                      style={styles.checkboxContainer}
+                    <ProtocolCompleteButton
+                      completed={completedToday.includes(strategy.id)}
                       onPress={() => handleToggleCompletion(strategy.id)}
-                      activeOpacity={0.7}
-                    >
-                      <View style={[
-                        styles.checkbox,
-                        completedToday.includes(strategy.id) && styles.checkboxCompleted
-                      ]}>
-                        {completedToday.includes(strategy.id) && (
-                          <Ionicons name="checkmark" size={24} color="#fff" />
-                        )}
-                      </View>
-                    </TouchableOpacity>
+                    />
                   )}
                   
                   {/* Action buttons for suggested strategies */}
@@ -620,7 +637,8 @@ export default function PlaybookScreen() {
                 </View>
               </GlassCard>
             </TouchableOpacity>
-            ))}
+            );
+            })}
             
             {/* Show More Button for Strategies */}
             {activeTab === 'strategies' && filteredStrategies.length > 3 && (
@@ -645,14 +663,17 @@ export default function PlaybookScreen() {
         })()}
       </ScrollView>
 
-      {/* Create Strategy Modal */}
+      {/* Create Protocol Modal */}
       <Modal
         visible={showCreateModal}
         animationType="slide"
         transparent={true}
         onRequestClose={() => setShowCreateModal(false)}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
           <GlassCard style={styles.modalContent} noPad contentStyle={styles.modalContentInner}>
             <View style={[styles.modalHeader, { borderBottomColor: isDarkTheme(theme.name) ? '#2a2a3e' : '#e5e5e5' }]}>
               <Text style={[styles.modalTitle, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.playbook.newStrategy')}</Text>
@@ -661,7 +682,12 @@ export default function PlaybookScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.modalBody}>
+            <ScrollView
+              style={styles.modalBodyScroll}
+              contentContainerStyle={styles.modalBodyContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
               <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.playbook.titleRequired')}</Text>
               <TextInput
                 style={[styles.input, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', borderColor: isDarkTheme(theme.name) ? '#2a2a2a' : '#e0e0e0', color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}
@@ -767,7 +793,9 @@ export default function PlaybookScreen() {
                   </TouchableOpacity>
                 ))}
               </View>
+            </ScrollView>
 
+            <View style={[styles.modalFooter, { paddingBottom: Math.max(insets.bottom, 16) }]}>
               <TouchableOpacity
                 style={styles.modalPrimaryButton}
                 onPress={createStrategy}
@@ -781,12 +809,12 @@ export default function PlaybookScreen() {
                   <Text style={styles.modalPrimaryButtonText}>{t('auxiliary.playbook.createStrategy')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
-            </ScrollView>
+            </View>
           </GlassCard>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
-      {/* Edit Strategy Modal */}
+      {/* Edit Protocol Modal */}
       <Modal
         visible={showEditModal}
         animationType="slide"
@@ -795,9 +823,9 @@ export default function PlaybookScreen() {
       >
         <KeyboardAvoidingView 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalOverlay}
+          style={[styles.modalOverlay, styles.modalOverlaySolid]}
         >
-          <GlassCard style={styles.modalContent} noPad contentStyle={styles.modalContentInner}>
+          <GlassCard style={styles.modalContent} variant="elevated" noPad contentStyle={styles.modalContentInner}>
             <View style={[styles.modalHeader, { borderBottomColor: isDarkTheme(theme.name) ? '#2a2a3e' : '#e5e5e5' }]}>
               <Text style={[styles.modalTitle, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.playbook.editStrategy')}</Text>
               <TouchableOpacity onPress={() => { setShowEditModal(false); setEditingStrategy(null); }}>
@@ -806,30 +834,14 @@ export default function PlaybookScreen() {
             </View>
 
             <ScrollView 
-              style={styles.modalBody} 
+              style={styles.modalBodyScroll} 
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ paddingBottom: 40 }}
+              contentContainerStyle={styles.modalBodyContent}
+              showsVerticalScrollIndicator={false}
             >
-              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.playbook.emoji')}</Text>
-              <View style={styles.emojiGrid}>
-                {['✨', '💪', '🏃', '👥', '🧘', '😴', '🥗', '🎯', '🌟', '💡', '🔥', '🌈', '🎨', '📚', '🎵', '🌱', '☕', '🍃', '💝', '🌸', '📈', '💭'].map((emoji) => (
-                  <TouchableOpacity
-                    key={emoji}
-                    style={[
-                      styles.emojiOption,
-                      { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', borderColor: isDarkTheme(theme.name) ? '#2a2a2a' : '#e0e0e0' },
-                      editDraft.emoji === emoji && styles.emojiOptionActive
-                    ]}
-                    onPress={() => setEditDraft({ ...editDraft, emoji })}
-                  >
-                    <Text style={styles.emojiText}>{emoji}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
               <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.playbook.titleRequired')}</Text>
               <TextInput
-                style={[styles.input, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', borderColor: isDarkTheme(theme.name) ? '#2a2a2a' : '#e0e0e0', color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}
+                style={[styles.input, styles.inputSubtle, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}
                 value={editDraft.title}
                 onChangeText={(text) => setEditDraft({ ...editDraft, title: text })}
                 placeholder={t('auxiliary.playbook.strategyTitle')}
@@ -838,7 +850,7 @@ export default function PlaybookScreen() {
 
               <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.playbook.description')}</Text>
               <TextInput
-                style={[styles.input, styles.textArea, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', borderColor: isDarkTheme(theme.name) ? '#2a2a2a' : '#e0e0e0', color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}
+                style={[styles.input, styles.textArea, styles.inputSubtle, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}
                 value={editDraft.description}
                 onChangeText={(text) => setEditDraft({ ...editDraft, description: text })}
                 placeholder={t('auxiliary.playbook.describe')}
@@ -914,6 +926,48 @@ export default function PlaybookScreen() {
                 </View>
               )}
 
+              <View style={styles.reminderRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.label, { marginTop: 0, color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>
+                    {t('auxiliary.playbook.reminderTitle')}
+                  </Text>
+                  <Text style={[styles.reminderDesc, { color: isDarkTheme(theme.name) ? '#999' : '#666' }]}>
+                    {t('auxiliary.playbook.reminderDesc')}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.reminderToggle, editDraft.reminderEnabled && styles.reminderToggleOn]}
+                  onPress={() => setEditDraft({ ...editDraft, reminderEnabled: !editDraft.reminderEnabled })}
+                >
+                  <View style={[styles.reminderKnob, editDraft.reminderEnabled && styles.reminderKnobOn]} />
+                </TouchableOpacity>
+              </View>
+
+              {editDraft.reminderEnabled ? (
+                <>
+                  <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>
+                    {t('auxiliary.playbook.reminderTime')}
+                  </Text>
+                  <TextInput
+                    style={[styles.input, styles.inputSubtle, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : '#f5f5f5', color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}
+                    value={editDraft.reminderTime}
+                    onChangeText={(text) => setEditDraft({ ...editDraft, reminderTime: text })}
+                    placeholder="09:00"
+                    placeholderTextColor={isDarkTheme(theme.name) ? '#666' : '#999'}
+                    keyboardType="numbers-and-punctuation"
+                  />
+                </>
+              ) : null}
+
+              <Text style={[styles.label, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.playbook.emoji')}</Text>
+              <CollapsibleEmojiPicker
+                value={editDraft.emoji}
+                onChange={(emoji) => setEditDraft({ ...editDraft, emoji })}
+              />
+
+            </ScrollView>
+
+            <View style={[styles.modalFooter, { paddingBottom: Math.max(insets.bottom, 16) }]}>
               <TouchableOpacity
                 style={styles.modalPrimaryButton}
                 onPress={handleUpdateStrategy}
@@ -941,10 +995,58 @@ export default function PlaybookScreen() {
                   <Text style={styles.editDeleteText}>{t('auxiliary.playbook.deleteStrategy')}</Text>
                 </TouchableOpacity>
               )}
-            </ScrollView>
+            </View>
           </GlassCard>
         </KeyboardAvoidingView>
       </Modal>
+
+      <ProtocolOptionsSheet
+        visible={!!optionsSheet}
+        title={t('auxiliary.playbook.strategyOptions')}
+        subtitle={optionsSheet?.title}
+        onDismiss={() => setOptionsSheet(null)}
+        actions={
+          optionsSheet
+            ? [
+                {
+                  label: t('auxiliary.common.edit'),
+                  icon: 'create-outline',
+                  iconColor: '#A855F7',
+                  onPress: () => openEditModal(optionsSheet),
+                },
+                ...(optionsSheet.status === 'active'
+                  ? [
+                      {
+                        label:
+                          pinnedProtocolId === optionsSheet.id
+                            ? t('auxiliary.playbook.unpinFromHome')
+                            : t('auxiliary.playbook.pinToHome'),
+                        icon: 'home-outline' as const,
+                        iconColor: '#818CF8',
+                        onPress: () =>
+                          pinnedProtocolId === optionsSheet.id
+                            ? handleUnpinProtocol()
+                            : handlePinProtocol(optionsSheet.id),
+                      },
+                      {
+                        label: t('auxiliary.playbook.reminderTitle'),
+                        icon: 'notifications-outline' as const,
+                        iconColor: '#38BDF8',
+                        onPress: () => openEditModal(optionsSheet),
+                      },
+                    ]
+                  : []),
+                {
+                  label: t('auxiliary.playbook.deleteStrategy'),
+                  icon: 'trash-outline',
+                  iconColor: '#EF4444',
+                  variant: 'destructive' as const,
+                  onPress: () => deleteStrategy(optionsSheet.id),
+                },
+              ]
+            : []
+        }
+      />
     </View>
   );
 }
@@ -981,7 +1083,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: PREMIUM.layout.screenPadH,
     paddingTop: PREMIUM.space[1],
-    paddingBottom: 100,
+    paddingBottom: 120,
     gap: PREMIUM.layout.cardGap,
   },
   sectionCard: {
@@ -1286,11 +1388,30 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'flex-end',
   },
+  modalOverlaySolid: {
+    backgroundColor: 'rgba(0, 0, 0, 0.88)',
+  },
   modalContent: {
-    maxHeight: '85%',
+    maxHeight: '90%',
   },
   modalContentInner: {
     flexShrink: 1,
+    maxHeight: '100%',
+  },
+  modalBodyScroll: {
+    flexGrow: 0,
+    flexShrink: 1,
+  },
+  modalBodyContent: {
+    padding: 20,
+    paddingBottom: 8,
+  },
+  modalFooter: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+    gap: 10,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1317,12 +1438,48 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: '#1a1a1a',
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 12,
     color: '#ffffff',
     fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  inputSubtle: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  reminderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 16,
+    marginBottom: 4,
+  },
+  reminderDesc: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  reminderToggle: {
+    width: 48,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    padding: 3,
+    justifyContent: 'center',
+  },
+  reminderToggleOn: {
+    backgroundColor: 'rgba(139,92,246,0.45)',
+  },
+  reminderKnob: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#fff',
+    alignSelf: 'flex-start',
+  },
+  reminderKnobOn: {
+    alignSelf: 'flex-end',
   },
   textArea: {
     height: 100,

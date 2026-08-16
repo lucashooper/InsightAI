@@ -14,17 +14,17 @@ import { isTablet, sf } from '../../utils/responsive';
 import { analytics } from '../../services/analytics';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getFirstName } from '../../utils/paywallPersonalization';
-import { ONBOARDING_SURFACE } from '../../constants/onboardingTheme';
-
-const insightLogo = require('../../public/Insight-Logo-nobg.webp');
+import { ONBOARDING_SURFACE, ONBOARDING_TEXT, ONBOARDING_CTA } from '../../constants/onboardingTheme';
+import { isRevenueCatEnabled } from '../../utils/revenueCatConfig';
+import { INSIGHT_LOGO } from '../../constants/appAssets';
 
 const ENTITLEMENT_ID = 'Insight Pro';
 
-/** Paywall always uses dark-space styling — ignores global theme toggle. */
+/** Paywall uses the light onboarding palette on the ambient gradient. */
 const PAYWALL_TEXT = {
-  primary: '#FFFFFF',
-  secondary: 'rgba(255, 255, 255, 0.70)',
-  muted: 'rgba(255, 255, 255, 0.58)',
+  primary: ONBOARDING_TEXT.primary,
+  secondary: ONBOARDING_TEXT.body,
+  muted: ONBOARDING_TEXT.secondary,
 } as const;
 
 export default function PaywallScreen({ navigation, route }: any) {
@@ -35,7 +35,7 @@ export default function PaywallScreen({ navigation, route }: any) {
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'weekly' | 'monthly' | 'yearly'>('yearly');
-  const [trialEnabled, setTrialEnabled] = useState(true);
+  const [trialEnabled, setTrialEnabled] = useState(false);
   /** Plan that actually carries an intro/free-trial offer from RevenueCat */
   const [trialPlan, setTrialPlan] = useState<'weekly' | 'monthly' | 'yearly' | null>('weekly');
   const [trialDays, setTrialDays] = useState(3);
@@ -63,12 +63,42 @@ export default function PaywallScreen({ navigation, route }: any) {
   ];
   const trialLabel = t('onboarding.paywall.trialEnabledDays', { days: trialDays });
   const trialBadgeLabel = t('onboarding.paywall.trialDays', { days: trialDays });
+  const showTrialCta = trialEnabled && selectedPlan === 'weekly';
+
+  const handleTrialToggle = (enabled: boolean) => {
+    Haptics.selectionAsync();
+    setTrialEnabled(enabled);
+    if (enabled) {
+      setSelectedPlan('weekly');
+    }
+  };
+
+  const handleSelectPlan = (plan: 'weekly' | 'monthly' | 'yearly') => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedPlan(plan);
+    if (plan !== 'weekly') {
+      setTrialEnabled(false);
+    }
+  };
   const firstName = getFirstName(userName);
   const paywallTitle = firstName
     ? t('onboarding.paywall.pricingTitleNamed', { name: firstName })
     : t('onboarding.paywall.pricingTitleGeneric');
 
   useEffect(() => {
+    if (!isRevenueCatEnabled()) {
+      const fromSettings = route?.params?.fromSettings === true;
+      if (fromSettings) {
+        navigation.goBack();
+        return;
+      }
+      (async () => {
+        await AsyncStorage.setItem('HAS_COMPLETED_ONBOARDING', 'true');
+        navigation.replace('PostPurchaseWelcome');
+      })();
+      return;
+    }
+
     console.log('[Paywall] 🔄 UPDATED VERSION LOADED - Subscription boxes now dark gray for dark theme compatibility');
     
     // Track paywall viewed
@@ -634,7 +664,7 @@ export default function PaywallScreen({ navigation, route }: any) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={false} />
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={false} />
       <OnboardingAmbientBackground />
 
       {/* Back Button - Circular style matching other onboarding pages */}
@@ -658,7 +688,7 @@ export default function PaywallScreen({ navigation, route }: any) {
         nestedScrollEnabled
       >
         <View style={styles.logoContainer}>
-          <BreathingLogo source={insightLogo} style={styles.logo} />
+          <BreathingLogo source={INSIGHT_LOGO} style={styles.logo} />
         </View>
 
         <View style={styles.header}>
@@ -672,7 +702,7 @@ export default function PaywallScreen({ navigation, route }: any) {
             <View style={styles.iconRail}>
               {premiumFeatures.map((feature) => (
                 <View key={`icon-${feature.title}`} style={styles.iconRailSlot}>
-                  <Ionicons name={feature.icon} size={18} color="rgba(255,255,255,0.92)" />
+                  <Ionicons name={feature.icon} size={18} color={ONBOARDING_TEXT.secondary} />
                 </View>
               ))}
             </View>
@@ -691,17 +721,10 @@ export default function PaywallScreen({ navigation, route }: any) {
           <Text style={styles.trialToggleLabel}>{trialLabel}</Text>
           <Switch
             value={trialEnabled}
-            onValueChange={(v) => {
-              Haptics.selectionAsync();
-              setTrialEnabled(v);
-              // Select the plan that actually carries the trial offer — not yearly by default
-              if (v && trialPlan) {
-                setSelectedPlan(trialPlan);
-              }
-            }}
-            trackColor={{ false: 'rgba(255,255,255,0.18)', true: 'rgba(168, 85, 247, 0.55)' }}
+            onValueChange={handleTrialToggle}
+            trackColor={{ false: 'rgba(123, 94, 167, 0.15)', true: 'rgba(123, 94, 167, 0.55)' }}
             thumbColor={trialEnabled ? '#FFFFFF' : '#E5E7EB'}
-            ios_backgroundColor="rgba(255,255,255,0.18)"
+            ios_backgroundColor="rgba(123, 94, 167, 0.15)"
           />
         </View>
 
@@ -710,13 +733,10 @@ export default function PaywallScreen({ navigation, route }: any) {
         <View style={styles.plansRow}>
           <PaywallPlanCard
             selected={selectedPlan === 'weekly'}
-            light={false}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setSelectedPlan('weekly');
-            }}
+            light
+            onPress={() => handleSelectPlan('weekly')}
             badge={
-              trialEnabled && trialPlan === 'weekly' ? (
+              trialEnabled ? (
                 <View style={styles.trialBadge}>
                   <Text style={styles.trialBadgeText}>{trialBadgeLabel}</Text>
                 </View>
@@ -730,21 +750,12 @@ export default function PaywallScreen({ navigation, route }: any) {
           <PaywallPlanCard
             selected={selectedPlan === 'yearly'}
             recommended
-            light={false}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setSelectedPlan('yearly');
-            }}
+            light
+            onPress={() => handleSelectPlan('yearly')}
             badge={
-              trialEnabled && trialPlan === 'yearly' ? (
-                <View style={styles.trialBadge}>
-                  <Text style={styles.trialBadgeText}>{trialBadgeLabel}</Text>
-                </View>
-              ) : (
-                <View style={styles.saveBadge}>
-                  <Text style={styles.saveBadgeText}>{t('onboarding.paywall.bestValue')}</Text>
-                </View>
-              )
+              <View style={styles.saveBadge}>
+                <Text style={styles.saveBadgeText}>{t('onboarding.paywall.bestValue')}</Text>
+              </View>
             }
           >
             <Text style={[styles.compactPlanName, selectedPlan === 'yearly' && styles.compactPlanNameSelected]}>{t('onboarding.paywall.yearly')}</Text>
@@ -753,18 +764,8 @@ export default function PaywallScreen({ navigation, route }: any) {
 
           <PaywallPlanCard
             selected={selectedPlan === 'monthly'}
-            light={false}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setSelectedPlan('monthly');
-            }}
-            badge={
-              trialEnabled && trialPlan === 'monthly' ? (
-                <View style={styles.trialBadge}>
-                  <Text style={styles.trialBadgeText}>{trialBadgeLabel}</Text>
-                </View>
-              ) : undefined
-            }
+            light
+            onPress={() => handleSelectPlan('monthly')}
           >
             <Text style={[styles.compactPlanName, selectedPlan === 'monthly' && styles.compactPlanNameSelected]}>{t('onboarding.paywall.monthly')}</Text>
             <Text style={[styles.compactPlanPriceMain, selectedPlan === 'monthly' && styles.compactPlanPriceMainSelected]}>{t('onboarding.paywall.priceMonthly')}</Text>
@@ -792,7 +793,7 @@ export default function PaywallScreen({ navigation, route }: any) {
               <ActivityIndicator color="#fff" />
             ) : (
               <Text style={styles.ctaText}>
-                {trialEnabled
+                {showTrialCta
                   ? t('onboarding.paywall.startJourney')
                   : t('common.continue')}
               </Text>
@@ -842,7 +843,9 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: ONBOARDING_SURFACE.fillElevated,
+    borderWidth: 1,
+    borderColor: ONBOARDING_SURFACE.border,
   },
   topContent: {
     flex: 1,
@@ -885,9 +888,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 10,
     paddingHorizontal: 6,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: ONBOARDING_SURFACE.fill,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: ONBOARDING_SURFACE.border,
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 4,
@@ -925,9 +928,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: ONBOARDING_SURFACE.fillElevated,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
     borderWidth: 1,
-    borderColor: ONBOARDING_SURFACE.border,
+    borderColor: 'rgba(200, 185, 255, 0.35)',
     borderRadius: 999,
     paddingVertical: 14,
     paddingHorizontal: 18,
@@ -935,8 +938,8 @@ const styles = StyleSheet.create({
   },
   trialToggleLabel: {
     fontSize: sf(14),
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.92)',
+    fontWeight: '500',
+    color: '#1a1a2e',
     flex: 1,
     paddingRight: 12,
   },
@@ -972,7 +975,7 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   saveBadge: {
-    backgroundColor: '#A855F7',
+    backgroundColor: '#7B5EA7',
     borderRadius: 999,
     paddingVertical: 4,
     paddingHorizontal: 10,
@@ -980,11 +983,11 @@ const styles = StyleSheet.create({
   saveBadgeText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#fff',
+    color: '#FFFFFF',
     letterSpacing: 0.3,
   },
   trialBadge: {
-    backgroundColor: '#A855F7',
+    backgroundColor: '#7B5EA7',
     borderRadius: 999,
     paddingVertical: 4,
     paddingHorizontal: 10,
@@ -992,7 +995,7 @@ const styles = StyleSheet.create({
   trialBadgeText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#fff',
+    color: '#FFFFFF',
     letterSpacing: 0.3,
   },
   stickyFooter: {
@@ -1005,13 +1008,13 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    backgroundColor: 'rgba(12, 12, 16, 0.94)',
+    backgroundColor: 'rgba(255, 255, 255, 0.88)',
     borderTopWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
-    shadowColor: '#000',
+    borderColor: ONBOARDING_SURFACE.border,
+    shadowColor: 'rgba(120, 80, 200, 0.12)',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
+    shadowOpacity: 1,
+    shadowRadius: 20,
     elevation: 8,
   },
   commitmentBadge: {
@@ -1035,16 +1038,22 @@ const styles = StyleSheet.create({
   },
   ctaButton: {
     width: '100%',
-    borderRadius: 28,
-    backgroundColor: '#1a1a1a',
-    paddingVertical: 20,
+    height: 56,
+    borderRadius: ONBOARDING_CTA.borderRadius,
+    backgroundColor: ONBOARDING_CTA.background,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: 'rgba(123, 94, 167, 0.35)',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
+    shadowOpacity: 1,
+    shadowRadius: 20,
     elevation: 8,
+  },
+  ctaButtonText: {
+    fontSize: sf(17),
+    fontWeight: '600',
+    color: ONBOARDING_CTA.text,
+    letterSpacing: 0.2,
   },
   ctaButtonDisabled: {
     opacity: 0.7,
@@ -1052,7 +1061,7 @@ const styles = StyleSheet.create({
   ctaText: {
     fontSize: sf(17),
     fontWeight: '600',
-    color: '#fff',
+    color: ONBOARDING_CTA.text,
     letterSpacing: 0.2,
   },
   footer: {

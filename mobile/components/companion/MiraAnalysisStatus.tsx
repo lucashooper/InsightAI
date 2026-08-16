@@ -4,9 +4,12 @@ import { ANALYSIS_STATUS_LINES } from '../../constants/miraReveal';
 import InsightCompanionMark from './InsightCompanionMark';
 import { sf } from '../../utils/responsive';
 
+import type { AiPersonality } from '../../utils/aiPersonalities';
+
 type Props = {
   isDark: boolean;
   isRoast?: boolean;
+  personality?: AiPersonality;
   lines?: string[];
 };
 
@@ -17,6 +20,7 @@ type Props = {
 export default function MiraAnalysisStatus({
   isDark,
   isRoast = false,
+  personality = 'default',
   lines = ANALYSIS_STATUS_LINES,
 }: Props) {
   const [index, setIndex] = useState(0);
@@ -75,7 +79,7 @@ export default function MiraAnalysisStatus({
       accessibilityLiveRegion="polite"
     >
       <Animated.View style={{ opacity: pulse }}>
-        <InsightCompanionMark size={26} isDark={isDark || isRoast} roast={isRoast} />
+        <InsightCompanionMark size={36} personality={personality} isDark={isDark || isRoast} roast={isRoast} />
       </Animated.View>
       <Animated.View style={[styles.textWrap, { opacity }]}>
         <Text style={[styles.text, { color: muted }]}>{lines[index]}</Text>

@@ -1,18 +1,15 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Asset } from 'expo-asset';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
+import CachedImage from '../../components/shared/CachedImage';
+import { INSIGHT_LOGO } from '../../constants/appAssets';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { isTablet, iPadContentStyle, sf } from '../../utils/responsive';
 import { ONBOARDING_SURFACE } from '../../constants/onboardingTheme';
-
-const insightLogo = require('../../public/Insight-Logo-nobg.webp');
-
-Asset.fromModule(insightLogo).downloadAsync();
 
 interface PrivacyOnboardingScreenProps {
   navigation: any;
@@ -54,7 +51,7 @@ export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardin
         </TouchableOpacity>
       )}
 
-      <Image source={insightLogo} style={styles.logo} />
+      <CachedImage source={INSIGHT_LOGO} style={styles.logo} contentFit="contain" recyclingKey="privacy-logo" />
 
       <View style={styles.mainContent}>
         <Text style={[styles.title, { color: dark ? '#ffffff' : '#1a1a2e' }]}>
@@ -176,7 +173,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: isTablet ? 820 : undefined,
     paddingVertical: 22,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#7B5EA7',
     borderRadius: 28,
     alignItems: 'center',
     shadowColor: '#000',

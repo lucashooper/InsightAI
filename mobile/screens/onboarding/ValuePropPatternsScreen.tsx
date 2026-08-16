@@ -2,9 +2,10 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
+import OnboardingButton from '../../components/onboarding/OnboardingButton';
+import { ONBOARDING_TEXT } from '../../constants/onboardingTheme';
 import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
 
 const PATTERNS = [
@@ -17,9 +18,7 @@ const PATTERNS = [
 ];
 
 export default function ValuePropPatternsScreen({ navigation }: any) {
-  const { theme } = useTheme();
   const { t } = useLanguage();
-  const dark = isDarkTheme(theme.name);
 
   const pillAnims = useRef(PATTERNS.map(() => ({
     opacity: new Animated.Value(0),
@@ -46,27 +45,21 @@ export default function ValuePropPatternsScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} />
+      <StatusBar barStyle="dark-content" />
       <OnboardingAmbientBackground />
 
       {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <View style={[styles.backArrowCircle, { backgroundColor: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-          <Ionicons name="arrow-back" size={20} color={dark ? '#fff' : '#1a1a2e'} />
+        <View style={styles.backArrowCircle}>
+          <Ionicons name="arrow-back" size={20} color={ONBOARDING_TEXT.primary} />
         </View>
       </TouchableOpacity>
 
       <View style={styles.content}>
         <View>
-          <Text style={[styles.eyebrow, { color: dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}>
-            {t('onboarding.patterns.eyebrow')}
-          </Text>
-          <Text style={[styles.title, { color: dark ? '#ffffff' : '#1a1a2e' }]}> 
-            {t('onboarding.patterns.title')}
-          </Text>
-          <Text style={[styles.subtitle, { color: dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }]}>
-            {t('onboarding.patterns.subtitle')}
-          </Text>
+          <Text style={styles.eyebrow}>{t('onboarding.patterns.eyebrow')}</Text>
+          <Text style={styles.title}>{t('onboarding.patterns.title')}</Text>
+          <Text style={styles.subtitle}>{t('onboarding.patterns.subtitle')}</Text>
         </View>
 
         {/* Pattern Pills */}
@@ -77,10 +70,8 @@ export default function ValuePropPatternsScreen({ navigation }: any) {
               style={[
                 styles.pill,
                 {
-                  backgroundColor: dark ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.75)',
-                  borderColor: i === 0
-                    ? 'rgba(168, 85, 247, 0.4)'
-                    : (dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.07)'),
+                  backgroundColor: 'rgba(255,255,255,0.75)',
+                  borderColor: i === 0 ? 'rgba(123, 94, 167, 0.4)' : 'rgba(0,0,0,0.07)',
                   opacity: pillAnims[i].opacity,
                   transform: [{ translateY: pillAnims[i].translateY }],
                 },
@@ -90,9 +81,7 @@ export default function ValuePropPatternsScreen({ navigation }: any) {
                 <Text style={styles.frequencyText}>{t('onboarding.patterns.frequency', { count: item.frequency })}</Text>
               </View>
               <Text style={styles.pillEmoji}>{item.emoji}</Text>
-              <Text style={[styles.pillText, { color: dark ? 'rgba(255,255,255,0.85)' : '#1a1a2e' }]}>
-                {t(`onboarding.patterns.${item.textKey}`)}
-              </Text>
+              <Text style={styles.pillText}>{t(`onboarding.patterns.${item.textKey}`)}</Text>
             </Animated.View>
           ))}
         </View>
@@ -108,18 +97,13 @@ export default function ValuePropPatternsScreen({ navigation }: any) {
           }),
         }],
       }, iPadContentStyle as any]}>
-        <TouchableOpacity
-          style={styles.button}
-          activeOpacity={0.9}
+        <OnboardingButton
+          label={t('common.continue')}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             navigation.navigate('ValuePropWins');
           }}
-        >
-          <View style={styles.buttonInner}>
-            <Text style={styles.buttonText}>{t('common.continue')}</Text>
-          </View>
-        </TouchableOpacity>
+        />
       </Animated.View>
     </View>
   );
@@ -142,6 +126,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.05)',
   },
   content: {
     flex: 1,
@@ -155,6 +140,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     textTransform: 'uppercase',
     marginBottom: 10,
+    color: ONBOARDING_TEXT.secondary,
   },
   title: {
     fontSize: sf(32),
@@ -162,11 +148,13 @@ const styles = StyleSheet.create({
     letterSpacing: -1.28,
     lineHeight: sf(40),
     marginBottom: 14,
+    color: ONBOARDING_TEXT.primary,
   },
   subtitle: {
     fontSize: sf(16),
     lineHeight: sf(23),
     marginBottom: isTablet ? 48 : 36,
+    color: ONBOARDING_TEXT.body,
   },
   pillsContainer: {
     gap: 12,
@@ -181,16 +169,18 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   frequencyBadge: {
-    backgroundColor: 'rgba(168, 85, 247, 0.2)',
+    backgroundColor: 'rgba(123, 94, 167, 0.15)',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(123, 94, 167, 0.3)',
     marginRight: 'auto',
   },
   frequencyText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#E9D5FF',
+    color: '#7B5EA7',
     letterSpacing: 0.3,
   },
   pillEmoji: {
@@ -202,31 +192,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     flex: 1,
     marginLeft: 12,
+    color: ONBOARDING_TEXT.primary,
   },
   footer: {
     paddingHorizontal: 24,
     paddingBottom: isTablet ? 70 : 50,
-  },
-  button: {
-    width: '100%',
-    borderRadius: 28,
-    backgroundColor: '#1a1a1a',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  buttonInner: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 22,
-    borderRadius: 28,
-  },
-  buttonText: {
-    fontSize: sf(17),
-    fontWeight: '600',
-    color: '#fff',
-    letterSpacing: 0.2,
   },
 });

@@ -26,7 +26,7 @@ export const PREMIUM = {
     fill: 'rgba(255, 255, 255, 0.05)',
     fillElevated: 'rgba(255, 255, 255, 0.05)',
     fillOverlay: 'rgba(255, 255, 255, 0.05)',
-    border: 'rgba(255, 255, 255, 0.12)',
+    border: 'rgba(255, 255, 255, 0.06)',
     highlight: 'rgba(255, 255, 255, 0.04)',
     innerShadow: 'rgba(0, 0, 0, 0.35)',
     washTop: 'rgba(255, 255, 255, 0.02)',
@@ -35,14 +35,14 @@ export const PREMIUM = {
     shadowOpacity: 0.35,
   },
 
-  /** Light-theme glass card — DESIGN_SYSTEM.md */
+  /** Light-theme glass card — softer, less bright */
   lightGlass: {
-    fill: 'rgba(255, 255, 255, 0.45)',
-    gradientStart: 'rgba(255, 255, 255, 0.45)',
-    gradientEnd: 'rgba(255, 255, 255, 0.45)',
-    border: 'rgba(255, 255, 255, 0.65)',
+    fill: 'rgba(255, 255, 255, 0.32)',
+    gradientStart: 'rgba(255, 255, 255, 0.38)',
+    gradientEnd: 'rgba(255, 255, 255, 0.22)',
+    border: 'rgba(255, 255, 255, 0.28)',
     blur: 48,
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.03,
   },
 
   /** Premium reveal card mesh (Figma radials) */
@@ -61,7 +61,7 @@ export const PREMIUM = {
     screenPadH: 20,
     headerTop: 8,
     sectionGap: 28,
-    heroTopPadding: 48,
+    heroTopPadding: 24,
     heroToCardGap: 36,
     cardGap: 16,
     cardPad: 24,

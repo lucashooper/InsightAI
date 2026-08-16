@@ -33,6 +33,9 @@ service-account*.json
 # Expo / React Native local
 .expo/
 .expo-shared/
+.expo-tmp-bundle-test/
+mobile/.expo-tmp-bundle-test/
+mobile/builds/
 mobile/.env
 mobile/.env.local
 

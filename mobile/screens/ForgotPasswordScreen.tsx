@@ -425,7 +425,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={auth.container}>
-        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={false} />
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={false} />
         <OnboardingAmbientBackground />
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -434,7 +434,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
         >
           <TouchableOpacity style={auth.backButton} onPress={handleBack}>
             <View style={auth.backArrowCircle}>
-              <Ionicons name="arrow-back" size={20} color="#ffffff" />
+              <Ionicons name="arrow-back" size={20} color="#1a1a2e" />
             </View>
           </TouchableOpacity>
 
@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   secondaryButtonTextDisabled: {
-    color: 'rgba(255, 255, 255, 0.3)',
+    color: 'rgba(26, 26, 46, 0.3)',
   },
   linkButton: {
     paddingVertical: 12,

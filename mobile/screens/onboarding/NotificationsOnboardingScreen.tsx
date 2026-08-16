@@ -1,15 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
+import CachedImage from '../../components/shared/CachedImage';
+import { INSIGHT_LOGO } from '../../constants/appAssets';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-
-const insightLogo = require('../../public/Insight-Logo-nobg.webp');
 
 interface NotificationsOnboardingScreenProps {
   navigation: any;
@@ -61,7 +61,7 @@ export default function NotificationsOnboardingScreen({ navigation }: Notificati
       )}
 
       {/* Logo */}
-      <Image source={insightLogo} style={styles.logo} />
+      <CachedImage source={INSIGHT_LOGO} style={styles.logo} contentFit="contain" recyclingKey="notifications-logo" />
 
       {/* Title */}
       <Text style={[styles.title, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>{t('onboarding.notifications.title')}</Text>
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   allowButton: {
     width: '100%',
     paddingVertical: 22,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#7B5EA7',
     borderRadius: 28,
     alignItems: 'center',
     marginBottom: 16,

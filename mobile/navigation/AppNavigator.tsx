@@ -12,6 +12,7 @@ import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FloatingTabBar from '../components/navigation/FloatingTabBar';
+import AppStatusBar from '../components/shared/AppStatusBar';
 
 function EmptyTabScreen() {
   return null;
@@ -48,6 +49,7 @@ import OnboardingSummaryScreen from '../screens/onboarding/OnboardingSummaryScre
 import PrivacyOnboardingScreen from '../screens/onboarding/PrivacyOnboardingScreen';
 import NotificationsOnboardingScreen from '../screens/onboarding/NotificationsOnboardingScreen';
 import AnalyzingScreen from '../screens/onboarding/AnalyzingScreen';
+import InsightIntroScreen from '../screens/onboarding/InsightIntroScreen';
 import MiraOnboardingChatScreen from '../screens/onboarding/MiraOnboardingChatScreen';
 import AnalysisCompleteScreen from '../screens/onboarding/AnalysisCompleteScreen';
 import InteractiveShowcaseScreen from '../screens/onboarding/InteractiveShowcaseScreen';
@@ -74,6 +76,21 @@ import { PREMIUM } from '../constants/premiumUI';
 import AppBackdrop from '../components/ui/AppBackdrop';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+const HomeStack = createNativeStackNavigator();
+
+function HomeStackNavigator() {
+  return (
+    <HomeStack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
+      <HomeStack.Screen name="HomeMain" component={DashboardScreenNew} options={{ animation: 'none' }} />
+      <HomeStack.Screen name="Profile" component={ProfileScreen} />
+      <HomeStack.Screen name="EditProfile" component={EditProfileScreen} />
+      <HomeStack.Screen name="Appearance" component={AppearanceScreen} />
+      <HomeStack.Screen name="Security" component={SecurityScreen} />
+      <HomeStack.Screen name="Personalize" component={PersonalizeScreen} />
+      <HomeStack.Screen name="Playbook" component={PlaybookScreen} options={{ animation: 'slide_from_right' }} />
+    </HomeStack.Navigator>
+  );
+}
 
 // Bottom Tab Navigator for main app screens
 function MainTabs() {
@@ -103,7 +120,7 @@ function MainTabs() {
       {/* Tab 1: Home (Dashboard) */}
       <Tab.Screen
         name="Home"
-        component={DashboardScreenNew}
+        component={HomeStackNavigator}
         options={{
           tabBarLabel: t('tabs.home'),
           tabBarIcon: ({ color }) => (
@@ -193,7 +210,13 @@ export default function AppNavigator() {
   const [onboardingResumeScreen, setOnboardingResumeScreen] = React.useState<string | null>(null);
   const [needsPostPurchaseSignup, setNeedsPostPurchaseSignup] = React.useState(false);
   const [passwordRecoveryActive, setPasswordRecoveryActive] = React.useState(false);
+  const [activeRoute, setActiveRoute] = React.useState<string | null>(null);
   const prevUserIdRef = React.useRef<string | null>(null);
+
+  const syncActiveRoute = React.useCallback(() => {
+    if (!navigationRef.isReady()) return;
+    setActiveRoute(navigationRef.getCurrentRoute()?.name ?? null);
+  }, []);
 
   React.useEffect(() => {
     // Detect user changes (sign-in, sign-out, or user ID change from OTP)
@@ -241,6 +264,14 @@ export default function AppNavigator() {
         // Apple/Google Sign-In sets this flag immediately in AuthContext
         const value = await AsyncStorage.getItem('HAS_COMPLETED_ONBOARDING');
         console.log('[NAV] HAS_COMPLETED_ONBOARDING from storage:', value);
+
+        if (!resumeScreen && value !== 'true') {
+          const lastOnboardingScreen = await AsyncStorage.getItem('ONBOARDING_LAST_SCREEN');
+          if (lastOnboardingScreen) {
+            console.log('[NAV] Resuming onboarding at saved screen:', lastOnboardingScreen);
+            setOnboardingResumeScreen(lastOnboardingScreen);
+          }
+        }
         
         if (value === 'true') {
           console.log('[NAV] ✅ Onboarding complete flag found - going to MainTabs');
@@ -421,7 +452,14 @@ export default function AppNavigator() {
   }
 
   return (
-    <NavigationContainer ref={navigationRef} theme={darkTheme}>
+    <>
+      <AppStatusBar routeName={activeRoute} />
+      <NavigationContainer
+        ref={navigationRef}
+        theme={darkTheme}
+        onReady={syncActiveRoute}
+        onStateChange={syncActiveRoute}
+      >
       {user ? (
         // Authenticated screens - user is already signed in
         <Stack.Navigator
@@ -450,6 +488,7 @@ export default function AppNavigator() {
           <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
           <Stack.Screen name="PersonalityQuizIntro" component={PersonalityQuizIntroScreen} />
           <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
+          <Stack.Screen name="InsightIntro" component={InsightIntroScreen} />
           <Stack.Screen name="MiraOnboardingChat" component={MiraOnboardingChatScreen} />
           <Stack.Screen name="PersonalityResult" component={PersonalityResultScreen} />
           <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
@@ -504,12 +543,7 @@ export default function AppNavigator() {
           <Stack.Screen name="AmbientSounds" component={AmbientSoundsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="AIChat" component={AIChatScreen} options={{ headerShown: false, animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
           <Stack.Screen name="Playbook" component={PlaybookScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
-          <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="Explore" component={ExploreScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
-          <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
-          <Stack.Screen name="Appearance" component={AppearanceScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
-          <Stack.Screen name="Security" component={SecurityScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
-          <Stack.Screen name="Personalize" component={PersonalizeScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
         </Stack.Navigator>
       ) : (
         // Unauthenticated - show Welcome first, then Login/Signup
@@ -533,6 +567,7 @@ export default function AppNavigator() {
           <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
           <Stack.Screen name="PersonalityQuizIntro" component={PersonalityQuizIntroScreen} />
           <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
+          <Stack.Screen name="InsightIntro" component={InsightIntroScreen} />
           <Stack.Screen name="MiraOnboardingChat" component={MiraOnboardingChatScreen} />
           <Stack.Screen name="PersonalityResult" component={PersonalityResultScreen} />
           <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
@@ -577,6 +612,7 @@ export default function AppNavigator() {
         </Stack.Navigator>
       )}
     </NavigationContainer>
+    </>
   );
 }
 

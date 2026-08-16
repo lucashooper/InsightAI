@@ -2,6 +2,7 @@ import { MIRA_COMPANION_NAME } from '../constants/mira';
 import { APP_NAME } from '../constants/branding';
 
 export type AiPersonality =
+  | 'default'
   | 'balanced'
   | 'cheerful'
   | 'direct'
@@ -11,6 +12,7 @@ export type AiPersonality =
   | 'hype';
 
 export const CHAT_PERSONALITIES: AiPersonality[] = [
+  'default',
   'balanced',
   'cheerful',
   'direct',
@@ -22,6 +24,7 @@ export const CHAT_PERSONALITIES: AiPersonality[] = [
 export const HIDDEN_CHAT_PERSONALITIES: AiPersonality[] = ['hype', 'roast'];
 
 export const PERSONALITY_EMOJI: Record<AiPersonality, string> = {
+  default: '◉',
   balanced: '⚖️',
   cheerful: '☀️',
   direct: '🎯',
@@ -32,6 +35,8 @@ export const PERSONALITY_EMOJI: Record<AiPersonality, string> = {
 };
 
 const PERSONALITY_TONES: Record<AiPersonality, string> = {
+  default:
+    '- Warm, supportive, and genuinely curious about the user\'s wellbeing\n- Insight\'s natural voice — balanced and thoughtful',
   balanced:
     '- Warm, supportive, and genuinely curious about the user\'s wellbeing\n- Like a wise friend who remembers everything they\'ve shared',
   cheerful:
@@ -136,6 +141,8 @@ CRITICAL EVIDENCE RULES:
 - If you cannot honestly count or correlate, use soft language WITHOUT fake numbers ("often shows up near work stress").
 - NEVER invent dates, quotes, counts, or traits not supported by the journals.
 - If there are no (or too few) journal entries, set type to "insufficient_data", confidence to null, and gently encourage journaling.
+- NEVER use placeholder answers like "A pattern worth noticing", "Still learning about you", or vague headline echoes.
+- If you cannot name a specific pattern/trait with 2+ concrete evidence bullets, use type "insufficient_data" — do NOT fake a card.
 
 OUTPUT FORMAT — respond with ONLY valid JSON (no markdown fences, no preamble):
 {

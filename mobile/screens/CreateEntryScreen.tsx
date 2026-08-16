@@ -10,11 +10,11 @@ import {
   Animated,
   Pressable,
   Keyboard,
-  TouchableWithoutFeedback,
   ScrollView,
   Alert,
   Image,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,6 +27,7 @@ import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { mobileAiService } from '../services/mobileAiService';
 import { EncryptionService } from '../services/encryptionService';
+import { shouldEncryptJournalForUser } from '../utils/journalEncryption';
 import { setCachedEntry, entryVersion } from '../utils/decryptCache';
 import { CheckInDraft } from '../components/checkin/types';
 import { saveCheckIn } from '../services/checkInService';
@@ -37,7 +38,14 @@ import GoDeeperThread from '../components/editor/GoDeeperThread';
 import InsightCompanionMark from '../components/companion/InsightCompanionMark';
 import { formatJournalPromptContent } from '../constants/branding';
 import { useEditorKeyboardPadding } from '../hooks/useEditorKeyboardPadding';
-import { useTypewriterReveal } from '../hooks/useTypewriterReveal';
+import { useFollowBottomScroll } from '../hooks/useFollowBottomScroll';
+import { useFadeReveal } from '../hooks/useFadeReveal';
+import { useAnimatedPlaceholder } from '../hooks/useAnimatedPlaceholder';
+import EntryQuickActionsMenu from '../components/editor/EntryQuickActionsMenu';
+import PremiumDialog from '../components/shared/PremiumDialog';
+import { getTodayPrompt } from '../data/dailyPrompts';
+import { resolveProAccess } from '../utils/entitlements';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   loadGoDeeperConversation,
   saveGoDeeperConversation,
@@ -67,6 +75,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
   const [promptText] = useState<string | null>(prefillPrompt || null);
   const [showMoodPicker, setShowMoodPicker] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
+  const [showScanSoon, setShowScanSoon] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [speechAvailable, setSpeechAvailable] = useState(true);
   const [interimText, setInterimText] = useState('');
@@ -85,12 +94,29 @@ export default function CreateEntryScreen({ navigation, route }: any) {
   const savedEntryIdRef = useRef<string | null>(null);
   const savingInProgress = useRef(false);
   const overlayOpacity = useRef(new Animated.Value(0)).current;
-  const quickActionsAnim = useRef(new Animated.Value(0)).current;
-  const controlsBottomAnim = useRef(new Animated.Value(20)).current;
+  const insets = useSafeAreaInsets();
+  const controlsRestingBottom = Math.max(insets.bottom, Platform.OS === 'android' ? 48 : 20) + 12;
+  const [controlsBottom, setControlsBottom] = useState(controlsRestingBottom);
+  const controlsBottomAnim = useRef(new Animated.Value(controlsRestingBottom)).current;
   const scrollViewRef = useRef<any>(null);
+  const goDeeperAnchorY = useRef(0);
+  const {
+    onScroll: onFollowBottomScroll,
+    onScrollBeginDrag: onFollowBottomScrollBeginDrag,
+    onContentSizeChange: onFollowBottomContentSizeChange,
+    onAnchorLayout: onGoDeeperAnchorLayout,
+    scrollToEndIfFollowing,
+    revealThread,
+  } = useFollowBottomScroll(scrollViewRef, { anchorYRef: goDeeperAnchorY });
   const contentInputRef = useRef<TextInput>(null);
   const { scrollPaddingBottom } = useEditorKeyboardPadding();
-  const { activeId: typingMessageId, displayText: typingDisplayText, startReveal } = useTypewriterReveal();
+  const { revealingId: revealingMessageId, startReveal, finishReveal } = useFadeReveal();
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [contentFocused, setContentFocused] = useState(false);
+  const animatedPlaceholder = useAnimatedPlaceholder(
+    promptText ? t('editor.yourThoughts') : t('editor.writeHere'),
+    !content.trim() && !contentFocused && !promptText,
+  );
 
   const persistGoDeeper = async (messages: GoDeeperMessage[]) => {
     if (!user?.id) return;
@@ -101,6 +127,15 @@ export default function CreateEntryScreen({ navigation, route }: any) {
     if (!user?.id) return;
     loadGoDeeperConversation(user.id, savedEntryIdRef.current).then(setGoDeeperMessages);
   }, [user?.id]);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      if (!title.trim()) {
+        contentInputRef.current?.focus();
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   const moods = ['😊', '😔', '😰', '😡', '😌', '🤔', '😴', '🎉'];
   // Auto-save functionality
@@ -143,12 +178,19 @@ export default function CreateEntryScreen({ navigation, route }: any) {
   const persistLinkedCheckIn = async (journalNoteId: string, journalTitle: string) => {
     if (!checkInDraft || checkInSavedRef.current || !user?.id) return;
 
-    await saveCheckIn(user.id, checkInDraft as CheckInDraft, {
-      journalTitle,
-      journalBody: content.trim(),
-      journalNoteId,
-    });
-    checkInSavedRef.current = true;
+    try {
+      const saved = await saveCheckIn(user.id, checkInDraft as CheckInDraft, {
+        journalTitle,
+        journalBody: content.trim(),
+        journalNoteId,
+      });
+      if (saved) checkInSavedRef.current = true;
+    } catch (error: any) {
+      console.warn(
+        '[CreateEntry] Linked check-in save skipped:',
+        error?.message || JSON.stringify(error),
+      );
+    }
   };
 
   const handleAutoSave = async () => {
@@ -157,8 +199,10 @@ export default function CreateEntryScreen({ navigation, route }: any) {
     savingInProgress.current = true;
 
     try {
-      // Get encryption key from secure storage
-      const encryptionKey = await EncryptionService.getKey();
+      const useEncryption = user?.id ? await shouldEncryptJournalForUser(user.id) : false;
+      const encryptionKey = useEncryption && user?.id
+        ? await EncryptionService.getKey(user.id)
+        : null;
       
       // If there's a prompt, prepend it as context for AI analysis
       let fullContent = content.trim();
@@ -276,14 +320,18 @@ export default function CreateEntryScreen({ navigation, route }: any) {
   };
 
   const handleAnalyze = async () => {
+    if (isAnalyzing) return;
     console.log('[CreateEntry] Analyze button pressed');
     console.log('[CreateEntry] Content length:', content.trim().length);
     if (content.trim().length < 5) {
-      console.log('[CreateEntry] Content too short, aborting');
+      Alert.alert(t('editor.analyze'), t('editor.needMoreText'));
       return;
     }
 
+    if (!(await ensureProAccess())) return;
+
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setIsAnalyzing(true);
 
     // Cancel any pending auto-save to prevent race conditions
     if (saveTimeoutRef.current) {
@@ -291,14 +339,25 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       saveTimeoutRef.current = null;
     }
     
-    // Wait for any in-progress auto-save to finish
-    while (savingInProgress.current) {
+    // Wait for any in-progress auto-save to finish (max 5s)
+    let waited = 0;
+    while (savingInProgress.current && waited < 5000) {
       await new Promise(resolve => setTimeout(resolve, 100));
+      waited += 100;
     }
     savingInProgress.current = true;
     
     try {
       const entryTitle = title.trim() || content.trim().split('\n')[0].substring(0, 50) || t('editor.journalEntry');
+      const plainContent = promptText
+        ? formatJournalPromptContent(promptText, content.trim())
+        : content.trim();
+      const savedAt = new Date().toISOString();
+
+      const navigateToAnalyze = (entryForDetail: Record<string, unknown>) => {
+        console.log('[CreateEntry] Navigating to analyze for entry:', entryForDetail.id);
+        navigation.replace('EntryDetail', { entry: entryForDetail, shouldAnalyze: true });
+      };
 
       // If auto-save already created the entry, update it and reuse
       if (savedEntryIdRef.current) {
@@ -306,29 +365,43 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           .from('notes')
           .update({
             title: entryTitle,
-            content: promptText ? formatJournalPromptContent(promptText, content.trim()) : content.trim(),
-            is_encrypted: false, // Analyze always saves unencrypted for AI processing
+            content: plainContent,
+            is_encrypted: false, // Plaintext required for AI analysis
             mood: mood || null,
-            updated_at: new Date().toISOString(),
+            updated_at: savedAt,
           })
           .eq('id', savedEntryIdRef.current);
 
-        if (!error) {
-          await persistLinkedCheckIn(savedEntryIdRef.current, entryTitle);
-          console.log('[CreateEntry] Updated existing entry, navigating to analyze');
-          // Fetch the full entry to pass to EntryDetail
-          const { data: updatedEntry } = await supabase
-            .from('notes')
-            .select('*')
-            .eq('id', savedEntryIdRef.current)
-            .single();
-
-          if (updatedEntry) {
-            navigation.replace('EntryDetail', { entry: updatedEntry, shouldAnalyze: true });
-          }
-        } else {
+        if (error) {
           console.error('[CreateEntry] Error updating entry:', error);
+          Alert.alert(t('entry.analysisFailed'), error.message || t('common.error'));
+          return;
         }
+
+        await persistLinkedCheckIn(savedEntryIdRef.current, entryTitle);
+
+        const { data: updatedEntry, error: fetchError } = await supabase
+          .from('notes')
+          .select('*')
+          .eq('id', savedEntryIdRef.current)
+          .single();
+
+        if (fetchError) {
+          console.warn('[CreateEntry] Fetch after update failed, using local entry:', fetchError.message);
+        }
+
+        navigateToAnalyze(
+          updatedEntry ?? {
+            id: savedEntryIdRef.current,
+            user_id: user?.id,
+            title: entryTitle,
+            content: plainContent,
+            mood: mood || null,
+            is_encrypted: false,
+            created_at: savedAt,
+            updated_at: savedAt,
+          },
+        );
       } else {
         // No existing entry, insert a new one
         const { data, error } = await supabase
@@ -336,43 +409,98 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           .insert({
             user_id: user?.id,
             title: entryTitle,
-            content: promptText ? formatJournalPromptContent(promptText, content.trim()) : content.trim(),
+            content: plainContent,
+            is_encrypted: false,
             mood: mood || null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            created_at: savedAt,
+            updated_at: savedAt,
           })
           .select()
           .single();
 
-        if (!error && data) {
-          savedEntryIdRef.current = data.id;
-          await persistLinkedCheckIn(data.id, entryTitle);
-          console.log('[CreateEntry] Entry saved successfully, navigating to analyze');
-          navigation.replace('EntryDetail', { entry: data, shouldAnalyze: true });
-        } else {
+        if (error || !data) {
           console.error('[CreateEntry] Error saving entry:', error);
+          Alert.alert(t('entry.analysisFailed'), error?.message || t('common.error'));
+          return;
         }
+
+        savedEntryIdRef.current = data.id;
+        await persistLinkedCheckIn(data.id, entryTitle);
+        navigateToAnalyze(data);
       }
-    } catch (error) {
-      console.error('[CreateEntry] Exception saving entry:', error);
+    } catch (error: any) {
+      console.error('[CreateEntry] Exception saving entry:', error?.message || JSON.stringify(error));
+      Alert.alert(t('entry.analysisFailed'), error?.message || t('common.error'));
     } finally {
       savingInProgress.current = false;
+      setIsAnalyzing(false);
     }
   };
 
+  const closeQuickActions = () => {
+    setShowQuickActions(false);
+  };
+
   const toggleQuickActions = () => {
-    const toValue = showQuickActions ? 0 : 1;
-    setShowQuickActions(!showQuickActions);
-    Animated.spring(quickActionsAnim, {
-      toValue,
-      useNativeDriver: true,
-      tension: 100,
-      friction: 10,
-    }).start();
+    if (showQuickActions) {
+      closeQuickActions();
+      return;
+    }
+    Keyboard.dismiss();
+    setShowQuickActions(true);
+  };
+
+  const handleScanDocument = () => {
+    setShowScanSoon(true);
+  };
+
+  const handleSelectGuidedPrompt = () => {
+    const daily = getTodayPrompt();
+    const promptText = daily.prompt + (daily.followUp ? `\n\n${daily.followUp}` : '');
+    navigation.navigate('PromptEntry', { promptText });
+  };
+
+  const quickActionItems = [
+    {
+      id: 'voice',
+      emoji: '🎙️',
+      label: t('editor.voiceMode'),
+      onPress: () => toggleVoiceRecording(),
+    },
+    {
+      id: 'scan',
+      emoji: '📷',
+      label: t('home.scan'),
+      onPress: () => handleScanDocument(),
+    },
+    {
+      id: 'prompt',
+      emoji: '💡',
+      label: t('home.todaysPrompt'),
+      onPress: () => handleSelectGuidedPrompt(),
+    },
+  ];
+
+  const ensureProAccess = async (): Promise<boolean> => {
+    if (!user?.id) return false;
+    const hasPro = await resolveProAccess(user.id);
+    if (!hasPro) {
+      Alert.alert(
+        t('editor.proRequiredTitle'),
+        t('editor.proRequiredMessage'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('companion.upgradePro'), onPress: () => navigation.navigate('Paywall') },
+        ],
+      );
+      return false;
+    }
+    return true;
   };
 
   const handleGoDeeper = async () => {
     if (!content.trim() || isGoDeeperLoading) return;
+    if (!(await ensureProAccess())) return;
 
     setIsGoDeeperLoading(true);
     try {
@@ -380,15 +508,29 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       const text = mobileAiService.formatGoDeeperReflection(response.reflection, response.questions);
       const msg = createGoDeeperMessage('assistant', text);
       setGoDeeperMessages((prev) => [...prev, msg]);
+      setTimeout(() => revealThread(true), 80);
       startReveal(msg.id, text, () => {
         setGoDeeperMessages((prev) => {
           persistGoDeeper(prev);
           return prev;
         });
-        setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 80);
+        scrollToEndIfFollowing(true);
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('[CreateEntry] Go Deeper error:', error);
+      const message = error?.message || t('entry.analysisError');
+      if (message.includes('Subscription') || message.includes('subscription')) {
+        Alert.alert(
+          t('editor.proRequiredTitle'),
+          t('editor.proRequiredMessage'),
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            { text: t('companion.upgradePro'), onPress: () => navigation.navigate('Paywall') },
+          ],
+        );
+      } else {
+        Alert.alert(t('entry.analysisFailed'), message);
+      }
     } finally {
       setIsGoDeeperLoading(false);
     }
@@ -409,9 +551,10 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       const assistantMsg = createGoDeeperMessage('assistant', assistantText);
       const full = [...withUser, assistantMsg];
       setGoDeeperMessages(full);
+      setTimeout(() => revealThread(true), 80);
       startReveal(assistantMsg.id, assistantText, () => {
         persistGoDeeper(full);
-        setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 80);
+        scrollToEndIfFollowing(true);
       });
     } catch (error) {
       console.error('[CreateEntry] Go Deeper reply error:', error);
@@ -528,13 +671,20 @@ export default function CreateEntryScreen({ navigation, route }: any) {
     }).start();
   }, [showMoodPicker]);
 
+  useEffect(() => {
+    controlsBottomAnim.setValue(controlsRestingBottom);
+    setControlsBottom(controlsRestingBottom);
+  }, [controlsRestingBottom, controlsBottomAnim]);
+
   // Keyboard event listeners
   useEffect(() => {
     const keyboardWillShow = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
       (e) => {
+        const nextBottom = e.endCoordinates.height + controlsRestingBottom;
+        setControlsBottom(nextBottom);
         Animated.spring(controlsBottomAnim, {
-          toValue: e.endCoordinates.height + 10,
+          toValue: nextBottom,
           useNativeDriver: false,
           tension: 100,
           friction: 10,
@@ -545,8 +695,9 @@ export default function CreateEntryScreen({ navigation, route }: any) {
     const keyboardWillHide = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
       () => {
+        setControlsBottom(controlsRestingBottom);
         Animated.spring(controlsBottomAnim, {
-          toValue: 20,
+          toValue: controlsRestingBottom,
           useNativeDriver: false,
           tension: 100,
           friction: 10,
@@ -558,7 +709,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       keyboardWillShow.remove();
       keyboardWillHide.remove();
     };
-  }, []);
+  }, [controlsRestingBottom, controlsBottomAnim]);
 
   const handleAddPhotos = async () => {
     setShowQuickActions(false);
@@ -621,8 +772,8 @@ export default function CreateEntryScreen({ navigation, route }: any) {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={styles.mainContent}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
@@ -631,6 +782,18 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           </TouchableOpacity>
         </View>
         <View style={styles.headerRight}>
+          <TouchableOpacity
+            onPress={toggleVoiceRecording}
+            style={styles.headerButton}
+            activeOpacity={0.7}
+            accessibilityLabel={t('home.speak')}
+          >
+            <Ionicons
+              name={isRecording ? 'mic' : 'mic-outline'}
+              size={24}
+              color={isRecording ? '#8b5cf6' : (isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : theme.colors.primaryText)}
+            />
+          </TouchableOpacity>
           <TouchableOpacity 
             onPress={() => setShowMoodPicker(!showMoodPicker)} 
             style={styles.headerButton}
@@ -643,11 +806,11 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           </TouchableOpacity>
           <TouchableOpacity 
             onPress={handleAnalyze}
-            disabled={content.trim().length < 5}
+            disabled={content.trim().length < 5 || isAnalyzing}
             activeOpacity={0.8}
             style={[
               { borderRadius: 12, overflow: 'hidden', minWidth: 80, alignItems: 'center', shadowColor: '#8b5cf6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 },
-              content.trim().length < 5 && { opacity: 0.4 }
+              (content.trim().length < 5 || isAnalyzing) && { opacity: 0.4 }
             ]}
           >
             <LinearGradient
@@ -656,7 +819,11 @@ export default function CreateEntryScreen({ navigation, route }: any) {
               end={{ x: 1, y: 1 }}
               style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, minWidth: 80, alignItems: 'center' }}
             >
-              <Text style={{ color: '#ffffff', fontSize: 15, fontWeight: '600' }}>{t('editor.analyze')}</Text>
+              {isAnalyzing ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Text style={{ color: '#ffffff', fontSize: 15, fontWeight: '600' }}>{t('editor.analyze')}</Text>
+              )}
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -666,6 +833,9 @@ export default function CreateEntryScreen({ navigation, route }: any) {
         <View style={styles.checkInChipWrap}>
           <StandardContainer variant="nested" style={styles.checkInChip}>
             <View style={styles.checkInChipRow}>
+              <View style={styles.checkInSymbol}>
+                <Ionicons name="pulse" size={16} color="#8b5cf6" />
+              </View>
               <MoodIcon tier={checkInDraft.moodTier} size={28} />
               <Text style={[styles.checkInChipText, { color: theme.colors.primaryText }]}>
                 {t('editor.checkInFeeling', {
@@ -751,15 +921,22 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       {/* Full-Screen Writing Canvas */}
       <KeyboardAvoidingView
         style={styles.writingArea}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 56 : 0}
       >
         <ScrollView
           ref={scrollViewRef}
           style={{ flex: 1 }}
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: scrollPaddingBottom }}
+          contentContainerStyle={{ flexGrow: 1, paddingTop: 8, paddingBottom: scrollPaddingBottom }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          scrollEventThrottle={16}
+          onScroll={onFollowBottomScroll}
+          onContentSizeChange={onFollowBottomContentSizeChange}
+          onScrollBeginDrag={() => {
+            onFollowBottomScrollBeginDrag();
+            closeQuickActions();
+          }}
         >
           <TextInput
             style={[styles.titleInput, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}
@@ -767,8 +944,10 @@ export default function CreateEntryScreen({ navigation, route }: any) {
             placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'}
             value={title}
             onChangeText={setTitle}
-            multiline={false}
-            returnKeyType="next"
+            multiline
+            scrollEnabled={false}
+            blurOnSubmit
+            returnKeyType="done"
           />
 
           {/* Branded Prompt Display */}
@@ -784,17 +963,32 @@ export default function CreateEntryScreen({ navigation, route }: any) {
             </View>
           )}
 
-          <TextInput
-            ref={contentInputRef}
-            style={[styles.contentInput, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}
-            value={content}
-            onChangeText={handleContentChange}
-            placeholder={promptText ? t('editor.yourThoughts') : t('editor.writeHere')}
-            placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'}
-            multiline
-            textAlignVertical="top"
-            autoFocus={false}
-          />
+          <View style={styles.contentInputWrap}>
+            {!content.trim() && !contentFocused && animatedPlaceholder ? (
+              <Text
+                pointerEvents="none"
+                style={[
+                  styles.contentInput,
+                  styles.placeholderOverlay,
+                  { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.42)' : 'rgba(0, 0, 0, 0.42)' },
+                ]}
+              >
+                {animatedPlaceholder}
+              </Text>
+            ) : null}
+            <TextInput
+              ref={contentInputRef}
+              style={[styles.contentInput, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}
+              value={content}
+              onChangeText={handleContentChange}
+              placeholder=""
+              onFocus={() => { closeQuickActions(); setContentFocused(true); }}
+              onBlur={() => setContentFocused(false)}
+              multiline
+              textAlignVertical="top"
+              autoFocus={false}
+            />
+          </View>
 
           {/* Attached Photo Thumbnails */}
           {attachedPhotos.length > 0 && (
@@ -829,86 +1023,63 @@ export default function CreateEntryScreen({ navigation, route }: any) {
             </View>
           )}
 
-          <GoDeeperThread
-            messages={goDeeperMessages}
-            replyText={goDeeperReply}
-            onReplyChange={setGoDeeperReply}
-            onSendReply={handleGoDeeperReply}
-            isLoading={isGoDeeperLoading}
-            isDark={isDarkTheme(theme.name)}
-            replyPlaceholder={t('editor.goDeeperReply')}
-            typingMessageId={typingMessageId}
-            typingDisplayText={typingDisplayText}
-          />
+          <View onLayout={onGoDeeperAnchorLayout} collapsable={false}>
+            <GoDeeperThread
+              messages={goDeeperMessages}
+              replyText={goDeeperReply}
+              onReplyChange={setGoDeeperReply}
+              onSendReply={handleGoDeeperReply}
+              isLoading={isGoDeeperLoading}
+              isDark={isDarkTheme(theme.name)}
+              replyPlaceholder={t('editor.goDeeperReply')}
+              revealingMessageId={revealingMessageId}
+              onRevealComplete={finishReveal}
+              onTypewriterProgress={() => scrollToEndIfFollowing(true)}
+            />
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      </View>
 
       {/* Bottom-Left Quick Actions Button */}
-      <Animated.View style={[styles.quickActionsButton, { bottom: controlsBottomAnim }]} pointerEvents="box-none">
+      <Animated.View style={[styles.quickActionsButton, { bottom: controlsBottomAnim }]}>
         <TouchableOpacity 
           onPress={toggleQuickActions}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={t('accessibility.openQuickActions')}
         >
-          <LinearGradient
-            colors={isDarkTheme(theme.name) ? ['rgba(139, 92, 246, 0.3)', 'rgba(99, 102, 241, 0.2)'] : ['#8b5cf6', '#7c3aed']}
-            style={styles.fabGradient}
-          >
-            <Ionicons 
-              name={showQuickActions ? "close" : "add"} 
-              size={24} 
-              color="#ffffff" 
-            />
-          </LinearGradient>
+          <View style={styles.fabOuter}>
+            <LinearGradient
+              colors={isDarkTheme(theme.name) ? ['#7c3aed', '#6366f1'] : ['#8b5cf6', '#7c3aed']}
+              style={styles.fabGradient}
+            >
+              <Ionicons 
+                name={showQuickActions ? "close" : "add"} 
+                size={24} 
+                color="#ffffff" 
+              />
+            </LinearGradient>
+          </View>
         </TouchableOpacity>
       </Animated.View>
 
-      {/* Quick Actions Overlay */}
-      {showQuickActions && (
-        <Animated.View 
-          style={[
-            styles.quickActionsOverlay,
-            {
-              opacity: quickActionsAnim,
-              transform: [{
-                translateY: quickActionsAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [20, 0],
-                }),
-              }],
-            },
-          ]}
-        >
-          <BlurView intensity={80} style={styles.quickActionsBlur}>
-            <LinearGradient
-              colors={['rgba(20, 20, 30, 0.95)', 'rgba(10, 10, 20, 0.98)']}
-              style={styles.quickActionsContainer}
-            >
-              <TouchableOpacity 
-                style={styles.quickActionItem}
-                onPress={() => {
-                  setShowQuickActions(false);
-                  toggleVoiceRecording();
-                }}
-              >
-                <Ionicons name={isRecording ? 'mic-off' : 'mic'} size={20} color={isRecording ? '#ef4444' : 'rgba(255, 255, 255, 0.8)'} />
-                <Text style={styles.quickActionText}>{isRecording ? t('editor.stopRecording') : t('editor.voiceMode')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.quickActionItem} onPress={handleAddPhotos}>
-                <Ionicons name="image" size={20} color="rgba(255, 255, 255, 0.8)" />
-                <Text style={styles.quickActionText}>{t('editor.addPhotos')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.quickActionItem} onPress={handleCustomizeAI}>
-                <Ionicons name="color-palette" size={20} color="rgba(255, 255, 255, 0.8)" />
-                <Text style={styles.quickActionText}>{t('editor.customizeAi')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.quickActionItem} onPress={handleNewDirection}>
-                <Ionicons name="compass" size={20} color="rgba(255, 255, 255, 0.8)" />
-                <Text style={styles.quickActionText}>{t('editor.newDirection')}</Text>
-              </TouchableOpacity>
-            </LinearGradient>
-          </BlurView>
-        </Animated.View>
-      )}
+      <EntryQuickActionsMenu
+        visible={showQuickActions}
+        bottomOffset={controlsBottom}
+        isDark={isDarkTheme(theme.name)}
+        onClose={closeQuickActions}
+        actions={quickActionItems}
+      />
+
+      <PremiumDialog
+        visible={showScanSoon}
+        title={t('home.comingSoon')}
+        message={t('home.scanSoon')}
+        icon="scan-outline"
+        onDismiss={() => setShowScanSoon(false)}
+        actions={[{ label: t('common.ok'), variant: 'primary', onPress: () => setShowScanSoon(false) }]}
+      />
 
       {/* Bottom-Right Go Deeper Button */}
       <Animated.View style={[styles.sparkleButton, { bottom: controlsBottomAnim }]} pointerEvents="box-none">
@@ -922,9 +1093,9 @@ export default function CreateEntryScreen({ navigation, route }: any) {
             style={styles.sparkleFabGradient}
           >
             {isGoDeeperLoading ? (
-              <Ionicons name="hourglass" size={24} color="#ffffff" />
+              <Ionicons name="hourglass" size={28} color="#ffffff" />
             ) : (
-              <Ionicons name="sparkles" size={24} color="#ffffff" />
+              <Ionicons name="sparkles" size={28} color="#ffffff" />
             )}
           </LinearGradient>
         </TouchableOpacity>
@@ -964,13 +1135,15 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           </View>
         </TouchableOpacity>
       </Modal>
-      </View>
-    </TouchableWithoutFeedback>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  mainContent: {
     flex: 1,
   },
   header: {
@@ -1198,6 +1371,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 30,
     paddingBottom: 12,
+    lineHeight: 32,
   },
   contentInput: {
     flex: 1,
@@ -1206,6 +1380,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 18,
     paddingBottom: 100,
+  },
+  contentInputWrap: {
+    flex: 1,
+    position: 'relative',
+  },
+  placeholderOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
   },
   aiPromptContainer: {
     flexDirection: 'row',
@@ -1250,7 +1435,22 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 30,
     left: 24,
-    zIndex: 10,
+    zIndex: 200,
+    elevation: 24,
+  },
+  fabOuter: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    overflow: 'hidden',
+    ...(Platform.OS === 'android'
+      ? {}
+      : {
+          shadowColor: '#8b5cf6',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 8,
+        }),
   },
   fabGradient: {
     width: 56,
@@ -1258,45 +1458,6 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  quickActionsOverlay: {
-    position: 'absolute',
-    bottom: 100,
-    left: 24,
-    zIndex: 9,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  quickActionsBlur: {
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  quickActionsContainer: {
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.3)',
-    gap: 8,
-    minHeight: 200,
-  },
-  quickActionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    gap: 12,
-    borderRadius: 10,
-    backgroundColor: 'rgba(139, 92, 246, 0.08)',
-  },
-  quickActionText: {
-    color: 'rgba(255, 255, 255, 0.85)',
-    fontSize: 15,
-    fontWeight: '500',
   },
   sparkleButton: {
     position: 'absolute',
@@ -1305,16 +1466,18 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   sparkleFabGradient: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.35)',
     shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 14,
+    elevation: 10,
   },
   // Voice recording indicator
   recordingBanner: {
@@ -1474,6 +1637,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+  },
+  checkInSymbol: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(139,92,246,0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   checkInChipText: {
     fontSize: 14,

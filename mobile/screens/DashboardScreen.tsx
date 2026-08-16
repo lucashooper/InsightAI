@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useIsFocused } from '@react-navigation/native';
 import {
   View,
@@ -19,7 +19,6 @@ import {
 import MaskedView from '@react-native-masked-view/masked-view';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { LineChart } from 'react-native-chart-kit';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -47,7 +46,22 @@ import {
   setDashboardDeferredCache,
 } from '../utils/dashboardCache';
 import { navigateToPlaybook } from '../utils/navigateToPlaybook';
+import { computeEmotionBubbleLayouts, computeAddBubbleLayout } from '../utils/emotionBubbleLayout';
 import { setPlaybookPrefill } from '../utils/playbookPrefill';
+import MoodOverTimeChart, { MoodTrendPoint } from '../components/analytics/MoodOverTimeChart';
+import { buildDailyMoodTrendPoints } from '../utils/moodTrendData';
+
+function patternEmojiForSummary(summary: string): string {
+  const s = summary.toLowerCase();
+  if (s.includes('sleep')) return '😴';
+  if (s.includes('stress') || s.includes('anx') || s.includes('worry')) return '😮‍💨';
+  if (s.includes('social') || s.includes('friend') || s.includes('relationship')) return '🤝';
+  if (s.includes('work') || s.includes('productiv') || s.includes('focus')) return '🎯';
+  if (s.includes('exercise') || s.includes('health') || s.includes('energy')) return '💪';
+  if (s.includes('gratitude') || s.includes('positive') || s.includes('joy')) return '✨';
+  if (s.includes('habit') || s.includes('routine')) return '🔄';
+  return '💭';
+}
 import {
   clearPatternAction,
   getPatternKey,
@@ -71,14 +85,6 @@ interface DashboardStats {
   currentStreak: number;
 }
 
-interface ChartData {
-  labels: string[];
-  datasets: {
-    data: number[];
-    color?: (opacity: number) => string;
-  }[];
-}
-
 export default function DashboardScreen() {
   const { user } = useAuth();
   const { theme, themeName } = useTheme();
@@ -94,20 +100,27 @@ export default function DashboardScreen() {
     console.log('[DashboardTheme]:', { themeName });
   }, [themeName]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [chartData, setChartData] = useState<ChartData | null>(null);
   const [loading, setLoading] = useState(true);
   const [dominantEmotions, setDominantEmotions] = useState<
     { emotion: string; percentage: number }[]
   >([]);
+  const BUBBLE_MAP_WIDTH = Dimensions.get('window').width - 72;
+  const BUBBLE_MAP_HEIGHT = 240;
+  const bubbleLayouts = useMemo(
+    () => computeEmotionBubbleLayouts(dominantEmotions, BUBBLE_MAP_WIDTH, BUBBLE_MAP_HEIGHT),
+    [dominantEmotions, BUBBLE_MAP_WIDTH, BUBBLE_MAP_HEIGHT],
+  );
+  const addBubbleLayout = useMemo(
+    () => computeAddBubbleLayout(bubbleLayouts, BUBBLE_MAP_WIDTH, BUBBLE_MAP_HEIGHT),
+    [bubbleLayouts, BUBBLE_MAP_WIDTH, BUBBLE_MAP_HEIGHT],
+  );
   const [emotionEntriesByEmotion, setEmotionEntriesByEmotion] = useState<
     Record<string, any[]>
   >({});
   const [emotionDetail, setEmotionDetail] = useState<
     { emotion: string; percentage: number; entries: any[] } | null
   >(null);
-  const [trendPoints, setTrendPoints] = useState<
-    { date: string; wellbeing: number; primaryEmotion?: string }[]
-  >([]);
+  const [trendPoints, setTrendPoints] = useState<MoodTrendPoint[]>([]);
   const [trendTooltip, setTrendTooltip] = useState<
     | {
         index: number;
@@ -160,9 +173,19 @@ export default function DashboardScreen() {
   const [strengthsSectionExpanded, setStrengthsSectionExpanded] = useState(false);
   const [growthSectionExpanded, setGrowthSectionExpanded] = useState(false);
   const [userName, setUserName] = useState<string>('');
+  const [stickySection, setStickySection] = useState<'patterns' | 'working' | null>(null);
+  const patternsSectionY = useRef(0);
+  const workingSectionY = useRef(0);
 
   const chartOpacity = useRef(new Animated.Value(0)).current;
   const cardAnimations = useRef([...Array(6)].map(() => new Animated.Value(0))).current;
+  const bubbleAnims = useRef(
+    [...Array(6)].map(() => ({
+      opacity: new Animated.Value(0),
+      scale: new Animated.Value(0.4),
+    })),
+  ).current;
+  const entrancePlayedRef = useRef(false);
   
   // Modal animation values
   const modalBackgroundOpacity = useRef(new Animated.Value(0)).current;
@@ -177,12 +200,6 @@ export default function DashboardScreen() {
   const reloadPatternActions = useCallback(async () => {
     setPatternActions(await loadPatternActions());
   }, []);
-
-  useEffect(() => {
-    if (isFocused) {
-      reloadPatternActions();
-    }
-  }, [isFocused, reloadPatternActions]);
 
   const visiblePatternsToAddress = patternsToAddress.filter(
     (pattern) => !isPatternHidden(patternActions[getPatternKey(pattern.summary)]),
@@ -259,25 +276,67 @@ export default function DashboardScreen() {
     deferredLoadedRef.current = true;
   };
 
-  // Load stats when Dashboard tab is focused — use cache to avoid reprocessing on every visit
-  useEffect(() => {
-    if (!isFocused || !preloaded.isLoaded || !user?.id) return;
-    if (preloaded.userName) setUserName(preloaded.userName);
-  }, [preloaded.userName]);
+  const playDashboardEntranceAnimations = useCallback(() => {
+    cardAnimations.forEach((anim, index) => {
+      // Emotional landscape stays put — only bubbles animate inside it
+      if (index === 1) {
+        anim.setValue(1);
+        return;
+      }
+      anim.setValue(0);
+    });
+    bubbleAnims.forEach((anim) => {
+      anim.opacity.setValue(0);
+      anim.scale.setValue(0.4);
+    });
 
+    Animated.stagger(
+      70,
+      [0, 2, 3].map((index) =>
+        Animated.spring(cardAnimations[index], {
+          toValue: 1,
+          useNativeDriver: true,
+          tension: 65,
+          friction: 9,
+        }),
+      ),
+    ).start();
+
+    const bubbleCount = Math.min(dominantEmotions.length + 1, bubbleAnims.length);
+    Animated.stagger(
+      90,
+      bubbleAnims.slice(0, bubbleCount).map(({ opacity, scale }) =>
+        Animated.parallel([
+          Animated.spring(scale, {
+            toValue: 1,
+            useNativeDriver: true,
+            tension: 140,
+            friction: 7,
+          }),
+          Animated.timing(opacity, {
+            toValue: 1,
+            duration: 280,
+            useNativeDriver: true,
+          }),
+        ]),
+      ),
+    ).start();
+  }, [bubbleAnims, cardAnimations, dominantEmotions.length]);
+
+  // Preload dashboard data as soon as notes are ready — don't wait for tab focus
   useEffect(() => {
-    if (!isFocused || !preloaded.isLoaded || !user?.id) return;
+    if (!preloaded.isLoaded || !user?.id) return;
+    if (preloaded.userName) setUserName(preloaded.userName);
+
     const sig = notesSignature(preloaded.notes);
     const cached = getDashboardDeferredCache(user.id, sig);
     if (cached) {
       applyDeferredCache(cached);
     }
 
-    // Skip full reload when stats already computed for this notes snapshot
     const localeSig = `${sig}:${language}`;
     if (lastLoadedSigRef.current === localeSig && stats) {
       setLoading(false);
-      // Recover if deferred work was aborted mid-flight
       if (!deferredLoadedRef.current) {
         const gen = ++loadGenRef.current;
         const notes = preloaded.notes || [];
@@ -289,17 +348,30 @@ export default function DashboardScreen() {
       return;
     }
 
+    const gen = ++loadGenRef.current;
     const handle = InteractionManager.runAfterInteractions(() => {
-      const gen = ++loadGenRef.current;
-      console.log('[Perf:Dashboard] loadStats starting after tab transition');
+      if (gen !== loadGenRef.current) return;
+      console.log('[Perf:Dashboard] loadStats preloading in background');
       loadStats(gen, localeSig);
     });
 
     return () => {
-      loadGenRef.current++;
       handle.cancel();
     };
-  }, [isFocused, preloaded.isLoaded, user?.id, language, notesSignature(preloaded.notes)]);
+  }, [preloaded.isLoaded, user?.id, language, notesSignature(preloaded.notes)]);
+
+  // Gamified entrance when user opens the Dashboard tab
+  useEffect(() => {
+    if (!isFocused) {
+      entrancePlayedRef.current = false;
+      return;
+    }
+    reloadPatternActions();
+    if (!loading && stats && !entrancePlayedRef.current) {
+      entrancePlayedRef.current = true;
+      playDashboardEntranceAnimations();
+    }
+  }, [isFocused, loading, stats, playDashboardEntranceAnimations, reloadPatternActions]);
 
   // Trigger modal animations when modal opens
   useEffect(() => {
@@ -368,7 +440,7 @@ export default function DashboardScreen() {
   };
 
   useEffect(() => {
-    if (chartData && chartData.datasets[0].data.length > 0) {
+    if (trendPoints.length > 0) {
       chartOpacity.setValue(0);
       Animated.timing(chartOpacity, {
         toValue: 1,
@@ -376,7 +448,7 @@ export default function DashboardScreen() {
         useNativeDriver: true,
       }).start();
     }
-  }, [chartData, chartOpacity]);
+  }, [trendPoints, chartOpacity]);
 
   const formatScoreLabel = (score: number | undefined): string => {
     if (score == null || Number.isNaN(score)) return t('dashboard.noRecentData');
@@ -660,13 +732,6 @@ export default function DashboardScreen() {
     return opposites[emotion.toLowerCase()] || 'balance';
   };
 
-  // Show cards instantly — no staggered animation to prevent janky load-in
-  useEffect(() => {
-    if (stats) {
-      cardAnimations.forEach(anim => anim.setValue(1));
-    }
-  }, [stats]);
-
   const loadStats = async (gen: number, sig: string) => {
     if (!user) return;
 
@@ -769,55 +834,19 @@ export default function DashboardScreen() {
       setDominantEmotions(dominant);
       setEmotionEntriesByEmotion(entriesByEmotion);
 
-      // Prepare chart data synchronously (fast)
+      // Prepare mood-over-time chart data
       const sentimentNotes =
-        notes?.filter((n: any) => n.ai_insights && (n.ai_insights.wellbeingScore || n.ai_insights.resilienceScore)) || [];
+        notes?.filter(
+          (n: any) =>
+            n.ai_structured_insights?.wellbeingScore ||
+            n.ai_insights?.wellbeingScore,
+        ) || [];
 
       if (sentimentNotes.length > 0) {
-        const recent = sentimentNotes
-          .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-          .slice(-8);
-
-        const labels = recent.map((n: any, index: number) => {
-          const isFirst = index === 0;
-          const isLast = index === recent.length - 1;
-          const isMiddle = index === Math.floor(recent.length / 2);
-          if (isFirst || isMiddle || isLast) {
-            const date = new Date(n.created_at);
-            return `${date.toLocaleDateString('en-US', { month: 'short' })} ${date.getDate()}`;
-          }
-          return '';
-        });
-        const wellbeingSeries = recent.map((n: any) => n.ai_insights?.wellbeingScore || 0);
-        const resilienceSeries = recent.map((n: any) => n.ai_insights?.resilienceScore || 0);
-
-        const trendPointsPayload = recent.map((n: any) => ({
-          date: n.created_at,
-          wellbeing: n.ai_insights?.wellbeingScore || 0,
-          primaryEmotion:
-            n.ai_insights?.mood_analysis?.primary_emotion ||
-            n.ai_structured_insights?.mood_analysis?.primary_emotion,
-        }));
-
-        const chartPayload: ChartData = {
-          labels,
-          datasets: [
-            {
-              data: wellbeingSeries,
-              color: (opacity = 1) => `rgba(56, 189, 248, ${opacity})`,
-            },
-            {
-              data: resilienceSeries,
-              color: (opacity = 1) => `rgba(249, 115, 22, ${opacity})`,
-            },
-          ],
-        };
-
-        console.log('[Mobile Dashboard] chartData', chartPayload);
-        setChartData(chartPayload);
+        const trendPointsPayload = buildDailyMoodTrendPoints(sentimentNotes, 14);
         setTrendPoints(trendPointsPayload);
       } else {
-        setChartData(null);
+        setTrendPoints([]);
       }
 
       // Clear loading IMMEDIATELY so UI renders with stats + emotions + chart
@@ -871,8 +900,31 @@ export default function DashboardScreen() {
   return (
     <View style={[styles.container, { backgroundColor: 'transparent' }]}>
       <AppBackdrop />
+      {stickySection && (
+        <View style={[styles.stickySectionBar, { top: insets.top + 4, backgroundColor: isDarkTheme(theme.name) ? 'rgba(12,12,16,0.92)' : 'rgba(255,255,255,0.92)' }]}>
+          <Text style={[styles.stickySectionText, { color: theme.colors.primaryText }]}>
+            {stickySection === 'patterns'
+              ? t('dashboard.patternsToAddressCount', { count: visiblePatternsToAddress.length })
+              : t('dashboard.whatsWorkingCount', { count: whatsWorking.length })}
+          </Text>
+        </View>
+      )}
       {/* Typographic header — content is the hero */}
-      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        scrollEventThrottle={16}
+        onScroll={(e) => {
+          const y = e.nativeEvent.contentOffset.y + insets.top + 56;
+          if (workingSectionY.current > 0 && y >= workingSectionY.current) {
+            setStickySection('working');
+          } else if (patternsSectionY.current > 0 && y >= patternsSectionY.current) {
+            setStickySection('patterns');
+          } else {
+            setStickySection(null);
+          }
+        }}
+      >
         <View style={[styles.dashboardHeaderPad, { paddingTop: insets.top + PREMIUM.layout.headerTop }]}>
           <DashboardHeaderHero title={t('dashboard.title')} />
         </View>
@@ -881,8 +933,37 @@ export default function DashboardScreen() {
           <DashboardSkeleton />
         ) : stats ? (
           <>
+            {trendPoints.length >= 2 && (
+              <GlassCard
+                variant="hero"
+                tint="violet"
+                noPad
+                contentStyle={glassCardInnerPad}
+                style={styles.sectionCard}
+              >
+                <MoodOverTimeChart
+                  points={trendPoints}
+                  isDark={isDarkTheme(theme.name)}
+                  textPrimary={theme.colors.primaryText}
+                  textSecondary={theme.colors.secondaryText}
+                  cardBg="transparent"
+                  cardBorder="transparent"
+                  title={t('dashboard.moodOverTime')}
+                  weeklyRecapLabel={t('dashboard.weeklyRecap')}
+                  weeklyAvgLabel={t('dashboard.weeklyAvg')}
+                  daysTrackedLabel={t('dashboard.daysTracked')}
+                  bestDayLabel={t('dashboard.bestDayShort')}
+                  selectedDayLabel={t('dashboard.selectedDay')}
+                  viewEntryLabel={t('dashboard.viewEntry')}
+                  chartOpacity={chartOpacity}
+                  onSeeAdvice={(point) => {
+                    navigation.navigate('EntryDetail', { entry: point.entry });
+                  }}
+                />
+              </GlassCard>
+            )}
+
             {/* Emotion Bubble Map - Enhanced */}
-            <Animated.View style={{ opacity: cardAnimations[1], transform: [{ translateY: cardAnimations[1].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
               <GlassCard
                 variant="hero"
                 tint="violet"
@@ -904,16 +985,9 @@ export default function DashboardScreen() {
                     <View style={styles.bubbleMapContainer}>
                       {/* removed bubbleAtmosphere — was reading as a hard purple ring */}
                       {dominantEmotions.map((item, index) => {
-                        const baseSize = 60;
-                        const size = baseSize + (item.percentage * 0.8);
-                        const positions = [
-                          { top: 16, left: 30 },
-                          { top: 50, right: 40 },
-                          { top: 100, left: 60 },
-                          { top: 84, right: 80 },
-                          { top: 132, left: 120 },
-                        ];
-                        const position = positions[index] || { top: 80, left: 80 };
+                        const layout = bubbleLayouts[index];
+                        if (!layout) return null;
+                        const { size, top, left, zIndex } = layout;
 
                         // Cohesive warm-purple bubble palette; each emotion gets its own hue
                         const bubblePalette = [
@@ -933,7 +1007,7 @@ export default function DashboardScreen() {
                         const glowRadius = 12 + item.percentage * 0.5;
 
                         return (
-                          <TouchableOpacity
+                          <Animated.View
                             key={item.emotion}
                             style={[
                               styles.emotionBubble,
@@ -944,15 +1018,28 @@ export default function DashboardScreen() {
                                 shadowColor: palette.glow,
                                 shadowOpacity: glowOpacity,
                                 shadowRadius: glowRadius,
-                                ...position,
+                                opacity: bubbleAnims[index]?.opacity ?? 1,
+                                transform: [{ scale: bubbleAnims[index]?.scale ?? 1 }],
+                                top,
+                                left,
+                                zIndex,
                               },
                             ]}
+                          >
+                          <TouchableOpacity
+                            style={styles.emotionBubbleTouchable}
                             activeOpacity={0.8}
                             onPress={() => {
                               navigation.navigate('EmotionDetail', {
                                 emotion: item.emotion,
                                 percentage: item.percentage,
                                 entries: emotionEntriesByEmotion[item.emotion] || [],
+                                accentGlow: palette.glow,
+                                gradientColors: [
+                                  `rgba(${palette.core}, 0.45)`,
+                                  `rgba(${palette.depth}, 0.72)`,
+                                  '#0D0B18',
+                                ],
                               });
                             }}
                           >
@@ -980,11 +1067,30 @@ export default function DashboardScreen() {
                               <Text style={styles.bubblePercentageText}>{item.percentage}%</Text>
                             </LinearGradient>
                           </TouchableOpacity>
+                          </Animated.View>
                         );
                       })}
                       
+                      <Animated.View
+                        style={[
+                          styles.emotionBubble,
+                          styles.addBubble,
+                          {
+                            width: addBubbleLayout.size,
+                            height: addBubbleLayout.size,
+                            borderRadius: addBubbleLayout.size / 2,
+                            top: addBubbleLayout.top,
+                            left: addBubbleLayout.left,
+                            zIndex: addBubbleLayout.zIndex,
+                            opacity: bubbleAnims[Math.min(dominantEmotions.length, bubbleAnims.length - 1)]?.opacity ?? 1,
+                            transform: [{
+                              scale: bubbleAnims[Math.min(dominantEmotions.length, bubbleAnims.length - 1)]?.scale ?? 1,
+                            }],
+                          },
+                        ]}
+                      >
                       <TouchableOpacity
-                        style={[styles.emotionBubble, styles.addBubble, { width: 50, height: 50, borderRadius: 25, top: 116, right: 30 }]}
+                        style={styles.emotionBubbleTouchable}
                         activeOpacity={0.8}
                         onPress={() => console.log('[Dashboard] Add emotion tapped')}
                       >
@@ -992,6 +1098,7 @@ export default function DashboardScreen() {
                           <Text style={[styles.addBubbleText, { color: theme.colors.secondaryText }]}>+</Text>
                         </View>
                       </TouchableOpacity>
+                      </Animated.View>
                     </View>
 
                     {/* Enhanced Insights Below Bubbles */}
@@ -1021,10 +1128,10 @@ export default function DashboardScreen() {
                   </View>
                 )}
               </GlassCard>
-            </Animated.View>
 
             {/* Patterns to Address */}
             {visiblePatternsToAddress.length > 0 && (
+              <View onLayout={(e) => { patternsSectionY.current = e.nativeEvent.layout.y; }}>
               <GlassCard tint="coral" noPad contentStyle={glassCardInnerPad} style={styles.sectionCard}>
                 <GlassCardHeader
                   title={t('dashboard.patternsToAddressCount', { count: visiblePatternsToAddress.length })}
@@ -1047,23 +1154,21 @@ export default function DashboardScreen() {
                         activeOpacity={0.7}
                       >
                         <GlassCard variant="nested" style={styles.patternCard}>
-                        <View style={styles.patternCardHeader}>
-                          <View style={styles.frequencyBadge}>
-                            <Ionicons name="flame" size={13} color="#ef4444" />
-                            <Text style={styles.frequencyText}>x{pattern.rawCount || pattern.count}</Text>
-                          </View>
-                          {pattern.priority === 'HIGH' && (
-                            <View style={[styles.priorityBadge, styles.priorityBadgeHighGlow]}>
-                              <Text style={styles.priorityBadgeText}>{t('dashboard.highPriority')}</Text>
+                        <View style={styles.patternTitleRow}>
+                          <Text
+                            style={[styles.patternSummary, { color: theme.colors.primaryText, flexShrink: 1 }]}
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                          >
+                            {patternEmojiForSummary(pattern.summary)} {pattern.summary}
+                          </Text>
+                          {(pattern.rawCount || pattern.count) > 1 ? (
+                            <View style={styles.frequencyBadgeTrailing}>
+                              <Ionicons name="flame" size={13} color="#ef4444" />
+                              <Text style={styles.frequencyText}>x{pattern.rawCount || pattern.count}</Text>
                             </View>
-                          )}
-                          {pattern.priority === 'MEDIUM' && (
-                            <View style={[styles.priorityBadge, styles.priorityBadgeMedium]}>
-                              <Text style={[styles.priorityBadgeText, styles.priorityBadgeTextMedium]}>{t('dashboard.medium')}</Text>
-                            </View>
-                          )}
+                          ) : null}
                         </View>
-                        <Text style={[styles.patternSummary, { color: theme.colors.primaryText }]}>{pattern.summary}</Text>
                         {pattern.description ? (
                           <Text style={[styles.patternDescription, { color: theme.colors.secondaryText }]} numberOfLines={3}>
                             {pattern.description}
@@ -1115,54 +1220,66 @@ export default function DashboardScreen() {
 
                   {!patternsExpanded && visiblePatternsToAddress.length > 2 && (
                     <TouchableOpacity
-                      style={[styles.viewAllButton, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
+                      style={styles.viewAllButtonPurple}
                       onPress={() => setPatternsExpanded(true)}
-                      activeOpacity={0.7}
+                      activeOpacity={0.85}
                     >
-                      <Text style={[styles.viewAllText, { color: theme.colors.secondaryText }]}>{t('dashboard.viewMoreFocusAreas', { count: visiblePatternsToAddress.length - 2 })}</Text>
-                      <Ionicons name="chevron-forward" size={14} color={theme.colors.secondaryText} />
+                      <LinearGradient colors={['#8b5cf6', '#7c3aed']} style={styles.viewAllButtonGradient}>
+                        <Text style={styles.viewAllTextPurple}>{t('dashboard.viewMoreFocusAreas', { count: visiblePatternsToAddress.length - 2 })}</Text>
+                        <Ionicons name="chevron-forward" size={14} color="#fff" />
+                      </LinearGradient>
                     </TouchableOpacity>
                   )}
                   {patternsExpanded && visiblePatternsToAddress.length > 2 && (
                     <TouchableOpacity
-                      style={[styles.viewAllButton, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
+                      style={styles.viewAllButtonPurple}
                       onPress={() => setPatternsExpanded(false)}
-                      activeOpacity={0.7}
+                      activeOpacity={0.85}
                     >
-                      <Text style={[styles.viewAllText, { color: theme.colors.secondaryText }]}>{t('dashboard.showLess')}</Text>
+                      <LinearGradient colors={['#8b5cf6', '#7c3aed']} style={styles.viewAllButtonGradient}>
+                        <Text style={styles.viewAllTextPurple}>{t('dashboard.showLess')}</Text>
+                        <Ionicons name="chevron-up" size={14} color="#fff" />
+                      </LinearGradient>
                     </TouchableOpacity>
                   )}
                 </View>
               </GlassCard>
+              </View>
             )}
 
             {workingPatterns.length > 0 && (
-              <GlassCard variant="nested" style={styles.workingPatternsCard}>
-                <TouchableOpacity
-                  style={styles.workingPatternsHeader}
+              <GlassCard tint="violet" noPad contentStyle={glassCardInnerPad} style={styles.sectionCard}>
+                <GlassCardHeader
+                  title={t('dashboard.patternsWorkingSection', { count: workingPatterns.length })}
                   onPress={() => setWorkingPatternsExpanded(!workingPatternsExpanded)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.workingPatternsTitle, { color: theme.colors.secondaryText }]}>
-                    {t('dashboard.patternsWorkingSection', { count: workingPatterns.length })}
-                  </Text>
-                  <Ionicons
-                    name={workingPatternsExpanded ? 'chevron-up' : 'chevron-down'}
-                    size={16}
-                    color={theme.colors.secondaryText}
-                  />
-                </TouchableOpacity>
+                  expanded={workingPatternsExpanded}
+                  showChevron
+                />
                 {workingPatternsExpanded ? (
-                  <View style={styles.workingPatternsList}>
+                  <View style={styles.sectionCardBody}>
                     {workingPatterns.map((pattern) => (
-                      <View key={`working-${pattern.id}`} style={styles.workingPatternItem}>
-                        <Text style={[styles.workingPatternText, { color: theme.colors.primaryText }]} numberOfLines={2}>
-                          {pattern.summary}
-                        </Text>
-                        <TouchableOpacity onPress={() => handlePatternWorkingToggle(pattern)}>
-                          <Text style={styles.workingPatternRestore}>{t('dashboard.patternRestore')}</Text>
-                        </TouchableOpacity>
-                      </View>
+                      <TouchableOpacity
+                        key={`working-${pattern.id}`}
+                        style={styles.patternCardWrap}
+                        onPress={() => handlePatternWorkingToggle(pattern)}
+                        activeOpacity={0.7}
+                      >
+                        <GlassCard variant="nested" style={styles.patternCard}>
+                          <View style={styles.patternTitleRow}>
+                            <Text style={[styles.workingSummary, { color: theme.colors.primaryText, flex: 1, fontSize: sf(16), fontWeight: '700' }]}>
+                              {patternEmojiForSummary(pattern.summary)} {pattern.summary}
+                            </Text>
+                          </View>
+                          {pattern.description ? (
+                            <Text style={[styles.patternDescription, { color: theme.colors.secondaryText }]} numberOfLines={3}>
+                              {pattern.description}
+                            </Text>
+                          ) : null}
+                          <TouchableOpacity onPress={() => handlePatternWorkingToggle(pattern)}>
+                            <Text style={styles.workingPatternRestore}>{t('dashboard.patternRestore')}</Text>
+                          </TouchableOpacity>
+                        </GlassCard>
+                      </TouchableOpacity>
                     ))}
                   </View>
                 ) : null}
@@ -1171,6 +1288,7 @@ export default function DashboardScreen() {
 
             {/* What's Working */}
             {whatsWorking.length > 0 && (
+              <View onLayout={(e) => { workingSectionY.current = e.nativeEvent.layout.y; }}>
               <GlassCard tint="aqua" noPad contentStyle={glassCardInnerPad} style={styles.sectionCard}>
                 <GlassCardHeader
                   title={t('dashboard.whatsWorkingCount', { count: whatsWorking.length })}
@@ -1194,18 +1312,21 @@ export default function DashboardScreen() {
                       activeOpacity={0.7}
                     >
                       <GlassCard variant="nested" style={styles.patternCard}>
-                      <View style={styles.patternCardHeader}>
-                        <View style={[styles.frequencyBadge, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-                          <Ionicons name="flame" size={13} color="#10b981" />
-                          <Text style={[styles.frequencyText, { color: '#10b981' }]}>x{item.rawCount || item.count}</Text>
-                        </View>
-                        {item.priority === 'HIGH' && (
-                          <View style={[styles.priorityBadge, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-                            <Text style={[styles.priorityBadgeText, { color: '#10b981' }]}>{t('dashboard.highImpact')}</Text>
+                      <View style={styles.patternTitleRow}>
+                        <Text
+                          style={[styles.workingSummary, { color: theme.colors.primaryText, flexShrink: 1 }]}
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
+                          {patternEmojiForSummary(item.summary)} {item.summary}
+                        </Text>
+                        {(item.rawCount || item.count) > 1 ? (
+                          <View style={[styles.frequencyBadgeTrailing, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+                            <Ionicons name="flame" size={13} color="#10b981" />
+                            <Text style={[styles.frequencyText, { color: '#10b981' }]}>x{item.rawCount || item.count}</Text>
                           </View>
-                        )}
+                        ) : null}
                       </View>
-                      <Text style={[styles.workingSummary, { color: theme.colors.primaryText }]}>{item.summary}</Text>
                       {item.description ? (
                         <Text style={[styles.patternDescription, { color: theme.colors.secondaryText }]} numberOfLines={3}>
                           {item.description}
@@ -1226,25 +1347,31 @@ export default function DashboardScreen() {
 
                   {!workingExpanded && whatsWorking.length > 2 && (
                     <TouchableOpacity
-                      style={[styles.viewAllButton, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
+                      style={styles.viewAllButtonPurple}
                       onPress={() => setWorkingExpanded(true)}
-                      activeOpacity={0.7}
+                      activeOpacity={0.85}
                     >
-                      <Text style={[styles.viewAllText, { color: theme.colors.secondaryText }]}>View {whatsWorking.length - 2} More Strengths</Text>
-                      <Ionicons name="chevron-forward" size={14} color={theme.colors.secondaryText} />
+                      <LinearGradient colors={['#8b5cf6', '#7c3aed']} style={styles.viewAllButtonGradient}>
+                        <Text style={styles.viewAllTextPurple}>{t('dashboard.viewMoreStrengths', { count: whatsWorking.length - 2 })}</Text>
+                        <Ionicons name="chevron-forward" size={14} color="#fff" />
+                      </LinearGradient>
                     </TouchableOpacity>
                   )}
                   {workingExpanded && whatsWorking.length > 2 && (
                     <TouchableOpacity
-                      style={[styles.viewAllButton, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}
+                      style={styles.viewAllButtonPurple}
                       onPress={() => setWorkingExpanded(false)}
-                      activeOpacity={0.7}
+                      activeOpacity={0.85}
                     >
-                      <Text style={[styles.viewAllText, { color: theme.colors.secondaryText }]}>{t('dashboard.showLess')}</Text>
+                      <LinearGradient colors={['#8b5cf6', '#7c3aed']} style={styles.viewAllButtonGradient}>
+                        <Text style={styles.viewAllTextPurple}>{t('dashboard.showLess')}</Text>
+                        <Ionicons name="chevron-up" size={14} color="#fff" />
+                      </LinearGradient>
                     </TouchableOpacity>
                   )}
                 </View>
               </GlassCard>
+              </View>
             )}
 
             {/* Refined This Week Card - Horizontal Layout */}
@@ -1767,7 +1894,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   dashboardBody: {
     paddingHorizontal: isTablet ? 40 : PREMIUM.layout.screenPadH,
@@ -2269,8 +2396,9 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.22)',
   },
   bubbleMapContainer: {
-    height: 200,
+    height: 240,
     position: 'relative',
+    width: '100%',
   },
   emotionBubble: {
     position: 'absolute',
@@ -2281,6 +2409,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.6,
     shadowRadius: 20,
     elevation: 10,
+  },
+  emotionBubbleTouchable: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   bubbleGradient: {
     width: '100%',
@@ -2301,10 +2435,11 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   bubblePercentageText: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: 'rgba(255, 255, 255, 0.7)',
-    marginTop: 2,
+    fontSize: 14,
+    fontWeight: '700',
+    color: 'rgba(255, 255, 255, 0.92)',
+    marginTop: 1,
+    letterSpacing: -0.3,
   },
   addBubble: {
     shadowColor: '#666',
@@ -2956,16 +3091,32 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.5)',
   },
   patternSummary: {
-    fontSize: 14,
-    lineHeight: 21,
-    fontWeight: '600',
+    fontSize: 17,
+    lineHeight: 25,
+    fontWeight: '700',
     color: 'rgba(255, 255, 255, 0.85)',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   patternDescription: {
-    fontSize: 13,
-    lineHeight: 19,
-    marginBottom: 6,
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 8,
+  },
+  stickySectionBar: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    zIndex: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(139,92,246,0.2)',
+  },
+  stickySectionText: {
+    fontSize: 15,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   frequencyBadge: {
     flexDirection: 'row',
@@ -2988,6 +3139,33 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 8,
     flexWrap: 'wrap',
+  },
+  patternTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginBottom: 8,
+  },
+  frequencyBadgeTrailing: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    flexShrink: 0,
+    marginTop: 2,
+  },
+  frequencyBadgeInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    marginTop: 2,
   },
   priorityBadge: {
     paddingHorizontal: 8,
@@ -3117,6 +3295,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
+  viewAllButtonPurple: {
+    marginTop: 8,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
   viewAllButton: {
     paddingVertical: 12,
     paddingHorizontal: 20,
@@ -3132,6 +3315,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,
+  },
+  viewAllButtonGradient: {
+    paddingVertical: 13,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  viewAllTextPurple: {
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 20,
+    color: '#ffffff',
   },
   keepGoingButton: {
     alignSelf: 'flex-start',
@@ -3154,8 +3351,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   workingSummary: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 17,
+    lineHeight: 25,
+    fontWeight: '700',
     marginBottom: 8,
   },
   workingFrequency: {

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system/legacy';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,30 +10,7 @@ import { usePreloadedData } from '../contexts/PreloadContext';
 import { supabase } from '../lib/supabase';
 import { isTablet, sf } from '../utils/responsive';
 import { useLanguage } from '../contexts/LanguageContext';
-
-// Inline base64 to ArrayBuffer decoder (avoids broken base64-arraybuffer package)
-function decodeBase64(base64: string): ArrayBuffer {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-  const lookup = new Uint8Array(256);
-  for (let i = 0; i < chars.length; i++) lookup[chars.charCodeAt(i)] = i;
-  const len = base64.length;
-  let bufferLength = Math.floor(len * 3 / 4);
-  if (base64[len - 1] === '=') bufferLength--;
-  if (base64[len - 2] === '=') bufferLength--;
-  const arraybuffer = new ArrayBuffer(bufferLength);
-  const bytes = new Uint8Array(arraybuffer);
-  let p = 0;
-  for (let i = 0; i < len; i += 4) {
-    const e0 = lookup[base64.charCodeAt(i)];
-    const e1 = lookup[base64.charCodeAt(i + 1)];
-    const e2 = lookup[base64.charCodeAt(i + 2)];
-    const e3 = lookup[base64.charCodeAt(i + 3)];
-    bytes[p++] = (e0 << 2) | (e1 >> 4);
-    bytes[p++] = ((e1 & 15) << 4) | (e2 >> 2);
-    bytes[p++] = ((e2 & 3) << 6) | (e3 & 63);
-  }
-  return arraybuffer;
-}
+import { profilePicturePickerOptions, uploadProfilePictureFromUri } from '../utils/profilePictureUpload';
 
 export default function EditProfileScreen({ navigation }: any) {
   const { user } = useAuth();
@@ -119,12 +95,7 @@ export default function EditProfileScreen({ navigation }: any) {
       }
 
       console.log('[EditProfile] Launching image library...');
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
-      });
+      const result = await ImagePicker.launchImageLibraryAsync(profilePicturePickerOptions());
 
       console.log('[EditProfile] Image picker result:', result.canceled ? 'cancelled' : 'selected');
       
@@ -154,40 +125,8 @@ export default function EditProfileScreen({ navigation }: any) {
 
       setSaving(true);
 
-      console.log('[EditProfile] 📥 Reading image file with FileSystem...');
-      // Read the file as base64 using legacy FileSystem API
-      const base64 = await FileSystem.readAsStringAsync(uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-      console.log('[EditProfile] ✅ File read as base64, length:', base64.length);
-      
-      // Convert base64 to ArrayBuffer
-      const arrayBuffer = decodeBase64(base64);
-      console.log('[EditProfile] ✅ ArrayBuffer created, byteLength:', arrayBuffer.byteLength);
-      
-      const fileExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
-      const fileName = `${user.id}/${user.id}-${Date.now()}.${fileExt}`;
-      console.log('[EditProfile] 📁 File name:', fileName);
-
-      console.log('[EditProfile] ☁️ Uploading to Supabase storage...');
-      const { error: uploadError } = await supabase.storage
-        .from('profile-pictures')
-        .upload(fileName, arrayBuffer, {
-          contentType: `image/${fileExt === 'jpg' ? 'jpeg' : fileExt}`,
-          upsert: false,
-        });
-
-      if (uploadError) {
-        console.error('[EditProfile] ❌ Upload error:', uploadError);
-        throw uploadError;
-      }
-      console.log('[EditProfile] ✅ Upload successful');
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('profile-pictures')
-        .getPublicUrl(fileName);
-      
-      console.log('[EditProfile] 🔗 Public URL:', publicUrl);
+      const publicUrl = await uploadProfilePictureFromUri(user.id, uri);
+      console.log('[EditProfile] ✅ Public URL:', publicUrl);
 
       // Verify the file is actually accessible
       console.log('[EditProfile] 🔍 Verifying file is accessible...');

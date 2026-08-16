@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useCheckInFlow } from './CheckInFlowProvider';
@@ -18,36 +19,44 @@ type Props = {
 export default function MoodSelectorStep({ onContinue }: Props) {
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const insets = useSafeAreaInsets();
   const { draft, setMoodScore } = useCheckInFlow();
   const tint = MOOD_TINTS[draft.moodTier];
 
   return (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={styles.container}
-      showsVerticalScrollIndicator={false}
-      bounces={false}
-    >
-      <Text style={[styles.heading, { color: theme.colors.primaryText }]}>
-        {t('checkIn.howDoYouFeel')}
-      </Text>
+    <View style={styles.wrapper}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        <Text style={[styles.heading, { color: theme.colors.primaryText }]}>
+          {t('checkIn.howDoYouFeel')}
+        </Text>
 
-      <View style={styles.iconArea}>
-        <MoodIcon tier={draft.moodTier} size={184} />
+        <View style={styles.iconArea}>
+          <MoodIcon tier={draft.moodTier} size={184} />
+        </View>
+
+        <Text style={[styles.moodLabel, { color: tint.accent }]}>{t(`checkIn.${draft.moodTier}`)}</Text>
+
+        <View style={styles.sliderBlock}>
+          <MoodSlider score={draft.moodScore} accent={tint.accent} onScoreChange={setMoodScore} />
+        </View>
+      </ScrollView>
+
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Platform.OS === 'android' ? 32 : 16) + 12 }]}>
+        <PremiumButton label={t('checkIn.continue')} onPress={onContinue} large block />
       </View>
-
-      <Text style={[styles.moodLabel, { color: tint.accent }]}>{t(`checkIn.${draft.moodTier}`)}</Text>
-
-      <View style={styles.sliderBlock}>
-        <MoodSlider score={draft.moodScore} accent={tint.accent} onScoreChange={setMoodScore} />
-      </View>
-
-      <PremiumButton label={t('checkIn.continue')} onPress={onContinue} large style={styles.cta} />
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    flex: 1,
+  },
   scroll: {
     flex: 1,
   },
@@ -55,7 +64,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: S.sm,
-    paddingBottom: S.xxl,
+    paddingBottom: S.lg,
   },
   heading: {
     fontSize: 22,
@@ -76,9 +85,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   sliderBlock: {
-    marginBottom: S.xxxl,
+    marginBottom: S.lg,
   },
-  cta: {
-    marginTop: S.sm,
+  footer: {
+    paddingHorizontal: 24,
+    paddingTop: 12,
   },
 });

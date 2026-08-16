@@ -308,7 +308,14 @@ export default function ExploreScreen({ navigation }: any) {
 
   const filteredArticles = selectedCategory === 'all'
     ? ARTICLES
-    : ARTICLES.filter(a => a.category === selectedCategory);
+    : (() => {
+        const primary = ARTICLES.filter(a => a.category === selectedCategory);
+        if (primary.length >= 3) return primary;
+        const extras = ARTICLES.filter(
+          (a) => a.category !== selectedCategory && !primary.some((p) => p.id === a.id),
+        );
+        return [...primary, ...extras].slice(0, Math.max(3, primary.length));
+      })();
 
   const trendingArticle = ARTICLES.find(a => a.isTrending) || ARTICLES[0];
 

@@ -12,6 +12,8 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { analytics } from '../services/analytics';
 import { getCurrentLanguage } from '../i18n/languageRef';
+import { isRevenueCatEnabled } from '../utils/revenueCatConfig';
+import { isManualTier } from '../utils/entitlements';
 
 // Conditionally import Google Sign-In to avoid Expo Go errors
 let GoogleSignin: any = null;
@@ -63,6 +65,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Helper function to sync subscription status to Supabase
   const syncSubscriptionToSupabase = async (userId: string, customerInfo: any) => {
     try {
+      const { data: existingProfile } = await supabase
+        .from('user_profiles')
+        .select('subscription_tier')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (isManualTier(existingProfile?.subscription_tier)) {
+        console.log('[SUBSCRIPTION SYNC] Preserving manual tier:', existingProfile?.subscription_tier);
+        return;
+      }
+
       // Determine subscription tier based on active entitlements
       let tier = 'free';
       
@@ -149,15 +162,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     });
 
-    // Set up RevenueCat listener for subscription changes (non-blocking)
-    const revenueCatListener = Purchases.addCustomerInfoUpdateListener((customerInfo) => {
-      console.log('[REVENUECAT LISTENER] Subscription status changed');
-      if (user?.id) {
-        syncSubscriptionToSupabase(user.id, customerInfo).catch(err =>
-          console.log('[REVENUECAT] Subscription sync error (non-blocking):', err)
-        );
-      }
-    });
+    // Set up RevenueCat listener for subscription changes (non-blocking, iOS only)
+    const revenueCatListener = isRevenueCatEnabled()
+      ? Purchases.addCustomerInfoUpdateListener((customerInfo) => {
+          console.log('[REVENUECAT LISTENER] Subscription status changed');
+          if (user?.id) {
+            syncSubscriptionToSupabase(user.id, customerInfo).catch(err =>
+              console.log('[REVENUECAT] Subscription sync error (non-blocking):', err)
+            );
+          }
+        })
+      : null;
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -172,13 +187,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Fire-and-forget: RevenueCat + subscription sync + profile preload
         (async () => {
           try {
-            await Purchases.logIn(session.user.id);
-            await Purchases.setEmail(session.user.email || '');
-            const customerInfo = await Purchases.getCustomerInfo();
-            // Non-blocking subscription sync
-            syncSubscriptionToSupabase(session.user.id, customerInfo).catch(err => 
-              console.log('[AUTH] Subscription sync error (non-blocking):', err)
-            );
+            if (isRevenueCatEnabled()) {
+              await Purchases.logIn(session.user.id);
+              await Purchases.setEmail(session.user.email || '');
+              const customerInfo = await Purchases.getCustomerInfo();
+              // Non-blocking subscription sync
+              syncSubscriptionToSupabase(session.user.id, customerInfo).catch(err => 
+                console.log('[AUTH] Subscription sync error (non-blocking):', err)
+              );
+            }
             
             // Preload profile picture to prevent loading animation
             const { data: profile } = await supabase
@@ -450,6 +467,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signInWithApple = async () => {
+    if (Platform.OS !== 'ios') {
+      return { error: new Error('Sign in with Apple is only available on iOS.') };
+    }
     try {
       const nonce = Math.random().toString(36).substring(2, 10);
       const hashedNonce = await Crypto.digestStringAsync(
@@ -577,7 +597,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Clear encryption key from keychain on logout
     try {
-      await EncryptionService.clearKey();
+      await EncryptionService.clearKey(user?.id);
       console.log('[Auth] Encryption key cleared on logout');
     } catch (error) {
       console.error('[Auth] Failed to clear encryption key:', error);
@@ -587,15 +607,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       clearDecryptCache(signingOutUserId);
     }
     
-    // CRITICAL FIX: Invalidate RevenueCat cache and log out when user signs out
-    // This ensures the next user sees their own subscription status, not cached data
-    try {
-      console.log('[Auth] Invalidating RevenueCat cache on sign out...');
-      await Purchases.invalidateCustomerInfoCache();
-      await Purchases.logOut();
-      console.log('[Auth] RevenueCat cache cleared and logged out');
-    } catch (error) {
-      console.error('[Auth] Failed to clear RevenueCat cache:', error);
+    // CRITICAL FIX: Invalidate RevenueCat cache and log out when user signs out (iOS only)
+    if (isRevenueCatEnabled()) {
+      try {
+        console.log('[Auth] Invalidating RevenueCat cache on sign out...');
+        await Purchases.invalidateCustomerInfoCache();
+        await Purchases.logOut();
+        console.log('[Auth] RevenueCat cache cleared and logged out');
+      } catch (error) {
+        console.error('[Auth] Failed to clear RevenueCat cache:', error);
+      }
     }
     
     // Clear onboarding flow flags but NOT the intro overlay flag

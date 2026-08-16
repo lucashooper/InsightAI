@@ -1,8 +1,8 @@
 import {
   decryptEntryFields,
   decryptEntries,
-  looksEncryptedContent,
 } from './entryDecryption';
+import { looksEncryptedContent } from './encryptionFormat';
 import {
   ensureDecryptCacheLoaded,
   entryVersion,

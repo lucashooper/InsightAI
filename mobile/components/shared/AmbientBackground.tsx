@@ -4,9 +4,9 @@ import {
   StyleSheet,
   StyleProp,
   ViewStyle,
-  Image,
   Dimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { PREMIUM } from '../../constants/premiumUI';
 
 const GRADIENT_MESH = require('../../public/gradient-ellipse-noise.png');
@@ -33,15 +33,19 @@ function AmbientBackground({ style, intensity = 'default' }: Props) {
       <Image
         source={GRADIENT_MESH}
         style={[styles.meshPrimary, { opacity }]}
-        resizeMode="cover"
-        fadeDuration={0}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        transition={0}
+        recyclingKey="ambient-mesh-primary"
       />
 
       <Image
         source={GRADIENT_MESH}
         style={[styles.meshSoft, { opacity: opacity * 0.4 }]}
-        resizeMode="cover"
-        fadeDuration={0}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        transition={0}
+        recyclingKey="ambient-mesh-soft"
       />
     </View>
   );

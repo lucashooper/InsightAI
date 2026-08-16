@@ -59,7 +59,7 @@ export default React.memo(function MiraRevealCard({
     enter.setValue(0);
     Animated.timing(enter, {
       toValue: 1,
-      duration: PREMIUM.motion.enterMs,
+      duration: 480,
       useNativeDriver: true,
     }).start();
   }, [enter]);
@@ -70,7 +70,10 @@ export default React.memo(function MiraRevealCard({
         styles.wrap,
         {
           opacity: enter,
-          transform: [{ translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
+          transform: [
+            { translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) },
+            { scale: enter.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] }) },
+          ],
         },
       ]}
       accessibilityRole="text"

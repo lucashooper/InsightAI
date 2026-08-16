@@ -13,6 +13,7 @@ import { sf } from '../utils/responsive';
 import StandardContainer from '../components/shared/StandardContainer';
 import LanguagePicker from '../components/LanguagePicker';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function resolveProfilePictureUrl(raw: string | null | undefined): string | null {
   if (!raw || typeof raw !== 'string') return null;
@@ -45,6 +46,8 @@ export default function ProfileScreen({ navigation }: any) {
   const { user, signOut } = useAuth();
   const { theme, themeName } = useTheme();
   const { t } = useLanguage();
+  const insets = useSafeAreaInsets();
+  const tabBarClearance = Math.max(insets.bottom, 8) + 88;
   const { data: preloaded, refreshProfile, refreshAccountStats } = usePreloadedData();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [subscriptionPlan, setSubscriptionPlan] = useState<string>('Free');
@@ -266,7 +269,11 @@ export default function ProfileScreen({ navigation }: any) {
         colors={theme.colors.backgroundGradient as any}
         style={styles.backgroundGradient}
       />
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ paddingBottom: tabBarClearance }}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={[styles.title, { color: theme.colors.primaryText }]}>{t('auxiliary.profile.title')}</Text>
 
         {/* Profile Card - Clickable */}
@@ -314,7 +321,7 @@ export default function ProfileScreen({ navigation }: any) {
             'card-outline',
             t('auxiliary.profile.currentPlan'),
             subscriptionPlan.toLowerCase() === 'free' ? t('auxiliary.profile.freePlan') : subscriptionPlan,
-            () => navigation.navigate('Paywall'),
+            () => navigation.getParent()?.navigate('Paywall'),
           )}
           {renderMenuItem('calendar-outline', t('auxiliary.profile.analysedToday'), `${entriesCount} / ${entriesLimit}`, undefined, false)}
         </View>

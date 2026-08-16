@@ -2,16 +2,15 @@ import React, { useEffect, useRef } from 'react';
 import {
   Animated,
   AccessibilityInfo,
-  Image,
-  ImageSourcePropType,
   StyleProp,
   ImageStyle,
   View,
   StyleSheet,
 } from 'react-native';
+import CachedImage from '../shared/CachedImage';
 
 type Props = {
-  source: ImageSourcePropType;
+  source: number;
   style?: StyleProp<ImageStyle>;
 };
 
@@ -46,7 +45,7 @@ export default function BreathingLogo({ source, style }: Props) {
   return (
     <View style={styles.glowWrap}>
       <Animated.View style={[styles.logoAnim, { transform: [{ scale }], opacity }]}>
-        <Image source={source} style={style} resizeMode="cover" />
+        <CachedImage source={source} style={style} contentFit="cover" recyclingKey="breathing-logo" />
       </Animated.View>
     </View>
   );

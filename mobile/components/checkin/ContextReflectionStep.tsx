@@ -132,7 +132,7 @@ export default function ContextReflectionStep({ onContinue }: Props) {
         );
       })}
 
-      <PremiumButton label={t('checkIn.continue')} onPress={onContinue} style={styles.cta} />
+      <PremiumButton label={t('checkIn.continue')} onPress={onContinue} large block style={styles.cta} />
 
       <Modal visible={!!addModal} transparent animationType="fade" onRequestClose={() => setAddModal(null)}>
         <Pressable style={styles.modalOverlay} onPress={() => setAddModal(null)}>

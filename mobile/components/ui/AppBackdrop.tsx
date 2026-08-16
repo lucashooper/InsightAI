@@ -1,5 +1,6 @@
 import React from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { PREMIUM } from '../../constants/premiumUI';
 import { HOME_PAGE_GRADIENT } from '../../constants/appAssets';
 import { isDarkTheme, useTheme } from '../../contexts/ThemeContext';
@@ -20,11 +21,13 @@ export default function AppBackdrop() {
           { backgroundColor: dark ? PREMIUM.bg : '#F5F3F8' },
         ]}
       />
-      <Image
+      <ExpoImage
         source={HOME_PAGE_GRADIENT}
         style={styles.image}
-        resizeMode="cover"
-        fadeDuration={0}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        transition={0}
+        recyclingKey="home-page-gradient"
       />
       {dark ? <View style={styles.darkOverlay} /> : null}
     </View>

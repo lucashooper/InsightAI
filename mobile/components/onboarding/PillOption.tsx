@@ -3,10 +3,8 @@ import { TouchableOpacity, Text, StyleSheet, View, Platform } from 'react-native
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { SvgXml } from 'react-native-svg';
-import { useTheme } from '../../contexts/ThemeContext';
-import { ONBOARDING_SURFACE } from '../../constants/onboardingTheme';
+import { ONBOARDING_SURFACE, ONBOARDING_TEXT, ONBOARDING_BRAND } from '../../constants/onboardingTheme';
 
-// SVG logo strings (inline for proper rendering)
 const InstagramSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><defs><radialGradient id="ig-grad-1" cx="19.38" cy="42.035" r="44.899"><stop offset="0" stop-color="#fd5"/><stop offset=".328" stop-color="#ff543f"/><stop offset=".348" stop-color="#fc5245"/><stop offset=".504" stop-color="#e64771"/><stop offset=".643" stop-color="#d53e91"/><stop offset=".761" stop-color="#cc39a4"/><stop offset=".841" stop-color="#c837ab"/></radialGradient><radialGradient id="ig-grad-2" cx="42.318" cy="34.137" r="65.039"><stop offset="0" stop-color="#4168c9"/><stop offset=".999" stop-color="#4168c9" stop-opacity="0"/></radialGradient></defs><path fill="url(#ig-grad-1)" d="M34.017 41.99l-20 .019c-4.4.004-8.003-3.592-8.008-7.992l-.019-20c-.004-4.4 3.592-8.003 7.992-8.008l20-.019c4.4-.004 8.003 3.592 8.008 7.992l.019 20c.005 4.401-3.592 8.004-7.992 8.008z"/><path fill="url(#ig-grad-2)" d="M34.017 41.99l-20 .019c-4.4.004-8.003-3.592-8.008-7.992l-.019-20c-.004-4.4 3.592-8.003 7.992-8.008l20-.019c4.4-.004 8.003 3.592 8.008 7.992l.019 20c.005 4.401-3.592 8.004-7.992 8.008z"/><path fill="#fff" d="M24 31c-3.859 0-7-3.14-7-7s3.141-7 7-7 7 3.14 7 7-3.141 7-7 7zm0-11.5c-2.481 0-4.5 2.019-4.5 4.5s2.019 4.5 4.5 4.5 4.5-2.019 4.5-4.5-2.019-4.5-4.5-4.5z"/><circle cx="31.5" cy="16.5" r="1.5" fill="#fff"/><path fill="#fff" d="M30 37H18c-3.859 0-7-3.14-7-7V18c0-3.86 3.141-7 7-7h12c3.859 0 7 3.14 7 7v12c0 3.86-3.141 7-7 7zM18 13.5c-2.481 0-4.5 2.019-4.5 4.5v12c0 2.481 2.019 4.5 4.5 4.5h12c2.481 0 4.5-2.019 4.5-4.5V18c0-2.481-2.019-4.5-4.5-4.5H18z"/></svg>`;
 
 const FacebookSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#1877F2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`;
@@ -25,9 +23,7 @@ interface PillOptionProps {
 }
 
 export default function PillOption({ label, icon, selected, onPress }: PillOptionProps) {
-  const { theme } = useTheme();
   const isSocialMedia = ['Instagram', 'Facebook', 'TikTok', 'YouTube', 'Google'].includes(label);
-  const useDarkOnboardingAccent = theme.name === 'dark' || theme.name === 'midnight';
 
   const getSvgLogo = () => {
     switch (label) {
@@ -48,54 +44,23 @@ export default function PillOption({ label, icon, selected, onPress }: PillOptio
   };
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.75}
-      onPress={handlePress}
-      style={styles.container}
-    >
-      <View
-        style={[
-          styles.pill,
-          useDarkOnboardingAccent
-            ? [
-                styles.pillDefaultDarkTheme,
-                selected && styles.pillSelectedDarkTheme,
-              ]
-            : selected
-              ? styles.pillSelected
-              : styles.pillDefault,
-        ]}
-      >
+    <TouchableOpacity activeOpacity={0.75} onPress={handlePress} style={styles.container}>
+      <View style={[styles.pill, selected ? styles.pillSelected : styles.pillDefault]}>
         <View style={styles.leftGroup}>
           {icon || isSocialMedia ? (
-            <View
-              style={[
-                styles.iconChip,
-                selected && styles.iconChipSelected,
-                useDarkOnboardingAccent && styles.iconChipDarkTheme,
-                useDarkOnboardingAccent && selected && styles.iconChipSelectedDarkTheme,
-              ]}
-            >
+            <View style={[styles.iconChip, selected && styles.iconChipSelected]}>
               {isSocialMedia && svgLogo ? (
                 <SvgXml xml={svgLogo} width={20} height={20} />
               ) : icon ? (
                 <Ionicons
                   name={icon as any}
                   size={18}
-                  color={selected ? '#ffffff' : (useDarkOnboardingAccent ? 'rgba(255,255,255,0.75)' : '#6b7280')}
+                  color={selected ? ONBOARDING_BRAND.purple : ONBOARDING_TEXT.secondary}
                 />
               ) : null}
             </View>
           ) : null}
-          <Text
-            style={[
-              styles.label,
-              useDarkOnboardingAccent && styles.labelDarkTheme,
-              selected && styles.labelSelected,
-            ]}
-          >
-            {label}
-          </Text>
+          <Text style={[styles.label, selected && styles.labelSelected]}>{label}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -105,14 +70,14 @@ export default function PillOption({ label, icon, selected, onPress }: PillOptio
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderRadius: 999,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderRadius: 18,
   },
   leftGroup: {
     flexDirection: 'row',
@@ -126,71 +91,41 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    backgroundColor: ONBOARDING_SURFACE.iconChip,
   },
   iconChipSelected: {
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: ONBOARDING_SURFACE.iconChipSelected,
   },
   pillDefault: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.07)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  pillSelected: {
-    backgroundColor: '#1a1a1a',
-    borderWidth: 1,
-    borderColor: '#1a1a1a',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  pillDefaultDarkTheme: {
     backgroundColor: ONBOARDING_SURFACE.fill,
     borderWidth: 1,
     borderColor: ONBOARDING_SURFACE.border,
-    shadowColor: '#000',
+    shadowColor: 'rgba(120, 80, 200, 0.08)',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowOpacity: 1,
+    shadowRadius: 12,
     elevation: 2,
   },
-  /** QUITTR-style active: soft violet wash + solid violet border + outer glow */
-  pillSelectedDarkTheme: {
-    backgroundColor: 'rgba(168, 85, 247, 0.22)',
+  pillSelected: {
+    backgroundColor: ONBOARDING_SURFACE.fillSelected,
     borderWidth: 1,
-    borderColor: '#A855F7',
-    shadowColor: '#A855F7',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.45,
+    borderColor: ONBOARDING_SURFACE.borderSelected,
+    shadowColor: 'rgba(120, 80, 200, 0.12)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
     shadowRadius: 12,
-    elevation: 8,
+    elevation: 3,
     ...(Platform.OS === 'android' ? { borderWidth: 1.5 } : null),
   },
   label: {
     flex: 1,
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#1a1a2e',
+    fontSize: 16,
+    fontWeight: '500',
+    color: ONBOARDING_TEXT.primary,
     letterSpacing: -0.2,
   },
   labelSelected: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  labelDarkTheme: {
-    color: 'rgba(255, 255, 255, 0.92)',
-  },
-  iconChipDarkTheme: {
-    backgroundColor: ONBOARDING_SURFACE.iconChip,
-  },
-  iconChipSelectedDarkTheme: {
-    backgroundColor: 'rgba(168, 85, 247, 0.35)',
+    fontWeight: '600',
+    color: ONBOARDING_TEXT.primary,
   },
 });

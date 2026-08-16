@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import InsightCompanionMark from '../companion/InsightCompanionMark';
+import MiraTypewriterText from '../companion/MiraTypewriterText';
+import MiraMessageBubble from '../companion/MiraMessageBubble';
 import { MIRA_COMPANION_NAME } from '../../constants/mira';
 import type { GoDeeperMessage } from '../../services/goDeeperConversationService';
 import { sf } from '../../utils/responsive';
@@ -21,8 +23,9 @@ type Props = {
   isLoading: boolean;
   isDark: boolean;
   replyPlaceholder: string;
-  typingMessageId?: string | null;
-  typingDisplayText?: string;
+  revealingMessageId?: string | null;
+  onRevealComplete?: () => void;
+  onTypewriterProgress?: () => void;
 };
 
 export default function GoDeeperThread({
@@ -33,50 +36,45 @@ export default function GoDeeperThread({
   isLoading,
   isDark,
   replyPlaceholder,
-  typingMessageId = null,
-  typingDisplayText = '',
+  revealingMessageId = null,
+  onRevealComplete,
+  onTypewriterProgress,
 }: Props) {
-  if (messages.length === 0 && !isLoading && !typingMessageId) return null;
+  if (messages.length === 0 && !isLoading && !revealingMessageId) return null;
 
-  const assistantTextColor = isDark ? 'rgba(255,255,255,0.78)' : '#5a5a5a';
   const userTextColor = isDark ? 'rgba(255,255,255,0.92)' : '#1a1a1a';
   const replyBg = isDark ? 'rgba(139,92,246,0.12)' : 'rgba(139,92,246,0.08)';
   const replyBorder = isDark ? 'rgba(139,92,246,0.28)' : 'rgba(139,92,246,0.2)';
 
-  const getDisplayContent = (msg: GoDeeperMessage) => {
-    if (typingMessageId === msg.id) {
-      return typingDisplayText || '';
-    }
-    return msg.content;
-  };
-
-  const showTypingCursor = (msg: GoDeeperMessage) =>
-    typingMessageId === msg.id && typingDisplayText.length < msg.content.length;
-
   return (
     <View style={styles.thread}>
       {messages.map((msg) => {
-        const text = getDisplayContent(msg);
-        if (!text && typingMessageId !== msg.id) return null;
+        if (!msg.content) return null;
 
         if (msg.role === 'assistant') {
+          const isRevealing = revealingMessageId === msg.id;
+
           return (
             <View key={msg.id} style={styles.assistantBlock}>
               <View style={styles.assistantHeader}>
-                <InsightCompanionMark size={24} isDark={isDark} />
+                <InsightCompanionMark size={32} isDark={isDark} />
                 <Text style={[styles.threadLabel, { color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }]}>
                   {MIRA_COMPANION_NAME}
                 </Text>
               </View>
-              <Text
-                style={[
-                  styles.assistantText,
-                  { color: assistantTextColor },
-                ]}
-              >
-                {text}
-                {showTypingCursor(msg) ? <Text style={styles.cursor}>|</Text> : null}
-              </Text>
+              <View style={styles.assistantBody}>
+                {isRevealing ? (
+                  <MiraTypewriterText
+                    text={msg.content}
+                    isDark={isDark}
+                    onComplete={onRevealComplete}
+                    onProgress={onTypewriterProgress}
+                    charIntervalMs={28}
+                  />
+                ) : (
+                  <MiraMessageBubble content={msg.content} isDark={isDark} />
+                )}
+              </View>
             </View>
           );
         }
@@ -84,20 +82,20 @@ export default function GoDeeperThread({
         return (
           <View key={msg.id} style={styles.userRow}>
             <View style={[styles.userBubble, { backgroundColor: isDark ? 'rgba(139,92,246,0.22)' : 'rgba(139,92,246,0.12)' }]}>
-              <Text style={[styles.messageText, { color: userTextColor }]}>{text}</Text>
+              <Text style={[styles.messageText, { color: userTextColor }]}>{msg.content}</Text>
             </View>
           </View>
         );
       })}
 
-      {isLoading && !typingMessageId && (
+      {isLoading && !revealingMessageId && (
         <View style={styles.loadingRow}>
           <InsightCompanionMark size={22} isDark={isDark} />
           <ActivityIndicator size="small" color="#8b5cf6" style={{ marginLeft: 10 }} />
         </View>
       )}
 
-      {(messages.length > 0 || typingMessageId) && (
+      {(messages.length > 0 || revealingMessageId) && (
         <View style={[styles.replyBox, { backgroundColor: replyBg, borderColor: replyBorder }]}>
           <TextInput
             style={[styles.replyInput, { color: userTextColor }]}
@@ -128,6 +126,11 @@ const styles = StyleSheet.create({
   thread: {
     marginTop: 24,
     gap: 16,
+    paddingHorizontal: 8,
+  },
+  assistantBody: {
+    paddingHorizontal: 12,
+    paddingVertical: 2,
   },
   assistantBlock: {
     gap: 8,
@@ -138,7 +141,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   threadLabel: {
-    fontSize: sf(13),
+    fontSize: sf(15),
     fontWeight: '700',
     letterSpacing: 0.3,
   },
@@ -146,11 +149,7 @@ const styles = StyleSheet.create({
     fontSize: sf(15),
     lineHeight: sf(23),
     fontStyle: 'italic',
-    paddingLeft: 2,
-  },
-  cursor: {
-    color: '#8b5cf6',
-    fontWeight: '600',
+    paddingHorizontal: 4,
   },
   userRow: {
     alignItems: 'flex-end',
@@ -179,7 +178,9 @@ const styles = StyleSheet.create({
     paddingRight: 6,
     paddingVertical: 6,
     marginTop: 4,
+    marginHorizontal: 4,
     minHeight: 48,
+    maxWidth: '100%',
   },
   replyInput: {
     flex: 1,

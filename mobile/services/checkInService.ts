@@ -77,7 +77,16 @@ export async function saveCheckIn(
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    if (error.code === '42P01') {
+      checkInsTableAvailable = false;
+      console.log('[CheckIn] check_ins table unavailable — skipping save');
+      return null;
+    }
+    throw error;
+  }
+
+  checkInsTableAvailable = true;
   return checkInRowToDraft(data);
 }
 

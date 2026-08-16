@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { AccessibilityInfo, Animated, View, Easing, ViewStyle, StyleProp } from 'react-native';
 import Svg, { Defs, RadialGradient, Stop, Circle } from 'react-native-svg';
+import type { AiPersonality } from '../../utils/aiPersonalities';
+import { PERSONALITY_ORB_BLOBS } from '../../constants/personalityOrbPalettes';
 
 type Blob = {
   /** rgb triplet, e.g. '168,85,247' */
@@ -238,6 +240,8 @@ type Props = {
   vivid?: boolean;
   /** Fiery roast-mode palette with faster pulse. */
   variant?: 'default' | 'roast';
+  /** Personality-tuned palette for chat orb. */
+  personality?: AiPersonality;
   /** When false, blobs stay static (e.g. voice overlay driven by external audio level). */
   animate?: boolean;
   /** Home hero: soft ambient + layered color without a hard outer ring. */
@@ -256,20 +260,23 @@ export default function AuroraOrb({
   compact = false,
   vivid = false,
   variant = 'default',
+  personality,
   animate = true,
   hero = false,
 }: Props) {
   const isCompact = compact || size <= 72;
-  const sourceBlobs = variant === 'roast'
-    ? ROAST_BLOBS
-    : hero
-      ? (isDark ? DARK_BLOBS : LIGHT_HERO_BLOBS)
-      : isDark
-        ? DARK_BLOBS
-        : LIGHT_BLOBS;
+  const sourceBlobs = personality
+    ? PERSONALITY_ORB_BLOBS[personality]
+    : variant === 'roast'
+      ? ROAST_BLOBS
+      : hero
+        ? (isDark ? DARK_BLOBS : LIGHT_HERO_BLOBS)
+        : isDark
+          ? DARK_BLOBS
+          : LIGHT_BLOBS;
   const blobs = hero
     ? buildHeroBlobs(sourceBlobs, size, isDark)
-    : scaleBlobsForSize(sourceBlobs, size, isCompact, !!clipToCircle, vivid || variant === 'roast');
+    : scaleBlobsForSize(sourceBlobs, size, isCompact, !!clipToCircle, useVivid || variant === 'roast');
   const [motionEnabled, setMotionEnabled] = React.useState(true);
 
   React.useEffect(() => {
@@ -281,6 +288,7 @@ export default function AuroraOrb({
   }, []);
 
   const allowMotion = animate && motionEnabled && !(isCompact && size < 40);
+  const useVivid = vivid || variant === 'roast' || Boolean(personality);
 
   const content = (
     <>
@@ -291,7 +299,7 @@ export default function AuroraOrb({
           size={size}
           index={i}
           motionEnabled={allowMotion}
-          vivid={vivid}
+          vivid={useVivid}
           softEdge={hero && i === 0}
         />
       ))}

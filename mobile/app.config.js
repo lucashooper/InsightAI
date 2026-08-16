@@ -20,19 +20,25 @@ function readEnvValue(key) {
 }
 
 const elevenLabsKey = readEnvValue('EXPO_PUBLIC_ELEVENLABS_API_KEY');
+const revenueCatAndroidKey = readEnvValue('EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY');
 
 module.exports = {
   expo: {
     name: "Insight",
     slug: "insight-app",
-    version: "1.0.9",
+    version: "1.13",
     orientation: "portrait",
     icon: "./assets/InsightAI-New-Logo.png",
-    userInterfaceStyle: "automatic",
+    userInterfaceStyle: "dark",
     newArchEnabled: true,
+    splash: {
+      image: "./assets/splash.png",
+      resizeMode: "contain",
+      backgroundColor: "#0D0B18"
+    },
     ios: {
       supportsTablet: true,
-      buildNumber: "102",
+      buildNumber: "114",
       infoPlist: {
         NSMicrophoneUsageDescription: "Insight uses the microphone for voice notes.",
         NSSpeechRecognitionUsageDescription: "Insight uses speech recognition to convert your voice into text for taking notes and searching your content.",
@@ -45,10 +51,23 @@ module.exports = {
     android: {
       adaptiveIcon: {
         foregroundImage: "./assets/InsightAI-New-Logo.png",
-        backgroundColor: "#ffffff"
+        backgroundColor: "#0D0B18"
       },
+      splash: {
+        image: "./assets/splash.png",
+        resizeMode: "contain",
+        backgroundColor: "#0D0B18"
+      },
+      versionCode: 114,
       permissions: [
-        "RECORD_AUDIO"
+        "INTERNET",
+        "RECORD_AUDIO",
+        "CAMERA",
+        "READ_MEDIA_IMAGES",
+        "POST_NOTIFICATIONS",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT",
+        "VIBRATE"
       ],
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
@@ -59,22 +78,31 @@ module.exports = {
     },
     extra: {
       eas: {
-        projectId: "8ffc6ed0-5105-49a6-90c1-3b7ab9ba9011"
+        projectId: "3fd09543-17dc-4535-a2b0-0d53868391b5"
       },
       EXPO_PUBLIC_SUPABASE_URL: "https://ptpqvghlaesyrzlljzkk.supabase.co",
       EXPO_PUBLIC_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0cHF2Z2hsYWVzeXJ6bGxqemtrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxMDc4MzEsImV4cCI6MjA2ODY4MzgzMX0.dmkb2_Hdf0vQwirOwJKX4ssfr0ltA1eIZ5_v1s5p6DE",
       EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: "878031859491-tub0qt8omp6enuiaqr7liivotmkq7gef.apps.googleusercontent.com",
       EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: "878031859491-dmj3m0e95nl2hmbt08c4oo7qm3a4j49l.apps.googleusercontent.com",
       EXPO_PUBLIC_ELEVENLABS_API_KEY: elevenLabsKey,
+      EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY: revenueCatAndroidKey,
     },
-    owner: "crupid2s-organization",
     updates: {
-      url: "https://u.expo.dev/8ffc6ed0-5105-49a6-90c1-3b7ab9ba9011",
+      url: "https://u.expo.dev/3fd09543-17dc-4535-a2b0-0d53868391b5",
     },
     runtimeVersion: {
       policy: "appVersion",
     },
     plugins: [
+      [
+        "expo-splash-screen",
+        {
+          backgroundColor: "#0D0B18",
+          image: "./assets/splash.png",
+          imageWidth: 180,
+          resizeMode: "contain"
+        }
+      ],
       [
         "expo-build-properties",
         {
@@ -84,6 +112,11 @@ module.exports = {
               { name: "RecaptchaInterop", modular_headers: true },
               { name: "AppCheckCore", version: "11.2.0" },
             ],
+          },
+          android: {
+            minSdkVersion: 24,
+            compileSdkVersion: 35,
+            targetSdkVersion: 35,
           },
         },
       ],

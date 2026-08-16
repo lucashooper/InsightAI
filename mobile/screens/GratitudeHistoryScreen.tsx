@@ -14,6 +14,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
 import EmptyState from '../components/shared/EmptyState';
+import AppBackdrop from '../components/ui/AppBackdrop';
+import GlassCard from '../components/ui/GlassCard';
 
 interface GratitudeEntry {
   id: string;
@@ -56,33 +58,26 @@ export default function GratitudeHistoryScreen({ navigation }: any) {
 
   const renderEntry = ({ item }: { item: GratitudeEntry }) => (
     <TouchableOpacity
-      style={styles.entryCard}
       onPress={() => navigation.navigate('EntryDetail', { entry: item })}
       activeOpacity={0.7}
     >
-      <View style={[styles.cardContent, { 
-        backgroundColor: dark ? 'rgba(40, 40, 45, 0.7)' : theme.colors.cardBackground,
-        borderColor: dark ? 'rgba(255, 255, 255, 0.08)' : theme.colors.border,
-      }]}>
+      <GlassCard style={styles.entryCard} noPad contentStyle={styles.cardContent}>
         <View style={styles.entryHeader}>
           <Ionicons name="heart" size={20} color="#f472b6" />
-          <Text style={[styles.entryDate, { color: dark ? 'rgba(255, 255, 255, 0.8)' : theme.colors.primaryText }]}>
+          <Text style={styles.entryDate}>
             {formatDate(item.created_at, { month: 'short', day: 'numeric', year: 'numeric' })}
           </Text>
         </View>
-        <Text style={[styles.entryContent, { color: dark ? 'rgba(255, 255, 255, 0.9)' : theme.colors.primaryText }]} numberOfLines={3}>
+        <Text style={styles.entryContent} numberOfLines={3}>
           {item.content}
         </Text>
-      </View>
+      </GlassCard>
     </TouchableOpacity>
   );
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={theme.colors.backgroundGradient as any}
-        style={styles.backgroundGradient}
-      />
+      <AppBackdrop />
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -180,9 +175,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   cardContent: {
-    padding: 16,
-    borderRadius: 14,
-    borderWidth: 1,
+    padding: 18,
   },
   entryHeader: {
     flexDirection: 'row',
@@ -193,9 +186,11 @@ const styles = StyleSheet.create({
   entryDate: {
     fontSize: 14,
     fontWeight: '600',
+    color: 'rgba(255,255,255,0.75)',
   },
   entryContent: {
     fontSize: 15,
     lineHeight: 22,
+    color: 'rgba(255,255,255,0.9)',
   },
 });

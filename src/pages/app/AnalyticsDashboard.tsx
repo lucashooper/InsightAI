@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { supabase } from '../../services/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -59,6 +60,177 @@ interface ContextMenu {
   sessionId: string;
   userId: string | null;
   username: string;
+}
+
+const PAGE_BG = 'linear-gradient(135deg, #0f0a1e 0%, #1a0f2e 50%, #0a1628 100%)';
+
+const glassCard: CSSProperties = {
+  background: 'rgba(255, 255, 255, 0.05)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  borderRadius: '16px',
+  backdropFilter: 'blur(20px)',
+  WebkitBackdropFilter: 'blur(20px)',
+};
+
+function CompletionRing({ percent }: { percent: number }) {
+  const radius = 36;
+  const stroke = 6;
+  const normalizedRadius = radius - stroke / 2;
+  const circumference = normalizedRadius * 2 * Math.PI;
+  const offset = circumference - (percent / 100) * circumference;
+
+  return (
+    <div style={{ position: 'relative', width: 72, height: 72 }}>
+      <svg width={72} height={72} style={{ transform: 'rotate(-90deg)' }}>
+        <circle
+          cx={36}
+          cy={36}
+          r={normalizedRadius}
+          fill="none"
+          stroke="rgba(255,255,255,0.1)"
+          strokeWidth={stroke}
+        />
+        <circle
+          cx={36}
+          cy={36}
+          r={normalizedRadius}
+          fill="none"
+          stroke="#7B5EA7"
+          strokeWidth={stroke}
+          strokeDasharray={`${circumference} ${circumference}`}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          style={{ filter: 'drop-shadow(0 0 6px rgba(123, 94, 167, 0.55))' }}
+        />
+      </svg>
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '15px',
+          fontWeight: 700,
+          color: '#FFFFFF',
+        }}
+      >
+        {Math.round(percent)}%
+      </div>
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  accent,
+  ring,
+}: {
+  label: string;
+  value: ReactNode;
+  accent?: string;
+  ring?: ReactNode;
+}) {
+  return (
+    <div style={{ ...glassCard, padding: '24px', position: 'relative', overflow: 'hidden' }}>
+      {accent && (
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: '3px',
+            background: accent,
+            borderRadius: '16px 0 0 16px',
+          }}
+        />
+      )}
+      <div
+        style={{
+          fontSize: '11px',
+          color: 'rgba(255,255,255,0.5)',
+          marginBottom: ring ? '12px' : '8px',
+          textTransform: 'uppercase',
+          letterSpacing: '1.5px',
+          fontWeight: 600,
+        }}
+      >
+        {label}
+      </div>
+      {ring ?? (
+        <div style={{ fontSize: '32px', fontWeight: 700, color: '#FFFFFF', lineHeight: 1.1 }}>
+          {value}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LegendPill({ color, label, glow }: { color: string; label: string; glow?: string }) {
+  return (
+    <div
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '8px',
+        background: 'rgba(255,255,255,0.06)',
+        borderRadius: '20px',
+        padding: '4px 10px',
+        fontSize: '12px',
+        color: 'rgba(255,255,255,0.75)',
+      }}
+    >
+      <div
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: '50%',
+          background: color,
+          boxShadow: glow ?? `0 0 6px ${color}`,
+        }}
+      />
+      {label}
+    </div>
+  );
+}
+
+function GhostButton({
+  children,
+  onClick,
+  disabled,
+  destructive,
+}: {
+  children: ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  destructive?: boolean;
+}) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        background: hover ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
+        border: '1px solid rgba(255,255,255,0.2)',
+        borderLeft: destructive ? '3px solid rgba(239,68,68,0.6)' : '1px solid rgba(255,255,255,0.2)',
+        borderRadius: '8px',
+        padding: '8px 14px',
+        fontSize: '12px',
+        fontWeight: 600,
+        color: '#fff',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.45 : 1,
+        transition: 'background 0.2s',
+      }}
+    >
+      {children}
+    </button>
+  );
 }
 
 export default function AnalyticsDashboard() {
@@ -364,18 +536,17 @@ export default function AnalyticsDashboard() {
   return (
     <div style={{ 
       minHeight: '100vh', 
-      background: 'linear-gradient(135deg, #0a0a0c 0%, #1a1a2e 100%)',
+      background: PAGE_BG,
       color: '#fff',
       padding: '32px'
     }}>
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-        {/* Header with Back Button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '28px' }}>
           <button
             onClick={() => navigate('/app/admin')}
             style={{
-              background: 'rgba(255, 255, 255, 0.08)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
               borderRadius: '8px',
               padding: '10px 16px',
               color: '#fff',
@@ -385,27 +556,13 @@ export default function AnalyticsDashboard() {
               gap: '8px',
               fontSize: '14px',
               fontWeight: '500',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
             }}
           >
             <ArrowLeft size={16} />
             Back to Admin
           </button>
           <div>
-            <h1 style={{ 
-              fontSize: '28px', 
-              fontWeight: '700',
-              background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              margin: 0,
-            }}>
+            <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#FFFFFF', margin: 0 }}>
               Onboarding Analytics
             </h1>
             <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '13px', margin: '4px 0 0 0' }}>
@@ -414,163 +571,55 @@ export default function AnalyticsDashboard() {
           </div>
         </div>
 
-        {/* Metrics Cards */}
         {metrics && (
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-            gap: '12px',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '16px',
             marginBottom: '24px'
           }}>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: '10px',
-              padding: '14px',
-            }}>
-              <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Total Users
-              </div>
-              <div style={{ fontSize: '24px', fontWeight: '700', color: '#fff' }}>
-                {metrics.totalSessions}
-              </div>
-            </div>
-
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: '10px',
-              padding: '14px',
-            }}>
-              <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Completed
-              </div>
-              <div style={{ fontSize: '24px', fontWeight: '700', color: '#10b981' }}>
-                {metrics.completedOnboarding}
-              </div>
-            </div>
-
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: '10px',
-              padding: '14px',
-            }}>
-              <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Completion Rate
-              </div>
-              <div style={{ fontSize: '24px', fontWeight: '700', color: '#8b5cf6' }}>
-                {metrics.completionRate.toFixed(0)}%
-              </div>
-            </div>
-
+            <StatCard label="Total Users" value={metrics.totalSessions} accent="rgba(123, 94, 167, 0.8)" />
+            <StatCard label="Completed" value={metrics.completedOnboarding} accent="rgba(74, 222, 128, 0.8)" />
+            <StatCard
+              label="Completion Rate"
+              value={null}
+              accent="rgba(123, 94, 167, 0.8)"
+              ring={<CompletionRing percent={metrics.completionRate} />}
+            />
             {metrics.dropOffStep && (
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '10px',
-                padding: '14px',
-              }}>
-                <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Common Drop-off
-                </div>
-                <div style={{ fontSize: '18px', fontWeight: '700', color: '#ef4444' }}>
-                  {metrics.dropOffStep}
-                </div>
-              </div>
+              <StatCard label="Common Drop-off" value={metrics.dropOffStep} accent="rgba(239, 68, 68, 0.65)" />
             )}
           </div>
         )}
 
-        {/* User Journeys */}
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.04)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: '10px',
-          padding: '20px',
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: '600', margin: 0, color: 'rgba(255, 255, 255, 0.9)' }}>
+        <div style={{ ...glassCard, padding: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+            <h2 style={{ fontSize: '16px', fontWeight: '600', margin: 0, color: '#FFFFFF' }}>
               User Journeys ({userJourneys.length})
             </h2>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                onClick={deleteAllJourneys}
-                disabled={loading || isDeletingAll || userJourneys.length === 0}
-                style={{
-                  background: (loading || isDeletingAll || userJourneys.length === 0) ? 'rgba(239, 68, 68, 0.3)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  padding: '8px 14px',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  cursor: (loading || isDeletingAll || userJourneys.length === 0) ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s',
-                  opacity: userJourneys.length === 0 ? 0.5 : 1,
-                }}
-              >
-                {isDeletingAll ? '🗑 Deleting...' : '🗑 Delete All'}
-              </button>
-              <button
-                onClick={loadAnalytics}
-                disabled={loading}
-                style={{
-                  background: loading ? 'rgba(139, 92, 246, 0.3)' : 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  padding: '8px 14px',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s',
-                }}
-              >
-                {loading ? '⟳ Loading...' : '↻ Refresh'}
-              </button>
+              <GhostButton onClick={deleteAllJourneys} disabled={loading || isDeletingAll || userJourneys.length === 0} destructive>
+                {isDeletingAll ? 'Deleting...' : 'Delete All'}
+              </GhostButton>
+              <GhostButton onClick={loadAnalytics} disabled={loading}>
+                {loading ? 'Loading...' : 'Refresh'}
+              </GhostButton>
             </div>
           </div>
 
-          {/* Legend */}
-          <div style={{ 
-            display: 'flex', 
-            gap: '20px', 
-            marginBottom: '14px',
-            paddingBottom: '14px',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-            fontSize: '11px',
-            color: 'rgba(255, 255, 255, 0.5)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981' }} />
-              Completed
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#fbbf24' }} />
-              Subscribed
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#f59e0b' }} />
-              Skipped
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ef4444' }} />
-              Dropped
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.15)' }} />
-              Not Reached
-            </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
+            <LegendPill color="#10b981" label="Completed" glow="0 0 4px #4ade80" />
+            <LegendPill color="#fbbf24" label="Subscribed" />
+            <LegendPill color="#f59e0b" label="Skipped" />
+            <LegendPill color="#ef4444" label="Dropped" />
+            <LegendPill color="rgba(255, 255, 255, 0.25)" label="Not Reached" glow="none" />
           </div>
 
-          {/* Journey List */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '550px', overflowY: 'auto' }}>
-            {userJourneys.map((journey) => {
+          <div style={{ display: 'flex', flexDirection: 'column', maxHeight: '550px', overflowY: 'auto' }}>
+            {userJourneys.map((journey, index) => {
               const completedStepNumbers = new Set(journey.steps.filter(s => s.completed && !s.skipped).map(s => s.step_number));
               const skippedStepNumbers = new Set(journey.steps.filter(s => s.skipped).map(s => s.step_number));
               const hasSubscribed = journey.steps.some(s => s.step === 'subscription');
-              const isFullyCompleted = completedStepNumbers.size >= 11;
               const isDeleting = deletingId === journey.session_id;
               
               return (
@@ -587,36 +636,26 @@ export default function AnalyticsDashboard() {
                     });
                   }}
                   style={{
-                    background: isDeleting ? 'rgba(239, 68, 68, 0.08)' : 'rgba(255, 255, 255, 0.02)',
-                    border: `1px solid ${isDeleting ? 'rgba(239,68,68,0.3)' : 'rgba(255, 255, 255, 0.06)'}`,
-                    borderRadius: '6px',
-                    padding: '10px 14px',
+                    background: index % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'transparent',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                    padding: '12px 14px',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '14px',
-                    transition: 'all 0.2s',
                     opacity: isDeleting ? 0.5 : 1,
                     cursor: 'context-menu',
                   }}
-                  onMouseEnter={(e) => {
-                    if (!isDeleting) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isDeleting) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
-                  }}
                 >
-                  {/* User Info */}
                   <div style={{ minWidth: '140px' }}>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: hasSubscribed ? '#fbbf24' : '#fff', marginBottom: '2px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '500', color: '#FFFFFF', marginBottom: '2px' }}>
                       {journey.username}{hasSubscribed ? ' 💎' : ''}
                     </div>
-                    <div style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.35)' }}>
+                    <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.4)' }}>
                       {new Date(journey.lastActiveTime).toLocaleDateString()} {new Date(journey.lastActiveTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
 
-                  {/* Step Dots */}
-                  <div style={{ display: 'flex', gap: '5px', flex: 1, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '6px', flex: 1, flexWrap: 'wrap' }}>
                     {ONBOARDING_STEPS.map(step => {
                       const isCompleted = completedStepNumbers.has(step.number);
                       const isSkipped = skippedStepNumbers.has(step.number);
@@ -640,39 +679,30 @@ export default function AnalyticsDashboard() {
                       }
 
                       const tooltipText = `${step.label} — ${step.description}\n[${status}]`;
+                      const dotGlow = isCompleted ? '0 0 4px #4ade80' : undefined;
 
                       return (
                         <div
                           key={step.id}
                           title={tooltipText}
                           style={{
-                            width: '12px',
-                            height: '12px',
+                            width: '10px',
+                            height: '10px',
                             borderRadius: '50%',
                             background: color,
-                            transition: 'transform 0.15s, background 0.2s',
-                            cursor: 'help',
+                            boxShadow: dotGlow,
                             flexShrink: 0,
                             opacity: step.optional ? 0.8 : 1,
                           }}
-                          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.6)'; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                         />
                       );
                     })}
                   </div>
 
-                  {/* Completion Status */}
-                  <div style={{ 
-                    fontSize: '11px', 
-                    fontWeight: '600',
-                    color: hasSubscribed ? '#fbbf24' : isFullyCompleted ? '#10b981' : '#ef4444',
-                    minWidth: '60px',
-                    textAlign: 'right'
-                  }}>
+                  <div style={{ fontSize: '12px', fontWeight: '600', color: '#FFFFFF', minWidth: '60px', textAlign: 'right' }}>
                     {completedStepNumbers.size}/{ONBOARDING_STEPS.length}
                     {skippedStepNumbers.size > 0 && (
-                      <span style={{ color: '#f59e0b', marginLeft: '4px' }}>(-{skippedStepNumbers.size})</span>
+                      <span style={{ color: 'rgba(255,100,100,0.8)', marginLeft: '4px' }}>(-{skippedStepNumbers.size})</span>
                     )}
                   </div>
                 </div>

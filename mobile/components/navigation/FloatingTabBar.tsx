@@ -16,11 +16,17 @@ const TAB_CONFIG: Record<string, { labelKey: string; icon: keyof typeof Ionicons
   Companion: { labelKey: 'tabs.companion', icon: 'chatbubble-ellipses-outline' },
 };
 
+const BLUR_PROPS =
+  Platform.OS === 'android'
+    ? { experimentalBlurMethod: 'dimezisBlurView' as const }
+    : {};
+
 export default function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const { t } = useLanguage();
   const isDark = isDarkTheme(theme.name);
+  const bottomPad = Math.max(insets.bottom, 8);
 
   const visibleRoutes = state.routes.filter((r) => r.name !== 'FabPlaceholder');
   const leftRoutes = visibleRoutes.filter((r) => r.name === 'Home' || r.name === 'Journal');
@@ -69,23 +75,23 @@ export default function FloatingTabBar({ state, navigation }: BottomTabBarProps)
     );
   };
 
-  const borderColor = isDark ? 'rgba(255,255,255,0.10)' : theme.colors.border;
-  const barFill = isDark ? 'rgba(18,18,22,0.22)' : 'rgba(255,255,255,0.97)';
+  const borderColor = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)';
+  const barTint = isDark ? 'dark' : 'light';
+  const barOverlay = isDark ? 'rgba(12,12,16,0.78)' : 'rgba(255,255,255,0.88)';
 
   return (
     <View
-      style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom, 8) }]}
+      style={[styles.wrapper, { paddingBottom: bottomPad }]}
       pointerEvents="box-none"
     >
       <View style={[styles.barOuter, isDark ? styles.barOuterDark : styles.barOuterLight]}>
-        {Platform.OS === 'ios' && isDark ? (
-          <>
-            <BlurView intensity={56} tint="dark" style={styles.blurFill} />
-            <View style={[styles.blurFill, { backgroundColor: barFill }]} />
-          </>
-        ) : (
-          <View style={[styles.blurFill, { backgroundColor: isDark ? 'rgba(18,18,22,0.55)' : barFill }]} />
-        )}
+        <BlurView
+          intensity={Platform.OS === 'android' ? (isDark ? 95 : 80) : (isDark ? 72 : 58)}
+          tint={barTint}
+          style={styles.blurFill}
+          {...BLUR_PROPS}
+        />
+        <View style={[styles.blurFill, { backgroundColor: barOverlay }]} />
         <View style={[styles.barBorder, { borderColor }]} />
         <View style={styles.barContent}>
           <View style={styles.sideGroup}>{leftRoutes.map(renderTab)}</View>
@@ -113,21 +119,21 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 420,
     borderRadius: 28,
-    overflow: 'visible',
+    overflow: 'hidden',
   },
   barOuterDark: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.28,
-    shadowRadius: 16,
-    elevation: 12,
+    shadowOpacity: 0.35,
+    shadowRadius: 20,
+    elevation: 16,
   },
   barOuterLight: {
     shadowColor: '#8b5cf6',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOpacity: 0.14,
+    shadowRadius: 14,
+    elevation: 10,
   },
   blurFill: {
     ...StyleSheet.absoluteFillObject,

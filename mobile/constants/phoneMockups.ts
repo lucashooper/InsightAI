@@ -1,8 +1,8 @@
 /** Full-frame Insight main screen (Product Reveal & marketing) */
-export const ZENO_MAIN_PHONE_FULL = require('../public/Insight-Main-Phone-New.png');
+export const ZENO_MAIN_PHONE_FULL = require('../public/Insight-Main-Phone-Light.png');
 
 /** Paywall hero — same rebranded Insight mockup */
-export const ZENO_MAIN_PHONE = require('../public/Insight-Main-Phone-New.png');
+export const ZENO_MAIN_PHONE = require('../public/Insight-Main-Phone-Light.png');
 
 /** Cropped mockups — legacy carousel assets */
 export const PAYWALL_PHONE_IMAGES = [

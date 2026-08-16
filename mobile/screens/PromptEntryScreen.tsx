@@ -9,29 +9,47 @@ import {
   Platform,
   ScrollView,
   Animated,
-  Keyboard,
-  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
+import { usePreloadedData } from '../contexts/PreloadContext';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { EncryptionService } from '../services/encryptionService';
-import { sf, ss } from '../utils/responsive';
+import { shouldEncryptJournalForUser } from '../utils/journalEncryption';
+import { sf } from '../utils/responsive';
 import { useLanguage } from '../contexts/LanguageContext';
 import { formatJournalPromptContent } from '../constants/branding';
+import AppBackdrop from '../components/ui/AppBackdrop';
+import GlassCard from '../components/ui/GlassCard';
+import { PREMIUM } from '../constants/premiumUI';
+import PromptSavedOverlay from '../components/prompt/PromptSavedOverlay';
+import { markPromptCompletedToday } from '../utils/promptCompletion';
+import { useSpeechToText } from '../hooks/useSpeechToText';
 
 export default function PromptEntryScreen({ navigation, route }: any) {
   const { promptText } = route?.params || {};
   const { user } = useAuth();
+  const { refreshNotes } = usePreloadedData();
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const insets = useSafeAreaInsets();
+  const isDark = isDarkTheme(theme.name);
   const [content, setContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [showSavedOverlay, setShowSavedOverlay] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
+
+  const { isRecording, toggleRecording } = useSpeechToText({
+    locale: 'en-US',
+    onTranscript: setContent,
+    getBaseText: () => content,
+    t,
+  });
 
   useEffect(() => {
     Animated.parallel([
@@ -46,284 +64,326 @@ export default function PromptEntryScreen({ navigation, route }: any) {
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
+  }, [fadeAnim, slideAnim]);
 
   const handleSave = async () => {
-    if (!content.trim()) {
-      Alert.alert(t('auxiliary.promptEntry.emptyTitle'), t('auxiliary.promptEntry.emptyMessage'));
-      return;
-    }
+    if (!content.trim()) return;
+    if (!user?.id) return;
 
     setIsSaving(true);
     try {
-      const encryptionKey = await EncryptionService.getKey();
-      
-      // Prepend prompt as metadata for AI analysis
+      const useEncryption = await shouldEncryptJournalForUser(user.id);
+      const encryptionKey = useEncryption
+        ? await EncryptionService.getKey(user.id)
+        : null;
       const fullContent = formatJournalPromptContent(promptText, content.trim());
-      const contentToSave = encryptionKey 
+      const contentToSave = encryptionKey
         ? await EncryptionService.encrypt(fullContent, encryptionKey)
         : fullContent;
 
-      // Auto-generate title from first line or use prompt
       const firstLine = content.trim().split('\n')[0];
-      const autoTitle = firstLine.length > 50 
-        ? firstLine.substring(0, 47) + '...' 
+      const autoTitle = firstLine.length > 50
+        ? firstLine.substring(0, 47) + '...'
         : firstLine;
 
-      const { data, error } = await supabase
-        .from('diary_entries')
-        .insert({
-          user_id: user?.id,
-          title: autoTitle || t('auxiliary.promptEntry.defaultTitle'),
-          content: contentToSave,
-          is_encrypted: !!encryptionKey,
-          entry_type: 'prompt', // Mark as prompt entry
-          prompt_text: promptText, // Store the prompt separately
-        })
+      const now = new Date().toISOString();
+      const baseRow = {
+        user_id: user.id,
+        title: autoTitle || t('auxiliary.promptEntry.defaultTitle'),
+        content: contentToSave,
+        is_encrypted: !!encryptionKey,
+        created_at: now,
+        updated_at: now,
+      };
+
+      const isMissingColumnError = (err: { message?: string; details?: string; code?: string } | null) => {
+        const blob = `${err?.message ?? ''} ${err?.details ?? ''}`.toLowerCase();
+        return (
+          err?.code === 'PGRST204'
+          || blob.includes('entry_type')
+          || blob.includes('prompt_text')
+          || blob.includes('could not find')
+          || blob.includes('column')
+        );
+      };
+
+      let { error } = await supabase
+        .from('notes')
+        .insert({ ...baseRow, entry_type: 'prompt', prompt_text: promptText ?? null })
         .select()
         .single();
 
+      if (error && isMissingColumnError(error)) {
+        ({ error } = await supabase.from('notes').insert(baseRow).select().single());
+      }
+
       if (error) throw error;
 
-      // Navigate back to home
-      navigation.navigate('Home', { refresh: true });
+      await refreshNotes(user.id, { force: true });
+      await markPromptCompletedToday();
+      setShowSavedOverlay(true);
     } catch (error: any) {
       console.error('Error saving prompt entry:', error);
-      Alert.alert(t('auxiliary.common.error'), t('auxiliary.promptEntry.saveFailed'));
     } finally {
       setIsSaving(false);
     }
   };
 
+  const footerBottom = Math.max(insets.bottom, Platform.OS === 'android' ? 20 : 12);
+
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={0}
-    >
-      {/* Gradient Background - Theme Aware */}
-      <LinearGradient
-        colors={theme.colors.backgroundGradient as any}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.gradientBackground}
-      />
+    <View style={styles.container}>
+      <AppBackdrop />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
-          <Ionicons name="close" size={28} color={isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a'} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Content */}
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
       >
-        <Animated.View
-          style={[
-            styles.contentContainer,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton} activeOpacity={0.8}>
+            <Ionicons name="close" size={26} color={isDark ? '#ffffff' : '#1a1a1a'} />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.flex}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: footerBottom + 96 }]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          {/* Prompt Badge */}
-          <View style={styles.promptBadge}>
-            <Ionicons name="sparkles" size={16} color={isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a'} />
-            <Text style={[styles.promptBadgeText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('auxiliary.promptEntry.todayPrompt')}</Text>
-          </View>
-
-          {/* Prompt Question */}
-          <View style={styles.promptCard}>
-            <Ionicons name="chatbubble-ellipses" size={32} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.6)'} style={styles.quoteIcon} />
-            <Text style={[styles.promptText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{promptText}</Text>
-          </View>
-
-          {/* Writing Area */}
-          <View style={styles.writingContainer}>
-            <Text style={[styles.writingLabel, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.7)' }]}>{t('auxiliary.promptEntry.yourReflection')}</Text>
-            <TextInput
-              style={[styles.textInput, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}
-              placeholder={t('auxiliary.promptEntry.placeholder')}
-              placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)'}
-              multiline
-              value={content}
-              onChangeText={setContent}
-              autoFocus
-              textAlignVertical="top"
-            />
-          </View>
-
-          {/* Character Count */}
-          {content.length > 0 && (
-            <Text style={[styles.characterCount, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)' }]}>
-              {t(content.length === 1 ? 'auxiliary.promptEntry.character' : 'auxiliary.promptEntry.characters', { count: content.length })}
-            </Text>
-          )}
-        </Animated.View>
-      </ScrollView>
-
-      {/* Save Button */}
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.saveButton, !content.trim() && styles.saveButtonDisabled]}
-          onPress={handleSave}
-          disabled={!content.trim() || isSaving}
-          activeOpacity={0.8}
-        >
-          <LinearGradient
-            colors={content.trim() ? ['#ffffff', '#f3f4f6'] : ['#666666', '#555555']}
-            style={styles.saveButtonGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+          <Animated.View
+            style={[
+              styles.contentContainer,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
           >
-            {isSaving ? (
-              <Text style={[styles.saveButtonText, { color: '#8b5cf6' }]}>{t('auxiliary.common.saving')}</Text>
-            ) : (
-              <>
-                <Ionicons name="checkmark-circle" size={22} color="#8b5cf6" />
-                <Text style={[styles.saveButtonText, { color: '#8b5cf6' }]}>{t('auxiliary.promptEntry.saveReflection')}</Text>
-              </>
+            <GlassCard style={styles.badgeCard} noPad contentStyle={styles.promptBadgeInner}>
+              <Ionicons name="sparkles" size={16} color={isDark ? '#c4b5fd' : '#7c3aed'} />
+              <Text style={[styles.promptBadgeText, { color: theme.colors.primaryText }]}>
+                {t('auxiliary.promptEntry.todayPrompt')}
+              </Text>
+            </GlassCard>
+
+            <GlassCard style={styles.promptCard} noPad contentStyle={styles.promptCardInner}>
+              <Ionicons
+                name="chatbubble-ellipses-outline"
+                size={28}
+                color={isDark ? 'rgba(167,139,250,0.45)' : 'rgba(124,58,237,0.35)'}
+                style={styles.quoteIcon}
+              />
+              <Text style={[styles.promptText, { color: theme.colors.primaryText }]}>{promptText}</Text>
+            </GlassCard>
+
+            <Text style={[styles.writingLabel, { color: theme.colors.secondaryText }]}>
+              {t('auxiliary.promptEntry.yourReflection')}
+            </Text>
+
+            <GlassCard style={styles.writingCard} noPad contentStyle={styles.writingCardInner}>
+              <TextInput
+                style={[styles.textInput, { color: theme.colors.primaryText }]}
+                placeholder={t('auxiliary.promptEntry.placeholder')}
+                placeholderTextColor={isDark ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.38)'}
+                multiline
+                value={content}
+                onChangeText={setContent}
+                autoFocus
+                textAlignVertical="top"
+              />
+            </GlassCard>
+
+            {content.length > 0 && (
+              <Text style={[styles.characterCount, { color: theme.colors.tertiaryText }]}>
+                {t(content.length === 1 ? 'auxiliary.promptEntry.character' : 'auxiliary.promptEntry.characters', { count: content.length })}
+              </Text>
             )}
-          </LinearGradient>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+          </Animated.View>
+        </ScrollView>
+
+        <View style={[styles.footer, { paddingBottom: footerBottom }]}>
+          <TouchableOpacity
+            style={[styles.voiceButton, isRecording && styles.voiceButtonActive]}
+            onPress={toggleRecording}
+            activeOpacity={0.85}
+          >
+            <Ionicons name={isRecording ? 'mic' : 'mic-outline'} size={22} color={isRecording ? '#ef4444' : '#c4b5fd'} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.saveButton, !content.trim() && styles.saveButtonDisabled, styles.saveButtonFlex]}
+            onPress={handleSave}
+            disabled={!content.trim() || isSaving}
+            activeOpacity={0.85}
+          >
+            <LinearGradient
+              colors={content.trim() ? ['#8b5cf6', '#7c3aed'] : ['#6b7280', '#4b5563']}
+              style={styles.saveButtonGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              {isSaving ? (
+                <Text style={styles.saveButtonText}>{t('auxiliary.common.saving')}</Text>
+              ) : (
+                <>
+                  <Ionicons name="checkmark-circle" size={22} color="#ffffff" />
+                  <Text style={styles.saveButtonText}>{t('auxiliary.promptEntry.saveReflection')}</Text>
+                </>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+
+      <PromptSavedOverlay
+        visible={showSavedOverlay}
+        title={t('auxiliary.promptEntry.completedTitle')}
+        message={t('auxiliary.promptEntry.completedMessage')}
+        buttonLabel={t('auxiliary.promptEntry.continue')}
+        onContinue={() => {
+          setShowSavedOverlay(false);
+          navigation.goBack();
+        }}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
   },
-  gradientBackground: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
+  flex: {
+    flex: 1,
   },
   header: {
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingHorizontal: 20,
-    paddingBottom: 10,
+    paddingHorizontal: PREMIUM.layout.screenPadH,
+    paddingBottom: 8,
   },
   closeButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  scrollView: {
-    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.18)',
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 100,
+    paddingHorizontal: PREMIUM.layout.screenPadH,
+    paddingTop: 8,
   },
   contentContainer: {
-    gap: 24,
+    gap: 16,
   },
-  promptBadge: {
+  badgeCard: {
+    alignSelf: 'flex-start',
+  },
+  promptBadgeInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 6,
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
   promptBadgeText: {
-    color: '#ffffff',
     fontSize: sf(13),
     fontWeight: '600',
   },
   promptCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 20,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    marginTop: 4,
+  },
+  promptCardInner: {
+    padding: 22,
     position: 'relative',
   },
   quoteIcon: {
     position: 'absolute',
     top: 16,
     right: 16,
-    opacity: 0.3,
   },
   promptText: {
-    color: '#ffffff',
     fontSize: sf(20),
     fontWeight: '600',
     lineHeight: sf(28),
     letterSpacing: -0.3,
-  },
-  writingContainer: {
-    gap: 12,
+    paddingRight: 36,
   },
   writingLabel: {
-    color: 'rgba(255, 255, 255, 0.8)',
     fontSize: sf(15),
     fontWeight: '600',
     letterSpacing: -0.2,
+    marginTop: 4,
+    marginLeft: 4,
+  },
+  writingCard: {
+    minHeight: 220,
+  },
+  writingCardInner: {
+    padding: 4,
+    minHeight: 220,
   },
   textInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 16,
-    padding: 20,
-    color: '#ffffff',
     fontSize: sf(16),
     lineHeight: sf(24),
     minHeight: 200,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    padding: 16,
   },
   characterCount: {
-    color: 'rgba(255, 255, 255, 0.5)',
     fontSize: sf(13),
     textAlign: 'right',
+    marginRight: 4,
   },
   footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 20,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 20,
+    paddingHorizontal: PREMIUM.layout.screenPadH,
+    paddingTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  voiceButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  voiceButtonActive: {
+    backgroundColor: 'rgba(239,68,68,0.15)',
+    borderColor: 'rgba(239,68,68,0.35)',
+  },
+  saveButtonFlex: {
+    flex: 1,
   },
   saveButton: {
     borderRadius: 16,
     overflow: 'hidden',
-    shadowColor: '#000',
+    shadowColor: '#8b5cf6',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    elevation: 6,
   },
   saveButtonDisabled: {
-    opacity: 0.5,
+    opacity: 0.55,
   },
   saveButtonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 18,
+    paddingVertical: 17,
     gap: 8,
   },
   saveButtonText: {
     fontSize: sf(17),
     fontWeight: '700',
     letterSpacing: -0.3,
+    color: '#ffffff',
   },
 });

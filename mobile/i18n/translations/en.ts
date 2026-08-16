@@ -488,8 +488,8 @@ const en: TranslationTree = {
   tabs: {
     home: 'Home',
     journal: 'Journal',
-    dashboard: 'Dashboard',
-    companion: 'Companion',
+    dashboard: 'Analytics',
+    companion: 'AI Chat',
   },
   home: {
     goodMorning: 'Good morning',
@@ -550,7 +550,7 @@ const en: TranslationTree = {
     reflection: 'REFLECTION',
   },
   dashboard: {
-    title: 'Dashboard',
+    title: 'Analytics',
     emotionalLandscape: 'Emotional landscape',
     tapToExplore: 'Tap to explore',
     mostRecurring: 'Most recurring',

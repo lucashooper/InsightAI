@@ -10,6 +10,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
 
 const { width } = Dimensions.get('window');
 
@@ -22,6 +23,7 @@ export default function AnalysisCompleteScreen({ navigation }: Props) {
     const { user } = useAuth();
     const { theme } = useTheme();
     const { t } = useLanguage();
+    const bottomInset = useOnboardingBottomInset();
     const checkmarkScale = useRef(new Animated.Value(0)).current;
     const contentFade = useRef(new Animated.Value(0)).current;
 
@@ -133,7 +135,7 @@ export default function AnalysisCompleteScreen({ navigation }: Props) {
                 </Animated.View>
 
                 {/* CTA Button */}
-                <Animated.View style={[styles.ctaContainer, { opacity: contentFade }]}>
+                <Animated.View style={[styles.ctaContainer, { opacity: contentFade, paddingBottom: bottomInset }]}>
                     <TouchableOpacity
                         style={styles.ctaButton}
                         activeOpacity={0.9}
@@ -158,7 +160,6 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingHorizontal: 32,
         paddingTop: 80,
-        paddingBottom: 50,
         alignItems: 'center',
         justifyContent: 'space-between',
     },
@@ -197,7 +198,7 @@ const styles = StyleSheet.create({
     ctaButton: {
         width: '100%',
         borderRadius: 28,
-        backgroundColor: '#1a1a1a',
+        backgroundColor: '#7B5EA7',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,

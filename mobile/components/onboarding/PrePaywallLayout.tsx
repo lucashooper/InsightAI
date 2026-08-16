@@ -15,6 +15,7 @@ import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { ONBOARDING_CTA } from '../../constants/onboardingTheme';
+import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
 
 type Props = {
   step: 0 | 1;
@@ -37,6 +38,7 @@ export default function PrePaywallLayout({
 }: Props) {
   const { t } = useLanguage();
   const { theme } = useTheme();
+  const bottomInset = useOnboardingBottomInset();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(24)).current;
 
@@ -57,12 +59,12 @@ export default function PrePaywallLayout({
   return (
     <View style={styles.container}>
       <OnboardingAmbientBackground />
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="dark-content" />
 
       {showBack && onBack && (
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
           <View style={styles.backArrowCircle}>
-            <Ionicons name="arrow-back" size={20} color="#ffffff" />
+            <Ionicons name="arrow-back" size={20} color="#1a1a2e" />
           </View>
         </TouchableOpacity>
       )}
@@ -77,7 +79,7 @@ export default function PrePaywallLayout({
         </Animated.View>
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: bottomInset }]}>
         <View style={styles.progressRow}>
           {Array.from({ length: TOTAL_STEPS }, (_, index) => (
             <View
@@ -113,7 +115,9 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderWidth: 1,
+    borderColor: 'rgba(200, 185, 255, 0.35)',
   },
   scroll: {
     flex: 1,
@@ -128,7 +132,6 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: 24,
-    paddingBottom: isTablet ? 56 : 44,
     gap: 16,
     ...(iPadContentStyle as object),
   },
@@ -141,21 +144,22 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: 'rgba(123, 94, 167, 0.25)',
   },
   progressDotActive: {
     width: 22,
-    backgroundColor: 'rgba(255,255,255,0.85)',
+    backgroundColor: '#7B5EA7',
   },
   ctaButton: {
     backgroundColor: ONBOARDING_CTA.background,
     borderRadius: ONBOARDING_CTA.borderRadius,
-    paddingVertical: ONBOARDING_CTA.paddingVertical,
+    height: 56,
     alignItems: 'center',
-    shadowColor: ONBOARDING_CTA.shadow,
+    justifyContent: 'center',
+    shadowColor: 'rgba(123, 94, 167, 0.35)',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.22,
-    shadowRadius: 12,
+    shadowOpacity: 1,
+    shadowRadius: 20,
     elevation: 8,
   },
   ctaText: {

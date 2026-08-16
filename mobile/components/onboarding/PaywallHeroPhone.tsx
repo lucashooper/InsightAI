@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Image, StyleSheet, Dimensions } from 'react-native';
+import { View, StyleSheet, Dimensions } from 'react-native';
+import CachedImage from '../shared/CachedImage';
 import { ZENO_MAIN_PHONE_FULL } from '../../constants/phoneMockups';
 import { isTablet } from '../../utils/responsive';
 
@@ -13,10 +14,11 @@ const PHONE_VISIBLE_HEIGHT = PHONE_FULL_HEIGHT * 0.58;
 export default function PaywallHeroPhone() {
   return (
     <View style={styles.wrap}>
-      <Image
+      <CachedImage
         source={ZENO_MAIN_PHONE_FULL}
         style={styles.image}
-        resizeMode="contain"
+        contentFit="contain"
+        recyclingKey="paywall-hero-phone"
       />
     </View>
   );

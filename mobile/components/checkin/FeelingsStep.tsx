@@ -160,7 +160,7 @@ export default function FeelingsStep({ onContinue }: Props) {
         </TouchableOpacity>
       )}
 
-      <PremiumButton label={t('checkIn.continue')} onPress={onContinue} style={styles.cta} />
+      <PremiumButton label={t('checkIn.continue')} onPress={onContinue} large block style={styles.cta} />
     </ScrollView>
   );
 }

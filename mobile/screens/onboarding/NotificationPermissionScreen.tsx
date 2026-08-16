@@ -3,12 +3,11 @@ import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform, StatusBar
 import * as Notifications from 'expo-notifications';
 import * as Haptics from 'expo-haptics';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
-import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { ONBOARDING_TEXT } from '../../constants/onboardingTheme';
 
 export default function NotificationPermissionScreen({ navigation }: any) {
     const { t } = useLanguage();
-    const { theme } = useTheme();
     const pointerAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
@@ -51,9 +50,9 @@ export default function NotificationPermissionScreen({ navigation }: any) {
     return (
         <View style={styles.container}>
             <OnboardingAmbientBackground />
-            <StatusBar barStyle="light-content" />
+            <StatusBar barStyle="dark-content" />
             <View style={styles.content}>
-                <Text style={[styles.title, { color: theme.colors.primaryText }]}>{t('onboarding.notifications.permissionTitle')}</Text>
+                <Text style={[styles.title, { color: ONBOARDING_TEXT.primary }]}>{t('onboarding.notifications.permissionTitle')}</Text>
 
                 <View style={styles.permissionCard}>
                     <Text style={styles.permissionTitle}>{t('onboarding.notifications.permissionRequest')}</Text>

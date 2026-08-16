@@ -89,6 +89,21 @@ export const DISCOVERY_PROMPTS_FEATURED = DISCOVERY_PROMPTS.slice(0, 3);
 /** Remaining prompts behind "See all insights" */
 export const DISCOVERY_PROMPTS_MORE = DISCOVERY_PROMPTS.slice(3);
 
+/** Three prompts that rotate daily — fresh feel without expand/collapse UI. */
+export function getDailyDiscoveryPrompts(date = new Date()): DiscoveryPrompt[] {
+  const daySeed =
+    date.getFullYear() * 1000 + date.getMonth() * 31 + date.getDate();
+  const pool = [...DISCOVERY_PROMPTS];
+  const picked: DiscoveryPrompt[] = [];
+  let seed = daySeed;
+  while (picked.length < 3 && pool.length > 0) {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    const index = seed % pool.length;
+    picked.push(pool.splice(index, 1)[0]);
+  }
+  return picked;
+}
+
 export const REVEAL_TYPE_LABELS: Record<MiraRevealType, string> = {
   biggest_strength: 'Biggest Strength',
   biggest_weakness: 'Biggest Weakness',

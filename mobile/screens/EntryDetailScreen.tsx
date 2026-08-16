@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Activi
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
-import Purchases from 'react-native-purchases';
+import { resolveProAccess, fetchSubscriptionTier, isUnlimitedTier } from '../utils/entitlements';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
 import { navigateToPlaybook } from '../utils/navigateToPlaybook';
@@ -15,6 +15,7 @@ import ImmersiveAnalysisOverlay from '../components/shared/ImmersiveAnalysisOver
 import StandardContainer from '../components/shared/StandardContainer';
 import InsightsHeroCard from '../components/insights/InsightsHeroCard';
 import PremiumUpsellOverlay from '../components/PremiumUpsellOverlay';
+import PremiumDialog, { type PremiumDialogAction } from '../components/shared/PremiumDialog';
 import * as Haptics from 'expo-haptics';
 import { isTablet, sf, ss, si } from '../utils/responsive';
 import SunoGradient from '../components/onboarding/SunoGradient';
@@ -23,13 +24,15 @@ import { setCachedEntry, entryVersion } from '../utils/decryptCache';
 import MoodIcon from '../components/checkin/MoodIcon';
 import { fetchCheckInForNote, StoredCheckIn } from '../services/checkInService';
 import { useLanguage } from '../contexts/LanguageContext';
-import { withContentLocale } from '../i18n/contentLocale';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { translateEmotion } from '../i18n/labels';
 import GoDeeperThread from '../components/editor/GoDeeperThread';
 import InsightCompanionMark from '../components/companion/InsightCompanionMark';
-import { formatJournalPromptContent, extractJournalPromptText, stripJournalPromptTag } from '../constants/branding';
+import { formatJournalPromptContent, extractJournalPromptText, stripJournalPromptTag, isPromptDrivenEntry, getPromptTextForEntry } from '../constants/branding';
+import InsightPromptHeader from '../components/journal/InsightPromptHeader';
 import { useEditorKeyboardPadding } from '../hooks/useEditorKeyboardPadding';
-import { useTypewriterReveal } from '../hooks/useTypewriterReveal';
+import { useFollowBottomScroll } from '../hooks/useFollowBottomScroll';
+import { useFadeReveal } from '../hooks/useFadeReveal';
 import {
   loadGoDeeperConversation,
   saveGoDeeperConversation,
@@ -121,21 +124,38 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
   const [premiumUpsellVisible, setPremiumUpsellVisible] = useState(false);
   const [playbookPreviewVisible, setPlaybookPreviewVisible] = useState(false);
   const [playbookDraft, setPlaybookDraft] = useState({ title: '', description: '', emoji: '📈' });
+  const [premiumDialog, setPremiumDialog] = useState<{
+    title: string;
+    message?: string;
+    icon?: keyof typeof Ionicons.glyphMap;
+    actions: PremiumDialogAction[];
+  } | null>(null);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [showMoodPicker, setShowMoodPicker] = useState(false);
   const [mood, setMood] = useState(initialEntry?.mood || '');
   const [linkedCheckIn, setLinkedCheckIn] = useState<StoredCheckIn | null>(null);
   const [attachedPhotos, setAttachedPhotos] = useState<Array<{ uri: string; width: number; height: number }>>([]);
   const quickActionsAnim = useRef(new Animated.Value(0)).current;
-  const controlsBottomAnim = useRef(new Animated.Value(20)).current;
+  const insets = useSafeAreaInsets();
+  const controlsRestingBottom = Math.max(insets.bottom, Platform.OS === 'android' ? 48 : 20) + 12;
+  const controlsBottomAnim = useRef(new Animated.Value(controlsRestingBottom)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef<ScrollView>(null);
+  const goDeeperAnchorY = useRef(0);
+  const {
+    onScroll: onFollowBottomScroll,
+    onScrollBeginDrag: onFollowBottomScrollBeginDrag,
+    onContentSizeChange: onFollowBottomContentSizeChange,
+    onAnchorLayout: onGoDeeperAnchorLayout,
+    scrollToEndIfFollowing,
+    revealThread,
+  } = useFollowBottomScroll(scrollViewRef, { anchorYRef: goDeeperAnchorY });
   const insightsSectionY = useRef<number>(0);
   const [goDeeperMessages, setGoDeeperMessages] = useState<GoDeeperMessage[]>([]);
   const [goDeeperReply, setGoDeeperReply] = useState('');
   const [isGoDeeperLoading, setIsGoDeeperLoading] = useState(false);
   const { scrollPaddingBottom } = useEditorKeyboardPadding();
-  const { activeId: typingMessageId, displayText: typingDisplayText, startReveal } = useTypewriterReveal();
+  const { revealingId: revealingMessageId, startReveal, finishReveal } = useFadeReveal();
   const [highlightedCardText, setHighlightedCardText] = useState<string | null>(highlightText || null);
 
   // Auto-scroll to insights when navigating from Dashboard with highlightText
@@ -236,8 +256,8 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
         setEditableTitle(decrypted.title || '');
         loadLinkedCheckIn(decrypted.id);
         
-        if (shouldAnalyze && !data.ai_structured_insights) {
-          handleAnalyzeEntry(data);
+        if (shouldAnalyze && !decrypted.ai_structured_insights) {
+          handleAnalyzeEntry(decrypted);
         }
       }
     } catch (error) {
@@ -340,48 +360,23 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
     // Dismiss keyboard immediately when analysis starts
     Keyboard.dismiss();
 
-    // Check admin/unlimited emails FIRST (before subscription check)
-    const UNLIMITED_EMAILS = ['edwardsjonny547@gmail.com'];
-    const ADMIN_EMAILS = ['orwellmax24@gmail.com'];
-    const DEMO_EMAILS: string[] = ['insight@gmail.com']; // Jonas demo account
-    const userEmail = user?.email?.toLowerCase() || '';
-    const isUnlimited = UNLIMITED_EMAILS.includes(userEmail) || __DEV__;
-    const isAdmin = ADMIN_EMAILS.includes(userEmail);
-    const isDemoUser = DEMO_EMAILS.includes(userEmail);
+    if (!user?.id) return;
 
-    // Check subscription status (skip for admin/unlimited/demo users)
-    if (!isUnlimited && !isAdmin && !isDemoUser) {
-      try {
-        const customerInfo = await Purchases.getCustomerInfo();
-        const ENTITLEMENT_ID = 'Insight Pro';
-        const isProActive = !!customerInfo.entitlements.active[ENTITLEMENT_ID];
-        const hasAnyActiveEntitlement = Object.keys(customerInfo.entitlements.active).length > 0;
-        
-        // If user doesn't have subscription, show premium overlay immediately
-        if (!isProActive && !hasAnyActiveEntitlement) {
-          console.log('[EntryDetail] User has no subscription - showing premium overlay');
-          setPremiumUpsellVisible(true);
-          return;
-        }
-        
-        // CRITICAL: Verify subscription belongs to THIS user, not another account on same device
-        const originalOwner = customerInfo.originalAppUserId;
-        const currentUserId = user?.id;
-        if (currentUserId && originalOwner && originalOwner !== currentUserId && !originalOwner.startsWith('$RCAnonymousID:')) {
-          console.log('[EntryDetail] Subscription belongs to different user:', originalOwner, 'current:', currentUserId);
-          setPremiumUpsellVisible(true);
-          return;
-        }
-      } catch (error) {
-        console.error('[EntryDetail] Error checking subscription:', error);
-        // If we can't check subscription, show premium overlay to be safe
+    const tier = await fetchSubscriptionTier(user.id);
+    const isUnlimited = isUnlimitedTier(tier) || __DEV__;
+    const isDemoUser = tier === 'demo';
+    const dailyLimit = isUnlimited ? 15 : isDemoUser ? 3 : 2;
+
+    if (!isUnlimited && !isDemoUser) {
+      const hasPro = await resolveProAccess(user.id);
+      if (!hasPro) {
+        console.log('[EntryDetail] User has no subscription - showing premium overlay');
         setPremiumUpsellVisible(true);
         return;
       }
     } else {
-      console.log('[EntryDetail] ✅ Admin/Unlimited/Demo user - bypassing subscription check');
+      console.log('[EntryDetail] ✅ Unlimited/demo tier - bypassing subscription check');
     }
-    const dailyLimit = isDemoUser ? 3 : (isAdmin ? 10 : 2);
     
     if (!isUnlimited) {
       try {
@@ -507,7 +502,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
               difficulty: 'moderate',
               emoji: card.type === 'growth' ? '🌱' : '💭',
               status: 'suggested',
-              source: withContentLocale('ai_suggested', language),
+              source: 'ai_suggested',
               source_entry_id: targetEntry.id,
             });
             if (suggestError) console.warn('[EntryDetail] Suggested strategy insert failed:', JSON.stringify(suggestError));
@@ -579,7 +574,12 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
       setPlaybookPreviewVisible(true);
     } catch (error) {
       console.error('[EntryDetail] Error generating protocol:', error);
-      Alert.alert(t('common.error'), t('entry.protocolFailed'));
+      setPremiumDialog({
+        title: t('common.error'),
+        message: t('entry.protocolFailed'),
+        icon: 'alert-circle',
+        actions: [{ label: t('common.ok'), variant: 'primary' }],
+      });
     } finally {
       setAddingToPlaybook(null);
     }
@@ -599,28 +599,43 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
           difficulty: 'moderate',
           emoji: playbookDraft.emoji,
           status: 'active',
-          source: withContentLocale('ai_suggested', language),
+          source: 'ai_suggested',
         });
 
       if (error) {
         console.error('[EntryDetail] Error saving protocol:', error);
-        Alert.alert(t('common.error'), t('entry.addFailed'));
+        setPremiumDialog({
+          title: t('common.error'),
+          message: t('entry.addFailed'),
+          icon: 'alert-circle',
+          actions: [{ label: t('common.ok'), variant: 'primary' }],
+        });
         return;
       }
 
       setPlaybookPreviewVisible(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert(
-        t('entry.added'),
-        t('entry.addedMessage', { title: playbookDraft.title }),
-        [
-          { text: t('entry.viewPlaybook'), onPress: () => navigateToPlaybook(navigation) },
-          { text: t('common.ok'), style: 'cancel' },
-        ]
-      );
+      setPremiumDialog({
+        title: t('entry.added'),
+        message: t('entry.addedMessage', { title: playbookDraft.title }),
+        icon: 'checkmark-circle',
+        actions: [
+          {
+            label: t('entry.viewPlaybook'),
+            variant: 'primary',
+            onPress: () => navigateToPlaybook(navigation),
+          },
+          { label: t('common.ok'), variant: 'secondary' },
+        ],
+      });
     } catch (error) {
       console.error('[EntryDetail] Error saving protocol:', error);
-      Alert.alert(t('common.error'), t('entry.saveFailed'));
+      setPremiumDialog({
+        title: t('common.error'),
+        message: t('entry.saveFailed'),
+        icon: 'alert-circle',
+        actions: [{ label: t('common.ok'), variant: 'primary' }],
+      });
     }
   };
 
@@ -646,8 +661,8 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
   };
 
   const getJournalBodyForGoDeeper = () => {
-    const promptText = extractJournalPromptText(editableContent);
-    if (promptText && entry?.entry_type === 'prompt') {
+    const promptText = getPromptTextForEntry(entry, editableContent);
+    if (promptText && isPromptDrivenEntry(entry, editableContent)) {
       return stripJournalPromptTag(editableContent);
     }
     return editableContent.trim();
@@ -663,12 +678,13 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
       const text = mobileAiService.formatGoDeeperReflection(response.reflection, response.questions);
       const msg = createGoDeeperMessage('assistant', text);
       setGoDeeperMessages((prev) => [...prev, msg]);
+      setTimeout(() => revealThread(true), 80);
       startReveal(msg.id, text, () => {
         setGoDeeperMessages((prev) => {
           persistGoDeeper(prev);
           return prev;
         });
-        setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 80);
+        scrollToEndIfFollowing(true);
       });
     } catch (error) {
       console.error('[EntryDetail] Go Deeper error:', error);
@@ -693,9 +709,10 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
       const assistantMsg = createGoDeeperMessage('assistant', assistantText);
       const full = [...withUser, assistantMsg];
       setGoDeeperMessages(full);
+      setTimeout(() => revealThread(true), 80);
       startReveal(assistantMsg.id, assistantText, () => {
         persistGoDeeper(full);
-        setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 80);
+        scrollToEndIfFollowing(true);
       });
     } catch (error) {
       console.error('[EntryDetail] Go Deeper reply error:', error);
@@ -704,10 +721,19 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
     }
   };
 
+  const closeQuickActions = () => {
+    if (!showQuickActions) return;
+    setShowQuickActions(false);
+    Animated.spring(quickActionsAnim, { toValue: 0, useNativeDriver: true, friction: 8 }).start();
+  };
+
   const toggleQuickActions = () => {
-    const toValue = showQuickActions ? 0 : 1;
-    setShowQuickActions(!showQuickActions);
-    Animated.spring(quickActionsAnim, { toValue, useNativeDriver: true, friction: 8 }).start();
+    if (showQuickActions) {
+      closeQuickActions();
+      return;
+    }
+    setShowQuickActions(true);
+    Animated.spring(quickActionsAnim, { toValue: 1, useNativeDriver: true, friction: 8 }).start();
   };
 
   const handleAddPhotos = async () => {
@@ -740,14 +766,20 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
   };
 
   useEffect(() => {
-    const showSub = Keyboard.addListener('keyboardWillShow', (e) => {
-      Animated.timing(controlsBottomAnim, { toValue: e.endCoordinates.height - 20, duration: 250, useNativeDriver: false }).start();
+    controlsBottomAnim.setValue(controlsRestingBottom);
+  }, [controlsRestingBottom, controlsBottomAnim]);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      Animated.timing(controlsBottomAnim, { toValue: e.endCoordinates.height + controlsRestingBottom, duration: 250, useNativeDriver: false }).start();
     });
-    const hideSub = Keyboard.addListener('keyboardWillHide', () => {
-      Animated.timing(controlsBottomAnim, { toValue: 20, duration: 250, useNativeDriver: false }).start();
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      Animated.timing(controlsBottomAnim, { toValue: controlsRestingBottom, duration: 250, useNativeDriver: false }).start();
     });
     return () => { showSub.remove(); hideSub.remove(); };
-  }, []);
+  }, [controlsRestingBottom, controlsBottomAnim]);
 
   if (!entry) {
     return (
@@ -864,6 +896,12 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
         showsVerticalScrollIndicator={true}
         scrollEventThrottle={16}
         keyboardShouldPersistTaps="handled"
+        onScroll={onFollowBottomScroll}
+        onContentSizeChange={onFollowBottomContentSizeChange}
+        onScrollBeginDrag={() => {
+          onFollowBottomScrollBeginDrag();
+          closeQuickActions();
+        }}
       >
         <View style={styles.entryContainer}>
           <TextInput
@@ -872,6 +910,9 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
             onChangeText={setEditableTitle}
             placeholder={t('editor.untitled')}
             placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'}
+            multiline
+            scrollEnabled={false}
+            blurOnSubmit
             autoFocus={false}
           />
           <Text style={[styles.metaLine, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0,0,0,0.4)' }]}>
@@ -916,25 +957,12 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
 
           {/* Beautiful Prompt Display for prompt entries */}
           {(() => {
-            const promptText = extractJournalPromptText(editableContent);
-            if (promptText && entry?.entry_type === 'prompt') {
+            const promptText = getPromptTextForEntry(entry, editableContent);
+            if (promptText && isPromptDrivenEntry(entry, editableContent)) {
               const userResponse = stripJournalPromptTag(editableContent);
               return (
                 <>
-                  <View style={[styles.promptDisplayCard, { 
-                    backgroundColor: isDarkTheme(theme.name) ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.08)',
-                    borderColor: isDarkTheme(theme.name) ? 'rgba(139, 92, 246, 0.3)' : 'rgba(139, 92, 246, 0.2)'
-                  }]}>
-                    <View style={styles.promptBadgeRow}>
-                      <InsightCompanionMark size={20} isDark={isDarkTheme(theme.name)} />
-                      <Text style={[styles.promptBadgeLabel, { color: isDarkTheme(theme.name) ? 'rgba(139, 92, 246, 0.9)' : '#7c3aed' }]}>
-                        {t('entry.todaysInsight')}
-                      </Text>
-                    </View>
-                    <Text style={[styles.promptQuestionText, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>
-                      {promptText}
-                    </Text>
-                  </View>
+                  <InsightPromptHeader promptText={promptText} isDark={isDarkTheme(theme.name)} />
                   <Text style={[styles.responseLabel, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>
                     {t('entry.yourReflection')}
                   </Text>
@@ -965,17 +993,20 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
             );
           })()}
 
-          <GoDeeperThread
-            messages={goDeeperMessages}
-            replyText={goDeeperReply}
-            onReplyChange={setGoDeeperReply}
-            onSendReply={handleGoDeeperReply}
-            isLoading={isGoDeeperLoading}
-            isDark={isDarkTheme(theme.name)}
-            replyPlaceholder={t('editor.goDeeperReply')}
-            typingMessageId={typingMessageId}
-            typingDisplayText={typingDisplayText}
-          />
+          <View onLayout={onGoDeeperAnchorLayout} collapsable={false}>
+            <GoDeeperThread
+              messages={goDeeperMessages}
+              replyText={goDeeperReply}
+              onReplyChange={setGoDeeperReply}
+              onSendReply={handleGoDeeperReply}
+              isLoading={isGoDeeperLoading}
+              isDark={isDarkTheme(theme.name)}
+              replyPlaceholder={t('editor.goDeeperReply')}
+              revealingMessageId={revealingMessageId}
+              onRevealComplete={finishReveal}
+              onTypewriterProgress={() => scrollToEndIfFollowing(true)}
+            />
+          </View>
           
           {structuredInsights && (
             <View style={styles.inlineInsightsSection}>
@@ -1003,10 +1034,14 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
               {/* Primary Emotion & Wellbeing Hero Card */}
               {(moodAnalysis || structuredInsights?.wellbeingScore != null) && (
                 <InsightsHeroCard
-                  emotionLabel={t('entry.primaryEmotion')}
                   emotion={moodAnalysis ? translateEmotion(t, moodAnalysis.primary_emotion) : undefined}
-                  wellbeingLabel={t('entry.wellbeing')}
                   wellbeingScore={structuredInsights?.wellbeingScore ?? undefined}
+                  adjustLabel={t('analysis.adjust')}
+                  summarySnippet={structuredInsights?.insights_report?.conversationalSummary}
+                  emotions={[
+                    moodAnalysis?.primary_emotion,
+                    ...(moodAnalysis?.secondary_emotions ?? []),
+                  ].filter(Boolean) as string[]}
                   onWellbeingChange={
                     structuredInsights?.wellbeingScore != null
                       ? async (newScore) => {
@@ -1020,8 +1055,8 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                 />
               )}
               
-              {/* Summary */}
-              {structuredInsights?.insights_report?.conversationalSummary && (
+              {/* Summary — shown when hero has no snippet */}
+              {structuredInsights?.insights_report?.conversationalSummary && !moodAnalysis && (
                 <StandardContainer variant="nested" style={[styles.inlineBriefingCard, { borderColor: theme.colors.border }]}>
                   <View style={styles.insightHeader}>
                     <Ionicons name="sparkles" size={20} color="#f59e0b" />
@@ -1204,6 +1239,13 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
         </TouchableOpacity>
       </Animated.View>
 
+      {showQuickActions && (
+        <Pressable
+          style={[StyleSheet.absoluteFill, styles.quickActionsBackdrop]}
+          onPress={closeQuickActions}
+        />
+      )}
+
       {/* Quick Actions Overlay */}
       {showQuickActions && (
         <Animated.View style={[styles.quickActionsOverlay, { opacity: quickActionsAnim, transform: [{ translateY: quickActionsAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}>
@@ -1232,7 +1274,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
             {isGoDeeperLoading ? (
               <Ionicons name="hourglass" size={24} color="#ffffff" />
             ) : (
-              <Ionicons name="sparkles" size={24} color="#ffffff" />
+              <Ionicons name="sparkles" size={28} color="#ffffff" />
             )}
           </LinearGradient>
         </TouchableOpacity>
@@ -1368,6 +1410,15 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
           setPremiumUpsellVisible(false);
         }}
       />
+
+      <PremiumDialog
+        visible={!!premiumDialog}
+        title={premiumDialog?.title ?? ''}
+        message={premiumDialog?.message}
+        icon={premiumDialog?.icon}
+        actions={premiumDialog?.actions ?? [{ label: t('common.ok'), variant: 'primary' }]}
+        onDismiss={() => setPremiumDialog(null)}
+      />
     </View>
   );
 }
@@ -1440,6 +1491,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.95)',
     marginBottom: isTablet ? 16 : 12,
     padding: 0,
+    lineHeight: sf(36),
   },
   metaLine: {
     fontSize: sf(14),
@@ -1861,11 +1913,14 @@ const styles = StyleSheet.create({
     borderRadius: 11,
   },
   // Quick actions & FAB buttons
+  quickActionsBackdrop: {
+    zIndex: 8,
+  },
   quickActionsButton: {
     position: 'absolute',
     bottom: 30,
     left: 24,
-    zIndex: 10,
+    zIndex: 11,
   },
   fabGradient: {
     width: 56,
@@ -1883,7 +1938,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 100,
     left: 24,
-    zIndex: 9,
+    zIndex: 10,
     borderRadius: 16,
     overflow: 'hidden',
   },
@@ -1918,16 +1973,18 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   sparkleFabGradient: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.35)',
     shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 14,
+    elevation: 10,
   },
   promptDisplayCard: {
     borderRadius: 16,

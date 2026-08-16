@@ -6,21 +6,23 @@ import {
   Modal,
   TouchableOpacity,
   Text,
-  SafeAreaView,
   StatusBar,
+  Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { isDarkTheme, useTheme } from '../../contexts/ThemeContext';
 import { CheckInFlowProvider, useCheckInFlow } from './CheckInFlowProvider';
 import MoodSelectorStep from './MoodSelectorStep';
 import FeelingsStep from './FeelingsStep';
 import ContextReflectionStep from './ContextReflectionStep';
+import CheckInCompleteStep from './CheckInCompleteStep';
 import { CheckInDraft } from './types';
 import { MOOD_TINTS } from './wordBanks';
 import { saveCheckIn } from '../../services/checkInService';
 import { useAuth } from '../../contexts/AuthContext';
+import AppBackdrop from '../ui/AppBackdrop';
 
 type Props = {
   visible: boolean;
@@ -34,13 +36,12 @@ const STEPS = ['mood', 'feelings', 'context'] as const;
 function CheckInFlowContent({ visible, onDismiss, onComplete, onLogMoodOnly }: Props) {
   const { theme } = useTheme();
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const { step, draft, goToStep, goBack, reset } = useCheckInFlow();
   const tint = MOOD_TINTS[draft.moodTier];
   const isDark = isDarkTheme(theme.name);
-  const backgroundColors: [string, string, string] = isDark
-    ? tint.bg
-    : [theme.colors.background, tint.lightBg[1], theme.colors.background];
-  const stepIndex = STEPS.indexOf(step as typeof STEPS[number]);
+  const headerTopPad = insets.top + (Platform.OS === 'android' ? 8 : 4);
+  const stepIndex = step === 'complete' ? STEPS.length : STEPS.indexOf(step as typeof STEPS[number]);
 
   useEffect(() => {
     if (!visible) reset();
@@ -72,9 +73,26 @@ function CheckInFlowContent({ visible, onDismiss, onComplete, onLogMoodOnly }: P
   };
 
   const handleContinueContext = async () => {
+    if (user?.id) {
+      try {
+        await saveCheckIn(user.id, draft);
+      } catch (e) {
+        console.warn('[CheckIn] save failed (table may not exist yet):', e);
+      }
+    }
     await markCheckedIn();
+    goToStep('complete');
+  };
+
+  const handleAddJournal = async () => {
     onComplete(draft);
     reset();
+    onDismiss();
+  };
+
+  const handleDoneForNow = async () => {
+    reset();
+    onLogMoodOnly();
     onDismiss();
   };
 
@@ -82,8 +100,9 @@ function CheckInFlowContent({ visible, onDismiss, onComplete, onLogMoodOnly }: P
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onDismiss}>
       <GestureHandlerRootView style={styles.fill}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent />
-      <LinearGradient colors={backgroundColors} style={styles.fill}>
-        <SafeAreaView style={styles.fill}>
+      <View style={styles.fill}>
+        <AppBackdrop />
+        <View style={[styles.fill, { paddingTop: headerTopPad }]}>
           <View style={styles.header}>
             {step !== 'mood' ? (
               <TouchableOpacity onPress={goBack} style={styles.iconBtn} hitSlop={12}>
@@ -122,9 +141,16 @@ function CheckInFlowContent({ visible, onDismiss, onComplete, onLogMoodOnly }: P
             {step === 'context' && (
               <ContextReflectionStep onContinue={handleContinueContext} />
             )}
+            {step === 'complete' && (
+              <CheckInCompleteStep
+                draft={draft}
+                onAddJournal={handleAddJournal}
+                onDone={handleDoneForNow}
+              />
+            )}
           </View>
-        </SafeAreaView>
-      </LinearGradient>
+        </View>
+      </View>
       </GestureHandlerRootView>
     </Modal>
   );

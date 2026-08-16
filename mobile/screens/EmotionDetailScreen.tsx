@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import StandardContainer from '../components/shared/StandardContainer';
+import GlassCard from '../components/ui/GlassCard';
 import { useLanguage } from '../contexts/LanguageContext';
 import { translateEmotion } from '../i18n/labels';
 
@@ -19,6 +20,8 @@ interface EmotionDetailRouteParams {
   emotion: string;
   percentage: number;
   entries: any[];
+  accentGlow?: string;
+  gradientColors?: [string, string, string];
 }
 
 export default function EmotionDetailScreen() {
@@ -28,7 +31,12 @@ export default function EmotionDetailScreen() {
   const route = useRoute();
   const params = route.params as EmotionDetailRouteParams;
   
-  const { emotion, percentage, entries } = params;
+  const { emotion, percentage, entries, accentGlow = '#8b5cf6', gradientColors } = params;
+  const pageGradient = gradientColors ?? [
+    `${accentGlow}66`,
+    `${accentGlow}33`,
+    '#0D0B18',
+  ];
   
   console.log('[EmotionDetail] Opened:', { emotion, percentage, entriesCount: entries?.length || 0 });
 
@@ -142,25 +150,23 @@ export default function EmotionDetailScreen() {
   const suggestions = getActionableSuggestions(emotion);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {/* Theme Background Gradient */}
+    <View style={styles.container}>
       <LinearGradient
-        colors={theme.colors.backgroundGradient as any}
-        style={styles.backgroundGradient}
+        colors={pageGradient}
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
       />
 
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: theme.colors.border }]}>
+      <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => {
-            console.log('[EmotionDetail] Back pressed');
-            navigation.goBack();
-          }}
+          onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color={theme.colors.primaryText} />
+          <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>{t('auxiliary.emotionDetail.title')}</Text>
+        <Text style={styles.headerTitle}>{t('auxiliary.emotionDetail.title')}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -170,83 +176,83 @@ export default function EmotionDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Emotion Header */}
-        <View style={styles.emotionHeader}>
-          <Text style={[styles.emotionName, { color: theme.colors.primaryText }]}>
+        <GlassCard style={styles.emotionHeaderCard} noPad contentStyle={styles.emotionHeaderInner}>
+          <View style={[styles.emotionOrb, { borderColor: `${accentGlow}88` }]}>
+            <Text style={styles.emotionOrbPct}>{percentage}%</Text>
+          </View>
+          <Text style={styles.emotionName}>
             {translateEmotion(t, emotion)}
           </Text>
-          <Text style={[styles.emotionPercentage, { color: theme.colors.secondaryText }]}>
+          <Text style={styles.emotionPercentage}>
             {t('auxiliary.emotionDetail.seenIn', { percentage })}
           </Text>
-        </View>
+        </GlassCard>
 
         {/* Empathetic Summary */}
-        <StandardContainer style={styles.section}>
+        <GlassCard style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="heart-outline" size={20} color="#8b5cf6" />
-            <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>{t('auxiliary.emotionDetail.understanding')}</Text>
+            <Ionicons name="heart-outline" size={20} color={accentGlow} />
+            <Text style={styles.sectionTitle}>{t('auxiliary.emotionDetail.understanding')}</Text>
           </View>
-          <Text style={[styles.sectionBody, { color: theme.colors.secondaryText }]}>
+          <Text style={styles.sectionBody}>
             {empatheticSummary}
           </Text>
-        </StandardContainer>
+        </GlassCard>
 
         {/* Contextual Interpretation */}
-        <StandardContainer style={styles.section}>
+        <GlassCard style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="analytics-outline" size={20} color="#8b5cf6" />
-            <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>{t('auxiliary.emotionDetail.contextPatterns')}</Text>
+            <Ionicons name="analytics-outline" size={20} color={accentGlow} />
+            <Text style={styles.sectionTitle}>{t('auxiliary.emotionDetail.contextPatterns')}</Text>
           </View>
-          <Text style={[styles.sectionBody, { color: theme.colors.secondaryText }]}>
+          <Text style={styles.sectionBody}>
             {contextualInterpretation}
           </Text>
-        </StandardContainer>
+        </GlassCard>
 
         {/* Actionable Suggestions */}
-        <StandardContainer style={styles.section}>
+        <GlassCard style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="bulb-outline" size={20} color="#8b5cf6" />
-            <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>{t('auxiliary.emotionDetail.whatMightHelp')}</Text>
+            <Ionicons name="bulb-outline" size={20} color={accentGlow} />
+            <Text style={styles.sectionTitle}>{t('auxiliary.emotionDetail.whatMightHelp')}</Text>
           </View>
           {suggestions.map((suggestion, index) => (
             <View key={index} style={styles.suggestionItem}>
               <View style={styles.suggestionBullet}>
-                <View style={[styles.suggestionDot, { backgroundColor: theme.colors.accent }]} />
+                <View style={[styles.suggestionDot, { backgroundColor: accentGlow }]} />
               </View>
-              <Text style={[styles.suggestionText, { color: theme.colors.secondaryText }]}>
+              <Text style={styles.suggestionText}>
                 {suggestion}
               </Text>
             </View>
           ))}
-        </StandardContainer>
+        </GlassCard>
 
         {/* Related Entries */}
         {entries && entries.length > 0 && (
-          <StandardContainer style={styles.section}>
+          <GlassCard style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="journal-outline" size={20} color="#8b5cf6" />
-              <Text style={[styles.sectionTitle, { color: theme.colors.primaryText }]}>
+              <Ionicons name="journal-outline" size={20} color={accentGlow} />
+              <Text style={styles.sectionTitle}>
                 {t('auxiliary.emotionDetail.recentEntries', { count: entries.length })}
               </Text>
             </View>
             {entries.slice(0, 5).map((entry, index) => (
               <TouchableOpacity
                 key={entry.id || index}
-                style={[styles.entryItem, { borderBottomColor: theme.colors.border }]}
-                onPress={() => {
-                  console.log('[EmotionDetail] Entry tapped:', entry.id);
-                  navigation.navigate('EntryDetail', { entry });
-                }}
+                style={styles.entryItem}
+                onPress={() => navigation.navigate('EntryDetail', { entry })}
               >
-                <Text style={[styles.entryDate, { color: theme.colors.secondaryText }]}>
+                <Text style={styles.entryDate}>
                   {formatDate(entry.created_at, {
                     month: 'short',
                     day: 'numeric',
                   })}
                 </Text>
-                <Text style={[styles.entryTitle, { color: theme.colors.primaryText }]} numberOfLines={1}>
+                <Text style={styles.entryTitle} numberOfLines={1}>
                   {entry.title || t('auxiliary.emotionDetail.untitled')}
                 </Text>
-                <Text style={[styles.entrySnippet, { color: theme.colors.secondaryText }]} numberOfLines={2}>
+                <Text style={styles.entrySnippet} numberOfLines={2}>
                   {entry.content}
                 </Text>
               </TouchableOpacity>
@@ -254,19 +260,16 @@ export default function EmotionDetailScreen() {
             
             {entries.length > 5 && (
               <TouchableOpacity
-                style={styles.viewAllButton}
-                onPress={() => {
-                  console.log('[EmotionDetail] View all entries tapped');
-                  navigation.navigate('Journal', { filterEmotion: emotion });
-                }}
+                style={styles.viewAllEntriesBtn}
+                onPress={() => navigation.navigate('Journal', { filterEmotion: emotion })}
               >
-                <Text style={[styles.viewAllText, { color: theme.colors.accent }]}>
+                <Text style={[styles.viewAllText, { color: accentGlow }]}>
                   {t('auxiliary.emotionDetail.viewAll', { count: entries.length })}
                 </Text>
-                <Ionicons name="arrow-forward" size={16} color={theme.colors.accent} />
+                <Ionicons name="arrow-forward" size={16} color={accentGlow} />
               </TouchableOpacity>
             )}
-          </StandardContainer>
+          </GlassCard>
         )}
 
         {/* Bottom Spacing */}
@@ -279,13 +282,10 @@ export default function EmotionDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#0D0B18',
   },
-  backgroundGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
+  emotionGradient: {
+    ...StyleSheet.absoluteFillObject,
   },
   header: {
     flexDirection: 'row',
@@ -294,7 +294,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 16,
-    borderBottomWidth: 1,
   },
   backButton: {
     width: 40,
@@ -305,6 +304,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
+    color: '#fff',
   },
   headerSpacer: {
     width: 40,
@@ -313,27 +313,50 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 24,
+    padding: 20,
+    paddingBottom: 40,
   },
-  emotionHeader: {
-    marginBottom: 32,
+  emotionHeaderCard: {
+    marginBottom: 16,
+  },
+  emotionHeaderInner: {
     alignItems: 'center',
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+  },
+  emotionOrb: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 2,
+  },
+  emotionOrbPct: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#fff',
   },
   emotionName: {
-    fontSize: 36,
+    fontSize: 28,
     fontWeight: '700',
     textTransform: 'capitalize',
-    marginBottom: 8,
+    marginBottom: 6,
     letterSpacing: -0.5,
+    color: '#fff',
+    textAlign: 'center',
   },
   emotionPercentage: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '500',
+    color: 'rgba(255,255,255,0.65)',
+    textAlign: 'center',
   },
   section: {
-    marginBottom: 20,
-    padding: 20,
-    borderRadius: 16,
+    marginBottom: 14,
+    padding: 18,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -344,10 +367,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 17,
     fontWeight: '600',
+    color: '#fff',
   },
   sectionBody: {
     fontSize: 15,
     lineHeight: 24,
+    color: 'rgba(255,255,255,0.72)',
   },
   suggestionItem: {
     flexDirection: 'row',
@@ -366,26 +391,31 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     lineHeight: 24,
+    color: 'rgba(255,255,255,0.72)',
   },
   entryItem: {
     paddingVertical: 12,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   entryDate: {
     fontSize: 12,
     fontWeight: '500',
     marginBottom: 4,
+    color: 'rgba(255,255,255,0.45)',
   },
   entryTitle: {
     fontSize: 15,
     fontWeight: '600',
     marginBottom: 4,
+    color: '#fff',
   },
   entrySnippet: {
     fontSize: 14,
     lineHeight: 20,
+    color: 'rgba(255,255,255,0.6)',
   },
-  viewAllButton: {
+  viewAllEntriesBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

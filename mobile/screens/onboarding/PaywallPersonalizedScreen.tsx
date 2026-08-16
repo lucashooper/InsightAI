@@ -24,7 +24,7 @@ export default function PaywallPersonalizedScreen({ navigation }: any) {
       onBack={() => navigation.goBack()}
     >
       <View style={styles.iconWrap}>
-        <Ionicons name="checkmark-circle" size={40} color="#ffffff" />
+        <Ionicons name="checkmark" size={28} color="#FFFFFF" />
       </View>
 
       <Text style={styles.title}>{title}</Text>
@@ -42,22 +42,22 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: '#7B5EA7',
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    fontSize: sf(28),
+    fontSize: sf(26),
     fontWeight: '700',
-    color: '#ffffff',
+    color: '#1a1a2e',
     textAlign: 'center',
-    letterSpacing: -1.28,
-    lineHeight: sf(36),
+    letterSpacing: -0.8,
+    lineHeight: sf(34),
     marginBottom: 16,
   },
   subtitle: {
     fontSize: sf(16),
-    color: 'rgba(255,255,255,0.75)',
+    color: '#3d3d5c',
     textAlign: 'center',
     lineHeight: sf(24),
     paddingHorizontal: 8,

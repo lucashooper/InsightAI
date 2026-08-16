@@ -1,20 +1,35 @@
-/** Onboarding-only surfaces — restrained glass (8–12%). Do not import into main app tabs. */
+/** Onboarding-only surfaces — light glassmorphic cards. */
 export const ONBOARDING_SURFACE = {
-  fill: 'rgba(255, 255, 255, 0.08)',
-  fillElevated: 'rgba(255, 255, 255, 0.10)',
-  fillSelected: 'rgba(255, 255, 255, 0.12)',
-  border: 'rgba(255, 255, 255, 0.12)',
-  borderSelected: 'rgba(255, 255, 255, 0.28)',
-  iconChip: 'rgba(255, 255, 255, 0.08)',
-  iconChipSelected: 'rgba(255, 255, 255, 0.14)',
+  fill: 'rgba(255, 255, 255, 0.7)',
+  fillElevated: 'rgba(255, 255, 255, 0.82)',
+  fillSelected: 'rgba(123, 94, 167, 0.1)',
+  border: 'rgba(200, 185, 255, 0.35)',
+  borderSelected: '#7B5EA7',
+  iconChip: 'rgba(255, 255, 255, 0.85)',
+  iconChipSelected: 'rgba(123, 94, 167, 0.12)',
 } as const;
 
 export const ONBOARDING_CTA = {
-  background: '#14141A',
+  background: '#7B5EA7',
   text: '#ffffff',
-  shadow: '#000000',
-  borderRadius: 28,
+  shadow: 'rgba(120, 80, 200, 0.25)',
+  borderRadius: 18,
   paddingVertical: 20,
 } as const;
 
-export const ONBOARDING_BG = '#090A0F';
+export const ONBOARDING_BG = '#f0eeff';
+
+export const ONBOARDING_GRADIENT = ['#f0eeff', '#fce8f0', '#e8f0ff'] as const;
+
+/** Onboarding copy — dark on light gradient. */
+export const ONBOARDING_TEXT = {
+  primary: '#1a1a2e',
+  body: '#3d3d5c',
+  secondary: '#6b6b8a',
+  tertiary: 'rgba(107, 107, 138, 0.75)',
+} as const;
+
+export const ONBOARDING_BRAND = {
+  purple: '#7B5EA7',
+  overlay: 'rgba(180, 160, 220, 0.2)',
+} as const;

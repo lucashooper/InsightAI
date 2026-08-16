@@ -4,6 +4,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { assertProEntitlement } from '../_shared/entitlements.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,6 +29,14 @@ serve(async (req) => {
     if (!user) {
       return new Response(JSON.stringify({ error: 'Not authenticated' }), {
         status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const entitlementError = await assertProEntitlement(supabase, user.id)
+    if (entitlementError) {
+      return new Response(await entitlementError.text(), {
+        status: 402,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }

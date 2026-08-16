@@ -1,10 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import PrePaywallLayout from '../../components/onboarding/PrePaywallLayout';
+import CachedImage from '../../components/shared/CachedImage';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { isTablet, sf } from '../../utils/responsive';
-import { ONBOARDING_SURFACE } from '../../constants/onboardingTheme';
+import { FAB_MENU_BACKGROUNDS } from '../../constants/fabMenuAssets';
+import { ONBOARDING_TEXT } from '../../constants/onboardingTheme';
 
 const BENEFIT_KEYS = ['emotions', 'habit', 'steps', 'mira'] as const;
 const BENEFIT_ICONS: Record<(typeof BENEFIT_KEYS)[number], keyof typeof Ionicons.glyphMap> = {
@@ -13,6 +17,47 @@ const BENEFIT_ICONS: Record<(typeof BENEFIT_KEYS)[number], keyof typeof Ionicons
   steps: 'trending-up-outline',
   mira: 'chatbubble-ellipses-outline',
 };
+
+const BENEFIT_BACKGROUNDS: Record<(typeof BENEFIT_KEYS)[number], number> = {
+  emotions: FAB_MENU_BACKGROUNDS.aiChat,
+  habit: FAB_MENU_BACKGROUNDS.journal,
+  steps: FAB_MENU_BACKGROUNDS.checkIn,
+  mira: FAB_MENU_BACKGROUNDS.playbook,
+};
+
+function BenefitGlassRow({
+  icon,
+  text,
+  background,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  text: string;
+  background: number;
+}) {
+  return (
+    <View style={styles.rowOuter}>
+      <View style={styles.rowBg}>
+        <CachedImage
+          source={background}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          recyclingKey={`paywall-benefit-${icon}`}
+        />
+        <BlurView intensity={28} tint="dark" style={StyleSheet.absoluteFill} />
+        <LinearGradient
+          colors={['rgba(13,11,24,0.55)', 'rgba(13,11,24,0.82)']}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={styles.rowContent}>
+          <View style={styles.iconCircle}>
+            <Ionicons name={icon} size={20} color="#FFFFFF" />
+          </View>
+          <Text style={styles.rowText}>{text}</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
 
 export default function PaywallBenefitsScreen({ navigation }: any) {
   const { t } = useLanguage();
@@ -29,12 +74,12 @@ export default function PaywallBenefitsScreen({ navigation }: any) {
 
       <View style={styles.list}>
         {BENEFIT_KEYS.map((key) => (
-          <View key={key} style={styles.row}>
-            <View style={styles.iconCircle}>
-              <Ionicons name={BENEFIT_ICONS[key]} size={22} color="rgba(255,255,255,0.8)" />
-            </View>
-            <Text style={styles.rowText}>{t(`onboarding.prePaywall.benefits.items.${key}`)}</Text>
-          </View>
+          <BenefitGlassRow
+            key={key}
+            icon={BENEFIT_ICONS[key]}
+            background={BENEFIT_BACKGROUNDS[key]}
+            text={t(`onboarding.prePaywall.benefits.items.${key}`)}
+          />
         ))}
       </View>
     </PrePaywallLayout>
@@ -45,7 +90,7 @@ const styles = StyleSheet.create({
   eyebrow: {
     fontSize: sf(13),
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.55)',
+    color: ONBOARDING_TEXT.secondary,
     textAlign: 'center',
     textTransform: 'uppercase',
     letterSpacing: 1.2,
@@ -54,23 +99,30 @@ const styles = StyleSheet.create({
   title: {
     fontSize: sf(28),
     fontWeight: '700',
-    color: '#ffffff',
+    color: ONBOARDING_TEXT.primary,
     textAlign: 'center',
     letterSpacing: -1.28,
     lineHeight: sf(36),
     marginBottom: isTablet ? 36 : 28,
   },
   list: {
-    gap: 12,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
     gap: 14,
-    backgroundColor: ONBOARDING_SURFACE.fillElevated,
+  },
+  rowOuter: {
+    borderRadius: 18,
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: ONBOARDING_SURFACE.border,
-    borderRadius: 16,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  rowBg: {
+    minHeight: 88,
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  rowContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
     paddingVertical: 16,
     paddingHorizontal: 16,
   },
@@ -78,18 +130,18 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
+    backgroundColor: 'rgba(123, 94, 167, 0.3)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(123, 94, 167, 0.5)',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: ONBOARDING_SURFACE.iconChip,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: ONBOARDING_SURFACE.border,
   },
   rowText: {
     flex: 1,
     fontSize: sf(16),
-    color: 'rgba(255,255,255,0.9)',
+    color: 'rgba(255,255,255,0.94)',
     lineHeight: sf(24),
-    fontWeight: '500',
-    paddingTop: 8,
+    fontWeight: '600',
+    letterSpacing: -0.2,
   },
 });

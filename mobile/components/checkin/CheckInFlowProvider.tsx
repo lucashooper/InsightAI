@@ -13,7 +13,7 @@ type CheckInFlowContextType = {
   reset: () => void;
 };
 
-const STEP_ORDER: CheckInStep[] = ['mood', 'feelings', 'context', 'journal'];
+const STEP_ORDER: CheckInStep[] = ['mood', 'feelings', 'context', 'complete'];
 
 const CheckInFlowContext = createContext<CheckInFlowContextType | undefined>(undefined);
 

@@ -6,18 +6,18 @@ import {
   TouchableOpacity,
   Modal,
   Dimensions,
-  Image,
   Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import ConfettiCannon from 'react-native-confetti-cannon';
+import CachedImage from './shared/CachedImage';
+import { INSIGHT_LOGO } from '../constants/appAssets';
 import { useLanguage } from '../contexts/LanguageContext';
 import { PREMIUM, TYPE } from '../constants/premiumUI';
 
 const { width } = Dimensions.get('window');
-const insightLogo = require('../public/Insight-Logo-nobg.webp');
 
 interface FirstTimeIntroOverlayProps {
   visible: boolean;
@@ -80,10 +80,11 @@ export default function FirstTimeIntroOverlay({ visible, onClose }: FirstTimeInt
 
         <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
           <View style={styles.header}>
-            <Image
-              source={insightLogo}
+            <CachedImage
+              source={INSIGHT_LOGO}
               style={styles.logoImage}
-              resizeMode="contain"
+              contentFit="contain"
+              recyclingKey="first-time-intro-logo"
             />
             <Text style={styles.title}>{t('components.intro.title')}</Text>
             <Text style={styles.subtitle}>{t('components.intro.subtitle')}</Text>

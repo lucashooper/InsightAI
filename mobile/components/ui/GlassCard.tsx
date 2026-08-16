@@ -10,6 +10,7 @@ import {
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { PREMIUM } from '../../constants/premiumUI';
+import { androidGlassCardBackground } from '../../constants/androidGlass';
 import { isDarkTheme, useTheme } from '../../contexts/ThemeContext';
 
 export type GlassVariant =
@@ -69,29 +70,32 @@ export default function GlassCard({
       : resolvedVariant === 'overlay'
         ? PREMIUM.glass.fillOverlay
         : PREMIUM.glass.fill;
+  const fillColor = dark ? darkFill : PREMIUM.lightGlass.fill;
+  const isAndroid = Platform.OS === 'android';
 
   return (
     <View
       {...viewProps}
-      style={[style, dark ? styles.darkShell : styles.lightShell]}
+      style={[
+        style,
+        dark ? styles.darkShell : styles.lightShell,
+        isAndroid && styles.androidShell,
+        isAndroid && { backgroundColor: androidGlassCardBackground(dark) },
+      ]}
     >
       {Platform.OS === 'ios' ? (
-        <BlurView
-          intensity={dark ? PREMIUM.glass.blur : PREMIUM.lightGlass.blur}
-          tint={dark ? 'dark' : 'light'}
-          style={StyleSheet.absoluteFill}
-        />
+        <>
+          <BlurView
+            intensity={dark ? PREMIUM.glass.blur : PREMIUM.lightGlass.blur}
+            tint={dark ? 'dark' : 'light'}
+            style={StyleSheet.absoluteFill}
+          />
+          <View
+            pointerEvents="none"
+            style={[StyleSheet.absoluteFill, { backgroundColor: fillColor }]}
+          />
+        </>
       ) : null}
-
-      <View
-        pointerEvents="none"
-        style={[
-          StyleSheet.absoluteFill,
-          {
-            backgroundColor: dark ? darkFill : PREMIUM.lightGlass.fill,
-          },
-        ]}
-      />
 
       {dark && resolvedWash ? (
         <LinearGradient
@@ -111,7 +115,7 @@ export default function GlassCard({
 const styles = StyleSheet.create({
   lightShell: {
     borderRadius: PREMIUM.radius.card,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: PREMIUM.lightGlass.border,
     overflow: 'hidden',
     backgroundColor: 'transparent',
@@ -123,7 +127,7 @@ const styles = StyleSheet.create({
   },
   darkShell: {
     borderRadius: PREMIUM.radius.card,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: PREMIUM.glass.border,
     overflow: 'hidden',
     backgroundColor: 'transparent',
@@ -132,6 +136,11 @@ const styles = StyleSheet.create({
     shadowOpacity: PREMIUM.glass.shadowOpacity,
     shadowRadius: 16,
     elevation: 6,
+  },
+  androidShell: {
+    elevation: 0,
+    shadowOpacity: 0,
+    shadowRadius: 0,
   },
   pad: {
     padding: PREMIUM.layout.cardPad,

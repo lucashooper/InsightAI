@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
     },
     ctaButton: {
         borderRadius: 28,
-        backgroundColor: '#1a1a1a',
+        backgroundColor: '#7B5EA7',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,

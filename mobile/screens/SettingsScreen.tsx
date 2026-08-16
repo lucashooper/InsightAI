@@ -19,6 +19,8 @@ import { APP_NAME } from '../constants/branding';
 import { usePreloadedData } from '../contexts/PreloadContext';
 import { isTablet, sf, ss, si, iPadContentStyle } from '../utils/responsive';
 import { printSubscriptionDebugReport, resetRevenueCatOnly, nukeAllSubscriptionState } from '../utils/subscriptionDebug';
+import { getAccountStatsForUser } from '../utils/entitlements';
+import { profilePicturePickerOptions, uploadProfilePictureFromUri } from '../utils/profilePictureUpload';
 import Constants from 'expo-constants';
 
 interface UserProfile {
@@ -365,43 +367,23 @@ export default function SettingsScreen({ navigation }: any) {
     try {
       setIsLoadingSubscription(true);
       console.log('[Settings] Loading subscription status...');
-      
-      const customerInfo = await Purchases.getCustomerInfo();
-      console.log('[Settings] Customer info loaded');
-      console.log('[Settings] Active entitlements:', Object.keys(customerInfo.entitlements.active));
-      console.log('[Settings] Active subscriptions:', customerInfo.activeSubscriptions);
-      
-      const ENTITLEMENT_ID = 'Insight Pro';
-      const isProActive = !!customerInfo.entitlements.active[ENTITLEMENT_ID];
-      const hasAnyActiveEntitlement = Object.keys(customerInfo.entitlements.active).length > 0;
-      
-      console.log('[Settings] Is Pro Active:', isProActive);
-      console.log('[Settings] Has any active entitlement:', hasAnyActiveEntitlement);
-      
-      let isPro = isProActive || hasAnyActiveEntitlement;
-      
-      // CRITICAL: Verify subscription belongs to THIS user, not another account on same device
-      if (isPro && user) {
-        const originalOwner = customerInfo.originalAppUserId;
-        const isOwnSubscription = originalOwner === user.id || originalOwner?.startsWith('$RCAnonymousID:');
-        if (!isOwnSubscription) {
-          console.log('[Settings] ⚠️ Subscription belongs to different user:', originalOwner, 'current:', user.id);
-          isPro = false;
-        }
-      }
-      
+
+      if (!user?.id) return;
+
+      const accountStats = await getAccountStatsForUser(user.id);
+      const isPro = accountStats.subscriptionPlan !== 'Free';
+
       if (isPro) {
         setSubscriptionPlan('Pro');
-        setUsageLimit(2);
-        console.log('[Settings] ✅ Subscription is active - setting plan to Pro');
+        setUsageLimit(accountStats.entriesLimit >= 999 ? 999 : accountStats.entriesLimit);
+        console.log('[Settings] ✅ Pro entitlement active');
       } else {
         setSubscriptionPlan(t('settings.free'));
         setUsageLimit(0);
-        console.log('[Settings] ⚠️ No active subscription - setting plan to Free');
+        console.log('[Settings] Free plan');
       }
     } catch (error: any) {
       console.error('[Settings] ❌ Error loading subscription status:', error);
-      console.error('[Settings] Error message:', error.message);
       setSubscriptionPlan(t('settings.free'));
       setUsageLimit(0);
     } finally {
@@ -417,60 +399,25 @@ export default function SettingsScreen({ navigation }: any) {
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+    const result = await ImagePicker.launchImageLibraryAsync(profilePicturePickerOptions());
 
     if (!result.canceled && user) {
       setUploadingImage(true);
       try {
         const uri = result.assets[0].uri;
-        const fileExt = uri.split('.').pop();
-        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-        // Store inside a user-specific folder to align with common RLS patterns
-        const filePath = `${user.id}/${fileName}`;
+        const publicUrl = await uploadProfilePictureFromUri(user.id, uri);
 
-        // Create form data for React Native
-        const formData = new FormData();
-        formData.append('file', {
-          uri: uri,
-          type: `image/${fileExt}`,
-          name: fileName,
-        } as any);
-
-        // Upload to Supabase Storage using FormData (same bucket as desktop)
-        const { error: uploadError } = await supabase.storage
-          .from('profile-pictures')
-          .upload(filePath, formData, {
-            contentType: `image/${fileExt}`,
-            upsert: true
-          });
-
-        if (uploadError) {
-          console.error('Upload error:', uploadError);
-          throw new Error(`Failed to upload: ${uploadError.message}`);
-        }
-
-        // Get public URL
-        const { data: urlData } = supabase.storage
-          .from('profile-pictures')
-          .getPublicUrl(filePath);
-
-        // Update profile picture URL in existing profile row
         const { error: updateError } = await supabase
           .from('user_profiles')
-          .update({ profile_picture_url: urlData.publicUrl })
+          .update({ profile_picture_url: publicUrl })
           .eq('user_id', user.id);
 
         if (updateError) {
           console.log('Could not save to database, updating local state only:', updateError);
         }
 
-        // Update local state regardless
-        setUserProfile(prev => prev ? { ...prev, profile_picture_url: urlData.publicUrl } : null);
+        setUserProfile(prev => prev ? { ...prev, profile_picture_url: publicUrl } : null);
+        await AsyncStorage.setItem('CACHED_PROFILE_PICTURE', publicUrl);
         Alert.alert(t('common.success'), t('settings.pictureUpdated'));
       } catch (error) {
         console.error('Error uploading image:', error);

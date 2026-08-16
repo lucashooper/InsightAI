@@ -65,7 +65,7 @@ export default function SignupPasswordScreen({ navigation, route }: any) {
 
   return (
     <View style={auth.containerPadded}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={false} />
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={false} />
       <OnboardingAmbientBackground />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -76,7 +76,7 @@ export default function SignupPasswordScreen({ navigation, route }: any) {
           onPress={() => navigation.goBack()}
         >
           <View style={auth.backArrowCircle}>
-            <Ionicons name="arrow-back" size={20} color="#ffffff" />
+            <Ionicons name="arrow-back" size={20} color="#1a1a2e" />
           </View>
         </TouchableOpacity>
 
