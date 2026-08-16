@@ -34,6 +34,13 @@ export default function JournalEntryOptionsSheet({ visible, title, options, onSe
   const isDark = isDarkTheme(theme.name);
   const insets = useSafeAreaInsets();
 
+  const sheetBg = isDark ? 'rgba(22,22,28,0.98)' : '#FFFFFF';
+  const titleColor = isDark ? theme.colors.primaryText : '#1a1a2e';
+  const rowLabelColor = isDark ? theme.colors.primaryText : '#1a1a2e';
+  const iconDefault = isDark ? '#c4b5fd' : '#7B5EA7';
+  const titleBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+  const rowBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
@@ -49,18 +56,20 @@ export default function JournalEntryOptionsSheet({ visible, title, options, onSe
           style={[
             styles.sheet,
             {
-              backgroundColor: isDark ? 'rgba(22,22,28,0.98)' : 'rgba(255,255,255,0.98)',
-              borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(139,92,246,0.15)',
+              backgroundColor: sheetBg,
+              shadowOpacity: isDark ? 0.2 : 0.08,
             },
           ]}
         >
-          <Text style={[styles.title, { color: theme.colors.primaryText }]}>{title}</Text>
-          {options.map((option) => (
+          <View style={[styles.titleBlock, { borderBottomColor: titleBorder }]}>
+            <Text style={[styles.title, { color: titleColor }]}>{title}</Text>
+          </View>
+          {options.map((option, index) => (
             <TouchableOpacity
               key={option.key}
               style={[
                 styles.row,
-                { borderTopColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' },
+                index < options.length - 1 && { borderBottomWidth: 1, borderBottomColor: rowBorder },
               ]}
               onPress={() => {
                 onSelect(option.key);
@@ -70,13 +79,13 @@ export default function JournalEntryOptionsSheet({ visible, title, options, onSe
             >
               <Ionicons
                 name={option.icon}
-                size={20}
-                color={option.destructive ? '#ef4444' : isDark ? '#c4b5fd' : '#7c3aed'}
+                size={22}
+                color={option.destructive ? '#DC2626' : iconDefault}
               />
               <Text
                 style={[
                   styles.rowLabel,
-                  { color: option.destructive ? '#ef4444' : theme.colors.primaryText },
+                  { color: option.destructive ? '#DC2626' : rowLabelColor },
                 ]}
               >
                 {option.label}
@@ -96,35 +105,37 @@ const styles = StyleSheet.create({
   sheetWrap: {
     flex: 1,
     justifyContent: 'flex-end',
-    paddingHorizontal: 20,
+    paddingHorizontal: 0,
   },
   sheet: {
-    borderRadius: 24,
-    borderWidth: 1,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 12,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
+    shadowRadius: 20,
     elevation: 12,
+  },
+  titleBlock: {
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
   },
   title: {
     fontSize: sf(17),
-    fontWeight: '700',
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 10,
+    fontWeight: '600',
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderTopWidth: StyleSheet.hairlineWidth,
   },
   rowLabel: {
     fontSize: sf(16),
     fontWeight: '500',
+    marginLeft: 14,
+    flex: 1,
   },
 });

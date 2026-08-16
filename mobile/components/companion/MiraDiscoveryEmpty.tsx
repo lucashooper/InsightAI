@@ -20,7 +20,7 @@ import * as Haptics from 'expo-haptics';
 
 import { getDailyDiscoveryPrompts } from '../../constants/miraReveal';
 
-import { OrbSlot } from './OrbOverlayProvider';
+import OrbView from './OrbView';
 
 import { PREMIUM, TYPE } from '../../constants/premiumUI';
 
@@ -69,6 +69,7 @@ type Props = {
 function MiraDiscoveryEmpty({
   isDark,
   isRoast = false,
+  personality = 'default',
   title,
   subtitle,
   roastPrompts,
@@ -157,11 +158,7 @@ function MiraDiscoveryEmpty({
     <View style={[styles.root, { minHeight: SCREEN_HEIGHT - insets.top - 200 }]}>
       <View style={styles.orbSection}>
         <View style={styles.orb}>
-          <OrbSlot
-            size={ORB_SIZE}
-            personality="default"
-            isRoast={isRoast}
-          />
+          <OrbView size={ORB_SIZE} personality={personality} isRoast={isRoast} />
         </View>
       </View>
 

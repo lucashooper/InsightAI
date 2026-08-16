@@ -45,6 +45,18 @@ export const PREMIUM = {
     shadowOpacity: 0.03,
   },
 
+  /** Insights / Recap overlay — unified frosted family */
+  recapGlass: {
+    fill: 'rgba(255, 255, 255, 0.72)',
+    border: 'rgba(255, 255, 255, 0.85)',
+    blur: 20,
+    shadowColor: 'rgba(120, 100, 180, 0.08)',
+    shadowOffset: { width: 0, height: 4 } as ViewStyle['shadowOffset'],
+    shadowRadius: 16,
+    elevation: 3,
+    radius: 20,
+  },
+
   /** Premium reveal card mesh (Figma radials) */
   revealMesh: {
     purple: '#B411FF',

@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Pressable,
+  Platform,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +18,7 @@ export type ProtocolSheetAction = {
   onPress: () => void;
   variant?: 'default' | 'destructive';
   icon?: keyof typeof Ionicons.glyphMap;
+  /** @deprecated Icons use brand purple unless destructive. */
   iconColor?: string;
 };
 
@@ -40,52 +42,48 @@ export default function ProtocolOptionsSheet({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onDismiss}>
       <View style={styles.root}>
-        <Pressable style={styles.scrim} onPress={onDismiss}>
-          <BlurView intensity={36} tint="dark" style={StyleSheet.absoluteFill} />
-          <View style={styles.scrimTint} />
+        <Pressable style={styles.backdrop} onPress={onDismiss}>
+          {Platform.OS === 'ios' ? (
+            <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
+          ) : (
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.55)' }]} />
+          )}
         </Pressable>
-        <View style={[styles.sheetWrap, { paddingBottom: Math.max(insets.bottom, 16) + 8 }]}>
+
+        <View style={[styles.sheetWrap, { paddingBottom: Math.max(insets.bottom, 16) }]}>
           <View style={styles.sheet}>
             <View style={styles.handle} />
-            <Text style={styles.title}>{title}</Text>
-            {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-            <View style={styles.actionsBlock}>
-              {actions.map((action) => (
+            <View style={styles.titleBlock}>
+              <Text style={styles.title}>{title}</Text>
+              {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+            </View>
+            {actions.map((action, index) => {
+              const destructive = action.variant === 'destructive';
+              const iconColor = destructive ? '#DC2626' : '#7B5EA7';
+              const labelColor = destructive ? '#DC2626' : '#1a1a2e';
+
+              return (
                 <TouchableOpacity
                   key={action.label}
-                  style={styles.actionRow}
+                  style={[
+                    styles.actionRow,
+                    index < actions.length - 1 && styles.actionRowBorder,
+                  ]}
                   onPress={() => {
                     onDismiss();
                     action.onPress();
                   }}
-                  activeOpacity={0.75}
+                  activeOpacity={0.7}
                 >
                   {action.icon ? (
-                    <View style={styles.iconWrap}>
-                      <Ionicons
-                        name={action.icon}
-                        size={20}
-                        color={
-                          action.iconColor
-                          ?? (action.variant === 'destructive' ? '#EF4444' : '#A855F7')
-                        }
-                      />
-                    </View>
-                  ) : null}
-                  <Text
-                    style={[
-                      styles.actionLabel,
-                      action.variant === 'destructive' && styles.actionDestructive,
-                    ]}
-                  >
-                    {action.label}
-                  </Text>
+                    <Ionicons name={action.icon} size={22} color={iconColor} />
+                  ) : (
+                    <View style={styles.iconSpacer} />
+                  )}
+                  <Text style={[styles.actionLabel, { color: labelColor }]}>{action.label}</Text>
                 </TouchableOpacity>
-              ))}
-            </View>
-            <TouchableOpacity style={styles.cancelRow} onPress={onDismiss} activeOpacity={0.75}>
-              <Text style={styles.cancelLabel}>Cancel</Text>
-            </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
       </View>
@@ -98,84 +96,66 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
   },
-  scrim: {
+  backdrop: {
     ...StyleSheet.absoluteFillObject,
-  },
-  scrimTint: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.52)',
   },
   sheetWrap: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 0,
   },
   sheet: {
-    backgroundColor: '#12102A',
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    borderWidth: 1,
-    borderColor: '#231F3D',
+    paddingTop: 12,
     overflow: 'hidden',
-    paddingTop: 10,
-    paddingBottom: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 12,
   },
   handle: {
     alignSelf: 'center',
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    marginBottom: 14,
+    backgroundColor: 'rgba(0,0,0,0.12)',
+    marginBottom: 8,
+  },
+  titleBlock: {
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.06)',
   },
   title: {
     fontSize: sf(17),
-    fontWeight: '700',
-    color: '#ffffff',
-    textAlign: 'center',
-    paddingHorizontal: 20,
+    fontWeight: '600',
+    color: '#1a1a2e',
   },
   subtitle: {
-    fontSize: sf(14),
-    color: 'rgba(255,255,255,0.5)',
-    textAlign: 'center',
-    marginTop: 6,
-    paddingHorizontal: 20,
+    fontSize: sf(13),
+    color: '#6b6b8a',
+    marginTop: 4,
     fontWeight: '500',
-  },
-  actionsBlock: {
-    marginTop: 18,
-    paddingHorizontal: 8,
   },
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 56,
     paddingHorizontal: 20,
-    borderRadius: 14,
+    paddingVertical: 16,
   },
-  iconWrap: {
-    width: 28,
-    alignItems: 'center',
-    marginRight: 14,
+  actionRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  iconSpacer: {
+    width: 22,
   },
   actionLabel: {
     fontSize: sf(16),
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.92)',
+    fontWeight: '500',
+    marginLeft: 14,
     flex: 1,
-  },
-  actionDestructive: {
-    color: '#EF4444',
-  },
-  cancelRow: {
-    height: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 4,
-    marginBottom: 4,
-  },
-  cancelLabel: {
-    fontSize: sf(15),
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.42)',
   },
 });

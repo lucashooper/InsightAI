@@ -124,8 +124,33 @@ export default function OrbView({
 
   const onMessage = useCallback(
     (e: { nativeEvent: { data: string } }) => {
-      const parsed = logOrbMessage(e.nativeEvent.data, 'message');
-      if (parsed && parsed.type === 'init') {
+      const raw = e.nativeEvent.data;
+      let parsed: Record<string, unknown> | null = null;
+      try {
+        parsed = JSON.parse(raw) as Record<string, unknown>;
+      } catch {
+        if (!poolMode && !warmup) {
+          console.log('[ORB:message]', raw);
+        }
+        return;
+      }
+
+      if (poolMode || warmup) {
+        if (parsed.type === 'init') {
+          setDiag({
+            supported: Boolean(parsed.supported),
+            webgl: Boolean(parsed.webgl),
+            fallback: Boolean(parsed.fallback),
+            canvasWidth: Number(parsed.canvasWidth) || 0,
+            canvasHeight: Number(parsed.canvasHeight) || 0,
+          });
+          markReady();
+        }
+        return;
+      }
+
+      logOrbMessage(raw, 'message');
+      if (parsed.type === 'init') {
         setDiag({
           supported: Boolean(parsed.supported),
           webgl: Boolean(parsed.webgl),
@@ -136,7 +161,7 @@ export default function OrbView({
         markReady();
       }
     },
-    [markReady],
+    [markReady, poolMode, warmup],
   );
 
   return (
@@ -148,6 +173,7 @@ export default function OrbView({
         ]}
       >
         <WebView
+          key={`${size}-${personalityKey}`}
           source={{ html }}
           style={[styles.webview, { width: size, height: size }]}
           scrollEnabled={false}
@@ -182,11 +208,10 @@ export default function OrbView({
           onHttpError={(e) => console.error('[ORB] HTTP error:', e.nativeEvent)}
           onMessage={onMessage}
           onConsoleMessage={(e) => {
-            if (warmup) return;
+            if (warmup || poolMode) return;
             const msg = `[ORB:console:${e.nativeEvent.messageLevel}] ${e.nativeEvent.message}`;
             if (e.nativeEvent.messageLevel === 'error') console.error(msg);
             else if (e.nativeEvent.messageLevel === 'warn') console.warn(msg);
-            else console.log(msg);
           }}
           {...(Platform.OS === 'android' ? { androidHardwareAccelerationDisabled: false } : {})}
         />

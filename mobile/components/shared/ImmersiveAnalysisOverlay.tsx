@@ -73,16 +73,12 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
   const opacity = useRef(new Animated.Value(0)).current;
   const [strengthsExpanded, setStrengthsExpanded] = useState(true);
   const [growthExpanded, setGrowthExpanded] = useState(true);
-  const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [editedWellbeing, setEditedWellbeing] = useState<number | null>(null);
 
   // Reset edited wellbeing when insights change
   useEffect(() => {
     if (props.variant === 'results' && props.insights?.wellbeingScore !== undefined) {
       setEditedWellbeing(props.insights.wellbeingScore);
-    }
-    if (!props.visible) {
-      setSummaryExpanded(false);
     }
   }, [props.variant === 'results' ? props.insights?.wellbeingScore : undefined, props.visible]);
 
@@ -116,8 +112,6 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
   const textPrimary = theme.colors.primaryText;
   const textSecondary = theme.colors.secondaryText;
   const textTertiary = theme.colors.tertiaryText;
-  const cardBg = theme.colors.cardBackground;
-  const cardBorder = theme.colors.border;
   const subtleBg = dark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)';
 
   if (!props.visible) return null;
@@ -157,14 +151,6 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
                 wellbeingScore={editedWellbeing ?? props.insights?.wellbeingScore}
                 adjustLabel={t('analysis.adjust')}
                 summarySnippet={props.insights?.insights_report?.conversationalSummary}
-                fullSummary={props.insights?.insights_report?.conversationalSummary}
-                showFullSummary={summaryExpanded}
-                onReadFullSummary={
-                  props.insights?.insights_report?.conversationalSummary
-                    ? () => setSummaryExpanded(true)
-                    : undefined
-                }
-                readFullSummaryLabel={t('analysis.readFullSummary')}
                 emotions={collectEmotions(props.insights)}
                 onWellbeingChange={
                   props.variant === 'results' && props.onWellbeingChange
@@ -187,7 +173,7 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
               
               return (
                 <View style={styles.accordionSection}>
-                  <StandardContainer variant="nested" style={[styles.accordionHeaderCard, { borderColor: cardBorder }]}>
+                  <StandardContainer variant="recap" style={styles.accordionHeaderCard}>
                     <TouchableOpacity
                       style={styles.accordionHeaderRow}
                       onPress={() => setStrengthsExpanded(!strengthsExpanded)}
@@ -205,7 +191,7 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
                   </StandardContainer>
 
                   {strengthsExpanded && strengthCards.map((card: any, idx: number) => (
-                    <StandardContainer key={idx} variant="nested" style={[styles.insightCard, { borderColor: cardBorder, marginTop: 8 }]}>
+                    <StandardContainer key={idx} variant="recap" style={[styles.insightCard, { marginTop: 8 }]}>
                       <View style={[styles.growthBadge, { backgroundColor: subtleBg }]}>
                         <Text style={[styles.growthBadgeText, { color: textSecondary }]}>
                           {card.short_label || card.type.toUpperCase()}
@@ -237,7 +223,7 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
               
               return (
                 <View style={styles.accordionSection}>
-                  <StandardContainer variant="nested" style={[styles.accordionHeaderCard, { borderColor: cardBorder }]}>
+                  <StandardContainer variant="recap" style={styles.accordionHeaderCard}>
                     <TouchableOpacity
                       style={styles.accordionHeaderRow}
                       onPress={() => setGrowthExpanded(!growthExpanded)}
@@ -255,7 +241,7 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
                   </StandardContainer>
 
                   {growthExpanded && growthCards.map((card: any, idx: number) => (
-                    <StandardContainer key={idx} tint="violet" style={[styles.insightCard, { borderColor: cardBorder, marginTop: 10 }]}>
+                    <StandardContainer key={idx} tint="violet" variant="recap" style={[styles.insightCard, { marginTop: 10 }]}>
                       <View style={[styles.growthBadge, { backgroundColor: subtleBg }]}>
                         <Text style={[styles.growthBadgeText, { color: textSecondary }]}>
                           {card.short_label || card.type.toUpperCase()}
@@ -303,7 +289,7 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
 
             {/* Key Themes */}
             {props.insights?.key_themes && props.insights.key_themes.length > 0 && (
-              <StandardContainer variant="nested" style={[styles.glassmorphicCard, { borderColor: cardBorder }]}>
+              <StandardContainer variant="recap" style={styles.glassmorphicCard}>
                 <View style={styles.cardHeader}>
                   <Ionicons name="chatbubble-outline" size={18} color="#a78bfa" />
                   <Text style={[styles.cardHeaderTitle, { color: textPrimary }]}>{t('analysis.themes')}</Text>

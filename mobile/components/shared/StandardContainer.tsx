@@ -6,7 +6,7 @@ import GlassCard, { GlassVariant } from '../ui/GlassCard';
 type Props = {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
-  variant?: 'default' | 'nested' | 'hero';
+  variant?: 'default' | 'nested' | 'hero' | 'recap';
   tint?: 'violet' | 'coral' | 'aqua' | 'gold';
   /** @deprecated */
   ambient?: string;
@@ -58,7 +58,13 @@ export default function StandardContainer({
   };
 
   const glassVariant: GlassVariant =
-    variant === 'hero' ? 'elevated' : variant === 'nested' ? 'overlay' : 'surface';
+    variant === 'recap'
+      ? 'recap'
+      : variant === 'hero'
+        ? 'elevated'
+        : variant === 'nested'
+          ? 'overlay'
+          : 'surface';
 
   return (
     <GlassCard

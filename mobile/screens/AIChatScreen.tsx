@@ -1387,6 +1387,7 @@ export default function AIChatScreen({ navigation }: any) {
   }, [
     isRoast,
     isDark,
+    personality,
     theme.colors.secondaryText,
     theme.colors.primaryText,
     profilePicture,

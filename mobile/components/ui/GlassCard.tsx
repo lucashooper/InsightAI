@@ -18,7 +18,8 @@ export type GlassVariant =
   | 'elevated'
   | 'overlay'
   | 'hero'
-  | 'nested';
+  | 'nested'
+  | 'recap';
 export type GlassTint = 'violet' | 'coral' | 'aqua' | 'gold';
 
 type Props = Omit<ViewProps, 'style'> & {
@@ -60,17 +61,24 @@ export default function GlassCard({
   const resolvedVariant =
     strong || variant === 'hero'
       ? 'elevated'
-      : variant === 'nested'
-        ? 'overlay'
-        : variant;
+      : variant === 'recap'
+        ? 'recap'
+        : variant === 'nested'
+          ? 'overlay'
+          : variant;
   const resolvedWash = wash ?? (tint ? TINT_WASH[tint] : undefined);
+  const isRecap = resolvedVariant === 'recap';
   const darkFill =
     resolvedVariant === 'elevated'
       ? PREMIUM.glass.fillElevated
       : resolvedVariant === 'overlay'
         ? PREMIUM.glass.fillOverlay
         : PREMIUM.glass.fill;
-  const fillColor = dark ? darkFill : PREMIUM.lightGlass.fill;
+  const fillColor = isRecap && !dark
+    ? PREMIUM.recapGlass.fill
+    : dark
+      ? darkFill
+      : PREMIUM.lightGlass.fill;
   const isAndroid = Platform.OS === 'android';
 
   return (
@@ -78,15 +86,23 @@ export default function GlassCard({
       {...viewProps}
       style={[
         style,
-        dark ? styles.darkShell : styles.lightShell,
+        dark ? styles.darkShell : isRecap ? styles.recapShell : styles.lightShell,
         isAndroid && styles.androidShell,
-        isAndroid && { backgroundColor: androidGlassCardBackground(dark) },
+        isAndroid && {
+          backgroundColor: isRecap && !dark
+            ? PREMIUM.recapGlass.fill
+            : androidGlassCardBackground(dark),
+        },
+        isRecap && !dark && !isAndroid ? styles.recapShadow : null,
+        isRecap && !dark && isAndroid ? styles.recapAndroidElevation : null,
       ]}
     >
       {Platform.OS === 'ios' ? (
         <>
           <BlurView
-            intensity={dark ? PREMIUM.glass.blur : PREMIUM.lightGlass.blur}
+            intensity={
+              isRecap && !dark ? PREMIUM.recapGlass.blur : dark ? PREMIUM.glass.blur : PREMIUM.lightGlass.blur
+            }
             tint={dark ? 'dark' : 'light'}
             style={StyleSheet.absoluteFill}
           />
@@ -124,6 +140,23 @@ const styles = StyleSheet.create({
     shadowOpacity: PREMIUM.lightGlass.shadowOpacity,
     shadowRadius: 16,
     elevation: 3,
+  },
+  recapShell: {
+    borderRadius: PREMIUM.recapGlass.radius,
+    borderWidth: 1,
+    borderColor: PREMIUM.recapGlass.border,
+    overflow: 'hidden',
+    backgroundColor: 'transparent',
+  },
+  recapShadow: {
+    shadowColor: PREMIUM.recapGlass.shadowColor,
+    shadowOffset: PREMIUM.recapGlass.shadowOffset,
+    shadowOpacity: 1,
+    shadowRadius: PREMIUM.recapGlass.shadowRadius,
+    elevation: PREMIUM.recapGlass.elevation,
+  },
+  recapAndroidElevation: {
+    elevation: PREMIUM.recapGlass.elevation,
   },
   darkShell: {
     borderRadius: PREMIUM.radius.card,

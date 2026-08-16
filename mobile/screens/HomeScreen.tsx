@@ -39,7 +39,7 @@ import { isTablet, sf, ss, iPadWideContentStyle } from '../utils/responsive';
 import { PREMIUM } from '../constants/premiumUI';
 import JournalEntryOptionsSheet from '../components/journal/JournalEntryOptionsSheet';
 import { isGratitudeEntry } from '../utils/journalEntryFilters';
-import { stripJournalPromptTag, isPromptDrivenEntry, getPromptTextForEntry } from '../constants/branding';
+import { stripJournalPromptTag, isPromptDrivenEntry } from '../constants/branding';
 
 const insightLogo = require('../assets/192px-Insight-ICON.png');
 
@@ -511,7 +511,6 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
   const hasInsights = item.ai_structured_insights?.wellbeingScore;
   const isHidden = hiddenEntryIds.has(item.id);
   const isPromptEntry = isPromptDrivenEntry(item, item.content);
-  const promptPreview = isPromptEntry ? getPromptTextForEntry(item, item.content) : null;
   const displayContent = isHidden
     ? t('journal.lockedBody')
     : isPromptEntry
@@ -595,12 +594,6 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
               </View>
             )}
           </View>
-
-          {isPromptEntry && promptPreview ? (
-            <Text style={styles.promptQuestionPreview} numberOfLines={2}>
-              {promptPreview}
-            </Text>
-          ) : null}
 
             <Text style={[styles.entryContent, { color: theme.colors.secondaryText }]} numberOfLines={3}>
               {searchQuery.trim() ? highlightText(displayContent, searchQuery) : displayContent}
@@ -1442,13 +1435,6 @@ const styles = StyleSheet.create({
   },
   promptCardContent: {
     borderWidth: 0,
-  },
-  promptQuestionPreview: {
-    fontStyle: 'italic',
-    color: '#A1A1AA',
-    fontSize: sf(14),
-    lineHeight: sf(20),
-    marginBottom: 8,
   },
   newEntryFab: {
     position: 'absolute',

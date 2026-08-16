@@ -31,6 +31,8 @@ type OrbSlotProps = {
   personality?: AiPersonality;
   isRoast?: boolean;
   style?: StyleProp<ViewStyle>;
+  /** Wait before registering — avoids orb flashing mid-transition on modal screens. */
+  deferRegistrationMs?: number;
 };
 
 type OrbSlotInnerProps = OrbSlotProps & {
@@ -43,10 +45,12 @@ function OrbSlotInner({
   personality = 'default',
   isRoast = false,
   style,
+  deferRegistrationMs = 0,
   registerSlot,
   unregisterSlot,
 }: OrbSlotInnerProps) {
   const isFocused = useIsFocused();
+  const [registrationReady, setRegistrationReady] = useState(false);
   const idRef = useRef(`slot-${Math.random().toString(36).slice(2)}`);
   const viewRef = useRef<View>(null);
 
@@ -54,8 +58,27 @@ function OrbSlotInner({
     unregisterSlot(idRef.current);
   }, [unregisterSlot]);
 
+  useEffect(() => {
+    if (!isFocused) {
+      setRegistrationReady(false);
+      clearSlot();
+      return;
+    }
+
+    if (deferRegistrationMs <= 0) {
+      setRegistrationReady(true);
+      return;
+    }
+
+    const timer = setTimeout(() => setRegistrationReady(true), deferRegistrationMs);
+    return () => {
+      clearTimeout(timer);
+      setRegistrationReady(false);
+    };
+  }, [isFocused, deferRegistrationMs, clearSlot]);
+
   const report = useCallback(() => {
-    if (!isFocused) return;
+    if (!isFocused || !registrationReady) return;
     viewRef.current?.measureInWindow((x, y, width, height) => {
       if (!isValidSlotRect({ x, y, width, height })) return;
       registerSlot(idRef.current, {
@@ -68,26 +91,24 @@ function OrbSlotInner({
         height,
       });
     });
-  }, [isFocused, registerSlot, size, personality, isRoast]);
+  }, [isFocused, registrationReady, registerSlot, size, personality, isRoast]);
 
   useEffect(() => {
-    if (!isFocused) {
-      clearSlot();
+    if (!isFocused || !registrationReady) {
+      if (!registrationReady) clearSlot();
       return;
     }
 
     report();
     const frame = requestAnimationFrame(report);
     const delayed = setTimeout(report, 120);
-    const interval = setInterval(report, 600);
 
     return () => {
       cancelAnimationFrame(frame);
       clearTimeout(delayed);
-      clearInterval(interval);
       clearSlot();
     };
-  }, [isFocused, report, clearSlot]);
+  }, [isFocused, registrationReady, report, clearSlot]);
 
   return (
     <View
@@ -105,6 +126,7 @@ export function OrbSlot({
   personality = 'default',
   isRoast = false,
   style,
+  deferRegistrationMs,
 }: OrbSlotProps) {
   const ctx = useContext(OrbOverlayContext);
 
@@ -122,6 +144,7 @@ export function OrbSlot({
       personality={personality}
       isRoast={isRoast}
       style={style}
+      deferRegistrationMs={deferRegistrationMs}
       registerSlot={ctx.registerSlot}
       unregisterSlot={ctx.unregisterSlot}
     />
