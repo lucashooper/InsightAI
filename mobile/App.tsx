@@ -55,7 +55,7 @@ import OnboardingHeroWarmup from './components/onboarding/OnboardingHeroWarmup';
 import OrbOverlayProvider from './components/companion/OrbOverlayProvider';
 import OrbPreloader from './components/companion/OrbPreloader';
 import { getRevenueCatApiKey, isRevenueCatEnabled } from './utils/revenueCatConfig';
-import { preloadAllAppAssets } from './utils/preloadAssets';
+import { preloadAllAppAssets, preloadSplashAssets } from './utils/preloadAssets';
 
 // RevenueCat: platform keys resolved in utils/revenueCatConfig.ts
 
@@ -89,6 +89,7 @@ async function configureRevenueCatInBackground() {
 }
 
 export default function App() {
+  const [splashReady, setSplashReady] = useState(false);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [savedTheme, setSavedTheme] = useState<string>('dark');
   const [themeLoaded, setThemeLoaded] = useState(false);
@@ -103,8 +104,11 @@ export default function App() {
         }
         setThemeLoaded(true);
 
-        // Block until every screen/onboarding asset is decoded — no post-load flashes.
-        console.log('[APP] Preloading all visual assets...');
+        console.log('[APP] Preloading splash assets...');
+        await preloadSplashAssets();
+        setSplashReady(true);
+
+        console.log('[APP] Preloading remaining visual assets...');
         await preloadAllAppAssets();
         console.log('[APP] ✅ All visual assets preloaded');
         setSplashAssetsReady(true);
@@ -116,6 +120,7 @@ export default function App() {
         console.error('[APP] ❌ Error in loadResourcesAndDataAsync:', e);
       } finally {
         setThemeLoaded(true);
+        setSplashReady(true);
         setSplashAssetsReady(true);
         setAssetsLoaded(true);
       }
@@ -132,6 +137,7 @@ export default function App() {
   const splashShownAtRef = useRef<number | null>(null);
 
   const SPLASH_MIN_MS = 2800;
+  const SPLASH_MIN_MS_SHORT = 900;
   const SPLASH_MAX_MS = 10000;
 
   useEffect(() => {
@@ -140,9 +146,9 @@ export default function App() {
     }
   }, [showBrandSplash]);
 
-  // Hide native splash once assets are decoded and JS splash is ready.
+  // Hide native splash once premium splash assets are decoded.
   useEffect(() => {
-    if (!assetsLoaded || Platform.OS === 'web') return;
+    if (!splashReady || Platform.OS === 'web') return;
 
     try {
       SplashScreen.setOptions({ fade: true, duration: 300 });
@@ -150,7 +156,7 @@ export default function App() {
       // setOptions unavailable on some builds
     }
     SplashScreen.hideAsync().catch(() => {});
-  }, [assetsLoaded]);
+  }, [splashReady]);
 
   // Hard cap — never leave the splash overlay blocking the app indefinitely.
   useEffect(() => {
@@ -166,7 +172,7 @@ export default function App() {
   useEffect(() => {
     if (!appReady) return;
 
-    const minMs = showBrandSplash ? SPLASH_MIN_MS : 0;
+    const minMs = showBrandSplash ? SPLASH_MIN_MS : SPLASH_MIN_MS_SHORT;
     const elapsed = Date.now() - (splashShownAtRef.current ?? Date.now());
     const remaining = Math.max(0, minMs - elapsed);
 
@@ -174,7 +180,7 @@ export default function App() {
     const timer = setTimeout(() => {
       Animated.timing(fadeAnim, {
         toValue: 0,
-        duration: showBrandSplash ? 400 : 0,
+        duration: showBrandSplash ? 400 : 300,
         useNativeDriver: true,
       }).start(() => {
         console.log('[APP] Splash fade complete, hiding splash');
@@ -185,7 +191,7 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [appReady, fadeAnim, showBrandSplash]);
 
-  console.log('[APP RENDER] assetsLoaded:', assetsLoaded, 'appReady:', appReady, 'splashVisible:', splashVisible, 'brand:', showBrandSplash);
+  console.log('[APP RENDER] splashReady:', splashReady, 'assetsLoaded:', assetsLoaded, 'appReady:', appReady, 'splashVisible:', splashVisible, 'brand:', showBrandSplash);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -221,8 +227,8 @@ export default function App() {
         </ThemeProvider>
       ) : null}
 
-      {/* Gradient splash — only after assets decoded so background never pops in late */}
-      {assetsLoaded && splashVisible && themeLoaded && (
+      {/* Gradient splash — show as soon as splash assets decode */}
+      {splashReady && splashVisible && themeLoaded && (
         <Animated.View
           style={{
             position: 'absolute',

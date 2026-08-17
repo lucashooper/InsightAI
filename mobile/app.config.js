@@ -32,13 +32,13 @@ module.exports = {
     userInterfaceStyle: "dark",
     newArchEnabled: true,
     splash: {
-      image: "./assets/splash.png",
-      resizeMode: "contain",
+      image: "./public/splash-premium.jpg",
+      resizeMode: "cover",
       backgroundColor: "#0D0B18"
     },
     ios: {
       supportsTablet: true,
-      buildNumber: "115",
+      buildNumber: "117",
       infoPlist: {
         NSMicrophoneUsageDescription: "Insight uses the microphone for voice notes.",
         NSSpeechRecognitionUsageDescription: "Insight uses speech recognition to convert your voice into text for taking notes and searching your content.",
@@ -54,11 +54,11 @@ module.exports = {
         backgroundColor: "#0D0B18"
       },
       splash: {
-        image: "./assets/splash.png",
-        resizeMode: "contain",
+        image: "./public/splash-premium.jpg",
+        resizeMode: "cover",
         backgroundColor: "#0D0B18"
       },
-      versionCode: 115,
+      versionCode: 117,
       permissions: [
         "INTERNET",
         "RECORD_AUDIO",
@@ -98,9 +98,8 @@ module.exports = {
         "expo-splash-screen",
         {
           backgroundColor: "#0D0B18",
-          image: "./assets/splash.png",
-          imageWidth: 180,
-          resizeMode: "contain"
+          image: "./public/splash-premium.jpg",
+          resizeMode: "cover",
         }
       ],
       [
