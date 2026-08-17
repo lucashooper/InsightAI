@@ -13,7 +13,7 @@ import Constants from 'expo-constants';
 import { analytics } from '../services/analytics';
 import { getCurrentLanguage } from '../i18n/languageRef';
 import { isRevenueCatEnabled } from '../utils/revenueCatConfig';
-import { isManualTier } from '../utils/entitlements';
+import { syncSubscriptionTierFromRevenueCat } from '../utils/subscriptionSync';
 
 // Conditionally import Google Sign-In to avoid Expo Go errors
 let GoogleSignin: any = null;
@@ -64,69 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Helper function to sync subscription status to Supabase
   const syncSubscriptionToSupabase = async (userId: string, customerInfo: any) => {
-    try {
-      const { data: existingProfile } = await supabase
-        .from('user_profiles')
-        .select('subscription_tier')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (isManualTier(existingProfile?.subscription_tier)) {
-        console.log('[SUBSCRIPTION SYNC] Preserving manual tier:', existingProfile?.subscription_tier);
-        return;
-      }
-
-      // Determine subscription tier based on active entitlements
-      let tier = 'free';
-      
-      console.log('[SUBSCRIPTION SYNC] 🔍 Checking entitlements:', customerInfo.entitlements.active);
-      console.log('[SUBSCRIPTION SYNC] 🔍 Original App User ID:', customerInfo.originalAppUserId);
-      console.log('[SUBSCRIPTION SYNC] 🔍 Current Supabase User ID:', userId);
-      
-      const hasActiveEntitlement = customerInfo.entitlements.active['InsightAI Pro'] || 
-        customerInfo.entitlements.active['pro'] || 
-        Object.keys(customerInfo.entitlements.active).length > 0;
-      
-      if (hasActiveEntitlement) {
-        // CRITICAL: Verify the subscription belongs to THIS user
-        // RevenueCat's originalAppUserId tells us who originally purchased
-        // If it's an anonymous ID ($RCAnonymousID:...) or doesn't match, the receipt
-        // may be from a different account on the same device
-        const originalOwner = customerInfo.originalAppUserId;
-        const isOwnSubscription = originalOwner === userId || 
-          originalOwner?.startsWith('$RCAnonymousID:');
-        
-        if (isOwnSubscription) {
-          tier = 'pro';
-          console.log('[SUBSCRIPTION SYNC] ✨ Pro entitlement detected - owned by this user');
-        } else {
-          console.log('[SUBSCRIPTION SYNC] ⚠️ Pro entitlement detected but belongs to different user:', originalOwner);
-          console.log('[SUBSCRIPTION SYNC] ⚠️ NOT granting Pro to current user:', userId);
-        }
-      }
-      
-      console.log('[SUBSCRIPTION SYNC] 📤 Updating Supabase with tier:', tier);
-      
-      // Update Supabase user_profiles table with timeout to prevent hanging
-      const updatePromise = supabase
-        .from('user_profiles')
-        .update({ subscription_tier: tier })
-        .eq('user_id', userId);
-      
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Subscription sync timeout after 5s')), 5000)
-      );
-      
-      const { error } = await Promise.race([updatePromise, timeoutPromise]) as any;
-      
-      if (error) {
-        console.error('[SUBSCRIPTION SYNC] ❌ Failed to update Supabase:', error);
-      } else {
-        console.log('[SUBSCRIPTION SYNC] ✅ Successfully synced to Supabase - tier:', tier);
-      }
-    } catch (error) {
-      console.error('[SUBSCRIPTION SYNC] ❌ Error:', error);
-    }
+    await syncSubscriptionTierFromRevenueCat(userId, customerInfo);
   };
 
   useEffect(() => {
@@ -163,15 +101,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     // Set up RevenueCat listener for subscription changes (non-blocking, iOS only)
+    const onCustomerInfoUpdated = (customerInfo: Awaited<ReturnType<typeof Purchases.getCustomerInfo>>) => {
+      console.log('[REVENUECAT LISTENER] Subscription status changed');
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user?.id) {
+          syncSubscriptionToSupabase(session.user.id, customerInfo).catch((err) =>
+            console.log('[REVENUECAT] Subscription sync error (non-blocking):', err),
+          );
+        }
+      });
+    };
+
     const revenueCatListener = isRevenueCatEnabled()
-      ? Purchases.addCustomerInfoUpdateListener((customerInfo) => {
-          console.log('[REVENUECAT LISTENER] Subscription status changed');
-          if (user?.id) {
-            syncSubscriptionToSupabase(user.id, customerInfo).catch(err =>
-              console.log('[REVENUECAT] Subscription sync error (non-blocking):', err)
-            );
-          }
-        })
+      ? Purchases.addCustomerInfoUpdateListener(onCustomerInfoUpdated)
       : null;
 
     // Listen for auth changes
@@ -223,7 +165,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      if (revenueCatListener && isRevenueCatEnabled()) {
+        Purchases.removeCustomerInfoUpdateListener(onCustomerInfoUpdated);
+      }
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {

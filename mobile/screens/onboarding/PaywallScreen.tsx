@@ -16,6 +16,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { getFirstName } from '../../utils/paywallPersonalization';
 import { ONBOARDING_SURFACE, ONBOARDING_TEXT, ONBOARDING_CTA } from '../../constants/onboardingTheme';
 import { isRevenueCatEnabled } from '../../utils/revenueCatConfig';
+import { syncSubscriptionTierFromRevenueCat } from '../../utils/subscriptionSync';
 import { INSIGHT_LOGO } from '../../constants/appAssets';
 
 const ENTITLEMENT_ID = 'Insight Pro';
@@ -357,6 +358,10 @@ export default function PaywallScreen({ navigation, route }: any) {
     
     if (isProActive || hasAnyActiveEntitlement) {
       console.log('[Paywall] ✅ Subscription is active');
+
+      if (user?.id) {
+        await syncSubscriptionTierFromRevenueCat(user.id, customerInfo);
+      }
       
       // Check if user came from Settings (upgrading) vs onboarding (new user)
       const fromSettings = route?.params?.fromSettings === true;

@@ -379,7 +379,7 @@ export default function AIChatScreen({ navigation }: any) {
       setIsProUser(false);
       return;
     }
-    resolveProAccess(user.id).then(setIsProUser).catch(() => setIsProUser(false));
+    resolveProAccess(user.id, user.email).then(setIsProUser).catch(() => setIsProUser(false));
   }, [user?.id]);
 
   useEffect(() => {
@@ -1003,7 +1003,7 @@ export default function AIChatScreen({ navigation }: any) {
         return false;
       }
 
-      const isPro = await resolveProAccess(user.id);
+      const isPro = await resolveProAccess(user.id, user.email);
       setIsProUser(isPro);
       console.log('[AIChatScreen] Is Pro:', isPro);
       
@@ -1081,7 +1081,7 @@ export default function AIChatScreen({ navigation }: any) {
 
     if (!isProUser) {
       try {
-        const isPro = await resolveProAccess(user!.id);
+        const isPro = await resolveProAccess(user!.id, user!.email);
         if (!isPro) {
           Alert.alert(
             t('companion.proFeature'),

@@ -14,6 +14,7 @@ import StandardContainer from '../components/shared/StandardContainer';
 import LanguagePicker from '../components/LanguagePicker';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { isDevAccountEmail } from '../constants/devAccounts';
 
 function resolveProfilePictureUrl(raw: string | null | undefined): string | null {
   if (!raw || typeof raw !== 'string') return null;
@@ -92,7 +93,7 @@ export default function ProfileScreen({ navigation }: any) {
     React.useCallback(() => {
       if (!user?.id) return;
       refreshProfile(user.id);
-      refreshAccountStats(user.id);
+      refreshAccountStats(user.id, user.email);
 
       const syncPfp = async () => {
         const cachedRaw = await AsyncStorage.getItem(`CACHED_PROFILE_PICTURE_${user.id}`);
@@ -334,6 +335,7 @@ export default function ProfileScreen({ navigation }: any) {
           </StandardContainer>
           {renderMenuItem('color-palette-outline', t('auxiliary.appearance.title'), t('auxiliary.profile.themeValue', { theme: t(`auxiliary.appearance.${themeName}`) }), () => navigation.navigate('Appearance'))}
           {renderMenuItem('lock-closed-outline', t('auxiliary.security.title'), t('auxiliary.security.noLock'), () => navigation.navigate('Security'))}
+          {renderMenuItem('settings-outline', t('settings.pageTitle'), t('auxiliary.profile.personalizeDescription'), () => navigation.navigate('Settings'))}
           {renderMenuItem('options-outline', t('auxiliary.personalize.title'), t('auxiliary.profile.personalizeDescription'), () => navigation.navigate('Personalize'))}
         </View>
 
@@ -342,6 +344,20 @@ export default function ProfileScreen({ navigation }: any) {
         <View style={styles.menuSection}>
           {renderMenuItem('document-text-outline', t('auxiliary.profile.privacyPolicy'), undefined, () => Linking.openURL('https://myinsightai.app/privacy'))}
         </View>
+
+        {(__DEV__ || isDevAccountEmail(user?.email)) ? (
+          <>
+            {renderSectionHeader('Screenshots')}
+            <View style={styles.menuSection}>
+              {renderMenuItem(
+                'shield-checkmark-outline',
+                'Privacy Marketing Screen',
+                'App Store screenshot frame',
+                () => navigation.getParent()?.navigate('PrivacyMarketing'),
+              )}
+            </View>
+          </>
+        ) : null}
 
         {/* Account Actions */}
         {renderSectionHeader(t('auxiliary.profile.accountActions'))}

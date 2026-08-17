@@ -2,6 +2,11 @@ import { SupabaseClient, createClient } from 'https://esm.sh/@supabase/supabase-
 
 const ENTITLED_TIERS = new Set(['pro', 'unlimited', 'demo'])
 
+/** Keep in sync with mobile/constants/devAccounts.ts */
+const DEV_ACCOUNT_EMAILS = new Set([
+  'edwardsjonny547@gmail.com',
+])
+
 /** APK investor demo — keep AI working even if profile tier drifts to free. */
 const INVESTOR_DEMO_USER_IDS = new Set([
   'a0c3ba5b-c584-48a2-b297-0feaa726fb83',
@@ -25,7 +30,7 @@ export async function assertProEntitlement(
 
   const { data: profile, error } = await adminClient()
     .from('user_profiles')
-    .select('subscription_tier')
+    .select('subscription_tier, email')
     .eq('user_id', userId)
     .maybeSingle()
 
@@ -35,6 +40,10 @@ export async function assertProEntitlement(
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     })
+  }
+
+  if (profile?.email && DEV_ACCOUNT_EMAILS.has(profile.email.toLowerCase())) {
+    return null
   }
 
   const tier = profile?.subscription_tier ?? 'free'

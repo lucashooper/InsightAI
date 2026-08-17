@@ -1,6 +1,7 @@
 import Purchases from 'react-native-purchases';
 import { supabase } from '../lib/supabase';
 import { PRO_DISPLAY_NAME } from '../constants/branding';
+import { isDevAccountEmail } from '../constants/devAccounts';
 import { isInvestorDemoUser } from '../constants/investorDemo';
 import { isRevenueCatEnabled } from './revenueCatConfig';
 
@@ -20,14 +21,17 @@ export function isManualTier(tier: string | null | undefined): boolean {
   return tier === 'unlimited' || tier === 'demo';
 }
 
-export async function fetchSubscriptionTier(userId: string): Promise<SubscriptionTier> {
-  if (isInvestorDemoUser(userId)) {
+export async function fetchSubscriptionTier(userId: string, email?: string | null): Promise<SubscriptionTier> {
+  if (isInvestorDemoUser(userId, email)) {
+    return 'unlimited';
+  }
+  if (isDevAccountEmail(email)) {
     return 'unlimited';
   }
 
   const { data, error } = await supabase
     .from('user_profiles')
-    .select('subscription_tier')
+    .select('subscription_tier, email')
     .eq('user_id', userId)
     .maybeSingle();
 
@@ -36,13 +40,17 @@ export async function fetchSubscriptionTier(userId: string): Promise<Subscriptio
     return 'free';
   }
 
+  if (isDevAccountEmail(data?.email) || isDevAccountEmail(email)) {
+    return 'unlimited';
+  }
+
   const tier = (data?.subscription_tier as SubscriptionTier) || 'free';
   if (isEntitledTier(tier)) return tier;
   return tier;
 }
 
-export async function hasServerSideProEntitlement(userId: string): Promise<boolean> {
-  const tier = await fetchSubscriptionTier(userId);
+export async function hasServerSideProEntitlement(userId: string, email?: string | null): Promise<boolean> {
+  const tier = await fetchSubscriptionTier(userId, email);
   return isEntitledTier(tier);
 }
 
@@ -74,20 +82,21 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Pro
   ]);
 }
 
-/** Resolve Pro access: investor demo → Supabase tier → iOS RevenueCat. */
-export async function resolveProAccess(userId: string): Promise<boolean> {
-  if (isInvestorDemoUser(userId)) return true;
+/** Resolve Pro access: dev/investor → Supabase tier → iOS RevenueCat. */
+export async function resolveProAccess(userId: string, email?: string | null): Promise<boolean> {
+  if (isInvestorDemoUser(userId, email)) return true;
+  if (isDevAccountEmail(email)) return true;
 
-  const serverEntitled = await withTimeout(hasServerSideProEntitlement(userId), 8000, false);
+  const serverEntitled = await withTimeout(hasServerSideProEntitlement(userId, email), 8000, false);
   if (serverEntitled) return true;
   return withTimeout(hasRevenueCatPro(userId), 5000, false);
 }
 
-export async function getAccountStatsForUser(userId: string): Promise<{
+export async function getAccountStatsForUser(userId: string, email?: string | null): Promise<{
   subscriptionPlan: string;
   entriesLimit: number;
 }> {
-  const tier = await fetchSubscriptionTier(userId);
+  const tier = await fetchSubscriptionTier(userId, email);
 
   if (isUnlimitedTier(tier)) {
     return { subscriptionPlan: PRO_DISPLAY_NAME, entriesLimit: 20 };

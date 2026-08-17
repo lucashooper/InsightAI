@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Activi
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
-import { resolveProAccess, fetchSubscriptionTier, isUnlimitedTier } from '../utils/entitlements';
+import { resolveProAccess, fetchSubscriptionTier, isUnlimitedTier, isEntitledTier } from '../utils/entitlements';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
 import { navigateToPlaybook } from '../utils/navigateToPlaybook';
@@ -362,13 +362,13 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
 
     if (!user?.id) return;
 
-    const tier = await fetchSubscriptionTier(user.id);
+    const tier = await fetchSubscriptionTier(user.id, user.email);
     const isUnlimited = isUnlimitedTier(tier) || __DEV__;
     const isDemoUser = tier === 'demo';
     const dailyLimit = isUnlimited ? 15 : isDemoUser ? 3 : 2;
 
-    if (!isUnlimited && !isDemoUser) {
-      const hasPro = await resolveProAccess(user.id);
+    if (!isUnlimited && !isDemoUser && !isEntitledTier(tier)) {
+      const hasPro = await resolveProAccess(user.id, user.email);
       if (!hasPro) {
         console.log('[EntryDetail] User has no subscription - showing premium overlay');
         setPremiumUpsellVisible(true);

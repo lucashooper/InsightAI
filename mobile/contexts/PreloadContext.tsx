@@ -113,11 +113,11 @@ export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children })
     return () => handle.cancel();
   }, [isLocked, isLockEnabled, backgroundWorkTick, runBackgroundDecryptAndPrewarm]);
 
-  const loadAccountStats = useCallback(async (userId: string) => {
+  const loadAccountStats = useCallback(async (userId: string, email?: string | null) => {
     const today = new Date().toISOString().split('T')[0];
 
     const [accountStats, usageResult] = await Promise.all([
-      getAccountStatsForUser(userId),
+      getAccountStatsForUser(userId, email),
       supabase
         .from('usage_tracking')
         .select('*', { count: 'exact', head: true })
@@ -204,7 +204,7 @@ export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children })
       setBackgroundWorkTick((t) => t + 1);
 
       // Account stats — lowest priority
-      loadAccountStats(userId)
+      loadAccountStats(userId, email)
         .then((accountStats) => {
           setData((prev) => ({
             ...prev,
@@ -345,9 +345,9 @@ export const PreloadProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, [data.userProfile?.email]);
 
-  const refreshAccountStats = useCallback(async (userId: string) => {
+  const refreshAccountStats = useCallback(async (userId: string, email?: string | null) => {
     try {
-      const accountStats = await loadAccountStats(userId);
+      const accountStats = await loadAccountStats(userId, email);
       setData(prev => ({
         ...prev,
         subscriptionPlan: accountStats.subscriptionPlan,

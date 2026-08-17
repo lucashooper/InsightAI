@@ -37,6 +37,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
 import AppearanceScreen from '../screens/AppearanceScreen';
 import SecurityScreen from '../screens/SecurityScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 import PersonalizeScreen from '../screens/PersonalizeScreen';
 import WelcomeScreen from '../screens/onboarding/WelcomeScreen';
 import ProductRevealScreen from '../screens/onboarding/ProductRevealScreen';
@@ -70,6 +71,7 @@ import AmbientSoundsScreen from '../screens/AmbientSoundsScreen';
 import AIChatScreen from '../screens/AIChatScreen';
 import PromptEntryScreen from '../screens/PromptEntryScreen';
 import ExploreScreen from '../screens/ExploreScreen';
+import PrivacyMarketingScreen from '../screens/PrivacyMarketingScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isTablet, sf, si } from '../utils/responsive';
 import { PREMIUM } from '../constants/premiumUI';
@@ -86,6 +88,7 @@ function HomeStackNavigator() {
       <HomeStack.Screen name="EditProfile" component={EditProfileScreen} />
       <HomeStack.Screen name="Appearance" component={AppearanceScreen} />
       <HomeStack.Screen name="Security" component={SecurityScreen} />
+      <HomeStack.Screen name="Settings" component={SettingsScreen} />
       <HomeStack.Screen name="Personalize" component={PersonalizeScreen} />
       <HomeStack.Screen name="Playbook" component={PlaybookScreen} options={{ animation: 'slide_from_right' }} />
     </HomeStack.Navigator>
@@ -544,6 +547,11 @@ export default function AppNavigator() {
           <Stack.Screen name="AIChat" component={AIChatScreen} options={{ headerShown: false, animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
           <Stack.Screen name="Playbook" component={PlaybookScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="Explore" component={ExploreScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen
+            name="PrivacyMarketing"
+            component={PrivacyMarketingScreen}
+            options={{ headerShown: false, animation: 'slide_from_right' }}
+          />
         </Stack.Navigator>
       ) : (
         // Unauthenticated - show Welcome first, then Login/Signup

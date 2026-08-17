@@ -483,7 +483,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
 
   const ensureProAccess = async (): Promise<boolean> => {
     if (!user?.id) return false;
-    const hasPro = await resolveProAccess(user.id);
+    const hasPro = await resolveProAccess(user.id, user.email);
     if (!hasPro) {
       Alert.alert(
         t('editor.proRequiredTitle'),

@@ -20,6 +20,8 @@ import { usePreloadedData } from '../contexts/PreloadContext';
 import { isTablet, sf, ss, si, iPadContentStyle } from '../utils/responsive';
 import { printSubscriptionDebugReport, resetRevenueCatOnly, nukeAllSubscriptionState } from '../utils/subscriptionDebug';
 import { getAccountStatsForUser } from '../utils/entitlements';
+import { isDevAccountEmail } from '../constants/devAccounts';
+import { syncSubscriptionTierFromRevenueCat } from '../utils/subscriptionSync';
 import { profilePicturePickerOptions, uploadProfilePictureFromUri } from '../utils/profilePictureUpload';
 import Constants from 'expo-constants';
 
@@ -370,7 +372,7 @@ export default function SettingsScreen({ navigation }: any) {
 
       if (!user?.id) return;
 
-      const accountStats = await getAccountStatsForUser(user.id);
+      const accountStats = await getAccountStatsForUser(user.id, user.email);
       const isPro = accountStats.subscriptionPlan !== 'Free';
 
       if (isPro) {
@@ -1013,7 +1015,7 @@ export default function SettingsScreen({ navigation }: any) {
         </View>
 
         {/* Developer Testing Tools - Only visible to admin account */}
-        {__DEV__ && user?.email === 'edwardsjonny547@gmail.com' && (
+        {isDevAccountEmail(user?.email) && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>{t('settings.developerTools')}</Text>
             <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
@@ -1048,6 +1050,28 @@ export default function SettingsScreen({ navigation }: any) {
               >
                 <Ionicons name="refresh" size={20} color="#a855f7" />
                 <Text style={[styles.devToolButtonText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>{t('settings.clearCache')}</Text>
+              </TouchableOpacity>
+              
+              <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
+
+              <TouchableOpacity
+                style={styles.devToolButton}
+                onPress={async () => {
+                  if (!user?.id) return;
+                  try {
+                    await Purchases.invalidateCustomerInfoCache();
+                    const customerInfo = await Purchases.getCustomerInfo();
+                    await syncSubscriptionTierFromRevenueCat(user.id, customerInfo);
+                    await loadSubscriptionStatus();
+                    Alert.alert(t('common.success'), 'Subscription synced to server.');
+                  } catch (error: any) {
+                    Alert.alert(t('common.error'), error.message);
+                  }
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="cloud-upload-outline" size={20} color="#10b981" />
+                <Text style={[styles.devToolButtonText, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a1a' }]}>Sync subscription to server</Text>
               </TouchableOpacity>
               
               <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />

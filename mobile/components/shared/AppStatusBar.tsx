@@ -28,6 +28,7 @@ const LIGHT_BACKGROUND_ROUTES = new Set([
   'OnboardingSummary',
   'InteractiveShowcase',
   'PrivacyOnboarding',
+  'PrivacyMarketing',
   'NotificationsOnboarding',
   'Login',
   'Signup',

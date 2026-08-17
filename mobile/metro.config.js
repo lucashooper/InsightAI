@@ -4,6 +4,11 @@ const path = require('path');
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname);
 
+// lucide-react-native ships ESM icon modules as .mjs
+if (!config.resolver.sourceExts.includes('mjs')) {
+  config.resolver.sourceExts.push('mjs');
+}
+
 const reanimatedEntry = path.resolve(
   __dirname,
   'node_modules/react-native-reanimated/lib/module/index.js',
