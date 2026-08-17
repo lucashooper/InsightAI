@@ -1,0 +1,13 @@
+# Shrink EAS upload — avoids network EPIPE on large tarballs
+node_modules/
+.expo/
+.expo-export-test/
+ios/
+android/
+.git/
+*.log
+submit_error.log
+.DS_Store
+dist/
+web-build/
+.metro-health-check*
