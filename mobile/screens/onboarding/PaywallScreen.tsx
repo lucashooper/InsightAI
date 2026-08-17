@@ -10,7 +10,8 @@ import Purchases, { PurchasesOffering, PurchasesPackage, CustomerInfo } from 're
 import { useAuth } from '../../contexts/AuthContext';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { supabase } from '../../lib/supabase';
-import { isTablet, sf } from '../../utils/responsive';
+import { isTablet, sf, screenPadding, ss, iPadContentStyle } from '../../utils/responsive';
+import { ONBOARDING_LAYOUT } from '../../constants/onboardingLayout';
 import { analytics } from '../../services/analytics';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getFirstName } from '../../utils/paywallPersonalization';
@@ -692,6 +693,7 @@ export default function PaywallScreen({ navigation, route }: any) {
         showsVerticalScrollIndicator={false}
         nestedScrollEnabled
       >
+        <View style={[styles.scrollInner, iPadContentStyle as any]}>
         <View style={styles.logoContainer}>
           <BreathingLogo source={INSIGHT_LOGO} style={styles.logo} />
         </View>
@@ -707,7 +709,7 @@ export default function PaywallScreen({ navigation, route }: any) {
             <View style={styles.iconRail}>
               {premiumFeatures.map((feature) => (
                 <View key={`icon-${feature.title}`} style={styles.iconRailSlot}>
-                  <Ionicons name={feature.icon} size={18} color={ONBOARDING_TEXT.secondary} />
+                  <Ionicons name={feature.icon} size={isTablet ? 22 : 18} color={ONBOARDING_TEXT.secondary} />
                 </View>
               ))}
             </View>
@@ -777,10 +779,12 @@ export default function PaywallScreen({ navigation, route }: any) {
           </PaywallPlanCard>
         </View>
         </View>
+        </View>
       </ScrollView>
 
       {/* Sticky Bottom Footer */}
       <View style={styles.stickyFooter}>
+        <View style={[styles.stickyFooterInner, iPadContentStyle as any]}>
         {/* Commitment Badge */}
         <View style={styles.commitmentBadge}>
           <Text style={styles.commitmentEmoji}>✅</Text>
@@ -820,6 +824,7 @@ export default function PaywallScreen({ navigation, route }: any) {
             <Text style={styles.footerLink}>{t('onboarding.paywall.privacyPolicy')}</Text>
           </TouchableOpacity>
         </View>
+        </View>
       </View>
     </View>
   );
@@ -837,15 +842,15 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: isTablet ? 60 : 50,
-    left: 24,
+    top: ONBOARDING_LAYOUT.backTop,
+    left: ONBOARDING_LAYOUT.backLeft,
     zIndex: 10,
     padding: 4,
   },
   backArrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: ONBOARDING_LAYOUT.backSize,
+    height: ONBOARDING_LAYOUT.backSize,
+    borderRadius: ONBOARDING_LAYOUT.backRadius,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: ONBOARDING_SURFACE.fillElevated,
@@ -854,44 +859,48 @@ const styles = StyleSheet.create({
   },
   topContent: {
     flex: 1,
-    paddingTop: isTablet ? 72 : 56,
+    paddingTop: isTablet ? 88 : 56,
   },
   scrollContent: {
-    paddingBottom: isTablet ? 240 : 210,
-    paddingHorizontal: 24,
+    paddingBottom: isTablet ? 190 : 170,
+    paddingHorizontal: ONBOARDING_LAYOUT.contentHorizontal,
+    flexGrow: 1,
+  },
+  scrollInner: {
+    width: '100%',
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: isTablet ? 8 : 4,
+    marginBottom: isTablet ? 16 : 4,
   },
   logo: {
-    width: isTablet ? 88 : 80,
-    height: isTablet ? 88 : 80,
+    width: isTablet ? ss(100) : 80,
+    height: isTablet ? ss(100) : 80,
   },
   header: {
     alignItems: 'center',
-    marginBottom: isTablet ? 28 : 24,
+    marginBottom: isTablet ? 32 : 24,
   },
   title: {
-    fontSize: isTablet ? sf(30) : sf(28),
+    fontSize: sf(28),
     fontWeight: '600',
     color: PAYWALL_TEXT.primary,
     letterSpacing: -1.28,
     textAlign: 'center',
-    lineHeight: isTablet ? sf(38) : sf(36),
+    lineHeight: sf(36),
   },
   featuresBlock: {
-    marginBottom: isTablet ? 32 : 28,
+    marginBottom: isTablet ? 28 : 24,
   },
   featuresRail: {
     flexDirection: 'row',
     alignItems: 'stretch',
-    gap: 16,
+    gap: isTablet ? 20 : 16,
   },
   iconRail: {
-    width: 48,
-    borderRadius: 16,
-    paddingVertical: 10,
+    width: isTablet ? 56 : 48,
+    borderRadius: isTablet ? 18 : 16,
+    paddingVertical: isTablet ? 12 : 10,
     paddingHorizontal: 6,
     backgroundColor: ONBOARDING_SURFACE.fill,
     borderWidth: StyleSheet.hairlineWidth,
@@ -901,8 +910,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   iconRailSlot: {
-    width: 36,
-    height: 36,
+    width: isTablet ? 40 : 36,
+    height: isTablet ? 40 : 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -910,10 +919,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'space-between',
     paddingVertical: 4,
-    gap: 16,
+    gap: isTablet ? 18 : 16,
   },
   featureCopyRow: {
-    minHeight: 40,
+    minHeight: isTablet ? 48 : 40,
     justifyContent: 'center',
   },
   featureTitle: {
@@ -937,9 +946,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(200, 185, 255, 0.35)',
     borderRadius: 999,
-    paddingVertical: 14,
+    paddingVertical: isTablet ? 16 : 14,
     paddingHorizontal: 18,
-    marginBottom: isTablet ? 28 : 24,
+    marginBottom: isTablet ? 24 : 20,
   },
   trialToggleLabel: {
     fontSize: sf(14),
@@ -949,14 +958,14 @@ const styles = StyleSheet.create({
     paddingRight: 12,
   },
   pricingSection: {
-    marginTop: isTablet ? 8 : 4,
-    marginBottom: isTablet ? 28 : 24,
+    marginTop: isTablet ? 4 : 4,
+    marginBottom: isTablet ? 16 : 12,
     overflow: 'visible',
   },
   plansRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: isTablet ? 20 : 16,
+    gap: isTablet ? 14 : 12,
+    marginBottom: isTablet ? 12 : 10,
     paddingTop: 14,
     overflow: 'visible',
   },
@@ -1008,19 +1017,22 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    paddingHorizontal: 24,
-    paddingBottom: isTablet ? 26 : 18,
+    paddingHorizontal: ONBOARDING_LAYOUT.contentHorizontal,
+    paddingBottom: ONBOARDING_LAYOUT.footerBottom - 24,
     paddingTop: 10,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     backgroundColor: 'rgba(255, 255, 255, 0.88)',
-    borderTopWidth: 1,
-    borderColor: ONBOARDING_SURFACE.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(200, 185, 255, 0.2)',
     shadowColor: 'rgba(120, 80, 200, 0.12)',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 1,
     shadowRadius: 20,
     elevation: 8,
+  },
+  stickyFooterInner: {
+    width: '100%',
   },
   commitmentBadge: {
     flexDirection: 'row',

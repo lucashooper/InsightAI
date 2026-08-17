@@ -6,7 +6,8 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import OnboardingButton from '../../components/onboarding/OnboardingButton';
 import { ONBOARDING_TEXT } from '../../constants/onboardingTheme';
-import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
+import { ONBOARDING_LAYOUT } from '../../constants/onboardingLayout';
+import { sf, iPadContentStyle } from '../../utils/responsive';
 
 const PATTERNS = [
   { emoji: '😴', textKey: 'adjustSleep', frequency: 8 },
@@ -115,23 +116,23 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 60,
-    left: 20,
+    top: ONBOARDING_LAYOUT.backTop,
+    left: ONBOARDING_LAYOUT.backLeft,
     zIndex: 10,
     padding: 4,
   },
   backArrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: ONBOARDING_LAYOUT.backSize,
+    height: ONBOARDING_LAYOUT.backSize,
+    borderRadius: ONBOARDING_LAYOUT.backRadius,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(0,0,0,0.05)',
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: isTablet ? 120 : 110,
+    paddingHorizontal: ONBOARDING_LAYOUT.contentHorizontal,
+    paddingTop: ONBOARDING_LAYOUT.contentTop,
     paddingBottom: 20,
   },
   eyebrow: {
@@ -153,7 +154,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: sf(16),
     lineHeight: sf(23),
-    marginBottom: isTablet ? 48 : 36,
+    marginBottom: ONBOARDING_LAYOUT.subtitleGap,
     color: ONBOARDING_TEXT.body,
   },
   pillsContainer: {
@@ -195,7 +196,7 @@ const styles = StyleSheet.create({
     color: ONBOARDING_TEXT.primary,
   },
   footer: {
-    paddingHorizontal: 24,
-    paddingBottom: isTablet ? 70 : 50,
+    paddingHorizontal: ONBOARDING_LAYOUT.contentHorizontal,
+    paddingBottom: ONBOARDING_LAYOUT.footerBottom,
   },
 });

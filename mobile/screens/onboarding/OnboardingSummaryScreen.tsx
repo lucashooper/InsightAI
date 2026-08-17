@@ -7,16 +7,18 @@ import ConfettiCannon from 'react-native-confetti-cannon';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import CachedImage from '../../components/shared/CachedImage';
 import { INSIGHT_LOGO } from '../../constants/appAssets';
-import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
-import { analytics } from '../../services/analytics';
+import { ONBOARDING_LIGHT, ONBOARDING_TEXT } from '../../constants/onboardingTheme';
+import { sf, si, screenPadding, iPadContentStyle } from '../../utils/responsive';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { analytics } from '../../services/analytics';
+import OnboardingButton from '../../components/onboarding/OnboardingButton';
+import { ONBOARDING_LAYOUT } from '../../constants/onboardingLayout';
 
 const { width } = Dimensions.get('window');
 
 export default function OnboardingSummaryScreen({ navigation, route }: any) {
     const { answers } = route.params || {};
-    const { theme } = useTheme();
     const { userName } = useOnboarding();
     const { t } = useLanguage();
     const fadeAnim = new Animated.Value(0);
@@ -74,7 +76,7 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} />
+            <StatusBar barStyle="dark-content" />
 
             <OnboardingAmbientBackground />
             
@@ -84,8 +86,8 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
                     style={styles.backButton}
                     onPress={() => navigation.goBack()}
                 >
-                    <View style={[styles.backArrowCircle, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-                        <Ionicons name="arrow-back" size={20} color={isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e'} />
+                    <View style={[styles.backArrowCircle, { backgroundColor: ONBOARDING_LIGHT.backCircleBg, borderColor: ONBOARDING_LIGHT.backCircleBorder, borderWidth: 1 }]}>
+                        <Ionicons name="arrow-back" size={si(20)} color={ONBOARDING_LIGHT.backIcon} />
                     </View>
                 </TouchableOpacity>
             )}
@@ -109,22 +111,17 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
                         <Ionicons name="checkmark-circle" size={64} color="#4ade80" />
                     </View>
 
-                    <Text style={[styles.title, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>{t('onboarding.summary.title')}</Text>
-                    <Text style={[styles.subtitle, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.7)' : '#6b7280' }]}>
+                    <Text style={[styles.title, { color: ONBOARDING_TEXT.primary }]}>{t('onboarding.summary.title')}</Text>
+                    <Text style={[styles.subtitle, { color: ONBOARDING_TEXT.secondary }]}>
                         {getSummaryText()}
                     </Text>
                 </Animated.View>
 
-                <View style={styles.footer}>
-                    <TouchableOpacity
-                        style={styles.button}
-                        activeOpacity={0.9}
+                <View style={[styles.footer, iPadContentStyle as any]}>
+                    <OnboardingButton
+                        label={t('common.continue')}
                         onPress={handleFinish}
-                    >
-                        <View style={styles.buttonGradient}>
-                            <Text style={styles.buttonText}>{t('common.continue')}</Text>
-                        </View>
-                    </TouchableOpacity>
+                    />
                 </View>
             </View>
         </View>
@@ -138,33 +135,34 @@ const styles = StyleSheet.create({
     },
     backButton: {
         position: 'absolute',
-        top: 60,
-        left: 20,
+        top: ONBOARDING_LAYOUT.backTop,
+        left: ONBOARDING_LAYOUT.backLeft,
         zIndex: 10,
         padding: 4,
     },
     backArrowCircle: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: ONBOARDING_LAYOUT.backSize,
+        height: ONBOARDING_LAYOUT.backSize,
+        borderRadius: ONBOARDING_LAYOUT.backRadius,
         alignItems: 'center',
         justifyContent: 'center',
     },
     logo: {
-        width: 100,
-        height: 100,
+        width: ONBOARDING_LAYOUT.logoSize,
+        height: ONBOARDING_LAYOUT.logoSize,
         opacity: 0.9,
         position: 'absolute',
-        top: 60,
+        top: ONBOARDING_LAYOUT.logoTop,
         alignSelf: 'center',
         zIndex: 10,
     },
     content: {
         flex: 1,
         justifyContent: 'space-between',
-        paddingHorizontal: 32,
-        paddingTop: 120,
-        paddingBottom: 60,
+        paddingHorizontal: ONBOARDING_LAYOUT.contentHorizontal,
+        paddingTop: ONBOARDING_LAYOUT.contentTop + 20,
+        paddingBottom: ONBOARDING_LAYOUT.footerBottom,
+        ...iPadContentStyle,
     },
     centerContent: {
         alignItems: 'center',
@@ -180,45 +178,22 @@ const styles = StyleSheet.create({
         elevation: 10,
     },
     title: {
-        fontSize: 32,
+        fontSize: sf(32),
         fontWeight: '600',
         color: '#1a1a2e',
         marginBottom: 16,
         textAlign: 'center',
         letterSpacing: -1.28,
-        lineHeight: 40,
+        lineHeight: sf(40),
     },
     subtitle: {
-        fontSize: 18,
+        fontSize: sf(18),
         color: '#6b7280',
         textAlign: 'center',
-        lineHeight: 26,
+        lineHeight: sf(26),
     },
     footer: {
         width: '100%',
-    },
-    button: {
-        width: '100%',
-        borderRadius: 28,
-        backgroundColor: '#7B5EA7',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
-        elevation: 8,
-    },
-    buttonGradient: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 22,
-        borderRadius: 28,
-        gap: 8,
-    },
-    buttonText: {
-        fontSize: 17,
-        fontWeight: '600',
-        color: '#fff',
-        letterSpacing: 0.2,
+        paddingTop: ONBOARDING_LAYOUT.footerTop,
     },
 });

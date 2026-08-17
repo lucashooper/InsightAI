@@ -76,7 +76,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-120b',
         messages,
         temperature: 0.7,
         max_tokens: 4096,
@@ -87,7 +87,10 @@ serve(async (req) => {
     if (!groqResponse.ok) {
       const errorBody = await groqResponse.text()
       console.error('[clever-api] Groq error:', groqResponse.status, errorBody)
-      return new Response(JSON.stringify({ error: `Groq API error (${groqResponse.status})` }), {
+      return new Response(JSON.stringify({
+        error: `Groq API error (${groqResponse.status})`,
+        detail: errorBody,
+      }), {
         status: groqResponse.status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })

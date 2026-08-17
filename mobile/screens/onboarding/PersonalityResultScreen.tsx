@@ -5,8 +5,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
-import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
-import { isTablet, sf } from '../../utils/responsive';
+import { ONBOARDING_LIGHT, ONBOARDING_TEXT } from '../../constants/onboardingTheme';
+import { isTablet, sf, screenPadding, iPadContentStyle } from '../../utils/responsive';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
 
@@ -313,9 +313,7 @@ function RadarChart({ dimensions, dark }: { dimensions: { label: string; score: 
 }
 // ── Main Screen ───────────────────────────────────────────────
 export default function PersonalityResultScreen({ navigation, route }: any) {
-  const { theme } = useTheme();
   const { t } = useLanguage();
-  const dark = isDarkTheme(theme.name);
   const answers = route?.params?.answers || {};
   const profile = computePersonality(answers, t);
   const bottomInset = useOnboardingBottomInset();
@@ -326,7 +324,7 @@ export default function PersonalityResultScreen({ navigation, route }: any) {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent={false} />
+            <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={false} />
             <OnboardingAmbientBackground />
 
       {/* Close button */}
@@ -339,41 +337,34 @@ export default function PersonalityResultScreen({ navigation, route }: any) {
           }
         }}
       >
-        <View style={[styles.backArrowCircle, { backgroundColor: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-          <Ionicons name="arrow-back" size={20} color={dark ? '#fff' : '#1a1a2e'} />
+        <View style={[styles.backArrowCircle, { backgroundColor: ONBOARDING_LIGHT.backCircleBg, borderColor: ONBOARDING_LIGHT.backCircleBorder, borderWidth: 1 }]}>
+          <Ionicons name="arrow-back" size={20} color={ONBOARDING_LIGHT.backIcon} />
         </View>
       </TouchableOpacity>
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, iPadContentStyle as any]}
         showsVerticalScrollIndicator={false}
       >
         <View>
-          {/* Header text */}
-          <Text style={[styles.subtitle, { color: dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }]}>
+          <Text style={styles.subtitle}>
             {t('onboarding.personality.primaryPattern')}
           </Text>
 
-          <Text style={[styles.primaryPattern, { color: dark ? '#fff' : '#1a1a2e' }]}>
+          <Text style={styles.primaryPattern}>
             {profile.primaryPattern}
           </Text>
 
-          {/* Radar Chart */}
-          <RadarChart dimensions={profile.dimensions} dark={dark} />
+          <RadarChart dimensions={profile.dimensions} dark={false} />
 
-          {/* Description */}
-          <Text style={[styles.description, { color: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)' }]}>
+          <Text style={styles.description}>
             {profile.description}
           </Text>
 
-          {/* Insight note */}
-          <View style={[styles.insightCard, {
-            backgroundColor: dark ? 'rgba(139,92,246,0.1)' : 'rgba(139,92,246,0.06)',
-            borderColor: dark ? 'rgba(139,92,246,0.2)' : 'rgba(139,92,246,0.12)',
-          }]}>
+          <View style={styles.insightCard}>
             <Ionicons name="sparkles" size={18} color="#8b5cf6" style={{ marginRight: 10, marginTop: 2 }} />
-            <Text style={[styles.insightText, { color: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)' }]}>
+            <Text style={styles.insightText}>
               {t('onboarding.personality.evolution')}
             </Text>
           </View>
@@ -406,7 +397,7 @@ const styles = StyleSheet.create({
   closeButton: {
     position: 'absolute',
     top: 60,
-    left: 20,
+    left: screenPadding,
     zIndex: 10,
     padding: 4,
   },
@@ -414,8 +405,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: isTablet ? 48 : 28,
-    paddingTop: isTablet ? 112 : 104,
+    paddingHorizontal: screenPadding,
+    paddingTop: 104,
     paddingBottom: 136,
   },
   subtitle: {
@@ -424,6 +415,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: sf(22),
     marginBottom: 12,
+    color: ONBOARDING_TEXT.secondary,
   },
   primaryPattern: {
     fontSize: sf(32),
@@ -431,6 +423,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: -1.28,
     marginBottom: isTablet ? 16 : 8,
+    color: ONBOARDING_TEXT.primary,
   },
   description: {
     fontSize: sf(16),
@@ -438,6 +431,7 @@ const styles = StyleSheet.create({
     textAlign: 'left',
     marginTop: 8,
     marginBottom: 40,
+    color: ONBOARDING_TEXT.body,
   },
   insightCard: {
     flexDirection: 'row',
@@ -446,14 +440,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'flex-start',
     marginBottom: 16,
+    backgroundColor: 'rgba(139,92,246,0.06)',
+    borderColor: 'rgba(139,92,246,0.12)',
   },
   insightText: {
     flex: 1,
     fontSize: sf(14),
     lineHeight: sf(20),
+    color: ONBOARDING_TEXT.body,
   },
   ctaContainer: {
-    paddingHorizontal: 24,
+    paddingHorizontal: screenPadding,
     paddingTop: 18,
   },
   backArrowCircle: {

@@ -6,8 +6,31 @@ import * as SplashScreen from 'expo-splash-screen';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-// CRITICAL: Suppress all warnings BEFORE any other imports to prevent yellow warning bar
-LogBox.ignoreAllLogs();
+// Suppress known noisy warnings only — keep errors visible in LogBox + Metro.
+LogBox.ignoreLogs([
+  'Non-serializable values were found in the navigation state',
+  'Sending `onAnimatedValueUpdate` with no listeners registered',
+]);
+
+if (__DEV__) {
+  const RNErrorUtils = (global as typeof globalThis & {
+    ErrorUtils?: {
+      getGlobalHandler: () => ((error: Error, isFatal?: boolean) => void) | undefined;
+      setGlobalHandler: (handler: (error: Error, isFatal?: boolean) => void) => void;
+    };
+  }).ErrorUtils;
+
+  if (RNErrorUtils?.getGlobalHandler && RNErrorUtils?.setGlobalHandler) {
+    const defaultHandler = RNErrorUtils.getGlobalHandler();
+    RNErrorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
+      console.error('\n══════════════ APP ERROR ══════════════');
+      console.error(isFatal ? 'FATAL' : 'NON-FATAL', error?.message ?? error);
+      if (error?.stack) console.error(error.stack);
+      console.error('══════════════════════════════════════\n');
+      defaultHandler?.(error, isFatal);
+    });
+  }
+}
 
 import { useEffect, useState, useRef } from 'react';
 import { View, Animated } from 'react-native';
@@ -30,6 +53,7 @@ import OnboardingLottieWarmup from './components/onboarding/OnboardingLottieWarm
 import AppImageWarmup from './components/shared/AppImageWarmup';
 import OnboardingHeroWarmup from './components/onboarding/OnboardingHeroWarmup';
 import OrbOverlayProvider from './components/companion/OrbOverlayProvider';
+import OrbPreloader from './components/companion/OrbPreloader';
 import { getRevenueCatApiKey, isRevenueCatEnabled } from './utils/revenueCatConfig';
 import { preloadAllAppAssets } from './utils/preloadAssets';
 
@@ -166,6 +190,7 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <OrbOverlayProvider>
+      <OrbPreloader />
       {splashAssetsReady ? (
         <>
           <OnboardingLottieWarmup />

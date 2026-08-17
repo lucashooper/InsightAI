@@ -4,21 +4,17 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import { OrbSlot } from '../../components/companion/OrbOverlayProvider';
-import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
-import { isTablet, sf, iPadWideContentStyle } from '../../utils/responsive';
+import { isTablet, sf, si, ss, screenPadding, iPadContentStyle, iPadWideContentStyle } from '../../utils/responsive';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { ONBOARDING_TEXT } from '../../constants/onboardingTheme';
 
-const ORB_SIZE = 110;
+const ORB_SIZE = isTablet ? 130 : 110;
 
 export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
-  const { theme } = useTheme();
   const { userName } = useOnboarding();
   const { t } = useLanguage();
-  const dark = isDarkTheme(theme.name);
-  const neutralAccent = dark ? 'rgba(255,255,255,0.94)' : '#1a1a2e';
-  const neutralSubtle = dark ? 'rgba(255,255,255,0.72)' : 'rgba(0,0,0,0.6)';
   const answers = route?.params?.answers || {};
   const returnIndex = route?.params?.returnIndex || 0;
 
@@ -40,7 +36,7 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent={false} />
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={false} />
       <OnboardingAmbientBackground />
 
       <TouchableOpacity
@@ -50,8 +46,8 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
           navigation.goBack();
         }}
       >
-        <View style={[styles.backArrowCircle, { backgroundColor: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-          <Ionicons name="arrow-back" size={20} color={dark ? '#fff' : '#1a1a2e'} />
+        <View style={styles.backArrowCircle}>
+          <Ionicons name="arrow-back" size={si(20)} color={ONBOARDING_TEXT.primary} />
         </View>
       </TouchableOpacity>
 
@@ -60,55 +56,45 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
           <OrbSlot size={ORB_SIZE} personality="default" />
         </View>
 
-        <Text style={[styles.title, { color: dark ? '#fff' : '#1a1a2e' }]}>
-          {t('onboarding.quizIntro.title')}
-        </Text>
+        <Text style={styles.title}>{t('onboarding.quizIntro.title')}</Text>
 
-        <Text style={[styles.description, { color: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)' }]}>
-          {t('onboarding.quizIntro.description')}
-        </Text>
+        <Text style={styles.description}>{t('onboarding.quizIntro.description')}</Text>
 
         <View style={styles.cardsContainer}>
-          <View style={[styles.card, { backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)', borderColor: dark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.4)' }]}>
+          <View style={styles.card}>
             <View style={styles.cardContent}>
-              <Text style={[styles.cardNumber, { color: neutralAccent }]}>10</Text>
-              <Text style={[styles.cardLabel, { color: neutralSubtle }]}>{t('onboarding.quizIntro.questions')}</Text>
+              <Text style={styles.cardNumber}>10</Text>
+              <Text style={styles.cardLabel}>{t('onboarding.quizIntro.questions')}</Text>
             </View>
           </View>
 
-          <View style={[styles.card, { backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)', borderColor: dark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.4)' }]}>
+          <View style={styles.card}>
             <View style={styles.cardContent}>
-              <Text style={[styles.cardNumber, { color: neutralAccent }]}>2</Text>
-              <Text style={[styles.cardLabel, { color: neutralSubtle }]}>{t('onboarding.quizIntro.minutes')}</Text>
+              <Text style={styles.cardNumber}>2</Text>
+              <Text style={styles.cardLabel}>{t('onboarding.quizIntro.minutes')}</Text>
             </View>
           </View>
 
-          <View style={[styles.card, { backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)', borderColor: dark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.4)' }]}>
+          <View style={styles.card}>
             <View style={styles.cardContent}>
-              <Ionicons name="lock-closed" size={28} color={neutralAccent} />
-              <Text style={[styles.cardLabel, { color: neutralSubtle }]}>{t('onboarding.quizIntro.private')}</Text>
+              <Ionicons name="lock-closed" size={si(28)} color={ONBOARDING_TEXT.primary} />
+              <Text style={styles.cardLabel}>{t('onboarding.quizIntro.private')}</Text>
             </View>
           </View>
         </View>
 
         <View style={styles.benefitsContainer}>
           <View style={styles.benefitRow}>
-            <Ionicons name="checkmark-circle" size={20} color={neutralAccent} />
-            <Text style={[styles.benefitText, { color: dark ? 'rgba(255,255,255,0.82)' : 'rgba(0,0,0,0.72)' }]}>
-              {t('onboarding.quizIntro.accurateInsights')}
-            </Text>
+            <Ionicons name="checkmark-circle" size={si(20)} color={ONBOARDING_TEXT.primary} />
+            <Text style={styles.benefitText}>{t('onboarding.quizIntro.accurateInsights')}</Text>
           </View>
           <View style={styles.benefitRow}>
-            <Ionicons name="checkmark-circle" size={20} color={neutralAccent} />
-            <Text style={[styles.benefitText, { color: dark ? 'rgba(255,255,255,0.82)' : 'rgba(0,0,0,0.72)' }]}>
-              {t('onboarding.quizIntro.recommendations')}
-            </Text>
+            <Ionicons name="checkmark-circle" size={si(20)} color={ONBOARDING_TEXT.primary} />
+            <Text style={styles.benefitText}>{t('onboarding.quizIntro.recommendations')}</Text>
           </View>
           <View style={styles.benefitRow}>
-            <Ionicons name="checkmark-circle" size={20} color={neutralAccent} />
-            <Text style={[styles.benefitText, { color: dark ? 'rgba(255,255,255,0.82)' : 'rgba(0,0,0,0.72)' }]}>
-              {t('onboarding.quizIntro.patternTracking')}
-            </Text>
+            <Ionicons name="checkmark-circle" size={si(20)} color={ONBOARDING_TEXT.primary} />
+            <Text style={styles.benefitText}>{t('onboarding.quizIntro.patternTracking')}</Text>
           </View>
         </View>
       </View>
@@ -129,9 +115,7 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
           activeOpacity={0.7}
           onPress={handleSkip}
         >
-          <Text style={[styles.skipText, { color: dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)' }]}>
-            {t('onboarding.skipForNow')}
-          </Text>
+          <Text style={styles.skipText}>{t('onboarding.skipForNow')}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -145,30 +129,33 @@ const styles = StyleSheet.create({
   backButton: {
     position: 'absolute',
     top: isTablet ? 60 : 50,
-    left: 24,
+    left: screenPadding,
     zIndex: 10,
     padding: 4,
   },
   backArrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: isTablet ? 44 : 36,
+    height: isTablet ? 44 : 36,
+    borderRadius: isTablet ? 22 : 18,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderWidth: 1,
+    borderColor: 'rgba(200, 185, 255, 0.35)',
   },
   content: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
-    paddingHorizontal: 24,
+    paddingHorizontal: screenPadding,
     paddingTop: isTablet ? 88 : 68,
     ...iPadWideContentStyle,
   },
   heroWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 24,
-    marginBottom: 28,
+    marginTop: ss(24),
+    marginBottom: ss(28),
     width: ORB_SIZE,
     height: ORB_SIZE,
   },
@@ -179,6 +166,7 @@ const styles = StyleSheet.create({
     marginTop: 0,
     marginBottom: 14,
     letterSpacing: -1.28,
+    color: ONBOARDING_TEXT.primary,
   },
   description: {
     fontSize: sf(16),
@@ -186,6 +174,7 @@ const styles = StyleSheet.create({
     lineHeight: sf(24),
     marginBottom: isTablet ? 28 : 20,
     paddingHorizontal: 8,
+    color: ONBOARDING_TEXT.body,
   },
   cardsContainer: {
     flexDirection: 'row',
@@ -204,6 +193,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderColor: 'rgba(255,255,255,0.4)',
   },
   cardContent: {
     alignItems: 'center',
@@ -216,12 +207,14 @@ const styles = StyleSheet.create({
     fontSize: sf(28),
     fontWeight: '800',
     lineHeight: sf(32),
+    color: ONBOARDING_TEXT.primary,
   },
   cardLabel: {
     fontSize: sf(13),
     fontWeight: '500',
     lineHeight: sf(16),
     textAlign: 'center',
+    color: ONBOARDING_TEXT.body,
   },
   benefitsContainer: {
     alignItems: 'flex-start',
@@ -238,12 +231,14 @@ const styles = StyleSheet.create({
   benefitText: {
     fontSize: sf(15),
     fontWeight: '500',
+    color: ONBOARDING_TEXT.body,
   },
   buttonsContainer: {
-    paddingHorizontal: 24,
+    paddingHorizontal: screenPadding,
     paddingTop: 8,
     paddingBottom: isTablet ? 60 : 50,
     width: '100%',
+    ...iPadContentStyle,
   },
   continueButton: {
     width: '100%',
@@ -275,5 +270,6 @@ const styles = StyleSheet.create({
   skipText: {
     fontSize: sf(15),
     fontWeight: '500',
+    color: ONBOARDING_TEXT.secondary,
   },
 });

@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { SvgXml } from 'react-native-svg';
 import { ONBOARDING_SURFACE, ONBOARDING_TEXT, ONBOARDING_BRAND } from '../../constants/onboardingTheme';
+import { isTablet, sf, ss, si } from '../../utils/responsive';
 
 const InstagramSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><defs><radialGradient id="ig-grad-1" cx="19.38" cy="42.035" r="44.899"><stop offset="0" stop-color="#fd5"/><stop offset=".328" stop-color="#ff543f"/><stop offset=".348" stop-color="#fc5245"/><stop offset=".504" stop-color="#e64771"/><stop offset=".643" stop-color="#d53e91"/><stop offset=".761" stop-color="#cc39a4"/><stop offset=".841" stop-color="#c837ab"/></radialGradient><radialGradient id="ig-grad-2" cx="42.318" cy="34.137" r="65.039"><stop offset="0" stop-color="#4168c9"/><stop offset=".999" stop-color="#4168c9" stop-opacity="0"/></radialGradient></defs><path fill="url(#ig-grad-1)" d="M34.017 41.99l-20 .019c-4.4.004-8.003-3.592-8.008-7.992l-.019-20c-.004-4.4 3.592-8.003 7.992-8.008l20-.019c4.4-.004 8.003 3.592 8.008 7.992l.019 20c.005 4.401-3.592 8.004-7.992 8.008z"/><path fill="url(#ig-grad-2)" d="M34.017 41.99l-20 .019c-4.4.004-8.003-3.592-8.008-7.992l-.019-20c-.004-4.4 3.592-8.003 7.992-8.008l20-.019c4.4-.004 8.003 3.592 8.008 7.992l.019 20c.005 4.401-3.592 8.004-7.992 8.008z"/><path fill="#fff" d="M24 31c-3.859 0-7-3.14-7-7s3.141-7 7-7 7 3.14 7 7-3.141 7-7 7zm0-11.5c-2.481 0-4.5 2.019-4.5 4.5s2.019 4.5 4.5 4.5 4.5-2.019 4.5-4.5-2.019-4.5-4.5-4.5z"/><circle cx="31.5" cy="16.5" r="1.5" fill="#fff"/><path fill="#fff" d="M30 37H18c-3.859 0-7-3.14-7-7V18c0-3.86 3.141-7 7-7h12c3.859 0 7 3.14 7 7v12c0 3.86-3.141 7-7 7zM18 13.5c-2.481 0-4.5 2.019-4.5 4.5v12c0 2.481 2.019 4.5 4.5 4.5h12c2.481 0 4.5-2.019 4.5-4.5V18c0-2.481-2.019-4.5-4.5-4.5H18z"/></svg>`;
 
@@ -50,11 +51,11 @@ export default function PillOption({ label, icon, selected, onPress }: PillOptio
           {icon || isSocialMedia ? (
             <View style={[styles.iconChip, selected && styles.iconChipSelected]}>
               {isSocialMedia && svgLogo ? (
-                <SvgXml xml={svgLogo} width={20} height={20} />
+                <SvgXml xml={svgLogo} width={si(20)} height={si(20)} />
               ) : icon ? (
                 <Ionicons
                   name={icon as any}
-                  size={18}
+                  size={si(18)}
                   color={selected ? ONBOARDING_BRAND.purple : ONBOARDING_TEXT.secondary}
                 />
               ) : null}
@@ -75,20 +76,20 @@ const styles = StyleSheet.create({
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    borderRadius: 18,
+    paddingVertical: isTablet ? ss(14) : 14,
+    paddingHorizontal: isTablet ? ss(18) : 18,
+    borderRadius: isTablet ? 20 : 18,
   },
   leftGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: isTablet ? 16 : 14,
     flex: 1,
   },
   iconChip: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: isTablet ? ss(36) : 36,
+    height: isTablet ? ss(36) : 36,
+    borderRadius: isTablet ? ss(18) : 18,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: ONBOARDING_SURFACE.iconChip,
@@ -119,7 +120,7 @@ const styles = StyleSheet.create({
   },
   label: {
     flex: 1,
-    fontSize: 16,
+    fontSize: sf(16),
     fontWeight: '500',
     color: ONBOARDING_TEXT.primary,
     letterSpacing: -0.2,

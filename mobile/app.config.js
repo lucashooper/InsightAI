@@ -26,7 +26,7 @@ module.exports = {
   expo: {
     name: "Insight",
     slug: "insight-app",
-    version: "1.13",
+    version: "1.14",
     orientation: "portrait",
     icon: "./assets/InsightAI-New-Logo.png",
     userInterfaceStyle: "dark",
@@ -38,7 +38,7 @@ module.exports = {
     },
     ios: {
       supportsTablet: true,
-      buildNumber: "114",
+      buildNumber: "115",
       infoPlist: {
         NSMicrophoneUsageDescription: "Insight uses the microphone for voice notes.",
         NSSpeechRecognitionUsageDescription: "Insight uses speech recognition to convert your voice into text for taking notes and searching your content.",
@@ -58,7 +58,7 @@ module.exports = {
         resizeMode: "contain",
         backgroundColor: "#0D0B18"
       },
-      versionCode: 114,
+      versionCode: 115,
       permissions: [
         "INTERNET",
         "RECORD_AUDIO",

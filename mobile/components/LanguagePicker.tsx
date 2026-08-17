@@ -19,15 +19,18 @@ import { AppLanguage } from '../i18n/types';
 type Props = {
   /** Compact pill for onboarding top-right */
   variant?: 'pill' | 'row';
+  /** Larger touch target for iPad onboarding */
+  size?: 'default' | 'large';
 };
 
-export default function LanguagePicker({ variant = 'pill' }: Props) {
+export default function LanguagePicker({ variant = 'pill', size = 'default' }: Props) {
   const { language, setLanguage, t } = useLanguage();
   const { theme } = useTheme();
   const [open, setOpen] = useState(false);
   const insets = useSafeAreaInsets();
   const dark = isDarkTheme(theme.name);
   const current = LANGUAGES.find((l) => l.code === language) ?? LANGUAGES[0];
+  const pillLarge = size === 'large';
 
   const handleSelect = async (code: AppLanguage) => {
     await setLanguage(code);
@@ -38,13 +41,13 @@ export default function LanguagePicker({ variant = 'pill' }: Props) {
     <>
       {variant === 'pill' ? (
         <TouchableOpacity
-          style={styles.pill}
+          style={[styles.pill, pillLarge && styles.pillLarge]}
           onPress={() => setOpen(true)}
           activeOpacity={0.8}
           accessibilityLabel={t('language.selectTitle')}
         >
-          <Text style={styles.pillFlag}>{current.flag}</Text>
-          <Text style={styles.pillCode}>{current.code.toUpperCase()}</Text>
+          <Text style={[styles.pillFlag, pillLarge && styles.pillFlagLarge]}>{current.flag}</Text>
+          <Text style={[styles.pillCode, pillLarge && styles.pillCodeLarge]}>{current.code.toUpperCase()}</Text>
         </TouchableOpacity>
       ) : (
         <TouchableOpacity style={styles.rowTrigger} onPress={() => setOpen(true)} activeOpacity={0.7}>
@@ -136,12 +139,22 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
+  pillLarge: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 22,
+    gap: 8,
+  },
   pillFlag: { fontSize: 16 },
+  pillFlagLarge: { fontSize: 20 },
   pillCode: {
     fontSize: 13,
     fontWeight: '700',
     color: '#1a1a2e',
     letterSpacing: 0.4,
+  },
+  pillCodeLarge: {
+    fontSize: 15,
   },
   rowTrigger: {
     flexDirection: 'row',

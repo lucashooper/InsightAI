@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar } from 'react-native';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
-import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
+import { isTablet, sf, screenPadding, iPadContentStyle } from '../../utils/responsive';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import LanguagePicker from '../../components/LanguagePicker';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -12,9 +12,9 @@ import { ZENO_MAIN_PHONE_FULL } from '../../constants/phoneMockups';
 import { INSIGHT_LOGO } from '../../constants/appAssets';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const PHONE_ASPECT_RATIO = 1350 / 2922;
-const PHONE_IMAGE_WIDTH = isTablet ? SCREEN_WIDTH * 0.74 : SCREEN_WIDTH * 0.84;
+const PHONE_IMAGE_WIDTH = isTablet ? SCREEN_WIDTH * 0.68 : SCREEN_WIDTH * 0.84;
 const PHONE_FULL_HEIGHT = PHONE_IMAGE_WIDTH / PHONE_ASPECT_RATIO;
-const PHONE_VISIBLE_HEIGHT = PHONE_FULL_HEIGHT * 0.68;
+const PHONE_VISIBLE_HEIGHT = PHONE_FULL_HEIGHT * (isTablet ? 0.58 : 0.68);
 
 const phoneMockup = ZENO_MAIN_PHONE_FULL;
 
@@ -27,8 +27,8 @@ export default function ProductRevealScreen({ navigation }: any) {
         <View style={[styles.container, { paddingTop: topInset + (isTablet ? 24 : 12), paddingBottom: bottomInset }]}>
             <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={false} />
             <OnboardingAmbientBackground />
-            <View style={[styles.languageAnchor, { top: topInset + 12 }]}>
-                <LanguagePicker variant="pill" />
+            <View style={[styles.languageAnchor, { top: topInset + (isTablet ? 16 : 12) }]}>
+                <LanguagePicker variant="pill" size="large" />
             </View>
 
             <View style={styles.header}>
@@ -47,6 +47,8 @@ export default function ProductRevealScreen({ navigation }: any) {
                     </Text>
                 </View>
             </View>
+
+        <View style={styles.spacer} />
 
             {/* Phone + CTA anchored together at the bottom (Oasis-style) */}
             <View style={styles.bottomBlock}>
@@ -107,12 +109,12 @@ const styles = StyleSheet.create({
     brandRow: {
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: isTablet ? 10 : 0,
-        marginBottom: isTablet ? 10 : 2,
+        marginTop: isTablet ? 0 : 0,
+        marginBottom: isTablet ? 6 : 2,
     },
     logo: {
-        width: isTablet ? 160 : 130,
-        height: isTablet ? 160 : 130,
+        width: isTablet ? 120 : 130,
+        height: isTablet ? 120 : 130,
         shadowColor: 'rgba(100, 80, 180, 0.2)',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 1,
@@ -130,16 +132,20 @@ const styles = StyleSheet.create({
         letterSpacing: -1.28,
         color: ONBOARDING_TEXT.primary,
     },
-    bottomBlock: {
+    spacer: {
         flex: 1,
-        justifyContent: 'flex-end',
+        minHeight: isTablet ? 20 : 8,
+    },
+    bottomBlock: {
+        flexShrink: 0,
         alignItems: 'center',
-        paddingHorizontal: isTablet ? 48 : 24,
+        paddingHorizontal: screenPadding,
         ...(iPadContentStyle as any),
     },
     phoneWrapper: {
         alignItems: 'center',
         paddingHorizontal: isTablet ? 8 : 0,
+        marginTop: 0,
         marginBottom: 0,
     },
     phoneCrop: {

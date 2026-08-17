@@ -20,17 +20,17 @@ import * as Haptics from 'expo-haptics';
 
 import { getDailyDiscoveryPrompts } from '../../constants/miraReveal';
 
-import OrbView from './OrbView';
+import { OrbSlot } from '../../components/companion/OrbOverlayProvider';
 
 import { PREMIUM, TYPE } from '../../constants/premiumUI';
 
 import { ROAST_PALETTE } from '../../utils/companionTheme';
 
-import { sf } from '../../utils/responsive';
+import { sf, ss, isTablet, iPadContentStyle, screenPadding } from '../../utils/responsive';
 
 import type { AiPersonality } from '../../utils/aiPersonalities';
 
-const ORB_SIZE = 130;
+const ORB_SIZE = isTablet ? 180 : 130;
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -158,7 +158,7 @@ function MiraDiscoveryEmpty({
     <View style={[styles.root, { minHeight: SCREEN_HEIGHT - insets.top - 200 }]}>
       <View style={styles.orbSection}>
         <View style={styles.orb}>
-          <OrbView size={ORB_SIZE} personality={personality} isRoast={isRoast} />
+          <OrbSlot size={ORB_SIZE} personality={personality} isRoast={isRoast} />
         </View>
       </View>
 
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     paddingBottom: PREMIUM.space[2],
   },
   orbSection: {
-    minHeight: SCREEN_HEIGHT * 0.26,
+    minHeight: isTablet ? SCREEN_HEIGHT * 0.22 : SCREEN_HEIGHT * 0.26,
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 8,
@@ -214,10 +214,11 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     paddingTop: 4,
+    ...iPadContentStyle,
   },
   title: {
-    fontSize: sf(22),
-    lineHeight: sf(28),
+    fontSize: sf(isTablet ? 26 : 22),
+    lineHeight: sf(isTablet ? 34 : 28),
     fontWeight: '700',
     letterSpacing: -0.5,
     textAlign: 'center',
@@ -227,12 +228,12 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     ...TYPE.secondary,
-    fontSize: sf(15),
+    fontSize: sf(isTablet ? 17 : 15),
     textAlign: 'center',
-    marginBottom: 36,
-    maxWidth: 300,
+    marginBottom: isTablet ? 40 : 36,
+    maxWidth: isTablet ? 480 : 300,
     paddingHorizontal: 28,
-    lineHeight: sf(22),
+    lineHeight: sf(isTablet ? 26 : 22),
   },
   subtitleSpacer: {
     height: 36,
@@ -253,11 +254,13 @@ const styles = StyleSheet.create({
   },
   list: {
     width: '100%',
-    gap: 12,
+    gap: isTablet ? 16 : 12,
     paddingTop: 4,
+    maxWidth: isTablet ? 560 : undefined,
+    alignSelf: 'center',
   },
   pillWrap: {
-    marginHorizontal: 20,
+    marginHorizontal: isTablet ? screenPadding : 20,
   },
   pillBlur: {
     borderRadius: 20,
@@ -268,9 +271,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
-    paddingVertical: 18,
-    paddingHorizontal: 18,
-    borderRadius: 18,
+    paddingVertical: isTablet ? ss(18) : 18,
+    paddingHorizontal: isTablet ? ss(20) : 18,
+    borderRadius: isTablet ? 20 : 18,
     borderWidth: 1,
   },
   promptPillRoast: {
@@ -287,7 +290,7 @@ const styles = StyleSheet.create({
   },
   pillText: {
     flex: 1,
-    fontSize: 15,
+    fontSize: sf(isTablet ? 17 : 15),
     fontWeight: '600',
     letterSpacing: -0.2,
   },

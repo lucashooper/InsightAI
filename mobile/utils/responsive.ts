@@ -39,10 +39,22 @@ export function si(size: number): number {
 }
 
 /**
- * Max-width container style for iPad to prevent content from stretching too wide.
+ * Screen horizontal padding — matches Analytics tab on iPad (40px).
+ */
+export const screenPadding = isTablet ? 40 : 24;
+
+/**
+ * App screens: full width with standard side padding only (no max-width column).
+ */
+export const iPadAppContentStyle = isTablet ? {
+  width: '100%' as const,
+} : {};
+
+/**
+ * Max-width container for onboarding / narrow form content.
  */
 export const iPadContentStyle = isTablet ? {
-  maxWidth: 820,
+  maxWidth: 720,
   alignSelf: 'center' as const,
   width: '100%' as const,
 } : {};
@@ -51,12 +63,7 @@ export const iPadContentStyle = isTablet ? {
  * Wider max-width container for screens that can use more space.
  */
 export const iPadWideContentStyle = isTablet ? {
-  maxWidth: 920,
+  maxWidth: 860,
   alignSelf: 'center' as const,
   width: '100%' as const,
 } : {};
-
-/**
- * Screen horizontal padding
- */
-export const screenPadding = isTablet ? 48 : 24;

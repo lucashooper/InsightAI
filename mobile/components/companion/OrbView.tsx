@@ -6,7 +6,7 @@ import {
   buildShaderOrbHtml,
   getShaderOrbConfigForPersonality,
 } from '../../utils/shaderOrbHtml';
-import { markOrbWarmed } from '../../utils/orbWarmupRegistry';
+import { isOrbWarmed, markOrbWarmed } from '../../utils/orbWarmupRegistry';
 
 type Props = {
   size: number;
@@ -96,8 +96,13 @@ export default function OrbView({
   useEffect(() => {
     readyRef.current = false;
     loadStarted.current = false;
+    if (!warmup && !poolMode && isOrbWarmed(size, personalityKey, isRoast)) {
+      readyRef.current = true;
+      fadeAnim.setValue(1);
+      return;
+    }
     fadeAnim.setValue(0);
-  }, [html, fadeAnim]);
+  }, [html, fadeAnim, warmup, poolMode, size, personalityKey, isRoast]);
 
   useEffect(() => {
     if (!warmup && !poolMode) {

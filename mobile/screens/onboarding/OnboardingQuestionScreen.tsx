@@ -13,7 +13,7 @@ import PillOption from '../../components/onboarding/PillOption';
 import AnimatedSlider from '../../components/onboarding/AnimatedSlider';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
-import { isTablet, sf, ss, iPadContentStyle, iPadWideContentStyle } from '../../utils/responsive';
+import { isTablet, sf, ss, si, screenPadding, iPadContentStyle, iPadWideContentStyle } from '../../utils/responsive';
 import { analytics } from '../../services/analytics';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ONBOARDING_SURFACE, ONBOARDING_TEXT, ONBOARDING_CTA } from '../../constants/onboardingTheme';
@@ -30,6 +30,16 @@ interface Option {
     label: string;
     value: string;
     icon?: string;
+}
+
+const NONE_OF_ABOVE_OPTION: Option = {
+    label: 'onboarding.questions.noneOfAbove',
+    value: 'none_of_above',
+    icon: 'remove-circle-outline',
+};
+
+function withNoneOfAbove(options: Option[]): Option[] {
+    return [...options, NONE_OF_ABOVE_OPTION];
 }
 
 interface Feature {
@@ -140,139 +150,139 @@ const STEPS: Step[] = [
         id: 'stressResponse',
         type: 'question',
         title: 'onboarding.questions.stressResponse.title',
-        options: [
+        options: withNoneOfAbove([
             { label: 'onboarding.questions.stressResponse.ruminate', value: 'ruminate', icon: 'sync-outline' },
             { label: 'onboarding.questions.stressResponse.selfBlame', value: 'self_blame', icon: 'person-outline' },
             { label: 'onboarding.questions.stressResponse.fixate', value: 'fixate', icon: 'create-outline' },
             { label: 'onboarding.questions.stressResponse.stepBack', value: 'step_back', icon: 'leaf-outline' },
-        ]
+        ])
     },
     {
         id: 'selfTalk',
         type: 'question',
         title: 'onboarding.questions.selfTalk.title',
-        options: [
+        options: withNoneOfAbove([
             { label: 'onboarding.questions.selfTalk.critical', value: 'critical', icon: 'thunderstorm-outline' },
             { label: 'onboarding.questions.selfTalk.mixed', value: 'mixed', icon: 'cloud-outline' },
             { label: 'onboarding.questions.selfTalk.supportive', value: 'supportive', icon: 'heart-outline' },
-        ]
+        ])
     },
     {
         id: 'copingStyle',
         type: 'question',
         title: 'onboarding.questions.coping.title',
-        options: [
+        options: withNoneOfAbove([
             { label: 'onboarding.questions.coping.social', value: 'social', icon: 'chatbubbles-outline' },
             { label: 'onboarding.questions.coping.physical', value: 'physical', icon: 'fitness-outline' },
             { label: 'onboarding.questions.coping.expressive', value: 'expressive', icon: 'brush-outline' },
             { label: 'onboarding.questions.coping.solitude', value: 'solitude', icon: 'moon-outline' },
-        ]
+        ])
     },
     {
         id: 'changeResponse',
         type: 'question',
         title: 'onboarding.questions.change.title',
-        options: [
+        options: withNoneOfAbove([
             { label: 'onboarding.questions.change.resistant', value: 'resistant', icon: 'shield-outline' },
             { label: 'onboarding.questions.change.anxious', value: 'anxious_persevere', icon: 'trending-up-outline' },
             { label: 'onboarding.questions.change.embrace', value: 'embrace', icon: 'rocket-outline' },
             { label: 'onboarding.questions.change.support', value: 'support_seeking', icon: 'people-outline' },
-        ]
+        ])
     },
     {
         id: 'motivationDriver',
         type: 'question',
         title: 'onboarding.questions.motivation.title',
-        options: [
+        options: withNoneOfAbove([
             { label: 'onboarding.questions.motivation.fear', value: 'fear_based', icon: 'alert-circle-outline' },
             { label: 'onboarding.questions.motivation.external', value: 'external', icon: 'trophy-outline' },
             { label: 'onboarding.questions.motivation.values', value: 'values_driven', icon: 'compass-outline' },
             { label: 'onboarding.questions.motivation.passion', value: 'passion', icon: 'flame-outline' },
-        ]
+        ])
     },
     // Optional deeper questions start here
     {
         id: 'relationshipPatterns',
         type: 'question',
         title: 'onboarding.questions.relationships.title',
-        options: [
+        options: withNoneOfAbove([
             { label: 'onboarding.questions.relationships.anxious', value: 'anxious_attachment', icon: 'heart-dislike-outline' },
             { label: 'onboarding.questions.relationships.avoidant', value: 'avoidant', icon: 'shield-outline' },
             { label: 'onboarding.questions.relationships.fearful', value: 'fearful_avoidant', icon: 'swap-horizontal-outline' },
             { label: 'onboarding.questions.relationships.secure', value: 'secure', icon: 'heart-circle-outline' },
-        ],
+        ]),
         skippable: true,
     },
     {
         id: 'conflictStyle',
         type: 'question',
         title: 'onboarding.questions.conflict.title',
-        options: [
+        options: withNoneOfAbove([
             { label: 'onboarding.questions.conflict.avoid', value: 'avoid', icon: 'close-circle-outline' },
             { label: 'onboarding.questions.conflict.accommodate', value: 'accommodate', icon: 'happy-outline' },
             { label: 'onboarding.questions.conflict.compete', value: 'compete', icon: 'medal-outline' },
             { label: 'onboarding.questions.conflict.collaborate', value: 'collaborate', icon: 'chatbubbles-outline' },
-        ],
+        ]),
         skippable: true,
     },
     {
         id: 'restStyle',
         type: 'question',
         title: 'onboarding.questions.rest.title',
-        options: [
+        options: withNoneOfAbove([
             { label: 'onboarding.questions.rest.guilt', value: 'guilt_rest', icon: 'time-outline' },
             { label: 'onboarding.questions.rest.solitude', value: 'solitude_rest', icon: 'moon-outline' },
             { label: 'onboarding.questions.rest.social', value: 'social_rest', icon: 'people-outline' },
             { label: 'onboarding.questions.rest.active', value: 'active_rest', icon: 'leaf-outline' },
-        ],
+        ]),
         skippable: true,
     },
     {
         id: 'identitySource',
         type: 'question',
         title: 'onboarding.questions.identitySource.title',
-        options: [
+        options: withNoneOfAbove([
             { label: 'onboarding.questions.identitySource.achievement', value: 'achievement', icon: 'trophy-outline' },
             { label: 'onboarding.questions.identitySource.relationships', value: 'relationships', icon: 'people-outline' },
             { label: 'onboarding.questions.identitySource.values', value: 'values', icon: 'book-outline' },
             { label: 'onboarding.questions.identitySource.expression', value: 'expression', icon: 'brush-outline' },
-        ],
+        ]),
         skippable: true,
     },
     {
         id: 'failureResponse',
         type: 'question',
         title: 'onboarding.questions.failure.title',
-        options: [
+        options: withNoneOfAbove([
             { label: 'onboarding.questions.failure.shame', value: 'shame', icon: 'sad-outline' },
             { label: 'onboarding.questions.failure.defensive', value: 'defensive', icon: 'shield-checkmark-outline' },
             { label: 'onboarding.questions.failure.analytical', value: 'analytical', icon: 'search-outline' },
             { label: 'onboarding.questions.failure.growth', value: 'growth', icon: 'trending-up-outline' },
-        ],
+        ]),
         skippable: true,
     },
     {
         id: 'emotionalAwareness',
         type: 'question',
         title: 'onboarding.questions.awareness.title',
-        options: [
+        options: withNoneOfAbove([
             { label: 'onboarding.questions.awareness.low', value: 'low_awareness', icon: 'eye-off-outline' },
             { label: 'onboarding.questions.awareness.moderate', value: 'moderate_awareness', icon: 'help-circle-outline' },
             { label: 'onboarding.questions.awareness.high', value: 'high_awareness', icon: 'eye-outline' },
             { label: 'onboarding.questions.awareness.veryHigh', value: 'very_high_awareness', icon: 'glasses-outline' },
-        ],
+        ]),
         skippable: true,
     },
     {
         id: 'decisionMaking',
         type: 'question',
         title: 'onboarding.questions.decisions.title',
-        options: [
+        options: withNoneOfAbove([
             { label: 'onboarding.questions.decisions.overthink', value: 'overthink', icon: 'infinite-outline' },
             { label: 'onboarding.questions.decisions.intuitive', value: 'intuitive', icon: 'flash-outline' },
             { label: 'onboarding.questions.decisions.external', value: 'external_validation', icon: 'people-circle-outline' },
             { label: 'onboarding.questions.decisions.systematic', value: 'systematic', icon: 'list-outline' },
-        ],
+        ]),
         skippable: true,
     },
     // 7. Identity
@@ -558,7 +568,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                     <View style={styles.backArrowCircle}>
                         <Ionicons
                             name="arrow-back"
-                            size={20}
+                            size={si(20)}
                             color="#1a1a2e"
                         />
                     </View>
@@ -740,25 +750,11 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                             <TextInput
                                 style={[
                                     styles.nameInput,
-                                    isDarkTheme(theme.name) && {
-                                        backgroundColor: nameInputFocused || textInputValue.trim()
-                                          ? 'rgba(168, 85, 247, 0.22)'
-                                          : Platform.OS === 'android'
-                                            ? '#14141A'
-                                            : ONBOARDING_SURFACE.fill,
-                                        borderColor: nameInputFocused || textInputValue.trim()
-                                          ? '#A855F7'
-                                          : ONBOARDING_SURFACE.border,
-                                        color: '#ffffff',
-                                        shadowColor: nameInputFocused || textInputValue.trim() ? '#A855F7' : 'transparent',
-                                        shadowOpacity: nameInputFocused || textInputValue.trim() ? 0.35 : 0,
-                                        shadowRadius: 10,
-                                        shadowOffset: { width: 0, height: 0 },
-                                    },
+                                    (nameInputFocused || textInputValue.trim()) && styles.nameInputFocused,
                                 ]}
                                 underlineColorAndroid="transparent"
                                 placeholder={t('onboarding.questions.name.placeholder')}
-                                placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.5)' : '#6b7280'}
+                                placeholderTextColor="#6b7280"
                                 value={textInputValue}
                                 onChangeText={setTextInputValue}
                                 onFocus={() => setNameInputFocused(true)}
@@ -850,8 +846,8 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                     {currentStep.type === 'slider' && (
                         <View style={styles.sliderContent}>
                             <View style={styles.sliderValueRow}>
-                                <Text style={[styles.sliderValueText, isDarkTheme(theme.name) && styles.sliderValueTextDark]}>{Math.round(wellbeingValue)}/10</Text>
-                                <Text style={[styles.sliderHintText, isDarkTheme(theme.name) && { color: 'rgba(255, 255, 255, 0.3)' }]}>{t('onboarding.questions.wellbeing.typicalDay')}</Text>
+                                <Text style={styles.sliderValueText}>{Math.round(wellbeingValue)}/10</Text>
+                                <Text style={styles.sliderHintText}>{t('onboarding.questions.wellbeing.typicalDay')}</Text>
                             </View>
 
                             <View style={styles.sliderTrackContainer}>
@@ -947,18 +943,18 @@ const styles = StyleSheet.create({
     topRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 24,
-        paddingTop: 60,
-        paddingBottom: 20,
+        paddingHorizontal: screenPadding,
+        paddingTop: isTablet ? 64 : 60,
+        paddingBottom: isTablet ? 24 : 20,
         gap: 12,
     },
     backArrow: {
         padding: 4,
     },
     backArrowCircle: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: isTablet ? 44 : 36,
+        height: isTablet ? 44 : 36,
+        borderRadius: isTablet ? 22 : 18,
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: 'rgba(255, 255, 255, 0.75)',
@@ -1064,8 +1060,8 @@ const styles = StyleSheet.create({
         marginBottom: 32,
     },
     cambridgeLogo: {
-        width: 300,
-        height: 72,
+        width: isTablet ? 380 : 300,
+        height: isTablet ? 90 : 72,
         alignSelf: 'center',
         marginTop: 8,
         marginBottom: 16,
@@ -1430,44 +1426,44 @@ const styles = StyleSheet.create({
         opacity: 1, // Controlled by Animated.View wrapper
     },
     researchTitle: {
-        fontSize: isTablet ? 40 : 32,
+        fontSize: sf(isTablet ? 40 : 32),
         fontWeight: '600',
         color: ONBOARDING_TEXT.primary,
         textAlign: 'left',
         width: '100%',
         letterSpacing: -1.28,
-        lineHeight: isTablet ? 48 : 40,
+        lineHeight: sf(isTablet ? 48 : 40),
         marginBottom: isTablet ? 8 : 4,
     },
     onboardingTitle: {
-        fontSize: 28,
+        fontSize: sf(28),
         fontWeight: '700',
         color: ONBOARDING_TEXT.primary,
         textAlign: 'left',
-        lineHeight: 36,
+        lineHeight: sf(36),
         letterSpacing: -1.12,
-        marginBottom: 20,
+        marginBottom: isTablet ? 24 : 20,
     },
     onboardingSubtitle: {
-        fontSize: 16,
+        fontSize: sf(16),
         color: ONBOARDING_TEXT.secondary,
-        lineHeight: 24,
-        marginBottom: 20,
+        lineHeight: sf(24),
+        marginBottom: isTablet ? 28 : 20,
     },
     researchLottieCompact: {
-        width: isTablet ? 200 : 160,
-        height: isTablet ? 200 : 160,
-        marginBottom: isTablet ? 16 : 10,
+        width: isTablet ? 280 : 160,
+        height: isTablet ? 280 : 160,
+        marginBottom: isTablet ? 20 : 10,
     },
     researchFact: {
-        fontSize: isTablet ? 22 : 19,
+        fontSize: sf(isTablet ? 24 : 19),
         fontWeight: '500',
         color: ONBOARDING_TEXT.primary,
         textAlign: 'center',
-        lineHeight: isTablet ? 34 : 30,
+        lineHeight: sf(isTablet ? 36 : 30),
         letterSpacing: -0.35,
-        maxWidth: 340,
-        marginBottom: isTablet ? 28 : 22,
+        maxWidth: isTablet ? 520 : 340,
+        marginBottom: isTablet ? 32 : 22,
     },
     cambridgeLogoWrap: {
         backgroundColor: 'rgba(255, 255, 255, 0.75)',
@@ -1485,12 +1481,12 @@ const styles = StyleSheet.create({
         width: 260,
     },
     researchCitation: {
-        fontSize: 13,
+        fontSize: sf(13),
         color: '#6b6b8a',
         textAlign: 'center',
-        lineHeight: 19,
+        lineHeight: sf(19),
         letterSpacing: 0.1,
-        maxWidth: 320,
+        maxWidth: isTablet ? 480 : 320,
         fontStyle: 'italic',
     },
     logoGrid: {
@@ -1642,5 +1638,13 @@ const styles = StyleSheet.create({
         color: '#1a1a2e',
         fontWeight: '500',
         marginBottom: 24,
+    },
+    nameInputFocused: {
+        backgroundColor: 'rgba(168, 85, 247, 0.12)',
+        borderColor: '#A855F7',
+        shadowColor: '#A855F7',
+        shadowOpacity: 0.25,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 0 },
     },
 });

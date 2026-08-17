@@ -1,18 +1,16 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
-
-const { width } = Dimensions.get('window');
+import { ONBOARDING_TEXT } from '../../constants/onboardingTheme';
+import { sf, screenPadding } from '../../utils/responsive';
 
 type Props = {
     navigation: NativeStackNavigationProp<any>;
@@ -21,21 +19,14 @@ type Props = {
 export default function AnalysisCompleteScreen({ navigation }: Props) {
     const { userName } = useOnboarding();
     const { user } = useAuth();
-    const { theme } = useTheme();
     const { t } = useLanguage();
     const bottomInset = useOnboardingBottomInset();
     const checkmarkScale = useRef(new Animated.Value(0)).current;
     const contentFade = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
-        console.log('[AnalysisComplete] Screen loaded');
-        console.log('[AnalysisComplete] userName from context:', userName);
-        console.log('[AnalysisComplete] user from auth:', user?.id);
-        
-        // Save username to profile when screen loads
         saveUsernameToProfile();
-        
-        // Simple fade and scale animation
+
         Animated.sequence([
             Animated.spring(checkmarkScale, {
                 toValue: 1,
@@ -53,48 +44,25 @@ export default function AnalysisCompleteScreen({ navigation }: Props) {
     }, []);
 
     const saveUsernameToProfile = async () => {
-        if (!user) {
-            console.log('[AnalysisComplete] No user found, skipping profile save');
-            return;
-        }
-        
-        if (!userName) {
-            console.log('[AnalysisComplete] No username found in context, skipping profile save');
-            return;
-        }
-        
+        if (!user || !userName) return;
+
         try {
-            console.log('[AnalysisComplete] Saving username to profile...');
-            console.log('[AnalysisComplete] User ID:', user.id);
-            console.log('[AnalysisComplete] Username:', userName);
-            console.log('[AnalysisComplete] User email:', user.email);
-            
-            // First, try to check if profile exists
-            const { data: existingProfile, error: checkError } = await supabase
+            const { data: existingProfile } = await supabase
                 .from('user_profiles')
                 .select('id, username')
                 .eq('user_id', user.id)
                 .single();
-            
-            console.log('[AnalysisComplete] Existing profile check:', existingProfile);
-            console.log('[AnalysisComplete] Check error:', checkError);
-            
+
             if (existingProfile) {
-                // Profile exists, update it
-                console.log('[AnalysisComplete] Profile exists, updating username...');
                 const { error: updateError } = await supabase
                     .from('user_profiles')
                     .update({ username: userName })
                     .eq('user_id', user.id);
-                
+
                 if (updateError) {
-                    console.error('[AnalysisComplete] ❌ Error updating profile:', updateError);
-                } else {
-                    console.log('[AnalysisComplete] ✅ Username updated successfully');
+                    console.error('[AnalysisComplete] Error updating profile:', updateError);
                 }
             } else {
-                // Profile doesn't exist, create it
-                console.log('[AnalysisComplete] Profile does not exist, creating new profile...');
                 const { error: insertError } = await supabase
                     .from('user_profiles')
                     .insert({
@@ -102,16 +70,13 @@ export default function AnalysisCompleteScreen({ navigation }: Props) {
                         username: userName,
                         email: user.email,
                     });
-                
+
                 if (insertError) {
-                    console.error('[AnalysisComplete] ❌ Error creating profile:', insertError);
-                } else {
-                    console.log('[AnalysisComplete] ✅ Profile created successfully');
+                    console.error('[AnalysisComplete] Error creating profile:', insertError);
                 }
             }
-            
         } catch (err) {
-            console.error('[AnalysisComplete] ❌ Exception in saveUsernameToProfile:', err);
+            console.error('[AnalysisComplete] Exception in saveUsernameToProfile:', err);
         }
     };
 
@@ -123,18 +88,18 @@ export default function AnalysisCompleteScreen({ navigation }: Props) {
     return (
         <View style={styles.container}>
             <OnboardingAmbientBackground />
-            
+
             <View style={styles.content}>
-                {/* Check + Headline Unit */}
                 <Animated.View style={[styles.centerUnit, { opacity: contentFade }]}>
                     <Animated.View style={[styles.checkIcon, { transform: [{ scale: checkmarkScale }] }]}>
                         <Ionicons name="checkmark-outline" size={90} color="#a855f7" />
                     </Animated.View>
-                    <Text style={[styles.headline, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>{userName ? t('onboarding.analysisComplete.namedTitle', { name: userName }) : t('onboarding.analysisComplete.title')}</Text>
-                    <Text style={[styles.reassurance, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.6)' : '#6b7280' }]}>{t('onboarding.analysisComplete.reassurance')}</Text>
+                    <Text style={styles.headline}>
+                        {userName ? t('onboarding.analysisComplete.namedTitle', { name: userName }) : t('onboarding.analysisComplete.title')}
+                    </Text>
+                    <Text style={styles.reassurance}>{t('onboarding.analysisComplete.reassurance')}</Text>
                 </Animated.View>
 
-                {/* CTA Button */}
                 <Animated.View style={[styles.ctaContainer, { opacity: contentFade, paddingBottom: bottomInset }]}>
                     <TouchableOpacity
                         style={styles.ctaButton}
@@ -158,7 +123,7 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
-        paddingHorizontal: 32,
+        paddingHorizontal: screenPadding,
         paddingTop: 80,
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -176,21 +141,20 @@ const styles = StyleSheet.create({
         shadowRadius: 16,
     },
     headline: {
-        fontSize: 32,
+        fontSize: sf(32),
         fontWeight: '600',
-        color: '#1a1a2e',
+        color: ONBOARDING_TEXT.primary,
         textAlign: 'center',
         marginBottom: 20,
         letterSpacing: -1.28,
-        lineHeight: 40,
+        lineHeight: sf(40),
     },
     reassurance: {
-        fontSize: 19,
-        color: '#6b7280',
+        fontSize: sf(19),
+        color: ONBOARDING_TEXT.secondary,
         textAlign: 'center',
         fontWeight: '400',
-        letterSpacing: 0,
-        lineHeight: 28,
+        lineHeight: sf(28),
     },
     ctaContainer: {
         width: '100%',
@@ -212,7 +176,7 @@ const styles = StyleSheet.create({
         borderRadius: 28,
     },
     ctaText: {
-        fontSize: 17,
+        fontSize: sf(17),
         fontWeight: '600',
         color: '#fff',
         letterSpacing: 0.2,

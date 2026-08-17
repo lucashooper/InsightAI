@@ -2,9 +2,11 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
+import OnboardingButton from '../../components/onboarding/OnboardingButton';
+import { ONBOARDING_LIGHT, ONBOARDING_TEXT } from '../../constants/onboardingTheme';
+import { ONBOARDING_LAYOUT } from '../../constants/onboardingLayout';
 import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
 
 const WINS = [
@@ -17,9 +19,7 @@ const WINS = [
 ];
 
 export default function ValuePropWinsScreen({ navigation }: any) {
-  const { theme } = useTheme();
   const { t } = useLanguage();
-  const dark = isDarkTheme(theme.name);
 
   const pillAnims = useRef(WINS.map(() => ({
     opacity: new Animated.Value(0),
@@ -46,26 +46,20 @@ export default function ValuePropWinsScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} />
+      <StatusBar barStyle="dark-content" />
       <OnboardingAmbientBackground />
 
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <View style={[styles.backArrowCircle, { backgroundColor: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-          <Ionicons name="arrow-back" size={20} color={dark ? '#fff' : '#1a1a2e'} />
+        <View style={[styles.backArrowCircle, { backgroundColor: ONBOARDING_LIGHT.backCircleBg, borderColor: ONBOARDING_LIGHT.backCircleBorder, borderWidth: 1 }]}>
+          <Ionicons name="arrow-back" size={ONBOARDING_LAYOUT.backIconSize} color={ONBOARDING_LIGHT.backIcon} />
         </View>
       </TouchableOpacity>
 
       <View style={styles.content}>
         <View>
-          <Text style={[styles.eyebrow, { color: dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}> 
-            {t('onboarding.wins.eyebrow')}
-          </Text>
-          <Text style={[styles.title, { color: dark ? '#ffffff' : '#1a1a2e' }]}> 
-            {t('onboarding.wins.title')}
-          </Text>
-          <Text style={[styles.subtitle, { color: dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }]}> 
-            {t('onboarding.wins.subtitle')}
-          </Text>
+          <Text style={styles.eyebrow}>{t('onboarding.wins.eyebrow')}</Text>
+          <Text style={styles.title}>{t('onboarding.wins.title')}</Text>
+          <Text style={styles.subtitle}>{t('onboarding.wins.subtitle')}</Text>
         </View>
 
         <View style={styles.pillsContainer}>
@@ -75,17 +69,13 @@ export default function ValuePropWinsScreen({ navigation }: any) {
               style={[
                 styles.pill,
                 {
-                  backgroundColor: dark ? 'rgba(52,211,153,0.08)' : 'rgba(52,211,153,0.10)',
-                  borderColor: dark ? 'rgba(52,211,153,0.18)' : 'rgba(52,211,153,0.25)',
                   opacity: pillAnims[i].opacity,
                   transform: [{ translateY: pillAnims[i].translateY }],
                 },
               ]}
             >
               <Text style={styles.pillEmoji}>{item.emoji}</Text>
-              <Text style={[styles.pillText, { color: dark ? 'rgba(255,255,255,0.85)' : '#1a1a2e' }]}>
-                {t(`onboarding.wins.${item.textKey}`)}
-              </Text>
+              <Text style={styles.pillText}>{t(`onboarding.wins.${item.textKey}`)}</Text>
             </Animated.View>
           ))}
         </View>
@@ -100,18 +90,13 @@ export default function ValuePropWinsScreen({ navigation }: any) {
           }),
         }],
       }, iPadContentStyle as any]}>
-        <TouchableOpacity
-          style={styles.button}
-          activeOpacity={0.9}
+        <OnboardingButton
+          label={t('common.continue')}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             navigation.navigate('NotificationsOnboarding');
           }}
-        >
-          <View style={styles.buttonInner}>
-            <Text style={styles.buttonText}>{t('common.continue')}</Text>
-          </View>
-        </TouchableOpacity>
+        />
       </Animated.View>
     </View>
   );
@@ -123,22 +108,22 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 60,
-    left: 20,
+    top: ONBOARDING_LAYOUT.backTop,
+    left: ONBOARDING_LAYOUT.backLeft,
     zIndex: 10,
     padding: 4,
   },
   backArrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: ONBOARDING_LAYOUT.backSize,
+    height: ONBOARDING_LAYOUT.backSize,
+    borderRadius: ONBOARDING_LAYOUT.backRadius,
     alignItems: 'center',
     justifyContent: 'center',
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: isTablet ? 120 : 110,
+    paddingHorizontal: ONBOARDING_LAYOUT.contentHorizontal,
+    paddingTop: ONBOARDING_LAYOUT.contentTop,
     paddingBottom: 20,
   },
   eyebrow: {
@@ -147,6 +132,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     textTransform: 'uppercase',
     marginBottom: 10,
+    color: ONBOARDING_TEXT.secondary,
   },
   title: {
     fontSize: sf(32),
@@ -154,11 +140,13 @@ const styles = StyleSheet.create({
     letterSpacing: -1.28,
     lineHeight: sf(40),
     marginBottom: 14,
+    color: ONBOARDING_TEXT.primary,
   },
   subtitle: {
     fontSize: sf(16),
     lineHeight: sf(23),
-    marginBottom: isTablet ? 48 : 36,
+    marginBottom: ONBOARDING_LAYOUT.subtitleGap,
+    color: ONBOARDING_TEXT.secondary,
   },
   pillsContainer: {
     gap: 12,
@@ -171,38 +159,19 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     gap: 12,
+    backgroundColor: 'rgba(52,211,153,0.10)',
+    borderColor: 'rgba(52,211,153,0.25)',
   },
   pillEmoji: {
-    fontSize: 22,
+    fontSize: isTablet ? 28 : 22,
   },
   pillText: {
     fontSize: sf(15),
     fontWeight: '500',
+    color: ONBOARDING_TEXT.primary,
   },
   footer: {
-    paddingHorizontal: 24,
-    paddingBottom: isTablet ? 70 : 50,
-  },
-  button: {
-    width: '100%',
-    borderRadius: 28,
-    backgroundColor: '#7B5EA7',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  buttonInner: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 22,
-    borderRadius: 28,
-  },
-  buttonText: {
-    fontSize: sf(17),
-    fontWeight: '600',
-    color: '#fff',
-    letterSpacing: 0.2,
+    paddingHorizontal: ONBOARDING_LAYOUT.contentHorizontal,
+    paddingBottom: ONBOARDING_LAYOUT.footerBottom,
   },
 });

@@ -16,7 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
-import { isTablet, sf } from '../utils/responsive';
+import { isTablet, sf, screenPadding } from '../utils/responsive';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: isTablet ? 48 : 24,
+    paddingHorizontal: screenPadding,
   },
   header: {
     flexDirection: 'row',

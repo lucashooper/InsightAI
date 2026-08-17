@@ -27,6 +27,8 @@ type Props = {
   large?: boolean;
   /** Full-width CTA (check-in flows) */
   block?: boolean;
+  /** Omit visible border on secondary (reveal cards) */
+  borderless?: boolean;
 };
 
 /**
@@ -41,6 +43,7 @@ export default function PremiumButton({
   disabled,
   large = false,
   block = false,
+  borderless = false,
 }: Props) {
   const { theme } = useTheme();
   const dark = isDarkTheme(theme.name);
@@ -71,6 +74,7 @@ export default function PremiumButton({
         block && styles.block,
         isPrimary && styles.primary,
         isSecondary && (dark ? styles.secondaryDark : styles.secondaryLight),
+        isSecondary && borderless && (dark ? styles.secondaryBorderlessDark : styles.secondaryBorderless),
         isGhost && styles.ghost,
         disabled && styles.disabled,
         style,
@@ -128,6 +132,14 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(122, 86, 160, 0.18)',
     backgroundColor: 'rgba(255,255,255,0.85)',
+  },
+  secondaryBorderless: {
+    borderWidth: 0,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+  },
+  secondaryBorderlessDark: {
+    borderWidth: 0,
+    backgroundColor: 'rgba(255,255,255,0.08)',
   },
   ghost: {
     backgroundColor: 'transparent',

@@ -11,6 +11,7 @@ import OnboardingAmbientBackground from '../../components/onboarding/OnboardingA
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ONBOARDING_SURFACE, ONBOARDING_TEXT } from '../../constants/onboardingTheme';
+import { ONBOARDING_LAYOUT } from '../../constants/onboardingLayout';
 import { androidOnboardingSurface } from '../../constants/androidGlass';
 import { useOnboardingBottomInset, useOnboardingTopInset } from '../../utils/onboardingInsets';
 
@@ -134,7 +135,7 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
         </TouchableOpacity>
       )}
 
-      <View style={[styles.content, { paddingTop: topInset + (isTablet ? 88 : 72) }]}>
+      <View style={[styles.content, iPadContentStyle as any, { paddingTop: topInset + (isTablet ? 96 : 72) }]}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.title, { color: ONBOARDING_TEXT.primary }]}>
@@ -208,23 +209,23 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 60,
-    left: 20,
+    top: ONBOARDING_LAYOUT.backTop,
+    left: ONBOARDING_LAYOUT.backLeft,
     zIndex: 10,
     padding: 4,
   },
   backArrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: ONBOARDING_LAYOUT.backSize,
+    height: ONBOARDING_LAYOUT.backSize,
+    borderRadius: ONBOARDING_LAYOUT.backRadius,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(0,0,0,0.05)',
   },
   content: {
     flex: 1,
-    paddingHorizontal: isTablet ? 80 : 24,
-    paddingTop: isTablet ? 140 : 120,
+    paddingHorizontal: ONBOARDING_LAYOUT.contentHorizontal,
+    width: '100%',
   },
   header: {
     marginBottom: isTablet ? 56 : 48,

@@ -30,7 +30,10 @@ function buildPool(): PoolItem[] {
     { id: '36-default', size: 36, personality: 'default' },
     { id: '110-default', size: 110, personality: 'default' },
     { id: '130-default', size: 130, personality: 'default' },
+    { id: '140-default', size: 140, personality: 'default' },
+    { id: '180-default', size: 180, personality: 'default' },
     { id: '220-default', size: 220, personality: 'default' },
+    { id: '260-default', size: 260, personality: 'default' },
     { id: '40-balanced', size: 40, personality: 'balanced' },
     ...CHAT_PERSONALITIES.map((personality) => ({
       id: `48-${personality}`,

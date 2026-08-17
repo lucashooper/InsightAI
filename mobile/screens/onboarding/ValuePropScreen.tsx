@@ -4,17 +4,18 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import CachedImage from '../../components/shared/CachedImage';
+import OnboardingButton from '../../components/onboarding/OnboardingButton';
 import { INSIGHT_LOGO } from '../../constants/appAssets';
-import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
-import { useLanguage } from '../../contexts/LanguageContext';
-import { sf } from '../../utils/responsive';
+import { ONBOARDING_LIGHT, ONBOARDING_TEXT } from '../../constants/onboardingTheme';
+import { ONBOARDING_LAYOUT } from '../../constants/onboardingLayout';
+import { sf, ss, si, iPadContentStyle } from '../../utils/responsive';
 import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const noisyImage = require('../../public/noisy-image.webp');
 const clarityImage = require('../../public/clarity-image.webp');
 
 export default function ValuePropScreen({ navigation }: any) {
-  const { theme } = useTheme();
   const { t } = useLanguage();
   const noisyAnim = useRef(new Animated.Value(0)).current;
   const arrowAnim = useRef(new Animated.Value(0)).current;
@@ -37,25 +38,22 @@ export default function ValuePropScreen({ navigation }: any) {
     <View style={styles.container}>
       <OnboardingAmbientBackground />
 
-      {/* Back Button - Circular style matching other onboarding pages */}
       {navigation.canGoBack() && (
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <View style={[styles.backArrowCircle, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-            <Ionicons name="arrow-back" size={20} color={isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e'} />
+          <View style={[styles.backArrowCircle, { backgroundColor: ONBOARDING_LIGHT.backCircleBg, borderColor: ONBOARDING_LIGHT.backCircleBorder, borderWidth: 1 }]}>
+            <Ionicons name="arrow-back" size={ONBOARDING_LAYOUT.backIconSize} color={ONBOARDING_LIGHT.backIcon} />
           </View>
         </TouchableOpacity>
       )}
 
-      {/* Logo */}
       <CachedImage source={INSIGHT_LOGO} style={styles.logo} contentFit="contain" recyclingKey="value-prop-logo" />
 
-      <View style={styles.content}>
+      <View style={[styles.content, iPadContentStyle as any]}>
         <View style={styles.mainContent}>
-          {/* Headline */}
-          <Text style={[styles.headline, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>
+          <Text style={[styles.headline, { color: ONBOARDING_TEXT.primary }]}>
             {t('onboarding.valueProp.title')}
           </Text>
 
@@ -80,13 +78,13 @@ export default function ValuePropScreen({ navigation }: any) {
                   recyclingKey="value-prop-noisy"
                 />
               </View>
-              <Text style={[styles.contrastLabel, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}>{t('onboarding.valueProp.mentalNoise')}</Text>
+              <Text style={[styles.contrastLabel, { color: ONBOARDING_TEXT.secondary }]}>{t('onboarding.valueProp.mentalNoise')}</Text>
             </Animated.View>
 
             <Animated.Text style={[
               styles.arrow,
               {
-                color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
+                color: 'rgba(0,0,0,0.2)',
                 opacity: arrowAnim,
                 transform: [{
                   scale: arrowAnim.interpolate({
@@ -117,7 +115,7 @@ export default function ValuePropScreen({ navigation }: any) {
                   recyclingKey="value-prop-clarity"
                 />
               </View>
-              <Text style={[styles.contrastLabel, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)' }]}>{t('onboarding.valueProp.understanding')}</Text>
+              <Text style={[styles.contrastLabel, { color: ONBOARDING_TEXT.secondary }]}>{t('onboarding.valueProp.understanding')}</Text>
             </Animated.View>
           </View>
 
@@ -131,37 +129,37 @@ export default function ValuePropScreen({ navigation }: any) {
               }),
             }],
           }}>
-          <View style={styles.bulletContainer}>
-            <View style={styles.bulletRow}>
-              <Text style={styles.bulletDot}>•</Text>
-              <Text style={[styles.bulletText, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.7)' : '#4a4a4a' }]}> 
-                {t('onboarding.valueProp.captureFeelings')}
-              </Text>
-            </View>
+            <View style={styles.bulletContainer}>
+              <View style={styles.bulletRow}>
+                <Text style={styles.bulletDot}>•</Text>
+                <Text style={[styles.bulletText, { color: ONBOARDING_TEXT.body }]}>
+                  {t('onboarding.valueProp.captureFeelings')}
+                </Text>
+              </View>
 
-            <View style={styles.bulletRow}>
-              <Text style={styles.bulletDot}>•</Text>
-              <Text style={[styles.bulletText, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.7)' : '#4a4a4a' }]}>
-                {t('onboarding.valueProp.understandPatterns')}
-              </Text>
-            </View>
+              <View style={styles.bulletRow}>
+                <Text style={styles.bulletDot}>•</Text>
+                <Text style={[styles.bulletText, { color: ONBOARDING_TEXT.body }]}>
+                  {t('onboarding.valueProp.understandPatterns')}
+                </Text>
+              </View>
 
-            <View style={styles.bulletRow}>
-              <Text style={styles.bulletDot}>•</Text>
-              <Text style={[styles.bulletText, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.7)' : '#4a4a4a' }]}>
-                {t('onboarding.valueProp.gainClarity')}
-              </Text>
+              <View style={styles.bulletRow}>
+                <Text style={styles.bulletDot}>•</Text>
+                <Text style={[styles.bulletText, { color: ONBOARDING_TEXT.body }]}>
+                  {t('onboarding.valueProp.gainClarity')}
+                </Text>
+              </View>
             </View>
-          </View>
           </Animated.View>
         </View>
       </View>
 
-      {/* Continue Button */}
       <Animated.View
         style={[
           styles.footer,
-          { paddingBottom: bottomInset },
+          iPadContentStyle as any,
+          { paddingBottom: Math.max(bottomInset, ONBOARDING_LAYOUT.footerBottom) },
           {
             opacity: footerAnim,
             transform: [{
@@ -173,22 +171,19 @@ export default function ValuePropScreen({ navigation }: any) {
           },
         ]}
       >
-        <TouchableOpacity
-          style={styles.button}
-          activeOpacity={0.9}
+        <OnboardingButton
+          label={t('common.continue')}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             navigation.navigate('ValuePropPatterns');
           }}
-        >
-          <View style={styles.buttonInner}>
-            <Text style={styles.buttonText}>{t('common.continue')}</Text>
-          </View>
-        </TouchableOpacity>
+        />
       </Animated.View>
     </View>
   );
 }
+
+const CONTRAST_IMAGE = ss(125);
 
 const styles = StyleSheet.create({
   container: {
@@ -197,60 +192,61 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 60,
-    left: 20,
+    top: ONBOARDING_LAYOUT.backTop,
+    left: ONBOARDING_LAYOUT.backLeft,
     zIndex: 10,
     padding: 4,
   },
   backArrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: ONBOARDING_LAYOUT.backSize,
+    height: ONBOARDING_LAYOUT.backSize,
+    borderRadius: ONBOARDING_LAYOUT.backRadius,
     alignItems: 'center',
     justifyContent: 'center',
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: ONBOARDING_LAYOUT.logoSize,
+    height: ONBOARDING_LAYOUT.logoSize,
     opacity: 0.9,
     position: 'absolute',
-    top: 60,
+    top: ONBOARDING_LAYOUT.logoTop,
     alignSelf: 'center',
     zIndex: 10,
   },
   content: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 80,
+    paddingHorizontal: ONBOARDING_LAYOUT.contentHorizontal,
+    paddingTop: ONBOARDING_LAYOUT.contentTop,
   },
   mainContent: {
     alignItems: 'center',
+    width: '100%',
   },
   headline: {
     fontSize: sf(32),
     fontWeight: '600',
-    color: '#1a1a2e',
     textAlign: 'center',
     lineHeight: sf(40),
     letterSpacing: -0.6,
-    marginBottom: 44,
+    marginBottom: ss(44),
+    marginTop: ONBOARDING_LAYOUT.logoContentOffset,
   },
   contrastContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 56,
-    gap: 32,
+    marginBottom: ss(56),
+    gap: ss(32),
   },
   contrastColumn: {
     alignItems: 'center',
-    gap: 16,
+    gap: ss(16),
   },
   imageContainer: {
-    width: 125,
-    height: 125,
-    borderRadius: 63,
+    width: CONTRAST_IMAGE,
+    height: CONTRAST_IMAGE,
+    borderRadius: CONTRAST_IMAGE / 2,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.08)',
@@ -264,69 +260,36 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   arrow: {
-    fontSize: 32,
-    color: 'rgba(0, 0, 0, 0.2)',
+    fontSize: sf(32),
     fontWeight: '300',
   },
   contrastLabel: {
-    fontSize: 13,
-    color: 'rgba(0, 0, 0, 0.45)',
+    fontSize: sf(13),
     fontWeight: '500',
     letterSpacing: 0.3,
   },
   bulletContainer: {
-    gap: 16,
+    gap: ss(16),
     alignItems: 'center',
     width: '100%',
   },
   bulletRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: ss(12),
   },
   bulletDot: {
-    fontSize: 24,
+    fontSize: sf(24),
     color: '#8b5cf6',
     fontWeight: '700',
   },
   bulletText: {
-    fontSize: 16,
+    fontSize: sf(16),
     fontWeight: '500',
     letterSpacing: 0.2,
   },
-  bulletTextGrey: {
-    color: '#4a4a4a',
-  },
-  bulletTextPurple: {
-    color: '#7c3aed',
-    fontWeight: '600',
-  },
   footer: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-  },
-  button: {
-    width: '100%',
-    borderRadius: 28,
-    backgroundColor: '#7B5EA7',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  buttonInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 22,
-    borderRadius: 28,
-    gap: 10,
-  },
-  buttonText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#fff',
-    letterSpacing: 0.3,
+    paddingHorizontal: ONBOARDING_LAYOUT.contentHorizontal,
+    paddingTop: ONBOARDING_LAYOUT.footerTop,
   },
 });

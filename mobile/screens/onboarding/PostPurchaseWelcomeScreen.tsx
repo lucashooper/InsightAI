@@ -8,7 +8,8 @@ import CachedImage from '../../components/shared/CachedImage';
 import { INSIGHT_LOGO } from '../../constants/appAssets';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ONBOARDING_SURFACE, ONBOARDING_TEXT } from '../../constants/onboardingTheme';
-import { sf } from '../../utils/responsive';
+import { ONBOARDING_LAYOUT } from '../../constants/onboardingLayout';
+import { isTablet, sf, ss, si, iPadContentStyle } from '../../utils/responsive';
 import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
 
 export default function PostPurchaseWelcomeScreen({ navigation }: any) {
@@ -31,7 +32,7 @@ export default function PostPurchaseWelcomeScreen({ navigation }: any) {
       <OnboardingAmbientBackground />
       <StatusBar barStyle="dark-content" />
 
-      <View style={styles.content}>
+      <View style={[styles.content, iPadContentStyle as any]}>
         <View style={styles.logoContainer}>
           <CachedImage source={INSIGHT_LOGO} style={styles.logo} contentFit="contain" recyclingKey="post-purchase-logo" />
         </View>
@@ -43,7 +44,7 @@ export default function PostPurchaseWelcomeScreen({ navigation }: any) {
           {features.map((f) => (
             <View key={f.text} style={styles.featureRow}>
               <View style={styles.featureIcon}>
-                <Ionicons name={f.icon} size={20} color="#7B5EA7" />
+                <Ionicons name={f.icon} size={si(20)} color="#7B5EA7" />
               </View>
               <Text style={styles.featureText}>{f.text}</Text>
             </View>
@@ -53,7 +54,11 @@ export default function PostPurchaseWelcomeScreen({ navigation }: any) {
         <Text style={styles.infoText}>{t('onboarding.postPurchase.accountInfo')}</Text>
       </View>
 
-      <View style={[styles.footer, { paddingBottom: bottomInset }]}>
+      <View style={[
+        styles.footer,
+        iPadContentStyle as any,
+        { paddingBottom: Math.max(bottomInset, ONBOARDING_LAYOUT.footerBottom) },
+      ]}>
         <OnboardingButton label={t('common.continue')} onPress={handleContinue} />
       </View>
     </View>
@@ -67,14 +72,16 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: ONBOARDING_LAYOUT.contentHorizontal,
+    paddingTop: isTablet ? ONBOARDING_LAYOUT.contentTop : 80,
     justifyContent: 'center',
     alignItems: 'center',
+    width: '100%',
   },
   logoContainer: {
-    width: 140,
-    height: 140,
-    marginBottom: 32,
+    width: ONBOARDING_LAYOUT.logoSize,
+    height: ONBOARDING_LAYOUT.logoSize,
+    marginBottom: isTablet ? ss(40) : 32,
   },
   logo: {
     width: '100%',
@@ -87,32 +94,31 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 10,
     letterSpacing: -1.28,
-    lineHeight: 40,
+    lineHeight: sf(40),
   },
   subtitle: {
     fontSize: sf(18),
     fontWeight: '600',
     color: ONBOARDING_TEXT.secondary,
     textAlign: 'center',
-    marginBottom: 40,
+    marginBottom: isTablet ? ss(48) : 40,
   },
   features: {
-    alignSelf: 'center',
+    alignSelf: 'stretch',
     width: '100%',
-    maxWidth: 320,
-    gap: 16,
-    marginBottom: 32,
+    maxWidth: isTablet ? 520 : 320,
+    gap: isTablet ? 20 : 16,
+    marginBottom: isTablet ? ss(40) : 32,
   },
   featureRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 14,
+    gap: ss(14),
   },
   featureIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: isTablet ? 52 : 44,
+    height: isTablet ? 52 : 44,
+    borderRadius: isTablet ? 16 : 14,
     backgroundColor: ONBOARDING_SURFACE.iconChip,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: ONBOARDING_SURFACE.border,
@@ -123,16 +129,19 @@ const styles = StyleSheet.create({
     fontSize: sf(16),
     fontWeight: '600',
     color: ONBOARDING_TEXT.body,
-    flexShrink: 1,
+    flex: 1,
     textAlign: 'left',
   },
   infoText: {
     fontSize: sf(14),
     color: ONBOARDING_TEXT.secondary,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: sf(22),
+    maxWidth: isTablet ? 480 : 320,
   },
   footer: {
-    paddingHorizontal: 24,
+    paddingHorizontal: ONBOARDING_LAYOUT.contentHorizontal,
+    paddingTop: ONBOARDING_LAYOUT.footerTop,
+    width: '100%',
   },
 });

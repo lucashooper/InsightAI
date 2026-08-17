@@ -5,8 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
-import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
-import { isTablet, sf } from '../../utils/responsive';
+import { ONBOARDING_LIGHT, ONBOARDING_SURFACE, ONBOARDING_TEXT } from '../../constants/onboardingTheme';
+import { isTablet, sf, screenPadding } from '../../utils/responsive';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -42,7 +42,6 @@ const getLocalAIResponse = (
 };
 
 export default function InteractiveShowcaseScreen({ navigation }: Props) {
-    const { theme } = useTheme();
     const { userName } = useOnboarding();
     const { t } = useLanguage();
     const [entryText, setEntryText] = useState('');
@@ -61,11 +60,10 @@ export default function InteractiveShowcaseScreen({ navigation }: Props) {
     const inputRef = useRef<TextInput>(null);
     const aiTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    const dark = isDarkTheme(theme.name);
-    const textColor = dark ? '#ffffff' : '#1a1a2e';
-    const subColor = dark ? 'rgba(255,255,255,0.6)' : '#6b7280';
-    const cardBg = dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.7)';
-    const cardBorder = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+    const textColor = ONBOARDING_TEXT.primary;
+    const subColor = ONBOARDING_TEXT.secondary;
+    const cardBg = ONBOARDING_SURFACE.fill;
+    const cardBorder = ONBOARDING_SURFACE.border;
 
     useEffect(() => {
         analytics.trackOnboardingScreen('interactive_showcase', 'viewed', userName || undefined);
@@ -149,8 +147,8 @@ export default function InteractiveShowcaseScreen({ navigation }: Props) {
                 onPress={() => navigation.canGoBack() && navigation.goBack()}
                 activeOpacity={0.7}
             >
-                <View style={[styles.backArrowCircle, { backgroundColor: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-                    <Ionicons name="arrow-back" size={20} color={dark ? '#ffffff' : '#1a1a2e'} />
+                <View style={[styles.backArrowCircle, { backgroundColor: ONBOARDING_LIGHT.backCircleBg, borderColor: ONBOARDING_LIGHT.backCircleBorder, borderWidth: 1 }]}>
+                    <Ionicons name="arrow-back" size={20} color={ONBOARDING_LIGHT.backIcon} />
                 </View>
             </TouchableOpacity>
 
@@ -181,7 +179,7 @@ export default function InteractiveShowcaseScreen({ navigation }: Props) {
                                 ref={inputRef}
                                 style={[styles.journalInput, { color: textColor }]}
                                 placeholder={t('onboarding.showcase.placeholder')}
-                                placeholderTextColor={dark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'}
+                                placeholderTextColor="rgba(0,0,0,0.3)"
                                 multiline
                                 value={entryText}
                                 onChangeText={setEntryText}
@@ -219,15 +217,15 @@ export default function InteractiveShowcaseScreen({ navigation }: Props) {
                                         activeOpacity={0.7}
                                     >
                                         <LinearGradient
-                                            colors={dark ? ['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.04)'] : ['rgba(255,255,255,0.95)', 'rgba(255,255,255,0.85)']}
+                                            colors={['rgba(255,255,255,0.95)', 'rgba(255,255,255,0.85)']}
                                             start={{ x: 0, y: 0 }}
                                             end={{ x: 0, y: 1 }}
-                                            style={[styles.promptChip, { borderColor: dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)' }]}
+                                            style={[styles.promptChip, { borderColor: 'rgba(0,0,0,0.08)' }]}
                                         >
-                                            <Text style={[styles.promptChipText, { color: dark ? 'rgba(255,255,255,0.85)' : '#374151' }]} numberOfLines={1}>
+                                            <Text style={[styles.promptChipText, { color: '#374151' }]} numberOfLines={1}>
                                                 {prompt}
                                             </Text>
-                                            <Ionicons name="chevron-forward" size={16} color={dark ? 'rgba(255,255,255,0.4)' : '#9ca3af'} />
+                                            <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
                                         </LinearGradient>
                                     </TouchableOpacity>
                                     );
@@ -252,7 +250,7 @@ export default function InteractiveShowcaseScreen({ navigation }: Props) {
                                     </LinearGradient>
                                     <Text style={[styles.aiLabel, { color: subColor }]}>{t('onboarding.showcase.aiLabel')}</Text>
                                 </View>
-                                <View style={[styles.aiBubble, { backgroundColor: dark ? 'rgba(139,92,246,0.12)' : 'rgba(139,92,246,0.08)', borderColor: dark ? 'rgba(139,92,246,0.2)' : 'rgba(139,92,246,0.15)' }]}>
+                                <View style={[styles.aiBubble, { backgroundColor: 'rgba(139,92,246,0.08)', borderColor: 'rgba(139,92,246,0.15)' }]}>
                                     <Text style={[styles.aiText, { color: textColor }]}>
                                         {displayedAI}
                                     </Text>
@@ -321,7 +319,7 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
-        paddingHorizontal: isTablet ? 48 : 24,
+        paddingHorizontal: screenPadding,
         paddingTop: isTablet ? 110 : 100,
         paddingBottom: 20,
     },
@@ -459,7 +457,7 @@ const styles = StyleSheet.create({
         fontWeight: '400',
     },
     ctaContainer: {
-        paddingHorizontal: isTablet ? 48 : 24,
+        paddingHorizontal: screenPadding,
         paddingBottom: 24,
     },
     ctaButton: {

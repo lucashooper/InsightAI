@@ -4,22 +4,21 @@ import { Ionicons } from '@expo/vector-icons';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import CachedImage from '../../components/shared/CachedImage';
 import { INSIGHT_LOGO } from '../../constants/appAssets';
-import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { isTablet, iPadContentStyle, sf } from '../../utils/responsive';
-import { ONBOARDING_SURFACE } from '../../constants/onboardingTheme';
+import { isTablet, iPadContentStyle, sf, si } from '../../utils/responsive';
+import OnboardingButton from '../../components/onboarding/OnboardingButton';
+import { ONBOARDING_TEXT } from '../../constants/onboardingTheme';
+import { ONBOARDING_LAYOUT } from '../../constants/onboardingLayout';
 
 interface PrivacyOnboardingScreenProps {
   navigation: any;
 }
 
 export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardingScreenProps) {
-  const { theme } = useTheme();
   const { userName } = useOnboarding();
   const { t } = useLanguage();
-  const dark = isDarkTheme(theme.name);
 
   useEffect(() => {
     analytics.trackOnboardingScreen('privacy', 'viewed', userName || undefined);
@@ -45,8 +44,8 @@ export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardin
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <View style={[styles.backArrowCircle, { backgroundColor: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-            <Ionicons name="arrow-back" size={20} color={dark ? '#ffffff' : '#1a1a2e'} />
+          <View style={styles.backArrowCircle}>
+            <Ionicons name="arrow-back" size={si(20)} color={ONBOARDING_TEXT.primary} />
           </View>
         </TouchableOpacity>
       )}
@@ -54,38 +53,25 @@ export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardin
       <CachedImage source={INSIGHT_LOGO} style={styles.logo} contentFit="contain" recyclingKey="privacy-logo" />
 
       <View style={styles.mainContent}>
-        <Text style={[styles.title, { color: dark ? '#ffffff' : '#1a1a2e' }]}>
-          {t('onboarding.privacy.title')}
-        </Text>
+        <Text style={styles.title}>{t('onboarding.privacy.title')}</Text>
 
-        <Text style={[styles.subtitle, { color: dark ? 'rgba(255,255,255,0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>
-          {t('onboarding.privacy.subtitle')}
-        </Text>
+        <Text style={styles.subtitle}>{t('onboarding.privacy.subtitle')}</Text>
 
         <View style={styles.featuresContainer}>
           {features.map((f) => (
-            <View
-              key={f.text}
-              style={[
-                styles.feature,
-                {
-                  backgroundColor: dark ? ONBOARDING_SURFACE.fillElevated : 'rgba(255, 255, 255, 0.5)',
-                  borderColor: dark ? ONBOARDING_SURFACE.border : 'rgba(0, 0, 0, 0.06)',
-                },
-              ]}
-            >
-              <View style={[styles.iconChip, { backgroundColor: dark ? ONBOARDING_SURFACE.iconChip : 'rgba(0,0,0,0.05)' }]}>
-                <Ionicons name={f.icon} size={20} color={dark ? 'rgba(255,255,255,0.8)' : '#1a1a2e'} />
+            <View key={f.text} style={styles.feature}>
+              <View style={styles.iconChip}>
+                <Ionicons name={f.icon} size={si(20)} color={ONBOARDING_TEXT.primary} />
               </View>
-              <Text style={[styles.featureText, { color: dark ? '#ffffff' : '#1a1a2e' }]}>{f.text}</Text>
+              <Text style={styles.featureText}>{f.text}</Text>
             </View>
           ))}
         </View>
       </View>
 
-      <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-        <Text style={styles.continueButtonText}>{t('common.continue')}</Text>
-      </TouchableOpacity>
+      <View style={[styles.footer, iPadContentStyle as any]}>
+        <OnboardingButton label={t('common.continue')} onPress={handleContinue} />
+      </View>
     </View>
   );
 }
@@ -94,38 +80,41 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'transparent',
-    paddingHorizontal: 24,
-    paddingTop: isTablet ? 116 : 140,
+    paddingHorizontal: ONBOARDING_LAYOUT.contentHorizontal,
+    paddingTop: ONBOARDING_LAYOUT.contentTop + 16,
     alignItems: 'center',
-    paddingBottom: 60,
+    paddingBottom: ONBOARDING_LAYOUT.footerBottom,
   },
   backButton: {
     position: 'absolute',
-    top: 60,
-    left: 24,
+    top: ONBOARDING_LAYOUT.backTop,
+    left: ONBOARDING_LAYOUT.backLeft,
     zIndex: 10,
     padding: 4,
   },
   backArrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: ONBOARDING_LAYOUT.backSize,
+    height: ONBOARDING_LAYOUT.backSize,
+    borderRadius: ONBOARDING_LAYOUT.backRadius,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderWidth: 1,
+    borderColor: 'rgba(200, 185, 255, 0.35)',
   },
   logo: {
-    width: isTablet ? 110 : 100,
-    height: isTablet ? 110 : 100,
+    width: ONBOARDING_LAYOUT.logoSize,
+    height: ONBOARDING_LAYOUT.logoSize,
     opacity: 0.9,
     position: 'absolute',
-    top: 60,
+    top: ONBOARDING_LAYOUT.logoTop,
   },
   mainContent: {
     flex: 1,
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: isTablet ? 72 : 88,
+    paddingTop: ONBOARDING_LAYOUT.logoContentOffset,
     ...iPadContentStyle,
   },
   title: {
@@ -135,12 +124,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: -1.28,
     lineHeight: isTablet ? sf(32) + 8 : 40,
+    color: ONBOARDING_TEXT.primary,
   },
   subtitle: {
     fontSize: sf(16),
     marginBottom: isTablet ? 40 : 32,
     textAlign: 'center',
     lineHeight: isTablet ? sf(18) + 8 : 24,
+    color: ONBOARDING_TEXT.body,
   },
   featuresContainer: {
     width: '100%',
@@ -155,37 +146,26 @@ const styles = StyleSheet.create({
     marginBottom: isTablet ? 14 : 12,
     borderWidth: 1,
     minHeight: isTablet ? 76 : undefined,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    borderColor: 'rgba(0, 0, 0, 0.06)',
   },
   iconChip: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: isTablet ? 44 : 40,
+    height: isTablet ? 44 : 40,
+    borderRadius: isTablet ? 22 : 20,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.05)',
   },
   featureText: {
     fontSize: sf(16),
     marginLeft: 14,
     fontWeight: '500',
     flex: 1,
+    color: ONBOARDING_TEXT.primary,
   },
-  continueButton: {
+  footer: {
     width: '100%',
-    maxWidth: isTablet ? 820 : undefined,
-    paddingVertical: 22,
-    backgroundColor: '#7B5EA7',
-    borderRadius: 28,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  continueButtonText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#fff',
-    letterSpacing: 0.2,
+    paddingTop: ONBOARDING_LAYOUT.footerTop,
   },
 });

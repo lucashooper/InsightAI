@@ -15,7 +15,8 @@ import Svg, {
 } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { evidenceIconFor } from '../../utils/miraReveal';
-import { PREMIUM, TYPE } from '../../constants/premiumUI';
+import { PREMIUM } from '../../constants/premiumUI';
+import { isTablet, sf, ss } from '../../utils/responsive';
 
 export type PremiumRevealContent = {
   headline: string;
@@ -170,17 +171,18 @@ const styles = StyleSheet.create({
   wrap: {
     alignSelf: 'stretch',
     width: '100%',
+    maxWidth: isTablet ? 560 : undefined,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.38,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.22,
+    shadowRadius: 16,
+    elevation: 6,
   },
   card: {
     borderRadius: PREMIUM.radius.xl,
     overflow: 'hidden',
     borderWidth: 0,
-    minHeight: 220,
+    minHeight: isTablet ? 240 : 220,
     backgroundColor: PREMIUM.revealMesh.base,
   },
   topSheen: {
@@ -193,10 +195,10 @@ const styles = StyleSheet.create({
     opacity: 0.55,
   },
   inner: {
-    padding: PREMIUM.space[3],
+    padding: isTablet ? ss(PREMIUM.space[3]) : PREMIUM.space[3],
   },
   label: {
-    fontSize: 12,
+    fontSize: sf(12),
     fontWeight: '600',
     letterSpacing: 1.2,
     textTransform: 'uppercase' as const,
@@ -204,10 +206,10 @@ const styles = StyleSheet.create({
     marginBottom: PREMIUM.space[1],
   },
   heading: {
-    fontSize: 26,
+    fontSize: sf(26),
     fontWeight: '700',
     letterSpacing: -0.5,
-    lineHeight: 32,
+    lineHeight: sf(32),
     color: '#FFFFFF',
     marginBottom: PREMIUM.space[2],
   },
@@ -223,20 +225,18 @@ const styles = StyleSheet.create({
     borderRadius: PREMIUM.radius.pill,
     paddingHorizontal: 12,
     paddingVertical: 7,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.18)',
   },
   confidenceText: {
-    fontSize: 13,
+    fontSize: sf(13),
     fontWeight: '600',
     color: 'rgba(255,255,255,0.92)',
   },
   fromLabel: {
-    fontSize: 13,
+    fontSize: sf(13),
     fontWeight: '500',
     color: 'rgba(255,255,255,0.72)',
     letterSpacing: 0.2,
-    lineHeight: 18,
+    lineHeight: sf(18),
   },
   evidenceList: {
     gap: 12,
@@ -247,28 +247,32 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   evidenceIcon: {
-    fontSize: 17,
-    lineHeight: 24,
+    fontSize: sf(17),
+    lineHeight: sf(24),
     marginRight: 8,
     marginTop: 1,
   },
   body: {
-    fontSize: 15,
+    fontSize: sf(15),
     fontWeight: '400',
-    lineHeight: 24,
+    lineHeight: sf(24),
     letterSpacing: 0.2,
     color: 'rgba(255,255,255,0.88)',
     flex: 1,
   },
   strengthBlock: {
-    marginTop: PREMIUM.space[1],
+    marginTop: PREMIUM.space[2],
     marginBottom: PREMIUM.space[2],
+    paddingTop: 2,
   },
   strengthValue: {
-    ...TYPE.cardTitle,
-    color: PREMIUM.text.primary,
+    fontSize: sf(18),
     fontWeight: '600',
-    marginTop: 4,
+    letterSpacing: -0.3,
+    lineHeight: sf(26),
+    color: PREMIUM.text.primary,
+    marginTop: 6,
+    paddingTop: 2,
   },
   showMore: {
     flexDirection: 'row',
@@ -277,16 +281,14 @@ const styles = StyleSheet.create({
     marginTop: PREMIUM.space[1],
   },
   showMoreText: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.78)',
-    fontWeight: '500',
+    fontSize: sf(15),
+    color: 'rgba(255,255,255,0.85)',
+    fontWeight: '600',
     letterSpacing: 0.1,
   },
   recBlock: {
     marginTop: PREMIUM.space[2],
     paddingTop: PREMIUM.space[2],
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.14)',
   },
   actions: {
     flexDirection: 'row',

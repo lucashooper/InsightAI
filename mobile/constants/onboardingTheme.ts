@@ -33,3 +33,18 @@ export const ONBOARDING_BRAND = {
   purple: '#7B5EA7',
   overlay: 'rgba(180, 160, 220, 0.2)',
 } as const;
+
+/** Onboarding always renders on a light gradient — never branch on app dark theme. */
+export const ONBOARDING_ALWAYS_LIGHT = true;
+
+/** Shared light-theme tokens for all onboarding screens. */
+export const ONBOARDING_LIGHT = {
+  statusBar: 'dark-content' as const,
+  backCircleBg: 'rgba(255, 255, 255, 0.75)',
+  backCircleBorder: 'rgba(200, 185, 255, 0.35)',
+  backIcon: ONBOARDING_TEXT.primary,
+  surfaceFill: 'rgba(255, 255, 255, 0.6)',
+  surfaceBorder: 'rgba(255, 255, 255, 0.4)',
+  progressTrack: 'rgba(0,0,0,0.06)',
+  skipText: ONBOARDING_TEXT.secondary,
+};

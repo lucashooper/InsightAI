@@ -20,6 +20,7 @@ import {
 } from '../utils/miraReveal';
 import { decryptEntriesInChunks } from '../utils/decryptBatch';
 import { looksEncryptedContent } from '../utils/encryptionFormat';
+import { GROQ_CHAT_MODEL } from '../constants/groqConfig';
 
 async function fetchDecryptedJournalEntries(userId: string, limit: number) {
   const { data: entries, error } = await supabase
@@ -139,16 +140,22 @@ async function waitForRateLimit() {
 
 // Helper: call the groq-proxy edge function (keeps API key server-side)
 async function callGroqProxy(messages: Array<{role: string; content: string}>, opts?: { temperature?: number; max_tokens?: number; model?: string }): Promise<string> {
-  console.log('[callGroqProxy] Getting session...');
+  const model = opts?.model || GROQ_CHAT_MODEL;
+  const url = `${SUPABASE_FUNCTION_URL}/groq-proxy`;
+
+  console.log('[callGroqProxy] ── request ──');
+  console.log('[callGroqProxy] URL:', url);
+  console.log('[callGroqProxy] Supabase project:', supabaseUrl || '(missing)');
+  console.log('[callGroqProxy] Model:', model);
+  console.log('[callGroqProxy] Messages:', messages.length, 'temperature:', opts?.temperature ?? 0.8, 'max_tokens:', opts?.max_tokens ?? 500);
+
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
-    console.error('[callGroqProxy] No session found');
+    console.error('[callGroqProxy] ❌ No auth session — user must be signed in');
     throw new Error('Not authenticated');
   }
-  console.log('[callGroqProxy] Session found, calling groq-proxy...');
+  console.log('[callGroqProxy] Session OK, user:', session.user.id);
 
-  // Enforce the persisted app language for every AI-generated surface
-  // (chat, follow-ups, protocols, stories, and any future call sites).
   const languageInstruction = getChatLanguageInstruction(getCurrentLanguage());
   const localizedMessages = languageInstruction
     ? messages.map((message, index) =>
@@ -158,34 +165,63 @@ async function callGroqProxy(messages: Array<{role: string; content: string}>, o
       )
     : messages;
 
-  const response = await fetch(`${SUPABASE_FUNCTION_URL}/groq-proxy`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${session.access_token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      messages: localizedMessages,
-      model: opts?.model || 'llama-3.3-70b-versatile',
-      temperature: opts?.temperature ?? 0.8,
-      max_tokens: opts?.max_tokens ?? 500,
-    }),
-  });
-
-  console.log('[callGroqProxy] Response status:', response.status);
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: 'Unknown error' }));
-    console.error('[callGroqProxy] Error response:', err);
-    if (response.status === 402) {
-      throw new Error(err.message || 'Subscription required to use AI features.');
-    }
-    throw new Error(err.error || err.message || `Groq proxy error (${response.status})`);
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messages: localizedMessages,
+        model,
+        temperature: opts?.temperature ?? 0.8,
+        max_tokens: opts?.max_tokens ?? 500,
+      }),
+    });
+  } catch (networkErr: any) {
+    console.error('[callGroqProxy] ❌ Network error:', networkErr?.message || networkErr);
+    throw new Error(`Network error calling groq-proxy: ${networkErr?.message || 'unknown'}`);
   }
 
-  const data = await response.json();
-  console.log('[callGroqProxy] ✅ Success, response length:', data.choices?.[0]?.message?.content?.length);
-  return data.choices?.[0]?.message?.content || '';
+  console.log('[callGroqProxy] HTTP status:', response.status);
+
+  const rawText = await response.text();
+
+  if (!response.ok) {
+    let parsed: Record<string, unknown> = {};
+    try {
+      parsed = JSON.parse(rawText);
+    } catch {
+      parsed = { raw: rawText.slice(0, 500) };
+    }
+    console.error('[callGroqProxy] ❌ ── failure ──');
+    console.error('[callGroqProxy]   HTTP status:', response.status);
+    console.error('[callGroqProxy]   URL:', url);
+    console.error('[callGroqProxy]   Model:', model);
+    console.error('[callGroqProxy]   Response body:', JSON.stringify(parsed, null, 2));
+    if (parsed.detail) {
+      console.error('[callGroqProxy]   Groq detail:', typeof parsed.detail === 'string' ? parsed.detail.slice(0, 800) : parsed.detail);
+    }
+    if (response.status === 402) {
+      throw new Error(String(parsed.message || 'Subscription required to use AI features.'));
+    }
+    const detail = parsed.detail || parsed.error || parsed.message || rawText.slice(0, 200);
+    throw new Error(`Groq proxy error (${response.status}): ${detail}`);
+  }
+
+  let data: any;
+  try {
+    data = JSON.parse(rawText);
+  } catch (parseErr) {
+    console.error('[callGroqProxy] ❌ Invalid JSON response:', rawText.slice(0, 300));
+    throw new Error('Invalid JSON from groq-proxy');
+  }
+
+  const content = data.choices?.[0]?.message?.content || '';
+  console.log('[callGroqProxy] ✅ Success, response length:', content.length);
+  return content;
 }
 
 function getDefaultChatSuggestions(): string[] {
@@ -409,7 +445,9 @@ Entry text: ${content}`;
         console.warn('[mobileAiService] analyzeEntry aborted');
         throw error;
       }
-      console.error('[mobileAiService] analyzeEntry error', error);
+      console.error('[mobileAiService] analyzeEntry failed');
+      console.error('[mobileAiService]   message:', error?.message);
+      console.error('[mobileAiService]   stack:', error?.stack);
       throw error;
     }
   },
@@ -763,7 +801,7 @@ Write in warm, conversational tone with clear structure:
       const response = await callGroqProxy(apiMessages, {
         temperature: getChatTemperature(personality),
         max_tokens: 350,
-        model: 'llama-3.3-70b-versatile',
+        model: GROQ_CHAT_MODEL,
       });
 
       console.log('[mobileAiService] ✅ Chat response received, length:', response?.length);
@@ -820,7 +858,7 @@ Write in warm, conversational tone with clear structure:
       const response = await callGroqProxy(apiMessages, {
         temperature: personality === 'roast' ? 0.7 : 0.55,
         max_tokens: 900,
-        model: 'llama-3.3-70b-versatile',
+        model: GROQ_CHAT_MODEL,
       });
 
       const raw = (response || '').trim();

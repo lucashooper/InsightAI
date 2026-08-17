@@ -6,8 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
-import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
-import { isTablet } from '../../utils/responsive';
+import { ONBOARDING_LIGHT, ONBOARDING_TEXT } from '../../constants/onboardingTheme';
+import { sf, si, isTablet, screenPadding, iPadContentStyle } from '../../utils/responsive';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -30,7 +30,6 @@ const CHECKLIST_ITEMS = [
 ];
 
 export default function AnalyzingScreen({ navigation, route }: Props) {
-    const { theme } = useTheme();
     const { userName } = useOnboarding();
     const { t } = useLanguage();
     const bottomInset = useOnboardingBottomInset();
@@ -112,8 +111,8 @@ export default function AnalyzingScreen({ navigation, route }: Props) {
         outputRange: ['0%', '100%'],
     });
 
-    const textColor = isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e';
-    const subColor = isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : '#6b7280';
+    const textColor = ONBOARDING_TEXT.primary;
+    const subColor = ONBOARDING_TEXT.secondary;
 
     return (
         <View style={styles.container}>
@@ -125,8 +124,8 @@ export default function AnalyzingScreen({ navigation, route }: Props) {
                 onPress={() => navigation.canGoBack() && navigation.goBack()}
                 activeOpacity={0.7}
             >
-                <View style={[styles.backArrowCircle, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-                    <Ionicons name="arrow-back" size={20} color={isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e'} />
+                <View style={[styles.backArrowCircle, { backgroundColor: ONBOARDING_LIGHT.backCircleBg, borderColor: ONBOARDING_LIGHT.backCircleBorder, borderWidth: 1 }]}>
+                    <Ionicons name="arrow-back" size={si(20)} color={ONBOARDING_LIGHT.backIcon} />
                 </View>
             </TouchableOpacity>
             
@@ -143,7 +142,7 @@ export default function AnalyzingScreen({ navigation, route }: Props) {
 
                 {/* Progress Bar */}
                 <View style={styles.progressBarContainer}>
-                    <View style={[styles.progressTrack, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
+                    <View style={[styles.progressTrack, { backgroundColor: ONBOARDING_LIGHT.progressTrack }]}>
                         <Animated.View style={[styles.progressFillWrap, { width: progressWidth }]}>
                             <LinearGradient
                                 colors={['#f87171', '#a855f7', '#6366f1']}
@@ -171,7 +170,7 @@ export default function AnalyzingScreen({ navigation, route }: Props) {
                                     {t(`onboarding.analyzing.${item.labelKey}`)}
                                 </Text>
                                 {itemCompleted && (
-                                    <Ionicons name="checkmark-circle" size={18} color="#a855f7" style={{ marginLeft: 'auto' }} />
+                                    <Ionicons name="checkmark-circle" size={si(22)} color="#a855f7" style={{ marginLeft: 'auto' }} />
                                 )}
                             </View>
                         );
@@ -215,7 +214,7 @@ const styles = StyleSheet.create({
     backButton: {
         position: 'absolute',
         top: isTablet ? 60 : 50,
-        left: 20,
+        left: screenPadding,
         zIndex: 10,
         padding: 4,
     },
@@ -230,26 +229,28 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingHorizontal: 32,
+        paddingHorizontal: screenPadding,
+        ...(isTablet ? iPadContentStyle : {}),
     },
     percentageText: {
-        fontSize: 72,
+        fontSize: sf(72),
         fontWeight: '800',
         letterSpacing: -2,
-        marginBottom: 12,
+        marginBottom: isTablet ? 16 : 12,
     },
     statusSubtitle: {
-        fontSize: 18,
+        fontSize: sf(20),
         fontWeight: '500',
         textAlign: 'center',
-        marginBottom: 40,
+        marginBottom: isTablet ? 36 : 40,
+        lineHeight: sf(28),
     },
     progressBarContainer: {
         width: '100%',
-        marginBottom: 48,
+        marginBottom: isTablet ? 40 : 48,
     },
     progressTrack: {
-        height: 8,
+        height: isTablet ? 10 : 8,
         borderRadius: 999,
         overflow: 'hidden',
     },
@@ -264,24 +265,27 @@ const styles = StyleSheet.create({
     },
     checklist: {
         width: '100%',
-        gap: 16,
+        gap: isTablet ? 20 : 16,
     },
     checklistItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 10,
+        gap: isTablet ? 14 : 10,
+        paddingVertical: isTablet ? 4 : 0,
     },
     checklistDot: {
-        fontSize: 16,
+        fontSize: sf(18),
         fontWeight: '700',
     },
     checklistLabel: {
-        fontSize: 16,
+        fontSize: sf(18),
         fontWeight: '500',
         flex: 1,
+        lineHeight: sf(26),
     },
     ctaContainer: {
-        paddingHorizontal: 24,
+        paddingHorizontal: screenPadding,
+        ...(isTablet ? iPadContentStyle : {}),
     },
     ctaButton: {
         width: '100%',
@@ -300,7 +304,7 @@ const styles = StyleSheet.create({
         borderRadius: 28,
     },
     ctaText: {
-        fontSize: 17,
+        fontSize: sf(17),
         fontWeight: '600',
         color: '#fff',
         letterSpacing: 0.2,

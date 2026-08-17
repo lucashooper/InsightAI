@@ -138,6 +138,7 @@ const en: TranslationTree = {
         subtitle: 'On a scale of 1-10, where do you typically feel?',
         typicalDay: 'TYPICAL DAY',
       },
+      noneOfAbove: 'None of the above',
       stressResponse: {
         title: "When you're under pressure, what do you tend to do?",
         ruminate: 'Ruminate or spiral',

@@ -36,7 +36,7 @@ import DashboardHeaderHero from '../components/dashboard/DashboardHeaderHero';
 import { PREMIUM } from '../constants/premiumUI';
 import EmptyState from '../components/shared/EmptyState';
 import { DashboardSkeleton } from '../components/shared/SkeletonBlock';
-import { isTablet, sf, ss, iPadWideContentStyle } from '../utils/responsive';
+import { isTablet, sf, ss, iPadWideContentStyle, screenPadding } from '../utils/responsive';
 import { yieldToUI } from '../utils/yieldToUI';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { notesSignature, computeDeferredDashboardData, filterNotesForDisplayLocale } from '../utils/computeDashboardData';
@@ -1266,7 +1266,7 @@ export default function DashboardScreen() {
                       >
                         <GlassCard variant="nested" style={styles.patternCard}>
                           <View style={styles.patternTitleRow}>
-                            <Text style={[styles.workingSummary, { color: theme.colors.primaryText, flex: 1, fontSize: sf(16), fontWeight: '700' }]}>
+                            <Text style={[styles.workingSummary, { color: theme.colors.primaryText, flex: 1 }]}>
                               {patternEmojiForSummary(pattern.summary)} {pattern.summary}
                             </Text>
                           </View>
@@ -1897,12 +1897,12 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   dashboardBody: {
-    paddingHorizontal: isTablet ? 40 : PREMIUM.layout.screenPadH,
+    paddingHorizontal: screenPadding,
     paddingTop: PREMIUM.space[1],
     gap: PREMIUM.layout.cardGap,
   },
   dashboardHeaderPad: {
-    paddingHorizontal: isTablet ? 40 : PREMIUM.layout.screenPadH,
+    paddingHorizontal: screenPadding,
     paddingTop: 0,
   },
   loadingContainer: {
@@ -2396,7 +2396,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.22)',
   },
   bubbleMapContainer: {
-    height: 240,
+    height: isTablet ? 360 : 240,
     position: 'relative',
     width: '100%',
   },
@@ -2426,16 +2426,16 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(139, 92, 246, 0.3)',
   },
   bubbleEmotionText: {
-    fontSize: 12,
+    fontSize: sf(12),
     fontWeight: '600',
     color: '#ffffff',
     textAlign: 'center',
     paddingHorizontal: 6,
-    lineHeight: 14,
+    lineHeight: sf(14),
     width: '100%',
   },
   bubblePercentageText: {
-    fontSize: 14,
+    fontSize: sf(14),
     fontWeight: '700',
     color: 'rgba(255, 255, 255, 0.92)',
     marginTop: 1,
@@ -3075,7 +3075,7 @@ const styles = StyleSheet.create({
   },
   // Patterns to Address Section
   patternCard: {
-    padding: 16,
+    padding: isTablet ? 20 : 16,
   },
   patternCardWrap: {
     marginBottom: 12,
@@ -3091,15 +3091,15 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.5)',
   },
   patternSummary: {
-    fontSize: 17,
-    lineHeight: 25,
+    fontSize: sf(19),
+    lineHeight: sf(27),
     fontWeight: '700',
     color: 'rgba(255, 255, 255, 0.85)',
     marginBottom: 6,
   },
   patternDescription: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: sf(17),
+    lineHeight: sf(24),
     marginBottom: 8,
   },
   stickySectionBar: {
@@ -3114,7 +3114,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(139,92,246,0.2)',
   },
   stickySectionText: {
-    fontSize: 15,
+    fontSize: sf(15),
     fontWeight: '700',
     textAlign: 'center',
   },
@@ -3129,7 +3129,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   frequencyText: {
-    fontSize: 12,
+    fontSize: sf(12),
     fontWeight: '700',
     color: '#ef4444',
   },
@@ -3199,7 +3199,7 @@ const styles = StyleSheet.create({
     color: '#f59e0b',
   },
   patternOrigin: {
-    fontSize: 12,
+    fontSize: sf(14),
     fontStyle: 'italic',
     marginTop: 2,
   },
@@ -3232,7 +3232,7 @@ const styles = StyleSheet.create({
     borderColor: '#10b981',
   },
   patternCheckLabel: {
-    fontSize: 13,
+    fontSize: sf(15),
     fontWeight: '500',
   },
   patternMenuBtn: {
@@ -3351,13 +3351,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   workingSummary: {
-    fontSize: 17,
-    lineHeight: 25,
+    fontSize: sf(19),
+    lineHeight: sf(27),
     fontWeight: '700',
     marginBottom: 8,
   },
   workingFrequency: {
-    fontSize: 12,
+    fontSize: sf(12),
     color: 'rgba(255, 255, 255, 0.6)',
     marginBottom: 12,
   },

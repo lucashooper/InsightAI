@@ -3,10 +3,10 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as StoreReview from 'expo-store-review';
-import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
-import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
+import { sf, screenPadding, iPadContentStyle } from '../../utils/responsive';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { ONBOARDING_LIGHT, ONBOARDING_TEXT } from '../../constants/onboardingTheme';
 
 const testimonials = [
   { textKey: 'first' },
@@ -15,22 +15,16 @@ const testimonials = [
 ];
 
 export default function RateUsScreen({ navigation }: any) {
-  const { theme } = useTheme();
   const { t } = useLanguage();
-  const dark = isDarkTheme(theme.name);
 
   const handleContinue = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
-    // Check if StoreReview is available
+
     const isAvailable = await StoreReview.isAvailableAsync();
-    
     if (isAvailable) {
-      // Request in-app review
       await StoreReview.requestReview();
     }
-    
-    // Navigate to next screen regardless
+
     navigation.navigate('PaywallPersonalized');
   };
 
@@ -43,54 +37,40 @@ export default function RateUsScreen({ navigation }: any) {
     <View style={styles.container}>
       <OnboardingAmbientBackground />
 
-      {/* Back Button */}
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
       >
-        <View style={[styles.backArrowCircle, { backgroundColor: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-          <Ionicons name="arrow-back" size={20} color={dark ? '#ffffff' : '#1a1a2e'} />
+        <View style={[styles.backArrowCircle, { backgroundColor: ONBOARDING_LIGHT.backCircleBg, borderColor: ONBOARDING_LIGHT.backCircleBorder, borderWidth: 1 }]}>
+          <Ionicons name="arrow-back" size={20} color={ONBOARDING_LIGHT.backIcon} />
         </View>
       </TouchableOpacity>
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, iPadContentStyle as any]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Title Row with Star */}
         <View style={styles.titleRow}>
           <Text style={styles.starIconSmall}>⭐</Text>
-          <Text style={[styles.title, dark && styles.titleDark]}>{t('onboarding.rateUs.title')}</Text>
+          <Text style={styles.title}>{t('onboarding.rateUs.title')}</Text>
         </View>
-        <Text style={[styles.subtitle, dark && styles.subtitleDark]}>
-          {t('onboarding.rateUs.subtitle')}
-        </Text>
+        <Text style={styles.subtitle}>{t('onboarding.rateUs.subtitle')}</Text>
 
-        {/* Testimonials */}
         <View style={styles.testimonialsContainer}>
           {testimonials.map((testimonial, index) => (
-            <View 
-              key={index}
-              style={[
-                styles.testimonialCard,
-                dark ? styles.testimonialCardDark : styles.testimonialCardLight
-              ]}
-            >
-              {/* Stars */}
+            <View key={index} style={styles.testimonialCard}>
               <View style={styles.starsRow}>
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Text key={star} style={styles.star}>⭐</Text>
                 ))}
               </View>
 
-              {/* Quote */}
-              <Text style={[styles.testimonialText, dark && styles.testimonialTextDark]}>
-                “{t(`onboarding.rateUs.testimonials.${testimonial.textKey}`)}”
+              <Text style={styles.testimonialText}>
+                "{t(`onboarding.rateUs.testimonials.${testimonial.textKey}`)}"
               </Text>
 
-              {/* Author */}
-              <Text style={[styles.testimonialAuthor, dark && styles.testimonialAuthorDark]}>
+              <Text style={styles.testimonialAuthor}>
                 — {t(`onboarding.rateUs.authors.${testimonial.textKey}`)}
               </Text>
             </View>
@@ -98,8 +78,7 @@ export default function RateUsScreen({ navigation }: any) {
         </View>
       </ScrollView>
 
-      {/* Bottom Buttons */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, iPadContentStyle as any]}>
         <TouchableOpacity
           style={styles.continueButton}
           onPress={handleContinue}
@@ -108,11 +87,8 @@ export default function RateUsScreen({ navigation }: any) {
           <Text style={styles.continueButtonText}>{t('common.continue')}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={handleSkip}
-          style={styles.skipButton}
-        >
-          <Text style={[styles.skipText, dark && styles.skipTextDark]}>{t('onboarding.skipForNow')}</Text>
+        <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
+          <Text style={styles.skipText}>{t('onboarding.skipForNow')}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -126,7 +102,7 @@ const styles = StyleSheet.create({
   backButton: {
     position: 'absolute',
     top: 60,
-    left: 20,
+    left: screenPadding,
     zIndex: 10,
     padding: 4,
   },
@@ -141,9 +117,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: isTablet ? 48 : 24,
-    paddingTop: isTablet ? 120 : 100,
-    paddingBottom: isTablet ? 40 : 20,
+    paddingHorizontal: screenPadding,
+    paddingTop: 100,
+    paddingBottom: 20,
     alignItems: 'center',
   },
   titleRow: {
@@ -154,28 +130,22 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   starIconSmall: {
-    fontSize: isTablet ? 28 : 24,
+    fontSize: sf(24),
   },
   title: {
     fontSize: sf(32),
     fontWeight: '600',
-    color: '#1a1a2e',
+    color: ONBOARDING_TEXT.primary,
     letterSpacing: -1.28,
     lineHeight: sf(40),
   },
-  titleDark: {
-    color: '#ffffff',
-  },
   subtitle: {
     fontSize: sf(16),
-    color: 'rgba(0, 0, 0, 0.6)',
+    color: ONBOARDING_TEXT.secondary,
     textAlign: 'center',
-    marginBottom: isTablet ? 48 : 40,
-    paddingHorizontal: isTablet ? 40 : 20,
+    marginBottom: 40,
+    paddingHorizontal: 20,
     lineHeight: sf(22),
-  },
-  subtitleDark: {
-    color: 'rgba(255, 255, 255, 0.7)',
   },
   testimonialsContainer: {
     width: '100%',
@@ -186,14 +156,8 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 16,
     borderWidth: 1,
-  },
-  testimonialCardDark: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  testimonialCardLight: {
-    backgroundColor: 'rgba(0, 0, 0, 0.03)',
-    borderColor: 'rgba(0, 0, 0, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderColor: 'rgba(200, 185, 255, 0.35)',
   },
   starsRow: {
     flexDirection: 'row',
@@ -205,29 +169,22 @@ const styles = StyleSheet.create({
   },
   testimonialText: {
     fontSize: sf(15),
-    color: '#374151',
+    color: ONBOARDING_TEXT.body,
     lineHeight: sf(22),
     fontWeight: '500',
     fontStyle: 'italic',
     marginBottom: 8,
   },
-  testimonialTextDark: {
-    color: '#ffffff',
-  },
   testimonialAuthor: {
     fontSize: sf(14),
-    color: 'rgba(0, 0, 0, 0.5)',
+    color: ONBOARDING_TEXT.secondary,
     fontWeight: '700',
-  },
-  testimonialAuthorDark: {
-    color: 'rgba(255, 255, 255, 0.7)',
   },
   footer: {
     width: '100%',
-    paddingHorizontal: isTablet ? 48 : 24,
-    paddingBottom: isTablet ? 70 : 50,
+    paddingHorizontal: screenPadding,
+    paddingBottom: 50,
     alignItems: 'center',
-    ...(iPadContentStyle as any),
   },
   continueButton: {
     width: '100%',
@@ -249,15 +206,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   skipButton: {
-    marginTop: isTablet ? 28 : 20,
+    marginTop: 20,
     paddingVertical: 8,
   },
   skipText: {
     fontSize: sf(15),
-    color: 'rgba(0, 0, 0, 0.45)',
+    color: ONBOARDING_TEXT.tertiary,
     textAlign: 'center',
-  },
-  skipTextDark: {
-    color: 'rgba(255, 255, 255, 0.6)',
   },
 });
