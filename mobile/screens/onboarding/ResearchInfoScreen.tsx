@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import LottieView from 'lottie-react-native';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
+import OnboardingButton from '../../components/onboarding/OnboardingButton';
+import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
@@ -39,12 +41,7 @@ export default function ResearchInfoScreen({ navigation }: any) {
 
       {/* Back Button - only show if can go back */}
       {navigation.canGoBack() && (
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="chevron-back" size={28} color="#ffffff" />
-        </TouchableOpacity>
+        <OnboardingBackButton onPress={() => navigation.goBack()} />
       )}
 
       <View style={styles.content}>
@@ -94,18 +91,13 @@ export default function ResearchInfoScreen({ navigation }: any) {
 
       {/* Continue Button */}
       <View style={[styles.footer, { paddingBottom: bottomInset }]}>
-        <TouchableOpacity
-          style={styles.button}
-          activeOpacity={0.9}
+        <OnboardingButton
+          label={t('common.continue')}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             navigation.navigate('OnboardingQuestion');
           }}
-        >
-          <View style={styles.buttonGradient}>
-            <Text style={styles.buttonText}>{t('common.continue')}</Text>
-          </View>
-        </TouchableOpacity>
+        />
       </View>
     </View>
   );
@@ -115,16 +107,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'transparent',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 60,
-    left: 24,
-    zIndex: 10,
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   content: {
     flex: 1,
@@ -180,26 +162,5 @@ const styles = StyleSheet.create({
   footer: {
     paddingHorizontal: 28,
     paddingTop: 16,
-  },
-  button: {
-    width: '100%',
-    borderRadius: 28,
-    backgroundColor: '#7B5EA7',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  buttonGradient: {
-    paddingVertical: 22,
-    borderRadius: 28,
-    alignItems: 'center',
-  },
-  buttonText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#fff',
-    letterSpacing: 0.3,
   },
 });

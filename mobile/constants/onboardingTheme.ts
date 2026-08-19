@@ -1,3 +1,5 @@
+import { sf } from '../utils/responsive';
+
 /** Onboarding-only surfaces — light glassmorphic cards. */
 export const ONBOARDING_SURFACE = {
   fill: 'rgba(255, 255, 255, 0.7)',
@@ -32,4 +34,26 @@ export const ONBOARDING_TEXT = {
 export const ONBOARDING_BRAND = {
   purple: '#7B5EA7',
   overlay: 'rgba(180, 160, 220, 0.2)',
+} as const;
+
+/** Shared onboarding typography — use on every onboarding screen. */
+export const ONBOARDING_TYPE = {
+  title: {
+    fontSize: sf(32),
+    fontWeight: '600' as const,
+    letterSpacing: -1.28,
+    lineHeight: sf(40),
+    textAlign: 'center' as const,
+  },
+  subtitle: {
+    fontSize: sf(16),
+    lineHeight: sf(24),
+    fontWeight: '400' as const,
+    textAlign: 'center' as const,
+  },
+  skip: {
+    fontSize: sf(15),
+    fontWeight: '500' as const,
+    textAlign: 'center' as const,
+  },
 } as const;

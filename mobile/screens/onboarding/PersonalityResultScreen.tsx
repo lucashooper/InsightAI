@@ -5,6 +5,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
+import OnboardingButton from '../../components/onboarding/OnboardingButton';
+import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { isTablet, sf } from '../../utils/responsive';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -330,7 +332,7 @@ export default function PersonalityResultScreen({ navigation, route }: any) {
             <OnboardingAmbientBackground />
 
       {/* Close button */}
-      <TouchableOpacity
+      <OnboardingBackButton
         style={styles.closeButton}
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -338,11 +340,7 @@ export default function PersonalityResultScreen({ navigation, route }: any) {
             navigation.goBack();
           }
         }}
-      >
-        <View style={[styles.backArrowCircle, { backgroundColor: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-          <Ionicons name="arrow-back" size={20} color={dark ? '#fff' : '#1a1a2e'} />
-        </View>
-      </TouchableOpacity>
+      />
 
       <ScrollView
         style={styles.scrollView}
@@ -382,18 +380,13 @@ export default function PersonalityResultScreen({ navigation, route }: any) {
 
       {/* Continue button */}
       <View style={[styles.ctaContainer, { paddingBottom: bottomInset }]}>
-        <TouchableOpacity
-          style={styles.ctaButton}
-          activeOpacity={0.9}
+        <OnboardingButton
+          label={t('common.continue')}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             navigation.navigate('OnboardingSummary', { answers });
           }}
-        >
-          <View style={styles.ctaGradient}>
-            <Text style={styles.ctaText}>{t('common.continue')}</Text>
-          </View>
-        </TouchableOpacity>
+        />
       </View>
     </View>
   );
@@ -455,34 +448,5 @@ const styles = StyleSheet.create({
   ctaContainer: {
     paddingHorizontal: 24,
     paddingTop: 18,
-  },
-  backArrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ctaButton: {
-    width: '100%',
-    borderRadius: 28,
-    backgroundColor: '#7B5EA7',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  ctaGradient: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 22,
-    borderRadius: 28,
-  },
-  ctaText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#fff',
-    letterSpacing: 0.2,
   },
 });

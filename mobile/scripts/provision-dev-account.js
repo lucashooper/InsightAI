@@ -69,9 +69,22 @@ async function main() {
 
   console.log('Found user:', user.id, user.email);
 
+  const { data: existingProfile } = await admin
+    .from('user_profiles')
+    .select('username')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  const username =
+    existingProfile?.username
+    || user.user_metadata?.username
+    || user.email?.split('@')[0]
+    || 'dev';
+
   const { error } = await admin.from('user_profiles').upsert(
     {
       user_id: user.id,
+      username,
       email: DEV_EMAIL,
       subscription_tier: 'unlimited',
       updated_at: new Date().toISOString(),

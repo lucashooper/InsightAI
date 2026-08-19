@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
+import OnboardingButton from '../../components/onboarding/OnboardingButton';
+import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { isTablet } from '../../utils/responsive';
 import { analytics } from '../../services/analytics';
@@ -119,16 +121,7 @@ export default function AnalyzingScreen({ navigation, route }: Props) {
         <View style={styles.container}>
             <OnboardingAmbientBackground />
 
-            {/* Back Button */}
-            <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => navigation.canGoBack() && navigation.goBack()}
-                activeOpacity={0.7}
-            >
-                <View style={[styles.backArrowCircle, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-                    <Ionicons name="arrow-back" size={20} color={isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e'} />
-                </View>
-            </TouchableOpacity>
+            <OnboardingBackButton onPress={() => navigation.canGoBack() && navigation.goBack()} />
             
             <View style={styles.content}>
                 {/* Big Percentage */}
@@ -181,27 +174,20 @@ export default function AnalyzingScreen({ navigation, route }: Props) {
 
             {/* Continue button — fades in only after reaching 100% */}
             <Animated.View style={[styles.ctaContainer, { opacity: ctaFade, paddingBottom: bottomInset }]}>
-                <TouchableOpacity
-                    style={styles.ctaButton}
-                    activeOpacity={0.9}
+                <OnboardingButton
+                    label={t('common.continue')}
                     disabled={!isComplete}
                     onPress={() => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                         analytics.trackOnboardingScreen('analyzing', 'completed', userName || undefined);
                         const answers = route?.params?.answers || {};
                         const skipPersonality = route?.params?.skipPersonality || false;
-                        
-                        // Emotional peak: Mira chat with personalized pattern
                         navigation.navigate('InsightIntro', {
                             answers,
                             skipPersonality,
                         });
                     }}
-                >
-                    <View style={styles.ctaGradient}>
-                        <Text style={styles.ctaText}>{t('common.continue')}</Text>
-                    </View>
-                </TouchableOpacity>
+                />
             </Animated.View>
         </View>
     );
@@ -211,20 +197,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: 'transparent',
-    },
-    backButton: {
-        position: 'absolute',
-        top: isTablet ? 60 : 50,
-        left: 20,
-        zIndex: 10,
-        padding: 4,
-    },
-    backArrowCircle: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     content: {
         flex: 1,
@@ -282,27 +254,5 @@ const styles = StyleSheet.create({
     },
     ctaContainer: {
         paddingHorizontal: 24,
-    },
-    ctaButton: {
-        width: '100%',
-        borderRadius: 28,
-        backgroundColor: '#7B5EA7',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
-        elevation: 8,
-    },
-    ctaGradient: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 22,
-        borderRadius: 28,
-    },
-    ctaText: {
-        fontSize: 17,
-        fontWeight: '600',
-        color: '#fff',
-        letterSpacing: 0.2,
     },
 });

@@ -8,6 +8,7 @@ import { Asset } from 'expo-asset';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
+import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
 import ProgressBarNeon from '../../components/onboarding/ProgressBarNeon';
 import PillOption from '../../components/onboarding/PillOption';
 import AnimatedSlider from '../../components/onboarding/AnimatedSlider';
@@ -542,7 +543,8 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
 
             {/* Back Arrow + Progress Bar Row (Left-aligned like CAL AI) */}
             <View style={styles.topRow}>
-                <TouchableOpacity
+                <OnboardingBackButton
+                    inline
                     onPress={() => {
                         if (isTransitioning.current) return;
                         if (currentIndex === 0) {
@@ -553,16 +555,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                             setSelectedOption(null);
                         }
                     }}
-                    style={styles.backArrow}
-                >
-                    <View style={styles.backArrowCircle}>
-                        <Ionicons
-                            name="arrow-back"
-                            size={20}
-                            color="#1a1a2e"
-                        />
-                    </View>
-                </TouchableOpacity>
+                />
                 <View style={styles.progressBarContainer}>
                     <ProgressBarNeon currentStep={currentIndex + 1} totalSteps={totalQuestionSteps} />
                 </View>
@@ -951,19 +944,6 @@ const styles = StyleSheet.create({
         paddingTop: 60,
         paddingBottom: 20,
         gap: 12,
-    },
-    backArrow: {
-        padding: 4,
-    },
-    backArrowCircle: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.75)',
-        borderWidth: 1,
-        borderColor: 'rgba(200, 185, 255, 0.35)',
     },
     progressBarContainer: {
         flex: 1,

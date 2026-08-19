@@ -1,20 +1,18 @@
 import React, { useEffect, useRef } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
-  TouchableOpacity,
   StatusBar,
   Animated,
   ScrollView,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import OnboardingAmbientBackground from './OnboardingAmbientBackground';
-import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
+import OnboardingBackButton from './OnboardingBackButton';
+import OnboardingButton from './OnboardingButton';
+import { isTablet, iPadContentStyle } from '../../utils/responsive';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { ONBOARDING_CTA } from '../../constants/onboardingTheme';
 import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
 
 type Props = {
@@ -62,11 +60,7 @@ export default function PrePaywallLayout({
       <StatusBar barStyle="dark-content" />
 
       {showBack && onBack && (
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <View style={styles.backArrowCircle}>
-            <Ionicons name="arrow-back" size={20} color="#1a1a2e" />
-          </View>
-        </TouchableOpacity>
+        <OnboardingBackButton onPress={onBack} style={styles.backButton} />
       )}
 
       <ScrollView
@@ -89,9 +83,7 @@ export default function PrePaywallLayout({
           ))}
         </View>
 
-        <TouchableOpacity style={styles.ctaButton} onPress={handleContinue} activeOpacity={0.9}>
-          <Text style={styles.ctaText}>{ctaLabel ?? t('common.continue')}</Text>
-        </TouchableOpacity>
+        <OnboardingButton label={ctaLabel ?? t('common.continue')} onPress={handleContinue} />
       </View>
     </View>
   );
@@ -103,21 +95,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   backButton: {
-    position: 'absolute',
     top: isTablet ? 60 : 50,
     left: 24,
-    zIndex: 10,
-    padding: 4,
-  },
-  backArrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.75)',
-    borderWidth: 1,
-    borderColor: 'rgba(200, 185, 255, 0.35)',
   },
   scroll: {
     flex: 1,
@@ -149,23 +128,5 @@ const styles = StyleSheet.create({
   progressDotActive: {
     width: 22,
     backgroundColor: '#7B5EA7',
-  },
-  ctaButton: {
-    backgroundColor: ONBOARDING_CTA.background,
-    borderRadius: ONBOARDING_CTA.borderRadius,
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: 'rgba(123, 94, 167, 0.35)',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-  ctaText: {
-    fontSize: sf(17),
-    fontWeight: '600',
-    color: ONBOARDING_CTA.text,
-    letterSpacing: 0.2,
   },
 });

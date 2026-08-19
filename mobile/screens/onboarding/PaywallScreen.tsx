@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
+import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
 import BreathingLogo from '../../components/onboarding/BreathingLogo';
 import PaywallPlanCard from '../../components/onboarding/PaywallPlanCard';
 import Purchases, { PurchasesOffering, PurchasesPackage, CustomerInfo } from 'react-native-purchases';
@@ -672,19 +673,14 @@ export default function PaywallScreen({ navigation, route }: any) {
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={false} />
       <OnboardingAmbientBackground />
 
-      {/* Back Button - Circular style matching other onboarding pages */}
-      <TouchableOpacity 
+      <OnboardingBackButton
         style={styles.backButton}
         onPress={() => {
           if (navigation.canGoBack()) {
             navigation.goBack();
           }
         }}
-      >
-        <View style={styles.backArrowCircle}>
-          <Ionicons name="arrow-back" size={20} color={PAYWALL_TEXT.primary} />
-        </View>
-      </TouchableOpacity>
+      />
 
       <ScrollView
         style={styles.topContent}
@@ -836,21 +832,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backButton: {
-    position: 'absolute',
     top: isTablet ? 60 : 50,
     left: 24,
-    zIndex: 10,
-    padding: 4,
-  },
-  backArrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: ONBOARDING_SURFACE.fillElevated,
-    borderWidth: 1,
-    borderColor: ONBOARDING_SURFACE.border,
   },
   topContent: {
     flex: 1,

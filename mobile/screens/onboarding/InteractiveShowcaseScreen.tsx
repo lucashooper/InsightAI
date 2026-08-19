@@ -5,6 +5,9 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
+import OnboardingButton from '../../components/onboarding/OnboardingButton';
+import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
+import OnboardingSkipLink from '../../components/onboarding/OnboardingSkipLink';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { isTablet, sf } from '../../utils/responsive';
 import { analytics } from '../../services/analytics';
@@ -143,16 +146,7 @@ export default function InteractiveShowcaseScreen({ navigation }: Props) {
         <View style={styles.container}>
             <OnboardingAmbientBackground />
 
-            {/* Back Button */}
-            <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => navigation.canGoBack() && navigation.goBack()}
-                activeOpacity={0.7}
-            >
-                <View style={[styles.backArrowCircle, { backgroundColor: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-                    <Ionicons name="arrow-back" size={20} color={dark ? '#ffffff' : '#1a1a2e'} />
-                </View>
-            </TouchableOpacity>
+            <OnboardingBackButton onPress={() => navigation.canGoBack() && navigation.goBack()} />
 
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
@@ -265,35 +259,24 @@ export default function InteractiveShowcaseScreen({ navigation }: Props) {
                 {/* CTA — fades in after AI response completes */}
                 {showCTA && (
                     <Animated.View style={[styles.ctaContainer, { opacity: ctaFade }]}>
-                        <TouchableOpacity
-                            style={styles.ctaButton}
-                            activeOpacity={0.9}
+                        <OnboardingButton
+                            label={t('common.continue')}
                             onPress={() => navigation.navigate('PrivacyOnboarding')}
-                        >
-                            <View style={styles.ctaGradient}>
-                                <Text style={styles.ctaText}>{t('common.continue')}</Text>
-                            </View>
-                        </TouchableOpacity>
-                        <TouchableOpacity
+                        />
+                        <OnboardingSkipLink
+                            label={t('onboarding.skipForNow')}
                             onPress={() => navigation.navigate('PrivacyOnboarding')}
-                            style={styles.skipButton}
-                            activeOpacity={0.7}
-                        >
-                            <Text style={[styles.skipText, { color: subColor }]}>{t('onboarding.skipForNow')}</Text>
-                        </TouchableOpacity>
+                        />
                     </Animated.View>
                 )}
 
                 {/* Skip button always visible if user hasn't submitted yet */}
                 {!hasSubmitted && !showCTA && (
                     <View style={styles.ctaContainer}>
-                        <TouchableOpacity
+                        <OnboardingSkipLink
+                            label={t('onboarding.skipForNow')}
                             onPress={() => navigation.navigate('PrivacyOnboarding')}
-                            style={styles.skipButton}
-                            activeOpacity={0.7}
-                        >
-                            <Text style={[styles.skipText, { color: subColor }]}>{t('onboarding.skipForNow')}</Text>
-                        </TouchableOpacity>
+                        />
                     </View>
                 )}
             </KeyboardAvoidingView>
@@ -304,20 +287,6 @@ export default function InteractiveShowcaseScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-    },
-    backButton: {
-        position: 'absolute',
-        top: isTablet ? 60 : 50,
-        left: 20,
-        zIndex: 10,
-        padding: 4,
-    },
-    backArrowCircle: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     content: {
         flex: 1,
@@ -461,35 +430,5 @@ const styles = StyleSheet.create({
     ctaContainer: {
         paddingHorizontal: isTablet ? 48 : 24,
         paddingBottom: 24,
-    },
-    ctaButton: {
-        borderRadius: 28,
-        backgroundColor: '#7B5EA7',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
-        elevation: 8,
-    },
-    ctaGradient: {
-        paddingVertical: 22,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: 28,
-    },
-    ctaText: {
-        fontSize: 17,
-        fontWeight: '700',
-        color: '#ffffff',
-        letterSpacing: 0.3,
-    },
-    skipButton: {
-        paddingVertical: 16,
-        alignItems: 'center',
-        marginTop: 12,
-    },
-    skipText: {
-        fontSize: 15,
-        fontWeight: '600',
     },
 });

@@ -6,8 +6,10 @@ import * as SplashScreen from 'expo-splash-screen';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-// CRITICAL: Suppress all warnings BEFORE any other imports to prevent yellow warning bar
-LogBox.ignoreAllLogs();
+// Show in-app warnings during local development
+if (!__DEV__) {
+  LogBox.ignoreAllLogs();
+}
 
 import { useEffect, useState, useRef } from 'react';
 import { View, Animated } from 'react-native';

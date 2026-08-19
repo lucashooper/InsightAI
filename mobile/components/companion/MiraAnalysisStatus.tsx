@@ -79,7 +79,7 @@ export default function MiraAnalysisStatus({
       accessibilityLiveRegion="polite"
     >
       <Animated.View style={{ opacity: pulse }}>
-        <InsightCompanionMark size={36} personality={personality} isDark={isDark || isRoast} roast={isRoast} />
+        <InsightCompanionMark size={36} personality={personality} isDark={isDark || isRoast} roast={isRoast} inline />
       </Animated.View>
       <Animated.View style={[styles.textWrap, { opacity }]}>
         <Text style={[styles.text, { color: muted }]}>{lines[index]}</Text>

@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import InsightCompanionMark from '../companion/InsightCompanionMark';
-import MiraTypewriterText from '../companion/MiraTypewriterText';
+import MiraStreamingText from '../companion/MiraStreamingText';
 import MiraMessageBubble from '../companion/MiraMessageBubble';
 import { MIRA_COMPANION_NAME } from '../../constants/mira';
 import type { GoDeeperMessage } from '../../services/goDeeperConversationService';
@@ -25,10 +25,12 @@ type Props = {
   replyPlaceholder: string;
   revealingMessageId?: string | null;
   onRevealComplete?: () => void;
+  onStreamProgress?: () => void;
+  /** @deprecated Use onStreamProgress */
   onTypewriterProgress?: () => void;
 };
 
-export default function GoDeeperThread({
+function GoDeeperThread({
   messages,
   replyText,
   onReplyChange,
@@ -38,8 +40,10 @@ export default function GoDeeperThread({
   replyPlaceholder,
   revealingMessageId = null,
   onRevealComplete,
+  onStreamProgress,
   onTypewriterProgress,
 }: Props) {
+  const scrollOnProgress = onStreamProgress ?? onTypewriterProgress;
   if (messages.length === 0 && !isLoading && !revealingMessageId) return null;
 
   const userTextColor = isDark ? 'rgba(255,255,255,0.92)' : '#1a1a1a';
@@ -64,12 +68,13 @@ export default function GoDeeperThread({
               </View>
               <View style={styles.assistantBody}>
                 {isRevealing ? (
-                  <MiraTypewriterText
+                  <MiraStreamingText
                     text={msg.content}
+                    isStreaming
+                    holdStreamingMs={380}
                     isDark={isDark}
                     onComplete={onRevealComplete}
-                    onProgress={onTypewriterProgress}
-                    charIntervalMs={28}
+                    onProgress={scrollOnProgress}
                   />
                 ) : (
                   <MiraMessageBubble content={msg.content} isDark={isDark} />
@@ -121,6 +126,8 @@ export default function GoDeeperThread({
     </View>
   );
 }
+
+export default React.memo(GoDeeperThread);
 
 const styles = StyleSheet.create({
   thread: {

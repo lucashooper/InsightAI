@@ -7,7 +7,7 @@ import {
   ViewStyle,
   StyleProp,
 } from 'react-native';
-import { ONBOARDING_CTA, ONBOARDING_TEXT } from '../../constants/onboardingTheme';
+import { ONBOARDING_CTA } from '../../constants/onboardingTheme';
 import { sf } from '../../utils/responsive';
 
 type Props = {

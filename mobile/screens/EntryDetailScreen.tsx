@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert, LayoutAnimation, Platform, UIManager, Animated, Modal, KeyboardAvoidingView, Image, Keyboard, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -110,6 +110,11 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
   const [editableTitle, setEditableTitle] = useState(initialEntry?.title || '');
   const [isModified, setIsModified] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const contentDraftRef = useRef(editableContent);
+  const titleDraftRef = useRef(editableTitle);
+  contentDraftRef.current = editableContent;
+  titleDraftRef.current = editableTitle;
+  const AUTO_SAVE_MS = 1500;
   const [strengthsExpanded, setStrengthsExpanded] = useState(true);
   const [growthExpanded, setGrowthExpanded] = useState(true);
   const [addingToPlaybook, setAddingToPlaybook] = useState<string | null>(null);
@@ -273,19 +278,21 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
 
   const saveEntry = async () => {
     if (!entry) return;
+    const nextTitle = titleDraftRef.current;
+    const nextContent = contentDraftRef.current;
     try {
       const { error } = await supabase
         .from('notes')
         .update({
-          title: editableTitle.trim() || t('entry.untitled'),
-          content: editableContent.trim(),
+          title: nextTitle.trim() || t('entry.untitled'),
+          content: nextContent.trim(),
           updated_at: new Date().toISOString(),
         })
         .eq('id', entry.id);
 
       if (!error) {
-        const savedTitle = editableTitle.trim() || t('entry.untitled');
-        const savedContent = editableContent.trim();
+        const savedTitle = nextTitle.trim() || t('entry.untitled');
+        const savedContent = nextContent.trim();
         const savedAt = new Date().toISOString();
         entry.title = savedTitle;
         entry.content = savedContent;
@@ -306,23 +313,28 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
     }
   };
 
-  useEffect(() => {
-    if (!isModified || !entry) return;
-
+  const scheduleAutoSave = useCallback(() => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
-
     saveTimeoutRef.current = setTimeout(() => {
-      saveEntry();
-    }, 500);
+      void saveEntry();
+    }, AUTO_SAVE_MS);
+  }, [entry]);
 
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, [editableContent, editableTitle, isModified]);
+  const handleEditableContentChange = useCallback((text: string) => {
+    setEditableContent(text);
+    scheduleAutoSave();
+  }, [scheduleAutoSave]);
+
+  const handleEditableTitleChange = useCallback((text: string) => {
+    setEditableTitle(text);
+    scheduleAutoSave();
+  }, [scheduleAutoSave]);
+
+  const handlePromptContentChange = useCallback((text: string, prompt: string) => {
+    handleEditableContentChange(formatJournalPromptContent(prompt, text));
+  }, [handleEditableContentChange]);
 
   // Force save when navigating away
   useEffect(() => {
@@ -331,12 +343,15 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
         clearTimeout(saveTimeoutRef.current);
         saveTimeoutRef.current = null;
       }
-      if (isModified && entry) {
-        saveEntry();
+      if (entry && (
+        contentDraftRef.current !== entry.content
+        || titleDraftRef.current !== entry.title
+      )) {
+        void saveEntry();
       }
     });
     return unsubscribe;
-  }, [navigation, editableContent, editableTitle, isModified, entry]);
+  }, [navigation, entry]);
 
   const handleCancelAnalysis = () => {
     if (analysisMessageIntervalRef.current) {
@@ -907,7 +922,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
           <TextInput
             style={[styles.titleInput, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}
             value={editableTitle}
-            onChangeText={setEditableTitle}
+            onChangeText={handleEditableTitleChange}
             placeholder={t('editor.untitled')}
             placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'}
             multiline
@@ -969,7 +984,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                   <TextInput
                     style={[styles.contentInput, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}
                     value={userResponse}
-                    onChangeText={(text) => setEditableContent(formatJournalPromptContent(promptText, text))}
+                    onChangeText={(text) => handlePromptContentChange(text, promptText)}
                     multiline
                     textAlignVertical="top"
                     placeholder={t('editor.yourThoughts')}
@@ -983,7 +998,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
               <TextInput
                 style={[styles.contentInput, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}
                 value={editableContent}
-                onChangeText={setEditableContent}
+                onChangeText={handleEditableContentChange}
                 multiline
                 textAlignVertical="top"
                 placeholder={t('editor.prompts.mind')}

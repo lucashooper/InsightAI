@@ -1,12 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import CachedImage from '../../components/shared/CachedImage';
+import OnboardingButton from '../../components/onboarding/OnboardingButton';
+import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
+import OnboardingSkipLink from '../../components/onboarding/OnboardingSkipLink';
 import { INSIGHT_LOGO } from '../../constants/appAssets';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
+import { ONBOARDING_TEXT, ONBOARDING_TYPE } from '../../constants/onboardingTheme';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -19,18 +21,19 @@ export default function NotificationsOnboardingScreen({ navigation }: Notificati
   const { theme } = useTheme();
   const { userName } = useOnboarding();
   const { t } = useLanguage();
+  const isDark = isDarkTheme(theme.name);
+  const titleColor = isDark ? '#ffffff' : ONBOARDING_TEXT.primary;
+  const subtitleColor = isDark ? 'rgba(255,255,255,0.6)' : ONBOARDING_TEXT.secondary;
 
   React.useEffect(() => {
     analytics.trackOnboardingScreen('notifications', 'viewed', userName || undefined);
   }, []);
-  
+
   const handleAllowNotifications = async () => {
     try {
       const { status } = await Notifications.requestPermissionsAsync();
       console.log('[Notifications] Permission status:', status);
       analytics.trackOnboardingScreen('notifications', 'completed', userName || undefined);
-      
-      // Navigate to paywall screen
       navigation.navigate('RateUs');
     } catch (error) {
       console.error('[Notifications] Error requesting permissions:', error);
@@ -47,39 +50,26 @@ export default function NotificationsOnboardingScreen({ navigation }: Notificati
   return (
     <View style={styles.container}>
       <OnboardingAmbientBackground />
-      
-      {/* Back Button - Circular style matching other onboarding pages */}
+
       {navigation.canGoBack() && (
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <View style={[styles.backArrowCircle, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-            <Ionicons name="arrow-back" size={20} color={isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e'} />
-          </View>
-        </TouchableOpacity>
+        <OnboardingBackButton onPress={() => navigation.goBack()} />
       )}
 
-      {/* Logo */}
       <CachedImage source={INSIGHT_LOGO} style={styles.logo} contentFit="contain" recyclingKey="notifications-logo" />
 
-      {/* Title */}
-      <Text style={[styles.title, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>{t('onboarding.notifications.title')}</Text>
+      <Text style={[styles.title, ONBOARDING_TYPE.title, { color: titleColor }]}>
+        {t('onboarding.notifications.title')}
+      </Text>
 
-      {/* Subtitle */}
-      <Text style={[styles.subtitle, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.6)' : 'rgba(0, 0, 0, 0.5)' }]}>
+      <Text style={[styles.subtitle, ONBOARDING_TYPE.subtitle, { color: subtitleColor }]}>
         {t('onboarding.notifications.subtitle')}
       </Text>
 
-      {/* Allow Button */}
-      <TouchableOpacity style={styles.allowButton} onPress={handleAllowNotifications} activeOpacity={0.9}>
-        <Text style={styles.allowButtonText}>{t('onboarding.notifications.allow')}</Text>
-      </TouchableOpacity>
+      <View style={styles.ctaWrap}>
+        <OnboardingButton label={t('onboarding.notifications.allow')} onPress={handleAllowNotifications} />
+      </View>
 
-      {/* Skip */}
-      <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
-        <Text style={[styles.skipText, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : 'rgba(0, 0, 0, 0.5)' }]}>{t('onboarding.notifications.skip')}</Text>
-      </TouchableOpacity>
+      <OnboardingSkipLink label={t('onboarding.notifications.skip')} onPress={handleSkip} />
     </View>
   );
 }
@@ -93,20 +83,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backButton: {
-    position: 'absolute',
-    top: 60,
-    left: 20,
-    zIndex: 10,
-    padding: 4,
-  },
-  backArrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   logo: {
     width: 100,
     height: 100,
@@ -116,48 +92,15 @@ const styles = StyleSheet.create({
     top: 60,
   },
   title: {
-    fontSize: 32,
-    fontWeight: '600',
-    color: '#1a1a2e',
     marginBottom: 16,
-    textAlign: 'center',
-    letterSpacing: -1.28,
-    lineHeight: 40,
     paddingHorizontal: 24,
   },
   subtitle: {
-    fontSize: 16,
-    color: 'rgba(0, 0, 0, 0.5)',
     marginBottom: 48,
-    textAlign: 'center',
-    lineHeight: 24,
     paddingHorizontal: 20,
   },
-  allowButton: {
+  ctaWrap: {
     width: '100%',
-    paddingVertical: 22,
-    backgroundColor: '#7B5EA7',
-    borderRadius: 28,
-    alignItems: 'center',
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  allowButtonText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#fff',
-    letterSpacing: 0.2,
-  },
-  skipButton: {
-    paddingVertical: 12,
-  },
-  skipText: {
-    fontSize: 15,
-    color: 'rgba(0, 0, 0, 0.5)',
-    textAlign: 'center',
   },
 });

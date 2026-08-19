@@ -13,6 +13,7 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FloatingTabBar from '../components/navigation/FloatingTabBar';
 import AppStatusBar from '../components/shared/AppStatusBar';
+import OnboardingOrbWarmup from '../components/onboarding/OnboardingOrbWarmup';
 
 function EmptyTabScreen() {
   return null;
@@ -463,6 +464,7 @@ export default function AppNavigator() {
         onReady={syncActiveRoute}
         onStateChange={syncActiveRoute}
       >
+      {!isOnboardingCompleted ? <OnboardingOrbWarmup /> : null}
       {user ? (
         // Authenticated screens - user is already signed in
         <Stack.Navigator

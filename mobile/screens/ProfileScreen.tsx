@@ -14,8 +14,6 @@ import StandardContainer from '../components/shared/StandardContainer';
 import LanguagePicker from '../components/LanguagePicker';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { isDevAccountEmail } from '../constants/devAccounts';
-
 function resolveProfilePictureUrl(raw: string | null | undefined): string | null {
   if (!raw || typeof raw !== 'string') return null;
   const t = raw.trim();
@@ -345,19 +343,6 @@ export default function ProfileScreen({ navigation }: any) {
           {renderMenuItem('document-text-outline', t('auxiliary.profile.privacyPolicy'), undefined, () => Linking.openURL('https://myinsightai.app/privacy'))}
         </View>
 
-        {(__DEV__ || isDevAccountEmail(user?.email)) ? (
-          <>
-            {renderSectionHeader('Screenshots')}
-            <View style={styles.menuSection}>
-              {renderMenuItem(
-                'shield-checkmark-outline',
-                'Privacy Marketing Screen',
-                'App Store screenshot frame',
-                () => navigation.getParent()?.navigate('PrivacyMarketing'),
-              )}
-            </View>
-          </>
-        ) : null}
 
         {/* Account Actions */}
         {renderSectionHeader(t('auxiliary.profile.accountActions'))}

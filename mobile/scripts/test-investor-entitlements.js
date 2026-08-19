@@ -58,7 +58,7 @@ async function main() {
 
   const groq = await callFunction('groq-proxy', token, {
     messages: [{ role: 'user', content: 'Say hi in one word.' }],
-    model: 'llama-3.3-70b-versatile',
+    model: 'openai/gpt-oss-120b',
     max_tokens: 10,
   });
   console.log('\ngroq-proxy:', groq.status, groq.status === 200 ? 'OK' : groq.json);

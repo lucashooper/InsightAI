@@ -59,7 +59,7 @@ import MiraDiscoveryEmpty from '../components/companion/MiraDiscoveryEmpty';
 import { useSpeechToText } from '../hooks/useSpeechToText';
 import MiraRevealCard from '../components/companion/MiraRevealCard';
 import MiraMessageBubble from '../components/companion/MiraMessageBubble';
-import MiraTypewriterText from '../components/companion/MiraTypewriterText';
+import MiraStreamingText from '../components/companion/MiraStreamingText';
 import MiraAnalysisStatus from '../components/companion/MiraAnalysisStatus';
 import AmbientBackground from '../components/shared/AmbientBackground';
 import AppBackdrop from '../components/ui/AppBackdrop';
@@ -73,7 +73,6 @@ import { resolveProAccess } from '../utils/entitlements';
 import * as Haptics from 'expo-haptics';
 import { ROAST_GRADIENT, ROAST_PALETTE, useRoastTransition } from '../utils/companionTheme';
 import { getMiraScreenshotMode, SCREENSHOT_MIRA_CHAT } from '../data/screenshotMiraChat';
-import { AppLanguage } from '../i18n/types';
 
 function buildScreenshotMessages(language: AppLanguage): ChatMessage[] {
   const seed = SCREENSHOT_MIRA_CHAT[language] ?? SCREENSHOT_MIRA_CHAT.en;
@@ -123,17 +122,21 @@ function AssistantFadeIn({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Clean typewriter for empty input placeholder */
+/** Placeholder types in once per chat visit — not on every send. */
 function TypewriterPlaceholder({
   text,
   visible,
   color,
+  animate,
+  onAnimated,
 }: {
   text: string;
   visible: boolean;
   color: string;
+  animate: boolean;
+  onAnimated?: () => void;
 }) {
-  const [shown, setShown] = useState('');
+  const [shown, setShown] = useState(animate ? '' : text);
   const fade = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -147,16 +150,24 @@ function TypewriterPlaceholder({
     }
 
     fade.setValue(1);
+    if (!animate) {
+      setShown(text);
+      return;
+    }
+
     setShown('');
     let i = 0;
     const id = setInterval(() => {
       i += 1;
       setShown(text.slice(0, i));
-      if (i >= text.length) clearInterval(id);
+      if (i >= text.length) {
+        clearInterval(id);
+        onAnimated?.();
+      }
     }, 32);
 
     return () => clearInterval(id);
-  }, [visible, text, fade]);
+  }, [visible, text, fade, animate]);
 
   if (!visible && shown.length === 0) return null;
 
@@ -247,6 +258,14 @@ interface SavedChat {
 type Personality = AiPersonality;
 
 export default function AIChatScreen({ navigation }: any) {
+  const [placeholderHasAnimated, setPlaceholderHasAnimated] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      setPlaceholderHasAnimated(false);
+      return () => {};
+    }, []),
+  );
   const screenshotMode = getMiraScreenshotMode();
   const isScreenshotBlank = screenshotMode === 'blank';
   const isScreenshotMessages = screenshotMode === 'messages';
@@ -321,7 +340,7 @@ export default function AIChatScreen({ navigation }: any) {
   const isTemporaryRef = useRef(isTemporary);
   const messagesRef = useRef<ChatMessage[]>(messages);
   const inputRef = useRef<TextInput>(null);
-  const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const typingIntervalRef = useRef<number | null>(null);
   const speechSyncRef = useRef<MiraSpeechSyncHandle | null>(null);
   const typingStartRef = useRef(0);
   const typingDurationRef = useRef(0);
@@ -443,11 +462,15 @@ export default function AIChatScreen({ navigation }: any) {
     return subscribeMiraSpeaking(setIsAudioPlaying);
   }, []);
 
-  const interruptVoice = useCallback(() => {
-    if (typingIntervalRef.current) {
-      clearInterval(typingIntervalRef.current);
+  const cancelVoiceProgress = useCallback(() => {
+    if (typingIntervalRef.current != null) {
+      cancelAnimationFrame(typingIntervalRef.current);
       typingIntervalRef.current = null;
     }
+  }, []);
+
+  const interruptVoice = useCallback(() => {
+    cancelVoiceProgress();
     speechSyncRef.current = null;
     syncTimedOutRef.current = true;
     stopMiraVoice();
@@ -458,7 +481,7 @@ export default function AIChatScreen({ navigation }: any) {
           : m,
       ),
     );
-  }, []);
+  }, [cancelVoiceProgress]);
 
   // When user changes (account switch), reset chat state
   useEffect(() => {
@@ -572,14 +595,10 @@ export default function AIChatScreen({ navigation }: any) {
   );
 
   const clearTypingEffect = useCallback(() => {
-    if (typingIntervalRef.current) {
-      clearInterval(typingIntervalRef.current);
-      clearTimeout(typingIntervalRef.current as unknown as ReturnType<typeof setTimeout>);
-      typingIntervalRef.current = null;
-    }
+    cancelVoiceProgress();
     speechSyncRef.current = null;
     stopMiraVoice();
-  }, []);
+  }, [cancelVoiceProgress]);
 
   useEffect(() => {
     return () => {
@@ -932,10 +951,10 @@ export default function AIChatScreen({ navigation }: any) {
       typingDurationRef.current = estimateSpeechDurationMs(fullContent);
       typingStartRef.current = Date.now();
 
-      const TICK_MS = 45;
       const SYNC_WAIT_MS = 15000;
+      let lastReportedIndex = 0;
 
-      typingIntervalRef.current = setInterval(() => {
+      const tickVoiceProgress = () => {
         const sync = speechSyncRef.current;
         let progress: number;
 
@@ -944,6 +963,7 @@ export default function AIChatScreen({ navigation }: any) {
             syncTimedOutRef.current = true;
             console.warn('[AIChatScreen] Speech sync timeout — showing text without audio sync');
           } else {
+            typingIntervalRef.current = requestAnimationFrame(tickVoiceProgress);
             return;
           }
         }
@@ -955,10 +975,8 @@ export default function AIChatScreen({ navigation }: any) {
         }
 
         const charIndex = Math.min(fullContent.length, Math.max(1, Math.floor(progress * fullContent.length)));
-        const currentText = fullContent.slice(0, charIndex);
 
         if (progress >= 1 || charIndex >= fullContent.length) {
-          if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
           typingIntervalRef.current = null;
           speechSyncRef.current = null;
           setMessages(prev => {
@@ -968,29 +986,38 @@ export default function AIChatScreen({ navigation }: any) {
             void persistChat(next, { force: true, reason: 'typing-complete-voice' });
             return next;
           });
-        } else {
+          flatListRef.current?.scrollToEnd({ animated: true });
+          return;
+        }
+
+        if (charIndex > lastReportedIndex) {
+          lastReportedIndex = charIndex;
+          const currentText = fullContent.slice(0, charIndex);
           setMessages(prev => prev.map(m =>
             m.id === messageId ? { ...m, displayedContent: currentText } : m
           ));
+          flatListRef.current?.scrollToEnd({ animated: true });
         }
 
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, TICK_MS);
+        typingIntervalRef.current = requestAnimationFrame(tickVoiceProgress);
+      };
+
+      typingIntervalRef.current = requestAnimationFrame(tickVoiceProgress);
     }
   };
 
-  const handleTypewriterComplete = useCallback((messageId: string) => {
+  const handleStreamComplete = useCallback((messageId: string) => {
     setMessages((prev) => {
       const next = prev.map((m) =>
         m.id === messageId ? { ...m, isTyping: false } : m,
       );
-      void persistChat(next, { force: true, reason: 'typing-complete' });
+      void persistChat(next, { force: true, reason: 'stream-complete' });
       return next;
     });
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 40);
   }, [persistChat]);
 
-  const scrollOnTypewriterProgress = useCallback(() => {
+  const scrollOnStreamProgress = useCallback(() => {
     scrollToEndIfFollowing(true);
   }, [scrollToEndIfFollowing]);
 
@@ -1270,7 +1297,7 @@ export default function AIChatScreen({ navigation }: any) {
       return (
         <View style={[styles.messageBubbleContainer, styles.assistantBubbleContainer, styles.revealRow]}>
           <View style={styles.avatarWrap}>
-            <InsightCompanionMark size={36} personality={personality} isDark={isDark || isRoast} roast={isRoast} />
+            <InsightCompanionMark size={36} personality={personality} isDark={isDark || isRoast} roast={isRoast} inline />
           </View>
           <View style={styles.revealColumn}>
             <MiraRevealCard
@@ -1306,21 +1333,23 @@ export default function AIChatScreen({ navigation }: any) {
       );
     }
 
-    // Streaming typewriter — no thinking dots, straight into canvas reveal
+    // Streaming response — full text with bottom fade while generating
     if (item.isTyping && !isVoiceEnabled) {
       return (
         <View style={styles.assistantCanvasRow}>
           <View style={styles.avatarWrap}>
-            <InsightCompanionMark size={36} personality={personality} isDark={isDark || isRoast} roast={isRoast} />
+            <InsightCompanionMark size={36} personality={personality} isDark={isDark || isRoast} roast={isRoast} inline />
           </View>
           <View style={styles.assistantCanvasContent}>
-            <MiraTypewriterText
+            <MiraStreamingText
               text={item.content}
+              isStreaming
+              holdStreamingMs={380}
               isDark={isDark}
               isRoast={isRoast}
               roastTextColor={ROAST_PALETTE.textPrimary}
-              onComplete={() => handleTypewriterComplete(item.id)}
-              onProgress={scrollOnTypewriterProgress}
+              onComplete={() => handleStreamComplete(item.id)}
+              onProgress={scrollOnStreamProgress}
             />
           </View>
         </View>
@@ -1332,15 +1361,18 @@ export default function AIChatScreen({ navigation }: any) {
       return (
         <View style={styles.assistantCanvasRow}>
           <View style={styles.avatarWrap}>
-            <InsightCompanionMark size={36} personality={personality} isDark={isDark || isRoast} roast={isRoast} />
+            <InsightCompanionMark size={36} personality={personality} isDark={isDark || isRoast} roast={isRoast} inline />
           </View>
           <View style={styles.assistantCanvasContent}>
             {item.displayedContent && item.displayedContent !== '…' ? (
-              <MiraMessageBubble
-                content={item.displayedContent}
+              <MiraStreamingText
+                text={item.displayedContent}
+                isStreaming={item.displayedContent.length < item.content.length}
                 isDark={isDark}
                 isRoast={isRoast}
                 roastTextColor={ROAST_PALETTE.textPrimary}
+                onComplete={() => handleStreamComplete(item.id)}
+                onProgress={scrollOnStreamProgress}
               />
             ) : (
               <View style={styles.voiceWaitingDot} />
@@ -1355,7 +1387,7 @@ export default function AIChatScreen({ navigation }: any) {
       <AssistantFadeIn>
         <View style={styles.assistantCanvasRow}>
           <View style={styles.avatarWrap}>
-            <InsightCompanionMark size={36} personality={personality} isDark={isDark || isRoast} roast={isRoast} />
+            <InsightCompanionMark size={36} personality={personality} isDark={isDark || isRoast} roast={isRoast} inline />
           </View>
           <View style={styles.assistantCanvasContent}>
             <Pressable
@@ -1398,8 +1430,8 @@ export default function AIChatScreen({ navigation }: any) {
     t,
     shareMessage,
     isVoiceEnabled,
-    handleTypewriterComplete,
-    scrollOnTypewriterProgress,
+    handleStreamComplete,
+    scrollOnStreamProgress,
   ]);
 
   const renderEmptyState = () => (
@@ -1507,6 +1539,10 @@ export default function AIChatScreen({ navigation }: any) {
           keyExtractor={item => item.id}
           extraData={{ expandedRevealIds, activeMessageId, isAnalyzing }}
           contentContainerStyle={styles.messagesList}
+          removeClippedSubviews={Platform.OS === 'android'}
+          windowSize={9}
+          maxToRenderPerBatch={6}
+          initialNumToRender={8}
           ListFooterComponent={
             isAnalyzing ? (
               <MiraAnalysisStatus
@@ -1559,6 +1595,8 @@ export default function AIChatScreen({ navigation }: any) {
                 text={t('companion.inputPlaceholder')}
                 visible={!inputText && !inputFocused}
                 color={isRoast ? 'rgba(255,255,255,0.35)' : (isDark ? 'rgba(255,255,255,0.32)' : 'rgba(0,0,0,0.35)')}
+                animate={!placeholderHasAnimated}
+                onAnimated={() => setPlaceholderHasAnimated(true)}
               />
               <TextInput
                 ref={inputRef}

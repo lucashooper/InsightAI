@@ -124,6 +124,7 @@ export interface EnhancedAIAnalysis {
 
 // Supabase Edge Function URL
 const supabaseUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 const SUPABASE_FUNCTION_URL = supabaseUrl
   ? `${supabaseUrl}/functions/v1`
   : 'https://YOUR_PROJECT.supabase.co/functions/v1';
@@ -131,6 +132,12 @@ const SUPABASE_FUNCTION_URL = supabaseUrl
 if (!supabaseUrl) {
   console.warn('[mobileAiService] Missing EXPO_PUBLIC_SUPABASE_URL. Analysis will fail.');
 }
+if (__DEV__ && !supabaseAnonKey) {
+  console.warn('[mobileAiService] Missing EXPO_PUBLIC_SUPABASE_ANON_KEY — edge function calls may fail.');
+}
+
+/** Groq chat model — llama-3.3-70b-versatile retired 2026-08-16. */
+const GROQ_CHAT_MODEL = 'openai/gpt-oss-120b';
 
 async function waitForRateLimit() {
   // Simple client-side rate limit spacer used on web as well
@@ -162,11 +169,12 @@ async function callGroqProxy(messages: Array<{role: string; content: string}>, o
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${session.access_token}`,
+      'apikey': supabaseAnonKey || '',
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       messages: localizedMessages,
-      model: opts?.model || 'llama-3.3-70b-versatile',
+      model: opts?.model || GROQ_CHAT_MODEL,
       temperature: opts?.temperature ?? 0.8,
       max_tokens: opts?.max_tokens ?? 500,
     }),
@@ -176,7 +184,10 @@ async function callGroqProxy(messages: Array<{role: string; content: string}>, o
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({ error: 'Unknown error' }));
-    console.error('[callGroqProxy] Error response:', err);
+    console.error('[callGroqProxy] Error response:', response.status, err);
+    if (__DEV__) {
+      console.error('[callGroqProxy] Hint: Groq key lives in Supabase secrets (GROQ_API_KEY), not mobile/.env. Run: node scripts/provision-dev-account.js');
+    }
     if (response.status === 402) {
       throw new Error(err.message || 'Subscription required to use AI features.');
     }
@@ -763,7 +774,7 @@ Write in warm, conversational tone with clear structure:
       const response = await callGroqProxy(apiMessages, {
         temperature: getChatTemperature(personality),
         max_tokens: 350,
-        model: 'llama-3.3-70b-versatile',
+        model: GROQ_CHAT_MODEL,
       });
 
       console.log('[mobileAiService] ✅ Chat response received, length:', response?.length);
@@ -820,7 +831,7 @@ Write in warm, conversational tone with clear structure:
       const response = await callGroqProxy(apiMessages, {
         temperature: personality === 'roast' ? 0.7 : 0.55,
         max_tokens: 900,
-        model: 'llama-3.3-70b-versatile',
+        model: GROQ_CHAT_MODEL,
       });
 
       const raw = (response || '').trim();

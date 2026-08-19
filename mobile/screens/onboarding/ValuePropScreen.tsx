@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
+import OnboardingButton from '../../components/onboarding/OnboardingButton';
+import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
 import CachedImage from '../../components/shared/CachedImage';
 import { INSIGHT_LOGO } from '../../constants/appAssets';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
@@ -37,16 +39,8 @@ export default function ValuePropScreen({ navigation }: any) {
     <View style={styles.container}>
       <OnboardingAmbientBackground />
 
-      {/* Back Button - Circular style matching other onboarding pages */}
       {navigation.canGoBack() && (
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <View style={[styles.backArrowCircle, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-            <Ionicons name="arrow-back" size={20} color={isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e'} />
-          </View>
-        </TouchableOpacity>
+        <OnboardingBackButton onPress={() => navigation.goBack()} />
       )}
 
       {/* Logo */}
@@ -173,18 +167,13 @@ export default function ValuePropScreen({ navigation }: any) {
           },
         ]}
       >
-        <TouchableOpacity
-          style={styles.button}
-          activeOpacity={0.9}
+        <OnboardingButton
+          label={t('common.continue')}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             navigation.navigate('ValuePropPatterns');
           }}
-        >
-          <View style={styles.buttonInner}>
-            <Text style={styles.buttonText}>{t('common.continue')}</Text>
-          </View>
-        </TouchableOpacity>
+        />
       </Animated.View>
     </View>
   );
@@ -194,20 +183,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'transparent',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 60,
-    left: 20,
-    zIndex: 10,
-    padding: 4,
-  },
-  backArrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   logo: {
     width: 100,
@@ -304,29 +279,5 @@ const styles = StyleSheet.create({
   footer: {
     paddingHorizontal: 24,
     paddingTop: 16,
-  },
-  button: {
-    width: '100%',
-    borderRadius: 28,
-    backgroundColor: '#7B5EA7',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  buttonInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 22,
-    borderRadius: 28,
-    gap: 10,
-  },
-  buttonText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#fff',
-    letterSpacing: 0.3,
   },
 });

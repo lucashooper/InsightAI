@@ -2,6 +2,8 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
+import OnboardingButton from '../../components/onboarding/OnboardingButton';
+import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
 import CachedImage from '../../components/shared/CachedImage';
 import { INSIGHT_LOGO } from '../../constants/appAssets';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
@@ -41,14 +43,7 @@ export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardin
       <OnboardingAmbientBackground />
 
       {navigation.canGoBack() && (
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <View style={[styles.backArrowCircle, { backgroundColor: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-            <Ionicons name="arrow-back" size={20} color={dark ? '#ffffff' : '#1a1a2e'} />
-          </View>
-        </TouchableOpacity>
+        <OnboardingBackButton onPress={() => navigation.goBack()} />
       )}
 
       <CachedImage source={INSIGHT_LOGO} style={styles.logo} contentFit="contain" recyclingKey="privacy-logo" />
@@ -83,9 +78,9 @@ export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardin
         </View>
       </View>
 
-      <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-        <Text style={styles.continueButtonText}>{t('common.continue')}</Text>
-      </TouchableOpacity>
+      <View style={styles.ctaWrap}>
+        <OnboardingButton label={t('common.continue')} onPress={handleContinue} />
+      </View>
     </View>
   );
 }
@@ -98,20 +93,6 @@ const styles = StyleSheet.create({
     paddingTop: isTablet ? 116 : 140,
     alignItems: 'center',
     paddingBottom: 60,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 60,
-    left: 24,
-    zIndex: 10,
-    padding: 4,
-  },
-  backArrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   logo: {
     width: isTablet ? 110 : 100,
@@ -169,23 +150,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     flex: 1,
   },
-  continueButton: {
+  ctaWrap: {
     width: '100%',
     maxWidth: isTablet ? 820 : undefined,
-    paddingVertical: 22,
-    backgroundColor: '#7B5EA7',
-    borderRadius: 28,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  continueButtonText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#fff',
-    letterSpacing: 0.2,
   },
 });

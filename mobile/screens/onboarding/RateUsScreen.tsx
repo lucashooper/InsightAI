@@ -1,11 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as StoreReview from 'expo-store-review';
 import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
+import OnboardingButton from '../../components/onboarding/OnboardingButton';
+import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
+import OnboardingSkipLink from '../../components/onboarding/OnboardingSkipLink';
+import { ONBOARDING_TYPE } from '../../constants/onboardingTheme';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 const testimonials = [
@@ -43,15 +46,7 @@ export default function RateUsScreen({ navigation }: any) {
     <View style={styles.container}>
       <OnboardingAmbientBackground />
 
-      {/* Back Button */}
-      <TouchableOpacity 
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
-        <View style={[styles.backArrowCircle, { backgroundColor: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-          <Ionicons name="arrow-back" size={20} color={dark ? '#ffffff' : '#1a1a2e'} />
-        </View>
-      </TouchableOpacity>
+      <OnboardingBackButton onPress={() => navigation.goBack()} />
 
       <ScrollView 
         style={styles.scrollView}
@@ -100,20 +95,8 @@ export default function RateUsScreen({ navigation }: any) {
 
       {/* Bottom Buttons */}
       <View style={styles.footer}>
-        <TouchableOpacity
-          style={styles.continueButton}
-          onPress={handleContinue}
-          activeOpacity={0.9}
-        >
-          <Text style={styles.continueButtonText}>{t('common.continue')}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={handleSkip}
-          style={styles.skipButton}
-        >
-          <Text style={[styles.skipText, dark && styles.skipTextDark]}>{t('onboarding.skipForNow')}</Text>
-        </TouchableOpacity>
+        <OnboardingButton label={t('common.continue')} onPress={handleContinue} />
+        <OnboardingSkipLink label={t('onboarding.skipForNow')} onPress={handleSkip} />
       </View>
     </View>
   );
@@ -122,20 +105,6 @@ export default function RateUsScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 60,
-    left: 20,
-    zIndex: 10,
-    padding: 4,
-  },
-  backArrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   scrollView: {
     flex: 1,
@@ -157,11 +126,8 @@ const styles = StyleSheet.create({
     fontSize: isTablet ? 28 : 24,
   },
   title: {
-    fontSize: sf(32),
-    fontWeight: '600',
+    ...ONBOARDING_TYPE.title,
     color: '#1a1a2e',
-    letterSpacing: -1.28,
-    lineHeight: sf(40),
   },
   titleDark: {
     color: '#ffffff',
@@ -227,37 +193,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: isTablet ? 48 : 24,
     paddingBottom: isTablet ? 70 : 50,
     alignItems: 'center',
+    gap: 4,
     ...(iPadContentStyle as any),
-  },
-  continueButton: {
-    width: '100%',
-    backgroundColor: '#7B5EA7',
-    borderRadius: 28,
-    paddingVertical: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  continueButtonText: {
-    fontSize: sf(17),
-    fontWeight: '600',
-    color: '#fff',
-    letterSpacing: 0.2,
-  },
-  skipButton: {
-    marginTop: isTablet ? 28 : 20,
-    paddingVertical: 8,
-  },
-  skipText: {
-    fontSize: sf(15),
-    color: 'rgba(0, 0, 0, 0.45)',
-    textAlign: 'center',
-  },
-  skipTextDark: {
-    color: 'rgba(255, 255, 255, 0.6)',
   },
 });

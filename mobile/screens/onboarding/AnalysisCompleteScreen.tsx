@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
+import OnboardingButton from '../../components/onboarding/OnboardingButton';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
@@ -136,15 +137,7 @@ export default function AnalysisCompleteScreen({ navigation }: Props) {
 
                 {/* CTA Button */}
                 <Animated.View style={[styles.ctaContainer, { opacity: contentFade, paddingBottom: bottomInset }]}>
-                    <TouchableOpacity
-                        style={styles.ctaButton}
-                        activeOpacity={0.9}
-                        onPress={handleContinue}
-                    >
-                        <View style={styles.ctaGradient}>
-                            <Text style={styles.ctaText}>{t('common.continue')}</Text>
-                        </View>
-                    </TouchableOpacity>
+                    <OnboardingButton label={t('common.continue')} onPress={handleContinue} />
                 </Animated.View>
             </View>
         </View>
@@ -194,27 +187,5 @@ const styles = StyleSheet.create({
     },
     ctaContainer: {
         width: '100%',
-    },
-    ctaButton: {
-        width: '100%',
-        borderRadius: 28,
-        backgroundColor: '#7B5EA7',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
-        elevation: 8,
-    },
-    ctaGradient: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 22,
-        borderRadius: 28,
-    },
-    ctaText: {
-        fontSize: 17,
-        fontWeight: '600',
-        color: '#fff',
-        letterSpacing: 0.2,
     },
 });

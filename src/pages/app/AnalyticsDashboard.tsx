@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { supabase } from '../../services/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
@@ -62,14 +62,12 @@ interface ContextMenu {
   username: string;
 }
 
-const PAGE_BG = 'linear-gradient(135deg, #0f0a1e 0%, #1a0f2e 50%, #0a1628 100%)';
+const PAGE_BG = '#000000';
 
 const glassCard: CSSProperties = {
-  background: 'rgba(255, 255, 255, 0.05)',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  borderRadius: '16px',
-  backdropFilter: 'blur(20px)',
-  WebkitBackdropFilter: 'blur(20px)',
+  background: 'rgba(255, 255, 255, 0.04)',
+  border: '1px solid rgba(255, 255, 255, 0.08)',
+  borderRadius: '20px',
 };
 
 function CompletionRing({ percent }: { percent: number }) {
@@ -124,36 +122,21 @@ function CompletionRing({ percent }: { percent: number }) {
 function StatCard({
   label,
   value,
-  accent,
   ring,
 }: {
   label: string;
   value: ReactNode;
-  accent?: string;
   ring?: ReactNode;
 }) {
   return (
-    <div style={{ ...glassCard, padding: '24px', position: 'relative', overflow: 'hidden' }}>
-      {accent && (
-        <div
-          style={{
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            bottom: 0,
-            width: '3px',
-            background: accent,
-            borderRadius: '16px 0 0 16px',
-          }}
-        />
-      )}
+    <div style={{ ...glassCard, padding: '24px' }}>
       <div
         style={{
           fontSize: '11px',
-          color: 'rgba(255,255,255,0.5)',
+          color: 'rgba(255,255,255,0.45)',
           marginBottom: ring ? '12px' : '8px',
           textTransform: 'uppercase',
-          letterSpacing: '1.5px',
+          letterSpacing: '1.2px',
           fontWeight: 600,
         }}
       >
@@ -216,9 +199,8 @@ function GhostButton({
       onMouseLeave={() => setHover(false)}
       style={{
         background: hover ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
-        border: '1px solid rgba(255,255,255,0.2)',
-        borderLeft: destructive ? '3px solid rgba(239,68,68,0.6)' : '1px solid rgba(255,255,255,0.2)',
-        borderRadius: '8px',
+        border: '1px solid rgba(255,255,255,0.12)',
+        borderRadius: '10px',
         padding: '8px 14px',
         fontSize: '12px',
         fontWeight: 600,
@@ -242,7 +224,14 @@ export default function AnalyticsDashboard() {
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const contextMenuRef = useRef<HTMLDivElement>(null);
+
+  const filteredJourneys = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return userJourneys;
+    return userJourneys.filter((j) => j.username.toLowerCase().includes(q));
+  }, [userJourneys, searchQuery]);
 
   useEffect(() => {
     if (!user || user.email !== 'edwardsjonny547@gmail.com') {
@@ -260,18 +249,8 @@ export default function AnalyticsDashboard() {
   const deleteJourney = useCallback(async (sessionId: string, userId: string | null, username: string) => {
     setDeletingId(sessionId);
     setContextMenu(null);
-    
-    // Confirm deletion
-    const confirmMsg = userId 
-      ? `Delete ALL analytics data for user "${username}"?\n\nThis will remove all sessions and events for this user, not just this one session.`
-      : `Delete this anonymous session for "${username}"?`;
-    
-    if (!confirm(confirmMsg)) {
-      setDeletingId(null);
-      return;
-    }
-    
-    console.log('[Analytics] 🗑️ Attempting to delete:', { sessionId, userId, username });
+
+    console.log('[Analytics] 🗑️ Deleting:', { sessionId, userId, username });
     
     try {
       let data, error, count;
@@ -333,16 +312,36 @@ export default function AnalyticsDashboard() {
     }
   }, []);
 
-  const deleteAllJourneys = useCallback(async () => {
-    const confirmMsg = `⚠️ DELETE ALL ONBOARDING ANALYTICS?\n\nThis will permanently delete ALL ${userJourneys.length} user journeys and their analytics events.\n\nThis action CANNOT be undone.\n\nType 'DELETE' to confirm:`;
-    
-    const userInput = prompt(confirmMsg);
-    
-    if (userInput !== 'DELETE') {
-      console.log('[Analytics] Delete all cancelled');
-      return;
+  const deleteAllMatchingSearch = useCallback(async () => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return;
+
+    setIsDeletingAll(true);
+    setContextMenu(null);
+
+    try {
+      const matching = userJourneys.filter((j) => j.username.toLowerCase().includes(q));
+      const userIds = [...new Set(matching.map((j) => j.user_id).filter(Boolean))] as string[];
+      const anonSessionIds = matching.filter((j) => !j.user_id).map((j) => j.session_id);
+
+      for (const userId of userIds) {
+        await supabase.from('analytics_events').delete().eq('user_id', userId);
+      }
+      for (const sessionId of anonSessionIds) {
+        await supabase.from('analytics_events').delete().eq('session_id', sessionId);
+      }
+
+      setUserJourneys((prev) =>
+        prev.filter((j) => !j.username.toLowerCase().includes(q)),
+      );
+    } catch (err: any) {
+      console.error('[Analytics] Delete matching failed:', err);
+    } finally {
+      setIsDeletingAll(false);
     }
-    
+  }, [searchQuery, userJourneys]);
+
+  const deleteAllJourneys = useCallback(async () => {
     setIsDeletingAll(true);
     console.log('[Analytics] 🗑️ Deleting ALL analytics events...');
     
@@ -357,7 +356,6 @@ export default function AnalyticsDashboard() {
       
       if (error) {
         console.error('[Analytics] ❌ Delete all failed:', error);
-        alert(`Failed to delete all journeys: ${error.message}`);
       } else {
         console.log('[Analytics] ✅ Successfully deleted', data?.length || 0, 'events');
         setUserJourneys([]);
@@ -367,7 +365,6 @@ export default function AnalyticsDashboard() {
           completionRate: 0,
           dropOffStep: null,
         });
-        alert(`Successfully deleted ${data?.length || 0} analytics events!`);
       }
     } catch (err: any) {
       console.error('[Analytics] ❌ Exception during delete all:', err);
@@ -578,16 +575,15 @@ export default function AnalyticsDashboard() {
             gap: '16px',
             marginBottom: '24px'
           }}>
-            <StatCard label="Total Users" value={metrics.totalSessions} accent="rgba(123, 94, 167, 0.8)" />
-            <StatCard label="Completed" value={metrics.completedOnboarding} accent="rgba(74, 222, 128, 0.8)" />
+            <StatCard label="Total Users" value={metrics.totalSessions} />
+            <StatCard label="Completed" value={metrics.completedOnboarding} />
             <StatCard
               label="Completion Rate"
               value={null}
-              accent="rgba(123, 94, 167, 0.8)"
               ring={<CompletionRing percent={metrics.completionRate} />}
             />
             {metrics.dropOffStep && (
-              <StatCard label="Common Drop-off" value={metrics.dropOffStep} accent="rgba(239, 68, 68, 0.65)" />
+              <StatCard label="Common Drop-off" value={metrics.dropOffStep} />
             )}
           </div>
         )}
@@ -595,9 +591,14 @@ export default function AnalyticsDashboard() {
         <div style={{ ...glassCard, padding: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
             <h2 style={{ fontSize: '16px', fontWeight: '600', margin: 0, color: '#FFFFFF' }}>
-              User Journeys ({userJourneys.length})
+              User Journeys ({filteredJourneys.length}{searchQuery ? ` of ${userJourneys.length}` : ''})
             </h2>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {searchQuery.trim() && filteredJourneys.length > 0 ? (
+                <GhostButton onClick={deleteAllMatchingSearch} disabled={loading || isDeletingAll} destructive>
+                  {isDeletingAll ? 'Deleting...' : `Delete "${searchQuery.trim()}" (${filteredJourneys.length})`}
+                </GhostButton>
+              ) : null}
               <GhostButton onClick={deleteAllJourneys} disabled={loading || isDeletingAll || userJourneys.length === 0} destructive>
                 {isDeletingAll ? 'Deleting...' : 'Delete All'}
               </GhostButton>
@@ -605,6 +606,26 @@ export default function AnalyticsDashboard() {
                 {loading ? 'Loading...' : 'Refresh'}
               </GhostButton>
             </div>
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <input
+              type="search"
+              placeholder="Search by username (e.g. Lucas)..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                maxWidth: '360px',
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '12px',
+                padding: '10px 14px',
+                color: '#fff',
+                fontSize: '14px',
+                outline: 'none',
+              }}
+            />
           </div>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
@@ -616,7 +637,7 @@ export default function AnalyticsDashboard() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', maxHeight: '550px', overflowY: 'auto' }}>
-            {userJourneys.map((journey, index) => {
+            {filteredJourneys.map((journey, index) => {
               const completedStepNumbers = new Set(journey.steps.filter(s => s.completed && !s.skipped).map(s => s.step_number));
               const skippedStepNumbers = new Set(journey.steps.filter(s => s.skipped).map(s => s.step_number));
               const hasSubscribed = journey.steps.some(s => s.step === 'subscription');

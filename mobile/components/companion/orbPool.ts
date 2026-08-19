@@ -1,9 +1,5 @@
 import { CHAT_PERSONALITIES } from '../../utils/aiPersonalities';
 import type { AiPersonality } from '../../utils/aiPersonalities';
-import {
-  markOrbPending,
-  setOrbPoolTotal,
-} from '../../utils/orbWarmupRegistry';
 
 export type SlotRect = {
   id: string;
@@ -72,12 +68,4 @@ export function findSlotForPoolItem(
 
 export function isValidSlotRect(rect: Pick<SlotRect, 'x' | 'y' | 'width' | 'height'>): boolean {
   return rect.width > 0 && rect.height > 0 && rect.y >= 0 && rect.x >= -8;
-}
-
-export function initOrbPoolPending(): void {
-  setOrbPoolTotal(ORB_POOL.length);
-  console.log('[ORB:preload] Mounting persistent pool —', ORB_POOL.length, 'WebViews');
-  for (const item of ORB_POOL) {
-    markOrbPending(item.size, item.personality, item.isRoast);
-  }
 }

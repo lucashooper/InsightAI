@@ -5,9 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
+import OnboardingButton from '../../components/onboarding/OnboardingButton';
+import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
 import CachedImage from '../../components/shared/CachedImage';
 import { INSIGHT_LOGO } from '../../constants/appAssets';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
+import { ONBOARDING_TEXT, ONBOARDING_TYPE } from '../../constants/onboardingTheme';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -80,14 +83,7 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
             
             {/* Back Button - Circular style matching other onboarding pages */}
             {navigation.canGoBack() && (
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={() => navigation.goBack()}
-                >
-                    <View style={[styles.backArrowCircle, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-                        <Ionicons name="arrow-back" size={20} color={isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e'} />
-                    </View>
-                </TouchableOpacity>
+                <OnboardingBackButton onPress={() => navigation.goBack()} />
             )}
 
             {/* Logo */}
@@ -109,22 +105,14 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
                         <Ionicons name="checkmark-circle" size={64} color="#4ade80" />
                     </View>
 
-                    <Text style={[styles.title, { color: isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e' }]}>{t('onboarding.summary.title')}</Text>
-                    <Text style={[styles.subtitle, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.7)' : '#6b7280' }]}>
+                    <Text style={[styles.title, ONBOARDING_TYPE.title, { color: isDarkTheme(theme.name) ? '#ffffff' : ONBOARDING_TEXT.primary }]}>{t('onboarding.summary.title')}</Text>
+                    <Text style={[styles.subtitle, ONBOARDING_TYPE.subtitle, { color: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.7)' : ONBOARDING_TEXT.secondary }]}>
                         {getSummaryText()}
                     </Text>
                 </Animated.View>
 
                 <View style={styles.footer}>
-                    <TouchableOpacity
-                        style={styles.button}
-                        activeOpacity={0.9}
-                        onPress={handleFinish}
-                    >
-                        <View style={styles.buttonGradient}>
-                            <Text style={styles.buttonText}>{t('common.continue')}</Text>
-                        </View>
-                    </TouchableOpacity>
+                    <OnboardingButton label={t('common.continue')} onPress={handleFinish} />
                 </View>
             </View>
         </View>
@@ -135,20 +123,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: 'transparent',
-    },
-    backButton: {
-        position: 'absolute',
-        top: 60,
-        left: 20,
-        zIndex: 10,
-        padding: 4,
-    },
-    backArrowCircle: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     logo: {
         width: 100,
@@ -180,45 +154,12 @@ const styles = StyleSheet.create({
         elevation: 10,
     },
     title: {
-        fontSize: 32,
-        fontWeight: '600',
-        color: '#1a1a2e',
         marginBottom: 16,
-        textAlign: 'center',
-        letterSpacing: -1.28,
-        lineHeight: 40,
     },
     subtitle: {
-        fontSize: 18,
-        color: '#6b7280',
-        textAlign: 'center',
-        lineHeight: 26,
+        paddingHorizontal: 8,
     },
     footer: {
         width: '100%',
-    },
-    button: {
-        width: '100%',
-        borderRadius: 28,
-        backgroundColor: '#7B5EA7',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
-        elevation: 8,
-    },
-    buttonGradient: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 22,
-        borderRadius: 28,
-        gap: 8,
-    },
-    buttonText: {
-        fontSize: 17,
-        fontWeight: '600',
-        color: '#fff',
-        letterSpacing: 0.2,
     },
 });

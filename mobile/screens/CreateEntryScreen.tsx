@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -90,6 +90,10 @@ export default function CreateEntryScreen({ navigation, route }: any) {
   const [goDeeperReply, setGoDeeperReply] = useState('');
   const [isGoDeeperLoading, setIsGoDeeperLoading] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const contentDraftRef = useRef(content);
+  const titleDraftRef = useRef(title);
+  contentDraftRef.current = content;
+  titleDraftRef.current = title;
   const hasUnsavedChanges = useRef(false);
   const savedEntryIdRef = useRef<string | null>(null);
   const savingInProgress = useRef(false);
@@ -138,26 +142,20 @@ export default function CreateEntryScreen({ navigation, route }: any) {
   }, []);
 
   const moods = ['😊', '😔', '😰', '😡', '😌', '🤔', '😴', '🎉'];
-  // Auto-save functionality
-  useEffect(() => {
-    if (!content.trim() || !hasUnsavedChanges.current) return;
+  const AUTO_SAVE_MS = 1500;
 
-    // Clear existing timeout
+  const handleAutoSaveRef = useRef<() => Promise<void>>(async () => {});
+
+  const scheduleAutoSave = useCallback(() => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
-
-    // Set new timeout for auto-save (500ms after user stops typing)
     saveTimeoutRef.current = setTimeout(() => {
-      handleAutoSave();
-    }, 500);
-
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
+      if (hasUnsavedChanges.current && contentDraftRef.current.trim()) {
+        void handleAutoSaveRef.current();
       }
-    };
-  }, [content, title]);
+    }, AUTO_SAVE_MS);
+  }, []);
 
   // Force save when navigating away (beforeRemove)
   useEffect(() => {
@@ -168,12 +166,12 @@ export default function CreateEntryScreen({ navigation, route }: any) {
         saveTimeoutRef.current = null;
       }
       // Force immediate save if there are unsaved changes
-      if (hasUnsavedChanges.current && content.trim()) {
-        handleAutoSave();
+      if (hasUnsavedChanges.current && contentDraftRef.current.trim()) {
+        void handleAutoSaveRef.current();
       }
     });
     return unsubscribe;
-  }, [navigation, content, title]);
+  }, [navigation]);
 
   const persistLinkedCheckIn = async (journalNoteId: string, journalTitle: string) => {
     if (!checkInDraft || checkInSavedRef.current || !user?.id) return;
@@ -181,7 +179,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
     try {
       const saved = await saveCheckIn(user.id, checkInDraft as CheckInDraft, {
         journalTitle,
-        journalBody: content.trim(),
+        journalBody: contentDraftRef.current.trim(),
         journalNoteId,
       });
       if (saved) checkInSavedRef.current = true;
@@ -194,7 +192,9 @@ export default function CreateEntryScreen({ navigation, route }: any) {
   };
 
   const handleAutoSave = async () => {
-    if (!content.trim()) return;
+    const draftContent = contentDraftRef.current;
+    const draftTitle = titleDraftRef.current;
+    if (!draftContent.trim()) return;
     if (savingInProgress.current) return; // Prevent concurrent saves
     savingInProgress.current = true;
 
@@ -205,7 +205,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
         : null;
       
       // If there's a prompt, prepend it as context for AI analysis
-      let fullContent = content.trim();
+      let fullContent = draftContent.trim();
       if (promptText && fullContent) {
         fullContent = formatJournalPromptContent(promptText, fullContent);
       }
@@ -226,7 +226,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       }
 
       const savedAt = new Date().toISOString();
-      const savedTitle = title.trim() || content.trim().split('\n')[0].substring(0, 50) || t('editor.journalEntry');
+      const savedTitle = draftTitle.trim() || draftContent.trim().split('\n')[0].substring(0, 50) || t('editor.journalEntry');
       const cachePlaintext = async (noteId: string) => {
         if (!user?.id) return;
         setCachedEntry(
@@ -260,10 +260,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           hasUnsavedChanges.current = false;
           await cachePlaintext(savedEntryIdRef.current);
           console.log('[CreateEntry] Entry updated successfully (id:', savedEntryIdRef.current, ')');
-          await persistLinkedCheckIn(
-            savedEntryIdRef.current,
-            title.trim() || content.trim().split('\n')[0].substring(0, 50) || t('editor.journalEntry'),
-          );
+          await persistLinkedCheckIn(savedEntryIdRef.current, savedTitle);
         }
       } else {
         const { data, error } = await supabase
@@ -284,7 +281,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
           hasUnsavedChanges.current = false;
           await cachePlaintext(data.id);
           console.log('[CreateEntry] Entry saved successfully (id:', data.id, ', encrypted:', isEncrypted, ')');
-          await persistLinkedCheckIn(data.id, title.trim() || t('editor.journalEntry'));
+          await persistLinkedCheckIn(data.id, savedTitle);
           await migrateDraftToEntry(user!.id, data.id);
           const loaded = await loadGoDeeperConversation(user!.id, data.id);
           if (loaded.length > 0) setGoDeeperMessages(loaded);
@@ -296,12 +293,18 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       savingInProgress.current = false;
     }
   };
+  handleAutoSaveRef.current = handleAutoSave;
 
   const handleContentChange = (text: string) => {
-    console.log('[CreateEntry] Content changed, length:', text.trim().length);
     setContent(text);
-    console.log('[CreateEntry] Can analyze:', text.trim().length >= 5);
     hasUnsavedChanges.current = true;
+    scheduleAutoSave();
+  };
+
+  const handleTitleChange = (text: string) => {
+    setTitle(text);
+    hasUnsavedChanges.current = true;
+    scheduleAutoSave();
   };
 
   const handleMoodSelect = (selectedMood: string) => {
@@ -943,7 +946,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
             placeholder={t('editor.titleOptional')}
             placeholderTextColor={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'}
             value={title}
-            onChangeText={setTitle}
+            onChangeText={handleTitleChange}
             multiline
             scrollEnabled={false}
             blurOnSubmit

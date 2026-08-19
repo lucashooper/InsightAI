@@ -5,6 +5,8 @@ import * as Haptics from 'expo-haptics';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
+import OnboardingButton from '../../components/onboarding/OnboardingButton';
+import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
 import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
 
 const WINS = [
@@ -49,11 +51,7 @@ export default function ValuePropWinsScreen({ navigation }: any) {
       <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} />
       <OnboardingAmbientBackground />
 
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <View style={[styles.backArrowCircle, { backgroundColor: dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-          <Ionicons name="arrow-back" size={20} color={dark ? '#fff' : '#1a1a2e'} />
-        </View>
-      </TouchableOpacity>
+      <OnboardingBackButton onPress={() => navigation.goBack()} />
 
       <View style={styles.content}>
         <View>
@@ -100,18 +98,13 @@ export default function ValuePropWinsScreen({ navigation }: any) {
           }),
         }],
       }, iPadContentStyle as any]}>
-        <TouchableOpacity
-          style={styles.button}
-          activeOpacity={0.9}
+        <OnboardingButton
+          label={t('common.continue')}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             navigation.navigate('NotificationsOnboarding');
           }}
-        >
-          <View style={styles.buttonInner}>
-            <Text style={styles.buttonText}>{t('common.continue')}</Text>
-          </View>
-        </TouchableOpacity>
+        />
       </Animated.View>
     </View>
   );
@@ -120,20 +113,6 @@ export default function ValuePropWinsScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 60,
-    left: 20,
-    zIndex: 10,
-    padding: 4,
-  },
-  backArrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   content: {
     flex: 1,
@@ -182,27 +161,5 @@ const styles = StyleSheet.create({
   footer: {
     paddingHorizontal: 24,
     paddingBottom: isTablet ? 70 : 50,
-  },
-  button: {
-    width: '100%',
-    borderRadius: 28,
-    backgroundColor: '#7B5EA7',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  buttonInner: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 22,
-    borderRadius: 28,
-  },
-  buttonText: {
-    fontSize: sf(17),
-    fontWeight: '600',
-    color: '#fff',
-    letterSpacing: 0.2,
   },
 });

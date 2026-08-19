@@ -490,7 +490,7 @@ Entry text: ${content}`;
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
+          model: 'openai/gpt-oss-120b',
           messages: messages,
           temperature: 0.7,
           max_tokens: 1000,
@@ -512,7 +512,7 @@ Entry text: ${content}`;
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              model: 'llama-3.3-70b-versatile',
+              model: 'openai/gpt-oss-120b',
               messages: messages,
               temperature: 0.7,
               max_tokens: 1000,
@@ -570,7 +570,7 @@ Diary entry: ${content}`;
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
+          model: 'openai/gpt-oss-120b',
           messages: [
             {
               role: 'user',
@@ -656,7 +656,7 @@ Focus on identifying causal relationships and patterns that could explain today'
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
+          model: 'openai/gpt-oss-120b',
           messages: [
             {
               role: 'user',
@@ -749,7 +749,7 @@ ${conversationContext ? `Previous Conversation:\n${conversationContext}\n` : ''}
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
+          model: 'openai/gpt-oss-120b',
           messages: [
             {
               role: 'system',

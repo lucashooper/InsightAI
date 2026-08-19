@@ -13,18 +13,33 @@ import type { AiPersonality } from '../../utils/aiPersonalities';
 import OrbView from './OrbView';
 import {
   findSlotForPoolItem,
-  initOrbPoolPending,
   isValidSlotRect,
   ORB_POOL,
+  type PoolItem,
   type SlotRect,
 } from './orbPool';
+import { markOrbPending } from '../../utils/orbWarmupRegistry';
 
 type OrbOverlayContextValue = {
   registerSlot: (id: string, rect: Omit<SlotRect, 'id' | 'updatedAt'>) => void;
   unregisterSlot: (id: string) => void;
 };
 
+type OrbPoolControlValue = {
+  requestWarmup: (poolIds: readonly string[]) => void;
+  releaseWarmup: (poolIds: readonly string[]) => void;
+};
+
 const OrbOverlayContext = createContext<OrbOverlayContextValue | null>(null);
+const OrbPoolControlContext = createContext<OrbPoolControlValue | null>(null);
+
+export function useOrbPoolControl(): OrbPoolControlValue {
+  const ctx = useContext(OrbPoolControlContext);
+  if (!ctx) {
+    throw new Error('useOrbPoolControl must be used within OrbOverlayProvider');
+  }
+  return ctx;
+}
 
 type OrbSlotProps = {
   size: number;
@@ -151,51 +166,128 @@ export function OrbSlot({
   );
 }
 
-function OrbPoolHost({ slots }: { slots: Map<string, SlotRect> }) {
+function getMountedPoolItems(
+  slots: Map<string, SlotRect>,
+  warmupIds: Set<string>,
+): PoolItem[] {
+  const mounted = new Set<string>();
+
+  for (const id of warmupIds) {
+    mounted.add(id);
+  }
+
+  for (const item of ORB_POOL) {
+    const slot = findSlotForPoolItem(slots, item);
+    if (slot && isValidSlotRect(slot)) {
+      mounted.add(item.id);
+    }
+  }
+
+  return ORB_POOL.filter((item) => mounted.has(item.id));
+}
+
+function LazyOrbPoolItem({ item, slot }: { item: PoolItem; slot: SlotRect | null }) {
+  useEffect(() => {
+    markOrbPending(item.size, item.personality, item.isRoast);
+  }, [item]);
+
+  const visible = slot != null && isValidSlotRect(slot);
+  const hostStyle = visible
+    ? {
+        position: 'absolute' as const,
+        left: slot!.x,
+        top: slot!.y,
+        width: item.size,
+        height: item.size,
+        zIndex: 9998,
+      }
+    : {
+        position: 'absolute' as const,
+        top: -10000,
+        left: 0,
+        width: item.size,
+        height: item.size,
+        opacity: 0,
+      };
+
+  return (
+    <View style={hostStyle} pointerEvents="none" collapsable={false}>
+      <OrbView
+        size={item.size}
+        personality={item.personality}
+        isRoast={item.isRoast}
+        poolMode
+      />
+    </View>
+  );
+}
+
+function OrbPoolHost({
+  slots,
+  warmupIds,
+}: {
+  slots: Map<string, SlotRect>;
+  warmupIds: Set<string>;
+}) {
+  const mountedItems = useMemo(
+    () => getMountedPoolItems(slots, warmupIds),
+    [slots, warmupIds],
+  );
+
+  if (mountedItems.length === 0) return null;
+
   return (
     <>
-      {ORB_POOL.map((item) => {
-        const slot = findSlotForPoolItem(slots, item);
-        const visible = slot != null && isValidSlotRect(slot);
-        const hostStyle = visible
-          ? {
-              position: 'absolute' as const,
-              left: slot!.x,
-              top: slot!.y,
-              width: item.size,
-              height: item.size,
-              zIndex: 9998,
-            }
-          : {
-              position: 'absolute' as const,
-              top: -10000,
-              left: 0,
-              width: item.size,
-              height: item.size,
-              opacity: 0,
-            };
-
-        return (
-          <View key={item.id} style={hostStyle} pointerEvents="none" collapsable={false}>
-            <OrbView
-              size={item.size}
-              personality={item.personality}
-              isRoast={item.isRoast}
-              poolMode
-            />
-          </View>
-        );
-      })}
+      {mountedItems.map((item) => (
+        <LazyOrbPoolItem
+          key={item.id}
+          item={item}
+          slot={findSlotForPoolItem(slots, item)}
+        />
+      ))}
     </>
   );
 }
 
 export default function OrbOverlayProvider({ children }: { children: React.ReactNode }) {
   const [slots, setSlots] = useState<Map<string, SlotRect>>(new Map());
+  const [warmupTick, setWarmupTick] = useState(0);
+  const warmupCountsRef = useRef<Map<string, number>>(new Map());
 
-  useEffect(() => {
-    initOrbPoolPending();
-  }, []);
+  const warmupIds = useMemo(() => {
+    void warmupTick;
+    const ids = new Set<string>();
+    for (const [id, count] of warmupCountsRef.current.entries()) {
+      if (count > 0) ids.add(id);
+    }
+    return ids;
+  }, [warmupTick, slots]);
+
+  const bumpWarmup = useCallback(() => setWarmupTick((n) => n + 1), []);
+
+  const requestWarmup = useCallback(
+    (poolIds: readonly string[]) => {
+      const counts = warmupCountsRef.current;
+      for (const id of poolIds) {
+        counts.set(id, (counts.get(id) ?? 0) + 1);
+      }
+      bumpWarmup();
+    },
+    [bumpWarmup],
+  );
+
+  const releaseWarmup = useCallback(
+    (poolIds: readonly string[]) => {
+      const counts = warmupCountsRef.current;
+      for (const id of poolIds) {
+        const next = (counts.get(id) ?? 0) - 1;
+        if (next <= 0) counts.delete(id);
+        else counts.set(id, next);
+      }
+      bumpWarmup();
+    },
+    [bumpWarmup],
+  );
 
   const registerSlot = useCallback((id: string, rect: Omit<SlotRect, 'id' | 'updatedAt'>) => {
     setSlots((prev) => {
@@ -214,18 +306,25 @@ export default function OrbOverlayProvider({ children }: { children: React.React
     });
   }, []);
 
-  const value = useMemo(
+  const overlayValue = useMemo(
     () => ({ registerSlot, unregisterSlot }),
     [registerSlot, unregisterSlot],
   );
 
+  const poolControlValue = useMemo(
+    () => ({ requestWarmup, releaseWarmup }),
+    [requestWarmup, releaseWarmup],
+  );
+
   return (
-    <OrbOverlayContext.Provider value={value}>
-      {children}
-      <View style={styles.overlay} pointerEvents="none">
-        <OrbPoolHost slots={slots} />
-      </View>
-    </OrbOverlayContext.Provider>
+    <OrbPoolControlContext.Provider value={poolControlValue}>
+      <OrbOverlayContext.Provider value={overlayValue}>
+        {children}
+        <View style={styles.overlay} pointerEvents="none">
+          <OrbPoolHost slots={slots} warmupIds={warmupIds} />
+        </View>
+      </OrbOverlayContext.Provider>
+    </OrbPoolControlContext.Provider>
   );
 }
 

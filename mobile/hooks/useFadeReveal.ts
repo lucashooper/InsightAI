@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 
-/** Tracks which assistant message is playing the typewriter reveal. */
+/** Tracks which assistant message is playing the streaming reveal. */
 export function useFadeReveal() {
   const [revealingId, setRevealingId] = useState<string | null>(null);
   const pendingCompleteRef = useRef<(() => void) | null>(null);

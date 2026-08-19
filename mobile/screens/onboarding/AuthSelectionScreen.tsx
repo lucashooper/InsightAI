@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SvgXml } from 'react-native-svg';
 import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
+import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ONBOARDING_SURFACE, ONBOARDING_TEXT } from '../../constants/onboardingTheme';
@@ -124,14 +125,10 @@ export default function AuthSelectionScreen({ navigation, route }: any) {
       
       {/* Back Button - only show if can go back */}
       {navigation.canGoBack() && (
-        <TouchableOpacity 
-          style={[styles.backButton, { top: topInset + 12 }]}
+        <OnboardingBackButton
+          style={{ top: topInset + 12 }}
           onPress={() => navigation.goBack()}
-        >
-          <View style={styles.backArrowCircle}>
-            <Ionicons name="arrow-back" size={20} color="#1a1a2e" />
-          </View>
-        </TouchableOpacity>
+        />
       )}
 
       <View style={[styles.content, { paddingTop: topInset + (isTablet ? 88 : 72) }]}>
@@ -205,21 +202,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'transparent',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 60,
-    left: 20,
-    zIndex: 10,
-    padding: 4,
-  },
-  backArrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.05)',
   },
   content: {
     flex: 1,
