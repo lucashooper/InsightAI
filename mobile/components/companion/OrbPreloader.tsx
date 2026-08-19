@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { CHAT_PERSONALITIES } from '../../utils/aiPersonalities';
 import OrbWarmup from './OrbWarmup';
 
-const COMMON_SIZES = [36, 40, 48, 110, 130, 220] as const;
+const COMMON_SIZES = [36, 40, 44, 48, 110, 130, 180, 220, 260] as const;
 
 /** App-root orb pre-mount — warms WebGL for every size/personality combo used in the app. */
 export default function OrbPreloader() {

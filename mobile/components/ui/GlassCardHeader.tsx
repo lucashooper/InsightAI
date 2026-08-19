@@ -79,15 +79,15 @@ const styles = StyleSheet.create({
     paddingRight: 8,
   },
   title: {
-    fontSize: sf(20),
+    fontSize: sf(22),
     fontWeight: '700',
     letterSpacing: -0.4,
     marginBottom: 6,
   },
   subtitle: {
-    fontSize: sf(15),
+    fontSize: sf(17),
     fontWeight: '400',
-    lineHeight: sf(21),
+    lineHeight: sf(24),
   },
   chevron: {
     marginTop: 4,

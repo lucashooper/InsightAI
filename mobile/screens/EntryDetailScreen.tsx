@@ -539,9 +539,12 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
       setAnalysisOverlayMode('results');
     } catch (err: any) {
       if (err?.name === 'AbortError') {
-        // Cancelled by user
         return;
       }
+
+      console.error('[EntryDetail] ❌ analyze failed');
+      console.error('[EntryDetail]   message:', err?.message);
+      console.error('[EntryDetail]   stack:', err?.stack);
       
       // Stop rotating messages
       if (analysisMessageIntervalRef.current) {

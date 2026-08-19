@@ -135,6 +135,7 @@ const es: TranslationTree = {
         subtitle: 'En una escala del 1 al 10, ¿cómo sueles sentirte?',
         typicalDay: 'DÍA HABITUAL',
       },
+      noneOfAbove: 'Ninguna de las anteriores',
       stressResponse: {
         title: 'Cuando estás bajo presión, ¿qué sueles hacer?',
         ruminate: 'Dar vueltas a las cosas',

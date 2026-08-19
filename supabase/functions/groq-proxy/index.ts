@@ -78,6 +78,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         error: `Groq API error (${groqResponse.status})`,
         detail: errorBody.slice(0, 500),
+        model: model || 'openai/gpt-oss-120b',
       }), {
         status: groqResponse.status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

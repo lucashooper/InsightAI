@@ -100,6 +100,7 @@ export default React.memo(function MiraRevealCard({
               icon={explanationExpanded ? 'chevron-up' : 'search-outline'}
               onPress={onExploreWhy}
               style={styles.actionBtn}
+              borderless
             />
             <PremiumButton
               variant="secondary"
@@ -107,6 +108,7 @@ export default React.memo(function MiraRevealCard({
               icon="chatbubble-ellipses-outline"
               onPress={onAskFollowUp}
               style={styles.actionBtn}
+              borderless
             />
           </>
         }

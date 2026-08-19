@@ -24,7 +24,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { ONBOARDING_SURFACE, ONBOARDING_BG, ONBOARDING_TEXT } from '../../constants/onboardingTheme';
 import { MIRA_COMPANION_NAME } from '../../constants/mira';
-import { sf } from '../../utils/responsive';
+import { sf, isTablet, screenPadding, iPadContentStyle } from '../../utils/responsive';
 
 type ReplyPill = { id: string; label: string };
 
@@ -462,13 +462,14 @@ const styles = StyleSheet.create({
   },
   scroll: { flex: 1 },
   scrollContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: screenPadding,
     paddingTop: 20,
     gap: 12,
+    width: '100%',
   },
   miraBubble: {
     alignSelf: 'flex-start',
-    maxWidth: '88%',
+    maxWidth: isTablet ? '70%' : '88%',
     backgroundColor: ONBOARDING_SURFACE.fill,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: ONBOARDING_SURFACE.border,
@@ -485,7 +486,7 @@ const styles = StyleSheet.create({
   },
   userBubble: {
     alignSelf: 'flex-end',
-    maxWidth: '80%',
+    maxWidth: isTablet ? '65%' : '80%',
     borderRadius: 22,
     borderBottomRightRadius: 8,
     paddingHorizontal: 16,

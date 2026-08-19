@@ -3,12 +3,14 @@ import type { CSSProperties, ReactNode } from 'react';
 import { supabase } from '../../services/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Search } from 'lucide-react';
 
 interface UserJourney {
   session_id: string;
   user_id: string | null;
   username: string;
+  email?: string | null;
+  signedUpAt?: string | null;
   steps: {
     step: string;
     step_number: number;
@@ -17,6 +19,14 @@ interface UserJourney {
     timestamp: string;
   }[];
   lastActiveTime: string;
+}
+
+interface RegisteredProfile {
+  user_id: string;
+  username: string;
+  email: string | null;
+  created_at: string;
+  hasAnalytics: boolean;
 }
 
 interface AnalyticsMetrics {
@@ -219,6 +229,7 @@ export default function AnalyticsDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [userJourneys, setUserJourneys] = useState<UserJourney[]>([]);
+  const [registeredProfiles, setRegisteredProfiles] = useState<RegisteredProfile[]>([]);
   const [metrics, setMetrics] = useState<AnalyticsMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
@@ -230,8 +241,23 @@ export default function AnalyticsDashboard() {
   const filteredJourneys = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return userJourneys;
-    return userJourneys.filter((j) => j.username.toLowerCase().includes(q));
+    return userJourneys.filter((j) => {
+      const haystack = [j.username, j.email, j.user_id, j.session_id]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(q);
+    });
   }, [userJourneys, searchQuery]);
+
+  const filteredProfiles = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return registeredProfiles.filter((p) => !p.hasAnalytics);
+    return registeredProfiles.filter((p) => {
+      const haystack = [p.username, p.email, p.user_id].filter(Boolean).join(' ').toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [registeredProfiles, searchQuery]);
 
   useEffect(() => {
     if (!user || user.email !== 'edwardsjonny547@gmail.com') {
@@ -320,7 +346,13 @@ export default function AnalyticsDashboard() {
     setContextMenu(null);
 
     try {
-      const matching = userJourneys.filter((j) => j.username.toLowerCase().includes(q));
+      const matching = userJourneys.filter((j) => {
+        const haystack = [j.username, j.email, j.user_id, j.session_id]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return haystack.includes(q);
+      });
       const userIds = [...new Set(matching.map((j) => j.user_id).filter(Boolean))] as string[];
       const anonSessionIds = matching.filter((j) => !j.user_id).map((j) => j.session_id);
 
@@ -332,7 +364,13 @@ export default function AnalyticsDashboard() {
       }
 
       setUserJourneys((prev) =>
-        prev.filter((j) => !j.username.toLowerCase().includes(q)),
+        prev.filter((j) => {
+          const haystack = [j.username, j.email, j.user_id, j.session_id]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+          return !haystack.includes(q);
+        }),
       );
     } catch (err: any) {
       console.error('[Analytics] Delete matching failed:', err);
@@ -480,18 +518,52 @@ export default function AnalyticsDashboard() {
         }))
         .sort((a, b) => b.lastActiveTime.localeCompare(a.lastActiveTime));
 
-      setUserJourneys(journeys);
+      const { data: profiles } = await supabase
+        .from('user_profiles')
+        .select('user_id, username, email, created_at')
+        .order('created_at', { ascending: false });
+
+      const analyticsUserIds = new Set(
+        journeys.map((j) => j.user_id).filter(Boolean) as string[],
+      );
+
+      const profileByUserId = new Map(
+        (profiles ?? []).map((p) => [p.user_id, p]),
+      );
+
+      const enrichedJourneys = journeys.map((j) => {
+        if (!j.user_id) return j;
+        const profile = profileByUserId.get(j.user_id);
+        if (!profile) return j;
+        return {
+          ...j,
+          username: j.username === 'Anonymous' ? profile.username : j.username,
+          email: profile.email,
+          signedUpAt: profile.created_at,
+        };
+      });
+
+      const registered = (profiles ?? []).map((p) => ({
+        user_id: p.user_id,
+        username: p.username,
+        email: p.email,
+        created_at: p.created_at,
+        hasAnalytics: analyticsUserIds.has(p.user_id),
+      }));
+
+      setUserJourneys(enrichedJourneys);
+      setRegisteredProfiles(registered);
 
       // Calculate metrics
-      const totalSessions = journeys.length;
-      const completedOnboarding = journeys.filter(j => 
+      const totalSessions = enrichedJourneys.length;
+      const completedOnboarding = enrichedJourneys.filter(j => 
         j.steps.some(s => s.completed && s.step_number >= 23)
       ).length;
       const completionRate = totalSessions > 0 ? (completedOnboarding / totalSessions) * 100 : 0;
 
       // Find most common drop-off point
       const dropOffCounts = new Map<string, number>();
-      journeys.forEach(j => {
+      enrichedJourneys.forEach(j => {
         const lastCompletedStep = j.steps.filter(s => s.completed).pop();
         if (lastCompletedStep && lastCompletedStep.step_number < 23) {
           const stepLabel = ONBOARDING_STEPS.find(s => s.number === lastCompletedStep.step_number)?.label || lastCompletedStep.step;
@@ -608,24 +680,42 @@ export default function AnalyticsDashboard() {
             </div>
           </div>
 
-          <div style={{ marginBottom: '16px' }}>
-            <input
-              type="search"
-              placeholder="Search by username (e.g. Lucas)..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                maxWidth: '360px',
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '12px',
-                padding: '10px 14px',
-                color: '#fff',
-                fontSize: '14px',
-                outline: 'none',
-              }}
-            />
+          <div style={{ marginBottom: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ position: 'relative', flex: '1 1 280px', maxWidth: '420px' }}>
+              <Search
+                size={16}
+                style={{
+                  position: 'absolute',
+                  left: 12,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: 'rgba(255,255,255,0.4)',
+                  pointerEvents: 'none',
+                }}
+              />
+              <input
+                type="search"
+                placeholder="Search username, email, or user id..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.currentTarget.blur();
+                }}
+                style={{
+                  width: '100%',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '12px',
+                  padding: '10px 14px 10px 38px',
+                  color: '#fff',
+                  fontSize: '14px',
+                  outline: 'none',
+                }}
+              />
+            </div>
+            {searchQuery.trim() ? (
+              <GhostButton onClick={() => setSearchQuery('')}>Clear</GhostButton>
+            ) : null}
           </div>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
@@ -672,8 +762,16 @@ export default function AnalyticsDashboard() {
                       {journey.username}{hasSubscribed ? ' 💎' : ''}
                     </div>
                     <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.4)' }}>
-                      {new Date(journey.lastActiveTime).toLocaleDateString()} {new Date(journey.lastActiveTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {journey.signedUpAt
+                        ? `Signed up ${new Date(journey.signedUpAt).toLocaleDateString()}`
+                        : new Date(journey.lastActiveTime).toLocaleDateString()}{' '}
+                      {new Date(journey.lastActiveTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
+                    {journey.email ? (
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '2px' }}>
+                        {journey.email}
+                      </div>
+                    ) : null}
                   </div>
 
                   <div style={{ display: 'flex', gap: '6px', flex: 1, flexWrap: 'wrap' }}>
@@ -730,6 +828,47 @@ export default function AnalyticsDashboard() {
               );
             })}
           </div>
+
+          {(searchQuery.trim() ? filteredProfiles : filteredProfiles.slice(0, 12)).length > 0 ? (
+            <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+              <h3 style={{ fontSize: '14px', fontWeight: 600, margin: '0 0 8px', color: '#fff' }}>
+                Registered in app, no onboarding analytics
+                {searchQuery.trim() ? ` (${filteredProfiles.length})` : ''}
+              </h3>
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)', margin: '0 0 12px' }}>
+                Usually Apple/Google sign-in at the end of onboarding, returning logins, or users who dropped before tracked steps.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {(searchQuery.trim() ? filteredProfiles : filteredProfiles.slice(0, 12)).map((profile) => (
+                  <div
+                    key={profile.user_id}
+                    style={{
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                      borderRadius: '10px',
+                      padding: '10px 12px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      gap: '12px',
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 500, color: '#fff' }}>{profile.username}</div>
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
+                        {profile.email || 'No email on profile'}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.45)', textAlign: 'right' }}>
+                      Signed up<br />
+                      {new Date(profile.created_at).toLocaleDateString()}{' '}
+                      {new Date(profile.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 

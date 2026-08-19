@@ -19,6 +19,7 @@ import AppBackdrop from '../ui/AppBackdrop';
 import StandardContainer from './StandardContainer';
 import InsightsHeroCard from '../insights/InsightsHeroCard';
 import PremiumButton from './PremiumButton';
+import { isTablet, sf, iPadContentStyle, screenPadding } from '../../utils/responsive';
 
 type LoadingProps = {
   variant: 'loading';
@@ -73,6 +74,8 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
   const opacity = useRef(new Animated.Value(0)).current;
   const [strengthsExpanded, setStrengthsExpanded] = useState(true);
   const [growthExpanded, setGrowthExpanded] = useState(true);
+  const [strengthsShowAll, setStrengthsShowAll] = useState(!isTablet);
+  const [growthShowAll, setGrowthShowAll] = useState(!isTablet);
   const [editedWellbeing, setEditedWellbeing] = useState<number | null>(null);
 
   // Reset edited wellbeing when insights change
@@ -190,7 +193,7 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
                     </TouchableOpacity>
                   </StandardContainer>
 
-                  {strengthsExpanded && strengthCards.map((card: any, idx: number) => (
+                  {strengthsExpanded && strengthCards.slice(0, strengthsShowAll ? strengthCards.length : (isTablet ? 1 : strengthCards.length)).map((card: any, idx: number) => (
                     <StandardContainer key={idx} variant="recap" style={[styles.insightCard, { marginTop: 8 }]}>
                       <View style={[styles.growthBadge, { backgroundColor: subtleBg }]}>
                         <Text style={[styles.growthBadgeText, { color: textSecondary }]}>
@@ -206,6 +209,17 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
                       </Text>
                     </StandardContainer>
                   ))}
+                  {strengthsExpanded && isTablet && !strengthsShowAll && strengthCards.length > 1 && (
+                    <TouchableOpacity
+                      style={styles.viewMoreRow}
+                      onPress={() => setStrengthsShowAll(true)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.viewMoreText, { color: textSecondary }]}>
+                        {t('dashboard.viewMoreStrengths', { count: strengthCards.length - 1 })}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               );
             })()}
@@ -240,7 +254,7 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
                     </TouchableOpacity>
                   </StandardContainer>
 
-                  {growthExpanded && growthCards.map((card: any, idx: number) => (
+                  {growthExpanded && growthCards.slice(0, growthShowAll ? growthCards.length : (isTablet ? 1 : growthCards.length)).map((card: any, idx: number) => (
                     <StandardContainer key={idx} tint="violet" variant="recap" style={[styles.insightCard, { marginTop: 10 }]}>
                       <View style={[styles.growthBadge, { backgroundColor: subtleBg }]}>
                         <Text style={[styles.growthBadgeText, { color: textSecondary }]}>
@@ -283,6 +297,17 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
                       )}
                     </StandardContainer>
                   ))}
+                  {growthExpanded && isTablet && !growthShowAll && growthCards.length > 1 && (
+                    <TouchableOpacity
+                      style={styles.viewMoreRow}
+                      onPress={() => setGrowthShowAll(true)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.viewMoreText, { color: textSecondary }]}>
+                        {t('common.showMore')}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               );
             })()}
@@ -359,22 +384,22 @@ const styles = StyleSheet.create({
   },
   resultsContainer: {
     flex: 1,
-    paddingTop: 80,
-    paddingHorizontal: 24,
+    paddingTop: isTablet ? 72 : 80,
+    paddingHorizontal: screenPadding,
     paddingBottom: 20,
     zIndex: 10,
   },
   resultsTitle: {
-    fontSize: 34,
+    fontSize: sf(isTablet ? 38 : 34),
     fontWeight: '700',
     letterSpacing: -1.1,
-    lineHeight: 40,
+    lineHeight: sf(isTablet ? 44 : 40),
     marginBottom: 10,
     textAlign: 'center',
     paddingHorizontal: 8,
   },
   resultsSubtitle: {
-    fontSize: 14,
+    fontSize: sf(isTablet ? 16 : 14),
     fontWeight: '500',
     textAlign: 'center',
     marginBottom: 16,
@@ -419,7 +444,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   insightCard: {
-    padding: 18,
+    padding: isTablet ? 22 : 18,
     borderRadius: 18,
   },
   accordionSection: {
@@ -458,7 +483,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   accordionTitle: {
-    fontSize: 16,
+    fontSize: sf(isTablet ? 18 : 16),
     fontWeight: '700',
     color: 'rgba(255, 255, 255, 0.95)',
     letterSpacing: -0.3,
@@ -527,10 +552,19 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   insightDescription: {
-    fontSize: 15,
+    fontSize: sf(isTablet ? 17 : 15),
     fontWeight: '400',
     color: 'rgba(255, 255, 255, 0.7)',
-    lineHeight: 23,
+    lineHeight: sf(isTablet ? 26 : 23),
+  },
+  viewMoreRow: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    marginTop: 4,
+  },
+  viewMoreText: {
+    fontSize: sf(14),
+    fontWeight: '600',
   },
   themeChip: {
     paddingHorizontal: 16,

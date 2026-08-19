@@ -1,5 +1,6 @@
 import { StyleSheet, Platform } from 'react-native';
 import { ONBOARDING_SURFACE, ONBOARDING_CTA, ONBOARDING_TEXT } from './onboardingTheme';
+import { ONBOARDING_LAYOUT } from './onboardingLayout';
 import { sf } from '../utils/responsive';
 
 /** Shared light-theme auth/onboarding form colors. */
@@ -30,22 +31,22 @@ export const onboardingAuthStyles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 60,
-    left: 20,
+    top: ONBOARDING_LAYOUT.backTop,
+    left: ONBOARDING_LAYOUT.backLeft,
     zIndex: 10,
     padding: 4,
   },
   backButtonCompact: {
     position: 'absolute',
-    top: 16,
-    left: 20,
+    top: ONBOARDING_LAYOUT.backTop,
+    left: ONBOARDING_LAYOUT.backLeft,
     zIndex: 10,
     padding: 4,
   },
   backArrowCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: ONBOARDING_LAYOUT.backSize,
+    height: ONBOARDING_LAYOUT.backSize,
+    borderRadius: ONBOARDING_LAYOUT.backRadius,
     backgroundColor: 'rgba(255, 255, 255, 0.6)',
     borderWidth: 1,
     borderColor: 'rgba(200, 185, 255, 0.35)',
@@ -54,18 +55,18 @@ export const onboardingAuthStyles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 120,
+    paddingHorizontal: ONBOARDING_LAYOUT.contentHorizontal,
+    paddingTop: ONBOARDING_LAYOUT.contentTop,
   },
   contentCompact: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingHorizontal: ONBOARDING_LAYOUT.contentHorizontal,
+    paddingTop: ONBOARDING_LAYOUT.contentTop - 50,
   },
   contentCentered: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 40,
+    paddingHorizontal: ONBOARDING_LAYOUT.contentHorizontal,
+    paddingTop: ONBOARDING_LAYOUT.contentTop - 70,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -196,8 +197,8 @@ export const onboardingAuthStyles = StyleSheet.create({
     fontWeight: '600',
   },
   bottomContainer: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
+    paddingHorizontal: ONBOARDING_LAYOUT.contentHorizontal,
+    paddingBottom: ONBOARDING_LAYOUT.footerBottom,
   },
   continueButton: {
     backgroundColor: ONBOARDING_CTA.background,

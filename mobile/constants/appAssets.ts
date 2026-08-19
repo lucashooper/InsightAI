@@ -6,6 +6,7 @@ import { PAYWALL_PHONE_IMAGES, PRODUCT_REVEAL_PHONE } from './phoneMockups';
 
 export const HOME_PAGE_GRADIENT = require('../public/home-page-gradient.png');
 export const SPLASH_BACKGROUND = require('../public/abstract-dark-background.jpg');
+export const SPLASH_PREMIUM = require('../public/splash-premium.jpg');
 export const SPLASH_LOADING_WORDMARK = require('../public/Insight-Loading-Text-White-Version.png');
 export const INSIGHT_LOGO = require('../public/Insight-Logo-nobg.webp');
 export const MIRA_ORB = require('../public/Mira-Orb-No-Background.png');

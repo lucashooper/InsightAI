@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { isTablet, si, sf } from '../../utils/responsive';
+import { isTablet, si, sf, screenPadding } from '../../utils/responsive';
 import { PREMIUM, TYPE } from '../../constants/premiumUI';
 
 type Props = {
@@ -31,7 +31,7 @@ export default function PageHeader({ title, onBack, right, style, large = true }
         styles.container,
         {
           paddingTop: insets.top + PREMIUM.layout.headerTop,
-          paddingHorizontal: isTablet ? 32 : PREMIUM.layout.screenPadH,
+          paddingHorizontal: screenPadding,
         },
         style,
       ]}

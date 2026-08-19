@@ -87,7 +87,10 @@ serve(async (req) => {
     if (!groqResponse.ok) {
       const errorBody = await groqResponse.text()
       console.error('[clever-api] Groq error:', groqResponse.status, errorBody)
-      return new Response(JSON.stringify({ error: `Groq API error (${groqResponse.status})` }), {
+      return new Response(JSON.stringify({
+        error: `Groq API error (${groqResponse.status})`,
+        detail: errorBody,
+      }), {
         status: groqResponse.status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })

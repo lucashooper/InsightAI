@@ -25,6 +25,7 @@ import CollapsibleEmojiPicker from '../components/shared/CollapsibleEmojiPicker'
 import { loadProtocolReminder, saveProtocolReminder, type ProtocolReminder } from '../utils/protocolReminders';
 import ProtocolOptionsSheet from '../components/playbook/ProtocolOptionsSheet';
 import { emojiForProtocol, resolveProtocolTasks } from '../utils/protocolEmoji';
+import { isTablet, sf, ss, screenPadding } from '../utils/responsive';
 
 type TabType = 'protocols' | 'strategies';
 
@@ -1081,7 +1082,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: PREMIUM.layout.screenPadH,
+    paddingHorizontal: screenPadding,
     paddingTop: PREMIUM.space[1],
     paddingBottom: 120,
     gap: PREMIUM.layout.cardGap,
@@ -1093,7 +1094,7 @@ const styles = StyleSheet.create({
     marginBottom: PREMIUM.space[1],
   },
   progressFraction: {
-    fontSize: 32,
+    fontSize: sf(isTablet ? 36 : 32),
     fontWeight: '700',
     letterSpacing: -1,
   },
@@ -1123,7 +1124,7 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: isTablet ? 14 : 12,
     borderRadius: PREMIUM.radius.md,
     alignItems: 'center',
   },
@@ -1131,7 +1132,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#8b5cf6',
   },
   tabText: {
-    fontSize: 14,
+    fontSize: sf(14),
     fontWeight: '600',
     color: '#666666',
   },
@@ -1158,7 +1159,7 @@ const styles = StyleSheet.create({
   },
   createButtonText: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: sf(16),
     fontWeight: '600',
   },
   // Empty State Styles
@@ -1211,7 +1212,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   cardEmoji: {
-    fontSize: 28,
+    fontSize: sf(isTablet ? 32 : 28),
   },
   cardInfo: {
     flex: 1,
@@ -1223,7 +1224,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: sf(isTablet ? 20 : 18),
     fontWeight: '700',
     color: '#ffffff',
     letterSpacing: -0.3,
@@ -1239,9 +1240,9 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   cardDescription: {
-    fontSize: 14,
+    fontSize: sf(isTablet ? 16 : 14),
     color: '#999999',
-    lineHeight: 20,
+    lineHeight: sf(isTablet ? 24 : 20),
   },
   deleteButton: {
     padding: 8,

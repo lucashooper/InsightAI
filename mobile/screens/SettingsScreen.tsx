@@ -17,7 +17,7 @@ import LanguagePicker from '../components/LanguagePicker';
 import { useLanguage } from '../contexts/LanguageContext';
 import { APP_NAME } from '../constants/branding';
 import { usePreloadedData } from '../contexts/PreloadContext';
-import { isTablet, sf, ss, si, iPadContentStyle } from '../utils/responsive';
+import { isTablet, sf, ss, si, screenPadding } from '../utils/responsive';
 import { printSubscriptionDebugReport, resetRevenueCatOnly, nukeAllSubscriptionState } from '../utils/subscriptionDebug';
 import { getAccountStatsForUser } from '../utils/entitlements';
 import { isDevAccountEmail } from '../constants/devAccounts';
@@ -1319,7 +1319,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: isTablet ? 48 : 20,
+    paddingHorizontal: screenPadding,
   },
   scrollContent: {
     paddingBottom: 100,

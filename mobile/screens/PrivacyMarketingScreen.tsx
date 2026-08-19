@@ -7,11 +7,13 @@ import EyeOff from 'lucide-react-native/dist/esm/icons/eye-off.mjs';
 import ShieldCheck from 'lucide-react-native/dist/esm/icons/shield-check.mjs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import OrbView from '../components/companion/OrbView';
+import { isTablet, sf, ss, si, screenPadding } from '../utils/responsive';
 
+const ORB_SIZE = isTablet ? 260 : 180;
+const LOCK_BADGE_SIZE = isTablet ? 72 : 56;
+const LOCK_ICON_SIZE = isTablet ? 34 : 26;
+const LOCK_BADGE_LEFT = (ORB_SIZE - LOCK_BADGE_SIZE) / 2;
 const SCREEN_BG = '#F5F0E8';
-const ORB_SIZE = 180;
-const LOCK_BADGE_SIZE = 56;
-const LOCK_ICON_SIZE = 26;
 
 type FeatureRowProps = {
   gradientColors: [string, string];
@@ -55,40 +57,44 @@ export default function PrivacyMarketingScreen({ navigation }: { navigation?: { 
           accessibilityLabel="Go back"
           accessibilityRole="button"
         >
-          <Ionicons name="chevron-back" size={24} color="#7B5EA7" />
+          <Ionicons name="chevron-back" size={si(24)} color="#7B5EA7" />
         </TouchableOpacity>
       ) : null}
 
-      <View style={styles.heroWrap}>
-        <View style={styles.orbContainer}>
-          <OrbView size={ORB_SIZE} />
+      <View style={styles.content}>
+        <View style={styles.heroWrap}>
+          <View style={styles.orbContainer}>
+            <OrbView size={ORB_SIZE} personality="default" />
+          </View>
+          <View style={styles.lockBadge}>
+            <Lock size={LOCK_ICON_SIZE} color="#FFFFFF" strokeWidth={2.5} />
+          </View>
         </View>
-        <View style={styles.lockBadge}>
-          <Lock size={LOCK_ICON_SIZE} color="#FFFFFF" strokeWidth={2.5} />
+
+        <View style={styles.cardsWrap}>
+          <FeatureRow
+            gradientColors={['#A78BFA', '#7B5EA7']}
+            shadowColor="rgba(123,94,167,0.4)"
+            icon={<Lock size={si(28)} color="#FFFFFF" strokeWidth={2.25} />}
+            title="End-to-End Encrypted"
+            subtitle="Your entries are encrypted before they ever leave your device."
+          />
+          <FeatureRow
+            gradientColors={['#38BDF8', '#0EA5E9']}
+            shadowColor="rgba(14,165,233,0.4)"
+            icon={<EyeOff size={si(28)} color="#FFFFFF" strokeWidth={2.25} />}
+            title="Completely Private"
+            subtitle="Only you can read your entries. Not even we can see them."
+          />
+          <FeatureRow
+            gradientColors={['#4ADE80', '#22C55E']}
+            shadowColor="rgba(34,197,94,0.4)"
+            icon={<ShieldCheck size={si(28)} color="#FFFFFF" strokeWidth={2.25} />}
+            title="Never Sold. Ever."
+            subtitle="We will never share, sell, or monetise your personal data."
+          />
         </View>
       </View>
-
-      <FeatureRow
-        gradientColors={['#A78BFA', '#7B5EA7']}
-        shadowColor="rgba(123,94,167,0.4)"
-        icon={<Lock size={24} color="#FFFFFF" strokeWidth={2.25} />}
-        title="End-to-End Encrypted"
-        subtitle="Your entries are encrypted before they ever leave your device."
-      />
-      <FeatureRow
-        gradientColors={['#38BDF8', '#0EA5E9']}
-        shadowColor="rgba(14,165,233,0.4)"
-        icon={<EyeOff size={24} color="#FFFFFF" strokeWidth={2.25} />}
-        title="Completely Private"
-        subtitle="Only you can read your entries. Not even we can see them."
-      />
-      <FeatureRow
-        gradientColors={['#4ADE80', '#22C55E']}
-        shadowColor="rgba(34,197,94,0.4)"
-        icon={<ShieldCheck size={24} color="#FFFFFF" strokeWidth={2.25} />}
-        title="Never Sold. Ever."
-        subtitle="We will never share, sell, or monetise your personal data."
-      />
     </View>
   );
 }
@@ -97,37 +103,43 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: SCREEN_BG,
-    paddingHorizontal: 24,
-    paddingTop: 140,
+    paddingHorizontal: screenPadding,
   },
   backButton: {
     position: 'absolute',
-    left: 16,
+    left: screenPadding - 8,
     zIndex: 10,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: isTablet ? 44 : 36,
+    height: isTablet ? 44 : 36,
+    borderRadius: isTablet ? 22 : 18,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: SCREEN_BG,
   },
+  content: {
+    flex: 1,
+    paddingTop: isTablet ? 100 : 140,
+    paddingBottom: isTablet ? 48 : 32,
+    justifyContent: isTablet ? 'space-evenly' : 'flex-start',
+  },
   heroWrap: {
     alignSelf: 'center',
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 40,
+    marginTop: isTablet ? 8 : 20,
+    marginBottom: isTablet ? ss(32) : 40,
     width: ORB_SIZE,
-    height: ORB_SIZE,
+    height: ORB_SIZE + LOCK_BADGE_SIZE / 3,
     position: 'relative',
   },
   orbContainer: {
     width: ORB_SIZE,
     height: ORB_SIZE,
+    overflow: 'visible',
   },
   lockBadge: {
     position: 'absolute',
     bottom: 0,
-    right: '28%',
+    left: LOCK_BADGE_LEFT,
     width: LOCK_BADGE_SIZE,
     height: LOCK_BADGE_SIZE,
     borderRadius: LOCK_BADGE_SIZE / 2,
@@ -140,16 +152,19 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 8,
-    elevation: 6,
+    elevation: 8,
+    zIndex: 2,
+  },
+  cardsWrap: {
+    gap: isTablet ? 20 : 12,
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 18,
-    marginBottom: 12,
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    borderRadius: isTablet ? 22 : 18,
+    paddingHorizontal: isTablet ? ss(22) : 16,
+    paddingVertical: isTablet ? ss(24) : 18,
     borderWidth: 1,
     borderColor: 'rgba(200,185,255,0.3)',
     shadowColor: 'rgb(120, 80, 200)',
@@ -159,19 +174,19 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   iconBoxOuter: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    marginRight: 14,
+    width: isTablet ? ss(60) : 52,
+    height: isTablet ? ss(60) : 52,
+    borderRadius: isTablet ? 20 : 16,
+    marginRight: isTablet ? 20 : 14,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 12,
     elevation: 6,
   },
   iconGradient: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
+    width: '100%',
+    height: '100%',
+    borderRadius: isTablet ? 20 : 16,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -182,13 +197,13 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontWeight: '800',
-    fontSize: 17,
+    fontSize: sf(19),
     color: '#1a1a2e',
-    marginBottom: 4,
+    marginBottom: isTablet ? 8 : 4,
   },
   cardSubtitle: {
-    fontSize: 14,
+    fontSize: sf(16),
     color: '#6b6b8a',
-    lineHeight: 20,
+    lineHeight: sf(23),
   },
 });

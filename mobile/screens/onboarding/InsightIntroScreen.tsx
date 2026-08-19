@@ -12,13 +12,13 @@ import * as Haptics from 'expo-haptics';
 import { OrbSlot } from '../../components/companion/OrbOverlayProvider';
 import OnboardingButton from '../../components/onboarding/OnboardingButton';
 import { ONBOARDING_GRADIENT } from '../../constants/onboardingTheme';
+import { ONBOARDING_LAYOUT } from '../../constants/onboardingLayout';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { computePersonality } from '../../utils/onboardingPersonality';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { sf } from '../../utils/responsive';
+import { isTablet, sf, ss, iPadContentStyle } from '../../utils/responsive';
 import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
 
-const ORB_SIZE = 220;
 const CHAR_DELAY = 40;
 const SUBTEXT_DELAY = 600;
 const BUTTON_DELAY = 1000;
@@ -132,11 +132,11 @@ export default function InsightIntroScreen({ navigation, route }: any) {
       <StatusBar barStyle="dark-content" />
 
       <SafeAreaView style={styles.safe}>
-        <View style={styles.content}>
+        <View style={[styles.content, iPadContentStyle as any]}>
           <Text style={styles.line1}>{line1 || ' '}</Text>
 
           <View style={styles.orbWrap}>
-            <OrbSlot size={ORB_SIZE} personality="default" />
+            <OrbSlot size={ONBOARDING_LAYOUT.introOrbSize} personality="default" />
           </View>
 
           <View style={styles.subtextWrap}>
@@ -149,7 +149,11 @@ export default function InsightIntroScreen({ navigation, route }: any) {
         </View>
 
         {showButton ? (
-          <Animated.View style={[styles.footer, { paddingBottom: bottomInset, opacity: buttonOpacity }]}>
+          <Animated.View style={[
+            styles.footer,
+            iPadContentStyle as any,
+            { paddingBottom: Math.max(bottomInset, ONBOARDING_LAYOUT.footerBottom), opacity: buttonOpacity },
+          ]}>
             <OnboardingButton label="Let's talk" onPress={onContinue} />
           </Animated.View>
         ) : (
@@ -171,8 +175,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: ONBOARDING_LAYOUT.contentHorizontal,
     paddingBottom: 24,
+    width: '100%',
   },
   line1: {
     fontSize: sf(38),
@@ -184,8 +189,8 @@ const styles = StyleSheet.create({
     minHeight: sf(46),
   },
   orbWrap: {
-    marginTop: 52,
-    marginBottom: 52,
+    marginTop: isTablet ? ss(64) : 52,
+    marginBottom: isTablet ? ss(64) : 52,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -203,10 +208,11 @@ const styles = StyleSheet.create({
     color: '#7B5EA7',
     textAlign: 'center',
     lineHeight: sf(28),
-    paddingHorizontal: 32,
+    paddingHorizontal: ONBOARDING_LAYOUT.contentHorizontal,
   },
   footer: {
-    paddingHorizontal: 24,
-    paddingTop: 12,
+    paddingHorizontal: ONBOARDING_LAYOUT.contentHorizontal,
+    paddingTop: ONBOARDING_LAYOUT.footerTop,
+    width: '100%',
   },
 });

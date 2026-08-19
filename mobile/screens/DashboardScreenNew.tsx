@@ -30,7 +30,7 @@ import PremiumDialog from '../components/shared/PremiumDialog';
 import PinnedRoutineCard from '../components/dashboard/PinnedRoutineCard';
 import PlaybookQuickAccessCard from '../components/dashboard/PlaybookQuickAccessCard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { isTablet, sf, ss, si, iPadContentStyle } from '../utils/responsive';
+import { isTablet, sf, ss, si, screenPadding } from '../utils/responsive';
 import { getTodayPrompt, DailyPrompt } from '../data/dailyPrompts';
 import { APP_NAME } from '../constants/branding';
 import CheckInFlowModal from '../components/checkin/CheckInFlowModal';
@@ -871,7 +871,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   heroZone: {
-    paddingHorizontal: isTablet ? 48 : PREMIUM.layout.screenPadH,
+    paddingHorizontal: screenPadding,
     paddingTop: PREMIUM.layout.heroTopPadding,
     minHeight: isTablet ? 180 : 140,
     justifyContent: 'flex-end',
@@ -983,7 +983,7 @@ const styles = StyleSheet.create({
   },
   actionsSection: {
     flexDirection: 'row',
-    paddingHorizontal: isTablet ? 48 : PREMIUM.layout.screenPadH,
+    paddingHorizontal: screenPadding,
     gap: isTablet ? 40 : 24,
     marginBottom: isTablet ? 36 : 28,
     justifyContent: 'center',
@@ -1127,7 +1127,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   insightsSection: {
-    paddingHorizontal: isTablet ? 48 : PREMIUM.layout.screenPadH,
+    paddingHorizontal: screenPadding,
     marginBottom: PREMIUM.layout.sectionGap,
     gap: 4,
   },
@@ -1169,7 +1169,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   challengesSection: {
-    paddingHorizontal: isTablet ? 48 : PREMIUM.layout.screenPadH,
+    paddingHorizontal: screenPadding,
     marginBottom: PREMIUM.layout.sectionGap,
   },
   challengeCard: {

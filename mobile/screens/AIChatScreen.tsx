@@ -47,7 +47,7 @@ import {
   type MiraVoiceSelection,
 } from '../services/miraVoiceService';
 import { AiPersonality, CHAT_PERSONALITIES } from '../utils/aiPersonalities';
-import { sf } from '../utils/responsive';
+import { sf, isTablet, screenPadding } from '../utils/responsive';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { getCachedChatSuggestions, setCachedChatSuggestions } from '../utils/chatSuggestionsCache';
@@ -1235,7 +1235,11 @@ export default function AIChatScreen({ navigation }: any) {
         }
       }
     } catch (error: any) {
-      console.error('[AIChatScreen] ❌ Error sending message:', error);
+      console.error('[AIChatScreen] ❌ Error sending message');
+      console.error('[AIChatScreen]   message:', error?.message);
+      console.error('[AIChatScreen]   name:', error?.name);
+      console.error('[AIChatScreen]   stack:', error?.stack);
+      if (error?.cause) console.error('[AIChatScreen]   cause:', error.cause);
       setIsAnalyzing(false);
       const errorMsg: ChatMessage = {
         id: `error-${Date.now()}`,
@@ -1284,7 +1288,7 @@ export default function AIChatScreen({ navigation }: any) {
                 onError={() => setProfilePictureError(true)}
               />
             ) : (
-              <Ionicons name="person-circle-outline" size={32} color={theme.colors.secondaryText} />
+              <Ionicons name="person-circle-outline" size={isTablet ? 42 : 42} color={theme.colors.secondaryText} />
             )}
           </View>
         </View>
@@ -1294,6 +1298,7 @@ export default function AIChatScreen({ navigation }: any) {
     const explanationOpen = !!expandedRevealIds[item.id];
 
     if (item.reveal) {
+      const avatarSize = isTablet ? 57 : 47;
       return (
         <View style={[styles.messageBubbleContainer, styles.assistantBubbleContainer, styles.revealRow]}>
           <View style={styles.avatarWrap}>
@@ -1538,7 +1543,10 @@ export default function AIChatScreen({ navigation }: any) {
           renderItem={renderMessage}
           keyExtractor={item => item.id}
           extraData={{ expandedRevealIds, activeMessageId, isAnalyzing }}
-          contentContainerStyle={styles.messagesList}
+          contentContainerStyle={[
+            styles.messagesList,
+            messages.length > 0 ? styles.messagesListCompact : null,
+          ]}
           removeClippedSubviews={Platform.OS === 'android'}
           windowSize={9}
           maxToRenderPerBatch={6}
@@ -1877,8 +1885,8 @@ const styles = StyleSheet.create({
     opacity: 0.5,
     marginTop: 8,
   },
-  revealRow: { alignItems: 'flex-start' },
-  revealColumn: { flex: 1, maxWidth: '88%' },
+  revealRow: { alignItems: 'flex-start', flexDirection: 'row' },
+  revealColumn: { flex: 1, maxWidth: isTablet ? '88%' : '88%' },
   revealExplanationBubble: { maxWidth: '100%', marginTop: 4 },
   messageActions: { flexDirection: 'row', gap: 4, marginTop: 6, marginLeft: 2 },
   messageActionBtn: {
@@ -1904,7 +1912,15 @@ const styles = StyleSheet.create({
   },
   roastBadgeText: { color: '#fca5a5', fontSize: sf(12), fontWeight: '600' },
   chatContainer: { flex: 1 },
-  messagesList: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8, flexGrow: 1 },
+  messagesList: {
+    paddingHorizontal: isTablet ? screenPadding : 20,
+    paddingTop: 16,
+    paddingBottom: 8,
+    flexGrow: 1,
+  },
+  messagesListCompact: {
+    flexGrow: 0,
+  },
   emptyDiscoveryLayer: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'flex-start',
@@ -1978,7 +1994,7 @@ const styles = StyleSheet.create({
   messageBubbleContainer: { flexDirection: 'row', marginBottom: 16, alignItems: 'flex-start', paddingHorizontal: 2 },
   userBubbleContainer: { justifyContent: 'flex-end', alignItems: 'flex-end' },
   assistantBubbleContainer: { justifyContent: 'flex-start', alignItems: 'flex-start' },
-  avatarWrap: { marginRight: 8, marginTop: 4, width: 36, height: 36, overflow: 'visible' },
+  avatarWrap: { marginRight: 10, marginTop: 4, width: isTablet ? 57 : 47, height: isTablet ? 57 : 47, overflow: 'visible' },
   avatarGradient: { width: 26, height: 26, borderRadius: 13, justifyContent: 'center', alignItems: 'center' },
   userAvatarWrap: { marginLeft: 8, marginBottom: 2 },
   userAvatarFrame: {
@@ -1987,7 +2003,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden' as any,
   },
   userAvatarImage: { width: '100%' as any, height: '100%' as any, borderRadius: 15 },
-  userAvatarImageDirect: { width: 32, height: 32, borderRadius: 16 },
+  userAvatarImageDirect: { width: isTablet ? 42 : 42, height: isTablet ? 42 : 42, borderRadius: 21 },
   userAvatarFallback: {
     width: '100%' as any, height: '100%' as any, borderRadius: 15,
     backgroundColor: 'rgba(139, 92, 246, 0.25)', justifyContent: 'center', alignItems: 'center',
