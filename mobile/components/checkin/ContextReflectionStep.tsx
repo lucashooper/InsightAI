@@ -81,7 +81,7 @@ export default function ContextReflectionStep({ onContinue }: Props) {
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.headingRow}>
         <Text style={[styles.heading, { color: theme.colors.primaryText }]}>
-          {t('checkIn.feelingPrefix', { mood: t(`checkIn.${draft.moodTier}`).toLowerCase() })}
+          {t(`checkIn.headlines.${draft.moodTier}`)}
         </Text>
       </View>
       <Text style={[styles.sub, { color: theme.colors.secondaryText }]}>

@@ -1,6 +1,7 @@
 /** Internal dev / founder accounts — entitled in all builds (Expo Go, TestFlight, production). */
 export const DEV_ACCOUNT_EMAILS = new Set([
   'edwardsjonny547@gmail.com',
+  'amy@insight.app',
 ]);
 
 export function isDevAccountEmail(email?: string | null): boolean {

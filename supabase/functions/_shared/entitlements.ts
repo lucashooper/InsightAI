@@ -5,6 +5,7 @@ const ENTITLED_TIERS = new Set(['pro', 'unlimited', 'demo'])
 /** Keep in sync with mobile/constants/devAccounts.ts */
 const DEV_ACCOUNT_EMAILS = new Set([
   'edwardsjonny547@gmail.com',
+  'amy@insight.app',
 ])
 
 /** APK investor demo — keep AI working even if profile tier drifts to free. */

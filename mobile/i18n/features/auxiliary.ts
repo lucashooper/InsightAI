@@ -99,7 +99,7 @@ const en: TranslationTree = {
     },
     gratitude: {
       title: 'Gratitude Practice', promptSmile: 'What made you smile today?',
-      promptPerson: 'Who are you grateful for right now?', promptJoy: 'What small moment brought you joy?',
+      promptGrateful: 'What are you grateful for right now?', promptJoy: 'What small moment brought you joy?',
       noResponses: 'No responses', noResponsesMessage: 'Please write at least one gratitude response.',
       insight: 'Reflection', savedMessage: 'Your gratitude practice has been saved to your journal.',
       saveFailed: 'Failed to save your gratitude practice. {{error}}', progress: '{{current}} of {{total}}',
@@ -346,7 +346,7 @@ const generatedTranslations: Partial<Record<AppLanguage, TranslationTree>> = {
       "gratitude": {
         "noResponses": "Sin respuestas",
         "title": "Práctica de gratitud",
-        "promptPerson": "¿Por quién estás agradecido en este momento?",
+        "promptGrateful": "¿Por qué estás agradecido en este momento?",
         "promptSmile": "¿Qué te hizo sonreír hoy?",
         "savedMessage": "Tu práctica de gratitud se ha guardado en tu diario.",
         "insight": "Conocimiento",
@@ -845,7 +845,7 @@ const generatedTranslations: Partial<Record<AppLanguage, TranslationTree>> = {
       },
       "gratitude": {
         "insight": "洞察力",
-        "promptPerson": "现在你最感激谁？",
+        "promptGrateful": "你现在最感激什么？",
         "title": "感恩实践",
         "noResponsesMessage": "请至少写一篇感谢回复。",
         "promptJoy": "哪个小时刻给你带来快乐？",
@@ -1142,7 +1142,7 @@ const generatedTranslations: Partial<Record<AppLanguage, TranslationTree>> = {
       "gratitude": {
         "noResponsesMessage": "कृपया कम से कम एक आभार प्रतिक्रिया लिखें।",
         "promptSmile": "किस बात ने तुम्हारे ओठों पर आज मुस्कान ला दी है?",
-        "promptPerson": "इस समय आप किसके प्रति आभारी हैं?",
+        "promptGrateful": "इस समय आप किस चीज़ के लिए आभारी हैं?",
         "noResponses": "कोई प्रतिक्रिया नहीं",
         "savedMessage": "आपका आभार अभ्यास आपकी पत्रिका में सहेजा गया है।",
         "insight": "अंतर्दृष्टि",
@@ -1650,7 +1650,7 @@ const generatedTranslations: Partial<Record<AppLanguage, TranslationTree>> = {
         "insight": "Aperçu",
         "title": "Pratique de gratitude",
         "promptJoy": "Quel petit moment vous a apporté de la joie ?",
-        "promptPerson": "Pour qui es-tu reconnaissant en ce moment ?",
+        "promptGrateful": "Pour quoi es-tu reconnaissant en ce moment ?",
         "noResponsesMessage": "Veuillez écrire au moins une réponse de gratitude.",
         "savedMessage": "Votre pratique de gratitude a été enregistrée dans votre journal.",
         "noResponses": "Aucune réponse",
@@ -2020,7 +2020,7 @@ const generatedTranslations: Partial<Record<AppLanguage, TranslationTree>> = {
         "saveFailed": "Ihre Dankbarkeitsübung konnte nicht gespeichert werden. {{error}}",
         "placeholder": "Schreiben Sie Ihre Gedanken ...",
         "progress": "{{current}} von {{total}}",
-        "promptPerson": "Für wen bist du gerade dankbar?"
+        "promptGrateful": "Wofür bist du gerade dankbar?"
       },
       "explore": {
         "title": "Erkunden",
@@ -2351,7 +2351,7 @@ const generatedTranslations: Partial<Record<AppLanguage, TranslationTree>> = {
       "gratitude": {
         "noResponsesMessage": "Напишите, пожалуйста, хотя бы один ответ с благодарностью.",
         "noResponses": "Нет ответов",
-        "promptPerson": "Кому вы благодарны прямо сейчас?",
+        "promptGrateful": "За что вы благодарны прямо сейчас?",
         "title": "Практика благодарности",
         "promptSmile": "Что заставило тебя улыбнуться сегодня?",
         "promptJoy": "Какой маленький момент принес вам радость?",
@@ -2775,7 +2775,7 @@ const generatedTranslations: Partial<Record<AppLanguage, TranslationTree>> = {
         "biometrics": "ID facial / Touch ID"
       },
       "gratitude": {
-        "promptPerson": "Por quem você está grato neste momento?",
+        "promptGrateful": "Pelo que você está grato neste momento?",
         "noResponsesMessage": "Por favor, escreva pelo menos uma resposta de gratidão.",
         "insight": "Entendimento",
         "promptSmile": "O que fez você sorrir hoje?",
@@ -3153,7 +3153,7 @@ const generatedTranslations: Partial<Record<AppLanguage, TranslationTree>> = {
         "progress": "{{current}} di {{total}}",
         "placeholder": "Scrivi i tuoi pensieri...",
         "saveFailed": "Impossibile salvare la pratica di gratitudine. {{error}}",
-        "promptPerson": "Per chi sei grato in questo momento?",
+        "promptGrateful": "Per cosa sei grato in questo momento?",
         "insight": "Intuizione"
       },
       "gratitudeHistory": {
@@ -3578,7 +3578,7 @@ const generatedTranslations: Partial<Record<AppLanguage, TranslationTree>> = {
         "insight": "Reflecție",
         "noResponses": "Niciun răspuns",
         "promptSmile": "Ce te-a făcut să zâmbești astăzi?",
-        "promptPerson": "Pentru cine ești recunoscător acum?",
+        "promptGrateful": "Pentru ce ești recunoscător acum?",
         "noResponsesMessage": "Vă rugăm să scrieți cel puțin un răspuns de recunoștință.",
         "saveFailed": "Nu s-a salvat practica de recunoștință. {{error}}",
         "savedMessage": "Practica ta de recunoștință a fost salvată în jurnalul tău.",
@@ -4103,7 +4103,7 @@ const generatedTranslations: Partial<Record<AppLanguage, TranslationTree>> = {
         "savedMessage": "Minnətdarlıq təcrübəniz jurnalınızda saxlandı.",
         "title": "Minnətdarlıq Təcrübəsi",
         "promptJoy": "Hansı kiçik an sizə sevinc gətirdi?",
-        "promptPerson": "Hazırda kimə minnətdarsınız?",
+        "promptGrateful": "Hazırda nəyə minnətdarsınız?",
         "placeholder": "Fikirlərinizi yazın...",
         "progress": "{{current}}/{{total}}",
         "saveFailed": "Minnətdarlıq təcrübənizi yadda saxlamaq alınmadı. {{error}}"
@@ -4392,7 +4392,7 @@ const generatedTranslations: Partial<Record<AppLanguage, TranslationTree>> = {
         "promptJoy": "Welk klein moment bracht jou vreugde?",
         "noResponsesMessage": "Schrijf ten minste één dankbaarheidsreactie.",
         "savedMessage": "Je dankbaarheidsoefening is opgeslagen in je dagboek.",
-        "promptPerson": "Voor wie ben jij op dit moment dankbaar?",
+        "promptGrateful": "Waar ben jij op dit moment dankbaar voor?",
         "placeholder": "Schrijf je gedachten...",
         "saveFailed": "Kan je dankbaarheidsoefening niet opslaan. {{error}}",
         "progress": "{{current}} van {{total}}"

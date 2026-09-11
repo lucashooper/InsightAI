@@ -8,14 +8,14 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { SPLASH_PREMIUM } from '../../constants/appAssets';
+import { SPLASH_BACKGROUND, SPLASH_LOADING_WORDMARK } from '../../constants/appAssets';
 
 type Props = {
   /** RN Animated opacity wrapper from App.tsx dismiss fade */
   style?: object;
 };
 
-/** Premium loading screen — red/purple textured gradient + Insight wordmark (matches native splash). */
+/** Main loading screen — premium red/purple gradient + Insight wordmark. */
 export default function PremiumSplashOverlay({ style }: Props) {
   const bgScale = useSharedValue(1);
 
@@ -35,15 +35,24 @@ export default function PremiumSplashOverlay({ style }: Props) {
     <View style={[styles.root, style]}>
       <Animated.View style={[styles.backgroundWrap, bgAnimStyle]}>
         <Image
-          source={SPLASH_PREMIUM}
+          source={SPLASH_BACKGROUND}
           style={styles.background}
           contentFit="cover"
           cachePolicy="memory-disk"
           transition={0}
-          recyclingKey="splash-premium"
-          accessibilityLabel="Insight"
+          recyclingKey="splash-background"
         />
       </Animated.View>
+      <View style={styles.center}>
+        <Image
+          source={SPLASH_LOADING_WORDMARK}
+          style={styles.wordmark}
+          contentFit="contain"
+          cachePolicy="memory-disk"
+          transition={0}
+          accessibilityLabel="Insight"
+        />
+      </View>
     </View>
   );
 }
@@ -60,5 +69,15 @@ const styles = StyleSheet.create({
   background: {
     width: '100%',
     height: '100%',
+  },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 48,
+  },
+  wordmark: {
+    width: 168,
+    height: 48,
   },
 });

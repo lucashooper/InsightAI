@@ -26,27 +26,35 @@ module.exports = {
   expo: {
     name: "Insight",
     slug: "insight-app",
+    scheme: "insight",
     version: "1.14",
     orientation: "portrait",
     icon: "./assets/InsightAI-New-Logo.png",
     userInterfaceStyle: "dark",
     newArchEnabled: true,
     splash: {
-      image: "./public/splash-premium.jpg",
-      resizeMode: "cover",
+      image: "./public/splash-logo.png",
+      resizeMode: "contain",
       backgroundColor: "#0D0B18"
     },
     ios: {
       supportsTablet: true,
-      buildNumber: "117",
+      buildNumber: "118",
+      bundleIdentifier: "com.crupid.mobile",
+      scheme: "insight",
       infoPlist: {
         NSMicrophoneUsageDescription: "Insight uses the microphone for voice notes.",
         NSSpeechRecognitionUsageDescription: "Insight uses speech recognition to convert your voice into text for taking notes and searching your content.",
         NSPhotoLibraryUsageDescription: "Insight needs access to your photo library so you can select a profile picture. For example, you can choose a photo from your library to personalize your account profile shown on the Settings screen. Only the photo you select is uploaded — your other photos are never accessed or stored.",
         ITSAppUsesNonExemptEncryption: false,
-        NSFaceIDUsageDescription: "Insight uses Face ID to quickly unlock your journal so only you can access your entries."
-      },
-      bundleIdentifier: "com.crupid.mobile"
+        NSFaceIDUsageDescription: "Insight uses Face ID to quickly unlock your journal so only you can access your entries.",
+        CFBundleURLTypes: [
+          {
+            CFBundleURLName: "insight",
+            CFBundleURLSchemes: ["insight"]
+          }
+        ]
+      }
     },
     android: {
       adaptiveIcon: {
@@ -54,11 +62,11 @@ module.exports = {
         backgroundColor: "#0D0B18"
       },
       splash: {
-        image: "./public/splash-premium.jpg",
-        resizeMode: "cover",
+        image: "./public/splash-logo.png",
+        resizeMode: "contain",
         backgroundColor: "#0D0B18"
       },
-      versionCode: 117,
+      versionCode: 118,
       permissions: [
         "INTERNET",
         "RECORD_AUDIO",
@@ -95,11 +103,18 @@ module.exports = {
     },
     plugins: [
       [
+        "expo-dev-client",
+        {
+          addGeneratedScheme: true
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           backgroundColor: "#0D0B18",
-          image: "./public/splash-premium.jpg",
-          resizeMode: "cover",
+          image: "./public/splash-logo.png",
+          imageWidth: 128,
+          resizeMode: "contain",
         }
       ],
       [

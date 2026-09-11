@@ -52,7 +52,7 @@ export default function FeelingsStep({ onContinue }: Props) {
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.headingRow}>
         <Text style={[styles.heading, { color: theme.colors.primaryText }]}>
-          {t('checkIn.feelingsQuestion', { mood: t(`checkIn.${draft.moodTier}`).toLowerCase() })}
+          {t('checkIn.feelingsPrompt')}
         </Text>
       </View>
       <Text style={[styles.sub, { color: theme.colors.secondaryText }]}>{t('checkIn.chooseAll')}</Text>

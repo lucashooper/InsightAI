@@ -11,7 +11,7 @@
     "ios": "expo run:ios",
     "ios:dev": "expo start --dev-client --ios",
     "ios:build:dev": "eas build --profile development --platform ios",
-    "ios:build:device": "eas build --profile development-device --platform ios",
+    "ios:build:dev:simulator": "eas build --profile development-simulator --platform ios",
     "ios:build:production": "eas build --profile production --platform ios",
     "ios:submit": "eas submit --platform ios --profile production",
     "ios:update:production": "eas update --channel production",

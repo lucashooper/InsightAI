@@ -26,7 +26,7 @@ export default function GratitudeScreen({ navigation }: any) {
   const { t } = useLanguage();
   const gratitudePrompts = [
     t('auxiliary.gratitude.promptSmile'),
-    t('auxiliary.gratitude.promptPerson'),
+    t('auxiliary.gratitude.promptGrateful'),
     t('auxiliary.gratitude.promptJoy'),
   ];
   const [currentPrompt, setCurrentPrompt] = useState(0);

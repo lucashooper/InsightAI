@@ -1,7 +1,7 @@
 import { Asset } from 'expo-asset';
 import { Image as ExpoImage } from 'expo-image';
 import { Image as RNImage } from 'react-native';
-import { ALL_PRELOAD_IMAGES, ALL_PRELOAD_LOTTIES, SPLASH_PREMIUM } from '../constants/appAssets';
+import { ALL_PRELOAD_IMAGES, ALL_PRELOAD_LOTTIES, SPLASH_BACKGROUND, SPLASH_LOADING_WORDMARK } from '../constants/appAssets';
 
 type ImageSource = number | { uri?: string };
 
@@ -56,7 +56,10 @@ function dedupeSources<T>(sources: readonly T[]): T[] {
 
 /** Splash visuals only — fast path so premium overlay replaces native splash quickly. */
 export async function preloadSplashAssets(): Promise<void> {
-  await prefetchImageModule(SPLASH_PREMIUM, 'splash-premium').catch(() => undefined);
+  await Promise.all([
+    prefetchImageModule(SPLASH_BACKGROUND, 'splash-background').catch(() => undefined),
+    prefetchImageModule(SPLASH_LOADING_WORDMARK, 'splash-wordmark').catch(() => undefined),
+  ]);
 }
 
 /** Block boot until every raster + lottie asset is on disk and images are decoded. */
