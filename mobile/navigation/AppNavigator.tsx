@@ -102,7 +102,7 @@ function MainTabs() {
 
   return (
     <View style={tabShell.root}>
-      <AppBackdrop />
+      <View style={tabShell.tabHost}>
       <Tab.Navigator
       initialRouteName="Home"
       detachInactiveScreens={false}
@@ -197,6 +197,8 @@ function MainTabs() {
         })}
       />
     </Tab.Navigator>
+      </View>
+      <AppBackdrop />
     </View>
   );
 }
@@ -204,6 +206,11 @@ function MainTabs() {
 const tabShell = StyleSheet.create({
   root: {
     flex: 1,
+    backgroundColor: 'transparent',
+  },
+  tabHost: {
+    flex: 1,
+    zIndex: 1,
     backgroundColor: 'transparent',
   },
 });
@@ -229,7 +236,9 @@ export default function AppNavigator() {
     const currentUserId = user?.id || null;
     if (currentUserId !== prevUserIdRef.current) {
       console.log('[NAV] User changed:', prevUserIdRef.current, '->', currentUserId);
-      setIsOnboardingCompleted(null);
+      if (!currentUserId || prevUserIdRef.current) {
+        setIsOnboardingCompleted(null);
+      }
       setOnboardingResumeScreen(null);
       setNeedsPostPurchaseSignup(false);
       setPasswordRecoveryActive(false);
@@ -404,8 +413,13 @@ export default function AppNavigator() {
   // changes from false/null to true after the authenticated stack has already rendered
   React.useEffect(() => {
     if (user && isOnboardingCompleted === true && navigationRef.isReady() && !passwordRecoveryActive) {
+      const rootState = navigationRef.getRootState();
+      const activeRootRoute = rootState.routes[rootState.index];
+      if (activeRootRoute?.name === 'MainTabs') return;
+
       const currentRoute = navigationRef.getCurrentRoute();
-      if (currentRoute && currentRoute.name !== 'MainTabs' && currentRoute.name !== 'Profile' && currentRoute.name !== 'EntryDetail' && currentRoute.name !== 'CreateEntry' && currentRoute.name !== 'AIChat' && currentRoute.name !== 'EmailVerified') {
+      const modalRoutes = new Set(['Profile', 'EntryDetail', 'CreateEntry', 'AIChat', 'EmailVerified']);
+      if (currentRoute && !modalRoutes.has(currentRoute.name)) {
         console.log('[NAV] Force navigating to MainTabs from:', currentRoute.name);
         navigationRef.reset({
           index: 0,

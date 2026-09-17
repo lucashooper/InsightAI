@@ -81,7 +81,9 @@ async function configureRevenueCatInBackground() {
     } else {
       await Purchases.logOut().catch(() => {});
       await AsyncStorage.removeItem('REVENUECAT_ANONYMOUS_ID');
-      await Purchases.invalidateCustomerInfoCache().catch(() => {});
+      if (Platform.OS !== 'web') {
+        await Purchases.invalidateCustomerInfoCache().catch(() => {});
+      }
     }
 
     await Purchases.getCustomerInfo().catch(() => {});
