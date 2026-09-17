@@ -1,6 +1,4 @@
-import Constants from 'expo-constants';
-import * as FileSystem from 'expo-file-system/legacy';
-import { Audio, AVPlaybackStatus } from 'expo-av';
+import { Audio, AVPlaybackStatus } from '../utils/audioCompat';
 
 export type ElevenLabsVoice = {
   id: string;

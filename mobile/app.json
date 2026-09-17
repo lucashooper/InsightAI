@@ -1,15 +1,6 @@
 {
   "expo": {
     "name": "Insight",
-    "slug": "insight-app",
-    "scheme": "insight",
-    "ios": {
-      "bundleIdentifier": "com.crupid.mobile",
-      "scheme": "insight"
-    },
-    "android": {
-      "package": "com.crupid.mobile",
-      "scheme": "insight"
-    }
+    "slug": "insight-app"
   }
 }

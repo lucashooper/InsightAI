@@ -31,7 +31,10 @@
       }
     },
     "production": {
-      "channel": "production"
+      "channel": "production",
+      "env": {
+        "EXPO_DOCTOR_ENABLE": "0"
+      }
     }
   },
   "submit": {

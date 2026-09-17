@@ -137,9 +137,6 @@ if (__DEV__ && !supabaseAnonKey) {
   console.warn('[mobileAiService] Missing EXPO_PUBLIC_SUPABASE_ANON_KEY — edge function calls may fail.');
 }
 
-/** Groq chat model — llama-3.3-70b-versatile retired 2026-08-16. */
-const GROQ_CHAT_MODEL = 'openai/gpt-oss-120b';
-
 async function waitForRateLimit() {
   // Simple client-side rate limit spacer used on web as well
   return new Promise((resolve) => setTimeout(resolve, 500));
