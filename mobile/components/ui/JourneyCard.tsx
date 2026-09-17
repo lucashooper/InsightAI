@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   sheen: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(255,255,255,0.18)',
     opacity: 0.35,
   },

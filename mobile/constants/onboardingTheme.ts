@@ -1,4 +1,5 @@
 import { sf } from '../utils/responsive';
+import { SURFACE, TYPO } from './typography';
 
 /** Onboarding-only surfaces — light glassmorphic cards. */
 export const ONBOARDING_SURFACE = {
@@ -11,11 +12,12 @@ export const ONBOARDING_SURFACE = {
   iconChipSelected: 'rgba(123, 94, 167, 0.12)',
 } as const;
 
+/** Main CTAs are charcoal pills everywhere — colour belongs to cards, not buttons. */
 export const ONBOARDING_CTA = {
-  background: '#7B5EA7',
+  background: SURFACE.charcoal,
   text: '#ffffff',
-  shadow: 'rgba(120, 80, 200, 0.25)',
-  borderRadius: 18,
+  shadow: 'rgba(28, 26, 34, 0.22)',
+  borderRadius: 999,
   paddingVertical: 20,
 } as const;
 
@@ -39,16 +41,11 @@ export const ONBOARDING_BRAND = {
 /** Shared onboarding typography — use on every onboarding screen. */
 export const ONBOARDING_TYPE = {
   title: {
-    fontSize: sf(36),
-    fontWeight: '800' as const,
-    letterSpacing: -1.1,
-    lineHeight: sf(44),
+    ...TYPO.h1,
     textAlign: 'center' as const,
   },
   subtitle: {
-    fontSize: sf(16),
-    lineHeight: sf(24),
-    fontWeight: '400' as const,
+    ...TYPO.body,
     textAlign: 'center' as const,
   },
   skip: {

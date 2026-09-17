@@ -136,10 +136,10 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   blur: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   fill: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   content: {
     paddingVertical: 16,

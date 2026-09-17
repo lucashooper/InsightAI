@@ -2390,7 +2390,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 999,
   },
   bubbleInnerRim: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.22)',

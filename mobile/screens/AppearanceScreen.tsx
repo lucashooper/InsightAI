@@ -8,6 +8,7 @@ import PageHeader from '../components/shared/PageHeader';
 import StandardContainer from '../components/shared/StandardContainer';
 import { sf } from '../utils/responsive';
 import { useLanguage } from '../contexts/LanguageContext';
+import { safeGoBack } from '../utils/navigationSafety';
 
 export default function AppearanceScreen({ navigation }: any) {
   const { theme, themeName, setTheme } = useTheme();
@@ -29,7 +30,7 @@ export default function AppearanceScreen({ navigation }: any) {
         colors={theme.colors.backgroundGradient as any}
         style={styles.backgroundGradient}
       />
-      <PageHeader title={t('auxiliary.appearance.title')} onBack={() => navigation.goBack()} />
+      <PageHeader title={t('auxiliary.appearance.title')} onBack={() => safeGoBack(navigation)} />
 
       <View style={styles.content}>
         <Text style={[styles.sectionTitle, { color: theme.colors.secondaryText }]}>

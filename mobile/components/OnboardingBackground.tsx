@@ -142,7 +142,7 @@ export default function OnboardingBackground() {
 
 const styles = StyleSheet.create({
     container: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor: '#0E0A1A',
         overflow: 'hidden',
     },
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
         left: -width * 0.4,
     },
     noiseOverlay: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor: 'transparent',
         // In a real implementation with assets, we would put a repeating noise image here
         // For now, we rely on the heavy blur and gradient mixing

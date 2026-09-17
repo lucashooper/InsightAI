@@ -20,6 +20,7 @@ import { isRevenueCatEnabled } from '../../utils/revenueCatConfig';
 import { safeInvalidateCustomerInfoCache } from '../../utils/revenueCatSafe';
 import { syncSubscriptionTierFromRevenueCat } from '../../utils/subscriptionSync';
 import { INSIGHT_LOGO } from '../../constants/appAssets';
+import { safeGoBack } from '../../utils/navigationSafety';
 
 const ENTITLEMENT_ID = 'Insight Pro';
 
@@ -92,7 +93,7 @@ export default function PaywallScreen({ navigation, route }: any) {
     if (!isRevenueCatEnabled()) {
       const fromSettings = route?.params?.fromSettings === true;
       if (fromSettings) {
-        navigation.goBack();
+        safeGoBack(navigation);
         return;
       }
       (async () => {
@@ -380,7 +381,7 @@ export default function PaywallScreen({ navigation, route }: any) {
               text: t('onboarding.paywall.alerts.ok'),
               onPress: () => {
                 console.log('[Paywall] Navigating back to Settings');
-                navigation.goBack();
+                safeGoBack(navigation);
               }
             }
           ]
@@ -514,7 +515,7 @@ export default function PaywallScreen({ navigation, route }: any) {
             [{ text: t('onboarding.paywall.alerts.ok'), onPress: () => {
               const fromSettings = route?.params?.fromSettings === true;
               if (fromSettings) {
-                navigation.goBack();
+                safeGoBack(navigation);
               } else {
                 handleCustomerInfo(existingInfo);
               }
@@ -678,7 +679,7 @@ export default function PaywallScreen({ navigation, route }: any) {
         style={styles.backButton}
         onPress={() => {
           if (navigation.canGoBack()) {
-            navigation.goBack();
+            safeGoBack(navigation);
           }
         }}
       />

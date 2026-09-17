@@ -19,6 +19,9 @@ const en: TranslationTree = {
   },
   onboarding: {
     welcome: 'Welcome to Insight',
+    heroHeadline: 'Feel\nclearer',
+    heroTagline: 'Your reflective companion',
+    heroLegal: 'By continuing you agree to our Terms of Use and Privacy Policy.',
     getStarted: 'Get Started',
     alreadyHaveAccount: 'Already have an account?',
     signIn: 'Sign In',

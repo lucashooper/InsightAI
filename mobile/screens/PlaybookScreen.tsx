@@ -10,12 +10,15 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { protocolCompletionService } from '../services/protocolCompletionService';
 import ProtocolCompleteButton from '../components/shared/ProtocolCompleteButton';
-import PageHeader from '../components/shared/PageHeader';
 import GlassCard from '../components/ui/GlassCard';
-import JourneyCard from '../components/ui/JourneyCard';
-import AppBackdrop from '../components/ui/AppBackdrop';
-import GlassCardHeader, { glassCardInnerPad } from '../components/ui/GlassCardHeader';
-import { PREMIUM, journeyForCategory, journeyInk, journeyMuted } from '../constants/premiumUI';
+import GenerativeCard from '../components/ui/GenerativeCard';
+import AnimatedGradientBackdrop from '../components/ui/AnimatedGradientBackdrop';
+import PressableScale from '../components/ui/PressableScale';
+import StaggerIn, { staggerDelay } from '../components/shared/StaggerIn';
+import { illustrationForCategory } from '../components/ui/CardIllustration';
+import { hueForCategory, resolvePalette, type CardHue } from '../utils/cardPalette';
+import { PREMIUM } from '../constants/premiumUI';
+import { TYPO } from '../constants/typography';
 import EmptyState from '../components/shared/EmptyState';
 import * as Haptics from 'expo-haptics';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -27,6 +30,7 @@ import { loadProtocolReminder, saveProtocolReminder, type ProtocolReminder } fro
 import ProtocolOptionsSheet from '../components/playbook/ProtocolOptionsSheet';
 import { emojiForProtocol, resolveProtocolTasks } from '../utils/protocolEmoji';
 import { isTablet, sf, ss, screenPadding } from '../utils/responsive';
+import { safeGoBack } from '../utils/navigationSafety';
 
 type TabType = 'protocols' | 'strategies';
 
@@ -423,93 +427,255 @@ export default function PlaybookScreen() {
     }
   };
 
-  const getCategoryHue = (category: string) => journeyForCategory(category);
+  const dark = isDarkTheme(theme.name);
+
+  // ── Derived view state ─────────────────────────────────────────────
+  const activeProtocols = strategies.filter((s) => s.status === 'active');
+  const suggestedProtocols = strategies.filter((s) => s.status === 'suggested' && s.source === 'ai_suggested');
+  const filteredStrategies = activeTab === 'protocols' ? activeProtocols : suggestedProtocols;
+  const displayStrategies =
+    activeTab === 'strategies' && !showAllSuggestions ? filteredStrategies.slice(0, 3) : filteredStrategies;
+
+  const remaining = Math.max(0, protocolProgress.total - protocolProgress.completed);
+  const allDone = protocolProgress.total > 0 && remaining === 0;
+
+  // The page's immersive backdrop follows the focused card: an expanded card
+  // wins, otherwise the first card in the list, otherwise the tab's own hue.
+  const focusedStrategy =
+    displayStrategies.find((s) => expandedProtocolIds.has(s.id)) ?? displayStrategies[0];
+  const pageHue: CardHue = focusedStrategy
+    ? hueForCategory(focusedStrategy.category)
+    : activeTab === 'protocols'
+      ? 'violet'
+      : 'lilac';
+  const pagePalette = resolvePalette({ hue: pageHue });
+  const heroHue: CardHue = allDone ? 'mint' : activeTab === 'protocols' ? 'violet' : 'lilac';
+  const heroPalette = resolvePalette({ hue: heroHue });
+
+  const heroTitle =
+    protocolProgress.total === 0
+      ? t('auxiliary.playbook.noProtocols')
+      : allDone
+        ? t('auxiliary.playbook.allDone')
+        : t('auxiliary.playbook.keepGoing', { remaining });
+  const heroSubtitle =
+    protocolProgress.total === 0
+      ? t('auxiliary.playbook.noProtocolsMessage')
+      : allDone
+        ? t('auxiliary.playbook.allDoneSubtitle')
+        : t('auxiliary.playbook.journeySubtitle');
+
+  const renderProtocolCard = (strategy: Strategy, index: number) => {
+    const isExpanded = expandedProtocolIds.has(strategy.id);
+    const displayEmoji = emojiForProtocol(strategy.title, strategy.category, strategy.emoji);
+    const displayTasks = resolveProtocolTasks(strategy.tasks, strategy.description, strategy.title)
+      .filter((task) => task.trim() !== (strategy.description?.trim() ?? ''));
+    const hue = hueForCategory(strategy.category);
+    const pal = resolvePalette({ hue });
+    const stats = protocolStats[strategy.id];
+    const isDone = completedToday.includes(strategy.id);
+    const visibleTasks = isExpanded ? displayTasks : displayTasks.slice(0, 2);
+
+    return (
+      <GenerativeCard
+        key={strategy.id}
+        seed={strategy.id}
+        hue={hue}
+        variant="tile"
+        illustration={illustrationForCategory(strategy.category)}
+        illustrationOpacity={isExpanded ? 0.55 : 0.8}
+        eyebrow={`${t(`auxiliary.playbook.categories.${strategy.category}`)} · ${t(`auxiliary.playbook.difficulties.${strategy.difficulty}`)}`}
+        title={strategy.title}
+        subtitle={strategy.description || undefined}
+        titleLines={isExpanded ? 4 : 2}
+        subtitleLines={isExpanded ? undefined : 2}
+        avatar={displayEmoji}
+        enterDelay={staggerDelay(index + 3)}
+        onPress={() => handleStrategyTap(strategy)}
+        onLongPress={() => handleStrategyLongPress(strategy)}
+        style={styles.unitCard}
+        footer={
+          <View style={styles.unitFooter}>
+            <View style={styles.chipRow}>
+              {strategy.status === 'active' && stats ? (
+                <>
+                  <View style={[styles.chip, { backgroundColor: pal.surface }]}>
+                    <Ionicons name="flame" size={13} color="#F97316" />
+                    <Text style={[styles.chipText, { color: pal.ink }]}>{stats.currentStreak}</Text>
+                  </View>
+                  <View style={[styles.chip, { backgroundColor: pal.surface }]}>
+                    <Ionicons name="trophy-outline" size={13} color="#F59E0B" />
+                    <Text style={[styles.chipText, { color: pal.ink }]}>{stats.longestStreak}</Text>
+                  </View>
+                </>
+              ) : null}
+              {strategy.status === 'suggested' && strategy.suggestion_count && strategy.suggestion_count > 1 ? (
+                <View style={[styles.chip, { backgroundColor: pal.accent }]}>
+                  <Ionicons name="sparkles" size={12} color="#fff" />
+                  <Text style={[styles.chipText, { color: '#fff' }]}>{strategy.suggestion_count}</Text>
+                </View>
+              ) : null}
+            </View>
+
+            {strategy.status === 'active' ? (
+              <ProtocolCompleteButton completed={isDone} onPress={() => handleToggleCompletion(strategy.id)} />
+            ) : (
+              <View style={styles.suggestActions}>
+                <PressableScale
+                  onPress={() => handleActivateSuggestion(strategy.id)}
+                  style={[styles.suggestBtn, { backgroundColor: pal.surfaceStrong }]}
+                  accessibilityLabel={t('auxiliary.common.accept')}
+                >
+                  <Ionicons name="checkmark" size={18} color="#16A34A" />
+                </PressableScale>
+                <PressableScale
+                  onPress={() => handleDismissSuggestion(strategy.id)}
+                  style={[styles.suggestBtn, { backgroundColor: pal.surface }]}
+                  accessibilityLabel={t('auxiliary.common.dismiss')}
+                >
+                  <Ionicons name="close" size={18} color={pal.muted} />
+                </PressableScale>
+              </View>
+            )}
+          </View>
+        }
+      >
+        {visibleTasks.length > 0 ? (
+          <View style={styles.taskPreview}>
+            {visibleTasks.map((task, i) => (
+              <View key={i} style={styles.taskPreviewItem}>
+                <View style={[styles.taskDot, { backgroundColor: pal.accent }]} />
+                <Text style={[styles.taskPreviewText, { color: pal.muted }]} numberOfLines={isExpanded ? 3 : 1}>
+                  {task}
+                </Text>
+              </View>
+            ))}
+            {!isExpanded && displayTasks.length > 2 ? (
+              <Text style={[styles.taskPreviewMore, { color: pal.muted }]}>
+                {t('auxiliary.playbook.moreCount', { count: displayTasks.length - 2 })}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
+      </GenerativeCard>
+    );
+  };
 
   return (
     <View style={styles.container}>
-      <AppBackdrop />
-      {/* Header */}
-      <PageHeader
-        title={t('auxiliary.playbook.title')}
-        onBack={() => navigation.goBack()}
-      />
+      <AnimatedGradientBackdrop colors={pagePalette.backdrop} />
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
-        {/* Today's Progress */}
-        <GlassCard noPad contentStyle={glassCardInnerPad} style={styles.sectionCard}>
-            <GlassCardHeader
-              title={t('auxiliary.playbook.todayProgress')}
-              subtitle={t('auxiliary.playbook.protocolsCompleted')}
-            />
-            <View style={styles.progressStats}>
-              <Text style={[styles.progressFraction, { color: theme.colors.primaryText }]}>{protocolProgress.completed}/{protocolProgress.total}</Text>
-            </View>
-            <View style={[styles.progressBarContainer, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : 'rgba(0,0,0,0.08)' }]}>
-              <LinearGradient
-                colors={['#8b5cf6', '#7c3aed']}
-                style={[styles.progressBar, { width: `${protocolProgress.percentage}%` }]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-              />
-            </View>
-            <Text style={[styles.progressPercentage, { color: '#8b5cf6' }]}>{t('auxiliary.playbook.completion', { percentage: protocolProgress.percentage })}</Text>
-        </GlassCard>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 8 }]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Top bar — frosted back control + "New" pill */}
+        <StaggerIn delay={0}>
+          <View style={styles.topBar}>
+            <PressableScale
+              onPress={() => safeGoBack(navigation)}
+              style={styles.circleBtn}
+              accessibilityRole="button"
+              accessibilityLabel={t('components.common.back')}
+            >
+              <Ionicons name="arrow-back" size={20} color={pagePalette.ink} />
+            </PressableScale>
+            <PressableScale
+              onPress={() => setShowCreateModal(true)}
+              style={[styles.newPill, { backgroundColor: pagePalette.ink }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('auxiliary.playbook.createNew')}
+            >
+              <Ionicons name="add" size={18} color="#fff" />
+              <Text style={styles.newPillText}>{t('auxiliary.playbook.newProtocol')}</Text>
+            </PressableScale>
+          </View>
 
-        {/* Tabs */}
-        <GlassCard style={styles.tabContainer} noPad contentStyle={styles.tabContainerInner}>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'protocols' && styles.tabActive]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setActiveTab('protocols');
-            }}
-          >
-            <Text style={[styles.tabText, { color: theme.colors.secondaryText }, activeTab === 'protocols' && { color: '#ffffff', fontWeight: '600' }]}>
-              {t('auxiliary.playbook.dailyProtocols')}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'strategies' && styles.tabActive]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setActiveTab('strategies');
-            }}
-          >
-            <Text style={[styles.tabText, { color: theme.colors.secondaryText }, activeTab === 'strategies' && { color: '#ffffff', fontWeight: '600' }]}>
-              {t('auxiliary.playbook.suggested')}
-            </Text>
-          </TouchableOpacity>
-        </GlassCard>
+          <Text style={[styles.journeyTitle, { color: pagePalette.ink }]}>{t('auxiliary.playbook.journeyTitle')}</Text>
+          <Text style={[styles.journeySubtitle, { color: pagePalette.muted }]}>
+            {t('auxiliary.playbook.journeySubtitle')}
+          </Text>
+        </StaggerIn>
 
-        {/* Create Button */}
-        <TouchableOpacity 
-          style={styles.createButton}
-          onPress={() => setShowCreateModal(true)}
-        >
-          <LinearGradient
-            colors={['#8b5cf6', '#7c3aed']}
-            style={styles.createButtonGradient}
-          >
-            <Ionicons name="add-circle" size={20} color="#ffffff" />
-            <Text style={styles.createButtonText}>{t('auxiliary.playbook.createNew')}</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+        {/* Progress hero */}
+        <GenerativeCard
+          variant="hero"
+          hue={heroHue}
+          seed={`journey-progress-${heroHue}`}
+          illustration={allDone ? 'sunrise' : 'hills'}
+          eyebrow={t('auxiliary.playbook.todayLabel')}
+          title={heroTitle}
+          subtitle={heroSubtitle}
+          enterDelay={70}
+          style={styles.heroCard}
+          footer={
+            protocolProgress.total > 0 ? (
+              <View>
+                <View style={styles.progressTrack}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      { width: `${Math.max(4, protocolProgress.percentage)}%`, backgroundColor: heroPalette.accent },
+                    ]}
+                  />
+                </View>
+                <View style={styles.progressMeta}>
+                  <Text style={[styles.progressFraction, { color: heroPalette.ink }]}>
+                    {protocolProgress.completed}/{protocolProgress.total}
+                  </Text>
+                  <Text style={[styles.progressLabel, { color: heroPalette.muted }]}>
+                    {t('auxiliary.playbook.completion', { percentage: protocolProgress.percentage })}
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              <PressableScale
+                onPress={() => setShowCreateModal(true)}
+                style={[styles.heroCta, { backgroundColor: heroPalette.ink }]}
+              >
+                <Text style={styles.heroCtaText}>{t('auxiliary.playbook.startHere')}</Text>
+                <Ionicons name="arrow-forward" size={16} color="#fff" />
+              </PressableScale>
+            )
+          }
+        />
 
-        {/* Content */}
+        {/* Segmented control */}
+        <StaggerIn delay={130}>
+          <View style={styles.segment}>
+            {(['protocols', 'strategies'] as TabType[]).map((tab) => {
+              const active = activeTab === tab;
+              return (
+                <PressableScale
+                  key={tab}
+                  scaleTo={0.97}
+                  onPress={() => setActiveTab(tab)}
+                  style={[styles.segmentItem, active && { backgroundColor: pagePalette.ink }]}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: active }}
+                >
+                  <Text style={[styles.segmentText, { color: active ? '#fff' : pagePalette.ink }]}>
+                    {tab === 'protocols' ? t('auxiliary.playbook.dailyProtocols') : t('auxiliary.playbook.suggested')}
+                  </Text>
+                  {tab === 'strategies' && suggestedProtocols.length > 0 ? (
+                    <View style={[styles.segmentBadge, { backgroundColor: active ? 'rgba(255,255,255,0.28)' : pagePalette.accentSoft }]}>
+                      <Text style={[styles.segmentBadgeText, { color: active ? '#fff' : pagePalette.accent }]}>
+                        {suggestedProtocols.length}
+                      </Text>
+                    </View>
+                  ) : null}
+                </PressableScale>
+              );
+            })}
+          </View>
+        </StaggerIn>
+
+        {/* Units */}
         {loading ? (
-          <ActivityIndicator size="large" color="#8b5cf6" style={styles.loader} />
-        ) : (() => {
-          // Filter strategies by status based on active tab
-          const filteredStrategies = activeTab === 'protocols'
-            ? strategies.filter(s => s.status === 'active')
-            : strategies.filter(s => s.status === 'suggested' && s.source === 'ai_suggested');
-          
-          // For suggestions, show only top 3 unless expanded
-          const displayStrategies = activeTab === 'strategies' && !showAllSuggestions
-            ? filteredStrategies.slice(0, 3)
-            : filteredStrategies;
-          
-          return displayStrategies.length === 0 ? (
+          <ActivityIndicator size="large" color={pagePalette.accent} style={styles.loader} />
+        ) : displayStrategies.length === 0 ? (
+          <StaggerIn delay={200}>
             <EmptyState
               icon={activeTab === 'strategies' ? 'sparkles-outline' : 'repeat-outline'}
               title={activeTab === 'strategies'
@@ -520,141 +686,26 @@ export default function PlaybookScreen() {
                 : t('auxiliary.playbook.noProtocolsMessage')}
               compact
             />
-          ) : (
-            <>
-            {displayStrategies.map((strategy) => {
-            const isExpanded = expandedProtocolIds.has(strategy.id);
-            const displayEmoji = emojiForProtocol(strategy.title, strategy.category, strategy.emoji);
-            const displayTasks = resolveProtocolTasks(strategy.tasks, strategy.description, strategy.title)
-              .filter((task) => task.trim() !== (strategy.description?.trim() ?? ''));
-            const hue = getCategoryHue(strategy.category);
-            const ink = journeyInk(hue, isDarkTheme(theme.name));
-            const muted = journeyMuted(hue, isDarkTheme(theme.name));
-            return (
-            <TouchableOpacity
-              key={strategy.id}
-              style={styles.premiumCardPressable}
-              activeOpacity={0.85}
-              onPress={() => handleStrategyTap(strategy)}
-              onLongPress={() => handleStrategyLongPress(strategy)}
-            >
-              <JourneyCard hue={hue} style={styles.premiumCard} contentStyle={styles.cardGradient}>
-                <View style={styles.cardHeader}>
-                  <View style={[styles.emojiContainer, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.7)' }]}>
-                    <Text style={styles.cardEmoji}>{displayEmoji}</Text>
-                  </View>
-                  <View style={styles.cardInfo}>
-                    <View style={styles.titleRow}>
-                      <Text style={[styles.cardTitle, { color: ink }]} numberOfLines={isExpanded ? 4 : 2} ellipsizeMode="tail">{strategy.title}</Text>
-                      {/* Show suggestion count for suggested strategies */}
-                      {strategy.status === 'suggested' && strategy.suggestion_count && strategy.suggestion_count > 1 && (
-                        <View style={styles.suggestionCountBadge}>
-                          <Text style={styles.suggestionCountText}>{strategy.suggestion_count}</Text>
-                        </View>
-                      )}
-                      {/* Only show streaks for active protocols */}
-                      {strategy.status === 'active' && protocolStats[strategy.id] && (
-                        <View style={styles.inlineStreaks}>
-                          <View style={styles.inlineStreakBadge}>
-                            <Ionicons name="flame" size={14} color="#f97316" />
-                            <Text style={[styles.streakText, { color: ink }]}>{protocolStats[strategy.id].currentStreak}</Text>
-                          </View>
-                          <View style={styles.inlineStreakBadge}>
-                            <Ionicons name="trophy-outline" size={14} color="#fbbf24" />
-                            <Text style={[styles.streakText, { color: ink }]}>{protocolStats[strategy.id].longestStreak}</Text>
-                          </View>
-                        </View>
-                      )}
-                    </View>
-                    {strategy.description ? (
-                      <Text style={[styles.cardDescription, { color: muted }]} numberOfLines={isExpanded ? undefined : 2}>{strategy.description}</Text>
-                    ) : null}
-                    {displayTasks.length > 0 && (
-                      <View style={styles.taskPreview}>
-                        {(isExpanded ? displayTasks : displayTasks.slice(0, 2)).map((task, index) => (
-                          <View key={index} style={styles.taskPreviewItem}>
-                            <Ionicons name="checkbox-outline" size={14} color={muted} />
-                            <Text style={[styles.taskPreviewText, { color: muted }]} numberOfLines={isExpanded ? 3 : 1}>
-                              {task}
-                            </Text>
-                          </View>
-                        ))}
-                        {!isExpanded && displayTasks.length > 2 && (
-                          <Text style={[styles.taskPreviewMore, { color: muted }]}>
-                            {t('auxiliary.playbook.moreCount', { count: displayTasks.length - 2 })}
-                          </Text>
-                        )}
-                      </View>
-                    )}
-                  </View>
-                </View>
-                
-                <View style={styles.cardFooter}>
-                  <View style={styles.badges}>
-                    <View style={[styles.categoryPill, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.72)' }]}>
-                      <Text style={[styles.categoryText, { color: ink }]}>
-                        {t(`auxiliary.playbook.categories.${strategy.category}`)}
-                      </Text>
-                    </View>
-                    <View style={[styles.difficultyBadge, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.5)' }]}>
-                      <Text style={[styles.difficultyText, { color: muted }]}>
-                        {t(`auxiliary.playbook.difficulties.${strategy.difficulty}`)}
-                      </Text>
-                    </View>
-                  </View>
-                  
-                  {/* Checkbox for active protocols */}
-                  {strategy.status === 'active' && (
-                    <ProtocolCompleteButton
-                      completed={completedToday.includes(strategy.id)}
-                      onPress={() => handleToggleCompletion(strategy.id)}
-                    />
-                  )}
-                  
-                  {/* Action buttons for suggested strategies */}
-                  {strategy.status === 'suggested' && (
-                    <View style={styles.actionButtons}>
-                      <TouchableOpacity 
-                        style={styles.actionButton}
-                        onPress={() => handleActivateSuggestion(strategy.id)}
-                      >
-                        <Ionicons name="checkmark-circle" size={18} color="#34d399" />
-                      </TouchableOpacity>
-                      <TouchableOpacity 
-                        style={styles.actionButton}
-                        onPress={() => handleDismissSuggestion(strategy.id)}
-                      >
-                        <Ionicons name="close-circle" size={18} color="#f97373" />
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </View>
-              </JourneyCard>
-            </TouchableOpacity>
-            );
-            })}
-            
-            {/* Show More Button for Strategies */}
-            {activeTab === 'strategies' && filteredStrategies.length > 3 && (
-              <TouchableOpacity
-                style={styles.showMoreButton}
+          </StaggerIn>
+        ) : (
+          <>
+            {displayStrategies.map(renderProtocolCard)}
+
+            {activeTab === 'strategies' && filteredStrategies.length > 3 ? (
+              <PressableScale
+                style={[styles.showMorePill, { backgroundColor: pagePalette.surface }]}
                 onPress={() => setShowAllSuggestions(!showAllSuggestions)}
               >
-                <Ionicons 
-                  name={showAllSuggestions ? 'chevron-up' : 'chevron-down'} 
-                  size={20} 
-                  color="#8b5cf6" 
-                />
-                <Text style={styles.showMoreText}>
-                  {showAllSuggestions 
+                <Ionicons name={showAllSuggestions ? 'chevron-up' : 'chevron-down'} size={18} color={pagePalette.ink} />
+                <Text style={[styles.showMoreText, { color: pagePalette.ink }]}>
+                  {showAllSuggestions
                     ? t('auxiliary.playbook.showLess')
                     : t('auxiliary.playbook.moreSuggested', { count: filteredStrategies.length - 3 })}
                 </Text>
-              </TouchableOpacity>
-            )}
-            </>
-          );
-        })()}
+              </PressableScale>
+            ) : null}
+          </>
+        )}
       </ScrollView>
 
       {/* Create Protocol Modal */}
@@ -1076,9 +1127,170 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: screenPadding,
-    paddingTop: PREMIUM.space[1],
-    paddingBottom: 120,
+    paddingBottom: 140,
     gap: PREMIUM.layout.cardGap,
+  },
+
+  // ── Journey (immersive) layout ────────────────────────────────────
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 18,
+  },
+  circleBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.72)',
+  },
+  newPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingLeft: 12,
+    paddingRight: 16,
+    height: 40,
+    borderRadius: 20,
+  },
+  newPillText: {
+    color: '#fff',
+    fontSize: sf(14),
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  journeyTitle: {
+    ...TYPO.h1,
+  },
+  journeySubtitle: {
+    ...TYPO.body,
+    marginTop: 6,
+    marginBottom: 8,
+    maxWidth: '88%',
+  },
+  heroCard: {
+    marginBottom: 4,
+  },
+  progressTrack: {
+    height: 10,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 6,
+  },
+  progressMeta: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  progressLabel: {
+    fontSize: sf(13),
+    fontWeight: '600',
+  },
+  heroCta: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 18,
+    height: 44,
+    borderRadius: 22,
+  },
+  heroCtaText: {
+    color: '#fff',
+    fontSize: sf(15),
+    fontWeight: '700',
+  },
+  segment: {
+    flexDirection: 'row',
+    padding: 4,
+    gap: 4,
+    borderRadius: PREMIUM.radius.pill,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+  },
+  segmentItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 42,
+    borderRadius: PREMIUM.radius.pill,
+  },
+  segmentText: {
+    fontSize: sf(14),
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  segmentBadge: {
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 6,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  segmentBadgeText: {
+    fontSize: sf(11),
+    fontWeight: '800',
+  },
+  unitCard: {
+    marginBottom: 0,
+  },
+  unitFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    height: 28,
+    borderRadius: 14,
+  },
+  chipText: {
+    fontSize: sf(12),
+    fontWeight: '700',
+  },
+  suggestActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  suggestBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  taskDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  showMorePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: 48,
+    borderRadius: PREMIUM.radius.pill,
+    marginTop: 4,
   },
   sectionCard: {
     marginBottom: 0,

@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   layer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   blurWrap: {
     flex: 1,

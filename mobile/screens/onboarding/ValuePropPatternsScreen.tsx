@@ -7,6 +7,7 @@ import OnboardingButton from '../../components/onboarding/OnboardingButton';
 import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
 import { ONBOARDING_TEXT } from '../../constants/onboardingTheme';
 import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
+import { safeGoBack } from '../../utils/navigationSafety';
 
 const PATTERNS = [
   { emoji: '😴', textKey: 'adjustSleep', frequency: 8 },
@@ -48,7 +49,7 @@ export default function ValuePropPatternsScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" />
       <OnboardingAmbientBackground />
 
-      <OnboardingBackButton onPress={() => navigation.goBack()} />
+      <OnboardingBackButton onPress={() => safeGoBack(navigation)} />
 
       <View style={styles.content}>
         <View>

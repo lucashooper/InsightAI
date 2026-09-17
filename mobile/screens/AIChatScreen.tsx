@@ -73,6 +73,7 @@ import { resolveProAccess } from '../utils/entitlements';
 import * as Haptics from 'expo-haptics';
 import { ROAST_GRADIENT, ROAST_PALETTE, useRoastTransition } from '../utils/companionTheme';
 import { getMiraScreenshotMode, SCREENSHOT_MIRA_CHAT } from '../data/screenshotMiraChat';
+import { safeGoBack } from '../utils/navigationSafety';
 
 function buildScreenshotMessages(language: AppLanguage): ChatMessage[] {
   const seed = SCREENSHOT_MIRA_CHAT[language] ?? SCREENSHOT_MIRA_CHAT.en;
@@ -1490,7 +1491,7 @@ export default function AIChatScreen({ navigation }: any) {
         },
       ]}>
         <View style={styles.headerSide}>
-          <TouchableOpacity style={styles.headerBtn} onPress={() => requestAnimationFrame(() => navigation.goBack())} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.headerBtn} onPress={() => requestAnimationFrame(() => safeGoBack(navigation))} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={26} color={isRoast ? ROAST_PALETTE.textPrimary : (isDark ? '#fff' : theme.colors.primaryText)} />
           </TouchableOpacity>
         </View>
@@ -1922,7 +1923,7 @@ const styles = StyleSheet.create({
     flexGrow: 0,
   },
   emptyDiscoveryLayer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: 'flex-start',
     paddingTop: 8,
     zIndex: 1,

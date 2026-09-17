@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
-import { StatusBar as RNStatusBar } from 'react-native';
-import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
+import { StatusBar, setStatusBarStyle, type StatusBarStyle } from 'expo-status-bar';
+import { useTheme, isDarkTheme, FORCE_LIGHT_MODE } from '../../contexts/ThemeContext';
 
 /** Routes that always use a light background — status bar must stay dark-content. */
 const LIGHT_BACKGROUND_ROUTES = new Set([
@@ -47,24 +47,23 @@ type Props = {
 /**
  * Single source of truth for status bar style.
  *
- * Renders the declarative <StatusBar> AND imperatively re-applies the style on
- * every change. Several screens mount their own <StatusBar>; RN resolves the
- * stack by mount order, so a stale entry from a previous screen can win after a
- * navigation reset. The imperative call always applies the latest resolution.
+ * Uses expo-status-bar so iOS gets crisp black time/battery glyphs on the
+ * light backdrop. Renders the declarative <StatusBar> AND imperatively
+ * re-applies the style on every change: several screens mount their own
+ * <StatusBar>, and RN resolves the stack by mount order, so a stale entry
+ * from a previous screen can otherwise win after a navigation reset.
  */
 export default function AppStatusBar({ routeName = null, forceDarkContent = false }: Props) {
   const { theme } = useTheme();
 
   const routeForcesDark = routeName != null && LIGHT_BACKGROUND_ROUTES.has(routeName);
-  const dark = isDarkTheme(theme.name);
-  const barStyle =
-    forceDarkContent || routeForcesDark ? 'dark-content' : dark ? 'light-content' : 'dark-content';
+  const dark = !FORCE_LIGHT_MODE && isDarkTheme(theme.name);
+  const style: StatusBarStyle =
+    forceDarkContent || routeForcesDark || !dark ? 'dark' : 'light';
 
   useEffect(() => {
-    RNStatusBar.setBarStyle(barStyle, true);
-  }, [barStyle, routeName]);
+    setStatusBarStyle(style, true);
+  }, [style, routeName]);
 
-  return (
-    <RNStatusBar barStyle={barStyle} translucent backgroundColor="transparent" />
-  );
+  return <StatusBar style={style} animated />;
 }

@@ -14,6 +14,7 @@ import { ONBOARDING_TEXT, ONBOARDING_TYPE } from '../../constants/onboardingThem
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { safeGoBack } from '../../utils/navigationSafety';
 
 const { width } = Dimensions.get('window');
 
@@ -83,7 +84,7 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
             
             {/* Back Button - Circular style matching other onboarding pages */}
             {navigation.canGoBack() && (
-                <OnboardingBackButton onPress={() => navigation.goBack()} />
+                <OnboardingBackButton onPress={() => safeGoBack(navigation)} />
             )}
 
             {/* Logo */}

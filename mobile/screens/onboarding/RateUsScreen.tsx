@@ -10,6 +10,7 @@ import OnboardingBackButton from '../../components/onboarding/OnboardingBackButt
 import OnboardingSkipLink from '../../components/onboarding/OnboardingSkipLink';
 import { ONBOARDING_TYPE } from '../../constants/onboardingTheme';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { safeGoBack } from '../../utils/navigationSafety';
 
 const testimonials = [
   { textKey: 'first' },
@@ -46,7 +47,7 @@ export default function RateUsScreen({ navigation }: any) {
     <View style={styles.container}>
       <OnboardingAmbientBackground />
 
-      <OnboardingBackButton onPress={() => navigation.goBack()} />
+      <OnboardingBackButton onPress={() => safeGoBack(navigation)} />
 
       <ScrollView 
         style={styles.scrollView}

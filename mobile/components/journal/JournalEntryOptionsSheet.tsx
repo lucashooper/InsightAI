@@ -100,7 +100,7 @@ export default function JournalEntryOptionsSheet({ visible, title, options, onSe
 
 const styles = StyleSheet.create({
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   sheetWrap: {
     flex: 1,

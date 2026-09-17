@@ -1,78 +1,41 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import AuroraOrb from '../shared/AuroraOrb';
-import OrbView from './OrbView';
-import { OrbSlot } from './OrbOverlayProvider';
+import CloudMascot from './CloudMascot';
 import type { AiPersonality } from '../../utils/aiPersonalities';
-
-const POOLED_SIZES = new Set([36, 40, 48, 110, 130, 220]);
 
 type Props = {
   size?: number;
+  /** @deprecated Mascot is light-mode only; kept for API compat. */
   isDark?: boolean;
   roast?: boolean;
   personality?: AiPersonality;
-  /** @deprecated Orb animates continuously; kept for API compat. */
+  /** @deprecated Mascot animates continuously; kept for API compat. */
   speaking?: boolean;
-  /** Inline WebView — use inside modals (pool overlay uses screen coordinates). */
+  /** @deprecated Cloud mascot renders inline everywhere; kept for API compat. */
   inline?: boolean;
+  /** Disable the breathing / blinking loop (e.g. many avatars in a list). */
+  animated?: boolean;
 };
 
-/** Mira's avatar — pooled WebGL orb on main screens; inline WebView in modals. */
+/** Mira's avatar — the cloud mascot, rendered inline everywhere. */
 export default function InsightCompanionMark({
   size = 64,
-  isDark = true,
   roast = false,
   personality = 'default',
-  inline = false,
+  animated,
 }: Props) {
-  if (roast) {
-    return (
-      <View style={[styles.wrap, { width: size, height: size }]}>
-        <AuroraOrb
-          size={size}
-          isDark={isDark}
-          clipToCircle
-          compact
-          vivid
-          variant="roast"
-        />
-      </View>
-    );
-  }
-
-  if (inline) {
-    return (
-      <View style={[styles.wrap, { width: size, height: size }]}>
-        <OrbView size={size} personality={personality} />
-      </View>
-    );
-  }
-
-  if (POOLED_SIZES.has(size)) {
-    return (
-      <View style={[styles.wrap, { width: size, height: size }]}>
-        <OrbSlot size={size} personality={personality} />
-      </View>
-    );
-  }
-
-  const poolSize = 36;
-  const scale = size / poolSize;
-
-  if (size < poolSize) {
-    return (
-      <View style={[styles.wrap, { width: size, height: size }]}>
-        <View style={{ transform: [{ scale }] }}>
-          <OrbSlot size={poolSize} personality={personality} />
-        </View>
-      </View>
-    );
-  }
-
+  // Tiny avatars (chat bubbles, headers) skip the ground shadow so they sit
+  // cleanly in a circle, and skip motion when there may be many on screen.
+  const compact = size < 56;
   return (
     <View style={[styles.wrap, { width: size, height: size }]}>
-      <OrbView size={size} personality={personality} />
+      <CloudMascot
+        size={size}
+        personality={personality}
+        isRoast={roast}
+        shadow={!compact}
+        animated={animated ?? !compact}
+      />
     </View>
   );
 }

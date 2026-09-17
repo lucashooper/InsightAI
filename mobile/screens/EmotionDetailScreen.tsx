@@ -15,6 +15,7 @@ import StandardContainer from '../components/shared/StandardContainer';
 import GlassCard from '../components/ui/GlassCard';
 import { useLanguage } from '../contexts/LanguageContext';
 import { translateEmotion } from '../i18n/labels';
+import { safeGoBack } from '../utils/navigationSafety';
 
 interface EmotionDetailRouteParams {
   emotion: string;
@@ -162,7 +163,7 @@ export default function EmotionDetailScreen() {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.goBack()}
+          onPress={() => safeGoBack(navigation)}
         >
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
@@ -285,7 +286,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0D0B18',
   },
   emotionGradient: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   header: {
     flexDirection: 'row',

@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { safeGoBack } from '../utils/navigationSafety';
 
 const { width, height } = Dimensions.get('window');
 
@@ -281,7 +282,7 @@ export default function MeditationScreen({ navigation }: any) {
       <View style={[styles.cloud, styles.cloud4]} />
 
       {/* Back button */}
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+      <TouchableOpacity onPress={() => safeGoBack(navigation)} style={styles.backButton}>
         <Ionicons name="arrow-back" size={28} color="rgba(255, 255, 255, 0.9)" />
       </TouchableOpacity>
 

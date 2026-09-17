@@ -8,21 +8,16 @@ import { isDarkTheme, useTheme } from '../../contexts/ThemeContext';
 
 const LIGHT_BG = '#F5F3F8';
 
-/** Convert a #RRGGBB colour to rgba() with the given alpha. */
-function withAlpha(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
 /**
  * Shared environmental backdrop for every glass-card screen.
  * Preloaded in App.tsx before the navigator renders.
  *
  * The gradient PNG has a transparent alpha edge that lands roughly at tab-bar
- * height on tall phones, which left a visible navy/grey strip above the
- * floating tab bar. A bottom fade into the base colour removes that edge.
+ * height on tall phones. Earlier builds masked it with a solid fade into the
+ * base colour, but on light mode that fade itself rendered as a grey slab
+ * above the floating tab bar. Instead the image is oversized so its edge
+ * sits below the viewport, and a barely-there tint keeps the bottom of the
+ * screen calm behind the bar without introducing a visible band.
  */
 export default function AppBackdrop() {
   const { theme } = useTheme();
@@ -36,6 +31,7 @@ export default function AppBackdrop() {
         source={HOME_PAGE_GRADIENT}
         style={styles.image}
         contentFit="cover"
+        contentPosition="top"
         cachePolicy="memory-disk"
         transition={0}
         recyclingKey="home-page-gradient"
@@ -43,9 +39,9 @@ export default function AppBackdrop() {
       {dark ? <View style={styles.darkOverlay} /> : null}
       <LinearGradient
         pointerEvents="none"
-        colors={[withAlpha(base, 0), withAlpha(base, 0.85), base]}
-        locations={[0, 0.7, 1]}
-        style={styles.bottomFade}
+        colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.10)']}
+        locations={[0, 1]}
+        style={styles.softenBottom}
       />
     </View>
   );
@@ -62,19 +58,23 @@ const styles = StyleSheet.create({
     zIndex: 0,
   },
   image: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    // Oversize so the PNG's alpha edge falls below the screen.
+    height: '118%',
     width: '100%',
-    height: '100%',
   },
   darkOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(9, 9, 11, 0.52)',
   },
-  bottomFade: {
+  softenBottom: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    height: '28%',
+    height: '18%',
   },
 });

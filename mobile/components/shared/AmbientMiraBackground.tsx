@@ -19,7 +19,7 @@ export default function AmbientMiraBackground({ children, style }: Props) {
         locations={[0, 0.4, 1]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1}}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
       {/* Radial accent overlay */}
       <View style={styles.radialAccent} />
@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   radialAccent: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'transparent',
     // Simulated radial gradient via opacity layers
     opacity: 0.3,

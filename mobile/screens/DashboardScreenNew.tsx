@@ -23,6 +23,11 @@ import { usePreloadedData } from '../contexts/PreloadContext';
 import { useAppLock } from '../contexts/AppLockContext';
 import GlassCard from '../components/ui/GlassCard';
 import JourneyCard from '../components/ui/JourneyCard';
+import GenerativeCard from '../components/ui/GenerativeCard';
+import CloudMascot from '../components/companion/CloudMascot';
+import PillButton from '../components/ui/PillButton';
+import PromptCarousel from '../components/home/PromptCarousel';
+import { INK, TYPO } from '../constants/typography';
 import AppBackdrop from '../components/ui/AppBackdrop';
 import HomeStagger from '../components/shared/HomeStagger';
 import { PREMIUM, journeyInk, journeyMuted } from '../constants/premiumUI';
@@ -526,23 +531,32 @@ export default function DashboardScreenNew() {
         <HomeStagger delay={STAGGER.mainCard} active={homeAnimationActive}>
           <View style={styles.insightsSection}>
           {!hasCheckInToday ? (
-            <TouchableOpacity
-              onPress={() => setShowCheckInFlow(true)}
-              activeOpacity={0.85}
-            >
-              <JourneyCard hue="violet" style={styles.insightCard} contentStyle={styles.insightCardInner}>
-              <View style={styles.insightHeader}>
-                <View style={[styles.journeyEmojiWrap, { backgroundColor: dark ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.62)' }]}>
-                  <Text style={styles.journeyEmoji}>✨</Text>
+            <View style={styles.checkInWrap}>
+              <GenerativeCard
+                hue="violet"
+                seed="home-checkin"
+                variant="plain"
+                illustration="none"
+                onPress={() => setShowCheckInFlow(true)}
+                style={styles.insightCard}
+                contentStyle={styles.checkInContent}
+                accessibilityLabel={t('home.howDoYouFeelToday')}
+              >
+                <View style={styles.checkInText}>
+                  <Text style={[styles.checkInTitle, { color: INK.primary }]}>
+                    {t('home.howDoYouFeelToday')}
+                  </Text>
+                  <Text style={[styles.checkInSubtitle, { color: INK.secondary }]}>
+                    {t('home.checkInSubtext')}
+                  </Text>
+                  <View style={styles.checkInCta}>
+                    <Ionicons name="arrow-forward" size={18} color={INK.inverse} />
+                  </View>
                 </View>
-                <Text style={[styles.insightTitle, { color: journeyInk('violet', dark), fontSize: sf(20) }]}>{t('home.howDoYouFeelToday')}</Text>
-              </View>
-              <Text style={[styles.insightSubtext, { color: journeyMuted('violet', dark), fontSize: sf(16), lineHeight: sf(24) }]}>{t('home.checkInSubtext')}</Text>
-              <View style={[styles.journeyCta, { backgroundColor: dark ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.7)' }]}>
-                <Ionicons name="arrow-forward" size={18} color={journeyInk('violet', dark)} />
-              </View>
-              </JourneyCard>
-            </TouchableOpacity>
+              </GenerativeCard>
+              {/* Mascot rides the top-right corner of the active card */}
+              <CloudMascot size={isTablet ? 136 : 112} tint="iris" shadow={false} style={styles.checkInMascot} />
+            </View>
           ) : todayInsights.length > 0 ? (
             todayInsights.map((insight, index) => (
               <GlassCard key={index} tint="violet" style={styles.insightCard} noPad contentStyle={styles.insightCardInner}>
@@ -567,70 +581,32 @@ export default function DashboardScreenNew() {
 
         {/* Primary Actions */}
         <HomeStagger delay={STAGGER.actions} active={homeAnimationActive}>
+        {/* One charcoal primary, two quiet secondaries — colour stays in the cards */}
         <View style={styles.actionsSection}>
-          <View style={styles.actionItem}>
-            <TouchableOpacity 
-              style={styles.actionCircle}
-              onPress={() => navigation.navigate('CreateEntry')}
-              activeOpacity={0.8}
-            >
-              <LinearGradient
-                colors={['#c4b5fd', '#8b5cf6', '#6d28d9']}
-                start={{ x: 0.15, y: 0 }}
-                end={{ x: 0.85, y: 1 }}
-                style={styles.glassmorphicButton}
-              >
-                <LinearGradient colors={["rgba(255,255,255,0.42)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.75,y:0.9}} style={styles.innerHighlight} pointerEvents="none" />
-                <View style={styles.iconWrap}>
-                  <Ionicons name="create-outline" size={si(24)} color="#ffffff" />
-                </View>
-              </LinearGradient>
-            </TouchableOpacity>
-            <Text style={[styles.actionLabel, { color: theme.colors.primaryText }]}>{t('home.write')}</Text>
-          </View>
-
-          <View style={styles.actionItem}>
-            <TouchableOpacity 
-              style={styles.actionCircle}
-              onPress={startRecording}
-              disabled={isRecording}
-              activeOpacity={0.8}
-            >
-              <LinearGradient
-                colors={isRecording ? ['#f87171', '#ef4444', '#dc2626'] : ['#fb7185', '#f472b6', '#e11d48']}
-                start={{ x: 0.15, y: 0 }}
-                end={{ x: 0.85, y: 1 }}
-                style={styles.glassmorphicButton}
-              >
-                <LinearGradient colors={["rgba(255,255,255,0.38)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.75,y:0.9}} style={styles.innerHighlight} pointerEvents="none" />
-                <View style={styles.iconWrap}>
-                  <Ionicons name={isRecording ? "mic" : "mic-outline"} size={si(24)} color="#ffffff" />
-                </View>
-              </LinearGradient>
-            </TouchableOpacity>
-            <Text style={[styles.actionLabel, { color: theme.colors.primaryText }]}>{isRecording ? t('home.listening') : t('home.speak')}</Text>
-          </View>
-
-          <View style={styles.actionItem}>
-            <TouchableOpacity 
-              style={styles.actionCircle}
-              onPress={() => setShowScanSoon(true)}
-              activeOpacity={0.8}
-            >
-              <LinearGradient
-                colors={['#67e8f9', '#22d3ee', '#0891b2']}
-                start={{ x: 0.15, y: 0 }}
-                end={{ x: 0.85, y: 1 }}
-                style={styles.glassmorphicButton}
-              >
-                <LinearGradient colors={["rgba(255,255,255,0.42)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.75,y:0.9}} style={styles.innerHighlight} pointerEvents="none" />
-                <View style={styles.iconWrap}>
-                  <Ionicons name="scan-outline" size={si(24)} color="#ffffff" />
-                </View>
-              </LinearGradient>
-            </TouchableOpacity>
-            <Text style={[styles.actionLabel, { color: theme.colors.primaryText }]}>{t('home.scan')}</Text>
-          </View>
+          <PillButton
+            label={t('home.write')}
+            icon="create-outline"
+            size="md"
+            onPress={() => navigation.navigate('CreateEntry')}
+            style={styles.actionPill}
+          />
+          <PillButton
+            label={isRecording ? t('home.listening') : t('home.speak')}
+            icon={isRecording ? 'mic' : 'mic-outline'}
+            size="md"
+            variant="secondary"
+            disabled={isRecording}
+            onPress={startRecording}
+            style={styles.actionPill}
+          />
+          <PillButton
+            label={t('home.scan')}
+            icon="scan-outline"
+            size="md"
+            variant="secondary"
+            onPress={() => setShowScanSoon(true)}
+            style={styles.actionPill}
+          />
         </View>
         </HomeStagger>
 
@@ -646,48 +622,48 @@ export default function DashboardScreenNew() {
         {/* Daily Prompt */}
         <HomeStagger delay={STAGGER.prompt} active={homeAnimationActive}>
         <View style={styles.challengesSection}>
-          <Text style={[styles.sectionTitle, { color: sectionHeadingColor }]}>{t('home.todaysPrompt')}</Text>
-          {promptCompletedToday ? (
-            <JourneyCard hue="aqua" style={styles.insightCard} contentStyle={styles.insightCardInner}>
-              <View style={styles.insightHeader}>
-                <View style={styles.promptCompleteBadge}>
-                  <Ionicons name="checkmark-circle" size={22} color={journeyInk('aqua', dark)} />
-                </View>
-                <View style={{ flex: 1, marginLeft: 8 }}>
-                  <Text style={[styles.insightTitle, { color: journeyInk('aqua', dark), fontSize: sf(16) }]}>
-                    {t('home.promptCompleted')}
-                  </Text>
-                  <Text style={[styles.insightText, { color: journeyMuted('aqua', dark), fontSize: sf(13), marginTop: 4 }]}>
-                    {t('home.promptCompletedSubtitle')}
-                  </Text>
-                </View>
-              </View>
-            </JourneyCard>
-          ) : (
-          <TouchableOpacity
-            onPress={() => navigation.navigate('PromptEntry', { promptText: dailyPrompt.prompt + (dailyPrompt.followUp ? `\n\n${dailyPrompt.followUp}` : '') })}
-            activeOpacity={0.85}
-          >
-            <JourneyCard hue="gold" style={styles.insightCard} contentStyle={styles.insightCardInner}>
-            <View style={styles.insightHeader}>
-              <View style={[styles.journeyEmojiWrap, { backgroundColor: dark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.7)' }]}>
-                <Text style={styles.journeyEmoji}>{dailyPrompt.emoji}</Text>
-              </View>
-              <View style={{ flex: 1, marginLeft: 4 }}>
-                <Text style={[styles.insightTitle, { color: journeyInk('gold', dark), fontSize: sf(17) }]}>{dailyPrompt.prompt}</Text>
-                {dailyPrompt.followUp && (
-                  <Text style={[styles.insightText, { color: journeyMuted('gold', dark), fontSize: sf(13), marginTop: 4 }]}>{dailyPrompt.followUp}</Text>
-                )}
-              </View>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
-              <View style={[styles.compactCta, { borderWidth: 0, backgroundColor: dark ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.72)' }]}>
-                <Text style={[styles.compactCtaText, { color: journeyInk('gold', dark) }]}>{t('home.getStarted')}</Text>
-              </View>
-            </View>
-            </JourneyCard>
-          </TouchableOpacity>
-          )}
+          <Text style={[styles.sectionTitle, { color: sectionHeadingColor }]}>{t('home.forYou')}</Text>
+          <PromptCarousel
+            items={[
+              {
+                key: 'daily-prompt',
+                colors: ['#FFD3DA', '#FFE9EC', '#FFF7F8'],
+                mascotTint: '#FFB7D3',
+                mascotValence: 0.85,
+                eyebrow: promptCompletedToday ? t('home.promptCompleted') : t('home.cardOf', { index: 1, total: 3 }),
+                title: promptCompletedToday ? t('home.promptCompletedSubtitle') : dailyPrompt.prompt,
+                subtitle: promptCompletedToday ? undefined : dailyPrompt.followUp || undefined,
+                cta: promptCompletedToday ? t('home.writeAnother') : t('home.reflect'),
+                done: promptCompletedToday,
+                onPress: () =>
+                  promptCompletedToday
+                    ? navigation.navigate('CreateEntry')
+                    : navigation.navigate('PromptEntry', {
+                        promptText: dailyPrompt.prompt + (dailyPrompt.followUp ? `\n\n${dailyPrompt.followUp}` : ''),
+                      }),
+              },
+              {
+                key: 'gratitude',
+                colors: ['#BFEBD8', '#E3F7EE', '#F6FCF9'],
+                mascotTint: '#A9EAD1',
+                mascotValence: 0.95,
+                eyebrow: t('home.cardOf', { index: 2, total: 3 }),
+                title: t('home.gratitudePrompt'),
+                cta: t('home.gratitudeCta'),
+                onPress: () => navigation.navigate('Gratitude'),
+              },
+              {
+                key: 'chat',
+                colors: ['#C9DFFF', '#E6EFFF', '#F6F9FF'],
+                mascotTint: '#A6D3FF',
+                mascotValence: 0.65,
+                eyebrow: t('home.cardOf', { index: 3, total: 3 }),
+                title: t('home.chatPrompt'),
+                cta: t('home.chatCta'),
+                onPress: () => navigation.navigate('AIChat'),
+              },
+            ]}
+          />
         </View>
         </HomeStagger>
 
@@ -697,42 +673,54 @@ export default function DashboardScreenNew() {
           <Text style={[styles.sectionTitle, { color: sectionHeadingColor }]}>
             {t('home.suggested')}
           </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Gratitude')} activeOpacity={0.85}>
-            <JourneyCard hue="peach" style={styles.challengeCard} contentStyle={styles.challengeCardInner}>
-            <View style={styles.challengeContent}>
-              <Text style={styles.challengeEmoji}>📝</Text>
-              <View style={styles.challengeInfo}>
-                <Text style={[styles.challengeTitle, { color: journeyInk('peach', dark) }]}>{t('home.gratitude')}</Text>
-                <Text style={[styles.challengeSubtext, { color: journeyMuted('peach', dark) }]}>{t('home.gratitudeDesc')}</Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={journeyInk('peach', dark)} />
-            </JourneyCard>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('AmbientSounds')} activeOpacity={0.85}>
-            <JourneyCard hue="sky" style={styles.challengeCard} contentStyle={styles.challengeCardInner}>
-            <View style={styles.challengeContent}>
-              <Text style={styles.challengeEmoji}>🌧️</Text>
-              <View style={styles.challengeInfo}>
-                <Text style={[styles.challengeTitle, { color: journeyInk('sky', dark) }]}>{t('home.ambient')}</Text>
-                <Text style={[styles.challengeSubtext, { color: journeyMuted('sky', dark) }]}>{t('home.ambientDesc')}</Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={journeyInk('sky', dark)} />
-            </JourneyCard>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('Explore')} activeOpacity={0.85}>
-            <JourneyCard hue="rose" style={styles.challengeCard} contentStyle={styles.challengeCardInner}>
-            <View style={styles.challengeContent}>
-              <Text style={styles.challengeEmoji}>🔍</Text>
-              <View style={styles.challengeInfo}>
-                <Text style={[styles.challengeTitle, { color: journeyInk('rose', dark) }]}>{t('home.articles')}</Text>
-                <Text style={[styles.challengeSubtext, { color: journeyMuted('rose', dark) }]}>{t('home.articlesDesc')}</Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={journeyInk('rose', dark)} />
-            </JourneyCard>
-          </TouchableOpacity>
+          <GenerativeCard
+            hue="lilac"
+            seed="home-journey"
+            variant="row"
+            illustration="hills"
+            avatar="🧭"
+            title={t('home.journey')}
+            subtitle={t('home.journeyDesc')}
+            chevron
+            onPress={() => navigation.navigate('Journey')}
+            style={styles.challengeCard}
+          />
+          <GenerativeCard
+            hue="peach"
+            seed="home-gratitude"
+            variant="row"
+            illustration="sunrise"
+            avatar="📝"
+            title={t('home.gratitude')}
+            subtitle={t('home.gratitudeDesc')}
+            chevron
+            onPress={() => navigation.navigate('Gratitude')}
+            style={styles.challengeCard}
+          />
+          <GenerativeCard
+            hue="sky"
+            seed="home-ambient"
+            variant="row"
+            illustration="clouds"
+            avatar="🌧️"
+            title={t('home.ambient')}
+            subtitle={t('home.ambientDesc')}
+            chevron
+            onPress={() => navigation.navigate('AmbientSounds')}
+            style={styles.challengeCard}
+          />
+          <GenerativeCard
+            hue="rose"
+            seed="home-explore"
+            variant="row"
+            illustration="orbs"
+            avatar="🔍"
+            title={t('home.articles')}
+            subtitle={t('home.articlesDesc')}
+            chevron
+            onPress={() => navigation.navigate('Explore')}
+            style={styles.challengeCard}
+          />
         </View>
         </HomeStagger>
 
@@ -826,9 +814,7 @@ const styles = StyleSheet.create({
     height: 72,
   },
   headerTitle: {
-    fontSize: sf(20),
-    fontWeight: '500',
-    letterSpacing: 0.3,
+    ...TYPO.title,
     marginLeft: -12,
   },
   logoIcon: {
@@ -883,10 +869,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   heroDate: {
-    fontSize: sf(12),
-    fontWeight: '500',
-    letterSpacing: 0,
-    lineHeight: sf(16),
+    ...TYPO.caption,
     marginBottom: 4,
   },
   greeting: {
@@ -904,11 +887,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   greetingText: {
-    fontSize: isTablet ? sf(40) : sf(36),
-    fontWeight: '800',
-    letterSpacing: -1.2,
+    ...TYPO.h1,
     textAlign: 'left',
-    lineHeight: isTablet ? sf(48) : sf(42),
     maxWidth: isTablet ? 520 : width * 0.88,
   },
   iconButton: {
@@ -989,9 +969,13 @@ const styles = StyleSheet.create({
   actionsSection: {
     flexDirection: 'row',
     paddingHorizontal: screenPadding,
-    gap: isTablet ? 40 : 24,
+    gap: 10,
     marginBottom: isTablet ? 36 : 28,
     justifyContent: 'center',
+  },
+  actionPill: {
+    flex: 1,
+    paddingHorizontal: 12,
   },
   actionItem: {
     alignItems: 'center',
@@ -1019,11 +1003,11 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.28)',
   },
   blurFallback: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(255,255,255,0.06)',
   },
   innerHighlight: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderRadius: 28,
   },
   iconWrap: {
@@ -1039,10 +1023,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: isTablet ? 40 : PREMIUM.layout.screenPadH,
   },
   sectionTitle: {
-    fontSize: sf(22),
-    fontWeight: '800',
-    letterSpacing: -0.4,
-    lineHeight: sf(28),
+    ...TYPO.h3,
     marginBottom: 14,
   },
   journeyEmojiWrap: {
@@ -1161,6 +1142,41 @@ const styles = StyleSheet.create({
     padding: PREMIUM.layout.cardPad,
     position: 'relative',
   },
+  checkInWrap: {
+    position: 'relative',
+    // Room for the mascot that overhangs the card's top edge.
+    paddingTop: 26,
+  },
+  checkInContent: {
+    paddingVertical: 22,
+    paddingRight: 12,
+  },
+  checkInText: {
+    // Leave the top-right corner to the mascot.
+    paddingRight: isTablet ? 120 : 96,
+  },
+  checkInTitle: {
+    ...TYPO.h3,
+  },
+  checkInSubtitle: {
+    ...TYPO.bodySm,
+    marginTop: 6,
+  },
+  checkInCta: {
+    marginTop: 18,
+    alignSelf: 'flex-start',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: INK.primary,
+  },
+  checkInMascot: {
+    position: 'absolute',
+    top: 0,
+    right: 6,
+  },
   insightHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1198,9 +1214,6 @@ const styles = StyleSheet.create({
     marginBottom: PREMIUM.layout.sectionGap,
   },
   challengeCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     marginTop: 12,
   },
   challengeCardInner: {

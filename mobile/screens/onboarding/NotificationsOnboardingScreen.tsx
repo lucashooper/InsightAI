@@ -12,6 +12,7 @@ import { ONBOARDING_TEXT, ONBOARDING_TYPE } from '../../constants/onboardingThem
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { safeGoBack } from '../../utils/navigationSafety';
 
 interface NotificationsOnboardingScreenProps {
   navigation: any;
@@ -52,7 +53,7 @@ export default function NotificationsOnboardingScreen({ navigation }: Notificati
       <OnboardingAmbientBackground />
 
       {navigation.canGoBack() && (
-        <OnboardingBackButton onPress={() => navigation.goBack()} />
+        <OnboardingBackButton onPress={() => safeGoBack(navigation)} />
       )}
 
       <CachedImage source={INSIGHT_LOGO} style={styles.logo} contentFit="contain" recyclingKey="notifications-logo" />

@@ -21,6 +21,7 @@ import { ONBOARDING_SURFACE, ONBOARDING_TEXT, ONBOARDING_CTA } from '../../const
 import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
 import { loadOnboardingQuizProgress, saveOnboardingQuizProgress, saveOnboardingLastScreen } from '../../utils/onboardingProgress';
 import { ONBOARDING_MEDITATION_LOTTIE } from '../../constants/appAssets';
+import { safeGoBack } from '../../utils/navigationSafety';
 const cambridgeColorLogo = require('../../public/Cambridge-Logo-No-Background.png');
 
 const { width } = Dimensions.get('window');
@@ -548,7 +549,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                     onPress={() => {
                         if (isTransitioning.current) return;
                         if (currentIndex === 0) {
-                            navigation.goBack();
+                            safeGoBack(navigation, 'PersonalityQuizIntro');
                         } else {
                             isTransitioning.current = true;
                             setCurrentIndex(currentIndex - 1);

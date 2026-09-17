@@ -40,6 +40,7 @@ import {
   createGoDeeperMessage,
   type GoDeeperMessage,
 } from '../services/goDeeperConversationService';
+import { safeGoBack } from '../utils/navigationSafety';
 
 // Helper function to get color styling based on emotion sentiment
 const getSentimentStyle = (emotion: string) => {
@@ -806,12 +807,12 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         {isDarkTheme(theme.name) ? (
-          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: theme.colors.background }]} />
         ) : (
           <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
         )}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <TouchableOpacity onPress={() => safeGoBack(navigation)} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : '#1a1a1a'} />
           </TouchableOpacity>
         </View>
@@ -834,12 +835,12 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {isDarkTheme(theme.name) ? (
-        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.background }]} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: theme.colors.background }]} />
       ) : (
         <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
       )}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => safeGoBack(navigation)} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : '#1a1a1a'} />
         </TouchableOpacity>
         <View style={styles.headerRight}>

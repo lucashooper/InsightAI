@@ -6,6 +6,7 @@ import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getFirstName, getGoalFocusKey } from '../../utils/paywallPersonalization';
 import { isTablet, sf } from '../../utils/responsive';
+import { safeGoBack } from '../../utils/navigationSafety';
 
 export default function PaywallPersonalizedScreen({ navigation }: any) {
   const { userName, onboardingAnswers } = useOnboarding();
@@ -21,7 +22,7 @@ export default function PaywallPersonalizedScreen({ navigation }: any) {
     <PrePaywallLayout
       step={0}
       onContinue={() => navigation.navigate('PaywallBenefits')}
-      onBack={() => navigation.goBack()}
+      onBack={() => safeGoBack(navigation)}
     >
       <View style={styles.iconWrap}>
         <Ionicons name="checkmark" size={28} color="#FFFFFF" />

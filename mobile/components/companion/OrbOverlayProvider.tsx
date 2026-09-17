@@ -27,6 +27,13 @@ import {
   type SlotRect,
 } from './orbPool';
 import { markOrbPending } from '../../utils/orbWarmupRegistry';
+import CloudMascot from './CloudMascot';
+
+/**
+ * The companion is now the SVG CloudMascot. The WebGL pool below is kept for
+ * reference/rollback but no pooled WebViews are mounted while this is true.
+ */
+const USE_CLOUD_MASCOT = true;
 
 type OrbOverlayContextValue = {
   registerSlot: (id: string, rect: Omit<SlotRect, 'id' | 'updatedAt'>) => void;
@@ -160,6 +167,14 @@ export function OrbSlot({
 }: OrbSlotProps) {
   const ctx = useContext(OrbOverlayContext);
 
+  if (USE_CLOUD_MASCOT) {
+    return (
+      <View style={[{ width: size, height: size }, style]} pointerEvents="none">
+        <CloudMascot size={size} personality={personality} isRoast={isRoast} shadow={size >= 56} />
+      </View>
+    );
+  }
+
   // No provider, or a size the pool doesn't carry (e.g. iPad-scaled sizes):
   // render inline instead of registering a slot nothing will ever fill.
   const pooled = ORB_POOL.some((item) => item.size === size);
@@ -252,7 +267,7 @@ function OrbPoolHost({
     [slots, warmupIds],
   );
 
-  if (mountedItems.length === 0) return null;
+  if (USE_CLOUD_MASCOT || mountedItems.length === 0) return null;
 
   return (
     <>

@@ -19,6 +19,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import GratitudeSavedOverlay from '../components/gratitude/GratitudeSavedOverlay';
 import AppBackdrop from '../components/ui/AppBackdrop';
 import { useSpeechToText } from '../hooks/useSpeechToText';
+import { safeGoBack } from '../utils/navigationSafety';
 
 export default function GratitudeScreen({ navigation }: any) {
   const { theme } = useTheme();
@@ -111,7 +112,7 @@ export default function GratitudeScreen({ navigation }: any) {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => safeGoBack(navigation)} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : '#1a1a1a'} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.95)' : '#1a1a1a' }]}>{t('auxiliary.gratitude.title')}</Text>
@@ -219,7 +220,7 @@ export default function GratitudeScreen({ navigation }: any) {
         buttonLabel={t('auxiliary.common.ok')}
         onClose={() => {
           setShowSavedOverlay(false);
-          navigation.goBack();
+          safeGoBack(navigation);
         }}
       />
     </View>

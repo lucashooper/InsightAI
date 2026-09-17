@@ -22,6 +22,7 @@ import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { onboardingAuthStyles as auth, ONBOARDING_AUTH_COLORS as colors } from '../constants/onboardingAuthStyles';
+import { safeGoBack } from '../utils/navigationSafety';
 
 type RecoveryStep = 'email' | 'code' | 'password' | 'success';
 const PASSWORD_RECOVERY_ACTIVE_KEY = 'PASSWORD_RECOVERY_ACTIVE';
@@ -230,7 +231,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
       return;
     }
 
-    navigation.goBack();
+    safeGoBack(navigation);
   };
 
   const renderTitle = () => {

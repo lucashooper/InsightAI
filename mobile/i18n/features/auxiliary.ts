@@ -3,7 +3,7 @@ import { AppLanguage, TranslationTree } from '../types';
 const en: TranslationTree = {
   auxiliary: {
     common: {
-      add: 'Add', cancel: 'Cancel', complete: 'Complete', continue: 'Continue', delete: 'Delete',
+      add: 'Add', accept: 'Accept', dismiss: 'Dismiss', cancel: 'Cancel', complete: 'Complete', continue: 'Continue', delete: 'Delete',
       edit: 'Edit', email: 'Email', error: 'Error', genericError: 'An error occurred', name: 'Name',
       next: 'Next', ok: 'OK', or: 'or', password: 'Password', previous: 'Previous', retry: 'Retry',
       saved: 'Saved', saving: 'Saving...', signIn: 'Sign In', success: 'Success',
@@ -157,6 +157,10 @@ const en: TranslationTree = {
     },
     playbook: {
       title: 'Protocols', updateFailed: 'Failed to update protocol.', pinned: 'Protocol pinned to Home',
+      journeyTitle: 'Daily practice', journeySubtitle: 'Small daily practices that add up to real change.',
+      unitLabel: 'Practice {{index}}', todayLabel: 'Today', streakLabel: '{{count}} day streak',
+      bestLabel: 'Best {{count}}', allDone: 'All done for today', allDoneSubtitle: 'Come back tomorrow to keep your streak alive.',
+      keepGoing: '{{remaining}} left today', startHere: 'Start here', newProtocol: 'New',
       pinFailed: 'Failed to pin protocol', unpinned: 'Protocol unpinned from Home',
       unpinFailed: 'Failed to unpin protocol', unpinFromHome: 'Unpin from Home', pinToHome: 'Pin to Home',
       deleteStrategy: 'Delete protocol', strategyOptions: 'Protocol options', todayProgress: "TODAY'S PROGRESS",

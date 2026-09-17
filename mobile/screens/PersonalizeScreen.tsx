@@ -8,6 +8,7 @@ import PageHeader from '../components/shared/PageHeader';
 import LanguagePicker from '../components/LanguagePicker';
 import { sf } from '../utils/responsive';
 import { useLanguage } from '../contexts/LanguageContext';
+import { safeGoBack } from '../utils/navigationSafety';
 
 export default function PersonalizeScreen({ navigation }: any) {
   const { theme } = useTheme();
@@ -40,7 +41,7 @@ export default function PersonalizeScreen({ navigation }: any) {
 
   return (
     <View style={[styles.wrapper, { backgroundColor: theme.colors.background }]}>
-      <PageHeader title={t('auxiliary.personalize.title')} onBack={() => navigation.goBack()} />
+      <PageHeader title={t('auxiliary.personalize.title')} onBack={() => safeGoBack(navigation)} />
 
       <View style={styles.content}>
         <Text style={[styles.sectionTitle, { color: theme.colors.secondaryText }]}>

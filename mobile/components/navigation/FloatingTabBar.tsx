@@ -144,12 +144,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   blurFill: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderRadius: 28,
     overflow: 'hidden',
   },
   barBorder: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderRadius: 28,
     borderWidth: 1,
   },
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   activePill: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderRadius: 18,
     marginHorizontal: 2,
   },

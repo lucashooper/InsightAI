@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalBackdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   modalSheet: {
@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   modalSheetFill: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(255,255,255,0.97)',
   },
   modalHandle: {

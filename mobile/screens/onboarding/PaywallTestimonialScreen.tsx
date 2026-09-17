@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import PrePaywallLayout from '../../components/onboarding/PrePaywallLayout';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { isTablet, sf } from '../../utils/responsive';
+import { safeGoBack } from '../../utils/navigationSafety';
 
 export default function PaywallTestimonialScreen({ navigation }: any) {
   const { t } = useLanguage();
@@ -13,7 +14,7 @@ export default function PaywallTestimonialScreen({ navigation }: any) {
       step={2}
       ctaLabel={t('onboarding.prePaywall.testimonial.cta')}
       onContinue={() => navigation.navigate('Paywall')}
-      onBack={() => navigation.goBack()}
+      onBack={() => safeGoBack(navigation)}
     >
       <Text style={styles.title}>{t('onboarding.prePaywall.testimonial.title')}</Text>
 

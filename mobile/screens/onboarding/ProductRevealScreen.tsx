@@ -1,192 +1,163 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { isTablet, sf, screenPadding, iPadContentStyle } from '../../utils/responsive';
-import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import LanguagePicker from '../../components/LanguagePicker';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { ONBOARDING_TEXT, ONBOARDING_CTA, ONBOARDING_TYPE } from '../../constants/onboardingTheme';
 import { useOnboardingBottomInset, useOnboardingTopInset } from '../../utils/onboardingInsets';
-import { ZENO_MAIN_PHONE_FULL } from '../../constants/phoneMockups';
 import { INSIGHT_LOGO } from '../../constants/appAssets';
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const PHONE_ASPECT_RATIO = 1350 / 2922;
-const PHONE_IMAGE_WIDTH = isTablet ? SCREEN_WIDTH * 0.68 : SCREEN_WIDTH * 0.84;
-const PHONE_FULL_HEIGHT = PHONE_IMAGE_WIDTH / PHONE_ASPECT_RATIO;
-const PHONE_VISIBLE_HEIGHT = PHONE_FULL_HEIGHT * (isTablet ? 0.58 : 0.68);
+import { INK, TYPO } from '../../constants/typography';
+import PillButton from '../../components/ui/PillButton';
+import PressableScale from '../../components/ui/PressableScale';
+import StaggerIn from '../../components/shared/StaggerIn';
 
-const phoneMockup = ZENO_MAIN_PHONE_FULL;
+const LANDSCAPE = require('../../assets/generated/onboarding-landscape.png');
 
+/**
+ * Welcome — a single generated pastel landscape fills the screen; the brand
+ * sits in the sky, one oversized headline over the horizon glow, and a
+ * charcoal CTA anchored on the hills. No shapes, no mascot, nothing hard-edged.
+ */
 export default function ProductRevealScreen({ navigation }: any) {
-    const { t } = useLanguage();
-    const bottomInset = useOnboardingBottomInset();
-    const topInset = useOnboardingTopInset();
+  const { t } = useLanguage();
+  const bottomInset = useOnboardingBottomInset();
+  const topInset = useOnboardingTopInset();
 
-    return (
-        <View style={[styles.container, { paddingTop: topInset + (isTablet ? 24 : 12), paddingBottom: bottomInset }]}>
-            <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={false} />
-            <OnboardingAmbientBackground />
-            <View style={[styles.languageAnchor, { top: topInset + (isTablet ? 16 : 12) }]}>
-                <LanguagePicker variant="pill" size="large" />
-            </View>
+  return (
+    <View style={styles.container}>
+      <StatusBar style="dark" />
 
-            <View style={styles.header}>
-                <View style={styles.brandRow}>
-                    <Image
-                        source={INSIGHT_LOGO}
-                        style={styles.logo}
-                        contentFit="contain"
-                        cachePolicy="memory-disk"
-                        transition={0}
-                    />
-                </View>
-                <View style={styles.welcomeContainer}>
-                    <Text style={styles.welcomeText}>
-                        {t('onboarding.welcome')}
-                    </Text>
-                </View>
-            </View>
+      <Image
+        source={LANDSCAPE}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        contentPosition="bottom"
+        cachePolicy="memory-disk"
+        transition={200}
+        accessibilityIgnoresInvertColors
+      />
+      {/* Soft lift behind the CTA block so type stays crisp over the hills */}
+      <LinearGradient
+        pointerEvents="none"
+        colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.55)', 'rgba(255,255,255,0.7)']}
+        locations={[0, 0.55, 1]}
+        style={styles.bottomLift}
+      />
 
-        <View style={styles.spacer} />
+      <View style={[styles.languageAnchor, { top: topInset + (isTablet ? 16 : 10) }]}>
+        <LanguagePicker variant="pill" size="large" />
+      </View>
 
-            {/* Phone + CTA anchored together at the bottom (Oasis-style) */}
-            <View style={styles.bottomBlock}>
-                <View style={styles.phoneWrapper}>
-                    <View style={styles.phoneCrop}>
-                        <Image
-                            source={phoneMockup}
-                            style={styles.phoneMockup}
-                            contentFit="contain"
-                            cachePolicy="memory-disk"
-                            transition={0}
-                            priority="high"
-                            recyclingKey="product-reveal-phone"
-                        />
-                    </View>
-                </View>
+      {/* Brand */}
+      <StaggerIn delay={40} style={[styles.brand, { paddingTop: topInset + (isTablet ? 30 : 22) }]}>
+        <Image source={INSIGHT_LOGO} style={styles.logo} contentFit="contain" cachePolicy="memory-disk" transition={0} />
+        <Text style={styles.tagline}>{t('onboarding.heroTagline')}</Text>
+      </StaggerIn>
 
-                <TouchableOpacity
-                    style={styles.button}
-                    activeOpacity={0.9}
-                    onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        navigation.navigate('OnboardingQuestion');
-                    }}
-                >
-                    <View style={styles.buttonInner}>
-                        <Text style={styles.buttonText}>{t('onboarding.getStarted')}</Text>
-                    </View>
-                </TouchableOpacity>
+      {/* Headline sits over the horizon glow */}
+      <View style={styles.hero} pointerEvents="none">
+        <StaggerIn delay={180}>
+          <Text style={styles.headline} allowFontScaling={false}>
+            {t('onboarding.heroHeadline')}
+          </Text>
+        </StaggerIn>
+      </View>
 
-                <TouchableOpacity
-                    onPress={() => navigation.navigate('Login')}
-                    style={styles.signInLink}
-                >
-                    <Text style={styles.signInText}>
-                        {t('onboarding.alreadyHaveAccount')}
-                    </Text>
-                </TouchableOpacity>
-            </View>
-        </View>
-    );
+      {/* CTA block */}
+      <StaggerIn delay={300} style={[styles.bottomBlock, { paddingBottom: bottomInset + 6 }]}>
+        <PillButton
+          label={t('onboarding.getStarted')}
+          block
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            navigation.navigate('OnboardingQuestion');
+          }}
+        />
+        <PressableScale
+          onPress={() => navigation.navigate('Login')}
+          style={styles.signInLink}
+          haptic={false}
+          scaleTo={0.98}
+          accessibilityRole="button"
+        >
+          <Text style={styles.signInText}>{t('onboarding.alreadyHaveAccount')}</Text>
+        </PressableScale>
+        <Text style={styles.legal}>{t('onboarding.heroLegal')}</Text>
+      </StaggerIn>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: 'transparent',
-    },
-    languageAnchor: {
-        position: 'absolute',
-        top: isTablet ? 88 : 68,
-        right: 20,
-        zIndex: 10,
-    },
-    header: {
-        flexShrink: 0,
-    },
-    brandRow: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: isTablet ? 0 : 0,
-        marginBottom: isTablet ? 6 : 2,
-    },
-    logo: {
-        width: isTablet ? 120 : 130,
-        height: isTablet ? 120 : 130,
-        shadowColor: 'rgba(100, 80, 180, 0.2)',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 1,
-        shadowRadius: 12,
-    },
-    welcomeContainer: {
-        alignItems: 'center',
-        marginBottom: isTablet ? 8 : 4,
-        paddingHorizontal: 24,
-    },
-    welcomeText: {
-        ...ONBOARDING_TYPE.title,
-        color: ONBOARDING_TEXT.primary,
-    },
-    spacer: {
-        flex: 1,
-        minHeight: isTablet ? 20 : 8,
-    },
-    bottomBlock: {
-        flexShrink: 0,
-        alignItems: 'center',
-        paddingHorizontal: screenPadding,
-        ...(iPadContentStyle as any),
-    },
-    phoneWrapper: {
-        alignItems: 'center',
-        paddingHorizontal: isTablet ? 8 : 0,
-        marginTop: 0,
-        marginBottom: 0,
-    },
-    phoneCrop: {
-        width: PHONE_IMAGE_WIDTH,
-        height: PHONE_VISIBLE_HEIGHT,
-        overflow: 'hidden',
-        alignItems: 'center',
-        position: 'relative',
-    },
-    phoneMockup: {
-        width: PHONE_IMAGE_WIDTH,
-        height: PHONE_FULL_HEIGHT,
-    },
-    button: {
-        width: '100%',
-        borderRadius: 999,
-        backgroundColor: ONBOARDING_CTA.background,
-        marginTop: -4,
-        shadowColor: ONBOARDING_CTA.shadow,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 1,
-        shadowRadius: 12,
-        elevation: 8,
-    },
-    buttonInner: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: ONBOARDING_CTA.paddingVertical,
-        borderRadius: ONBOARDING_CTA.borderRadius,
-    },
-    buttonText: {
-        fontSize: sf(18),
-        fontWeight: '700',
-        color: ONBOARDING_CTA.text,
-        letterSpacing: -0.2,
-    },
-    signInLink: {
-        marginTop: isTablet ? 20 : 14,
-        paddingVertical: 6,
-    },
-    signInText: {
-        fontSize: sf(15),
-        textAlign: 'center',
-        color: ONBOARDING_TEXT.secondary,
-        fontWeight: '400',
-    },
+  container: {
+    flex: 1,
+    backgroundColor: '#DDE6FA',
+  },
+  bottomLift: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '34%',
+  },
+  languageAnchor: {
+    position: 'absolute',
+    right: 20,
+    zIndex: 10,
+  },
+  brand: {
+    alignItems: 'center',
+  },
+  logo: {
+    width: isTablet ? 88 : 74,
+    height: isTablet ? 88 : 74,
+  },
+  tagline: {
+    ...TYPO.title,
+    color: INK.secondary,
+    marginTop: -4,
+  },
+  hero: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    // Bias the headline toward the horizon glow rather than dead centre.
+    paddingTop: '10%',
+  },
+  headline: {
+    ...TYPO.display,
+    fontSize: sf(isTablet ? 84 : 68),
+    lineHeight: sf(isTablet ? 86 : 70),
+    letterSpacing: -3,
+    textAlign: 'center',
+    color: INK.primary,
+  },
+  bottomBlock: {
+    alignItems: 'center',
+    paddingHorizontal: screenPadding,
+    gap: 4,
+    ...(iPadContentStyle as any),
+  },
+  signInLink: {
+    marginTop: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  signInText: {
+    ...TYPO.title,
+    textAlign: 'center',
+    color: INK.primary,
+  },
+  legal: {
+    ...TYPO.caption,
+    lineHeight: sf(17),
+    textAlign: 'center',
+    color: INK.tertiary,
+    maxWidth: 300,
+    marginTop: 4,
+  },
 });

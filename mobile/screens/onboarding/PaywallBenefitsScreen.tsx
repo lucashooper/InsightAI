@@ -9,6 +9,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { isTablet, sf } from '../../utils/responsive';
 import { FAB_MENU_BACKGROUNDS } from '../../constants/fabMenuAssets';
 import { ONBOARDING_TEXT } from '../../constants/onboardingTheme';
+import { safeGoBack } from '../../utils/navigationSafety';
 
 const BENEFIT_KEYS = ['emotions', 'habit', 'steps', 'mira'] as const;
 const BENEFIT_ICONS: Record<(typeof BENEFIT_KEYS)[number], keyof typeof Ionicons.glyphMap> = {
@@ -67,7 +68,7 @@ export default function PaywallBenefitsScreen({ navigation }: any) {
       step={1}
       ctaLabel={t('onboarding.prePaywall.testimonial.cta')}
       onContinue={() => navigation.navigate('Paywall')}
-      onBack={() => navigation.goBack()}
+      onBack={() => safeGoBack(navigation)}
     >
       <Text style={styles.eyebrow}>{t('onboarding.prePaywall.benefits.eyebrow')}</Text>
       <Text style={styles.title}>{t('onboarding.prePaywall.benefits.title')}</Text>

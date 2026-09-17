@@ -13,6 +13,7 @@ import { isTablet, sf } from '../../utils/responsive';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { safeGoBack } from '../../utils/navigationSafety';
 
 const { width, height } = Dimensions.get('window');
 
@@ -146,7 +147,7 @@ export default function InteractiveShowcaseScreen({ navigation }: Props) {
         <View style={styles.container}>
             <OnboardingAmbientBackground />
 
-            <OnboardingBackButton onPress={() => navigation.canGoBack() && navigation.goBack()} />
+            <OnboardingBackButton onPress={() => navigation.canGoBack() && safeGoBack(navigation)} />
 
             <KeyboardAvoidingView
                 style={{ flex: 1 }}

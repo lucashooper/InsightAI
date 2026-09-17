@@ -302,20 +302,29 @@ const CONTAINER_STYLE_KEY = '@insightai_container_style';
 const DARK_THEMES: ThemeName[] = ['dark', 'midnight', 'forest'];
 const LIGHT_THEMES: ThemeName[] = ['light', 'vibrant', 'ocean', 'sunset'];
 
+/**
+ * Insight is light-mode-first. While this is true every screen (onboarding,
+ * main app, modals) resolves to the light palette and the OS appearance
+ * setting is ignored. The stored preference is preserved so flipping this
+ * back on later restores whatever the user had chosen.
+ */
+export const FORCE_LIGHT_MODE = true;
+
 /** Collapse legacy palette themes into light or dark. */
 export const normalizeThemeName = (stored: string | null): ThemeName => {
-  if (!stored) return 'dark';
+  if (FORCE_LIGHT_MODE) return 'light';
+  if (!stored) return 'light';
   if (stored === 'light' || stored === 'dark') return stored;
   if (DARK_THEMES.includes(stored as ThemeName)) return 'dark';
   if (LIGHT_THEMES.includes(stored as ThemeName)) return 'light';
-  return 'dark';
+  return 'light';
 };
 
 /** Themes shown in Appearance settings. */
-export const selectableThemes: ThemeName[] = ['light', 'dark'];
+export const selectableThemes: ThemeName[] = FORCE_LIGHT_MODE ? ['light'] : ['light', 'dark'];
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [themeName, setThemeName] = useState<ThemeName>('dark');
+  const [themeName, setThemeName] = useState<ThemeName>('light');
   const [containerStyle, setContainerStyleState] = useState<ContainerStyle>('modern-gray');
 
   useEffect(() => {
@@ -327,7 +336,9 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       const stored = await AsyncStorage.getItem(THEME_STORAGE_KEY);
       const normalized = normalizeThemeName(stored);
       setThemeName(normalized);
-      if (stored && stored !== normalized) {
+      // Only rewrite legacy palette names; never overwrite the user's real
+      // preference while light mode is being forced.
+      if (!FORCE_LIGHT_MODE && stored && stored !== normalized) {
         await AsyncStorage.setItem(THEME_STORAGE_KEY, normalized);
       }
       console.log('[THEME] Active theme:', normalized);
@@ -343,7 +354,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const setTheme = async (name: ThemeName) => {
     try {
       await AsyncStorage.setItem(THEME_STORAGE_KEY, name);
-      setThemeName(name);
+      setThemeName(FORCE_LIGHT_MODE ? 'light' : name);
     } catch (error) {
       console.error('Error saving theme:', error);
     }
@@ -385,8 +396,9 @@ export const ThemeOverride: React.FC<{ name?: ThemeName; children: ReactNode }> 
 }) => {
   const parent = useTheme();
   const value = useMemo<ThemeContextType>(() => {
-    if (!name || name === parent.themeName) return parent;
-    return { ...parent, theme: themes[name], themeName: name };
+    const resolved = name ? normalizeThemeName(name) : undefined;
+    if (!resolved || resolved === parent.themeName) return parent;
+    return { ...parent, theme: themes[resolved], themeName: resolved };
   }, [parent, name]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
@@ -394,5 +406,6 @@ export const ThemeOverride: React.FC<{ name?: ThemeName; children: ReactNode }> 
 
 // Helper function to check if a theme uses dark styling (dark backgrounds, white text)
 export const isDarkTheme = (themeName: ThemeName): boolean => {
+  if (FORCE_LIGHT_MODE) return false;
   return normalizeThemeName(themeName) === 'dark';
 };

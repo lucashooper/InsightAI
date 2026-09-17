@@ -6,6 +6,7 @@ import { useAppLock } from '../contexts/AppLockContext';
 import PageHeader from '../components/shared/PageHeader';
 import { sf } from '../utils/responsive';
 import { useLanguage } from '../contexts/LanguageContext';
+import { safeGoBack } from '../utils/navigationSafety';
 
 export default function SecurityScreen({ navigation }: any) {
   const { theme } = useTheme();
@@ -84,7 +85,7 @@ export default function SecurityScreen({ navigation }: any) {
 
   return (
     <View style={[styles.wrapper, { backgroundColor: theme.colors.background }]}>
-      <PageHeader title={t('auxiliary.security.title')} onBack={() => navigation.goBack()} />
+      <PageHeader title={t('auxiliary.security.title')} onBack={() => safeGoBack(navigation)} />
 
       <View style={styles.content}>
         <Text style={[styles.sectionTitle, { color: theme.colors.secondaryText }]}>

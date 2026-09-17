@@ -11,6 +11,7 @@ import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { isTablet, sf } from '../../utils/responsive';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
+import { safeGoBack } from '../../utils/navigationSafety';
 
 const { width } = Dimensions.get('window');
 
@@ -337,7 +338,7 @@ export default function PersonalityResultScreen({ navigation, route }: any) {
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           if (navigation.canGoBack()) {
-            navigation.goBack();
+            safeGoBack(navigation);
           }
         }}
       />

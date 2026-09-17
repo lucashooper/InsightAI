@@ -8,6 +8,7 @@ import OnboardingAmbientBackground from '../../components/onboarding/OnboardingA
 import OnboardingButton from '../../components/onboarding/OnboardingButton';
 import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
 import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
+import { safeGoBack } from '../../utils/navigationSafety';
 
 const WINS = [
   { emoji: '🏋️', textKey: 'gym' },
@@ -51,7 +52,7 @@ export default function ValuePropWinsScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" />
       <OnboardingAmbientBackground />
 
-      <OnboardingBackButton onPress={() => navigation.goBack()} />
+      <OnboardingBackButton onPress={() => safeGoBack(navigation)} />
 
       <View style={styles.content}>
         <View>

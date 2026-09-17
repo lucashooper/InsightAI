@@ -12,6 +12,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
 
 import { ONBOARDING_MEDITATION_LOTTIE } from '../../constants/appAssets';
+import { safeGoBack } from '../../utils/navigationSafety';
 
 export default function ResearchInfoScreen({ navigation }: any) {
   const { t } = useLanguage();
@@ -41,7 +42,7 @@ export default function ResearchInfoScreen({ navigation }: any) {
 
       {/* Back Button - only show if can go back */}
       {navigation.canGoBack() && (
-        <OnboardingBackButton onPress={() => navigation.goBack()} />
+        <OnboardingBackButton onPress={() => safeGoBack(navigation)} />
       )}
 
       <View style={styles.content}>

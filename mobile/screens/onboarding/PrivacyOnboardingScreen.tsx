@@ -12,6 +12,7 @@ import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { isTablet, iPadContentStyle, sf } from '../../utils/responsive';
 import { ONBOARDING_SURFACE } from '../../constants/onboardingTheme';
+import { safeGoBack } from '../../utils/navigationSafety';
 
 interface PrivacyOnboardingScreenProps {
   navigation: any;
@@ -43,7 +44,7 @@ export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardin
       <OnboardingAmbientBackground />
 
       {navigation.canGoBack() && (
-        <OnboardingBackButton onPress={() => navigation.goBack()} />
+        <OnboardingBackButton onPress={() => safeGoBack(navigation)} />
       )}
 
       <CachedImage source={INSIGHT_LOGO} style={styles.logo} contentFit="contain" recyclingKey="privacy-logo" />

@@ -22,7 +22,8 @@ import { CheckInDraft } from './types';
 import { MOOD_TINTS } from './wordBanks';
 import { saveCheckIn } from '../../services/checkInService';
 import { useAuth } from '../../contexts/AuthContext';
-import AppBackdrop from '../ui/AppBackdrop';
+import AnimatedGradientBackdrop from '../ui/AnimatedGradientBackdrop';
+import { INK } from '../../constants/typography';
 
 type Props = {
   visible: boolean;
@@ -101,7 +102,8 @@ function CheckInFlowContent({ visible, onDismiss, onComplete, onLogMoodOnly }: P
       <GestureHandlerRootView style={styles.fill}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent />
       <View style={styles.fill}>
-        <AppBackdrop />
+        {/* Page tint follows the mood and crossfades as the slider moves */}
+        <AnimatedGradientBackdrop colors={tint.lightBg} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} />
         <View style={[styles.fill, { paddingTop: headerTopPad }]}>
           <View style={styles.header}>
             {step !== 'mood' ? (
@@ -119,7 +121,7 @@ function CheckInFlowContent({ visible, onDismiss, onComplete, onLogMoodOnly }: P
                     styles.dot,
                     {
                       backgroundColor:
-                        i <= stepIndex ? tint.accent : theme.colors.divider,
+                        i <= stepIndex ? INK.primary : 'rgba(28,26,34,0.12)',
                       width: i === stepIndex ? 22 : 7,
                     },
                   ]}

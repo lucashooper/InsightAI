@@ -73,6 +73,8 @@ import AmbientSoundsScreen from '../screens/AmbientSoundsScreen';
 import AIChatScreen from '../screens/AIChatScreen';
 import PromptEntryScreen from '../screens/PromptEntryScreen';
 import ExploreScreen from '../screens/ExploreScreen';
+import JourneyScreen from '../screens/JourneyScreen';
+import JourneyLessonScreen from '../screens/JourneyLessonScreen';
 import PrivacyMarketingScreen from '../screens/PrivacyMarketingScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isTablet, sf, si } from '../utils/responsive';
@@ -111,6 +113,13 @@ function MainTabs() {
       screenOptions={{
         headerShown: false,
         lazy: false,
+        // Cross-fade between tabs — no slide, so the shared backdrop never
+        // appears to jump and content simply dissolves into place.
+        animation: 'fade',
+        transitionSpec: {
+          animation: 'timing',
+          config: { duration: 220 },
+        },
         sceneStyle: { backgroundColor: 'transparent' },
         tabBarShowLabel: false,
         tabBarStyle: {
@@ -569,6 +578,8 @@ export default function AppNavigator() {
           <Stack.Screen name="AIChat" component={AIChatScreen} options={{ headerShown: false, animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
           <Stack.Screen name="Playbook" component={PlaybookScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="Explore" component={ExploreScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="Journey" component={JourneyScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="JourneyLesson" component={JourneyLessonScreen} options={{ headerShown: false, animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
           <Stack.Screen
             name="PrivacyMarketing"
             component={PrivacyMarketingScreen}

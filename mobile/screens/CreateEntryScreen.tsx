@@ -53,6 +53,7 @@ import {
   createGoDeeperMessage,
   type GoDeeperMessage,
 } from '../services/goDeeperConversationService';
+import { safeGoBack } from '../utils/navigationSafety';
 // Conditionally import speech recognition (crashes in Expo Go where native module isn't available)
 let ExpoSpeechRecognitionModule: any = null;
 let useSpeechRecognitionEvent: any = (_event: string, _handler: any) => {};
@@ -780,7 +781,7 @@ export default function CreateEntryScreen({ navigation, route }: any) {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
+          <TouchableOpacity onPress={() => safeGoBack(navigation)} style={styles.headerButton}>
             <Ionicons name="arrow-back" size={24} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : '#1a1a1a'} />
           </TouchableOpacity>
         </View>

@@ -11,6 +11,7 @@ import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { sf } from '../../utils/responsive';
 import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
+import { safeGoBack } from '../../utils/navigationSafety';
 
 const noisyImage = require('../../public/noisy-image.webp');
 const clarityImage = require('../../public/clarity-image.webp');
@@ -40,7 +41,7 @@ export default function ValuePropScreen({ navigation }: any) {
       <OnboardingAmbientBackground />
 
       {navigation.canGoBack() && (
-        <OnboardingBackButton onPress={() => navigation.goBack()} />
+        <OnboardingBackButton onPress={() => safeGoBack(navigation)} />
       )}
 
       {/* Logo */}

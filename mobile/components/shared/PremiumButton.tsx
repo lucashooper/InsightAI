@@ -12,6 +12,7 @@ import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { PREMIUM, TYPE } from '../../constants/premiumUI';
+import { SURFACE } from '../../constants/typography';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 
 type Variant = 'primary' | 'secondary' | 'ghost';
@@ -55,7 +56,7 @@ export default function PremiumButton({
     ? '#fff'
     : isGhost
       ? (dark ? PREMIUM.text.secondary : 'rgba(26,26,26,0.55)')
-      : (dark ? '#c4b5fd' : '#6d28d9');
+      : (dark ? '#c4b5fd' : '#1C1A22');
 
   return (
     <TouchableOpacity
@@ -120,8 +121,10 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     width: '100%',
   },
+  // Main CTAs are charcoal pills app-wide — colour lives in cards, not buttons.
   primary: {
-    backgroundColor: PREMIUM.accent,
+    backgroundColor: SURFACE.charcoal,
+    borderRadius: 999,
   },
   secondaryDark: {
     borderWidth: StyleSheet.hairlineWidth,

@@ -14,6 +14,7 @@ import OnboardingAmbientBackground from '../../components/onboarding/OnboardingA
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { onboardingAuthStyles as auth, ONBOARDING_AUTH_COLORS as colors } from '../../constants/onboardingAuthStyles';
+import { safeGoBack } from '../../utils/navigationSafety';
 
 export default function SignupEmailScreen({ navigation }: any) {
   const { t } = useLanguage();
@@ -38,7 +39,7 @@ export default function SignupEmailScreen({ navigation }: any) {
       >
         <TouchableOpacity
           style={auth.backButtonCompact}
-          onPress={() => navigation.goBack()}
+          onPress={() => safeGoBack(navigation)}
         >
           <View style={auth.backArrowCircle}>
             <Ionicons name="arrow-back" size={20} color="#1a1a2e" />

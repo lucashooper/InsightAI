@@ -55,12 +55,12 @@ export default React.memo(AmbientBackground);
 
 const styles = StyleSheet.create({
   root: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: PREMIUM.bg,
     overflow: 'hidden',
   },
   base: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   meshPrimary: {
     position: 'absolute',

@@ -6,6 +6,7 @@ import { Lock, EyeOff, ShieldCheck } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import OrbView from '../components/companion/OrbView';
 import { isTablet, sf, ss, si, screenPadding } from '../utils/responsive';
+import { safeGoBack } from '../utils/navigationSafety';
 
 const ORB_SIZE = isTablet ? 260 : 180;
 const LOCK_BADGE_SIZE = isTablet ? 72 : 56;
@@ -50,7 +51,7 @@ export default function PrivacyMarketingScreen({ navigation }: { navigation?: { 
       {navigation ? (
         <TouchableOpacity
           style={[styles.backButton, { top: insets.top + 8 }]}
-          onPress={() => navigation.goBack()}
+          onPress={() => safeGoBack(navigation)}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           accessibilityLabel="Go back"
           accessibilityRole="button"

@@ -22,6 +22,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { onboardingAuthStyles as auth, ONBOARDING_AUTH_COLORS as colors } from '../constants/onboardingAuthStyles';
 import { ONBOARDING_LIGHT } from '../constants/onboardingTheme';
+import { safeGoBack } from '../utils/navigationSafety';
 
 interface VerifyEmailScreenProps {
   navigation: any;
@@ -292,7 +293,7 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
           {/* Back Button */}
           <TouchableOpacity
             style={auth.backButtonCompact}
-            onPress={() => navigation.goBack()}
+            onPress={() => safeGoBack(navigation)}
           >
             <View style={auth.backArrowCircle}>
               <Ionicons name="arrow-back" size={20} color={ONBOARDING_LIGHT.backIcon} />
@@ -344,7 +345,7 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
           {/* Change Email */}
           <TouchableOpacity
             style={styles.changeEmailButton}
-            onPress={() => navigation.goBack()}
+            onPress={() => safeGoBack(navigation)}
           >
             <Text style={auth.linkText}>{t('auxiliary.verifyEmail.changeEmail')}</Text>
           </TouchableOpacity>

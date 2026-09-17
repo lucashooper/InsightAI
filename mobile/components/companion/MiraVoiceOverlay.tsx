@@ -154,7 +154,7 @@ export default function MiraVoiceOverlay({
 
 const styles = StyleSheet.create({
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 200,
     elevation: 200,
   },

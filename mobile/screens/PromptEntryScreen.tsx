@@ -28,6 +28,7 @@ import { PREMIUM } from '../constants/premiumUI';
 import PromptSavedOverlay from '../components/prompt/PromptSavedOverlay';
 import { markPromptCompletedToday } from '../utils/promptCompletion';
 import { useSpeechToText } from '../hooks/useSpeechToText';
+import { safeGoBack } from '../utils/navigationSafety';
 
 export default function PromptEntryScreen({ navigation, route }: any) {
   const { promptText } = route?.params || {};
@@ -141,7 +142,7 @@ export default function PromptEntryScreen({ navigation, route }: any) {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
       >
         <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton} activeOpacity={0.8}>
+          <TouchableOpacity onPress={() => safeGoBack(navigation)} style={styles.closeButton} activeOpacity={0.8}>
             <Ionicons name="close" size={26} color={isDark ? '#ffffff' : '#1a1a1a'} />
           </TouchableOpacity>
         </View>
@@ -244,7 +245,7 @@ export default function PromptEntryScreen({ navigation, route }: any) {
         buttonLabel={t('auxiliary.promptEntry.continue')}
         onContinue={() => {
           setShowSavedOverlay(false);
-          navigation.goBack();
+          safeGoBack(navigation);
         }}
       />
     </View>

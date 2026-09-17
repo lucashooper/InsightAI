@@ -14,6 +14,7 @@ import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
+import { safeGoBack } from '../../utils/navigationSafety';
 
 const { width } = Dimensions.get('window');
 
@@ -121,7 +122,7 @@ export default function AnalyzingScreen({ navigation, route }: Props) {
         <View style={styles.container}>
             <OnboardingAmbientBackground />
 
-            <OnboardingBackButton onPress={() => navigation.canGoBack() && navigation.goBack()} />
+            <OnboardingBackButton onPress={() => navigation.canGoBack() && safeGoBack(navigation)} />
             
             <View style={styles.content}>
                 {/* Big Percentage */}

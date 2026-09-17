@@ -11,6 +11,7 @@ import { supabase } from '../lib/supabase';
 import { isTablet, sf } from '../utils/responsive';
 import { useLanguage } from '../contexts/LanguageContext';
 import { profilePicturePickerOptions, uploadProfilePictureFromUri } from '../utils/profilePictureUpload';
+import { safeGoBack } from '../utils/navigationSafety';
 
 export default function EditProfileScreen({ navigation }: any) {
   const { user } = useAuth();
@@ -236,7 +237,7 @@ export default function EditProfileScreen({ navigation }: any) {
       await AsyncStorage.setItem('CACHED_USERNAME', username);
       await refreshProfile(user.id);
       Alert.alert(t('auxiliary.common.success'), t('auxiliary.editProfile.profileUpdated'));
-      navigation.goBack();
+      safeGoBack(navigation);
     } catch (error: any) {
       console.error('[EditProfile] Error saving profile:', error);
       Alert.alert(t('auxiliary.common.error'), error.message || t('auxiliary.editProfile.saveFailed'));
@@ -258,7 +259,7 @@ export default function EditProfileScreen({ navigation }: any) {
   return (
     <View style={[styles.wrapper, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => safeGoBack(navigation)} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={theme.colors.primaryText} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>{t('auxiliary.editProfile.title')}</Text>

@@ -30,7 +30,8 @@ module.exports = ({ config }) => ({
   version: "1.15",
   orientation: "portrait",
   icon: "./assets/InsightAI-New-Logo.png",
-  userInterfaceStyle: "dark",
+  // Light-mode-first: the app ignores the OS dark setting on every screen.
+  userInterfaceStyle: "light",
   ios: {
     supportsTablet: true,
       buildNumber: "121",
@@ -100,7 +101,7 @@ module.exports = ({ config }) => ({
     [
       "expo-splash-screen",
       {
-        backgroundColor: "#0D0B18",
+        backgroundColor: "#A9E4E0",
         image: "./public/splash-logo.png",
         imageWidth: 128,
         resizeMode: "contain"

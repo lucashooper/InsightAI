@@ -14,6 +14,7 @@ import { isTablet, sf, screenPadding } from '../utils/responsive';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useLanguage } from '../contexts/LanguageContext';
+import { safeGoBack } from '../utils/navigationSafety';
 
 const noiseTexture = require('../public/noisy-image.webp');
 
@@ -332,7 +333,7 @@ export default function ExploreScreen({ navigation }: any) {
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <TouchableOpacity onPress={() => safeGoBack(navigation)} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color={theme.colors.primaryText} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>{t('auxiliary.explore.title')}</Text>

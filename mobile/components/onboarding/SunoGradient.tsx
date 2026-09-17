@@ -64,10 +64,10 @@ export default function SunoGradient({ themeColors, themeBlobColors }: SunoGradi
         locations={locations}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
 
-      <Svg width={width} height={height} style={StyleSheet.absoluteFillObject}>
+      <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
         <Defs>
           <RadialGradient id="pinkBlob" cx="82%" cy="12%" rx="55%" ry="45%">
             <Stop offset="0%" stopColor={blobColors.pink} stopOpacity={pinkOpacity[0]} />
@@ -108,11 +108,11 @@ export default function SunoGradient({ themeColors, themeBlobColors }: SunoGradi
 
 const styles = StyleSheet.create({
   container: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 0,
   },
   grainOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     opacity: 0.15,
   },
 });

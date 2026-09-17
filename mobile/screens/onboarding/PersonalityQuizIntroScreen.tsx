@@ -12,6 +12,7 @@ import { isTablet, sf, iPadWideContentStyle } from '../../utils/responsive';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { safeGoBack } from '../../utils/navigationSafety';
 
 const ORB_SIZE = 110;
 
@@ -49,7 +50,8 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
       <OnboardingBackButton
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          navigation.goBack();
+          // Resumed onboarding lands here with no history — fall back to the welcome screen.
+          safeGoBack(navigation, 'ProductReveal');
         }}
       />
 

@@ -9,6 +9,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import AmbientBackground from '../components/shared/AmbientBackground';
 import { PREMIUM } from '../constants/premiumUI';
+import { safeGoBack } from '../utils/navigationSafety';
 
 const { width, height } = Dimensions.get('window');
 
@@ -220,7 +221,7 @@ export default function AmbientSoundsScreen({ navigation }: any) {
       )}
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, !dark && { backgroundColor: 'rgba(0,0,0,0.06)' }]}>
+        <TouchableOpacity onPress={() => safeGoBack(navigation)} style={[styles.backButton, !dark && { backgroundColor: 'rgba(0,0,0,0.06)' }]}>
           <Ionicons name="arrow-back" size={24} color={dark ? 'rgba(255,255,255,0.9)' : '#1a1a1a'} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, !dark && { color: '#1a1a1a' }]}>{t('auxiliary.ambient.title')}</Text>
@@ -258,15 +259,15 @@ const styles = StyleSheet.create({
     backgroundColor: PREMIUM.bg,
   },
   gradientBackground: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   backgroundImage: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     width: width,
     height: height,
   },
   overlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   header: {
     flexDirection: 'row',
@@ -314,7 +315,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   soundOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   soundInfo: {
     position: 'absolute',

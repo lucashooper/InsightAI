@@ -1,52 +1,25 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-} from 'react-native-reanimated';
-import { SPLASH_BACKGROUND, SPLASH_LOADING_WORDMARK } from '../../constants/appAssets';
+import MeshGradientBackdrop from '../ui/MeshGradientBackdrop';
+import { SPLASH_LOADING_WORDMARK } from '../../constants/appAssets';
+import { INK } from '../../constants/typography';
 
 type Props = {
   /** RN Animated opacity wrapper from App.tsx dismiss fade */
   style?: object;
 };
 
-/** Main loading screen — premium red/purple gradient + Insight wordmark. */
+/** Loading screen — a full-bleed pastel mesh gradient with the wordmark in charcoal. */
 export default function PremiumSplashOverlay({ style }: Props) {
-  const bgScale = useSharedValue(1);
-
-  useEffect(() => {
-    bgScale.value = withRepeat(
-      withTiming(1.04, { duration: 6000, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true,
-    );
-  }, [bgScale]);
-
-  const bgAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: bgScale.value }],
-  }));
-
   return (
     <View style={[styles.root, style]}>
-      <Animated.View style={[styles.backgroundWrap, bgAnimStyle]}>
-        <Image
-          source={SPLASH_BACKGROUND}
-          style={styles.background}
-          contentFit="cover"
-          cachePolicy="memory-disk"
-          transition={0}
-          recyclingKey="splash-background"
-        />
-      </Animated.View>
+      <MeshGradientBackdrop />
       <View style={styles.center}>
         <Image
           source={SPLASH_LOADING_WORDMARK}
           style={styles.wordmark}
+          tintColor={INK.primary}
           contentFit="contain"
           cachePolicy="memory-disk"
           transition={0}
@@ -60,15 +33,8 @@ export default function PremiumSplashOverlay({ style }: Props) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#0D0B18',
+    backgroundColor: '#A9E4E0',
     overflow: 'hidden',
-  },
-  backgroundWrap: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  background: {
-    width: '100%',
-    height: '100%',
   },
   center: {
     flex: 1,

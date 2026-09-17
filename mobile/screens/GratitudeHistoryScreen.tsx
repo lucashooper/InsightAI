@@ -16,6 +16,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import EmptyState from '../components/shared/EmptyState';
 import AppBackdrop from '../components/ui/AppBackdrop';
 import GlassCard from '../components/ui/GlassCard';
+import { safeGoBack } from '../utils/navigationSafety';
 
 interface GratitudeEntry {
   id: string;
@@ -80,7 +81,7 @@ export default function GratitudeHistoryScreen({ navigation }: any) {
       <AppBackdrop />
 
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => safeGoBack(navigation)} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={dark ? 'rgba(255, 255, 255, 0.7)' : theme.colors.primaryText} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: dark ? '#ffffff' : theme.colors.primaryText }]}>{t('auxiliary.gratitudeHistory.title')}</Text>
