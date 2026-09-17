@@ -35,10 +35,10 @@ type Props = Omit<ViewProps, 'style'> & {
 };
 
 const TINT_WASH: Record<GlassTint, string> = {
-  violet: 'rgba(139, 92, 246, 0.06)',
-  coral: 'rgba(244, 122, 104, 0.05)',
-  aqua: 'rgba(53, 185, 173, 0.05)',
-  gold: 'rgba(241, 177, 91, 0.05)',
+  violet: 'rgba(139, 92, 246, 0.16)',
+  coral: 'rgba(244, 122, 104, 0.14)',
+  aqua: 'rgba(53, 185, 173, 0.14)',
+  gold: 'rgba(241, 177, 91, 0.16)',
 };
 
 /**
@@ -113,7 +113,7 @@ export default function GlassCard({
         </>
       ) : null}
 
-      {dark && resolvedWash ? (
+      {resolvedWash ? (
         <LinearGradient
           pointerEvents="none"
           colors={[resolvedWash, 'transparent']}

@@ -12,9 +12,10 @@ import { protocolCompletionService } from '../services/protocolCompletionService
 import ProtocolCompleteButton from '../components/shared/ProtocolCompleteButton';
 import PageHeader from '../components/shared/PageHeader';
 import GlassCard from '../components/ui/GlassCard';
+import JourneyCard from '../components/ui/JourneyCard';
 import AppBackdrop from '../components/ui/AppBackdrop';
 import GlassCardHeader, { glassCardInnerPad } from '../components/ui/GlassCardHeader';
-import { PREMIUM } from '../constants/premiumUI';
+import { PREMIUM, journeyForCategory, journeyInk, journeyMuted } from '../constants/premiumUI';
 import EmptyState from '../components/shared/EmptyState';
 import * as Haptics from 'expo-haptics';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -422,18 +423,7 @@ export default function PlaybookScreen() {
     }
   };
 
-  const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
-      coping: '#10b981',
-      exercise: '#f59e0b',
-      social: '#ec4899',
-      mindfulness: '#8b5cf6',
-      sleep: '#6366f1',
-      nutrition: '#14b8a6',
-      general: '#8b5cf6'
-    };
-    return colors[category] || '#8b5cf6';
-  };
+  const getCategoryHue = (category: string) => journeyForCategory(category);
 
   return (
     <View style={styles.container}>
@@ -537,22 +527,25 @@ export default function PlaybookScreen() {
             const displayEmoji = emojiForProtocol(strategy.title, strategy.category, strategy.emoji);
             const displayTasks = resolveProtocolTasks(strategy.tasks, strategy.description, strategy.title)
               .filter((task) => task.trim() !== (strategy.description?.trim() ?? ''));
+            const hue = getCategoryHue(strategy.category);
+            const ink = journeyInk(hue, isDarkTheme(theme.name));
+            const muted = journeyMuted(hue, isDarkTheme(theme.name));
             return (
             <TouchableOpacity
               key={strategy.id}
               style={styles.premiumCardPressable}
-              activeOpacity={0.7}
+              activeOpacity={0.85}
               onPress={() => handleStrategyTap(strategy)}
               onLongPress={() => handleStrategyLongPress(strategy)}
             >
-              <GlassCard style={styles.premiumCard} noPad contentStyle={styles.cardGradient}>
+              <JourneyCard hue={hue} style={styles.premiumCard} contentStyle={styles.cardGradient}>
                 <View style={styles.cardHeader}>
-                  <View style={[styles.emojiContainer, { backgroundColor: isDarkTheme(theme.name) ? '#1a1a1a' : 'rgba(139, 92, 246, 0.1)' }]}>
+                  <View style={[styles.emojiContainer, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.7)' }]}>
                     <Text style={styles.cardEmoji}>{displayEmoji}</Text>
                   </View>
                   <View style={styles.cardInfo}>
                     <View style={styles.titleRow}>
-                      <Text style={[styles.cardTitle, { color: theme.colors.primaryText }]} numberOfLines={isExpanded ? 4 : 2} ellipsizeMode="tail">{strategy.title}</Text>
+                      <Text style={[styles.cardTitle, { color: ink }]} numberOfLines={isExpanded ? 4 : 2} ellipsizeMode="tail">{strategy.title}</Text>
                       {/* Show suggestion count for suggested strategies */}
                       {strategy.status === 'suggested' && strategy.suggestion_count && strategy.suggestion_count > 1 && (
                         <View style={styles.suggestionCountBadge}>
@@ -564,30 +557,30 @@ export default function PlaybookScreen() {
                         <View style={styles.inlineStreaks}>
                           <View style={styles.inlineStreakBadge}>
                             <Ionicons name="flame" size={14} color="#f97316" />
-                            <Text style={[styles.streakText, { color: theme.colors.primaryText }]}>{protocolStats[strategy.id].currentStreak}</Text>
+                            <Text style={[styles.streakText, { color: ink }]}>{protocolStats[strategy.id].currentStreak}</Text>
                           </View>
                           <View style={styles.inlineStreakBadge}>
                             <Ionicons name="trophy-outline" size={14} color="#fbbf24" />
-                            <Text style={[styles.streakText, { color: theme.colors.primaryText }]}>{protocolStats[strategy.id].longestStreak}</Text>
+                            <Text style={[styles.streakText, { color: ink }]}>{protocolStats[strategy.id].longestStreak}</Text>
                           </View>
                         </View>
                       )}
                     </View>
                     {strategy.description ? (
-                      <Text style={[styles.cardDescription, { color: theme.colors.secondaryText }]} numberOfLines={isExpanded ? undefined : 2}>{strategy.description}</Text>
+                      <Text style={[styles.cardDescription, { color: muted }]} numberOfLines={isExpanded ? undefined : 2}>{strategy.description}</Text>
                     ) : null}
                     {displayTasks.length > 0 && (
                       <View style={styles.taskPreview}>
                         {(isExpanded ? displayTasks : displayTasks.slice(0, 2)).map((task, index) => (
                           <View key={index} style={styles.taskPreviewItem}>
-                            <Ionicons name="checkbox-outline" size={14} color={theme.colors.tertiaryText} />
-                            <Text style={[styles.taskPreviewText, { color: theme.colors.secondaryText }]} numberOfLines={isExpanded ? 3 : 1}>
+                            <Ionicons name="checkbox-outline" size={14} color={muted} />
+                            <Text style={[styles.taskPreviewText, { color: muted }]} numberOfLines={isExpanded ? 3 : 1}>
                               {task}
                             </Text>
                           </View>
                         ))}
                         {!isExpanded && displayTasks.length > 2 && (
-                          <Text style={[styles.taskPreviewMore, { color: theme.colors.tertiaryText }]}>
+                          <Text style={[styles.taskPreviewMore, { color: muted }]}>
                             {t('auxiliary.playbook.moreCount', { count: displayTasks.length - 2 })}
                           </Text>
                         )}
@@ -598,13 +591,13 @@ export default function PlaybookScreen() {
                 
                 <View style={styles.cardFooter}>
                   <View style={styles.badges}>
-                    <View style={[styles.categoryPill, { backgroundColor: '#8b5cf6' }]}>
-                      <Text style={[styles.categoryText, { color: '#ffffff' }]}>
+                    <View style={[styles.categoryPill, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.72)' }]}>
+                      <Text style={[styles.categoryText, { color: ink }]}>
                         {t(`auxiliary.playbook.categories.${strategy.category}`)}
                       </Text>
                     </View>
-                    <View style={[styles.difficultyBadge, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
-                      <Text style={[styles.difficultyText, { color: theme.colors.secondaryText }]}>
+                    <View style={[styles.difficultyBadge, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.5)' }]}>
+                      <Text style={[styles.difficultyText, { color: muted }]}>
                         {t(`auxiliary.playbook.difficulties.${strategy.difficulty}`)}
                       </Text>
                     </View>
@@ -636,7 +629,7 @@ export default function PlaybookScreen() {
                     </View>
                   )}
                 </View>
-              </GlassCard>
+              </JourneyCard>
             </TouchableOpacity>
             );
             })}
@@ -1094,13 +1087,13 @@ const styles = StyleSheet.create({
     marginBottom: PREMIUM.space[1],
   },
   progressFraction: {
-    fontSize: sf(isTablet ? 36 : 32),
-    fontWeight: '700',
-    letterSpacing: -1,
+    fontSize: sf(isTablet ? 44 : 40),
+    fontWeight: '800',
+    letterSpacing: -1.2,
   },
   progressBarContainer: {
-    height: 8,
-    borderRadius: 4,
+    height: 12,
+    borderRadius: 8,
     overflow: 'hidden',
     marginBottom: 8,
   },
@@ -1125,7 +1118,7 @@ const styles = StyleSheet.create({
   tab: {
     flex: 1,
     paddingVertical: isTablet ? 14 : 12,
-    borderRadius: PREMIUM.radius.md,
+    borderRadius: PREMIUM.radius.pill,
     alignItems: 'center',
   },
   tabActive: {
@@ -1141,7 +1134,7 @@ const styles = StyleSheet.create({
   },
   // Create Button Styles
   createButton: {
-    borderRadius: PREMIUM.radius.md,
+    borderRadius: PREMIUM.radius.pill,
     overflow: 'hidden',
     shadowColor: '#8b5cf6',
     shadowOffset: { width: 0, height: 4 },
@@ -1203,16 +1196,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   emojiContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: '#1a1a1a',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
   },
   cardEmoji: {
-    fontSize: sf(isTablet ? 32 : 28),
+    fontSize: sf(isTablet ? 36 : 32),
   },
   cardInfo: {
     flex: 1,
@@ -1224,10 +1217,10 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   cardTitle: {
-    fontSize: sf(isTablet ? 20 : 18),
-    fontWeight: '700',
+    fontSize: sf(isTablet ? 22 : 20),
+    fontWeight: '800',
     color: '#ffffff',
-    letterSpacing: -0.3,
+    letterSpacing: -0.4,
     flex: 1,
   },
   inlineStreaks: {

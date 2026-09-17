@@ -156,6 +156,67 @@ function orbBootstrapScript(configJson: string, size: number): string {
 
 export function buildShaderOrbHtml(config: ShaderOrbConfig, size: number): string {
   const configJson = JSON.stringify(config);
+  const showFace = size >= 88;
+  const eye = Math.max(4, Math.round(size * 0.078));
+  const eyeGap = Math.round(size * 0.155);
+  const smileW = Math.round(size * 0.24);
+  const smileH = Math.round(size * 0.11);
+  const smileTop = Math.round(size * 0.55);
+  const cheek = Math.max(6, Math.round(size * 0.09));
+  const faceCss = showFace
+    ? `
+  .face {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .eye {
+    position: absolute;
+    top: 37%;
+    width: ${eye}px;
+    height: ${eye}px;
+    border-radius: 50%;
+    background: rgba(28, 20, 48, 0.78);
+    box-shadow: 0 ${Math.max(1, Math.round(size * 0.008))}px 0 rgba(255,255,255,0.25) inset;
+  }
+  .eye.left { left: calc(50% - ${eyeGap}px - ${eye / 2}px); animation: blink 5.4s ease-in-out infinite; }
+  .eye.right { left: calc(50% + ${eyeGap}px - ${eye / 2}px); animation: blink 5.4s ease-in-out 0.12s infinite; }
+  .cheek {
+    position: absolute;
+    top: 48%;
+    width: ${cheek}px;
+    height: ${Math.round(cheek * 0.62)}px;
+    border-radius: 50%;
+    background: rgba(244, 114, 182, 0.28);
+  }
+  .cheek.left { left: calc(50% - ${eyeGap + cheek}px); }
+  .cheek.right { left: calc(50% + ${eyeGap}px); }
+  .smile {
+    position: absolute;
+    top: ${smileTop}px;
+    left: 50%;
+    width: ${smileW}px;
+    height: ${smileH}px;
+    margin-left: -${Math.round(smileW / 2)}px;
+    border-bottom: ${Math.max(2, Math.round(size * 0.03))}px solid rgba(28, 20, 48, 0.68);
+    border-radius: 0 0 80% 80%;
+    transform-origin: 50% 20%;
+    animation: smileBob 3.6s ease-in-out infinite;
+  }
+  @keyframes blink {
+    0%, 86%, 100% { transform: scaleY(1); }
+    90% { transform: scaleY(0.08); }
+    93% { transform: scaleY(1); }
+  }
+  @keyframes smileBob {
+    0%, 100% { transform: translateY(0) scaleX(1); }
+    50% { transform: translateY(${Math.max(1, Math.round(size * 0.012))}px) scaleX(1.06); }
+  }`
+    : '';
+  const faceMarkup = showFace
+    ? `<div class="face" aria-hidden="true"><span class="eye left"></span><span class="eye right"></span><span class="cheek left"></span><span class="cheek right"></span><span class="smile"></span></div>`
+    : '';
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -171,15 +232,17 @@ export function buildShaderOrbHtml(config: ShaderOrbConfig, size: number): strin
     background: transparent;
   }
   .orb {
+    position: relative;
     width: ${size}px;
     height: ${size}px;
     max-width: 100%;
     aspect-ratio: 1;
   }
+  ${faceCss}
 </style>
 </head>
 <body>
-<div class="orb"></div>
+<div class="orb">${faceMarkup}</div>
 <script>
 ${ORB_CREATE_ORB_SOURCE}
 </script>

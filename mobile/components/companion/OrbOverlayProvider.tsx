@@ -7,8 +7,16 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { StyleSheet, View, type ViewStyle, type StyleProp } from 'react-native';
+import {
+  InteractionManager,
+  Platform,
+  StyleSheet,
+  View,
+  type ViewStyle,
+  type StyleProp,
+} from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
+import { FullWindowOverlay } from 'react-native-screens';
 import type { AiPersonality } from '../../utils/aiPersonalities';
 import OrbView from './OrbView';
 import {
@@ -28,6 +36,8 @@ type OrbOverlayContextValue = {
 type OrbPoolControlValue = {
   requestWarmup: (poolIds: readonly string[]) => void;
   releaseWarmup: (poolIds: readonly string[]) => void;
+  suppressOverlay: () => void;
+  releaseOverlay: () => void;
 };
 
 const OrbOverlayContext = createContext<OrbOverlayContextValue | null>(null);
@@ -114,13 +124,18 @@ function OrbSlotInner({
       return;
     }
 
+    // Measure now, next frame, then re-measure as the screen settles. A slot
+    // measured mid-transition (slide-in, keyboard, stagger entrance) would
+    // otherwise park the pooled WebView at a stale position for good.
     report();
     const frame = requestAnimationFrame(report);
-    const delayed = setTimeout(report, 120);
+    const timers = [120, 400, 900, 1600].map((ms) => setTimeout(report, ms));
+    const afterInteractions = InteractionManager.runAfterInteractions(report);
 
     return () => {
       cancelAnimationFrame(frame);
-      clearTimeout(delayed);
+      timers.forEach(clearTimeout);
+      afterInteractions.cancel();
       clearSlot();
     };
   }, [isFocused, registrationReady, report, clearSlot]);
@@ -145,7 +160,10 @@ export function OrbSlot({
 }: OrbSlotProps) {
   const ctx = useContext(OrbOverlayContext);
 
-  if (!ctx) {
+  // No provider, or a size the pool doesn't carry (e.g. iPad-scaled sizes):
+  // render inline instead of registering a slot nothing will ever fill.
+  const pooled = ORB_POOL.some((item) => item.size === size);
+  if (!ctx || !pooled) {
     return (
       <View style={[{ width: size, height: size }, style]} pointerEvents="none">
         <OrbView size={size} personality={personality} isRoast={isRoast} />
@@ -249,10 +267,63 @@ function OrbPoolHost({
   );
 }
 
-export default function OrbOverlayProvider({ children }: { children: React.ReactNode }) {
+/**
+ * Layer the pooled orb WebViews above the navigator. On iOS the native stack
+ * (react-native-screens) paints above ordinary absolute siblings regardless of
+ * zIndex, so a plain overlay View ends up hidden behind every screen. A
+ * FullWindowOverlay is a real UIWindow above the stack; touches fall through
+ * where no child is hit and the orbs are pointerEvents="none" anyway.
+ */
+function OverlayHost({ children, hidden }: { children: React.ReactNode; hidden: boolean }) {
+  // Do NOT use absoluteFill here. A full-window opaque layer (especially inside
+  // FullWindowOverlay) is what made the home screen look empty while the header
+  // and tab bar — which live outside that overlay — stayed visible.
+  const layer = (
+    <View
+      style={hidden ? styles.overlayHidden : undefined}
+      pointerEvents="none"
+      collapsable={false}
+    >
+      {children}
+    </View>
+  );
+  if (Platform.OS === 'ios') {
+    return <FullWindowOverlay>{layer}</FullWindowOverlay>;
+  }
+  return layer;
+}
+
+/**
+ * Hide the orb layer while `active` — for full-screen covers that live inside
+ * the navigator tree (PIN lock, in-app splash). Reference counted, so several
+ * callers can overlap safely.
+ */
+export function useSuppressOrbOverlay(active: boolean): void {
+  const ctx = useContext(OrbPoolControlContext);
+  const suppress = ctx?.suppressOverlay;
+  const release = ctx?.releaseOverlay;
+
+  useEffect(() => {
+    if (!active || !suppress || !release) return;
+    suppress();
+    return release;
+  }, [active, suppress, release]);
+}
+
+type OrbOverlayProviderProps = {
+  children: React.ReactNode;
+  /** Hide the orb layer from outside the tree (e.g. while the startup splash is up). */
+  hidden?: boolean;
+};
+
+export default function OrbOverlayProvider({ children, hidden = false }: OrbOverlayProviderProps) {
   const [slots, setSlots] = useState<Map<string, SlotRect>>(new Map());
   const [warmupTick, setWarmupTick] = useState(0);
+  const [suppressCount, setSuppressCount] = useState(0);
   const warmupCountsRef = useRef<Map<string, number>>(new Map());
+
+  const suppressOverlay = useCallback(() => setSuppressCount((n) => n + 1), []);
+  const releaseOverlay = useCallback(() => setSuppressCount((n) => Math.max(0, n - 1)), []);
 
   const warmupIds = useMemo(() => {
     void warmupTick;
@@ -312,25 +383,24 @@ export default function OrbOverlayProvider({ children }: { children: React.React
   );
 
   const poolControlValue = useMemo(
-    () => ({ requestWarmup, releaseWarmup }),
-    [requestWarmup, releaseWarmup],
+    () => ({ requestWarmup, releaseWarmup, suppressOverlay, releaseOverlay }),
+    [requestWarmup, releaseWarmup, suppressOverlay, releaseOverlay],
   );
 
   return (
     <OrbPoolControlContext.Provider value={poolControlValue}>
       <OrbOverlayContext.Provider value={overlayValue}>
         {children}
-        <View style={styles.overlay} pointerEvents="none">
+        <OverlayHost hidden={hidden || suppressCount > 0}>
           <OrbPoolHost slots={slots} warmupIds={warmupIds} />
-        </View>
+        </OverlayHost>
       </OrbOverlayContext.Provider>
     </OrbPoolControlContext.Provider>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 9998,
+  overlayHidden: {
+    opacity: 0,
   },
 });

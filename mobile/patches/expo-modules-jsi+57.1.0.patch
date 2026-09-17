@@ -1,0 +1,96 @@
+diff --git a/node_modules/expo-modules-jsi/apple/Package.swift b/node_modules/expo-modules-jsi/apple/Package.swift
+index 77b0525..22609c1 100644
+--- a/node_modules/expo-modules-jsi/apple/Package.swift
++++ b/node_modules/expo-modules-jsi/apple/Package.swift
+@@ -85,17 +85,13 @@ let package = Package(
+       ],
+       swiftSettings: [
+         .interoperabilityMode(.Cxx),
+-
+-        // Enable some upcoming features that improve ergonomics and reduce executor hoppings
+-        // https://github.com/swiftlang/swift-evolution/blob/main/proposals/0461-async-function-isolation.md
+-        .enableUpcomingFeature("NonisolatedNonsendingByDefault"),
+-        // https://github.com/swiftlang/swift-evolution/blob/main/proposals/0470-isolated-conformances.md
+-        .enableUpcomingFeature("InferIsolatedConformances"),
++        .enableUpcomingFeature("BareSlashRegexLiterals"),
+ 
+         .unsafeFlags([
+           "-enable-library-evolution",
+           "-emit-module-interface",
+           "-no-verify-emitted-module-interface",
++          "-strict-concurrency=minimal",
+           "-Xfrontend",
+           "-clang-header-expose-decls=has-expose-attr",
+ 
+@@ -150,7 +146,7 @@ let package = Package(
+       path: "Benchmarks",
+     ),
+   ] + testFrameworks.binaryTargets,
+-  swiftLanguageModes: [.v6],
++  swiftLanguageModes: [.v5],
+   cxxLanguageStandard: .cxx20
+ )
+ 
+diff --git a/node_modules/expo-modules-jsi/apple/Sources/ExpoModulesJSI-Cxx/include/RuntimeScheduler.h b/node_modules/expo-modules-jsi/apple/Sources/ExpoModulesJSI-Cxx/include/RuntimeScheduler.h
+index 6115e87..957527c 100644
+--- a/node_modules/expo-modules-jsi/apple/Sources/ExpoModulesJSI-Cxx/include/RuntimeScheduler.h
++++ b/node_modules/expo-modules-jsi/apple/Sources/ExpoModulesJSI-Cxx/include/RuntimeScheduler.h
+@@ -50,7 +50,7 @@ public:
+    `scheduleTask` dispatches through `fn`, which the host implements against
+    the real react::RuntimeScheduler.
+    */
+-  SWIFT_RETURNS_RETAINED RuntimeScheduler(void *scheduler, ScheduleFn fn) noexcept
++  RuntimeScheduler(void *scheduler, ScheduleFn fn) noexcept
+       : nativeScheduler(scheduler), scheduleFn(fn) {}
+ 
+   /**
+@@ -58,7 +58,7 @@ public:
+    caller's thread — intended for standalone runtimes (e.g. tests) that have
+    no React scheduler.
+    */
+-  SWIFT_RETURNS_RETAINED RuntimeScheduler() {}
++  RuntimeScheduler() {}
+ 
+   RuntimeScheduler(const RuntimeScheduler &) = delete;
+ 
+diff --git a/node_modules/expo-modules-jsi/apple/Sources/ExpoModulesJSI/Runtime/Values/JavaScriptPromise.swift b/node_modules/expo-modules-jsi/apple/Sources/ExpoModulesJSI/Runtime/Values/JavaScriptPromise.swift
+index 434c379..a1b3628 100644
+--- a/node_modules/expo-modules-jsi/apple/Sources/ExpoModulesJSI/Runtime/Values/JavaScriptPromise.swift
++++ b/node_modules/expo-modules-jsi/apple/Sources/ExpoModulesJSI/Runtime/Values/JavaScriptPromise.swift
+@@ -43,7 +43,7 @@ public struct JavaScriptPromise: JavaScriptType, ~Copyable {
+     }
+   }
+ 
+-  private let longLivedState = LongLivedState()
++  private let longLivedState: LongLivedState
+ 
+   /// Dropping the wrapper means no native code can settle or read this promise anymore, so release
+   /// its long-lived state. The values can only be touched on the JS thread while the runtime is
+@@ -67,6 +67,7 @@ public struct JavaScriptPromise: JavaScriptType, ~Copyable {
+   @JavaScriptActor
+   public init(_ runtime: JavaScriptRuntime, _ object: consuming JavaScriptObject) throws {
+     self.runtime = runtime
++    self.longLivedState = LongLivedState()
+     longLivedState.object.reset(object.asValue())
+     try setUpCallbacks()
+     // Register only after setup succeeds, so a failed initializer (e.g. `then` unavailable) doesn't
+@@ -79,6 +80,7 @@ public struct JavaScriptPromise: JavaScriptType, ~Copyable {
+   @JavaScriptActor
+   public init(_ runtime: JavaScriptRuntime) throws {
+     self.runtime = runtime
++    self.longLivedState = LongLivedState()
+ 
+     // The promise and its two settle functions come from a JavaScript closure that returns all three
+     // at once, rather than from `new Promise(executor)` with a host function as the executor. The
+diff --git a/node_modules/expo-modules-jsi/apple/scripts/build-xcframework.sh b/node_modules/expo-modules-jsi/apple/scripts/build-xcframework.sh
+index 4c50653..abf4711 100755
+--- a/node_modules/expo-modules-jsi/apple/scripts/build-xcframework.sh
++++ b/node_modules/expo-modules-jsi/apple/scripts/build-xcframework.sh
+@@ -237,6 +237,7 @@ build_slice() {
+     DEBUG_INFORMATION_FORMAT=dwarf-with-dsym \
+     COMPILER_INDEX_STORE_ENABLE=NO \
+     SWIFT_COMPILATION_MODE=wholemodule \
++    SWIFT_STRICT_CONCURRENCY=minimal \
+     CLANG_ENABLE_CODE_COVERAGE=NO \
+     CLANG_COVERAGE_MAPPING=NO \
+   )

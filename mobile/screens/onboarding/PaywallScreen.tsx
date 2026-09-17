@@ -17,6 +17,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { getFirstName } from '../../utils/paywallPersonalization';
 import { ONBOARDING_SURFACE, ONBOARDING_TEXT, ONBOARDING_CTA } from '../../constants/onboardingTheme';
 import { isRevenueCatEnabled } from '../../utils/revenueCatConfig';
+import { safeInvalidateCustomerInfoCache } from '../../utils/revenueCatSafe';
 import { syncSubscriptionTierFromRevenueCat } from '../../utils/subscriptionSync';
 import { INSIGHT_LOGO } from '../../constants/appAssets';
 
@@ -593,7 +594,7 @@ export default function PaywallScreen({ navigation, route }: any) {
             { text: t('onboarding.paywall.alerts.tryRestore'), onPress: async () => {
               try {
                 console.log('[REVENUECAT] Attempting restore to verify ownership...');
-                await Purchases.invalidateCustomerInfoCache();
+                await safeInvalidateCustomerInfoCache();
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 handleRestorePurchases();
               } catch (error) {
@@ -626,7 +627,7 @@ export default function PaywallScreen({ navigation, route }: any) {
       
       // Invalidate cache before restoring to force fresh validation
       console.log('[REVENUECAT] Invalidating cache before restore...');
-      await Purchases.invalidateCustomerInfoCache();
+      await safeInvalidateCustomerInfoCache();
       
       const customerInfo = await Purchases.restorePurchases();
       

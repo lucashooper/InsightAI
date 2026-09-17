@@ -48,7 +48,7 @@ export default function ValuePropWinsScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} />
+      <StatusBar barStyle="dark-content" />
       <OnboardingAmbientBackground />
 
       <OnboardingBackButton onPress={() => navigation.goBack()} />

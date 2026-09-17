@@ -22,9 +22,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePreloadedData } from '../contexts/PreloadContext';
 import { useAppLock } from '../contexts/AppLockContext';
 import GlassCard from '../components/ui/GlassCard';
+import JourneyCard from '../components/ui/JourneyCard';
 import AppBackdrop from '../components/ui/AppBackdrop';
 import HomeStagger from '../components/shared/HomeStagger';
-import { PREMIUM } from '../constants/premiumUI';
+import { PREMIUM, journeyInk, journeyMuted } from '../constants/premiumUI';
 import FirstTimeIntroOverlay from '../components/FirstTimeIntroOverlay';
 import PremiumDialog from '../components/shared/PremiumDialog';
 import PinnedRoutineCard from '../components/dashboard/PinnedRoutineCard';
@@ -452,7 +453,7 @@ export default function DashboardScreenNew() {
   // Using MindseraOrb with built-in palette and blur; no explicit colors required
 
   const dark = isDarkTheme(theme.name);
-  const sectionHeadingColor = dark ? '#CBD5E1' : '#334155';
+  const sectionHeadingColor = dark ? '#F1E8FF' : '#2C184F';
   const heroDateLabel = new Date().toLocaleDateString(language, {
     weekday: 'short',
     month: 'short',
@@ -521,28 +522,30 @@ export default function DashboardScreenNew() {
           </View>
         </HomeStagger>
 
-        {/* Today's Insights — primary glass card beneath greeting */}
+        {/* Today's Insights — primary journey card beneath greeting */}
         <HomeStagger delay={STAGGER.mainCard} active={homeAnimationActive}>
           <View style={styles.insightsSection}>
           {!hasCheckInToday ? (
             <TouchableOpacity
               onPress={() => setShowCheckInFlow(true)}
-              activeOpacity={0.7}
+              activeOpacity={0.85}
             >
-              <GlassCard style={styles.insightCard} noPad contentStyle={styles.insightCardInner}>
+              <JourneyCard hue="violet" style={styles.insightCard} contentStyle={styles.insightCardInner}>
               <View style={styles.insightHeader}>
-                <Ionicons name="happy-outline" size={24} color="#8b5cf6" />
-                <Text style={[styles.insightTitle, { color: theme.colors.primaryText, fontSize: sf(18) }]}>{t('home.howDoYouFeelToday')}</Text>
+                <View style={[styles.journeyEmojiWrap, { backgroundColor: dark ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.62)' }]}>
+                  <Text style={styles.journeyEmoji}>✨</Text>
+                </View>
+                <Text style={[styles.insightTitle, { color: journeyInk('violet', dark), fontSize: sf(20) }]}>{t('home.howDoYouFeelToday')}</Text>
               </View>
-              <Text style={[styles.insightSubtext, { color: theme.colors.primaryText, fontSize: sf(17), lineHeight: sf(26) }]}>{t('home.checkInSubtext')}</Text>
-              <View style={styles.ctaArrow}>
-                <Ionicons name="arrow-forward" size={20} color={theme.colors.tertiaryText} />
+              <Text style={[styles.insightSubtext, { color: journeyMuted('violet', dark), fontSize: sf(16), lineHeight: sf(24) }]}>{t('home.checkInSubtext')}</Text>
+              <View style={[styles.journeyCta, { backgroundColor: dark ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.7)' }]}>
+                <Ionicons name="arrow-forward" size={18} color={journeyInk('violet', dark)} />
               </View>
-              </GlassCard>
+              </JourneyCard>
             </TouchableOpacity>
           ) : todayInsights.length > 0 ? (
             todayInsights.map((insight, index) => (
-              <GlassCard key={index} style={styles.insightCard} noPad contentStyle={styles.insightCardInner}>
+              <GlassCard key={index} tint="violet" style={styles.insightCard} noPad contentStyle={styles.insightCardInner}>
                 <View style={styles.insightHeader}>
                   <Ionicons name={insight.icon as any} size={20} color={insight.iconColor} />
                   <Text style={[styles.insightTitle, { color: theme.colors.primaryText }]}>{insight.title}</Text>
@@ -551,13 +554,13 @@ export default function DashboardScreenNew() {
               </GlassCard>
             ))
           ) : (
-            <GlassCard style={styles.insightCard} noPad contentStyle={styles.insightCardInner}>
+            <JourneyCard hue="aqua" style={styles.insightCard} contentStyle={styles.insightCardInner}>
               <View style={styles.insightHeader}>
-                <Ionicons name="checkmark-circle" size={20} color={theme.colors.success} />
-                <Text style={[styles.insightTitle, { color: theme.colors.primaryText }]}>{t('home.greatStart')}</Text>
+                <Ionicons name="checkmark-circle" size={22} color={journeyInk('aqua', dark)} />
+                <Text style={[styles.insightTitle, { color: journeyInk('aqua', dark) }]}>{t('home.greatStart')}</Text>
               </View>
-              <Text style={[styles.insightText, { color: theme.colors.secondaryText }]}>{t('home.journaledToday')}</Text>
-            </GlassCard>
+              <Text style={[styles.insightText, { color: journeyMuted('aqua', dark) }]}>{t('home.journaledToday')}</Text>
+            </JourneyCard>
           )}
         </View>
         </HomeStagger>
@@ -572,12 +575,12 @@ export default function DashboardScreenNew() {
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={['#a78bfa', '#8b5cf6', '#7c3aed']}
+                colors={['#c4b5fd', '#8b5cf6', '#6d28d9']}
                 start={{ x: 0.15, y: 0 }}
                 end={{ x: 0.85, y: 1 }}
                 style={styles.glassmorphicButton}
               >
-                <LinearGradient colors={["rgba(255,255,255,0.38)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.75,y:0.9}} style={styles.innerHighlight} pointerEvents="none" />
+                <LinearGradient colors={["rgba(255,255,255,0.42)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.75,y:0.9}} style={styles.innerHighlight} pointerEvents="none" />
                 <View style={styles.iconWrap}>
                   <Ionicons name="create-outline" size={si(24)} color="#ffffff" />
                 </View>
@@ -594,7 +597,7 @@ export default function DashboardScreenNew() {
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={isRecording ? ['#f87171', '#ef4444', '#dc2626'] : ['#a78bfa', '#8b5cf6', '#7c3aed']}
+                colors={isRecording ? ['#f87171', '#ef4444', '#dc2626'] : ['#fb7185', '#f472b6', '#e11d48']}
                 start={{ x: 0.15, y: 0 }}
                 end={{ x: 0.85, y: 1 }}
                 style={styles.glassmorphicButton}
@@ -615,12 +618,12 @@ export default function DashboardScreenNew() {
               activeOpacity={0.8}
             >
               <LinearGradient
-                colors={['#a78bfa', '#8b5cf6', '#7c3aed']}
+                colors={['#67e8f9', '#22d3ee', '#0891b2']}
                 start={{ x: 0.15, y: 0 }}
                 end={{ x: 0.85, y: 1 }}
                 style={styles.glassmorphicButton}
               >
-                <LinearGradient colors={["rgba(255,255,255,0.38)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.75,y:0.9}} style={styles.innerHighlight} pointerEvents="none" />
+                <LinearGradient colors={["rgba(255,255,255,0.42)", "rgba(255,255,255,0)"]} start={{x:0.2,y:0}} end={{x:0.75,y:0.9}} style={styles.innerHighlight} pointerEvents="none" />
                 <View style={styles.iconWrap}>
                   <Ionicons name="scan-outline" size={si(24)} color="#ffffff" />
                 </View>
@@ -645,42 +648,44 @@ export default function DashboardScreenNew() {
         <View style={styles.challengesSection}>
           <Text style={[styles.sectionTitle, { color: sectionHeadingColor }]}>{t('home.todaysPrompt')}</Text>
           {promptCompletedToday ? (
-            <GlassCard style={styles.insightCard} noPad contentStyle={styles.insightCardInner}>
+            <JourneyCard hue="aqua" style={styles.insightCard} contentStyle={styles.insightCardInner}>
               <View style={styles.insightHeader}>
                 <View style={styles.promptCompleteBadge}>
-                  <Ionicons name="checkmark-circle" size={22} color="#34d399" />
+                  <Ionicons name="checkmark-circle" size={22} color={journeyInk('aqua', dark)} />
                 </View>
                 <View style={{ flex: 1, marginLeft: 8 }}>
-                  <Text style={[styles.insightTitle, { color: theme.colors.primaryText, fontSize: sf(15) }]}>
+                  <Text style={[styles.insightTitle, { color: journeyInk('aqua', dark), fontSize: sf(16) }]}>
                     {t('home.promptCompleted')}
                   </Text>
-                  <Text style={[styles.insightText, { color: theme.colors.tertiaryText, fontSize: sf(13), marginTop: 4 }]}>
+                  <Text style={[styles.insightText, { color: journeyMuted('aqua', dark), fontSize: sf(13), marginTop: 4 }]}>
                     {t('home.promptCompletedSubtitle')}
                   </Text>
                 </View>
               </View>
-            </GlassCard>
+            </JourneyCard>
           ) : (
           <TouchableOpacity
             onPress={() => navigation.navigate('PromptEntry', { promptText: dailyPrompt.prompt + (dailyPrompt.followUp ? `\n\n${dailyPrompt.followUp}` : '') })}
-            activeOpacity={0.7}
+            activeOpacity={0.85}
           >
-            <GlassCard style={styles.insightCard} noPad contentStyle={styles.insightCardInner}>
+            <JourneyCard hue="gold" style={styles.insightCard} contentStyle={styles.insightCardInner}>
             <View style={styles.insightHeader}>
-              <Text style={{ fontSize: 22 }}>{dailyPrompt.emoji}</Text>
+              <View style={[styles.journeyEmojiWrap, { backgroundColor: dark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.7)' }]}>
+                <Text style={styles.journeyEmoji}>{dailyPrompt.emoji}</Text>
+              </View>
               <View style={{ flex: 1, marginLeft: 4 }}>
-                <Text style={[styles.insightTitle, { color: theme.colors.primaryText, fontSize: sf(15) }]}>{dailyPrompt.prompt}</Text>
+                <Text style={[styles.insightTitle, { color: journeyInk('gold', dark), fontSize: sf(17) }]}>{dailyPrompt.prompt}</Text>
                 {dailyPrompt.followUp && (
-                  <Text style={[styles.insightText, { color: theme.colors.tertiaryText, fontSize: sf(13), marginTop: 4 }]}>{dailyPrompt.followUp}</Text>
+                  <Text style={[styles.insightText, { color: journeyMuted('gold', dark), fontSize: sf(13), marginTop: 4 }]}>{dailyPrompt.followUp}</Text>
                 )}
               </View>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
-              <View style={[styles.compactCta, { borderColor: theme.colors.border, backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
-                <Text style={[styles.compactCtaText, { color: theme.colors.primaryText }]}>{t('home.getStarted')}</Text>
+              <View style={[styles.compactCta, { borderWidth: 0, backgroundColor: dark ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.72)' }]}>
+                <Text style={[styles.compactCtaText, { color: journeyInk('gold', dark) }]}>{t('home.getStarted')}</Text>
               </View>
             </View>
-            </GlassCard>
+            </JourneyCard>
           </TouchableOpacity>
           )}
         </View>
@@ -692,41 +697,41 @@ export default function DashboardScreenNew() {
           <Text style={[styles.sectionTitle, { color: sectionHeadingColor }]}>
             {t('home.suggested')}
           </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Gratitude')} activeOpacity={0.7}>
-            <GlassCard style={styles.challengeCard} noPad contentStyle={styles.challengeCardInner}>
+          <TouchableOpacity onPress={() => navigation.navigate('Gratitude')} activeOpacity={0.85}>
+            <JourneyCard hue="peach" style={styles.challengeCard} contentStyle={styles.challengeCardInner}>
             <View style={styles.challengeContent}>
               <Text style={styles.challengeEmoji}>📝</Text>
               <View style={styles.challengeInfo}>
-                <Text style={[styles.challengeTitle, { color: theme.colors.primaryText }]}>{t('home.gratitude')}</Text>
-                <Text style={[styles.challengeSubtext, { color: theme.colors.tertiaryText }]}>{t('home.gratitudeDesc')}</Text>
+                <Text style={[styles.challengeTitle, { color: journeyInk('peach', dark) }]}>{t('home.gratitude')}</Text>
+                <Text style={[styles.challengeSubtext, { color: journeyMuted('peach', dark) }]}>{t('home.gratitudeDesc')}</Text>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
-            </GlassCard>
+            <Ionicons name="chevron-forward" size={20} color={journeyInk('peach', dark)} />
+            </JourneyCard>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('AmbientSounds')} activeOpacity={0.7}>
-            <GlassCard style={styles.challengeCard} noPad contentStyle={styles.challengeCardInner}>
+          <TouchableOpacity onPress={() => navigation.navigate('AmbientSounds')} activeOpacity={0.85}>
+            <JourneyCard hue="sky" style={styles.challengeCard} contentStyle={styles.challengeCardInner}>
             <View style={styles.challengeContent}>
               <Text style={styles.challengeEmoji}>🌧️</Text>
               <View style={styles.challengeInfo}>
-                <Text style={[styles.challengeTitle, { color: theme.colors.primaryText }]}>{t('home.ambient')}</Text>
-                <Text style={[styles.challengeSubtext, { color: theme.colors.tertiaryText }]}>{t('home.ambientDesc')}</Text>
+                <Text style={[styles.challengeTitle, { color: journeyInk('sky', dark) }]}>{t('home.ambient')}</Text>
+                <Text style={[styles.challengeSubtext, { color: journeyMuted('sky', dark) }]}>{t('home.ambientDesc')}</Text>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
-            </GlassCard>
+            <Ionicons name="chevron-forward" size={20} color={journeyInk('sky', dark)} />
+            </JourneyCard>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('Explore')} activeOpacity={0.7}>
-            <GlassCard style={styles.challengeCard} noPad contentStyle={styles.challengeCardInner}>
+          <TouchableOpacity onPress={() => navigation.navigate('Explore')} activeOpacity={0.85}>
+            <JourneyCard hue="rose" style={styles.challengeCard} contentStyle={styles.challengeCardInner}>
             <View style={styles.challengeContent}>
               <Text style={styles.challengeEmoji}>🔍</Text>
               <View style={styles.challengeInfo}>
-                <Text style={[styles.challengeTitle, { color: theme.colors.primaryText }]}>{t('home.articles')}</Text>
-                <Text style={[styles.challengeSubtext, { color: theme.colors.tertiaryText }]}>{t('home.articlesDesc')}</Text>
+                <Text style={[styles.challengeTitle, { color: journeyInk('rose', dark) }]}>{t('home.articles')}</Text>
+                <Text style={[styles.challengeSubtext, { color: journeyMuted('rose', dark) }]}>{t('home.articlesDesc')}</Text>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={theme.colors.tertiaryText} />
-            </GlassCard>
+            <Ionicons name="chevron-forward" size={20} color={journeyInk('rose', dark)} />
+            </JourneyCard>
           </TouchableOpacity>
         </View>
         </HomeStagger>
@@ -899,12 +904,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   greetingText: {
-    fontSize: isTablet ? sf(32) : sf(30),
-    fontWeight: '600',
-    letterSpacing: -0.8,
+    fontSize: isTablet ? sf(40) : sf(36),
+    fontWeight: '800',
+    letterSpacing: -1.2,
     textAlign: 'left',
-    lineHeight: isTablet ? sf(40) : sf(36),
-    maxWidth: isTablet ? 480 : width * 0.82,
+    lineHeight: isTablet ? sf(48) : sf(42),
+    maxWidth: isTablet ? 520 : width * 0.88,
   },
   iconButton: {
     width: isTablet ? 56 : 44,
@@ -1034,13 +1039,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: isTablet ? 40 : PREMIUM.layout.screenPadH,
   },
   sectionTitle: {
-    fontSize: sf(14),
-    fontWeight: '600',
-    letterSpacing: -0.2,
-    lineHeight: sf(20),
-    textTransform: 'uppercase',
-    marginBottom: 12,
-    opacity: 0.8,
+    fontSize: sf(22),
+    fontWeight: '800',
+    letterSpacing: -0.4,
+    lineHeight: sf(28),
+    marginBottom: 14,
+  },
+  journeyEmojiWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  journeyEmoji: {
+    fontSize: 22,
+  },
+  journeyCta: {
+    position: 'absolute',
+    right: 16,
+    top: 22,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   patternCard: {
     marginBottom: 12,
@@ -1136,6 +1159,7 @@ const styles = StyleSheet.create({
   },
   insightCardInner: {
     padding: PREMIUM.layout.cardPad,
+    position: 'relative',
   },
   insightHeader: {
     flexDirection: 'row',
@@ -1152,10 +1176,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   insightTitle: {
-    fontSize: sf(17),
-    fontWeight: '600',
-    letterSpacing: -0.3,
-    lineHeight: sf(22),
+    fontSize: sf(18),
+    fontWeight: '800',
+    letterSpacing: -0.4,
+    lineHeight: sf(24),
+    flex: 1,
   },
   insightText: {
     fontSize: sf(15),
@@ -1209,8 +1234,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   challengeTitle: {
-    fontSize: sf(17),
-    fontWeight: '600',
+    fontSize: sf(18),
+    fontWeight: '800',
+    letterSpacing: -0.3,
     marginBottom: 2,
   },
   challengeSubtext: {

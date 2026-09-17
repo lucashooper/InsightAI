@@ -90,6 +90,7 @@ module.exports = ({ config }) => ({
     policy: "appVersion",
   },
   plugins: [
+    "./plugins/withDisableExplicitSwiftModules.js",
     [
       "expo-dev-client",
       {

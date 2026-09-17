@@ -8,7 +8,8 @@ import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { sf } from '../../utils/responsive';
-import StandardContainer from '../shared/StandardContainer';
+import JourneyCard from '../ui/JourneyCard';
+import { journeyInk, journeyMuted } from '../../constants/premiumUI';
 import { emojiForProtocol, resolveProtocolTasks } from '../../utils/protocolEmoji';
 import { protocolCompletionService } from '../../services/protocolCompletionService';
 import ProtocolOptionsSheet from '../playbook/ProtocolOptionsSheet';
@@ -177,12 +178,7 @@ export default function PinnedRoutineCard({ userId }: { userId: string }) {
         }}
         delayLongPress={400}
       >
-        <StandardContainer
-          style={[styles.container, {
-            backgroundColor: theme.colors.cardBackground,
-            borderColor: theme.colors.border,
-          }]}
-        >
+        <JourneyCard hue="violet" style={styles.container} contentStyle={styles.inner}>
           <View style={styles.header}>
             <TouchableOpacity
               style={styles.headerLeft}
@@ -192,14 +188,14 @@ export default function PinnedRoutineCard({ userId }: { userId: string }) {
               }}
               activeOpacity={0.7}
             >
-              <View style={[styles.iconCircle, { backgroundColor: dark ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.1)' }]}>
-                <Text style={{ fontSize: 18 }}>{protocol.emoji}</Text>
+              <View style={[styles.iconCircle, { backgroundColor: dark ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.7)' }]}>
+                <Text style={{ fontSize: 20 }}>{protocol.emoji}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.title, { color: theme.colors.primaryText }]}>
+                <Text style={[styles.title, { color: journeyInk('violet', dark) }]}>
                   {protocol.title}
                 </Text>
-                <Text style={[styles.subtitle, { color: theme.colors.tertiaryText }]} numberOfLines={2}>
+                <Text style={[styles.subtitle, { color: journeyMuted('violet', dark) }]} numberOfLines={2}>
                   {summaryText}
                 </Text>
               </View>
@@ -252,7 +248,7 @@ export default function PinnedRoutineCard({ userId }: { userId: string }) {
                   </View>
                   <Text style={[
                     styles.taskLabel,
-                    { color: theme.colors.primaryText },
+                    { color: journeyInk('violet', dark) },
                     task.completed && styles.taskCompleted,
                   ]}>
                     {task.label}
@@ -261,7 +257,7 @@ export default function PinnedRoutineCard({ userId }: { userId: string }) {
               ))}
             </View>
           )}
-        </StandardContainer>
+        </JourneyCard>
       </Pressable>
 
       <ProtocolOptionsSheet
@@ -303,6 +299,8 @@ export default function PinnedRoutineCard({ userId }: { userId: string }) {
 
 const styles = StyleSheet.create({
   container: {
+  },
+  inner: {
     padding: 16,
   },
   header: {
@@ -322,16 +320,17 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   iconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    fontSize: sf(16),
-    fontWeight: '700',
+    fontSize: sf(17),
+    fontWeight: '800',
     marginBottom: 2,
+    letterSpacing: -0.3,
   },
   subtitle: {
     fontSize: sf(12),

@@ -28,6 +28,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { translateEmotion } from '../i18n/labels';
 import GoDeeperThread from '../components/editor/GoDeeperThread';
 import InsightCompanionMark from '../components/companion/InsightCompanionMark';
+import { useSuppressOrbOverlay } from '../components/companion/OrbOverlayProvider';
 import { formatJournalPromptContent, extractJournalPromptText, stripJournalPromptTag, isPromptDrivenEntry, getPromptTextForEntry } from '../constants/branding';
 import InsightPromptHeader from '../components/journal/InsightPromptHeader';
 import { useEditorKeyboardPadding } from '../hooks/useEditorKeyboardPadding';
@@ -137,6 +138,8 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
   } | null>(null);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [showMoodPicker, setShowMoodPicker] = useState(false);
+  // The orb layer renders above the native stack — hide it under the in-tree picker backdrop.
+  useSuppressOrbOverlay(showMoodPicker);
   const [mood, setMood] = useState(initialEntry?.mood || '');
   const [linkedCheckIn, setLinkedCheckIn] = useState<StoredCheckIn | null>(null);
   const [attachedPhotos, setAttachedPhotos] = useState<Array<{ uri: string; width: number; height: number }>>([]);

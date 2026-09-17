@@ -82,12 +82,12 @@ export const PREMIUM = {
   },
 
   radius: {
-    button: 20,
-    card: 28,
+    button: 22,
+    card: 32,
     input: 28,
     md: 16,
-    lg: 20,
-    xl: 24,
+    lg: 22,
+    xl: 28,
     pill: 999,
   },
 
@@ -127,41 +127,41 @@ export const PREMIUM = {
 } as const;
 
 /**
- * Typography — Linear / Arc / Apple Intelligence restraint.
- * Prefer opacity hierarchy over many colors. Stick to these roles.
+ * Typography — round, high-contrast, friendly.
+ * Display/headings carry weight; body stays readable.
  */
 export const TYPE = {
   display: {
-    fontSize: sf(36),
-    fontWeight: '700' as TextStyle['fontWeight'],
-    letterSpacing: sf(36) * -0.04,
-    lineHeight: sf(42),
+    fontSize: sf(38),
+    fontWeight: '800' as TextStyle['fontWeight'],
+    letterSpacing: -1.2,
+    lineHeight: sf(44),
   },
   /** Card / screen primary title — sole high-emphasis element */
   heading: {
-    fontSize: sf(28),
-    fontWeight: '700' as TextStyle['fontWeight'],
-    letterSpacing: sf(28) * -0.04,
-    lineHeight: sf(34),
+    fontSize: sf(30),
+    fontWeight: '800' as TextStyle['fontWeight'],
+    letterSpacing: -0.8,
+    lineHeight: sf(36),
   },
   /** Legacy alias used by Dashboard / Journal page titles */
   large: {
-    fontSize: sf(40),
-    fontWeight: '700' as TextStyle['fontWeight'],
-    letterSpacing: -0.9,
-    lineHeight: sf(44),
+    fontSize: sf(42),
+    fontWeight: '800' as TextStyle['fontWeight'],
+    letterSpacing: -1.1,
+    lineHeight: sf(46),
   },
   section: {
-    fontSize: sf(18),
-    fontWeight: '700' as TextStyle['fontWeight'],
-    letterSpacing: -0.3,
-    lineHeight: sf(24),
+    fontSize: sf(22),
+    fontWeight: '800' as TextStyle['fontWeight'],
+    letterSpacing: -0.4,
+    lineHeight: sf(28),
   },
   cardTitle: {
-    fontSize: sf(17),
-    fontWeight: '600' as TextStyle['fontWeight'],
-    letterSpacing: -0.3,
-    lineHeight: sf(22),
+    fontSize: sf(18),
+    fontWeight: '700' as TextStyle['fontWeight'],
+    letterSpacing: -0.35,
+    lineHeight: sf(24),
   },
   body: {
     fontSize: sf(15),
@@ -206,6 +206,97 @@ export const TYPE = {
     textTransform: 'uppercase' as const,
   },
 };
+
+export type JourneyHue = 'violet' | 'peach' | 'rose' | 'gold' | 'aqua' | 'sky';
+
+/** Colorful journey units — Insight palette, not a mint/cloud clone. */
+export const JOURNEY: Record<
+  JourneyHue,
+  {
+    light: [string, string];
+    dark: [string, string];
+    inkLight: string;
+    inkDark: string;
+    mutedLight: string;
+    mutedDark: string;
+  }
+> = {
+  violet: {
+    light: ['#F1E8FF', '#DCC6FF'],
+    dark: ['#3D2A63', '#2A1C48'],
+    inkLight: '#2C184F',
+    inkDark: '#F6EEFF',
+    mutedLight: 'rgba(44, 24, 79, 0.62)',
+    mutedDark: 'rgba(246, 238, 255, 0.72)',
+  },
+  peach: {
+    light: ['#FFE7D6', '#FFCDB0'],
+    dark: ['#5A3226', '#3D211A'],
+    inkLight: '#5C2412',
+    inkDark: '#FFE8DC',
+    mutedLight: 'rgba(92, 36, 18, 0.62)',
+    mutedDark: 'rgba(255, 232, 220, 0.72)',
+  },
+  rose: {
+    light: ['#FFD9E8', '#F7B7D0'],
+    dark: ['#5A2740', '#3D1A2C'],
+    inkLight: '#5C1838',
+    inkDark: '#FFE6F0',
+    mutedLight: 'rgba(92, 24, 56, 0.62)',
+    mutedDark: 'rgba(255, 230, 240, 0.72)',
+  },
+  gold: {
+    light: ['#FFE9C4', '#FFD28A'],
+    dark: ['#5A4318', '#3D2E10'],
+    inkLight: '#5C3D0A',
+    inkDark: '#FFF0D2',
+    mutedLight: 'rgba(92, 61, 10, 0.62)',
+    mutedDark: 'rgba(255, 240, 210, 0.72)',
+  },
+  aqua: {
+    light: ['#D6F4EE', '#B3E4DA'],
+    dark: ['#1A4540', '#12332F'],
+    inkLight: '#11403A',
+    inkDark: '#D9F6F0',
+    mutedLight: 'rgba(17, 64, 58, 0.62)',
+    mutedDark: 'rgba(217, 246, 240, 0.72)',
+  },
+  sky: {
+    light: ['#D9E8FF', '#B7D2F7'],
+    dark: ['#1E3358', '#15243F'],
+    inkLight: '#16325C',
+    inkDark: '#E4EEFF',
+    mutedLight: 'rgba(22, 50, 92, 0.62)',
+    mutedDark: 'rgba(228, 238, 255, 0.72)',
+  },
+};
+
+export function journeyForCategory(category?: string): JourneyHue {
+  switch (category) {
+    case 'coping':
+      return 'aqua';
+    case 'exercise':
+      return 'gold';
+    case 'social':
+      return 'rose';
+    case 'mindfulness':
+      return 'violet';
+    case 'sleep':
+      return 'sky';
+    case 'nutrition':
+      return 'peach';
+    default:
+      return 'violet';
+  }
+}
+
+export function journeyInk(hue: JourneyHue, dark: boolean): string {
+  return dark ? JOURNEY[hue].inkDark : JOURNEY[hue].inkLight;
+}
+
+export function journeyMuted(hue: JourneyHue, dark: boolean): string {
+  return dark ? JOURNEY[hue].mutedDark : JOURNEY[hue].mutedLight;
+}
 
 export const REVEAL_AMBIENT_TINT: Record<string, string> = {
   biggest_strength: 'rgba(139, 92, 246, 0.10)',

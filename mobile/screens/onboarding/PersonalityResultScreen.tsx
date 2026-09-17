@@ -328,7 +328,7 @@ export default function PersonalityResultScreen({ navigation, route }: any) {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent={false} />
+            <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={false} />
             <OnboardingAmbientBackground />
 
       {/* Close button */}

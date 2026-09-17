@@ -84,21 +84,30 @@ export default function FloatingTabBar({ state, navigation }: BottomTabBarProps)
       style={[styles.wrapper, { paddingBottom: bottomPad }]}
       pointerEvents="box-none"
     >
-      <View style={[styles.barOuter, isDark ? styles.barOuterDark : styles.barOuterLight]}>
-        <BlurView
-          intensity={Platform.OS === 'android' ? (isDark ? 95 : 80) : (isDark ? 72 : 58)}
-          tint={barTint}
-          style={styles.blurFill}
-          {...BLUR_PROPS}
-        />
-        <View style={[styles.blurFill, { backgroundColor: barOverlay }]} />
-        <View style={[styles.barBorder, { borderColor }]} />
-        <View style={styles.barContent}>
-          <View style={styles.sideGroup}>{leftRoutes.map(renderTab)}</View>
-          <View style={styles.centerSlot}>
-            <CenterFabButton embedded />
+      {/*
+        Shadow lives on a separate frame, never on the overflow-hidden blur
+        container. iOS cannot compute a shadow for a transparent clipped view
+        without rasterizing its (blur) contents, which intermittently paints a
+        grey slab around the bar. On dark the base is near-black, so a shadow
+        adds nothing — the hairline border provides separation instead.
+      */}
+      <View style={[styles.barFrame, !isDark && styles.barFrameLight]}>
+        <View style={styles.barOuter}>
+          <BlurView
+            intensity={Platform.OS === 'android' ? (isDark ? 95 : 80) : (isDark ? 72 : 58)}
+            tint={barTint}
+            style={styles.blurFill}
+            {...BLUR_PROPS}
+          />
+          <View style={[styles.blurFill, { backgroundColor: barOverlay }]} />
+          <View style={[styles.barBorder, { borderColor }]} />
+          <View style={styles.barContent}>
+            <View style={styles.sideGroup}>{leftRoutes.map(renderTab)}</View>
+            <View style={styles.centerSlot}>
+              <CenterFabButton embedded />
+            </View>
+            <View style={styles.sideGroup}>{rightRoutes.map(renderTab)}</View>
           </View>
-          <View style={styles.sideGroup}>{rightRoutes.map(renderTab)}</View>
         </View>
       </View>
     </View>
@@ -115,25 +124,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     backgroundColor: 'transparent',
   },
-  barOuter: {
+  barFrame: {
     width: '100%',
     maxWidth: 420,
     borderRadius: 28,
-    overflow: 'hidden',
   },
-  barOuterDark: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
-    elevation: 16,
-  },
-  barOuterLight: {
+  barFrameLight: {
+    // Opaque fill lets iOS compute the shadow path from bounds (no rasterization).
+    backgroundColor: '#ffffff',
     shadowColor: '#8b5cf6',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.14,
     shadowRadius: 14,
     elevation: 10,
+  },
+  barOuter: {
+    width: '100%',
+    borderRadius: 28,
+    overflow: 'hidden',
   },
   blurFill: {
     ...StyleSheet.absoluteFillObject,

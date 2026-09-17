@@ -21,6 +21,7 @@ import OnboardingAmbientBackground from '../components/onboarding/OnboardingAmbi
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { onboardingAuthStyles as auth, ONBOARDING_AUTH_COLORS as colors } from '../constants/onboardingAuthStyles';
+import { ONBOARDING_LIGHT } from '../constants/onboardingTheme';
 
 interface VerifyEmailScreenProps {
   navigation: any;
@@ -282,7 +283,7 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={auth.containerPadded}>
-        <StatusBar barStyle="light-content" />
+        <StatusBar barStyle="dark-content" />
         <OnboardingAmbientBackground />
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -294,7 +295,7 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
             onPress={() => navigation.goBack()}
           >
             <View style={auth.backArrowCircle}>
-              <Ionicons name="arrow-back" size={20} color="#ffffff" />
+              <Ionicons name="arrow-back" size={20} color={ONBOARDING_LIGHT.backIcon} />
             </View>
           </TouchableOpacity>
 
@@ -318,7 +319,7 @@ export default function VerifyEmailScreen({ navigation, route }: VerifyEmailScre
           </View>
 
           {loading && (
-            <ActivityIndicator size="small" color="#ffffff" style={styles.loader} />
+            <ActivityIndicator size="small" color={colors.icon} style={styles.loader} />
           )}
 
           {/* Resend Button */}

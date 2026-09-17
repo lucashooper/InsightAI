@@ -39,10 +39,10 @@ export const ONBOARDING_BRAND = {
 /** Shared onboarding typography — use on every onboarding screen. */
 export const ONBOARDING_TYPE = {
   title: {
-    fontSize: sf(32),
-    fontWeight: '600' as const,
-    letterSpacing: -1.28,
-    lineHeight: sf(40),
+    fontSize: sf(36),
+    fontWeight: '800' as const,
+    letterSpacing: -1.1,
+    lineHeight: sf(44),
     textAlign: 'center' as const,
   },
   subtitle: {

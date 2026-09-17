@@ -43,7 +43,7 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent={false} />
+      <StatusBar barStyle="dark-content" />
       <OnboardingAmbientBackground />
 
       <OnboardingBackButton

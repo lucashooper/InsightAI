@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import Purchases from 'react-native-purchases';
+import { safeInvalidateCustomerInfoCache } from '../utils/revenueCatSafe';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme, ThemeName, isDarkTheme, ContainerStyle } from '../contexts/ThemeContext';
 import { useAppLock } from '../contexts/AppLockContext';
@@ -1029,7 +1030,7 @@ export default function SettingsScreen({ navigation }: any) {
                       { text: t('common.cancel'), style: 'cancel' },
                       { text: t('settings.clearCacheAction'), onPress: async () => {
                         try {
-                          await Purchases.invalidateCustomerInfoCache();
+                          await safeInvalidateCustomerInfoCache();
                           const customerInfo = await Purchases.getCustomerInfo();
                           const hasEntitlement = Object.keys(customerInfo.entitlements.active).length > 0;
                           Alert.alert(
@@ -1059,7 +1060,7 @@ export default function SettingsScreen({ navigation }: any) {
                 onPress={async () => {
                   if (!user?.id) return;
                   try {
-                    await Purchases.invalidateCustomerInfoCache();
+                    await safeInvalidateCustomerInfoCache();
                     const customerInfo = await Purchases.getCustomerInfo();
                     await syncSubscriptionTierFromRevenueCat(user.id, customerInfo);
                     await loadSubscriptionStatus();

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type ThemeName = 'dark' | 'light' | 'vibrant' | 'ocean' | 'forest' | 'sunset' | 'midnight';
@@ -371,6 +371,25 @@ export const useTheme = () => {
     throw new Error('useTheme must be used within ThemeProvider');
   }
   return context;
+};
+
+/**
+ * Pins the resolved theme for a subtree without touching the persisted
+ * preference. Used to force onboarding/auth screens to light regardless of
+ * the saved in-app theme. `setTheme` still writes the user's real preference.
+ * Pass `name={undefined}` to render children with the inherited theme.
+ */
+export const ThemeOverride: React.FC<{ name?: ThemeName; children: ReactNode }> = ({
+  name,
+  children,
+}) => {
+  const parent = useTheme();
+  const value = useMemo<ThemeContextType>(() => {
+    if (!name || name === parent.themeName) return parent;
+    return { ...parent, theme: themes[name], themeName: name };
+  }, [parent, name]);
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };
 
 // Helper function to check if a theme uses dark styling (dark backgrounds, white text)

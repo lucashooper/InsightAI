@@ -77,7 +77,7 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle={isDarkTheme(theme.name) ? 'light-content' : 'dark-content'} />
+            <StatusBar barStyle="dark-content" />
 
             <OnboardingAmbientBackground />
             

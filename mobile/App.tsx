@@ -54,9 +54,10 @@ import { analytics } from './services/analytics';
 import OnboardingLottieWarmup from './components/onboarding/OnboardingLottieWarmup';
 import AppImageWarmup from './components/shared/AppImageWarmup';
 import OnboardingHeroWarmup from './components/onboarding/OnboardingHeroWarmup';
-import OrbOverlayProvider from './components/companion/OrbOverlayProvider';
+import OrbOverlayProvider, { useSuppressOrbOverlay } from './components/companion/OrbOverlayProvider';
 import OrbPreloader from './components/companion/OrbPreloader';
 import { getRevenueCatApiKey, isRevenueCatEnabled } from './utils/revenueCatConfig';
+import { patchRevenueCatBrowserStubs, safeInvalidateCustomerInfoCache, safePurchasesLogOut } from './utils/revenueCatSafe';
 import { preloadAllAppAssets, preloadSplashAssets } from './utils/preloadAssets';
 
 // RevenueCat: platform keys resolved in utils/revenueCatConfig.ts
@@ -66,6 +67,8 @@ async function configureRevenueCatInBackground() {
     console.log('[REVENUECAT] Skipped on Android — subscriptions not configured yet');
     return;
   }
+
+  patchRevenueCatBrowserStubs();
 
   try {
     const REVENUECAT_API_KEY = getRevenueCatApiKey();
@@ -79,11 +82,9 @@ async function configureRevenueCatInBackground() {
     if (needsEmailSignup === 'true' && savedAnonymousId) {
       await Purchases.logIn(savedAnonymousId).catch(() => {});
     } else {
-      await Purchases.logOut().catch(() => {});
+      await safePurchasesLogOut();
       await AsyncStorage.removeItem('REVENUECAT_ANONYMOUS_ID');
-      if (Platform.OS !== 'web') {
-        await Purchases.invalidateCustomerInfoCache().catch(() => {});
-      }
+      await safeInvalidateCustomerInfoCache();
     }
 
     await Purchases.getCustomerInfo().catch(() => {});
@@ -199,7 +200,8 @@ export default function App() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <OrbOverlayProvider>
+      {/* Orb layer sits above the native stack — keep it hidden under the splash */}
+      <OrbOverlayProvider hidden={splashReady && splashVisible && themeLoaded}>
       <OrbPreloader />
       {splashAssetsReady ? (
         <>
@@ -286,6 +288,8 @@ function AppContent({
   }, [authLoading, user, resetData]);
 
   const isStartupReady = !authLoading && isLockReady;
+  const lockShown = isLocked && isLockEnabled && !authLoading && isLockReady;
+  useSuppressOrbOverlay(lockShown);
 
   // Dismiss splash once auth + lock settings are ready — brand splash only if logged in
   useEffect(() => {
@@ -311,7 +315,7 @@ function AppContent({
   return (
     <View style={{ flex: 1 }}>
       <AppNavigator />
-      {isLocked && isLockEnabled && !authLoading && isLockReady && (
+      {lockShown && (
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}>
           <LockScreen />
         </View>

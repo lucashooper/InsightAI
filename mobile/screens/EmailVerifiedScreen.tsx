@@ -8,6 +8,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 import OnboardingAmbientBackground from '../components/onboarding/OnboardingAmbientBackground';
 import { onboardingAuthStyles as auth } from '../constants/onboardingAuthStyles';
+import { ONBOARDING_BRAND } from '../constants/onboardingTheme';
 import { supabase } from '../lib/supabase';
 
 /**
@@ -106,10 +107,10 @@ export default function EmailVerifiedScreen({ navigation }: any) {
   if (!isReady) {
     return (
       <View style={auth.container}>
-        <StatusBar barStyle="light-content" />
+        <StatusBar barStyle="dark-content" />
         <OnboardingAmbientBackground />
         <View style={styles.loadingContent}>
-          <ActivityIndicator size="large" color="#ffffff" />
+          <ActivityIndicator size="large" color={ONBOARDING_BRAND.purple} />
           <Text style={auth.subtitleCentered}>{t('auxiliary.emailVerified.verifying')}</Text>
         </View>
       </View>
@@ -118,7 +119,7 @@ export default function EmailVerifiedScreen({ navigation }: any) {
 
   return (
     <View style={auth.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="dark-content" />
       <OnboardingAmbientBackground />
 
       <View style={styles.content}>

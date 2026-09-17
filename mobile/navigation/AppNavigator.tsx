@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavigationContainer, createNavigationContainerRef, useFocusEffect } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, createNavigationContainerRef, useFocusEffect } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 const navigationRef = createNavigationContainerRef();
@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FloatingTabBar from '../components/navigation/FloatingTabBar';
 import AppStatusBar from '../components/shared/AppStatusBar';
 import OnboardingOrbWarmup from '../components/onboarding/OnboardingOrbWarmup';
+import { ThemeOverride } from '../contexts/ThemeContext';
 
 function EmptyTabScreen() {
   return null;
@@ -429,7 +430,7 @@ export default function AppNavigator() {
     }
   }, [user, isOnboardingCompleted, passwordRecoveryActive]);
 
-  const darkTheme = {
+  const darkNavTheme = {
     dark: true,
     colors: {
       primary: '#8b5cf6',
@@ -440,22 +441,23 @@ export default function AppNavigator() {
       notification: '#8b5cf6',
     },
     fonts: {
-      regular: {
-        fontFamily: 'System',
-        fontWeight: '400' as const,
-      },
-      medium: {
-        fontFamily: 'System',
-        fontWeight: '500' as const,
-      },
-      bold: {
-        fontFamily: 'System',
-        fontWeight: '700' as const,
-      },
-      heavy: {
-        fontFamily: 'System',
-        fontWeight: '900' as const,
-      },
+      regular: { fontFamily: 'System', fontWeight: '400' as const },
+      medium: { fontFamily: 'System', fontWeight: '500' as const },
+      bold: { fontFamily: 'System', fontWeight: '700' as const },
+      heavy: { fontFamily: 'System', fontWeight: '900' as const },
+    },
+  };
+
+  const lightNavTheme = {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      primary: '#8b5cf6',
+      background: 'transparent',
+      card: 'transparent',
+      text: '#1a1a2e',
+      border: 'rgba(200, 185, 255, 0.35)',
+      notification: '#8b5cf6',
     },
   };
 
@@ -469,12 +471,16 @@ export default function AppNavigator() {
     );
   }
 
+  // Onboarding and auth are always light — the saved in-app theme must never
+  // leak into them. Once onboarding completes the user's real theme applies.
+  const forceLightTheme = !user || !isOnboardingCompleted;
+
   return (
-    <>
-      <AppStatusBar routeName={activeRoute} />
+    <ThemeOverride name={forceLightTheme ? 'light' : undefined}>
+      <AppStatusBar routeName={activeRoute} forceDarkContent={forceLightTheme} />
       <NavigationContainer
         ref={navigationRef}
-        theme={darkTheme}
+        theme={forceLightTheme ? lightNavTheme : darkNavTheme}
         onReady={syncActiveRoute}
         onStateChange={syncActiveRoute}
       >
@@ -572,7 +578,7 @@ export default function AppNavigator() {
       ) : (
         // Unauthenticated - show Welcome first, then Login/Signup
         <Stack.Navigator 
-          initialRouteName={passwordRecoveryActive ? 'ForgotPassword' : isOnboardingCompleted ? 'Login' : needsPostPurchaseSignup ? 'PostPurchaseWelcome' : 'Welcome'}
+          initialRouteName={passwordRecoveryActive ? 'ForgotPassword' : isOnboardingCompleted ? 'Login' : needsPostPurchaseSignup ? 'PostPurchaseWelcome' : 'PersonalityQuizIntro' /* DEBUG-TMP */}
           screenOptions={{
             headerShown: false,
             animation: 'none',
@@ -636,7 +642,7 @@ export default function AppNavigator() {
         </Stack.Navigator>
       )}
     </NavigationContainer>
-    </>
+    </ThemeOverride>
   );
 }
 

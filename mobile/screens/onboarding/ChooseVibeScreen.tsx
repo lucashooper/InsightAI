@@ -1,24 +1,23 @@
 import React, { useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { useTheme } from '../../contexts/ThemeContext';
 
 interface Props {
   navigation: any;
   onVibeSelected?: (vibe: 'light') => void;
 }
 
-/** Deprecated screen — onboarding now defaults to dark theme without a picker. */
+/**
+ * Deprecated pass-through — there is no vibe picker any more.
+ * Must NOT write a theme: onboarding is always rendered light (see
+ * ThemeOverride in AppNavigator) and the in-app default is handled by
+ * ThemeContext. Persisting `dark` here made every new user's onboarding
+ * flip to dark mid-flow.
+ */
 export default function ChooseVibeScreen({ navigation, onVibeSelected }: Props) {
-  const { setTheme } = useTheme();
-
   useEffect(() => {
-    const forward = async () => {
-      await setTheme('dark');
-      onVibeSelected?.('light');
-      navigation.replace('OnboardingQuestion');
-    };
-    forward();
-  }, [navigation, onVibeSelected, setTheme]);
+    onVibeSelected?.('light');
+    navigation.replace('OnboardingQuestion');
+  }, [navigation, onVibeSelected]);
 
   return (
     <View style={styles.container}>

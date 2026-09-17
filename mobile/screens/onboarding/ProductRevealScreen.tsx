@@ -6,7 +6,7 @@ import { isTablet, sf, screenPadding, iPadContentStyle } from '../../utils/respo
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import LanguagePicker from '../../components/LanguagePicker';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { ONBOARDING_TEXT, ONBOARDING_CTA } from '../../constants/onboardingTheme';
+import { ONBOARDING_TEXT, ONBOARDING_CTA, ONBOARDING_TYPE } from '../../constants/onboardingTheme';
 import { useOnboardingBottomInset, useOnboardingTopInset } from '../../utils/onboardingInsets';
 import { ZENO_MAIN_PHONE_FULL } from '../../constants/phoneMockups';
 import { INSIGHT_LOGO } from '../../constants/appAssets';
@@ -126,10 +126,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
     },
     welcomeText: {
-        fontSize: sf(32),
-        fontWeight: '700',
-        textAlign: 'center',
-        letterSpacing: -1.28,
+        ...ONBOARDING_TYPE.title,
         color: ONBOARDING_TEXT.primary,
     },
     spacer: {
@@ -161,7 +158,7 @@ const styles = StyleSheet.create({
     },
     button: {
         width: '100%',
-        borderRadius: ONBOARDING_CTA.borderRadius,
+        borderRadius: 999,
         backgroundColor: ONBOARDING_CTA.background,
         marginTop: -4,
         shadowColor: ONBOARDING_CTA.shadow,
@@ -177,10 +174,10 @@ const styles = StyleSheet.create({
         borderRadius: ONBOARDING_CTA.borderRadius,
     },
     buttonText: {
-        fontSize: sf(17),
-        fontWeight: '600',
+        fontSize: sf(18),
+        fontWeight: '700',
         color: ONBOARDING_CTA.text,
-        letterSpacing: 0.2,
+        letterSpacing: -0.2,
     },
     signInLink: {
         marginTop: isTablet ? 20 : 14,

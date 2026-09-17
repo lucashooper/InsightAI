@@ -13,6 +13,7 @@ import Constants from 'expo-constants';
 import { analytics } from '../services/analytics';
 import { getCurrentLanguage } from '../i18n/languageRef';
 import { isRevenueCatEnabled } from '../utils/revenueCatConfig';
+import { safeInvalidateCustomerInfoCache, safePurchasesLogOut } from '../utils/revenueCatSafe';
 import { syncSubscriptionTierFromRevenueCat } from '../utils/subscriptionSync';
 
 // Conditionally import Google Sign-In to avoid Expo Go errors
@@ -558,8 +559,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (isRevenueCatEnabled()) {
       try {
         console.log('[Auth] Invalidating RevenueCat cache on sign out...');
-        await Purchases.invalidateCustomerInfoCache();
-        await Purchases.logOut();
+        await safeInvalidateCustomerInfoCache();
+        await safePurchasesLogOut();
         console.log('[Auth] RevenueCat cache cleared and logged out');
       } catch (error) {
         console.error('[Auth] Failed to clear RevenueCat cache:', error);
