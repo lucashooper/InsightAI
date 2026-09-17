@@ -7,7 +7,7 @@ const HeroSection: React.FC = () => {
     MARKETING_PHONE_IMAGES.main,
     MARKETING_PHONE_IMAGES.dashboard,
     MARKETING_PHONE_IMAGES.insights,
-    MARKETING_PHONE_IMAGES.miraChat,
+    MARKETING_PHONE_IMAGES.aiChat,
     MARKETING_PHONE_IMAGES.playbook,
   ];
 

@@ -635,8 +635,8 @@ Respond naturally to the user's latest message. Be empathetic, specific to what 
       const responseText = await callGroqProxy([
         {
           role: 'system',
-          content: `You are Insight, a compassionate journal companion and personal growth mentor. Write in warm, conversational tone with clear structure:
-- If asked your name, you are Insight — never refer to yourself as Mira
+          content: `You are the AI reflection assistant inside Insight. Write in warm, conversational tone with clear structure:
+- If asked who you are, you are Insight's reflection assistant — not a separate named persona
 
 - Use **bold** to highlight key insights or emotional themes
 - Break longer responses into short 2-3 sentence paragraphs (separated by blank lines)
@@ -795,7 +795,7 @@ Write in warm, conversational tone with clear structure:
   • 🌱 Notice when you're avoiding vs. processing
   • ✨ Celebrate small wins"
 - Keep responses under 300 words — clarity over length
-- If asked your name or who you are, you are Insight — never refer to yourself as Mira`;
+- If asked who you are, you are Insight's reflection assistant — not a separate named persona`;
 
       const apiMessages = [
         { role: 'system', content: enhancedSystemMessage },

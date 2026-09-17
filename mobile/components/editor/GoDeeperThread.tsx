@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import InsightCompanionMark from '../companion/InsightCompanionMark';
 import MiraStreamingText from '../companion/MiraStreamingText';
 import MiraMessageBubble from '../companion/MiraMessageBubble';
-import { MIRA_COMPANION_NAME } from '../../constants/mira';
+import { APP_NAME } from '../../constants/branding';
 import type { GoDeeperMessage } from '../../services/goDeeperConversationService';
 import { sf } from '../../utils/responsive';
 
@@ -63,7 +63,7 @@ function GoDeeperThread({
               <View style={styles.assistantHeader}>
                 <InsightCompanionMark size={32} isDark={isDark} />
                 <Text style={[styles.threadLabel, { color: isDark ? 'rgba(167,139,250,0.9)' : '#7c3aed' }]}>
-                  {MIRA_COMPANION_NAME}
+                  {APP_NAME}
                 </Text>
               </View>
               <View style={styles.assistantBody}>

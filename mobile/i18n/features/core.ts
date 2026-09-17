@@ -47,7 +47,7 @@ const en = {
     "writeAnother": "Write another",
     "gratitudePrompt": "What's one small thing that brought a smile to your face today?",
     "gratitudeCta": "Give thanks",
-    "chatPrompt": "Something on your mind? Talk it through with Mira.",
+    "chatPrompt": "Something on your mind? Reflect on this together.",
     "chatCta": "Discuss",
     "suggested": "Suggested for you",
     "journey": "Your Journey",

@@ -1,4 +1,3 @@
-import { MIRA_COMPANION_NAME } from '../constants/mira';
 import { APP_NAME } from '../constants/branding';
 
 export type AiPersonality =
@@ -69,7 +68,7 @@ const DEFAULT_RULES = `
 - Suggest actionable insights based on patterns you notice
 - Never be preachy or give unsolicited advice — ask before suggesting
 - If they seem distressed, be extra gentle and validating
-- If asked your name or who you are, you are Insight — never refer to yourself as Mira or any other name`;
+- You are the AI inside ${APP_NAME} — not a separate character or named persona. If asked who you are, say you are Insight's reflection assistant`;
 
 export function buildMiraChatSystemPrompt(
   personality: AiPersonality,
@@ -80,12 +79,12 @@ export function buildMiraChatSystemPrompt(
   const isRoast = personality === 'roast';
   const rules = isRoast ? ROAST_RULES : DEFAULT_RULES;
   const roleLine = isRoast
-    ? `You are ${MIRA_COMPANION_NAME}, the unfiltered AI inside ${APP_NAME}. The user opted into Roast Mode.`
-    : `You are ${MIRA_COMPANION_NAME}, an intuitive, empathetic personal growth mentor and intelligent journal assistant inside ${APP_NAME}. You have access to the user's journal entries and can reference them to provide personalized support.`;
+    ? `You are the AI reflection assistant inside ${APP_NAME}. The user opted into Roast Mode — unfiltered, receipt-driven honesty grounded in their journal.`
+    : `You are the AI reflection assistant inside ${APP_NAME} — an empathetic journal companion with access to the user's entries. You help them reflect, notice patterns, and grow through their own words.`;
 
   const disclaimer = isRoast
-    ? `\nYou are NOT a therapist. You're a roast comedian with a photographic memory of their journal.`
-    : `\nYou are NOT a therapist. You're a supportive companion who helps them reflect and discover patterns in their own words.`;
+    ? `\nYou are NOT a therapist. You're a sharp mirror with a photographic memory of their journal.`
+    : `\nYou are NOT a therapist. You help them reflect and discover patterns in their own words.`;
 
   return `${roleLine}
 
@@ -111,7 +110,7 @@ export function getChatMaxTokens(personality: AiPersonality): number {
 }
 
 /**
- * System prompt for Mira "gotcha" reveal cards.
+ * System prompt for self-discovery reveal cards.
  * Forces structured JSON grounded in journal evidence only.
  */
 export function buildMiraRevealSystemPrompt(
@@ -129,7 +128,7 @@ export function buildMiraRevealSystemPrompt(
     ? `\nPreferred reveal type for this question: "${preferredType}". Use it unless the journals clearly support a better type.`
     : '';
 
-  return `You are ${MIRA_COMPANION_NAME} inside ${APP_NAME}. Produce a single self-discovery REVEAL CARD as JSON.
+  return `You are the AI reflection engine inside ${APP_NAME}. Produce a single self-discovery REVEAL CARD as JSON.
 
 ${tone}
 

@@ -3,16 +3,20 @@ import React from 'react';
 const GallerySection: React.FC = () => {
   const galleryItems = [
     {
-      image: '/new-app-images/InsightAI-DashboardPage.png',
-      caption: 'Dashboard'
+      image: '/new-app-images/Insight-Main-1.jpeg',
+      caption: 'Home'
     },
     {
-      image: '/new-app-images/InsightAI-AnalysisPage.png',
+      image: '/new-app-images/Insight-Check-In-1.jpeg',
+      caption: 'Check-in'
+    },
+    {
+      image: '/new-app-images/Insight-Analytics-1.jpeg',
       caption: 'Insights'
     },
     {
-      image: '/new-app-images/InsightAI-StrategiesPage.png',
-      caption: 'Playbook'
+      image: '/new-app-images/Insight-Journey-1.jpeg',
+      caption: 'Journey'
     }
   ];
 

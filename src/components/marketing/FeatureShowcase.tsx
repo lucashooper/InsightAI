@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MARKETING_PHONE_IMAGES } from '../../constants/marketingPhoneImages';
+import PhoneFrame from './PhoneFrame';
 
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
@@ -13,29 +14,24 @@ const useIsMobile = () => {
 
 const showcaseFeatures = [
   {
-    title: 'AI-Powered Analysis',
-    description: 'Get deep insights into your emotional patterns. Our AI reads between the lines and surfaces what matters most to your wellbeing.',
+    title: 'Light, calm home',
+    description: 'Your day at a glance — check-in prompts, reflection cards, and quick actions to write, speak, or scan.',
     image: MARKETING_PHONE_IMAGES.main,
   },
   {
-    title: 'Beautiful Dashboard',
-    description: 'Track your emotional health over time with interactive charts, mood trends, and pattern recognition — all in one view.',
+    title: 'Mood check-in',
+    description: 'Slide to how you feel. A soft companion reacts as you move — then Insight remembers the pattern.',
     image: MARKETING_PHONE_IMAGES.dashboard,
   },
   {
-    title: 'Deep Insights',
-    description: 'Discover meaningful patterns in your thoughts and emotions with AI-powered analysis that helps you understand yourself better.',
+    title: 'Deep insights',
+    description: 'AI reads between the lines of your entries and surfaces themes, strengths, and growth areas.',
     image: MARKETING_PHONE_IMAGES.insights,
   },
   {
-    title: 'Personal Playbook',
-    description: 'Build a library of strategies and coping techniques suggested by AI based on your unique patterns and growth areas.',
+    title: 'Daily practice',
+    description: 'Build small habits with guided protocols — streaks, reminders, and progress you can actually see.',
     image: MARKETING_PHONE_IMAGES.playbook,
-  },
-  {
-    title: 'Meet Mira',
-    description: 'Your AI companion for reflection and growth. Chat with Mira anytime for thoughtful guidance, deeper insights, and support tailored to your journal.',
-    image: MARKETING_PHONE_IMAGES.miraChat,
   },
 ];
 
@@ -47,7 +43,7 @@ const FeatureShowcase: React.FC = () => {
   const handleFeatureChange = (index: number) => {
     if (index !== activeIndex) {
       setActiveIndex(index);
-      setFadeKey(prev => prev + 1);
+      setFadeKey((prev) => prev + 1);
     }
   };
 
@@ -79,15 +75,6 @@ const FeatureShowcase: React.FC = () => {
     order: -1,
   };
 
-  const mobilePhoneImg: React.CSSProperties = {
-    width: '260px',
-    maxWidth: '68%',
-    maxHeight: '580px',
-    height: 'auto',
-    objectFit: 'contain',
-    filter: 'drop-shadow(0 20px 40px rgba(0, 0, 0, 0.4))',
-  };
-
   const mobileFeatureItem: React.CSSProperties = {
     maxWidth: '100%',
     width: '100%',
@@ -98,24 +85,26 @@ const FeatureShowcase: React.FC = () => {
   };
 
   return (
-    <section className="showcase-section" style={isMobile ? mobileSection : undefined}>
-      <h2 className="showcase-title showcase-premium-title" style={isMobile ? { fontSize: '1.75rem', marginBottom: '1.5rem', textAlign: 'center' } : undefined}>What does Insight include?</h2>
-      
-      <div className={isMobile ? undefined : "showcase-layout"} style={isMobile ? mobileLayout : undefined}>
+    <section className="showcase-section showcase-light" style={isMobile ? mobileSection : undefined}>
+      <h2 className="showcase-title showcase-premium-title showcase-light-title" style={isMobile ? { fontSize: '1.75rem', marginBottom: '1.5rem', textAlign: 'center' } : undefined}>
+        What does Insight include?
+      </h2>
+
+      <div className={isMobile ? undefined : 'showcase-layout'} style={isMobile ? mobileLayout : undefined}>
         <div className="showcase-phone-container" style={isMobile ? mobilePhoneContainer : undefined}>
-          <div className="showcase-phone" style={isMobile ? { width: '100%', display: 'flex', justifyContent: 'center' } : undefined}>
-            <img 
-              src={showcaseFeatures[activeIndex].image} 
+          <div className="showcase-phone float-phone" style={isMobile ? { width: '100%', display: 'flex', justifyContent: 'center' } : undefined}>
+            <PhoneFrame
+              src={showcaseFeatures[activeIndex].image}
               alt={showcaseFeatures[activeIndex].title}
-              className={isMobile ? undefined : "showcase-phone-img"}
-              key={fadeKey}
-              style={isMobile ? mobilePhoneImg : undefined}
+              size="showcase"
+              imageKey={fadeKey}
             />
           </div>
-          <div className="showcase-dots">
+          <div className="showcase-dots showcase-dots--light">
             {showcaseFeatures.map((_, index) => (
               <button
                 key={index}
+                type="button"
                 className={`showcase-dot ${index === activeIndex ? 'active' : ''}`}
                 onClick={() => handleFeatureChange(index)}
                 aria-label={`View ${showcaseFeatures[index].title}`}
@@ -123,12 +112,13 @@ const FeatureShowcase: React.FC = () => {
             ))}
           </div>
         </div>
-        
+
         <div className="showcase-features-list" style={isMobile ? { padding: 0, width: '100%', maxWidth: '100%', boxSizing: 'border-box' as const } : undefined}>
           {showcaseFeatures.map((feature, index) => (
             <button
               key={index}
-              className={`showcase-feature-item depth-card ${index === activeIndex ? 'active' : ''}`}
+              type="button"
+              className={`showcase-feature-item depth-card depth-card--light ${index === activeIndex ? 'active' : ''}`}
               onClick={() => handleFeatureChange(index)}
               style={isMobile ? { ...mobileFeatureItem, transform: 'none' } : undefined}
             >

@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   heading: {
-    ...TYPO.h2,
+    ...TYPO.heading,
     color: INK.primary,
     textAlign: 'center',
     marginTop: 8,
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     minHeight: 180,
   },
   moodLabel: {
-    ...TYPO.h1,
+    ...TYPO.display,
     color: INK.primary,
     textAlign: 'center',
     marginBottom: 28,

@@ -170,15 +170,15 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   title: {
-    ...TYPO.h2,
+    ...TYPO.subheading,
     color: INK.primary,
   },
   titleDone: {
     color: INK.secondary,
   },
   subtitle: {
-    ...TYPO.bodySm,
-    color: INK.secondary,
+    ...TYPO.body,
+    color: INK.muted,
     marginTop: 10,
   },
   cardFooter: {

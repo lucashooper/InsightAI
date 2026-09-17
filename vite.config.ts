@@ -1,7 +1,30 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { copyFileSync, mkdirSync, readdirSync, statSync } from 'fs'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'fs'
 import { join } from 'path'
+
+/** Keep web marketing screenshots in sync with mobile/public/new-app-images */
+function syncMarketingScreenshots() {
+  const src = join(__dirname, 'mobile/public/new-app-images')
+  const dest = join(__dirname, 'public/new-app-images')
+
+  const copy = () => {
+    if (!existsSync(src)) return
+    mkdirSync(dest, { recursive: true })
+    for (const entry of readdirSync(src)) {
+      const srcPath = join(src, entry)
+      if (statSync(srcPath).isFile()) {
+        copyFileSync(srcPath, join(dest, entry))
+      }
+    }
+  }
+
+  return {
+    name: 'sync-marketing-screenshots',
+    buildStart: copy,
+    configureServer: copy,
+  }
+}
 
 // Plugin to copy marketing dist to main dist
 function copyMarketingDist() {
@@ -49,5 +72,5 @@ function copyMarketingDist() {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), copyMarketingDist()],
+  plugins: [react(), syncMarketingScreenshots(), copyMarketingDist()],
 })

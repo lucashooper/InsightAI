@@ -1162,7 +1162,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   journeyTitle: {
-    ...TYPO.h1,
+    ...TYPO.heading,
   },
   journeySubtitle: {
     ...TYPO.body,

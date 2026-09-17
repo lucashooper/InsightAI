@@ -17,7 +17,7 @@ type Props = {
   animated?: boolean;
 };
 
-/** Mira's avatar — the cloud mascot, rendered inline everywhere. */
+/** Insight's cloud mascot — rendered inline everywhere. */
 export default function InsightCompanionMark({
   size = 64,
   roast = false,

@@ -41,7 +41,7 @@ export const ONBOARDING_BRAND = {
 /** Shared onboarding typography — use on every onboarding screen. */
 export const ONBOARDING_TYPE = {
   title: {
-    ...TYPO.h1,
+    ...TYPO.heading,
     textAlign: 'center' as const,
   },
   subtitle: {

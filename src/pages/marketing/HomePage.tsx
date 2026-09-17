@@ -1,41 +1,38 @@
 import React from 'react';
-import Starfield from '../../components/marketing/Starfield';
 import MarketingNav from '../../components/marketing/MarketingNav';
-import TypewriterText from '../../components/marketing/TypewriterText';
+import CloudMascotMark from '../../components/marketing/CloudMascotMark';
 import FeaturesSection from '../../components/marketing/FeaturesSection';
 import FeatureShowcase from '../../components/marketing/FeatureShowcase';
 import FAQSection from '../../components/marketing/FAQSection';
 import Footer from '../../components/marketing/Footer';
 import { useScrollReveal } from '../../hooks/marketing/useScrollReveal';
 import { MARKETING_PHONE_IMAGES } from '../../constants/marketingPhoneImages';
+import PhoneFrame from '../../components/marketing/PhoneFrame';
 import '../../styles/marketing.css';
-
-const typewriterPhrases = [
-  'discover patterns in your thoughts.',
-  'track your emotional wellbeing.',
-  'build better habits.',
-  'understand yourself.',
-];
 
 const HomePage: React.FC = () => {
   useScrollReveal();
 
   return (
-    <div className="App marketing-page">
-      <div className="ambient-gradient" aria-hidden="true" />
-      <Starfield />
+    <div className="App marketing-page marketing-page--light">
+      <div className="ambient-gradient ambient-gradient--light" aria-hidden="true" />
+      <div className="mesh-blob mesh-blob--a" aria-hidden="true" />
+      <div className="mesh-blob mesh-blob--b" aria-hidden="true" />
+      <div className="mesh-blob mesh-blob--c" aria-hidden="true" />
+
       <MarketingNav />
 
-      <section className="hero-section-v2 hero-premium">
+      <section className="hero-section-v2 hero-premium hero-light">
         <div className="hero-v2-content">
           <div className="hero-v2-text hero-premium-text">
-            <h1 className="hero-v2-title hero-premium-title">
-              Understand yourself
+            <CloudMascotMark size={96} className="hero-mascot float-slow" tint="#B8D4FF" />
+            <h1 className="hero-v2-title hero-premium-title hero-light-title">
+              The AI reflection journal
               <br />
-              <span className="hero-premium-accent">with Insight.</span>
+              <span className="hero-premium-accent">that helps you grow.</span>
             </h1>
-            <p className="hero-v2-subtitle hero-premium-subtitle">
-              <TypewriterText phrases={typewriterPhrases} />
+            <p className="hero-v2-subtitle hero-premium-subtitle hero-light-subtitle">
+              Reflect in voice or text, track your mood, and get personalized insights — just five minutes a day.
             </p>
             <div className="hero-v2-buttons">
               <a href="https://apps.apple.com/us/app/insight-understand-yourself/id6755717396" target="_blank" rel="noopener noreferrer">
@@ -47,15 +44,17 @@ const HomePage: React.FC = () => {
             </div>
           </div>
           <div className="hero-v2-phones hero-premium-phones">
-            <img
+            <PhoneFrame
               src={MARKETING_PHONE_IMAGES.main}
-              alt="Zeno app home screen"
-              className="hero-phone-main"
+              alt="Insight app home screen"
+              size="hero-main"
+              className="float-phone"
             />
-            <img
+            <PhoneFrame
               src={MARKETING_PHONE_IMAGES.dashboard}
-              alt="Zeno dashboard"
-              className="hero-phone-secondary"
+              alt="Insight daily check-in"
+              size="hero-secondary"
+              className="float-phone-delayed"
             />
           </div>
         </div>

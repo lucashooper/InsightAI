@@ -887,7 +887,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   greetingText: {
-    ...TYPO.h1,
+    ...TYPO.display,
     textAlign: 'left',
     maxWidth: isTablet ? 520 : width * 0.88,
   },
@@ -1023,7 +1023,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: isTablet ? 40 : PREMIUM.layout.screenPadH,
   },
   sectionTitle: {
-    ...TYPO.h3,
+    ...TYPO.heading,
     marginBottom: 14,
   },
   journeyEmojiWrap: {
@@ -1156,10 +1156,11 @@ const styles = StyleSheet.create({
     paddingRight: isTablet ? 120 : 96,
   },
   checkInTitle: {
-    ...TYPO.h3,
+    ...TYPO.subheading,
   },
   checkInSubtitle: {
-    ...TYPO.bodySm,
+    ...TYPO.body,
+    color: INK.muted,
     marginTop: 6,
   },
   checkInCta: {

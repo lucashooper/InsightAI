@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     paddingTop: '10%',
   },
   headline: {
-    ...TYPO.display,
+    ...TYPO.displayLg,
     fontSize: sf(isTablet ? 84 : 68),
     lineHeight: sf(isTablet ? 86 : 70),
     letterSpacing: -3,

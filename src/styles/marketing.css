@@ -4216,3 +4216,415 @@ body:has(.marketing-page) {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
+
+/* =====================================================
+   LIGHT THEME — vibrant pastel mesh (matches app UI)
+   ===================================================== */
+
+.marketing-page--light {
+  --surface-0: #f4f7fc;
+  --surface-1: #ffffff;
+  --surface-2: #eef3fa;
+  --surface-3: #e8eef8;
+  --ink-primary: #1c1a22;
+  --ink-secondary: rgba(28, 26, 34, 0.65);
+  --ink-muted: rgba(28, 26, 34, 0.45);
+  --border-subtle: rgba(28, 26, 34, 0.06);
+  --border-highlight: rgba(28, 26, 34, 0.1);
+  --accent: #1c1a22;
+  --accent-soft: rgba(28, 26, 34, 0.08);
+  color: var(--ink-primary);
+}
+
+body:has(.marketing-page--light),
+.marketing-page--light {
+  background: #eef4ff;
+}
+
+.marketing-page--light .ambient-gradient--light {
+  background:
+    radial-gradient(ellipse 90% 60% at 15% 0%, rgba(143, 211, 255, 0.55) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 85% 10%, rgba(255, 200, 220, 0.35) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 55% at 50% 100%, rgba(169, 234, 209, 0.4) 0%, transparent 55%),
+    linear-gradient(180deg, #e8f2ff 0%, #f5f8fc 45%, #faf6f0 100%);
+}
+
+.mesh-blob {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(60px);
+}
+
+.mesh-blob--a {
+  width: 420px;
+  height: 420px;
+  top: -80px;
+  left: -100px;
+  background: rgba(143, 211, 255, 0.45);
+  animation: meshDriftA 14s ease-in-out infinite;
+}
+
+.mesh-blob--b {
+  width: 360px;
+  height: 360px;
+  top: 20%;
+  right: -80px;
+  background: rgba(255, 183, 211, 0.35);
+  animation: meshDriftB 16s ease-in-out infinite;
+}
+
+.mesh-blob--c {
+  width: 480px;
+  height: 480px;
+  bottom: -120px;
+  left: 30%;
+  background: rgba(169, 234, 209, 0.4);
+  animation: meshDriftC 18s ease-in-out infinite;
+}
+
+@keyframes meshDriftA {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(30px, 20px) scale(1.06); }
+}
+
+@keyframes meshDriftB {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-24px, 28px) scale(1.04); }
+}
+
+@keyframes meshDriftC {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20px, -16px) scale(1.05); }
+}
+
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes floatPhone {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-14px) rotate(0deg); }
+}
+
+@keyframes floatPhoneDelayed {
+  0%, 100% { transform: translateY(0) rotate(1deg); }
+  50% { transform: translateY(-10px) rotate(0deg); }
+}
+
+.float-slow {
+  animation: floatSlow 5s ease-in-out infinite;
+}
+
+.float-phone {
+  animation: floatPhone 6s ease-in-out infinite;
+}
+
+.float-phone-delayed {
+  animation: floatPhoneDelayed 6.5s ease-in-out 0.4s infinite;
+}
+
+.marketing-page--light .hero-mascot {
+  margin-bottom: 1.25rem;
+}
+
+.marketing-page--light .hero-light-title,
+.marketing-page--light .hero-premium-title {
+  font-family: 'DM Sans', system-ui, sans-serif !important;
+  font-weight: 700 !important;
+  font-size: clamp(2.25rem, 5vw, 3.5rem) !important;
+  line-height: 1.08 !important;
+  letter-spacing: -0.03em !important;
+  color: #1c1a22 !important;
+}
+
+.marketing-page--light .hero-premium-accent {
+  font-style: normal;
+  color: #1c1a22;
+}
+
+.marketing-page--light .hero-light-subtitle,
+.marketing-page--light .hero-premium-subtitle {
+  color: rgba(28, 26, 34, 0.65) !important;
+  font-size: 1.125rem !important;
+  line-height: 1.65 !important;
+  max-width: 460px;
+}
+
+.marketing-page--light .premium-nav--scrolled {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(28, 26, 34, 0.06);
+}
+
+.marketing-page--light .premium-nav-logo,
+.marketing-page--light .premium-nav-logo span {
+  color: #1c1a22 !important;
+}
+
+.marketing-page--light .premium-nav-link {
+  color: rgba(28, 26, 34, 0.55);
+}
+
+.marketing-page--light .premium-nav-link:hover {
+  color: #1c1a22;
+  background: rgba(28, 26, 34, 0.04);
+}
+
+.marketing-page--light .premium-nav-cta {
+  background: #1c1a22;
+  color: #fff !important;
+  border-color: #1c1a22;
+}
+
+.marketing-page--light .premium-nav-cta:hover {
+  background: #2a2733;
+}
+
+.marketing-page--light .depth-card--light {
+  background: rgba(255, 255, 255, 0.88) !important;
+  border: 1px solid rgba(28, 26, 34, 0.06) !important;
+  border-radius: 24px !important;
+  box-shadow:
+    0 1px 2px rgba(28, 26, 34, 0.04),
+    0 12px 40px rgba(143, 180, 220, 0.12) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+.marketing-page--light .depth-card--light::after {
+  background: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(255, 255, 255, 0.9) 0%, transparent 55%);
+}
+
+.marketing-page--light .depth-card--light:hover {
+  background: #ffffff !important;
+  border-color: rgba(28, 26, 34, 0.1) !important;
+  transform: translateY(-2px);
+  box-shadow:
+    0 2px 4px rgba(28, 26, 34, 0.06),
+    0 20px 48px rgba(143, 180, 220, 0.16) !important;
+}
+
+.marketing-page--light .features-light-title,
+.marketing-page--light .showcase-light-title,
+.marketing-page--light .features-premium-title,
+.marketing-page--light .showcase-premium-title {
+  font-family: 'DM Sans', system-ui, sans-serif !important;
+  font-weight: 700 !important;
+  color: #1c1a22 !important;
+  letter-spacing: -0.025em !important;
+}
+
+.marketing-page--light .feature-v2-name,
+.marketing-page--light .showcase-feature-title {
+  color: #1c1a22 !important;
+  font-weight: 600 !important;
+}
+
+.marketing-page--light .feature-v2-desc,
+.marketing-page--light .showcase-feature-desc {
+  color: rgba(28, 26, 34, 0.65) !important;
+}
+
+.marketing-page--light .showcase-feature-item.depth-card.active,
+.marketing-page--light .showcase-feature-item.depth-card--light.active,
+.marketing-page--light .showcase-feature-item.active {
+  background: #ffffff !important;
+  border-color: rgba(184, 212, 255, 0.55) !important;
+  color: #1c1a22 !important;
+  transform: none !important;
+  box-shadow:
+    0 4px 8px rgba(28, 26, 34, 0.06),
+    0 20px 48px rgba(143, 180, 220, 0.18) !important;
+}
+
+.marketing-page--light .showcase-feature-item.active .showcase-feature-title,
+.marketing-page--light .showcase-feature-item.depth-card.active .showcase-feature-title {
+  color: #1c1a22 !important;
+}
+
+.marketing-page--light .showcase-feature-item.active .showcase-feature-desc,
+.marketing-page--light .showcase-feature-item.depth-card.active .showcase-feature-desc {
+  color: rgba(28, 26, 34, 0.65) !important;
+}
+
+.marketing-page--light .showcase-dot {
+  background: rgba(28, 26, 34, 0.15);
+}
+
+.marketing-page--light .showcase-dot.active {
+  background: #1c1a22;
+}
+
+/* ---- Minimalist phone frames (Lightly-style) ---- */
+.phone-frame {
+  background: #ffffff;
+  border-radius: 36px;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.phone-frame__screen {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  border-radius: 32px;
+}
+
+.phone-frame--hero-main {
+  width: 360px;
+  max-width: min(360px, 38vw);
+  max-height: min(680px, 72vh);
+  aspect-ratio: 9 / 19.5;
+  position: relative;
+  z-index: 2;
+  padding: 10px;
+}
+
+.phone-frame--hero-secondary {
+  width: 290px;
+  max-width: min(290px, 32vw);
+  max-height: min(580px, 62vh);
+  aspect-ratio: 9 / 19.5;
+  position: absolute;
+  left: 42%;
+  top: 18%;
+  z-index: 1;
+  opacity: 0.92;
+  padding: 8px;
+}
+
+.phone-frame--showcase {
+  width: 360px;
+  max-width: min(360px, 44vw);
+  max-height: min(700px, 85vh);
+  aspect-ratio: 9 / 19.5;
+  padding: 10px;
+  animation: showcaseFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (min-width: 1025px) {
+  .phone-frame--showcase {
+    width: 400px;
+    max-width: 400px;
+    max-height: min(760px, 85vh);
+  }
+}
+
+.marketing-page--light .phone-frame {
+  box-shadow:
+    0 20px 40px -15px rgba(28, 26, 34, 0.08),
+    0 8px 24px rgba(143, 180, 220, 0.12);
+}
+
+@media (max-width: 1024px) {
+  .phone-frame--hero-main {
+    width: 260px;
+    max-width: 260px;
+    max-height: 540px;
+  }
+
+  .phone-frame--hero-secondary {
+    width: 210px;
+    max-width: 210px;
+    max-height: 460px;
+    top: 22%;
+    left: 42%;
+  }
+
+  .phone-frame--showcase {
+    width: 300px;
+    max-width: 300px;
+    max-height: 600px;
+  }
+}
+
+@media (max-width: 768px) {
+  .phone-frame--showcase {
+    width: 240px;
+    max-width: 68vw;
+    max-height: 520px;
+  }
+}
+
+@media (max-width: 640px) {
+  .phone-frame--hero-main {
+    width: 210px;
+    max-width: 58vw;
+    max-height: 480px;
+  }
+
+  .phone-frame--hero-secondary {
+    width: 175px;
+    max-width: 48vw;
+    max-height: 400px;
+  }
+}
+
+.marketing-page--light .download-badge,
+.marketing-page--light .footer-download-badge {
+  filter: drop-shadow(0 4px 12px rgba(28, 26, 34, 0.08));
+}
+
+.marketing-page--light .faq-title {
+  color: #1c1a22 !important;
+}
+
+.marketing-page--light .faq-item {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(28, 26, 34, 0.06);
+  border-radius: 20px;
+}
+
+.marketing-page--light .faq-question {
+  color: #1c1a22;
+}
+
+.marketing-page--light .faq-answer {
+  color: rgba(28, 26, 34, 0.65);
+}
+
+.marketing-page--light .footer-arise {
+  background: linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.6) 20%, #f0f4fa 100%);
+}
+
+.marketing-page--light .footer-cta-title,
+.marketing-page--light .footer-brand-name {
+  color: #1c1a22 !important;
+}
+
+.marketing-page--light .footer-link-title {
+  color: rgba(28, 26, 34, 0.75) !important;
+}
+
+.marketing-page--light a.footer-link {
+  color: rgba(28, 26, 34, 0.55) !important;
+}
+
+.marketing-page--light a.footer-link:hover {
+  color: #1c1a22 !important;
+}
+
+.marketing-page--light .footer-bottom-bar,
+.marketing-page--light .footer-bottom-bar p {
+  color: rgba(28, 26, 34, 0.45) !important;
+}
+
+.marketing-page--light .features-premium .feature-v2-card.depth-card {
+  background: rgba(255, 255, 255, 0.88) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .float-slow,
+  .float-phone,
+  .float-phone-delayed,
+  .mesh-blob {
+    animation: none !important;
+  }
+}

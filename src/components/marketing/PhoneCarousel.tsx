@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import PhoneFrame from './PhoneFrame';
 
 interface PhoneCarouselProps {
   images: string[];
@@ -37,11 +38,11 @@ const PhoneCarousel: React.FC<PhoneCarouselProps> = ({ images }) => {
           <ChevronLeft size={24} />
         </button>
 
-        {/* Phone Image (already has frame) */}
-        <img 
-          src={images[currentIndex]} 
+        <PhoneFrame
+          src={images[currentIndex]}
           alt={`Phone screenshot ${currentIndex + 1}`}
-          className="phone-screenshot-direct"
+          size="showcase"
+          imageKey={currentIndex}
         />
 
         <button 

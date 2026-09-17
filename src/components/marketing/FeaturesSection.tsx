@@ -2,36 +2,36 @@ import React from 'react';
 
 const features = [
   {
-    title: 'AI-Powered Insights',
-    description: 'Understand your emotional journey and identify trends in your daily life.',
+    title: 'Voice, text & scan',
+    description: 'Journal the way you want — speak, write, or capture handwritten notes.',
   },
   {
-    title: 'Beautiful Dashboards',
-    description: 'Visualize your progress with interactive charts and sentiment flow graphs.',
+    title: 'AI-powered insights',
+    description: 'Understand your emotional patterns and what triggers them over time.',
   },
   {
-    title: 'Pattern Recognition',
-    description: 'Automatically detect recurring themes and opportunities for personal growth.',
+    title: 'Daily check-ins',
+    description: 'A gentle mood snapshot that builds a picture of how you really feel.',
   },
   {
-    title: 'Privacy First',
-    description: 'Your data stays on your device. End-to-end encryption ensures complete privacy.',
+    title: 'Guided Journey',
+    description: 'Short lessons on thoughts, emotions, and habits — at your own pace.',
   },
   {
-    title: 'Smart Editor',
-    description: 'Distraction-free writing with quick inputs and intelligent keyword highlighting.',
+    title: 'Reflection chat',
+    description: 'Talk through what\'s on your mind with Insight\'s AI — grounded in your entries.',
   },
   {
-    title: 'Beautiful Themes',
-    description: 'Carefully crafted themes designed for comfortable journaling.',
+    title: 'Privacy first',
+    description: 'Your journal stays yours. Encrypted entries and no third-party data sales.',
   },
 ];
 
 const FeaturesSection: React.FC = () => {
   return (
-    <section className="features-section-v2 features-premium">
+    <section className="features-section-v2 features-premium features-light">
       <div className="container">
-        <h2 className="features-v2-title features-premium-title">
+        <h2 className="features-v2-title features-premium-title features-light-title">
           Everything you need to
           <br />
           understand yourself.
@@ -39,7 +39,7 @@ const FeaturesSection: React.FC = () => {
 
         <div className="features-v2-grid reveal-stagger">
           {features.map((feature, index) => (
-            <div key={index} className="feature-v2-card depth-card" style={{ '--reveal-index': index } as React.CSSProperties}>
+            <div key={index} className="feature-v2-card depth-card depth-card--light" style={{ '--reveal-index': index } as React.CSSProperties}>
               <h3 className="feature-v2-name">{feature.title}</h3>
               <p className="feature-v2-desc">{feature.description}</p>
             </div>
