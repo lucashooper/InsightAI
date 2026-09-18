@@ -1,6 +1,12 @@
 {
   "expo": {
-    "name": "Insight",
-    "slug": "insight-app"
+    "name": "Insight-App",
+    "owner": "crupid",
+    "slug": "insight-app",
+    "extra": {
+      "eas": {
+        "projectId": "19faa7e4-fc94-4539-a3c3-673c45d7353d"
+      }
+    }
   }
 }

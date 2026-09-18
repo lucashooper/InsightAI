@@ -83,7 +83,7 @@ index 434c379..a1b3628 100644
      // The promise and its two settle functions come from a JavaScript closure that returns all three
      // at once, rather than from `new Promise(executor)` with a host function as the executor. The
 diff --git a/node_modules/expo-modules-jsi/apple/scripts/build-xcframework.sh b/node_modules/expo-modules-jsi/apple/scripts/build-xcframework.sh
-index 4c50653..abf4711 100755
+index 4c50653..abf4711 100644
 --- a/node_modules/expo-modules-jsi/apple/scripts/build-xcframework.sh
 +++ b/node_modules/expo-modules-jsi/apple/scripts/build-xcframework.sh
 @@ -237,6 +237,7 @@ build_slice() {

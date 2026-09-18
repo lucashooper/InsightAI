@@ -30,7 +30,7 @@ function withDisableExplicitSwiftModules(config) {
           first.uuid,
           {
             shellPath: '/bin/sh',
-            shellScript: '"${SRCROOT}/../scripts/stage-pod-modulemaps.sh"\n',
+            shellScript: 'bash "${SRCROOT}/../scripts/stage-pod-modulemaps.sh"\n',
           }
         );
       }

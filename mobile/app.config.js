@@ -22,14 +22,18 @@ function readEnvValue(key) {
 const elevenLabsKey = readEnvValue('EXPO_PUBLIC_ELEVENLABS_API_KEY');
 const revenueCatAndroidKey = readEnvValue('EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY');
 
+const productionProfiles = new Set(['production', 'preview', 'investor-apk']);
+const includeDevClient = !productionProfiles.has(process.env.EAS_BUILD_PROFILE ?? '');
+
 module.exports = ({ config }) => ({
   ...config,
-  name: "Insight",
+  name: "Insight-App",
+  owner: "crupid",
   slug: "insight-app",
   scheme: "insight",
   version: "1.15",
   orientation: "portrait",
-  icon: "./assets/InsightAI-New-Logo.png",
+  icon: "./assets/icon.png",
   // Light-mode-first: the app ignores the OS dark setting on every screen.
   userInterfaceStyle: "light",
   ios: {
@@ -53,7 +57,7 @@ module.exports = ({ config }) => ({
   },
   android: {
     adaptiveIcon: {
-      foregroundImage: "./assets/InsightAI-New-Logo.png",
+      foregroundImage: "./assets/icon.png",
       backgroundColor: "#0D0B18"
     },
     versionCode: 118,
@@ -75,7 +79,7 @@ module.exports = ({ config }) => ({
   },
   extra: {
     eas: {
-      projectId: "3fd09543-17dc-4535-a2b0-0d53868391b5"
+      projectId: "19faa7e4-fc94-4539-a3c3-673c45d7353d",
     },
     EXPO_PUBLIC_SUPABASE_URL: "https://ptpqvghlaesyrzlljzkk.supabase.co",
     EXPO_PUBLIC_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0cHF2Z2hsYWVzeXJ6bGxqemtrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxMDc4MzEsImV4cCI6MjA2ODY4MzgzMX0.dmkb2_Hdf0vQwirOwJKX4ssfr0ltA1eIZ5_v1s5p6DE",
@@ -85,19 +89,16 @@ module.exports = ({ config }) => ({
     EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY: revenueCatAndroidKey,
   },
   updates: {
-    url: "https://u.expo.dev/3fd09543-17dc-4535-a2b0-0d53868391b5",
+    url: "https://u.expo.dev/19faa7e4-fc94-4539-a3c3-673c45d7353d",
   },
   runtimeVersion: {
     policy: "appVersion",
   },
   plugins: [
     "./plugins/withDisableExplicitSwiftModules.js",
-    [
-      "expo-dev-client",
-      {
-        addGeneratedScheme: true
-      }
-    ],
+    ...(includeDevClient
+      ? [["expo-dev-client", { addGeneratedScheme: true }]]
+      : []),
     [
       "expo-splash-screen",
       {
