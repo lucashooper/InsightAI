@@ -68,7 +68,7 @@ export const MOOD_TINT_COLORS: Record<MoodTier, string> = {
 export const MOOD_VALENCE: Record<MoodTier, number> = {
   terrible: 0,
   struggling: 0.25,
-  neutral: 0.55,
+  neutral: 0.5,
   good: 0.8,
   amazing: 1,
 };
@@ -118,6 +118,8 @@ type Props = {
   animated?: boolean;
   /** Soft ground shadow beneath the cloud. */
   shadow?: boolean;
+  /** `orb` is a full sphere for mood check-in (no flattened belly). */
+  variant?: 'cloud' | 'orb';
   style?: StyleProp<ViewStyle>;
 };
 
@@ -191,6 +193,7 @@ function splinePath(pts: Array<[number, number]>): string {
 }
 
 export const CLOUD_BODY_PATH = splinePath(outlinePoints());
+export const ORB_BODY_PATH = `M 100 36 A 64 64 0 1 1 99.99 36 Z`;
 
 const INK = '#2A2438';
 
@@ -211,6 +214,7 @@ export default function CloudMascot({
   isRoast = false,
   animated = true,
   shadow = true,
+  variant = 'cloud',
   style,
 }: Props) {
   const reduceMotion = useReducedMotion();
@@ -287,9 +291,9 @@ export default function CloudMascot({
 
   // Mouth: frown → wide smile.
   const mouthProps = useAnimatedProps(() => {
-    const endY = interpolate(v.value, [0, 0.5, 1], [121, 115, 112]);
-    const ctrlY = interpolate(v.value, [0, 0.5, 1], [111, 123, 131]);
-    const halfW = interpolate(v.value, [0, 1], [11, 16]);
+    const endY = interpolate(v.value, [0, 0.5, 1], [122, 118, 112]);
+    const ctrlY = interpolate(v.value, [0, 0.5, 1], [110, 118, 132]);
+    const halfW = interpolate(v.value, [0, 0.5, 1], [11, 12, 16]);
     return { d: `M ${100 - halfW} ${endY} Q 100 ${ctrlY} ${100 + halfW} ${endY}` };
   });
 
@@ -309,6 +313,9 @@ export default function CloudMascot({
     opacity: interpolate(v.value, [0.4, 1], [0, 0.4], 'clamp'),
   }));
 
+  const bodyPath = variant === 'orb' ? ORB_BODY_PATH : CLOUD_BODY_PATH;
+  const shadowCy = variant === 'orb' ? 176 : 170;
+  const shadowRx = variant === 'orb' ? 48 : 56;
   const uid = useMemo(() => Math.random().toString(36).slice(2, 8), []);
   const id = (name: string) => `${name}-${uid}`;
 
@@ -318,7 +325,7 @@ export default function CloudMascot({
         <Svg width={size} height={size} viewBox="0 0 200 200">
           <Defs>
             <ClipPath id={id('clip')}>
-              <Path d={CLOUD_BODY_PATH} />
+              <Path d={bodyPath} />
             </ClipPath>
             <Filter id={id('blur')} x="-30%" y="-30%" width="160%" height="160%">
               <FeGaussianBlur stdDeviation={9} />
@@ -338,15 +345,15 @@ export default function CloudMascot({
             </RadialGradient>
           </Defs>
 
-          {shadow ? <Ellipse cx={100} cy={170} rx={56} ry={9} fill={INK} opacity={0.1} /> : null}
+          {shadow ? <Ellipse cx={100} cy={shadowCy} rx={shadowRx} ry={9} fill={INK} opacity={0.12} /> : null}
 
           {/* Soft glow — the same body, blurred and slightly enlarged */}
           <G transform="translate(100 106) scale(1.06) translate(-100 -106)" opacity={0.6}>
-            <AnimatedPath animatedProps={glowProps} d={CLOUD_BODY_PATH} filter={`url(#${id('blur')})`} />
+            <AnimatedPath animatedProps={glowProps} d={bodyPath} filter={`url(#${id('blur')})`} />
           </G>
 
           {/* Body */}
-          <AnimatedPath animatedProps={bodyProps} d={CLOUD_BODY_PATH} />
+          <AnimatedPath animatedProps={bodyProps} d={bodyPath} />
           <G clipPath={`url(#${id('clip')})`}>
             <Rect x={0} y={0} width={200} height={200} fill={`url(#${id('shade')})`} />
             <Rect x={0} y={0} width={200} height={200} fill={`url(#${id('hi')})`} />

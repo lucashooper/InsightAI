@@ -9,6 +9,7 @@ import HomePage from './pages/marketing/HomePage';
 import TermsPage from './pages/marketing/TermsPage';
 import PrivacyPage from './pages/marketing/PrivacyPage';
 import SupportPage from './pages/marketing/SupportPage';
+import QuizPage from './pages/marketing/QuizPage';
 
 // Auth pages
 import LoginPage from './pages/auth/LoginPage';
@@ -35,6 +36,10 @@ export const router = createBrowserRouter([
   {
     path: '/support',
     element: <SupportPage />,
+  },
+  {
+    path: '/quiz',
+    element: <QuizPage />,
   },
 
   // Auth routes (public, but redirect if already authenticated)

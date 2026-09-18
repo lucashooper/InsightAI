@@ -1,12 +1,15 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, StatusBar, Animated, ScrollView } from 'react-native';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import OnboardingButton from '../../components/onboarding/OnboardingButton';
 import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
 import OnboardingSkipLink from '../../components/onboarding/OnboardingSkipLink';
-import { OrbSlot } from '../../components/companion/OrbOverlayProvider';
+import CloudMascot from '../../components/companion/CloudMascot';
+import { JOURNEY_UNITS } from '../../data/journeyUnits';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { isTablet, sf, iPadWideContentStyle } from '../../utils/responsive';
 import { analytics } from '../../services/analytics';
@@ -15,6 +18,12 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { safeGoBack } from '../../utils/navigationSafety';
 
 const ORB_SIZE = 110;
+const FEATURE_CARDS = [
+  { unitId: 'thoughts', title: 'Know Your Worth', meta: '3 Min · Easy', copy: 'Feeling worthy from within' },
+  { unitId: 'emotions', title: 'Find Your Focus', meta: '5 Min · Medium', copy: 'Where your energy goes' },
+  { unitId: 'habits', title: 'Find Your Rhythm', meta: '5 Min · Medium', copy: 'A steadier everyday pace' },
+  { unitId: 'self-compassion', title: 'Turn Entries into Insights', meta: '7 Min · Easy', copy: 'Patterns you can actually use' },
+];
 
 export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
   const { theme } = useTheme();
@@ -22,13 +31,20 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
   const { t } = useLanguage();
   const dark = isDarkTheme(theme.name);
   const neutralAccent = dark ? 'rgba(255,255,255,0.94)' : '#1a1a2e';
-  const neutralSubtle = dark ? 'rgba(255,255,255,0.72)' : 'rgba(0,0,0,0.6)';
   const answers = route?.params?.answers || {};
   const returnIndex = route?.params?.returnIndex || 0;
+  const mascotScale = useRef(new Animated.Value(0.42)).current;
 
   useEffect(() => {
     analytics.trackOnboardingScreen('personality_quiz_intro', 'viewed', userName || undefined);
-  }, []);
+    Animated.spring(mascotScale, {
+      toValue: 1,
+      damping: 15,
+      stiffness: 180,
+      mass: 0.9,
+      useNativeDriver: true,
+    }).start();
+  }, [mascotScale, userName]);
 
   const handleContinue = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -55,10 +71,14 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
         }}
       />
 
-      <View style={styles.content}>
-        <View style={styles.heroWrap}>
-          <OrbSlot size={ORB_SIZE} personality="default" />
-        </View>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <Animated.View style={[styles.heroWrap, { transform: [{ scale: mascotScale }] }]}>
+          <CloudMascot size={ORB_SIZE} personality="default" valence={0.78} shadow />
+        </Animated.View>
 
         <Text style={[styles.title, { color: dark ? '#fff' : '#1a1a2e' }]}>
           {t('onboarding.quizIntro.title')}
@@ -68,27 +88,26 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
           {t('onboarding.quizIntro.description')}
         </Text>
 
-        <View style={styles.cardsContainer}>
-          <View style={[styles.card, { backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)', borderColor: dark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.4)' }]}>
-            <View style={styles.cardContent}>
-              <Text style={[styles.cardNumber, { color: neutralAccent }]}>10</Text>
-              <Text style={[styles.cardLabel, { color: neutralSubtle }]}>{t('onboarding.quizIntro.questions')}</Text>
-            </View>
-          </View>
-
-          <View style={[styles.card, { backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)', borderColor: dark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.4)' }]}>
-            <View style={styles.cardContent}>
-              <Text style={[styles.cardNumber, { color: neutralAccent }]}>2</Text>
-              <Text style={[styles.cardLabel, { color: neutralSubtle }]}>{t('onboarding.quizIntro.minutes')}</Text>
-            </View>
-          </View>
-
-          <View style={[styles.card, { backgroundColor: dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)', borderColor: dark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.4)' }]}>
-            <View style={styles.cardContent}>
-              <Ionicons name="lock-closed" size={28} color={neutralAccent} />
-              <Text style={[styles.cardLabel, { color: neutralSubtle }]}>{t('onboarding.quizIntro.private')}</Text>
-            </View>
-          </View>
+        <View style={styles.featureGrid}>
+          {FEATURE_CARDS.map((card) => {
+            const unit = JOURNEY_UNITS.find((item) => item.id === card.unitId);
+            return (
+              <LinearGradient
+                key={card.unitId}
+                colors={unit?.colors ?? ['#E8F0FF', '#FCE8F0']}
+                start={{ x: 0.05, y: 0 }}
+                end={{ x: 0.95, y: 1 }}
+                style={styles.featureCard}
+              >
+                {unit?.art ? (
+                  <Image source={unit.art} style={styles.featureArt} contentFit="contain" />
+                ) : null}
+                <Text style={styles.featureMeta}>{card.meta}</Text>
+                <Text style={styles.featureTitle}>{card.title}</Text>
+                <Text style={styles.featureCopy}>{card.copy}</Text>
+              </LinearGradient>
+            );
+          })}
         </View>
 
         <View style={styles.benefitsContainer}>
@@ -104,14 +123,8 @@ export default function PersonalityQuizIntroScreen({ navigation, route }: any) {
               {t('onboarding.quizIntro.recommendations')}
             </Text>
           </View>
-          <View style={styles.benefitRow}>
-            <Ionicons name="checkmark-circle" size={20} color={neutralAccent} />
-            <Text style={[styles.benefitText, { color: dark ? 'rgba(255,255,255,0.82)' : 'rgba(0,0,0,0.72)' }]}>
-              {t('onboarding.quizIntro.patternTracking')}
-            </Text>
-          </View>
         </View>
-      </View>
+      </ScrollView>
 
       <View style={styles.buttonsContainer}>
         <OnboardingButton label={t('common.continue')} onPress={handleContinue} />
@@ -125,72 +138,85 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
+  scroll: {
     flex: 1,
+  },
+  content: {
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingHorizontal: 24,
     paddingTop: isTablet ? 88 : 68,
+    paddingBottom: 16,
     ...iPadWideContentStyle,
   },
   heroWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 24,
-    marginBottom: 28,
+    marginTop: 8,
+    marginBottom: 12,
     width: ORB_SIZE,
     height: ORB_SIZE,
   },
   title: {
-    fontSize: sf(32),
-    fontWeight: '600',
+    fontSize: sf(28),
+    fontWeight: '700',
     textAlign: 'center',
     marginTop: 0,
-    marginBottom: 14,
-    letterSpacing: -1.28,
+    marginBottom: 8,
+    letterSpacing: -1.1,
   },
   description: {
-    fontSize: sf(16),
+    fontSize: sf(15),
     textAlign: 'center',
-    lineHeight: sf(24),
-    marginBottom: isTablet ? 28 : 20,
+    lineHeight: sf(22),
+    marginBottom: 16,
     paddingHorizontal: 8,
   },
-  cardsContainer: {
+  featureGrid: {
+    width: '100%',
     flexDirection: 'row',
-    gap: isTablet ? 18 : 12,
-    marginBottom: isTablet ? 36 : 28,
-    width: '100%',
-    justifyContent: 'center',
-    maxWidth: isTablet ? 560 : undefined,
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 18,
   },
-  card: {
-    width: isTablet ? 160 : 100,
-    minHeight: isTablet ? 154 : undefined,
-    paddingVertical: isTablet ? 24 : 20,
-    paddingHorizontal: isTablet ? 16 : 12,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
+  featureCard: {
+    width: '47%',
+    flexGrow: 1,
+    minHeight: isTablet ? 168 : 148,
+    borderRadius: 24,
+    padding: 12,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+    shadowColor: 'rgba(80, 70, 120, 0.16)',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 1,
+    shadowRadius: 16,
+    elevation: 3,
   },
-  cardContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: isTablet ? 8 : 4,
-    width: '100%',
-    minHeight: isTablet ? 100 : undefined,
+  featureArt: {
+    position: 'absolute',
+    right: -8,
+    top: -6,
+    width: 92,
+    height: 92,
+    opacity: 0.92,
   },
-  cardNumber: {
-    fontSize: sf(28),
+  featureMeta: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: 'rgba(26,26,46,0.62)',
+    marginBottom: 2,
+  },
+  featureTitle: {
+    fontSize: 14,
     fontWeight: '800',
-    lineHeight: sf(32),
+    color: '#1a1a2e',
+    letterSpacing: -0.3,
   },
-  cardLabel: {
-    fontSize: sf(13),
-    fontWeight: '500',
-    lineHeight: sf(16),
-    textAlign: 'center',
+  featureCopy: {
+    fontSize: 12,
+    color: 'rgba(26,26,46,0.7)',
+    marginTop: 2,
   },
   benefitsContainer: {
     alignItems: 'flex-start',

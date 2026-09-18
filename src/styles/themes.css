@@ -84,7 +84,7 @@ body {
 }
 
 /* Input styling - but not diary elements */
-input:not(.diary-title-input):not(.diary-textarea), 
+input:not(.diary-title-input):not(.diary-textarea):not(.quiz-email-input), 
 textarea:not(.diary-textarea), 
 select {
   background-color: var(--bg-secondary) !important;
@@ -92,7 +92,7 @@ select {
   color: var(--text-primary) !important;
 }
 
-input:not(.diary-title-input):not(.diary-textarea):focus, 
+input:not(.diary-title-input):not(.diary-textarea):not(.quiz-email-input):focus, 
 textarea:not(.diary-textarea):focus, 
 select:focus {
   border-color: var(--accent-primary) !important;
@@ -369,7 +369,7 @@ html, body, #root, .app-container {
 }
 
 /* Enhanced input styling - but not diary elements */
-input:not(.diary-title-input):not(.diary-textarea), 
+input:not(.diary-title-input):not(.diary-textarea):not(.quiz-email-input), 
 textarea:not(.diary-textarea), 
 select {
   background-color: var(--bg-tertiary) !important;
@@ -380,7 +380,7 @@ select {
   transition: all 0.2s ease !important;
 }
 
-input:not(.diary-title-input):not(.diary-textarea):focus, 
+input:not(.diary-title-input):not(.diary-textarea):not(.quiz-email-input):focus, 
 textarea:not(.diary-textarea):focus, 
 select:focus {
   outline: none !important;

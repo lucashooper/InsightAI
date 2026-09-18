@@ -19,11 +19,12 @@ const GoogleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><
 interface PillOptionProps {
   label: string;
   icon?: string;
+  emoji?: string;
   selected: boolean;
   onPress: () => void;
 }
 
-export default function PillOption({ label, icon, selected, onPress }: PillOptionProps) {
+export default function PillOption({ label, icon, emoji, selected, onPress }: PillOptionProps) {
   const isSocialMedia = ['Instagram', 'Facebook', 'TikTok', 'YouTube', 'Google'].includes(label);
 
   const getSvgLogo = () => {
@@ -48,9 +49,11 @@ export default function PillOption({ label, icon, selected, onPress }: PillOptio
     <TouchableOpacity activeOpacity={0.75} onPress={handlePress} style={styles.container}>
       <View style={[styles.pill, selected ? styles.pillSelected : styles.pillDefault]}>
         <View style={styles.leftGroup}>
-          {icon || isSocialMedia ? (
+          {emoji || icon || isSocialMedia ? (
             <View style={[styles.iconChip, selected && styles.iconChipSelected]}>
-              {isSocialMedia && svgLogo ? (
+              {emoji ? (
+                <Text style={styles.emoji}>{emoji}</Text>
+              ) : isSocialMedia && svgLogo ? (
                 <SvgXml xml={svgLogo} width={si(20)} height={si(20)} />
               ) : icon ? (
                 <Ionicons
@@ -128,5 +131,8 @@ const styles = StyleSheet.create({
   labelSelected: {
     fontWeight: '600',
     color: ONBOARDING_TEXT.primary,
+  },
+  emoji: {
+    fontSize: si(18),
   },
 });

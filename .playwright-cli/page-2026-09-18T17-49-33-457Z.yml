@@ -1,0 +1,18 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - button "Back" [ref=e6] [cursor=pointer]
+    - link "Insight" [ref=e9] [cursor=pointer]:
+      - /url: /
+    - generic [ref=e10]: 17/19
+  - main [ref=e13]:
+    - generic [ref=e107]:
+      - heading "What’s the biggest blocker to staying consistent?" [level=1] [ref=e108]
+      - listbox "What’s the biggest blocker to staying consistent?" [ref=e109]:
+        - option "I never have enough time" [ref=e110] [cursor=pointer]:
+          - generic [ref=e111]: ⌛
+        - option "I forget until the day is over" [ref=e114] [cursor=pointer]:
+          - generic [ref=e115]: 🔔
+        - option "I sit down and go blank" [ref=e118] [cursor=pointer]:
+          - generic [ref=e119]: 😶
+        - option "I’m not sure it will help" [ref=e122] [cursor=pointer]:
+          - generic [ref=e123]: ❔

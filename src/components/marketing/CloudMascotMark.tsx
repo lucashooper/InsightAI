@@ -4,10 +4,11 @@ type Props = {
   size?: number;
   className?: string;
   tint?: string;
+  mouth?: 'smile' | 'neutral';
 };
 
 /** Soft cloud mascot for the marketing site — matches the in-app companion. */
-export default function CloudMascotMark({ size = 120, className = '', tint = '#CDBBFF' }: Props) {
+export default function CloudMascotMark({ size = 120, className = '', tint = '#CDBBFF', mouth = 'smile' }: Props) {
   const id = React.useId().replace(/:/g, '');
   return (
     <svg
@@ -43,7 +44,13 @@ export default function CloudMascotMark({ size = 120, className = '', tint = '#C
       <circle cx={130} cy={116} r={7} fill="#FF9EC4" opacity={0.32} />
       <ellipse cx={84} cy={100} rx={4.6} ry={6.2} fill="#2A2438" />
       <ellipse cx={116} cy={100} rx={4.6} ry={6.2} fill="#2A2438" />
-      <path d="M 85 114 Q 100 128 115 114" stroke="#2A2438" strokeWidth={4.4} strokeLinecap="round" fill="none" />
+      <path
+        d={mouth === 'neutral' ? 'M 88 118 L 112 118' : 'M 85 114 Q 100 128 115 114'}
+        stroke="#2A2438"
+        strokeWidth={4.4}
+        strokeLinecap="round"
+        fill="none"
+      />
     </svg>
   );
 }

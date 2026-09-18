@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useRef } from 'react';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,9 +25,21 @@ export default function ProductRevealScreen({ navigation }: any) {
   const { t } = useLanguage();
   const bottomInset = useOnboardingBottomInset();
   const topInset = useOnboardingTopInset();
+  const leaveY = useRef(new Animated.Value(0)).current;
+  const leaveOpacity = useRef(new Animated.Value(1)).current;
+  const leaving = useRef(false);
+
+  const go = (route: string) => {
+    if (leaving.current) return;
+    leaving.current = true;
+    Animated.parallel([
+      Animated.timing(leaveY, { toValue: 28, duration: 340, useNativeDriver: true }),
+      Animated.timing(leaveOpacity, { toValue: 0, duration: 340, useNativeDriver: true }),
+    ]).start(() => navigation.navigate(route));
+  };
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { opacity: leaveOpacity, transform: [{ translateY: leaveY }] }]}>
       <StatusBar style="dark" />
 
       <Image
@@ -73,11 +85,11 @@ export default function ProductRevealScreen({ navigation }: any) {
           block
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            navigation.navigate('OnboardingQuestion');
+            go('OnboardingQuestion');
           }}
         />
         <PressableScale
-          onPress={() => navigation.navigate('Login')}
+          onPress={() => go('Login')}
           style={styles.signInLink}
           haptic={false}
           scaleTo={0.98}
@@ -87,7 +99,7 @@ export default function ProductRevealScreen({ navigation }: any) {
         </PressableScale>
         <Text style={styles.legal}>{t('onboarding.heroLegal')}</Text>
       </StaggerIn>
-    </View>
+    </Animated.View>
   );
 }
 

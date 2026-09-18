@@ -1,0 +1,78 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link "Insight Insight" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - img "Insight" [ref=e7]
+        - generic [ref=e8]: Insight
+      - navigation "Main" [ref=e9]:
+        - link "Features" [ref=e10] [cursor=pointer]:
+          - /url: /#features
+        - link "App" [ref=e11] [cursor=pointer]:
+          - /url: /#showcase
+        - link "Quiz" [ref=e12] [cursor=pointer]:
+          - /url: /quiz
+      - link "Try for free" [ref=e14] [cursor=pointer]:
+        - /url: https://apps.apple.com/us/app/insight-understand-yourself/id6755717396
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - generic [ref=e17]: 75%
+      - generic [ref=e98]:
+        - generic [ref=e99]: Step 3 of 4
+        - heading "How many minutes a day can you dedicate to a mental reset?" [level=1] [ref=e100]
+        - paragraph [ref=e101]: Small commitments compound into lasting clarity.
+        - listbox "Daily minutes selection" [ref=e102]:
+          - option "3 minutes Quick check-in" [ref=e103] [cursor=pointer]:
+            - generic [ref=e104]:
+              - generic [ref=e105]: 3 minutes
+              - generic [ref=e106]: Quick check-in
+          - option "5 minutes Recommended starting point" [ref=e107] [cursor=pointer]:
+            - generic [ref=e108]:
+              - generic [ref=e109]: 5 minutes
+              - generic [ref=e110]: Recommended starting point
+          - option "10 minutes Deeper reflection" [ref=e111] [cursor=pointer]:
+            - generic [ref=e112]:
+              - generic [ref=e113]: 10 minutes
+              - generic [ref=e114]: Deeper reflection
+          - option "15+ minutes Full mental reset" [ref=e115] [cursor=pointer]:
+            - generic [ref=e116]:
+              - generic [ref=e117]: 15+ minutes
+              - generic [ref=e118]: Full mental reset
+      - generic [ref=e46]:
+        - button "Back" [ref=e97] [cursor=pointer]
+        - button "Continue" [disabled] [ref=e47]
+  - contentinfo [ref=e48]:
+    - generic [ref=e49]:
+      - generic [ref=e50]:
+        - img "Insight" [ref=e52]
+        - heading "Start understanding yourself today." [level=2] [ref=e53]
+        - generic [ref=e54]:
+          - link [ref=e55] [cursor=pointer]:
+            - /url: https://apps.apple.com/us/app/insight-understand-yourself/id6755717396
+            - img "Download on the App Store" [ref=e56]
+          - img "Get it on Google Play"
+      - generic [ref=e57]:
+        - generic [ref=e58]: Insight
+        - generic [ref=e60]:
+          - heading "Downloads" [level=4] [ref=e61]
+          - link "iOS App" [ref=e62] [cursor=pointer]:
+            - /url: https://apps.apple.com/us/app/insight-understand-yourself/id6755717396
+          - link "Web App" [ref=e63] [cursor=pointer]:
+            - /url: /login
+        - generic [ref=e64]:
+          - heading "Socials" [level=4] [ref=e65]
+          - link "Instagram" [ref=e66] [cursor=pointer]:
+            - /url: https://www.instagram.com/insightaiapp/
+          - link "X (Twitter)" [ref=e67] [cursor=pointer]:
+            - /url: https://x.com/insightaiapp
+        - generic [ref=e68]:
+          - heading "Company" [level=4] [ref=e69]
+          - link "Support" [ref=e70] [cursor=pointer]:
+            - /url: /support
+          - link "Contact" [ref=e71] [cursor=pointer]:
+            - /url: mailto:support@myinsightai.app?subject=Insight%20Support%20Request
+          - link "Privacy Policy" [ref=e72] [cursor=pointer]:
+            - /url: /privacy
+          - link "Terms of Use" [ref=e73] [cursor=pointer]:
+            - /url: /terms
+      - paragraph [ref=e75]: © 2026 Insight Company LLC. All rights reserved.

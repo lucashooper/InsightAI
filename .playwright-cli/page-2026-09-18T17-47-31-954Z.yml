@@ -1,0 +1,19 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - button "Back" [ref=e6] [cursor=pointer]
+    - link "Insight" [ref=e9] [cursor=pointer]:
+      - /url: /
+    - generic [ref=e10]: 2/19
+  - main [ref=e13]:
+    - generic [ref=e15]:
+      - heading "What's holding you back most right now?" [level=1] [ref=e16]
+      - paragraph [ref=e17]: Pick the pattern that feels closest.
+      - listbox "What's holding you back most right now?" [ref=e18]:
+        - option "Overthinking loops" [active] [selected] [ref=e19] [cursor=pointer]:
+          - generic [ref=e20]: 🌀
+        - option "Anxiety and tension" [ref=e23] [cursor=pointer]:
+          - generic [ref=e24]: 🌊
+        - option "Focus and follow-through" [ref=e27] [cursor=pointer]:
+          - generic [ref=e28]: 🎯
+        - option "Mental fatigue" [ref=e31] [cursor=pointer]:
+          - generic [ref=e32]: 🌙

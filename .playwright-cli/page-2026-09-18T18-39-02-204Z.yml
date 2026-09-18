@@ -1,0 +1,42 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - link "Insight" [ref=e124] [cursor=pointer]:
+      - /url: /
+    - paragraph [ref=e125]:
+      - text: "Discount is reserved for:"
+      - strong [ref=e126]: 10:00
+    - link "Get my plan" [ref=e127] [cursor=pointer]:
+      - /url: https://testflight.apple.com/join/6DmaDpNf
+  - main [ref=e13]:
+    - generic [ref=e129]:
+      - generic [ref=e130]:
+        - article [ref=e131]:
+          - heading "Now" [level=2] [ref=e142]
+          - generic [ref=e143]:
+            - generic [ref=e144]:
+              - term [ref=e145]: Potential realization
+              - definition [ref=e146]: Blocked
+            - generic [ref=e147]:
+              - term [ref=e148]: Idea execution
+              - definition [ref=e149]: Paralyzed
+            - generic [ref=e151]:
+              - term [ref=e152]: Self-esteem level
+              - definition [ref=e153]: Low
+        - article [ref=e155]:
+          - heading "Your Goal" [level=2] [ref=e167]
+          - generic [ref=e168]:
+            - generic [ref=e169]:
+              - term [ref=e170]: Potential realization
+              - definition [ref=e171]: Unlocked
+            - generic [ref=e172]:
+              - term [ref=e173]: Idea execution
+              - definition [ref=e174]: Consistent
+            - generic [ref=e176]:
+              - term [ref=e177]: Self-esteem level
+              - definition [ref=e178]: High
+      - heading [level=1] [ref=e180]:
+        - text: Lucas, your 28-Day Anti-Self-Sabotage Challenge
+        - emphasis [ref=e181]: is ready!
+      - link "Join TestFlight Beta" [ref=e182] [cursor=pointer]:
+        - /url: https://testflight.apple.com/join/6DmaDpNf
+      - paragraph [ref=e183]: Get early access · App Store launching soon

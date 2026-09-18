@@ -479,7 +479,7 @@ body {
 }
 
 /* Inputs and textareas - but not diary elements */
-input:not(.diary-title-input):not(.diary-textarea), 
+input:not(.diary-title-input):not(.diary-textarea):not(.quiz-email-input), 
 textarea:not(.diary-textarea), 
 .input:not(.diary-textarea), 
 .textarea:not(.diary-textarea) {

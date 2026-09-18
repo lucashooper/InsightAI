@@ -22,6 +22,7 @@ import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
 import { loadOnboardingQuizProgress, saveOnboardingQuizProgress, saveOnboardingLastScreen } from '../../utils/onboardingProgress';
 import { ONBOARDING_MEDITATION_LOTTIE } from '../../constants/appAssets';
 import { safeGoBack } from '../../utils/navigationSafety';
+import CloudMascot from '../../components/companion/CloudMascot';
 const cambridgeColorLogo = require('../../public/Cambridge-Logo-No-Background.png');
 
 const { width } = Dimensions.get('window');
@@ -32,6 +33,7 @@ interface Option {
     label: string;
     value: string;
     icon?: string;
+    emoji?: string;
 }
 
 interface Feature {
@@ -88,10 +90,10 @@ const STEPS: Step[] = [
         type: 'question',
         title: 'onboarding.questions.goal.title',
         options: [
-            { label: 'onboarding.questions.goal.mood', value: 'mood', icon: 'sunny' },
-            { label: 'onboarding.questions.goal.stress', value: 'stress', icon: 'leaf' },
-            { label: 'onboarding.questions.goal.habits', value: 'habits', icon: 'calendar' },
-            { label: 'onboarding.questions.goal.clarity', value: 'clarity', icon: 'bulb' },
+            { label: 'onboarding.questions.goal.mood', value: 'mood', icon: 'sunny', emoji: '☀️' },
+            { label: 'onboarding.questions.goal.stress', value: 'stress', icon: 'leaf', emoji: '🌿' },
+            { label: 'onboarding.questions.goal.habits', value: 'habits', icon: 'calendar', emoji: '📅' },
+            { label: 'onboarding.questions.goal.clarity', value: 'clarity', icon: 'bulb', emoji: '💡' },
         ]
     },
     // 2. Info Slide A (Research)
@@ -111,9 +113,9 @@ const STEPS: Step[] = [
         type: 'question',
         title: 'onboarding.questions.frequency.title',
         options: [
-            { label: 'onboarding.questions.frequency.daily', value: 'daily', icon: 'repeat' },
-            { label: 'onboarding.questions.frequency.weekly', value: 'weekly', icon: 'calendar-outline' },
-            { label: 'onboarding.questions.frequency.asNeeded', value: 'as_needed', icon: 'hand-left' },
+            { label: 'onboarding.questions.frequency.daily', value: 'daily', icon: 'repeat', emoji: '🔁' },
+            { label: 'onboarding.questions.frequency.weekly', value: 'weekly', icon: 'calendar-outline', emoji: '🗓️' },
+            { label: 'onboarding.questions.frequency.asNeeded', value: 'as_needed', icon: 'hand-left', emoji: '✋' },
         ]
     },
     // 4. Journaling Experience
@@ -122,10 +124,10 @@ const STEPS: Step[] = [
         type: 'question',
         title: 'onboarding.questions.experience.title',
         options: [
-            { label: 'onboarding.questions.experience.new', value: 'new', icon: 'star-outline' },
-            { label: 'onboarding.questions.experience.underSixMonths', value: '<6m', icon: 'time-outline' },
-            { label: 'onboarding.questions.experience.sixToTwentyFourMonths', value: '6-24m', icon: 'book-outline' },
-            { label: 'onboarding.questions.experience.twoPlusYears', value: '2+y', icon: 'ribbon-outline' },
+            { label: 'onboarding.questions.experience.new', value: 'new', icon: 'star-outline', emoji: '✨' },
+            { label: 'onboarding.questions.experience.underSixMonths', value: '<6m', icon: 'time-outline', emoji: '⏳' },
+            { label: 'onboarding.questions.experience.sixToTwentyFourMonths', value: '6-24m', icon: 'book-outline', emoji: '📖' },
+            { label: 'onboarding.questions.experience.twoPlusYears', value: '2+y', icon: 'ribbon-outline', emoji: '🏅' },
         ]
     },
     // 6. Wellbeing Slider
@@ -143,10 +145,10 @@ const STEPS: Step[] = [
         type: 'question',
         title: 'onboarding.questions.stressResponse.title',
         options: [
-            { label: 'onboarding.questions.stressResponse.ruminate', value: 'ruminate', icon: 'sync-outline' },
-            { label: 'onboarding.questions.stressResponse.selfBlame', value: 'self_blame', icon: 'person-outline' },
-            { label: 'onboarding.questions.stressResponse.fixate', value: 'fixate', icon: 'create-outline' },
-            { label: 'onboarding.questions.stressResponse.stepBack', value: 'step_back', icon: 'leaf-outline' },
+            { label: 'onboarding.questions.stressResponse.ruminate', value: 'ruminate', icon: 'sync-outline', emoji: '🔁' },
+            { label: 'onboarding.questions.stressResponse.selfBlame', value: 'self_blame', icon: 'person-outline', emoji: '🪞' },
+            { label: 'onboarding.questions.stressResponse.fixate', value: 'fixate', icon: 'create-outline', emoji: '📝' },
+            { label: 'onboarding.questions.stressResponse.stepBack', value: 'step_back', icon: 'leaf-outline', emoji: '🌿' },
         ]
     },
     {
@@ -154,9 +156,9 @@ const STEPS: Step[] = [
         type: 'question',
         title: 'onboarding.questions.selfTalk.title',
         options: [
-            { label: 'onboarding.questions.selfTalk.critical', value: 'critical', icon: 'thunderstorm-outline' },
-            { label: 'onboarding.questions.selfTalk.mixed', value: 'mixed', icon: 'cloud-outline' },
-            { label: 'onboarding.questions.selfTalk.supportive', value: 'supportive', icon: 'heart-outline' },
+            { label: 'onboarding.questions.selfTalk.critical', value: 'critical', icon: 'thunderstorm-outline', emoji: '⛈️' },
+            { label: 'onboarding.questions.selfTalk.mixed', value: 'mixed', icon: 'cloud-outline', emoji: '⛅' },
+            { label: 'onboarding.questions.selfTalk.supportive', value: 'supportive', icon: 'heart-outline', emoji: '💗' },
         ]
     },
     {
@@ -164,10 +166,10 @@ const STEPS: Step[] = [
         type: 'question',
         title: 'onboarding.questions.coping.title',
         options: [
-            { label: 'onboarding.questions.coping.social', value: 'social', icon: 'chatbubbles-outline' },
-            { label: 'onboarding.questions.coping.physical', value: 'physical', icon: 'fitness-outline' },
-            { label: 'onboarding.questions.coping.expressive', value: 'expressive', icon: 'brush-outline' },
-            { label: 'onboarding.questions.coping.solitude', value: 'solitude', icon: 'moon-outline' },
+            { label: 'onboarding.questions.coping.social', value: 'social', icon: 'chatbubbles-outline', emoji: '💬' },
+            { label: 'onboarding.questions.coping.physical', value: 'physical', icon: 'fitness-outline', emoji: '🏃' },
+            { label: 'onboarding.questions.coping.expressive', value: 'expressive', icon: 'brush-outline', emoji: '🎨' },
+            { label: 'onboarding.questions.coping.solitude', value: 'solitude', icon: 'moon-outline', emoji: '🌙' },
         ]
     },
     {
@@ -175,10 +177,10 @@ const STEPS: Step[] = [
         type: 'question',
         title: 'onboarding.questions.change.title',
         options: [
-            { label: 'onboarding.questions.change.resistant', value: 'resistant', icon: 'shield-outline' },
-            { label: 'onboarding.questions.change.anxious', value: 'anxious_persevere', icon: 'trending-up-outline' },
-            { label: 'onboarding.questions.change.embrace', value: 'embrace', icon: 'rocket-outline' },
-            { label: 'onboarding.questions.change.support', value: 'support_seeking', icon: 'people-outline' },
+            { label: 'onboarding.questions.change.resistant', value: 'resistant', icon: 'shield-outline', emoji: '🛡️' },
+            { label: 'onboarding.questions.change.anxious', value: 'anxious_persevere', icon: 'trending-up-outline', emoji: '📈' },
+            { label: 'onboarding.questions.change.embrace', value: 'embrace', icon: 'rocket-outline', emoji: '🚀' },
+            { label: 'onboarding.questions.change.support', value: 'support_seeking', icon: 'people-outline', emoji: '🤝' },
         ]
     },
     {
@@ -186,10 +188,10 @@ const STEPS: Step[] = [
         type: 'question',
         title: 'onboarding.questions.motivation.title',
         options: [
-            { label: 'onboarding.questions.motivation.fear', value: 'fear_based', icon: 'alert-circle-outline' },
-            { label: 'onboarding.questions.motivation.external', value: 'external', icon: 'trophy-outline' },
-            { label: 'onboarding.questions.motivation.values', value: 'values_driven', icon: 'compass-outline' },
-            { label: 'onboarding.questions.motivation.passion', value: 'passion', icon: 'flame-outline' },
+            { label: 'onboarding.questions.motivation.fear', value: 'fear_based', icon: 'alert-circle-outline', emoji: '⚠️' },
+            { label: 'onboarding.questions.motivation.external', value: 'external', icon: 'trophy-outline', emoji: '🏆' },
+            { label: 'onboarding.questions.motivation.values', value: 'values_driven', icon: 'compass-outline', emoji: '🧭' },
+            { label: 'onboarding.questions.motivation.passion', value: 'passion', icon: 'flame-outline', emoji: '🔥' },
         ]
     },
     // Optional deeper questions start here
@@ -198,10 +200,10 @@ const STEPS: Step[] = [
         type: 'question',
         title: 'onboarding.questions.relationships.title',
         options: [
-            { label: 'onboarding.questions.relationships.anxious', value: 'anxious_attachment', icon: 'heart-dislike-outline' },
-            { label: 'onboarding.questions.relationships.avoidant', value: 'avoidant', icon: 'shield-outline' },
-            { label: 'onboarding.questions.relationships.fearful', value: 'fearful_avoidant', icon: 'swap-horizontal-outline' },
-            { label: 'onboarding.questions.relationships.secure', value: 'secure', icon: 'heart-circle-outline' },
+            { label: 'onboarding.questions.relationships.anxious', value: 'anxious_attachment', icon: 'heart-dislike-outline', emoji: '💔' },
+            { label: 'onboarding.questions.relationships.avoidant', value: 'avoidant', icon: 'shield-outline', emoji: '🛡️' },
+            { label: 'onboarding.questions.relationships.fearful', value: 'fearful_avoidant', icon: 'swap-horizontal-outline', emoji: '↔️' },
+            { label: 'onboarding.questions.relationships.secure', value: 'secure', icon: 'heart-circle-outline', emoji: '💞' },
         ],
         skippable: true,
     },
@@ -210,10 +212,10 @@ const STEPS: Step[] = [
         type: 'question',
         title: 'onboarding.questions.conflict.title',
         options: [
-            { label: 'onboarding.questions.conflict.avoid', value: 'avoid', icon: 'close-circle-outline' },
-            { label: 'onboarding.questions.conflict.accommodate', value: 'accommodate', icon: 'happy-outline' },
-            { label: 'onboarding.questions.conflict.compete', value: 'compete', icon: 'medal-outline' },
-            { label: 'onboarding.questions.conflict.collaborate', value: 'collaborate', icon: 'chatbubbles-outline' },
+            { label: 'onboarding.questions.conflict.avoid', value: 'avoid', icon: 'close-circle-outline', emoji: '🙈' },
+            { label: 'onboarding.questions.conflict.accommodate', value: 'accommodate', icon: 'happy-outline', emoji: '🙂' },
+            { label: 'onboarding.questions.conflict.compete', value: 'compete', icon: 'medal-outline', emoji: '🥇' },
+            { label: 'onboarding.questions.conflict.collaborate', value: 'collaborate', icon: 'chatbubbles-outline', emoji: '🗣️' },
         ],
         skippable: true,
     },
@@ -222,10 +224,10 @@ const STEPS: Step[] = [
         type: 'question',
         title: 'onboarding.questions.rest.title',
         options: [
-            { label: 'onboarding.questions.rest.guilt', value: 'guilt_rest', icon: 'time-outline' },
-            { label: 'onboarding.questions.rest.solitude', value: 'solitude_rest', icon: 'moon-outline' },
-            { label: 'onboarding.questions.rest.social', value: 'social_rest', icon: 'people-outline' },
-            { label: 'onboarding.questions.rest.active', value: 'active_rest', icon: 'leaf-outline' },
+            { label: 'onboarding.questions.rest.guilt', value: 'guilt_rest', icon: 'time-outline', emoji: '⏱️' },
+            { label: 'onboarding.questions.rest.solitude', value: 'solitude_rest', icon: 'moon-outline', emoji: '🌙' },
+            { label: 'onboarding.questions.rest.social', value: 'social_rest', icon: 'people-outline', emoji: '🫶' },
+            { label: 'onboarding.questions.rest.active', value: 'active_rest', icon: 'leaf-outline', emoji: '🚶' },
         ],
         skippable: true,
     },
@@ -234,10 +236,10 @@ const STEPS: Step[] = [
         type: 'question',
         title: 'onboarding.questions.identitySource.title',
         options: [
-            { label: 'onboarding.questions.identitySource.achievement', value: 'achievement', icon: 'trophy-outline' },
-            { label: 'onboarding.questions.identitySource.relationships', value: 'relationships', icon: 'people-outline' },
-            { label: 'onboarding.questions.identitySource.values', value: 'values', icon: 'book-outline' },
-            { label: 'onboarding.questions.identitySource.expression', value: 'expression', icon: 'brush-outline' },
+            { label: 'onboarding.questions.identitySource.achievement', value: 'achievement', icon: 'trophy-outline', emoji: '🏆' },
+            { label: 'onboarding.questions.identitySource.relationships', value: 'relationships', icon: 'people-outline', emoji: '👥' },
+            { label: 'onboarding.questions.identitySource.values', value: 'values', icon: 'book-outline', emoji: '📘' },
+            { label: 'onboarding.questions.identitySource.expression', value: 'expression', icon: 'brush-outline', emoji: '🎨' },
         ],
         skippable: true,
     },
@@ -246,10 +248,10 @@ const STEPS: Step[] = [
         type: 'question',
         title: 'onboarding.questions.failure.title',
         options: [
-            { label: 'onboarding.questions.failure.shame', value: 'shame', icon: 'sad-outline' },
-            { label: 'onboarding.questions.failure.defensive', value: 'defensive', icon: 'shield-checkmark-outline' },
-            { label: 'onboarding.questions.failure.analytical', value: 'analytical', icon: 'search-outline' },
-            { label: 'onboarding.questions.failure.growth', value: 'growth', icon: 'trending-up-outline' },
+            { label: 'onboarding.questions.failure.shame', value: 'shame', icon: 'sad-outline', emoji: '😞' },
+            { label: 'onboarding.questions.failure.defensive', value: 'defensive', icon: 'shield-checkmark-outline', emoji: '🛡️' },
+            { label: 'onboarding.questions.failure.analytical', value: 'analytical', icon: 'search-outline', emoji: '🔍' },
+            { label: 'onboarding.questions.failure.growth', value: 'growth', icon: 'trending-up-outline', emoji: '🌱' },
         ],
         skippable: true,
     },
@@ -258,10 +260,10 @@ const STEPS: Step[] = [
         type: 'question',
         title: 'onboarding.questions.awareness.title',
         options: [
-            { label: 'onboarding.questions.awareness.low', value: 'low_awareness', icon: 'eye-off-outline' },
-            { label: 'onboarding.questions.awareness.moderate', value: 'moderate_awareness', icon: 'help-circle-outline' },
-            { label: 'onboarding.questions.awareness.high', value: 'high_awareness', icon: 'eye-outline' },
-            { label: 'onboarding.questions.awareness.veryHigh', value: 'very_high_awareness', icon: 'glasses-outline' },
+            { label: 'onboarding.questions.awareness.low', value: 'low_awareness', icon: 'eye-off-outline', emoji: '😶' },
+            { label: 'onboarding.questions.awareness.moderate', value: 'moderate_awareness', icon: 'help-circle-outline', emoji: '❔' },
+            { label: 'onboarding.questions.awareness.high', value: 'high_awareness', icon: 'eye-outline', emoji: '👀' },
+            { label: 'onboarding.questions.awareness.veryHigh', value: 'very_high_awareness', icon: 'glasses-outline', emoji: '👓' },
         ],
         skippable: true,
     },
@@ -270,10 +272,10 @@ const STEPS: Step[] = [
         type: 'question',
         title: 'onboarding.questions.decisions.title',
         options: [
-            { label: 'onboarding.questions.decisions.overthink', value: 'overthink', icon: 'infinite-outline' },
-            { label: 'onboarding.questions.decisions.intuitive', value: 'intuitive', icon: 'flash-outline' },
-            { label: 'onboarding.questions.decisions.external', value: 'external_validation', icon: 'people-circle-outline' },
-            { label: 'onboarding.questions.decisions.systematic', value: 'systematic', icon: 'list-outline' },
+            { label: 'onboarding.questions.decisions.overthink', value: 'overthink', icon: 'infinite-outline', emoji: '♾️' },
+            { label: 'onboarding.questions.decisions.intuitive', value: 'intuitive', icon: 'flash-outline', emoji: '⚡️' },
+            { label: 'onboarding.questions.decisions.external', value: 'external_validation', icon: 'people-circle-outline', emoji: '🙋' },
+            { label: 'onboarding.questions.decisions.systematic', value: 'systematic', icon: 'list-outline', emoji: '📋' },
         ],
         skippable: true,
     },
@@ -284,10 +286,10 @@ const STEPS: Step[] = [
         title: 'onboarding.questions.gender.title',
         subtitle: 'onboarding.questions.gender.subtitle',
         options: [
-            { label: 'onboarding.questions.gender.woman', value: 'woman', icon: 'female' },
-            { label: 'onboarding.questions.gender.man', value: 'man', icon: 'male' },
-            { label: 'onboarding.questions.gender.nonBinary', value: 'non-binary', icon: 'transgender' },
-            { label: 'onboarding.questions.gender.preferNot', value: 'prefer-not', icon: 'person' },
+            { label: 'onboarding.questions.gender.woman', value: 'woman', icon: 'female', emoji: '♀️' },
+            { label: 'onboarding.questions.gender.man', value: 'man', icon: 'male', emoji: '♂️' },
+            { label: 'onboarding.questions.gender.nonBinary', value: 'non-binary', icon: 'transgender', emoji: '🌈' },
+            { label: 'onboarding.questions.gender.preferNot', value: 'prefer-not', icon: 'person', emoji: '🙂' },
         ]
     }
 ];
@@ -809,6 +811,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                                             <PillOption
                                                 label={t(option.label)}
                                                 icon={option.icon}
+                                                emoji={option.emoji}
                                                 selected={selectedOption === option.value}
                                                 onPress={() => setSelectedOption(option.value)}
                                             />
@@ -926,6 +929,11 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                     )}
                 </View>
             </View>
+            {currentStep.type === 'question' ? (
+                <View style={styles.cornerMascot} pointerEvents="none">
+                    <CloudMascot size={isTablet ? 120 : 92} tint="sky" valence={0.72} />
+                </View>
+            ) : null}
         </View>
     );
 }
@@ -937,6 +945,12 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: 'transparent',
+    },
+    cornerMascot: {
+        position: 'absolute',
+        right: -6,
+        bottom: 8,
+        zIndex: 2,
     },
     topRow: {
         flexDirection: 'row',

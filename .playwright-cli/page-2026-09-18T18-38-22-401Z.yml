@@ -1,0 +1,22 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - button "Back" [ref=e6] [cursor=pointer]
+    - link "Insight" [ref=e9] [cursor=pointer]:
+      - /url: /
+    - generic [ref=e10]: 19/19
+  - main [ref=e13]:
+    - generic [ref=e100]:
+      - paragraph [ref=e101]: Your execution capacity level
+      - img "Execution capacity over 4 weeks" [ref=e102]:
+        - generic [ref=e105]: Today
+        - generic [ref=e110]: After using Insight
+        - generic [ref=e114]: Week 1
+        - generic [ref=e115]: Week 2
+        - generic [ref=e116]: Week 3
+        - generic [ref=e117]: Week 4
+      - heading [level=1] [ref=e118]:
+        - text: Lucas, your personal
+        - emphasis [ref=e119]: 28-Day Anti-Self-Sabotage Challenge
+        - text: is ready!
+      - paragraph [ref=e120]: Based on people who keep a short daily reflection habit. The curve is an illustration — results vary.
+      - button "Continue" [ref=e121] [cursor=pointer]

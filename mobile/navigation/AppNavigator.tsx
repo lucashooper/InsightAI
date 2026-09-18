@@ -517,12 +517,20 @@ export default function AppNavigator() {
           <Stack.Screen name="ProductReveal" component={ProductRevealScreen} />
           <Stack.Screen name="AuthSelection" component={AuthSelectionScreen} />
           <Stack.Screen name="ChooseVibe" component={ChooseVibeScreen} />
-          <Stack.Screen name="OnboardingQuestion" component={OnboardingQuestionScreen} />
+          <Stack.Screen
+            name="OnboardingQuestion"
+            component={OnboardingQuestionScreen}
+            options={{ animation: 'fade_from_bottom', animationDuration: 420 }}
+          />
           <Stack.Screen name="EmailVerified" component={EmailVerifiedScreen} />
           <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
           <Stack.Screen name="PersonalityQuizIntro" component={PersonalityQuizIntroScreen} />
           <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
-          <Stack.Screen name="InsightIntro" component={InsightIntroScreen} />
+          <Stack.Screen
+            name="InsightIntro"
+            component={InsightIntroScreen}
+            options={{ animation: 'fade_from_bottom', animationDuration: 480 }}
+          />
           <Stack.Screen name="MiraOnboardingChat" component={MiraOnboardingChatScreen} />
           <Stack.Screen name="PersonalityResult" component={PersonalityResultScreen} />
           <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />
@@ -604,11 +612,19 @@ export default function AppNavigator() {
           <Stack.Screen name="AuthSelection" component={AuthSelectionScreen} />
           <Stack.Screen name="ChooseVibe" component={ChooseVibeScreen} />
           <Stack.Screen name="EmailVerified" component={EmailVerifiedScreen} />
-          <Stack.Screen name="OnboardingQuestion" component={OnboardingQuestionScreen} />
+          <Stack.Screen
+            name="OnboardingQuestion"
+            component={OnboardingQuestionScreen}
+            options={{ animation: 'fade_from_bottom', animationDuration: 420 }}
+          />
           <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
           <Stack.Screen name="PersonalityQuizIntro" component={PersonalityQuizIntroScreen} />
           <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
-          <Stack.Screen name="InsightIntro" component={InsightIntroScreen} />
+          <Stack.Screen
+            name="InsightIntro"
+            component={InsightIntroScreen}
+            options={{ animation: 'fade_from_bottom', animationDuration: 480 }}
+          />
           <Stack.Screen name="MiraOnboardingChat" component={MiraOnboardingChatScreen} />
           <Stack.Screen name="PersonalityResult" component={PersonalityResultScreen} />
           <Stack.Screen name="AnalysisComplete" component={AnalysisCompleteScreen} />

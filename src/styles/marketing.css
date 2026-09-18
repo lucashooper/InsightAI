@@ -4685,6 +4685,18 @@ body:has(.marketing-page--light),
   color: rgba(28, 26, 34, 0.65);
 }
 
+.marketing-page--light .faq-answer p {
+  color: rgba(28, 26, 34, 0.72) !important;
+}
+
+.marketing-page--light .faq-chevron {
+  color: rgba(28, 26, 34, 0.45);
+}
+
+.marketing-page--light .faq-item-open .faq-chevron {
+  color: rgba(28, 26, 34, 0.7);
+}
+
 .marketing-page--light .footer-arise {
   background: linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.6) 20%, #f0f4fa 100%);
 }

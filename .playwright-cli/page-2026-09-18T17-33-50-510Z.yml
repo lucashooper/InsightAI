@@ -1,0 +1,80 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link "Insight Insight" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - img "Insight" [ref=e7]
+        - generic [ref=e8]: Insight
+      - navigation "Main" [ref=e9]:
+        - link "Features" [ref=e10] [cursor=pointer]:
+          - /url: /#features
+        - link "App" [ref=e11] [cursor=pointer]:
+          - /url: /#showcase
+        - link "Quiz" [ref=e12] [cursor=pointer]:
+          - /url: /quiz
+      - link "Try for free" [ref=e14] [cursor=pointer]:
+        - /url: https://apps.apple.com/us/app/insight-understand-yourself/id6755717396
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - generic [ref=e17]: 25%
+      - generic [ref=e21]:
+        - generic [ref=e22]: Step 1 of 4
+        - heading "What's your primary goal with cognitive reflection?" [level=1] [ref=e23]
+        - paragraph [ref=e24]: Pick the outcome that matters most right now.
+        - listbox "Goal selection" [ref=e25]:
+          - option "Overcoming overthinking Break repetitive thought loops and find mental quiet." [ref=e26] [cursor=pointer]:
+            - generic [ref=e27]: 🌀
+            - generic [ref=e28]:
+              - generic [ref=e29]: Overcoming overthinking
+              - generic [ref=e30]: Break repetitive thought loops and find mental quiet.
+          - option "Processing anxiety Name what you feel and release the pressure safely." [ref=e31] [cursor=pointer]:
+            - generic [ref=e32]: 🌊
+            - generic [ref=e33]:
+              - generic [ref=e34]: Processing anxiety
+              - generic [ref=e35]: Name what you feel and release the pressure safely.
+          - option "Daily journaling Build a consistent reflection habit that sticks." [ref=e36] [cursor=pointer]:
+            - generic [ref=e37]: 📓
+            - generic [ref=e38]:
+              - generic [ref=e39]: Daily journaling
+              - generic [ref=e40]: Build a consistent reflection habit that sticks.
+          - option "Self-clarity See your patterns clearly and make better decisions." [ref=e41] [cursor=pointer]:
+            - generic [ref=e42]: ✨
+            - generic [ref=e43]:
+              - generic [ref=e44]: Self-clarity
+              - generic [ref=e45]: See your patterns clearly and make better decisions.
+      - button "Continue" [disabled] [ref=e47]
+  - contentinfo [ref=e48]:
+    - generic [ref=e49]:
+      - generic [ref=e50]:
+        - img "Insight" [ref=e52]
+        - heading "Start understanding yourself today." [level=2] [ref=e53]
+        - generic [ref=e54]:
+          - link [ref=e55] [cursor=pointer]:
+            - /url: https://apps.apple.com/us/app/insight-understand-yourself/id6755717396
+            - img "Download on the App Store" [ref=e56]
+          - img "Get it on Google Play"
+      - generic [ref=e57]:
+        - generic [ref=e58]: Insight
+        - generic [ref=e60]:
+          - heading "Downloads" [level=4] [ref=e61]
+          - link "iOS App" [ref=e62] [cursor=pointer]:
+            - /url: https://apps.apple.com/us/app/insight-understand-yourself/id6755717396
+          - link "Web App" [ref=e63] [cursor=pointer]:
+            - /url: /login
+        - generic [ref=e64]:
+          - heading "Socials" [level=4] [ref=e65]
+          - link "Instagram" [ref=e66] [cursor=pointer]:
+            - /url: https://www.instagram.com/insightaiapp/
+          - link "X (Twitter)" [ref=e67] [cursor=pointer]:
+            - /url: https://x.com/insightaiapp
+        - generic [ref=e68]:
+          - heading "Company" [level=4] [ref=e69]
+          - link "Support" [ref=e70] [cursor=pointer]:
+            - /url: /support
+          - link "Contact" [ref=e71] [cursor=pointer]:
+            - /url: mailto:support@myinsightai.app?subject=Insight%20Support%20Request
+          - link "Privacy Policy" [ref=e72] [cursor=pointer]:
+            - /url: /privacy
+          - link "Terms of Use" [ref=e73] [cursor=pointer]:
+            - /url: /terms
+      - paragraph [ref=e75]: © 2026 Insight Company LLC. All rights reserved.

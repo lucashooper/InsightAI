@@ -20,6 +20,7 @@ export default function MoodIcon({ tier, size = 160 }: Props) {
         size={size}
         tint={MOOD_TINT_COLORS[tier]}
         valence={MOOD_VALENCE[tier]}
+        variant="orb"
         shadow={large}
         animated={large}
       />
@@ -31,5 +32,6 @@ const styles = StyleSheet.create({
   wrap: {
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'visible',
   },
 });

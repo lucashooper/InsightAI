@@ -35,6 +35,9 @@ const HomePage: React.FC = () => {
               Reflect in voice or text, track your mood, and get personalized insights — just five minutes a day.
             </p>
             <div className="hero-v2-buttons">
+              <a href="/quiz" className="premium-nav-cta" style={{ textDecoration: 'none', marginRight: '0.5rem' }}>
+                Take the free quiz
+              </a>
               <a href="https://apps.apple.com/us/app/insight-understand-yourself/id6755717396" target="_blank" rel="noopener noreferrer">
                 <img src="/app-store-download-button.avif" alt="Download on the App Store" className="download-badge" />
               </a>

@@ -7,6 +7,7 @@ interface MarketingNavProps {
 const defaultLinks = [
   { href: '#features', label: 'Features' },
   { href: '#showcase', label: 'App' },
+  { href: '/quiz', label: 'Quiz' },
   { href: '/privacy', label: 'Privacy' },
 ];
 

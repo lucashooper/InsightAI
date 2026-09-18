@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { OrbSlot } from '../../components/companion/OrbOverlayProvider';
+import CloudMascot from '../../components/companion/CloudMascot';
 import OnboardingButton from '../../components/onboarding/OnboardingButton';
 import { ONBOARDING_GRADIENT } from '../../constants/onboardingTheme';
 import { ONBOARDING_LAYOUT } from '../../constants/onboardingLayout';
@@ -100,6 +100,17 @@ export default function InsightIntroScreen({ navigation, route }: any) {
   const [showSubtext, setShowSubtext] = useState(false);
   const [showButton, setShowButton] = useState(false);
   const buttonOpacity = useRef(new Animated.Value(0)).current;
+  const enterY = useRef(new Animated.Value(-22)).current;
+  const enterOpacity = useRef(new Animated.Value(0)).current;
+  const mascotScale = useRef(new Animated.Value(0.42)).current;
+
+  React.useEffect(() => {
+    Animated.parallel([
+      Animated.timing(enterOpacity, { toValue: 1, duration: 420, useNativeDriver: true }),
+      Animated.timing(enterY, { toValue: 0, duration: 520, useNativeDriver: true }),
+      Animated.spring(mascotScale, { toValue: 1, damping: 15, stiffness: 180, mass: 0.9, useNativeDriver: true }),
+    ]).start();
+  }, [enterOpacity, enterY, mascotScale]);
 
   const onLine1Complete = useCallback(() => {
     setTimeout(() => {
@@ -132,12 +143,23 @@ export default function InsightIntroScreen({ navigation, route }: any) {
       <StatusBar barStyle="dark-content" />
 
       <SafeAreaView style={styles.safe}>
-        <View style={[styles.content, iPadContentStyle as any]}>
+        <Animated.View
+          style={[
+            styles.content,
+            iPadContentStyle as any,
+            { opacity: enterOpacity, transform: [{ translateY: enterY }] },
+          ]}
+        >
           <Text style={styles.line1}>{line1 || ' '}</Text>
 
-          <View style={styles.orbWrap}>
-            <OrbSlot size={ONBOARDING_LAYOUT.introOrbSize} personality="default" />
-          </View>
+          <Animated.View style={[styles.orbWrap, { transform: [{ scale: mascotScale }] }]}>
+            <CloudMascot
+              size={ONBOARDING_LAYOUT.introOrbSize}
+              personality="default"
+              valence={0.78}
+              shadow
+            />
+          </Animated.View>
 
           <View style={styles.subtextWrap}>
             {showSubtext ? (
@@ -146,7 +168,7 @@ export default function InsightIntroScreen({ navigation, route }: any) {
               <View style={styles.subtextPlaceholder} />
             )}
           </View>
-        </View>
+        </Animated.View>
 
         {showButton ? (
           <Animated.View style={[

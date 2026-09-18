@@ -1,0 +1,121 @@
+- generic [ref=f3e3]:
+  - banner [ref=f3e4]:
+    - generic [ref=f3e5]:
+      - link "Insight Insight" [ref=f3e6] [cursor=pointer]:
+        - /url: /
+        - img "Insight" [ref=f3e7]
+        - generic [ref=f3e8]: Insight
+      - navigation "Main" [ref=f3e9]:
+        - link "Features" [ref=f3e10] [cursor=pointer]:
+          - /url: "#features"
+        - link "App" [ref=f3e11] [cursor=pointer]:
+          - /url: "#showcase"
+        - link "Quiz" [ref=f3e12] [cursor=pointer]:
+          - /url: /quiz
+        - link "Privacy" [ref=f3e13] [cursor=pointer]:
+          - /url: /privacy
+      - link "Try for free" [ref=f3e15] [cursor=pointer]:
+        - /url: https://apps.apple.com/us/app/insight-understand-yourself/id6755717396
+  - generic [ref=f3e17]:
+    - generic [ref=f3e18]:
+      - heading "The AI reflection journal that helps you grow." [level=1] [ref=f3e29]: The AI reflection journalthat helps you grow.
+      - paragraph [ref=f3e30]: Reflect in voice or text, track your mood, and get personalized insights — just five minutes a day.
+      - generic [ref=f3e31]:
+        - link "Take the free quiz" [ref=f3e32] [cursor=pointer]:
+          - /url: /quiz
+        - link [ref=f3e33] [cursor=pointer]:
+          - /url: https://apps.apple.com/us/app/insight-understand-yourself/id6755717396
+          - img "Download on the App Store" [ref=f3e34]
+        - generic [ref=f3e35]:
+          - img "Get it on Google Play"
+    - generic [ref=f3e36]:
+      - img "Insight app home screen" [ref=f3e39]
+      - img "Insight daily check-in" [ref=f3e42]
+  - generic [ref=f3e45]:
+    - heading "Everything you need to understand yourself." [level=2] [ref=f3e46]: Everything you need tounderstand yourself.
+    - generic [ref=f3e47]:
+      - generic [ref=f3e48]:
+        - heading "Voice, text & scan" [level=3] [ref=f3e49]
+        - paragraph [ref=f3e50]: Journal the way you want — speak, write, or capture handwritten notes.
+      - generic [ref=f3e51]:
+        - heading "AI-powered insights" [level=3] [ref=f3e52]
+        - paragraph [ref=f3e53]: Understand your emotional patterns and what triggers them over time.
+      - generic [ref=f3e54]:
+        - heading "Daily check-ins" [level=3] [ref=f3e55]
+        - paragraph [ref=f3e56]: A gentle mood snapshot that builds a picture of how you really feel.
+      - generic [ref=f3e57]:
+        - heading "Guided Journey" [level=3] [ref=f3e58]
+        - paragraph [ref=f3e59]: Short lessons on thoughts, emotions, and habits — at your own pace.
+      - generic [ref=f3e60]:
+        - heading "Reflection chat" [level=3] [ref=f3e61]
+        - paragraph [ref=f3e62]: Talk through what's on your mind with Insight's AI — grounded in your entries.
+      - generic [ref=f3e63]:
+        - heading "Privacy first" [level=3] [ref=f3e64]
+        - paragraph [ref=f3e65]: Your journal stays yours. Encrypted entries and no third-party data sales.
+  - generic [ref=f3e67]:
+    - heading "What does Insight include?" [level=2] [ref=f3e68]
+    - generic [ref=f3e69]:
+      - generic [ref=f3e70]:
+        - img "Light, calm home" [ref=f3e73]
+        - generic [ref=f3e74]:
+          - button "View Light, calm home" [ref=f3e75] [cursor=pointer]
+          - button "View Mood check-in" [ref=f3e76] [cursor=pointer]
+          - button "View Deep insights" [ref=f3e77] [cursor=pointer]
+          - button "View Daily practice" [ref=f3e78] [cursor=pointer]
+      - generic [ref=f3e79]:
+        - button [ref=f3e80] [cursor=pointer]:
+          - heading "Light, calm home" [level=3] [ref=f3e81]
+          - paragraph [ref=f3e82]: Your day at a glance — check-in prompts, reflection cards, and quick actions to write, speak, or scan.
+        - button [ref=f3e83] [cursor=pointer]:
+          - heading "Mood check-in" [level=3] [ref=f3e84]
+          - paragraph [ref=f3e85]: Slide to how you feel. A soft companion reacts as you move — then Insight remembers the pattern.
+        - button [ref=f3e86] [cursor=pointer]:
+          - heading "Deep insights" [level=3] [ref=f3e87]
+          - paragraph [ref=f3e88]: AI reads between the lines of your entries and surfaces themes, strengths, and growth areas.
+        - button [ref=f3e89] [cursor=pointer]:
+          - heading "Daily practice" [level=3] [ref=f3e90]
+          - paragraph [ref=f3e91]: Build small habits with guided protocols — streaks, reminders, and progress you can actually see.
+  - generic [ref=f3e94]:
+    - heading "Common Questions" [level=2] [ref=f3e95]
+    - generic [ref=f3e96]:
+      - button "What is Insight?" [ref=f3e98] [cursor=pointer]
+      - generic [ref=f3e102]:
+        - button "Who is Insight for?" [expanded] [active] [ref=f3e103] [cursor=pointer]
+        - paragraph [ref=f3e146]: Insight is for anyone looking to improve their mental wellbeing and self-awareness. Whether you're dealing with stress, anxiety, or simply want to understand yourself better, Insight provides personalized insights and actionable strategies based on your unique patterns.
+      - button "How is my data used?" [ref=f3e108] [cursor=pointer]
+      - button "Can I cancel my subscription anytime?" [ref=f3e113] [cursor=pointer]
+  - contentinfo [ref=f3e117]:
+    - generic [ref=f3e118]:
+      - generic [ref=f3e119]:
+        - img "Insight" [ref=f3e121]
+        - heading "Start understanding yourself today." [level=2] [ref=f3e122]
+        - generic [ref=f3e123]:
+          - link [ref=f3e124] [cursor=pointer]:
+            - /url: https://apps.apple.com/us/app/insight-understand-yourself/id6755717396
+            - img "Download on the App Store" [ref=f3e125]
+          - img "Get it on Google Play"
+      - generic [ref=f3e126]:
+        - generic [ref=f3e127]: Insight
+        - generic [ref=f3e129]:
+          - heading "Downloads" [level=4] [ref=f3e130]
+          - link "iOS App" [ref=f3e131] [cursor=pointer]:
+            - /url: https://apps.apple.com/us/app/insight-understand-yourself/id6755717396
+          - link "Web App" [ref=f3e132] [cursor=pointer]:
+            - /url: /login
+        - generic [ref=f3e133]:
+          - heading "Socials" [level=4] [ref=f3e134]
+          - link "Instagram" [ref=f3e135] [cursor=pointer]:
+            - /url: https://www.instagram.com/insightaiapp/
+          - link "X (Twitter)" [ref=f3e136] [cursor=pointer]:
+            - /url: https://x.com/insightaiapp
+        - generic [ref=f3e137]:
+          - heading "Company" [level=4] [ref=f3e138]
+          - link "Support" [ref=f3e139] [cursor=pointer]:
+            - /url: /support
+          - link "Contact" [ref=f3e140] [cursor=pointer]:
+            - /url: mailto:support@myinsightai.app?subject=Insight%20Support%20Request
+          - link "Privacy Policy" [ref=f3e141] [cursor=pointer]:
+            - /url: /privacy
+          - link "Terms of Use" [ref=f3e142] [cursor=pointer]:
+            - /url: /terms
+      - paragraph [ref=f3e144]: © 2026 Insight Company LLC. All rights reserved.
