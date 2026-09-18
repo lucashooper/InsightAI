@@ -208,13 +208,17 @@ function GhostButton({
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
-        background: hover ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
-        border: '1px solid rgba(255,255,255,0.12)',
+        background: destructive
+          ? hover ? 'rgba(239,68,68,0.22)' : 'rgba(239,68,68,0.12)'
+          : hover ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
+        border: destructive
+          ? '1px solid rgba(239,68,68,0.45)'
+          : '1px solid rgba(255,255,255,0.12)',
         borderRadius: '10px',
         padding: '8px 14px',
         fontSize: '12px',
         fontWeight: 600,
-        color: '#fff',
+        color: destructive ? '#fecaca' : '#fff',
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.45 : 1,
         transition: 'background 0.2s',
