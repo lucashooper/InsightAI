@@ -38,7 +38,7 @@ module.exports = ({ config }) => ({
   userInterfaceStyle: "light",
   ios: {
     supportsTablet: true,
-      buildNumber: "121",
+      buildNumber: "122",
     bundleIdentifier: "com.crupid.mobile",
     scheme: "insight",
     infoPlist: {

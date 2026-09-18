@@ -31,6 +31,7 @@
       }
     },
     "production": {
+      "autoIncrement": true,
       "channel": "production",
       "env": {
         "EXPO_DOCTOR_ENABLE": "0"
