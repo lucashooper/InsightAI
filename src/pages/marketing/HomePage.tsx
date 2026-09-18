@@ -44,18 +44,20 @@ const HomePage: React.FC = () => {
             </div>
           </div>
           <div className="hero-v2-phones hero-premium-phones">
-            <PhoneFrame
-              src={MARKETING_PHONE_IMAGES.main}
-              alt="Insight app home screen"
-              size="hero-main"
-              className="float-phone"
-            />
-            <PhoneFrame
-              src={MARKETING_PHONE_IMAGES.dashboard}
-              alt="Insight daily check-in"
-              size="hero-secondary"
-              className="float-phone-delayed"
-            />
+            <div className="hero-phone-float hero-phone-float--main float-phone">
+              <PhoneFrame
+                src={MARKETING_PHONE_IMAGES.main}
+                alt="Insight app home screen"
+                size="hero-main"
+              />
+            </div>
+            <div className="hero-phone-float hero-phone-float--secondary float-phone-delayed">
+              <PhoneFrame
+                src={MARKETING_PHONE_IMAGES.dashboard}
+                alt="Insight daily check-in"
+                size="hero-secondary"
+              />
+            </div>
           </div>
         </div>
       </section>

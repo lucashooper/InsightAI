@@ -3355,7 +3355,8 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 2rem 0;
+  padding: 2rem 1.5rem;
+  gap: 1rem;
   background: transparent !important;
   border: none;
   color: #fff;
@@ -3410,7 +3411,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .faq-answer {
-  padding: 0 0 2rem 0;
+  padding: 0 1.5rem 2rem;
   animation: fadeIn 0.3s ease;
 }
 
@@ -3435,10 +3436,10 @@ h1, h2, h3, h4, h5, h6 {
 @media (max-width: 640px) {
   .faq-question {
     font-size: 1rem;
-    padding: 1.5rem 0;
+    padding: 1.5rem 1.5rem;
   }
   .faq-answer {
-    padding: 0 0 1.5rem 0;
+    padding: 0 1.5rem 1.5rem;
   }
   .faq-answer p {
     font-size: 0.9375rem;
@@ -4001,16 +4002,12 @@ body:has(.marketing-page) {
 
 .fade-up {
   opacity: 0;
-  transform: translateY(20px);
-  transition:
-    opacity 0.7s var(--ease-out-expo),
-    transform 0.7s var(--ease-out-expo);
+  transition: opacity 0.7s var(--ease-out-expo);
   transition-delay: calc(var(--reveal-delay, 0) * 1ms);
 }
 
 .fade-up.visible {
   opacity: 1;
-  transform: translateY(0);
 }
 
 /* Override legacy chunky navbar styles */
@@ -4060,10 +4057,16 @@ body:has(.marketing-page) {
 @media (max-width: 768px) {
   .premium-nav {
     padding: 0;
-    background: rgba(0, 0, 0, 0.85);
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom: none;
+  }
+
+  .premium-nav--scrolled {
+    background: rgba(0, 0, 0, 0.78);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border-bottom: none;
   }
 
   .premium-nav-inner {
@@ -4300,30 +4303,39 @@ body:has(.marketing-page--light),
 }
 
 @keyframes floatSlow {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(0, -8px, 0); }
 }
 
 @keyframes floatPhone {
-  0%, 100% { transform: translateY(0) rotate(-1deg); }
-  50% { transform: translateY(-14px) rotate(0deg); }
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(0, -8px, 0); }
 }
 
 @keyframes floatPhoneDelayed {
-  0%, 100% { transform: translateY(0) rotate(1deg); }
-  50% { transform: translateY(-10px) rotate(0deg); }
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(0, -8px, 0); }
+}
+
+.float-slow,
+.float-phone,
+.float-phone-delayed {
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 .float-slow {
-  animation: floatSlow 5s ease-in-out infinite;
+  animation: floatSlow 3s ease-in-out infinite alternate;
 }
 
 .float-phone {
-  animation: floatPhone 6s ease-in-out infinite;
+  animation: floatPhone 3s ease-in-out infinite alternate;
 }
 
 .float-phone-delayed {
-  animation: floatPhoneDelayed 6.5s ease-in-out 0.4s infinite;
+  animation: floatPhoneDelayed 3s ease-in-out 0.4s infinite alternate;
 }
 
 .marketing-page--light .hero-mascot {
@@ -4353,10 +4365,52 @@ body:has(.marketing-page--light),
   max-width: 460px;
 }
 
+.marketing-page--light .premium-nav {
+  background: transparent;
+}
+
 .marketing-page--light .premium-nav--scrolled {
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(28, 26, 34, 0.06);
+}
+
+@media (max-width: 768px) {
+  .marketing-page--light .premium-nav {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .marketing-page--light .premium-nav--scrolled {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .marketing-page--light .premium-nav-mobile {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(28, 26, 34, 0.08);
+  }
+
+  .marketing-page--light .premium-nav-mobile-link {
+    color: rgba(28, 26, 34, 0.75);
+    border-bottom-color: rgba(28, 26, 34, 0.06);
+  }
+
+  .marketing-page--light .premium-nav-mobile-cta {
+    background: #1c1a22;
+    color: #fff !important;
+    border-color: #1c1a22;
+  }
+
+  .marketing-page--light .premium-nav-menu-btn {
+    border-color: rgba(28, 26, 34, 0.12);
+    color: #1c1a22;
+  }
 }
 
 .marketing-page--light .premium-nav-logo,
@@ -4466,6 +4520,16 @@ body:has(.marketing-page--light),
   overflow: hidden;
   flex-shrink: 0;
   line-height: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.hero-mascot {
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 .phone-frame__screen {
@@ -4477,13 +4541,31 @@ body:has(.marketing-page--light),
   border-radius: 32px;
 }
 
+.hero-phone-float {
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.hero-phone-float--main {
+  position: relative;
+  z-index: 2;
+}
+
+.hero-phone-float--secondary {
+  position: absolute;
+  left: 42%;
+  top: 18%;
+  z-index: 1;
+  opacity: 0.92;
+}
+
 .phone-frame--hero-main {
   width: 360px;
   max-width: min(360px, 38vw);
   max-height: min(680px, 72vh);
   aspect-ratio: 9 / 19.5;
-  position: relative;
-  z-index: 2;
   padding: 10px;
 }
 
@@ -4492,11 +4574,6 @@ body:has(.marketing-page--light),
   max-width: min(290px, 32vw);
   max-height: min(580px, 62vh);
   aspect-ratio: 9 / 19.5;
-  position: absolute;
-  left: 42%;
-  top: 18%;
-  z-index: 1;
-  opacity: 0.92;
   padding: 8px;
 }
 
@@ -4530,12 +4607,15 @@ body:has(.marketing-page--light),
     max-height: 540px;
   }
 
+  .hero-phone-float--secondary {
+    top: 22%;
+    left: 42%;
+  }
+
   .phone-frame--hero-secondary {
     width: 210px;
     max-width: 210px;
     max-height: 460px;
-    top: 22%;
-    left: 42%;
   }
 
   .phone-frame--showcase {
@@ -4576,10 +4656,25 @@ body:has(.marketing-page--light),
   color: #1c1a22 !important;
 }
 
+.marketing-page--light .faq-list {
+  gap: 0.75rem;
+}
+
 .marketing-page--light .faq-item {
   background: rgba(255, 255, 255, 0.85);
   border: 1px solid rgba(28, 26, 34, 0.06);
   border-radius: 20px;
+  border-bottom: 1px solid rgba(28, 26, 34, 0.06);
+}
+
+.marketing-page--light .faq-question {
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+.marketing-page--light .faq-answer {
+  padding-left: 2rem;
+  padding-right: 2rem;
 }
 
 .marketing-page--light .faq-question {
@@ -4624,7 +4719,18 @@ body:has(.marketing-page--light),
   .float-slow,
   .float-phone,
   .float-phone-delayed,
-  .mesh-blob {
+  .mesh-blob,
+  .hero-phone-float {
     animation: none !important;
+  }
+
+  .float-slow,
+  .float-phone,
+  .float-phone-delayed,
+  .hero-phone-float,
+  .hero-mascot,
+  .phone-frame {
+    will-change: auto;
+    transform: none;
   }
 }

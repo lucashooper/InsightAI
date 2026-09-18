@@ -92,7 +92,7 @@ const FeatureShowcase: React.FC = () => {
 
       <div className={isMobile ? undefined : 'showcase-layout'} style={isMobile ? mobileLayout : undefined}>
         <div className="showcase-phone-container" style={isMobile ? mobilePhoneContainer : undefined}>
-          <div className="showcase-phone float-phone" style={isMobile ? { width: '100%', display: 'flex', justifyContent: 'center' } : undefined}>
+          <div className="showcase-phone" style={isMobile ? { width: '100%', display: 'flex', justifyContent: 'center' } : undefined}>
             <PhoneFrame
               src={showcaseFeatures[activeIndex].image}
               alt={showcaseFeatures[activeIndex].title}
