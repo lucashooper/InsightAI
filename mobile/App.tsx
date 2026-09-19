@@ -57,7 +57,7 @@ import OnboardingHeroWarmup from './components/onboarding/OnboardingHeroWarmup';
 import OrbOverlayProvider, { useSuppressOrbOverlay } from './components/companion/OrbOverlayProvider';
 import OrbPreloader from './components/companion/OrbPreloader';
 import { getRevenueCatApiKey, isRevenueCatEnabled } from './utils/revenueCatConfig';
-import { patchRevenueCatBrowserStubs, safeInvalidateCustomerInfoCache, safePurchasesLogOut } from './utils/revenueCatSafe';
+import { isRevenueCatBrowserMode, patchRevenueCatBrowserStubs, safeInvalidateCustomerInfoCache, safePurchasesLogOut } from './utils/revenueCatSafe';
 import { preloadAllAppAssets, preloadSplashAssets } from './utils/preloadAssets';
 
 // RevenueCat: platform keys resolved in utils/revenueCatConfig.ts
@@ -69,6 +69,10 @@ async function configureRevenueCatInBackground() {
   }
 
   patchRevenueCatBrowserStubs();
+  if (isRevenueCatBrowserMode()) {
+    console.log('[REVENUECAT] Skipped in Expo Go');
+    return;
+  }
 
   try {
     const REVENUECAT_API_KEY = getRevenueCatApiKey();

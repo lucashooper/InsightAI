@@ -118,8 +118,12 @@ type Props = {
   animated?: boolean;
   /** Soft ground shadow beneath the cloud. */
   shadow?: boolean;
+  /** Outer color halo — off by default for a cleaner silhouette. */
+  glow?: boolean;
   /** `orb` is a full sphere for mood check-in (no flattened belly). */
   variant?: 'cloud' | 'orb';
+  /** Optional fixed expression — overrides valence-driven brows. */
+  expression?: 'default' | 'curious';
   style?: StyleProp<ViewStyle>;
 };
 
@@ -139,12 +143,14 @@ const EYE_RY = 6.2;
 const CX = 100;
 const CY = 104;
 const R0 = 58;
+/** Symmetric lobes — same silhouette at any scale or placement. */
 const LOBES: Array<[deg: number, amp: number]> = [
-  [-150, 0.2],
-  [-98, 0.27],
-  [-42, 0.22],
-  [8, 0.13],
-  [178, 0.11],
+  [-120, 0.14],
+  [-60, 0.2],
+  [0, 0.1],
+  [60, 0.2],
+  [120, 0.14],
+  [180, 0.12],
 ];
 const SIGMA = (24 * Math.PI) / 180;
 
@@ -164,12 +170,7 @@ function outlinePoints(n = 40): Array<[number, number]> {
       bump += amp * Math.exp(-(d * d) / (2 * SIGMA * SIGMA));
     }
     const r = R0 * (1 + bump);
-    let x = CX + Math.cos(th) * r;
-    let y = CY + Math.sin(th) * r;
-    // Flatten the belly so it reads as a cloud rather than a blob.
-    const belly = CY + 8;
-    if (y > belly) y = belly + (y - belly) * 0.5;
-    pts.push([x, y]);
+    pts.push([CX + Math.cos(th) * r, CY + Math.sin(th) * r]);
   }
   return pts;
 }
@@ -214,7 +215,9 @@ export default function CloudMascot({
   isRoast = false,
   animated = true,
   shadow = true,
+  glow = false,
   variant = 'cloud',
+  expression = 'default',
   style,
 }: Props) {
   const reduceMotion = useReducedMotion();
@@ -300,18 +303,19 @@ export default function CloudMascot({
   // Brows: appear and tilt inward when low.
   const browOpacity = useDerivedValue(() => interpolate(v.value, [0, 0.45], [1, 0], 'clamp'));
   const leftBrowProps = useAnimatedProps(() => {
+    if (expression === 'curious') {
+      return { d: 'M 74 90 L 92 90', opacity: 1 };
+    }
     const tilt = interpolate(v.value, [0, 0.45], [6, 0], 'clamp');
     return { d: `M 72 ${86 + tilt} L 90 ${86 - tilt * 0.4}`, opacity: browOpacity.value };
   });
   const rightBrowProps = useAnimatedProps(() => {
+    if (expression === 'curious') {
+      return { d: 'M 108 82 L 126 86', opacity: 1 };
+    }
     const tilt = interpolate(v.value, [0, 0.45], [6, 0], 'clamp');
     return { d: `M 110 ${86 - tilt * 0.4} L 128 ${86 + tilt}`, opacity: browOpacity.value };
   });
-
-  // Blush grows with joy.
-  const blushProps = useAnimatedProps(() => ({
-    opacity: interpolate(v.value, [0.4, 1], [0, 0.4], 'clamp'),
-  }));
 
   const bodyPath = variant === 'orb' ? ORB_BODY_PATH : CLOUD_BODY_PATH;
   const shadowCy = variant === 'orb' ? 176 : 170;
@@ -347,10 +351,11 @@ export default function CloudMascot({
 
           {shadow ? <Ellipse cx={100} cy={shadowCy} rx={shadowRx} ry={9} fill={INK} opacity={0.12} /> : null}
 
-          {/* Soft glow — the same body, blurred and slightly enlarged */}
-          <G transform="translate(100 106) scale(1.06) translate(-100 -106)" opacity={0.6}>
-            <AnimatedPath animatedProps={glowProps} d={bodyPath} filter={`url(#${id('blur')})`} />
-          </G>
+          {glow ? (
+            <G transform="translate(100 106) scale(1.06) translate(-100 -106)" opacity={0.35}>
+              <AnimatedPath animatedProps={glowProps} d={bodyPath} filter={`url(#${id('blur')})`} />
+            </G>
+          ) : null}
 
           {/* Body */}
           <AnimatedPath animatedProps={bodyProps} d={bodyPath} />
@@ -361,9 +366,7 @@ export default function CloudMascot({
             <Ellipse cx={80} cy={66} rx={22} ry={11} fill="#FFFFFF" opacity={0.55} transform="rotate(-16 80 66)" />
           </G>
 
-          {/* Face */}
-          <AnimatedCircle animatedProps={blushProps} cx={70} cy={116} r={7} fill="#FF9EC4" />
-          <AnimatedCircle animatedProps={blushProps} cx={130} cy={116} r={7} fill="#FF9EC4" />
+          {/* Face — minimal seal-like: eyes, brows, mouth only */}
           <AnimatedPath animatedProps={leftBrowProps} stroke={INK} strokeWidth={3.2} strokeLinecap="round" fill="none" />
           <AnimatedPath animatedProps={rightBrowProps} stroke={INK} strokeWidth={3.2} strokeLinecap="round" fill="none" />
           <AnimatedEllipse animatedProps={eyeProps} cx={84} rx={4.6} fill={INK} />

@@ -67,7 +67,7 @@ export default function PaywallBenefitsScreen({ navigation }: any) {
     <PrePaywallLayout
       step={1}
       ctaLabel={t('onboarding.prePaywall.testimonial.cta')}
-      onContinue={() => navigation.navigate('Paywall')}
+      onContinue={() => navigation.navigate('PaywallPersonalized')}
       onBack={() => safeGoBack(navigation)}
     >
       <Text style={styles.eyebrow}>{t('onboarding.prePaywall.benefits.eyebrow')}</Text>

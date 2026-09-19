@@ -1,195 +1,224 @@
 import React from 'react';
-import { View, Text, StyleSheet, Linking } from 'react-native';
-import PrePaywallLayout from '../../components/onboarding/PrePaywallLayout';
+import { View, Text, StyleSheet, ScrollView, StatusBar } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
+import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
+import CloudMascot from '../../components/companion/CloudMascot';
+import PlanReadyCard, { type PlanNode } from '../../components/onboarding/PlanReadyCard';
+import PaywallOfferBlock from '../../components/onboarding/PaywallOfferBlock';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getFirstName, getGoalFocusKey } from '../../utils/paywallPersonalization';
-import { sf } from '../../utils/responsive';
+import { isTablet, sf, iPadContentStyle } from '../../utils/responsive';
+import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
+import { ONBOARDING_TEXT } from '../../constants/onboardingTheme';
 import { safeGoBack } from '../../utils/navigationSafety';
 
-const TESTFLIGHT_URL = 'https://testflight.apple.com/join/6DmaDpNf';
-
-const PLAN_NODES = [
-  { color: '#FF8A65', label: 'Plan Focus', value: 'Find Inner Clarity' },
-  { color: '#AB7BFF', label: 'Coaching Style', value: 'Deeper Reflection' },
-  { color: '#F4C15D', label: 'Growth Area', value: 'Realign Your Path' },
-  { color: '#F48FB1', label: 'Future Feeling', value: 'Feel Steady and Clear' },
+const PLAN_NODES: PlanNode[] = [
+  { color: '#FF8A65', label: 'Plan Focus', value: 'Find Inner Clarity', icon: 'search' },
+  { color: '#AB7BFF', label: 'Coaching Style', value: 'Deeper Reflection', icon: 'chatbubble' },
+  { color: '#F4C15D', label: 'Growth Area', value: 'Realign Your Path', icon: 'flash' },
+  { color: '#F48FB1', label: 'Future Feeling', value: 'Feel Steady and Clear', icon: 'sparkles' },
 ];
 
-const FEATURES = [
-  { emoji: '✨', color: '#F3E8FF', title: 'Personalised Wellbeing Plan', copy: '5 minutes a day to rewire your mindset' },
-  { emoji: '🔮', color: '#EDE7FF', title: 'AI Insights', copy: 'Uncover surprising patterns about you' },
-  { emoji: '📊', color: '#E7F3FF', title: 'Mood Dashboard', copy: 'Keep track of your progress' },
-  { emoji: '🎙️', color: '#E8F8F2', title: 'Longer Conversations', copy: 'Talk it through until it lands' },
+const PREMIUM_FEATURES = [
+  { color: '#F48FB1', icon: 'brush-outline' as const, titleKey: 'plan', bodyKey: 'plan' },
+  { color: '#AB7BFF', icon: 'sparkles-outline' as const, titleKey: 'insights', bodyKey: 'insights' },
+  { color: '#F4C15D', icon: 'bar-chart-outline' as const, titleKey: 'mood', bodyKey: 'mood' },
+  { color: '#7EB8FF', icon: 'mic-outline' as const, titleKey: 'conversations', bodyKey: 'conversations' },
+  { color: '#FF8A65', icon: 'book-outline' as const, titleKey: 'coaching', bodyKey: 'coaching' },
 ];
 
-export default function PaywallPersonalizedScreen({ navigation }: any) {
+export default function PaywallPersonalizedScreen({ navigation, route }: any) {
   const { userName, onboardingAnswers } = useOnboarding();
   const { t } = useLanguage();
+  const bottomInset = useOnboardingBottomInset();
   const firstName = getFirstName(userName);
   const goalKey = getGoalFocusKey(onboardingAnswers);
 
   const title = firstName
-    ? `${firstName}, your plan is ready`
-    : t('onboarding.prePaywall.personalized.titleGeneric');
+    ? t('onboarding.prePaywall.scroll.titleNamed', { name: firstName })
+    : t('onboarding.prePaywall.scroll.titleGeneric');
 
   return (
-    <PrePaywallLayout
-      step={0}
-      ctaLabel="Get Started"
-      onContinue={() => navigation.navigate('PaywallBenefits')}
-      onBack={() => safeGoBack(navigation)}
-    >
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.subtitle}>
-        {t(`onboarding.prePaywall.personalized.focus.${goalKey}`)}
-      </Text>
+    <View style={styles.container}>
+      <OnboardingAmbientBackground />
+      <StatusBar barStyle="dark-content" />
 
-      <View style={styles.planCard}>
-        {PLAN_NODES.map((node, i) => (
-          <View key={node.label} style={styles.nodeRow}>
-            <View style={styles.nodeRail}>
-              <View style={[styles.nodeDot, { backgroundColor: node.color }]} />
-              {i < PLAN_NODES.length - 1 ? <View style={styles.nodeLine} /> : null}
+      <OnboardingBackButton style={styles.backButton} onPress={() => safeGoBack(navigation)} />
+
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.scrollContent, iPadContentStyle as object, { paddingBottom: bottomInset + 24 }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.heroTitle}>{title}</Text>
+        <Text style={styles.heroSubtitle}>
+          {t(`onboarding.prePaywall.personalized.focus.${goalKey}`)}
+        </Text>
+
+        <PlanReadyCard nodes={PLAN_NODES} />
+
+        <View style={styles.mascotSection}>
+          <CloudMascot size={isTablet ? 148 : 128} valence={0.72} expression="curious" animated shadow={false} glow={false} />
+          <Text style={styles.mascotCaption}>{t('onboarding.prePaywall.scroll.mascotCaption')}</Text>
+        </View>
+
+        <Text style={styles.unlockTitle}>
+          {t('onboarding.prePaywall.scroll.unlockPrefix')}{' '}
+          <Text style={styles.unlockAccent}>{t('onboarding.prePaywall.scroll.unlockAccent')}</Text>
+        </Text>
+
+        <View style={styles.featureList}>
+          {PREMIUM_FEATURES.map((f) => (
+            <View key={f.titleKey} style={styles.featureRow}>
+              <View style={[styles.featureIcon, { backgroundColor: f.color }]}>
+                <Ionicons name={f.icon} size={20} color="#1a1a2e" />
+              </View>
+              <View style={styles.featureCopy}>
+                <Text style={styles.featureTitle}>
+                  {t(`onboarding.prePaywall.scroll.features.${f.titleKey}.title`)}
+                </Text>
+                <Text style={styles.featureBody}>
+                  {t(`onboarding.prePaywall.scroll.features.${f.bodyKey}.body`)}
+                </Text>
+              </View>
             </View>
-            <View style={styles.nodeCopy}>
-              <Text style={styles.nodeLabel}>{node.label}</Text>
-              <Text style={styles.nodeValue}>{node.value}</Text>
-            </View>
+          ))}
+        </View>
+
+        <View style={styles.testimonialCard}>
+          <View style={styles.starsRow}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Ionicons key={star} name="star" size={18} color="#fbbf24" />
+            ))}
           </View>
-        ))}
-      </View>
+          <Text style={styles.testimonialQuote}>
+            "{t('onboarding.prePaywall.testimonial.quote')}"
+          </Text>
+          <Text style={styles.testimonialAuthor}>{t('onboarding.prePaywall.testimonial.author')}</Text>
+        </View>
 
-      <View style={styles.features}>
-        {FEATURES.map((item) => (
-          <View key={item.title} style={styles.featureRow}>
-            <View style={[styles.featureIcon, { backgroundColor: item.color }]}>
-              <Text style={styles.featureEmoji}>{item.emoji}</Text>
-            </View>
-            <View style={styles.featureCopy}>
-              <Text style={styles.featureTitle}>{item.title}</Text>
-              <Text style={styles.featureHint}>{item.copy}</Text>
-            </View>
-          </View>
-        ))}
-      </View>
-
-      <Text style={styles.beta} onPress={() => Linking.openURL(TESTFLIGHT_URL)}>
-        Join TestFlight Beta
-      </Text>
-      <Text style={styles.soon}>App launching soon on the App Store</Text>
-    </PrePaywallLayout>
+        <PaywallOfferBlock navigation={navigation} route={route} layout="stack" />
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  title: {
+  container: { flex: 1 },
+  backButton: {
+    top: isTablet ? 60 : 50,
+    left: 24,
+    zIndex: 2,
+  },
+  scroll: { flex: 1 },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingTop: isTablet ? 108 : 96,
+    gap: 4,
+  },
+  heroTitle: {
+    fontSize: sf(30),
+    fontWeight: '700',
+    color: ONBOARDING_TEXT.primary,
+    textAlign: 'center',
+    letterSpacing: -1,
+    lineHeight: sf(38),
+    marginBottom: 10,
+  },
+  heroSubtitle: {
+    fontSize: sf(16),
+    color: ONBOARDING_TEXT.body,
+    textAlign: 'center',
+    lineHeight: sf(24),
+    marginBottom: 24,
+    paddingHorizontal: 4,
+  },
+  mascotSection: {
+    alignItems: 'center',
+    marginTop: 28,
+    marginBottom: 8,
+    position: 'relative',
+  },
+  mascotCaption: {
+    marginTop: 12,
+    fontSize: sf(15),
+    color: ONBOARDING_TEXT.body,
+    textAlign: 'center',
+    lineHeight: sf(22),
+    maxWidth: 300,
+  },
+  unlockTitle: {
     fontSize: sf(26),
     fontWeight: '700',
-    color: '#1a1a2e',
+    color: ONBOARDING_TEXT.primary,
     textAlign: 'center',
     letterSpacing: -0.8,
     lineHeight: sf(34),
-    marginBottom: 8,
+    marginTop: 20,
+    marginBottom: 20,
   },
-  subtitle: {
-    fontSize: sf(16),
-    color: '#3d3d5c',
-    textAlign: 'center',
-    lineHeight: sf(24),
-    paddingHorizontal: 8,
-    marginBottom: 22,
+  unlockAccent: {
+    color: '#8B9CF7',
   },
-  planCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    paddingVertical: 18,
-    paddingHorizontal: 18,
-    shadowColor: 'rgba(80, 90, 140, 0.16)',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 1,
-    shadowRadius: 18,
-    elevation: 3,
-  },
-  features: {
-    marginTop: 18,
-    gap: 10,
+  featureList: {
+    gap: 16,
+    marginBottom: 28,
   },
   featureRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+    alignItems: 'flex-start',
+    gap: 14,
   },
   featureIcon: {
-    width: 42,
-    height: 42,
+    width: 44,
+    height: 44,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  featureEmoji: {
-    fontSize: 18,
-  },
   featureCopy: {
     flex: 1,
+    paddingTop: 2,
   },
   featureTitle: {
-    fontSize: 14,
+    fontSize: sf(16),
     fontWeight: '700',
-    color: '#1a1a2e',
+    color: ONBOARDING_TEXT.primary,
+    marginBottom: 2,
   },
-  featureHint: {
-    fontSize: 12,
-    color: '#8A8798',
-    marginTop: 1,
+  featureBody: {
+    fontSize: sf(14),
+    color: ONBOARDING_TEXT.body,
+    lineHeight: sf(20),
   },
-  nodeRow: {
+  testimonialCard: {
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.7)',
+    padding: 22,
+    marginBottom: 28,
+  },
+  starsRow: {
     flexDirection: 'row',
-    minHeight: 52,
+    justifyContent: 'center',
+    gap: 4,
+    marginBottom: 14,
   },
-  nodeRail: {
-    width: 28,
-    alignItems: 'center',
-  },
-  nodeDot: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    marginTop: 2,
-  },
-  nodeLine: {
-    flex: 1,
-    width: 2,
-    backgroundColor: '#E6E4F0',
-    marginVertical: 4,
-  },
-  nodeCopy: {
-    flex: 1,
-    paddingLeft: 8,
-    paddingBottom: 12,
-  },
-  nodeLabel: {
-    fontSize: 12,
-    color: '#8A8798',
-  },
-  nodeValue: {
-    fontSize: 16,
+  testimonialQuote: {
+    fontSize: sf(17),
     fontWeight: '700',
-    color: '#1a1a2e',
-    marginTop: 2,
-  },
-  beta: {
-    marginTop: 18,
+    color: ONBOARDING_TEXT.primary,
     textAlign: 'center',
-    color: '#7B5EA7',
-    fontSize: 14,
-    fontWeight: '700',
+    lineHeight: sf(26),
+    marginBottom: 10,
   },
-  soon: {
-    marginTop: 4,
+  testimonialAuthor: {
+    fontSize: sf(13),
+    color: ONBOARDING_TEXT.secondary,
     textAlign: 'center',
-    color: '#8A8798',
-    fontSize: 12,
     fontWeight: '500',
   },
 });

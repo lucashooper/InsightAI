@@ -43,6 +43,8 @@ import SettingsScreen from '../screens/SettingsScreen';
 import PersonalizeScreen from '../screens/PersonalizeScreen';
 import WelcomeScreen from '../screens/onboarding/WelcomeScreen';
 import ProductRevealScreen from '../screens/onboarding/ProductRevealScreen';
+import MascotIntroScreen from '../screens/onboarding/MascotIntroScreen';
+import { ONBOARDING_MOTION } from '../constants/onboardingMotion';
 import ValuePropScreen from '../screens/onboarding/ValuePropScreen';
 import ChooseVibeScreen from '../screens/onboarding/ChooseVibeScreen';
 import AuthSelectionScreen from '../screens/onboarding/AuthSelectionScreen';
@@ -515,21 +517,34 @@ export default function AppNavigator() {
           {/* Onboarding Flow - Include all onboarding screens so users can navigate back through full flow */}
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="ProductReveal" component={ProductRevealScreen} />
+          <Stack.Screen
+            name="MascotIntro"
+            component={MascotIntroScreen}
+            options={{ animation: ONBOARDING_MOTION.stackAnimation, animationDuration: ONBOARDING_MOTION.stackDurationMs }}
+          />
           <Stack.Screen name="AuthSelection" component={AuthSelectionScreen} />
           <Stack.Screen name="ChooseVibe" component={ChooseVibeScreen} />
           <Stack.Screen
             name="OnboardingQuestion"
             component={OnboardingQuestionScreen}
-            options={{ animation: 'fade_from_bottom', animationDuration: 420 }}
+            options={{ animation: ONBOARDING_MOTION.stackAnimation, animationDuration: ONBOARDING_MOTION.stackDurationMs }}
           />
           <Stack.Screen name="EmailVerified" component={EmailVerifiedScreen} />
           <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
-          <Stack.Screen name="PersonalityQuizIntro" component={PersonalityQuizIntroScreen} />
-          <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
+          <Stack.Screen
+            name="PersonalityQuizIntro"
+            component={PersonalityQuizIntroScreen}
+            options={{ animation: ONBOARDING_MOTION.stackAnimation, animationDuration: ONBOARDING_MOTION.stackDurationMs }}
+          />
+          <Stack.Screen
+            name="Analyzing"
+            component={AnalyzingScreen}
+            options={{ animation: ONBOARDING_MOTION.stackAnimation, animationDuration: ONBOARDING_MOTION.stackDurationMs }}
+          />
           <Stack.Screen
             name="InsightIntro"
             component={InsightIntroScreen}
-            options={{ animation: 'fade_from_bottom', animationDuration: 480 }}
+            options={{ animation: ONBOARDING_MOTION.stackAnimation, animationDuration: ONBOARDING_MOTION.stackDurationMs }}
           />
           <Stack.Screen name="MiraOnboardingChat" component={MiraOnboardingChatScreen} />
           <Stack.Screen name="PersonalityResult" component={PersonalityResultScreen} />
@@ -541,22 +556,22 @@ export default function AppNavigator() {
           <Stack.Screen
             name="PaywallPersonalized"
             component={PaywallPersonalizedScreen}
-            options={{ animation: 'slide_from_right', animationDuration: 380 }}
+            options={{ animation: ONBOARDING_MOTION.stackAnimation, animationDuration: ONBOARDING_MOTION.stackDurationMs }}
           />
           <Stack.Screen
             name="PaywallBenefits"
             component={PaywallBenefitsScreen}
-            options={{ animation: 'slide_from_right', animationDuration: 380 }}
+            options={{ animation: ONBOARDING_MOTION.stackAnimation, animationDuration: ONBOARDING_MOTION.stackDurationMs }}
           />
           <Stack.Screen
             name="PaywallTestimonial"
             component={PaywallTestimonialScreen}
-            options={{ animation: 'slide_from_right', animationDuration: 380 }}
+            options={{ animation: ONBOARDING_MOTION.stackAnimation, animationDuration: ONBOARDING_MOTION.stackDurationMs }}
           />
           <Stack.Screen
             name="Paywall"
             component={PaywallScreen}
-            options={{ animation: 'slide_from_right', animationDuration: 380 }}
+            options={{ animation: ONBOARDING_MOTION.stackAnimation, animationDuration: ONBOARDING_MOTION.stackDurationMs }}
           />
           <Stack.Screen name="PostPurchaseWelcome" component={PostPurchaseWelcomeScreen} />
           <Stack.Screen name="OnboardingSummary" component={OnboardingSummaryScreen} />
@@ -597,7 +612,7 @@ export default function AppNavigator() {
       ) : (
         // Unauthenticated - show Welcome first, then Login/Signup
         <Stack.Navigator 
-          initialRouteName={passwordRecoveryActive ? 'ForgotPassword' : isOnboardingCompleted ? 'Login' : needsPostPurchaseSignup ? 'PostPurchaseWelcome' : 'PersonalityQuizIntro' /* DEBUG-TMP */}
+          initialRouteName={passwordRecoveryActive ? 'ForgotPassword' : isOnboardingCompleted ? 'Login' : needsPostPurchaseSignup ? 'PostPurchaseWelcome' : 'ProductReveal'}
           screenOptions={{
             headerShown: false,
             animation: 'none',
@@ -609,21 +624,34 @@ export default function AppNavigator() {
           {/* Onboarding Flow for new users */}
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="ProductReveal" component={ProductRevealScreen} />
+          <Stack.Screen
+            name="MascotIntro"
+            component={MascotIntroScreen}
+            options={{ animation: ONBOARDING_MOTION.stackAnimation, animationDuration: ONBOARDING_MOTION.stackDurationMs }}
+          />
           <Stack.Screen name="AuthSelection" component={AuthSelectionScreen} />
           <Stack.Screen name="ChooseVibe" component={ChooseVibeScreen} />
           <Stack.Screen name="EmailVerified" component={EmailVerifiedScreen} />
           <Stack.Screen
             name="OnboardingQuestion"
             component={OnboardingQuestionScreen}
-            options={{ animation: 'fade_from_bottom', animationDuration: 420 }}
+            options={{ animation: ONBOARDING_MOTION.stackAnimation, animationDuration: ONBOARDING_MOTION.stackDurationMs }}
           />
           <Stack.Screen name="NotificationPermission" component={NotificationPermissionScreen} />
-          <Stack.Screen name="PersonalityQuizIntro" component={PersonalityQuizIntroScreen} />
-          <Stack.Screen name="Analyzing" component={AnalyzingScreen} />
+          <Stack.Screen
+            name="PersonalityQuizIntro"
+            component={PersonalityQuizIntroScreen}
+            options={{ animation: ONBOARDING_MOTION.stackAnimation, animationDuration: ONBOARDING_MOTION.stackDurationMs }}
+          />
+          <Stack.Screen
+            name="Analyzing"
+            component={AnalyzingScreen}
+            options={{ animation: ONBOARDING_MOTION.stackAnimation, animationDuration: ONBOARDING_MOTION.stackDurationMs }}
+          />
           <Stack.Screen
             name="InsightIntro"
             component={InsightIntroScreen}
-            options={{ animation: 'fade_from_bottom', animationDuration: 480 }}
+            options={{ animation: ONBOARDING_MOTION.stackAnimation, animationDuration: ONBOARDING_MOTION.stackDurationMs }}
           />
           <Stack.Screen name="MiraOnboardingChat" component={MiraOnboardingChatScreen} />
           <Stack.Screen name="PersonalityResult" component={PersonalityResultScreen} />
@@ -639,22 +667,22 @@ export default function AppNavigator() {
           <Stack.Screen
             name="PaywallPersonalized"
             component={PaywallPersonalizedScreen}
-            options={{ animation: 'slide_from_right', animationDuration: 380 }}
+            options={{ animation: ONBOARDING_MOTION.stackAnimation, animationDuration: ONBOARDING_MOTION.stackDurationMs }}
           />
           <Stack.Screen
             name="PaywallBenefits"
             component={PaywallBenefitsScreen}
-            options={{ animation: 'slide_from_right', animationDuration: 380 }}
+            options={{ animation: ONBOARDING_MOTION.stackAnimation, animationDuration: ONBOARDING_MOTION.stackDurationMs }}
           />
           <Stack.Screen
             name="PaywallTestimonial"
             component={PaywallTestimonialScreen}
-            options={{ animation: 'slide_from_right', animationDuration: 380 }}
+            options={{ animation: ONBOARDING_MOTION.stackAnimation, animationDuration: ONBOARDING_MOTION.stackDurationMs }}
           />
           <Stack.Screen
             name="Paywall"
             component={PaywallScreen}
-            options={{ animation: 'slide_from_right', animationDuration: 380 }}
+            options={{ animation: ONBOARDING_MOTION.stackAnimation, animationDuration: ONBOARDING_MOTION.stackDurationMs }}
           />
           <Stack.Screen name="PostPurchaseWelcome" component={PostPurchaseWelcomeScreen} />
           

@@ -2,11 +2,9 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
-import CachedImage from '../../components/shared/CachedImage';
 import OnboardingButton from '../../components/onboarding/OnboardingButton';
 import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
 import OnboardingSkipLink from '../../components/onboarding/OnboardingSkipLink';
-import { INSIGHT_LOGO } from '../../constants/appAssets';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { ONBOARDING_TEXT, ONBOARDING_TYPE } from '../../constants/onboardingTheme';
 import { analytics } from '../../services/analytics';
@@ -56,8 +54,7 @@ export default function NotificationsOnboardingScreen({ navigation }: Notificati
         <OnboardingBackButton onPress={() => safeGoBack(navigation)} />
       )}
 
-      <CachedImage source={INSIGHT_LOGO} style={styles.logo} contentFit="contain" recyclingKey="notifications-logo" />
-
+      <View style={styles.mainContent}>
       <Text style={[styles.title, ONBOARDING_TYPE.title, { color: titleColor }]}>
         {t('onboarding.notifications.title')}
       </Text>
@@ -71,6 +68,7 @@ export default function NotificationsOnboardingScreen({ navigation }: Notificati
       </View>
 
       <OnboardingSkipLink label={t('onboarding.notifications.skip')} onPress={handleSkip} />
+      </View>
     </View>
   );
 }
@@ -80,25 +78,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
     paddingHorizontal: 24,
-    paddingTop: 140,
+  },
+  mainContent: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  logo: {
-    width: 100,
-    height: 100,
-    marginBottom: 60,
-    opacity: 0.9,
-    position: 'absolute',
-    top: 60,
+    paddingTop: 56,
+    paddingBottom: 24,
   },
   title: {
     marginBottom: 16,
-    paddingHorizontal: 24,
+    paddingHorizontal: 8,
+    textAlign: 'center',
   },
   subtitle: {
     marginBottom: 48,
     paddingHorizontal: 20,
+    textAlign: 'center',
   },
   ctaWrap: {
     width: '100%',

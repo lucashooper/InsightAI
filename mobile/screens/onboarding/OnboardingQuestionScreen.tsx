@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, StatusBar, Animated, ScrollView, Easing, Linking, TextInput, Keyboard, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Animated, ScrollView, Easing, Linking, TextInput, Keyboard, Platform } from 'react-native';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
 import { Asset } from 'expo-asset';
@@ -9,12 +8,10 @@ import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
-import ProgressBarNeon from '../../components/onboarding/ProgressBarNeon';
 import PillOption from '../../components/onboarding/PillOption';
-import AnimatedSlider from '../../components/onboarding/AnimatedSlider';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
-import { isTablet, sf, ss, iPadContentStyle, iPadWideContentStyle } from '../../utils/responsive';
+import { isTablet, sf, iPadContentStyle, iPadWideContentStyle } from '../../utils/responsive';
 import { analytics } from '../../services/analytics';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ONBOARDING_SURFACE, ONBOARDING_TEXT, ONBOARDING_CTA } from '../../constants/onboardingTheme';
@@ -22,10 +19,9 @@ import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
 import { loadOnboardingQuizProgress, saveOnboardingQuizProgress, saveOnboardingLastScreen } from '../../utils/onboardingProgress';
 import { ONBOARDING_MEDITATION_LOTTIE } from '../../constants/appAssets';
 import { safeGoBack } from '../../utils/navigationSafety';
-import CloudMascot from '../../components/companion/CloudMascot';
+import CloudMascot, { MOOD_TINT_COLORS, MOOD_VALENCE } from '../../components/companion/CloudMascot';
+import { ONBOARDING_MOTION } from '../../constants/onboardingMotion';
 const cambridgeColorLogo = require('../../public/Cambridge-Logo-No-Background.png');
-
-const { width } = Dimensions.get('window');
 
 type StepType = 'question' | 'info' | 'slider' | 'text_input';
 
@@ -34,6 +30,7 @@ interface Option {
     value: string;
     icon?: string;
     emoji?: string;
+    hint?: string;
 }
 
 interface Feature {
@@ -90,10 +87,10 @@ const STEPS: Step[] = [
         type: 'question',
         title: 'onboarding.questions.goal.title',
         options: [
-            { label: 'onboarding.questions.goal.mood', value: 'mood', icon: 'sunny', emoji: '☀️' },
-            { label: 'onboarding.questions.goal.stress', value: 'stress', icon: 'leaf', emoji: '🌿' },
-            { label: 'onboarding.questions.goal.habits', value: 'habits', icon: 'calendar', emoji: '📅' },
-            { label: 'onboarding.questions.goal.clarity', value: 'clarity', icon: 'bulb', emoji: '💡' },
+            { label: 'onboarding.questions.goal.mood', value: 'mood', icon: 'sunny', emoji: '☀️', hint: 'onboarding.questions.goal.moodHint' },
+            { label: 'onboarding.questions.goal.stress', value: 'stress', icon: 'leaf', emoji: '🌿', hint: 'onboarding.questions.goal.stressHint' },
+            { label: 'onboarding.questions.goal.habits', value: 'habits', icon: 'calendar', emoji: '📅', hint: 'onboarding.questions.goal.habitsHint' },
+            { label: 'onboarding.questions.goal.clarity', value: 'clarity', icon: 'bulb', emoji: '💡', hint: 'onboarding.questions.goal.clarityHint' },
         ]
     },
     // 2. Info Slide A (Research)
@@ -113,9 +110,9 @@ const STEPS: Step[] = [
         type: 'question',
         title: 'onboarding.questions.frequency.title',
         options: [
-            { label: 'onboarding.questions.frequency.daily', value: 'daily', icon: 'repeat', emoji: '🔁' },
-            { label: 'onboarding.questions.frequency.weekly', value: 'weekly', icon: 'calendar-outline', emoji: '🗓️' },
-            { label: 'onboarding.questions.frequency.asNeeded', value: 'as_needed', icon: 'hand-left', emoji: '✋' },
+            { label: 'onboarding.questions.frequency.daily', value: 'daily', icon: 'repeat', emoji: '🔁', hint: 'onboarding.questions.frequency.dailyHint' },
+            { label: 'onboarding.questions.frequency.weekly', value: 'weekly', icon: 'calendar-outline', emoji: '🗓️', hint: 'onboarding.questions.frequency.weeklyHint' },
+            { label: 'onboarding.questions.frequency.asNeeded', value: 'as_needed', icon: 'hand-left', emoji: '✋', hint: 'onboarding.questions.frequency.asNeededHint' },
         ]
     },
     // 4. Journaling Experience
@@ -124,10 +121,10 @@ const STEPS: Step[] = [
         type: 'question',
         title: 'onboarding.questions.experience.title',
         options: [
-            { label: 'onboarding.questions.experience.new', value: 'new', icon: 'star-outline', emoji: '✨' },
-            { label: 'onboarding.questions.experience.underSixMonths', value: '<6m', icon: 'time-outline', emoji: '⏳' },
-            { label: 'onboarding.questions.experience.sixToTwentyFourMonths', value: '6-24m', icon: 'book-outline', emoji: '📖' },
-            { label: 'onboarding.questions.experience.twoPlusYears', value: '2+y', icon: 'ribbon-outline', emoji: '🏅' },
+            { label: 'onboarding.questions.experience.new', value: 'new', icon: 'star-outline', emoji: '✨', hint: 'onboarding.questions.experience.newHint' },
+            { label: 'onboarding.questions.experience.underSixMonths', value: '<6m', icon: 'time-outline', emoji: '⏳', hint: 'onboarding.questions.experience.underSixMonthsHint' },
+            { label: 'onboarding.questions.experience.sixToTwentyFourMonths', value: '6-24m', icon: 'book-outline', emoji: '📖', hint: 'onboarding.questions.experience.sixToTwentyFourMonthsHint' },
+            { label: 'onboarding.questions.experience.twoPlusYears', value: '2+y', icon: 'ribbon-outline', emoji: '🏅', hint: 'onboarding.questions.experience.twoPlusYearsHint' },
         ]
     },
     // 6. Wellbeing Slider
@@ -135,7 +132,6 @@ const STEPS: Step[] = [
         id: 'wellbeing',
         type: 'slider',
         title: 'onboarding.questions.wellbeing.title',
-        subtitle: 'onboarding.questions.wellbeing.subtitle',
         min: 1,
         max: 10,
         defaultValue: 7,
@@ -294,6 +290,29 @@ const STEPS: Step[] = [
     }
 ];
 
+const PRIMARY_STEP_IDS = ['name', 'referral', 'goal', 'research_info', 'frequency', 'journalingExperience', 'wellbeing'];
+
+type WellbeingOrb = {
+    label: string;
+    score: number;
+    tier: 'terrible' | 'struggling' | 'neutral' | 'good' | 'amazing';
+    size: number;
+    top?: number;
+    left?: number;
+    right?: number;
+    bottom?: number;
+    center?: boolean;
+};
+
+/** Pentagon cluster — upper-middle, ~35% larger orbs, no isolated bottom orb. */
+const WELLBEING_ORBS: WellbeingOrb[] = [
+    { label: 'Terrible', score: 1, tier: 'terrible' as const, size: isTablet ? 158 : 132, top: 12, left: 6 },
+    { label: 'Great', score: 10, tier: 'amazing' as const, size: isTablet ? 168 : 140, top: 0, right: 6 },
+    { label: 'Bad', score: 3, tier: 'struggling' as const, size: isTablet ? 162 : 136, top: isTablet ? 118 : 104, left: 2 },
+    { label: 'Good', score: 8, tier: 'good' as const, size: isTablet ? 166 : 138, top: isTablet ? 108 : 96, right: 2 },
+    { label: 'Fine', score: 5, tier: 'neutral' as const, size: isTablet ? 170 : 142, top: isTablet ? 208 : 188, center: true },
+];
+
 export default function OnboardingQuestionScreen({ navigation, route }: any) {
     const { userName, setUserName, setOnboardingAnswers } = useOnboarding();
     const { theme } = useTheme();
@@ -305,20 +324,12 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
     const [textInputValue, setTextInputValue] = useState('');
     const [nameInputFocused, setNameInputFocused] = useState(false);
-    const [wellbeingValue, setWellbeingValue] = useState(7);
+    const [selectedWellbeing, setSelectedWellbeing] = useState<string | null>(null);
     const isTransitioning = useRef(false);
+    const pageX = useRef(new Animated.Value(0)).current;
+    const prevIndexRef = useRef(currentIndex);
     const [showLottie, setShowLottie] = useState(false);
     const [featureFadeAnims] = useState([
-        new Animated.Value(0),
-        new Animated.Value(0),
-        new Animated.Value(0),
-    ]);
-    // Animation values for pill options (staggered fade-in)
-    const [optionFadeAnims] = useState([
-        new Animated.Value(0),
-        new Animated.Value(0),
-        new Animated.Value(0),
-        new Animated.Value(0),
         new Animated.Value(0),
         new Animated.Value(0),
         new Animated.Value(0),
@@ -332,7 +343,14 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
     const pulseAnim = useRef(new Animated.Value(1)).current;
 
     const currentStep = STEPS[currentIndex];
-    const totalQuestionSteps = STEPS.length;
+    const primaryPos = PRIMARY_STEP_IDS.indexOf(currentStep.id);
+    const personalityTotal = Math.max(1, STEPS.length - PRIMARY_STEP_IDS.length);
+    const progressLabel = primaryPos >= 0
+        ? `${primaryPos + 1} / ${PRIMARY_STEP_IDS.length}`
+        : `${currentIndex - PRIMARY_STEP_IDS.length + 1} / ${personalityTotal}`;
+    const progressRatio = primaryPos >= 0
+        ? (primaryPos + 1) / PRIMARY_STEP_IDS.length
+        : (currentIndex - PRIMARY_STEP_IDS.length + 1) / personalityTotal;
     const bottomInset = useOnboardingBottomInset();
     const useDarkOnboardingAccent = theme.name === 'dark' || theme.name === 'midnight';
     const primaryButtonColor = ONBOARDING_CTA.background;
@@ -364,6 +382,14 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
     useEffect(() => {
         saveOnboardingQuizProgress(currentIndex, answers);
     }, [currentIndex, answers]);
+
+    useEffect(() => {
+        const next = route?.params?.startIndex;
+        if (typeof next === 'number' && next !== currentIndex) {
+            setCurrentIndex(next);
+            setSelectedOption(null);
+        }
+    }, [route?.params?.startIndex]);
 
     // CRITICAL: Skip name step ONLY if user explicitly used Apple/Google Sign-In
     useEffect(() => {
@@ -431,9 +457,8 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
     useEffect(() => {
         isTransitioning.current = false;
 
-        // Reset wellbeing default when entering slider step
-        if (currentStep.type === 'slider') {
-            setWellbeingValue(currentStep.defaultValue ?? 7);
+        if (currentStep.type === 'slider' && prevIndexRef.current !== currentIndex) {
+            setSelectedWellbeing(null);
         }
 
         // Reset and staggered fade-in for AI features
@@ -450,22 +475,6 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
             });
         }
 
-        // Staggered pill fade-in for question options only
-        if (currentStep.type === 'question' && currentStep.options) {
-            optionFadeAnims.forEach((anim) => anim.setValue(0));
-            currentStep.options.forEach((_, index) => {
-                if (optionFadeAnims[index]) {
-                    Animated.timing(optionFadeAnims[index], {
-                        toValue: 1,
-                        duration: 420,
-                        delay: index * 60,
-                        easing: Easing.out(Easing.cubic),
-                        useNativeDriver: true,
-                    }).start();
-                }
-            });
-        }
-
         // Simple fade-in for info pages (research) - same as other pages
         if (currentStep.type === 'info') {
             setShowLottie(false);
@@ -473,7 +482,34 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
         } else {
             setShowLottie(false);
         }
-    }, [currentIndex, currentStep.type, currentStep.defaultValue, currentStep.features, currentStep.options, featureFadeAnims, optionFadeAnims, infoLottieAnim, infoCardAnim]);
+
+        const prev = prevIndexRef.current;
+        prevIndexRef.current = currentIndex;
+        if (prev === currentIndex) return;
+
+        const prevStep = STEPS[prev];
+        const layoutShiftStep =
+            currentStep.type === 'slider' ||
+            prevStep?.type === 'slider' ||
+            currentStep.type === 'info' ||
+            prevStep?.type === 'info';
+
+        // Wellbeing + info slides use a different layout — sliding the whole block causes a shake.
+        if (layoutShiftStep) {
+            pageX.stopAnimation();
+            pageX.setValue(0);
+            return;
+        }
+
+        const dir = currentIndex >= prev ? 1 : -1;
+        pageX.setValue(dir * ONBOARDING_MOTION.pageSlidePx);
+        Animated.timing(pageX, {
+            toValue: 0,
+            duration: ONBOARDING_MOTION.pageDurationMs,
+            easing: ONBOARDING_MOTION.pageEasing,
+            useNativeDriver: true,
+        }).start();
+    }, [currentIndex, currentStep.type, currentStep.defaultValue, currentStep.features, currentStep.options, featureFadeAnims, infoLottieAnim, infoCardAnim, pageX]);
 
     const handleNext = (value?: string) => {
         if (isTransitioning.current) return; // Prevent double-taps during transition
@@ -499,15 +535,17 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
             console.log('[OnboardingQuestion] Username saved to context');
         }
 
-        // After wellbeing question (index 5), go to PersonalityQuizIntro
-        if (currentIndex === 5) {
+        // After the short primary path, pause for the personality intro.
+        if (currentStep.id === 'wellbeing') {
             isTransitioning.current = false;
             const currentAnswers = value ? { ...answers, [currentStep.id]: value } : answers;
-            console.log('[OnboardingQuestion] After wellbeing, navigating to PersonalityQuizIntro');
-            navigation.navigate('PersonalityQuizIntro', { answers: currentAnswers, returnIndex: 6 });
+            navigation.navigate('PersonalityQuizIntro', { answers: currentAnswers, returnIndex: currentIndex + 1 });
         } else if (currentIndex < STEPS.length - 1) {
             setCurrentIndex(currentIndex + 1);
             setSelectedOption(null);
+            setTimeout(() => {
+                isTransitioning.current = false;
+            }, ONBOARDING_MOTION.pageDurationMs);
         } else {
             // Finished all questions - go to analyzing
             isTransitioning.current = false;
@@ -551,7 +589,7 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                     onPress={() => {
                         if (isTransitioning.current) return;
                         if (currentIndex === 0) {
-                            safeGoBack(navigation, 'PersonalityQuizIntro');
+                            safeGoBack(navigation, 'MascotIntro');
                         } else {
                             isTransitioning.current = true;
                             setCurrentIndex(currentIndex - 1);
@@ -560,11 +598,14 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                     }}
                 />
                 <View style={styles.progressBarContainer}>
-                    <ProgressBarNeon currentStep={currentIndex + 1} totalSteps={totalQuestionSteps} />
+                    <View style={styles.progressTrack}>
+                        <View style={[styles.progressFill, { width: `${Math.max(8, progressRatio * 100)}%` }]} />
+                    </View>
                 </View>
+                <Text style={styles.progressCount}>{progressLabel}</Text>
             </View>
 
-            <View style={styles.content}>
+            <Animated.View style={[styles.content, { transform: [{ translateX: pageX }] }]}>
 
                 <View style={styles.stepContainer}>
 
@@ -620,11 +661,11 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                             {renderAnimationPlaceholder()}
 
                             {/* Title */}
-                            <Text style={styles.onboardingTitle}>
+                            <Text style={[styles.onboardingTitle, currentStep.type === 'slider' && styles.checkInTitle]}>
                                 {t(currentStep.title)}
                             </Text>
 
-                            {currentStep.subtitle && (
+                            {currentStep.subtitle && currentStep.type !== 'slider' && (
                                 <Text style={styles.onboardingSubtitle}>{t(currentStep.subtitle)}</Text>
                             )}
 
@@ -795,115 +836,82 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                         <View style={styles.questionContent}>
                             <ScrollView style={styles.optionsList} showsVerticalScrollIndicator={false}>
                                 <View style={styles.optionsContainer}>
-                                    {currentStep.options.map((option, index) => (
-                                        <Animated.View
+                                    {currentStep.options.map((option) => {
+                                        const hintKey = option.hint;
+                                        const hintValue = hintKey ? t(hintKey) : undefined;
+                                        return (
+                                        <PillOption
                                             key={option.value}
-                                            style={{
-                                                opacity: optionFadeAnims[index],
-                                                transform: [{
-                                                    translateY: optionFadeAnims[index].interpolate({
-                                                        inputRange: [0, 1],
-                                                        outputRange: [6, 0],
-                                                    })
-                                                }]
+                                            label={t(option.label)}
+                                            hint={hintValue && hintValue !== hintKey ? hintValue : undefined}
+                                            icon={option.icon}
+                                            emoji={option.emoji}
+                                            selected={selectedOption === option.value}
+                                            onPress={() => {
+                                                if (isTransitioning.current) return;
+                                                setSelectedOption(option.value);
+                                                setTimeout(() => handleNext(option.value), ONBOARDING_MOTION.autoAdvanceMs);
                                             }}
-                                        >
-                                            <PillOption
-                                                label={t(option.label)}
-                                                icon={option.icon}
-                                                emoji={option.emoji}
-                                                selected={selectedOption === option.value}
-                                                onPress={() => setSelectedOption(option.value)}
-                                            />
-                                        </Animated.View>
-                                    ))}
+                                        />
+                                        );
+                                    })}
                                 </View>
                             </ScrollView>
 
-                            {/* Continue Button - only enabled when option selected */}
-                            <TouchableOpacity
-                                style={[
-                                    styles.continueButton,
-                                    { backgroundColor: primaryButtonColor, shadowColor: primaryButtonShadow },
-                                    !selectedOption && styles.continueButtonDisabled
-                                ]}
-                                activeOpacity={0.9}
-                                onPress={() => {
-                                    if (selectedOption) {
-                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                        handleNext(selectedOption);
-                                    }
-                                }}
-                                disabled={!selectedOption}
-                            >
-                                <View style={styles.continueGradient}>
-                                    <Text style={styles.continueText}>{t('common.continue')}</Text>
-                                </View>
-                            </TouchableOpacity>
                         </View>
                     )}
 
                     {/* Wellbeing Slider - distinct from normal questions */}
                     {currentStep.type === 'slider' && (
-                        <View style={styles.sliderContent}>
-                            <View style={styles.sliderValueRow}>
-                                <Text style={[styles.sliderValueText, isDarkTheme(theme.name) && styles.sliderValueTextDark]}>{Math.round(wellbeingValue)}/10</Text>
-                                <Text style={[styles.sliderHintText, isDarkTheme(theme.name) && { color: 'rgba(255, 255, 255, 0.3)' }]}>{t('onboarding.questions.wellbeing.typicalDay')}</Text>
+                        <View style={styles.checkInContent}>
+                            <View style={styles.checkInStage}>
+                                {WELLBEING_ORBS.map((orb) => {
+                                    const selected = selectedWellbeing === orb.label;
+                                    return (
+                                        <TouchableOpacity
+                                            key={orb.label}
+                                            style={[
+                                                styles.checkInHit,
+                                                {
+                                                    top: orb.top,
+                                                    left: orb.center ? '50%' : orb.left,
+                                                    right: orb.right,
+                                                    bottom: orb.bottom,
+                                                    marginLeft: orb.center ? -(orb.size / 2) : 0,
+                                                },
+                                            ]}
+                                            activeOpacity={0.88}
+                                            onPress={() => {
+                                                if (isTransitioning.current) return;
+                                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                                                setSelectedWellbeing(orb.label);
+                                                setTimeout(() => handleNext(String(orb.score)), ONBOARDING_MOTION.autoAdvanceMs);
+                                            }}
+                                        >
+                                            <View
+                                                style={[
+                                                    styles.checkInOrb,
+                                                    selected && styles.checkInOrbOn,
+                                                    { shadowColor: MOOD_TINT_COLORS[orb.tier] },
+                                                ]}
+                                            >
+                                                <CloudMascot
+                                                    size={orb.size}
+                                                    tint={MOOD_TINT_COLORS[orb.tier]}
+                                                    valence={MOOD_VALENCE[orb.tier]}
+                                                    variant="orb"
+                                                    shadow={false}
+                                                    glow={false}
+                                                    animated={false}
+                                                />
+                                            </View>
+                                            <Text style={[styles.checkInLabel, selected && styles.checkInLabelOn]}>
+                                                {orb.label}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
                             </View>
-
-                            <View style={styles.sliderTrackContainer}>
-                                <View style={styles.sliderTrackBase} />
-                                <View
-                                    style={[
-                                        styles.sliderTrackFillWrap,
-                                        {
-                                            width: `${((wellbeingValue - (currentStep.min ?? 1)) / ((currentStep.max ?? 10) - (currentStep.min ?? 1))) * 100}%`,
-                                        },
-                                    ]}
-                                >
-                                    <LinearGradient
-                                        colors={['#06b6d4', '#3b82f6', '#8b5cf6']}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 0 }}
-                                        style={styles.sliderTrackFill}
-                                    />
-                                </View>
-
-                                <AnimatedSlider
-                                    style={styles.slider}
-                                    minimumValue={currentStep.min ?? 1}
-                                    maximumValue={currentStep.max ?? 10}
-                                    step={1}
-                                    value={wellbeingValue}
-                                    minimumTrackTintColor="transparent"
-                                    maximumTrackTintColor="transparent"
-                                    thumbTintColor="#ffffff"
-                                    onValueChange={(v) => {
-                                        const snapped = Math.round(v);
-                                        if (snapped !== Math.round(wellbeingValue)) {
-                                            Haptics.selectionAsync();
-                                        }
-                                        setWellbeingValue(snapped);
-                                    }}
-                                    onSlidingComplete={(v) => setWellbeingValue(Math.round(v))}
-                                />
-                            </View>
-
-                            <TouchableOpacity
-                                style={[
-                                    styles.sliderContinueButton,
-                                    { backgroundColor: primaryButtonColor, shadowColor: primaryButtonShadow }
-                                ]}
-                                activeOpacity={0.9}
-                                onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                    handleNext(String(Math.round(wellbeingValue)));
-                                }}
-                            >
-                                <View style={styles.sliderContinueGradient}>
-                                    <Text style={styles.sliderContinueText}>{t('common.continue')}</Text>
-                                </View>
-                            </TouchableOpacity>
                         </View>
                     )}
 
@@ -928,10 +936,10 @@ export default function OnboardingQuestionScreen({ navigation, route }: any) {
                         </View>
                     )}
                 </View>
-            </View>
+            </Animated.View>
             {currentStep.type === 'question' ? (
                 <View style={styles.cornerMascot} pointerEvents="none">
-                    <CloudMascot size={isTablet ? 120 : 92} tint="sky" valence={0.72} />
+                    <CloudMascot size={isTablet ? 132 : 108} valence={0.86} animated shadow={false} glow={false} />
                 </View>
             ) : null}
         </View>
@@ -948,9 +956,9 @@ const styles = StyleSheet.create({
     },
     cornerMascot: {
         position: 'absolute',
-        right: -6,
-        bottom: 8,
-        zIndex: 2,
+        right: -18,
+        bottom: 72,
+        zIndex: 4,
     },
     topRow: {
         flexDirection: 'row',
@@ -962,6 +970,24 @@ const styles = StyleSheet.create({
     },
     progressBarContainer: {
         flex: 1,
+    },
+    progressTrack: {
+        height: 3,
+        borderRadius: 99,
+        backgroundColor: 'rgba(28, 26, 46, 0.08)',
+        overflow: 'hidden',
+    },
+    progressFill: {
+        height: '100%',
+        borderRadius: 99,
+        backgroundColor: '#7B5EA7',
+    },
+    progressCount: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: '#6b6b8a',
+        minWidth: 44,
+        textAlign: 'right',
     },
     progressWrapper: {
         marginTop: 24,
@@ -1279,97 +1305,46 @@ const styles = StyleSheet.create({
     },
 
     // ========================================
-    // WELLBEING SLIDER
+    // WELLBEING CHECK-IN
     // ========================================
-    sliderContent: {
+    checkInContent: {
         flex: 1,
-        justifyContent: 'center',
-        paddingTop: isTablet ? 0 : 20,
         width: '100%',
+        justifyContent: 'flex-start',
+        paddingTop: 8,
         ...iPadContentStyle,
     },
-    sliderValueRow: {
-        alignItems: 'center',
-        marginBottom: isTablet ? 56 : 40,
+    checkInStage: {
+        width: '100%',
+        height: isTablet ? 340 : 300,
+        position: 'relative',
+        marginTop: 4,
+        alignSelf: 'center',
+        maxWidth: 360,
     },
-    sliderValueText: {
-        fontSize: isTablet ? 132 : 72,
-        fontWeight: '800',
+    checkInHit: {
+        position: 'absolute',
+        alignItems: 'center',
+    },
+    checkInOrb: {
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.28,
+        shadowRadius: 16,
+        elevation: 5,
+    },
+    checkInOrbOn: {
+        shadowOpacity: 0.55,
+        transform: [{ scale: 1.08 }],
+    },
+    checkInLabel: {
+        marginTop: 6,
+        fontSize: sf(14),
+        fontWeight: '600',
+        color: '#6b6b8a',
+    },
+    checkInLabelOn: {
         color: '#1a1a2e',
-        letterSpacing: -2,
-        textShadowColor: 'rgba(139, 92, 246, 0.15)',
-        textShadowOffset: { width: 0, height: 0 },
-        textShadowRadius: 20,
-    },
-    sliderValueTextDark: {
-        color: '#a78bfa',
-        textShadowColor: 'rgba(139, 92, 246, 0.4)',
-    },
-    sliderHintText: {
-        marginTop: 10,
-        fontSize: 11,
-        fontWeight: '600',
-        color: 'rgba(0, 0, 0, 0.25)',
-        letterSpacing: 1.5,
-        textTransform: 'uppercase',
-    },
-    sliderTrackContainer: {
-        marginTop: 0,
-        marginBottom: isTablet ? 76 : 60,
-        justifyContent: 'center',
-        paddingHorizontal: 4,
-    },
-    sliderTrackBase: {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        height: 8,
-        borderRadius: 999,
-        backgroundColor: 'rgba(0,0,0,0.06)',
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.04)',
-    },
-    sliderTrackFillWrap: {
-        position: 'absolute',
-        left: 0,
-        height: 8,
-        borderRadius: 999,
-        overflow: 'hidden',
-        shadowColor: '#8b5cf6',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-    },
-    sliderTrackFill: {
-        flex: 1,
-        borderRadius: 999,
-    },
-    slider: {
-        width: '100%',
-        height: 48,
-    },
-    sliderContinueButton: {
-        width: '100%',
-        borderRadius: 28,
-        backgroundColor: '#7B5EA7',
-        marginTop: 24,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
-        elevation: 8,
-    },
-    sliderContinueGradient: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 22,
-        borderRadius: 28,
-    },
-    sliderContinueText: {
-        fontSize: sf(17),
-        fontWeight: '600',
-        color: '#fff',
-        letterSpacing: 0.2,
+        fontWeight: '800',
     },
     
     // ========================================
@@ -1442,6 +1417,11 @@ const styles = StyleSheet.create({
         lineHeight: 36,
         letterSpacing: -1.12,
         marginBottom: 20,
+    },
+    checkInTitle: {
+        textAlign: 'center',
+        marginBottom: 8,
+        paddingHorizontal: 8,
     },
     onboardingSubtitle: {
         fontSize: 16,

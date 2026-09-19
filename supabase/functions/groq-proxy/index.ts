@@ -42,7 +42,7 @@ serve(async (req) => {
     }
 
     // 2. Parse the request body
-    const { messages, model, temperature, max_tokens } = await req.json()
+    const { messages, model, temperature, max_tokens, reasoning_effort } = await req.json()
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: 'Missing or invalid messages array' }), {
@@ -57,19 +57,28 @@ serve(async (req) => {
       throw new Error('GROQ_API_KEY not configured in Supabase secrets')
     }
 
+    const resolvedModel = model || 'openai/gpt-oss-120b'
+    const isReasoningModel = /gpt-oss|qwen\/qwen3/i.test(resolvedModel)
+    const tokenBudget = Math.max(max_tokens ?? 500, isReasoningModel ? 1024 : 500)
+
     // 4. Proxy the request to Groq
+    const groqBody: Record<string, unknown> = {
+      model: resolvedModel,
+      messages,
+      temperature: temperature ?? 0.8,
+      max_tokens: tokenBudget,
+    }
+    if (isReasoningModel) {
+      groqBody.reasoning_effort = reasoning_effort ?? 'low'
+    }
+
     const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${groqApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: model || 'openai/gpt-oss-120b',
-        messages,
-        temperature: temperature ?? 0.8,
-        max_tokens: max_tokens ?? 500,
-      }),
+      body: JSON.stringify(groqBody),
     })
 
     if (!groqResponse.ok) {

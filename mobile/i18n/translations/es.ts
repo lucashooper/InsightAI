@@ -134,8 +134,8 @@ const es: TranslationTree = {
         twoPlusYears: 'Más de 2 años',
       },
       wellbeing: {
-        title: '¿Cómo valorarías tu bienestar diario?',
-        subtitle: 'En una escala del 1 al 10, ¿cómo sueles sentirte?',
+        title: '¿Cómo te sientes hoy?',
+        subtitle: 'Elige la que encaja con un día habitual',
         typicalDay: 'DÍA HABITUAL',
       },
       noneOfAbove: 'Ninguna de las anteriores',
@@ -234,8 +234,8 @@ const es: TranslationTree = {
       insightsWith: 'OBTÉN INSIGHTS CON',
     },
     quizIntro: {
-      title: 'Ayúdanos a entender tus hábitos',
-      description: 'Preguntas opcionales para personalizar tu experiencia',
+      title: 'Unas preguntas para conocerte',
+      description: 'Opcional — unos dos minutos. Puedes saltarlo.',
       questions: 'preguntas',
       minutes: 'minutos',
       private: 'privado',
@@ -244,11 +244,14 @@ const es: TranslationTree = {
       patternTracking: 'Mejor seguimiento de patrones',
     },
     analyzing: {
+      headline: 'Personalizando tu experiencia',
       emotionalPatterns: 'Analizando patrones emocionales',
       responses: 'Procesando tus respuestas',
       stressMarkers: 'Identificando señales de estrés',
       personalPlan: 'Creando tu plan personal',
       status: '{{label}}...',
+      privacy: 'Tus reflexiones son tuyas.',
+      privacyHint: 'Tus datos te pertenecen. Los cuidamos.',
     },
     personality: {
       primaryPattern: 'Tu patrón principal',

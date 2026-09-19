@@ -6,7 +6,7 @@ const Footer: React.FC = () => {
       <div className="footer-arise-inner">
         <div className="footer-cta-section">
           <div className="footer-cta-icon">
-            <img src="/Insight-Logo-1.png" alt="Insight" />
+            <img src="/Insight-New-Logo.png" alt="Insight" />
           </div>
           <h2 className="footer-cta-title">Start understanding yourself today.</h2>
           <div className="footer-cta-buttons">

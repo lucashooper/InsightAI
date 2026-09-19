@@ -3,13 +3,14 @@ import { SURFACE, TYPO } from './typography';
 
 /** Onboarding-only surfaces — light glassmorphic cards. */
 export const ONBOARDING_SURFACE = {
-  fill: 'rgba(255, 255, 255, 0.7)',
-  fillElevated: 'rgba(255, 255, 255, 0.82)',
+  fill: 'rgba(255, 255, 255, 0.88)',
+  fillElevated: 'rgba(255, 255, 255, 0.92)',
+  /** ~10% brand tint — selected reads by contrast, not heaviness */
   fillSelected: 'rgba(123, 94, 167, 0.1)',
-  border: 'rgba(200, 185, 255, 0.35)',
-  borderSelected: '#7B5EA7',
-  iconChip: 'rgba(255, 255, 255, 0.85)',
-  iconChipSelected: 'rgba(123, 94, 167, 0.12)',
+  border: 'rgba(200, 195, 210, 0.45)',
+  borderSelected: 'rgba(123, 94, 167, 0.55)',
+  iconChip: 'rgba(255, 255, 255, 0.92)',
+  iconChipSelected: 'rgba(123, 94, 167, 0.08)',
 } as const;
 
 /** Main CTAs are charcoal pills everywhere — colour belongs to cards, not buttons. */
@@ -21,9 +22,10 @@ export const ONBOARDING_CTA = {
   paddingVertical: 20,
 } as const;
 
-export const ONBOARDING_BG = '#f0eeff';
+export const ONBOARDING_BG = '#eef4fc';
 
-export const ONBOARDING_GRADIENT = ['#f0eeff', '#fce8f0', '#e8f0ff'] as const;
+/** Single sky-wash family — low saturation so content stays focal */
+export const ONBOARDING_GRADIENT = ['#f8fbff', '#eef4fc', '#e3edf8'] as const;
 
 /** Onboarding copy — dark on light gradient. */
 export const ONBOARDING_TEXT = {

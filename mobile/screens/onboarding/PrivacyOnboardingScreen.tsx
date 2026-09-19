@@ -4,8 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import OnboardingButton from '../../components/onboarding/OnboardingButton';
 import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
-import CachedImage from '../../components/shared/CachedImage';
-import { INSIGHT_LOGO } from '../../constants/appAssets';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
@@ -46,8 +44,6 @@ export default function PrivacyOnboardingScreen({ navigation }: PrivacyOnboardin
       {navigation.canGoBack() && (
         <OnboardingBackButton onPress={() => safeGoBack(navigation)} />
       )}
-
-      <CachedImage source={INSIGHT_LOGO} style={styles.logo} contentFit="contain" recyclingKey="privacy-logo" />
 
       <View style={styles.mainContent}>
         <Text style={[styles.title, { color: dark ? '#ffffff' : '#1a1a2e' }]}>
@@ -91,7 +87,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
     paddingHorizontal: 24,
-    paddingTop: isTablet ? 116 : 140,
+    paddingTop: isTablet ? 88 : 96,
     alignItems: 'center',
     paddingBottom: 60,
   },
@@ -107,7 +103,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: isTablet ? 72 : 88,
+    paddingTop: isTablet ? 48 : 56,
     ...iPadContentStyle,
   },
   title: {

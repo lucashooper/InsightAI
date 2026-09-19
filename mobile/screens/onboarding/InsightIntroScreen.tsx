@@ -7,11 +7,10 @@ import {
   Animated,
   SafeAreaView,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import CloudMascot from '../../components/companion/CloudMascot';
+import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import OnboardingButton from '../../components/onboarding/OnboardingButton';
-import { ONBOARDING_GRADIENT } from '../../constants/onboardingTheme';
 import { ONBOARDING_LAYOUT } from '../../constants/onboardingLayout';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { computePersonality } from '../../utils/onboardingPersonality';
@@ -139,7 +138,7 @@ export default function InsightIntroScreen({ navigation, route }: any) {
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={[...ONBOARDING_GRADIENT]} style={StyleSheet.absoluteFill} />
+      <OnboardingAmbientBackground />
       <StatusBar barStyle="dark-content" />
 
       <SafeAreaView style={styles.safe}>
@@ -153,12 +152,7 @@ export default function InsightIntroScreen({ navigation, route }: any) {
           <Text style={styles.line1}>{line1 || ' '}</Text>
 
           <Animated.View style={[styles.orbWrap, { transform: [{ scale: mascotScale }] }]}>
-            <CloudMascot
-              size={ONBOARDING_LAYOUT.introOrbSize}
-              personality="default"
-              valence={0.78}
-              shadow
-            />
+            <CloudMascot size={ONBOARDING_LAYOUT.introOrbSize} valence={0.88} animated shadow />
           </Animated.View>
 
           <View style={styles.subtextWrap}>

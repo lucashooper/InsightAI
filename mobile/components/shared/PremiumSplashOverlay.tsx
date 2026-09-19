@@ -1,8 +1,7 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Image } from 'expo-image';
+import { View, Text, StyleSheet } from 'react-native';
 import MeshGradientBackdrop from '../ui/MeshGradientBackdrop';
-import { SPLASH_LOADING_WORDMARK } from '../../constants/appAssets';
+import { sf } from '../../utils/responsive';
 import { INK } from '../../constants/typography';
 
 type Props = {
@@ -16,15 +15,9 @@ export default function PremiumSplashOverlay({ style }: Props) {
     <View style={[styles.root, style]}>
       <MeshGradientBackdrop />
       <View style={styles.center}>
-        <Image
-          source={SPLASH_LOADING_WORDMARK}
-          style={styles.wordmark}
-          tintColor={INK.primary}
-          contentFit="contain"
-          cachePolicy="memory-disk"
-          transition={0}
-          accessibilityLabel="Insight"
-        />
+        <Text style={styles.wordmark} accessibilityRole="header">
+          Insight
+        </Text>
       </View>
     </View>
   );
@@ -43,7 +36,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 48,
   },
   wordmark: {
-    width: 168,
-    height: 48,
+    fontSize: sf(36),
+    fontWeight: '500',
+    letterSpacing: sf(36) * 0.03,
+    color: INK.primary,
   },
 });

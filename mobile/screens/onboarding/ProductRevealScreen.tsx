@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,38 +8,25 @@ import { isTablet, sf, screenPadding, iPadContentStyle } from '../../utils/respo
 import LanguagePicker from '../../components/LanguagePicker';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useOnboardingBottomInset, useOnboardingTopInset } from '../../utils/onboardingInsets';
-import { INSIGHT_LOGO } from '../../constants/appAssets';
 import { INK, TYPO } from '../../constants/typography';
 import PillButton from '../../components/ui/PillButton';
 import PressableScale from '../../components/ui/PressableScale';
 import StaggerIn from '../../components/shared/StaggerIn';
+import CloudMascot from '../../components/companion/CloudMascot';
 
 const LANDSCAPE = require('../../assets/generated/onboarding-landscape.png');
 
 /**
- * Welcome — a single generated pastel landscape fills the screen; the brand
- * sits in the sky, one oversized headline over the horizon glow, and a
- * charcoal CTA anchored on the hills. No shapes, no mascot, nothing hard-edged.
+ * Welcome — pastel landscape, live companion in the sky, one headline,
+ * charcoal CTA. Screen-to-screen motion is owned by the stack (slide).
  */
 export default function ProductRevealScreen({ navigation }: any) {
   const { t } = useLanguage();
   const bottomInset = useOnboardingBottomInset();
   const topInset = useOnboardingTopInset();
-  const leaveY = useRef(new Animated.Value(0)).current;
-  const leaveOpacity = useRef(new Animated.Value(1)).current;
-  const leaving = useRef(false);
-
-  const go = (route: string) => {
-    if (leaving.current) return;
-    leaving.current = true;
-    Animated.parallel([
-      Animated.timing(leaveY, { toValue: 28, duration: 340, useNativeDriver: true }),
-      Animated.timing(leaveOpacity, { toValue: 0, duration: 340, useNativeDriver: true }),
-    ]).start(() => navigation.navigate(route));
-  };
 
   return (
-    <Animated.View style={[styles.container, { opacity: leaveOpacity, transform: [{ translateY: leaveY }] }]}>
+    <View style={styles.container}>
       <StatusBar style="dark" />
 
       <Image
@@ -63,9 +50,8 @@ export default function ProductRevealScreen({ navigation }: any) {
         <LanguagePicker variant="pill" size="large" />
       </View>
 
-      {/* Brand */}
       <StaggerIn delay={40} style={[styles.brand, { paddingTop: topInset + (isTablet ? 30 : 22) }]}>
-        <Image source={INSIGHT_LOGO} style={styles.logo} contentFit="contain" cachePolicy="memory-disk" transition={0} />
+        <CloudMascot size={isTablet ? 96 : 82} valence={0.88} animated shadow />
         <Text style={styles.tagline}>{t('onboarding.heroTagline')}</Text>
       </StaggerIn>
 
@@ -85,11 +71,11 @@ export default function ProductRevealScreen({ navigation }: any) {
           block
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            go('OnboardingQuestion');
+            navigation.navigate('MascotIntro');
           }}
         />
         <PressableScale
-          onPress={() => go('Login')}
+          onPress={() => navigation.navigate('Login')}
           style={styles.signInLink}
           haptic={false}
           scaleTo={0.98}
@@ -99,7 +85,7 @@ export default function ProductRevealScreen({ navigation }: any) {
         </PressableScale>
         <Text style={styles.legal}>{t('onboarding.heroLegal')}</Text>
       </StaggerIn>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -122,10 +108,6 @@ const styles = StyleSheet.create({
   },
   brand: {
     alignItems: 'center',
-  },
-  logo: {
-    width: isTablet ? 88 : 74,
-    height: isTablet ? 88 : 74,
   },
   tagline: {
     ...TYPO.title,

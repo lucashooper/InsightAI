@@ -25,7 +25,7 @@ const MarketingNav: React.FC<MarketingNavProps> = ({ links = defaultLinks }) => 
     <header className={`premium-nav ${scrolled ? 'premium-nav--scrolled' : ''}`}>
       <div className="premium-nav-inner">
         <a href="/" className="premium-nav-logo">
-          <img src="/Insight-Logo-nobg.webp" alt="Insight" />
+          <img src="/Insight-New-Logo.png" alt="Insight" />
           <span>Insight</span>
         </a>
 

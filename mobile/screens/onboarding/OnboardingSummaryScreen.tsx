@@ -7,8 +7,6 @@ import ConfettiCannon from 'react-native-confetti-cannon';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import OnboardingButton from '../../components/onboarding/OnboardingButton';
 import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
-import CachedImage from '../../components/shared/CachedImage';
-import { INSIGHT_LOGO } from '../../constants/appAssets';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { ONBOARDING_TEXT, ONBOARDING_TYPE } from '../../constants/onboardingTheme';
 import { analytics } from '../../services/analytics';
@@ -87,9 +85,6 @@ export default function OnboardingSummaryScreen({ navigation, route }: any) {
                 <OnboardingBackButton onPress={() => safeGoBack(navigation)} />
             )}
 
-            {/* Logo */}
-            <CachedImage source={INSIGHT_LOGO} style={styles.logo} contentFit="contain" recyclingKey="summary-logo" />
-            
             {/* Confetti */}
             <ConfettiCannon
                 ref={confettiRef}
@@ -125,20 +120,11 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'transparent',
     },
-    logo: {
-        width: 100,
-        height: 100,
-        opacity: 0.9,
-        position: 'absolute',
-        top: 60,
-        alignSelf: 'center',
-        zIndex: 10,
-    },
     content: {
         flex: 1,
         justifyContent: 'space-between',
         paddingHorizontal: 32,
-        paddingTop: 120,
+        paddingTop: 88,
         paddingBottom: 60,
     },
     centerContent: {

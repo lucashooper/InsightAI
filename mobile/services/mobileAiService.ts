@@ -142,16 +142,45 @@ async function waitForRateLimit() {
   return new Promise((resolve) => setTimeout(resolve, 500));
 }
 
+function extractGroqMessageContent(data: any): string {
+  const choice = data?.choices?.[0];
+  const message = choice?.message;
+  if (!message) return '';
+
+  const direct =
+    (typeof message.content === 'string' && message.content.trim()) ||
+    (typeof message.content === 'string' ? message.content : '');
+  if (direct.trim()) return direct.trim();
+
+  const reasoning =
+    (typeof message.reasoning === 'string' && message.reasoning.trim()) ||
+    (typeof message.reasoning_content === 'string' && message.reasoning_content.trim()) ||
+    '';
+  if (reasoning.trim()) {
+    console.warn('[callGroqProxy] Using reasoning fallback — content field was empty');
+    return reasoning.trim();
+  }
+
+  return '';
+}
+
+function isReasoningGroqModel(model: string): boolean {
+  return /gpt-oss|qwen\/qwen3/i.test(model);
+}
+
 // Helper: call the groq-proxy edge function (keeps API key server-side)
-async function callGroqProxy(messages: Array<{role: string; content: string}>, opts?: { temperature?: number; max_tokens?: number; model?: string }): Promise<string> {
+async function callGroqProxy(messages: Array<{role: string; content: string}>, opts?: { temperature?: number; max_tokens?: number; model?: string; reasoning_effort?: 'low' | 'medium' | 'high' }): Promise<string> {
   const model = opts?.model || GROQ_CHAT_MODEL;
   const url = `${SUPABASE_FUNCTION_URL}/groq-proxy`;
+  const requestedTokens = opts?.max_tokens ?? 500;
+  const minTokens = isReasoningGroqModel(model) ? 1024 : requestedTokens;
+  const max_tokens = Math.max(requestedTokens, minTokens);
 
   console.log('[callGroqProxy] ── request ──');
   console.log('[callGroqProxy] URL:', url);
   console.log('[callGroqProxy] Supabase project:', supabaseUrl || '(missing)');
   console.log('[callGroqProxy] Model:', model);
-  console.log('[callGroqProxy] Messages:', messages.length, 'temperature:', opts?.temperature ?? 0.8, 'max_tokens:', opts?.max_tokens ?? 500);
+  console.log('[callGroqProxy] Messages:', messages.length, 'temperature:', opts?.temperature ?? 0.8, 'max_tokens:', max_tokens);
 
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
@@ -182,7 +211,8 @@ async function callGroqProxy(messages: Array<{role: string; content: string}>, o
         messages: localizedMessages,
         model,
         temperature: opts?.temperature ?? 0.8,
-        max_tokens: opts?.max_tokens ?? 500,
+        max_tokens,
+        ...(isReasoningGroqModel(model) ? { reasoning_effort: opts?.reasoning_effort ?? 'low' } : {}),
       }),
     });
   } catch (networkErr: any) {
@@ -224,8 +254,55 @@ async function callGroqProxy(messages: Array<{role: string; content: string}>, o
     throw new Error('Invalid JSON from groq-proxy');
   }
 
-  const content = data.choices?.[0]?.message?.content || '';
-  console.log('[callGroqProxy] ✅ Success, response length:', content.length);
+  const finishReason = data?.choices?.[0]?.finish_reason;
+  const usage = data?.usage;
+  const reasoningTokens = usage?.completion_tokens_details?.reasoning_tokens;
+  let content = extractGroqMessageContent(data);
+
+  console.log('[callGroqProxy] ✅ Success', {
+    contentLength: content.length,
+    finishReason,
+    completionTokens: usage?.completion_tokens,
+    reasoningTokens,
+  });
+
+  if (!content && finishReason === 'length') {
+    console.warn('[callGroqProxy] Empty content with finish_reason=length — retrying with larger budget');
+    const retryResponse = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: supabaseAnonKey || '',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messages: localizedMessages,
+        model,
+        temperature: opts?.temperature ?? 0.8,
+        max_tokens: Math.max(max_tokens * 2, 2048),
+        ...(isReasoningGroqModel(model) ? { reasoning_effort: 'low' } : {}),
+      }),
+    });
+    const retryRaw = await retryResponse.text();
+    if (retryResponse.ok) {
+      try {
+        const retryData = JSON.parse(retryRaw);
+        content = extractGroqMessageContent(retryData);
+        console.log('[callGroqProxy] Retry content length:', content.length);
+      } catch {
+        /* fall through */
+      }
+    }
+  }
+
+  if (!content) {
+    console.error('[callGroqProxy] Empty model output after retry', {
+      finishReason,
+      reasoningTokens,
+      choiceKeys: data?.choices?.[0]?.message ? Object.keys(data.choices[0].message) : [],
+    });
+  }
+
   return content;
 }
 
@@ -759,6 +836,7 @@ Write in second person ("you"). Keep it under 60 words.`;
     // Build journal context summary
     console.log('[mobileAiService] Entries found for user:', entries?.length ?? 0);
     const readableEntries = await fetchDecryptedJournalEntries(userId, 20);
+    console.log('[mobileAiService] Readable decrypted entries for chat:', readableEntries.length);
     let journalContext = buildJournalContextFromEntries(readableEntries);
     if (readableEntries.length === 0 && entries && entries.length > 0) {
       journalContext =
@@ -805,8 +883,9 @@ Write in warm, conversational tone with clear structure:
       console.log('[mobileAiService] Calling Groq proxy...');
       const response = await callGroqProxy(apiMessages, {
         temperature: getChatTemperature(personality),
-        max_tokens: 350,
+        max_tokens: 1200,
         model: GROQ_CHAT_MODEL,
+        reasoning_effort: 'low',
       });
 
       console.log('[mobileAiService] ✅ Chat response received, length:', response?.length);
@@ -841,6 +920,7 @@ Write in warm, conversational tone with clear structure:
 
     const userId = currentUser.id;
     const readableEntries = await fetchDecryptedJournalEntries(userId, 40);
+    console.log('[mobileAiService] chatReveal readable entries:', readableEntries.length);
     const journalContext = buildJournalContextFromEntries(readableEntries);
 
     const personality = (options?.personality || 'balanced') as AiPersonality;
@@ -862,19 +942,26 @@ Write in warm, conversational tone with clear structure:
 
       const response = await callGroqProxy(apiMessages, {
         temperature: personality === 'roast' ? 0.7 : 0.55,
-        max_tokens: 900,
+        max_tokens: 1800,
         model: GROQ_CHAT_MODEL,
+        reasoning_effort: 'low',
       });
 
       const raw = (response || '').trim();
+      console.log('[mobileAiService] chatReveal raw length:', raw.length, 'preview:', raw.slice(0, 120));
       const parsed = parseMiraRevealPayload(raw);
       const card = parseMiraRevealResponse(raw);
 
       if (card) {
+        console.log('[mobileAiService] chatReveal card type:', card.type);
         return { reveal: card, raw };
       }
 
-      console.warn('[mobileAiService] chatReveal — no card-worthy reveal, using plain text');
+      console.warn('[mobileAiService] chatReveal — no card-worthy reveal', {
+        readableEntries: readableEntries.length,
+        parsedType: parsed?.type,
+        rawLength: raw.length,
+      });
       return {
         reveal: null,
         raw,

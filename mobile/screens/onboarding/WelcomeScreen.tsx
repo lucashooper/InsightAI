@@ -4,8 +4,6 @@ import { Asset } from 'expo-asset';
 import { isTablet, sf, ss } from '../../utils/responsive';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 
-const insightLogo = require('../../public/Insight-Logo-nobg.webp');
-
 export default function WelcomeScreen({ navigation }: any) {
     useEffect(() => {
         // Skip WelcomeScreen splash - App.tsx already shows splash

@@ -4,8 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
 import OnboardingButton from '../../components/onboarding/OnboardingButton';
-import CachedImage from '../../components/shared/CachedImage';
-import { INSIGHT_LOGO } from '../../constants/appAssets';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ONBOARDING_SURFACE, ONBOARDING_TEXT } from '../../constants/onboardingTheme';
 import { ONBOARDING_LAYOUT } from '../../constants/onboardingLayout';
@@ -33,10 +31,6 @@ export default function PostPurchaseWelcomeScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" />
 
       <View style={[styles.content, iPadContentStyle as any]}>
-        <View style={styles.logoContainer}>
-          <CachedImage source={INSIGHT_LOGO} style={styles.logo} contentFit="contain" recyclingKey="post-purchase-logo" />
-        </View>
-
         <Text style={styles.title}>{t('onboarding.postPurchase.title')}</Text>
         <Text style={styles.subtitle}>{t('onboarding.postPurchase.subtitle')}</Text>
 
@@ -77,15 +71,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
-  },
-  logoContainer: {
-    width: ONBOARDING_LAYOUT.logoSize,
-    height: ONBOARDING_LAYOUT.logoSize,
-    marginBottom: isTablet ? ss(40) : 32,
-  },
-  logo: {
-    width: '100%',
-    height: '100%',
   },
   title: {
     fontSize: sf(32),

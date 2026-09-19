@@ -1,7 +1,22 @@
-import Aes from 'react-native-aes-crypto';
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
 import { looksEncryptedContent } from '../utils/encryptionFormat';
+
+type AesModule = {
+  pbkdf2: (password: string, salt: string, iterations: number, keyLength: number, algorithm: string) => Promise<string>;
+  encrypt: (text: string, key: string, iv: string, algorithm: string) => Promise<string>;
+  decrypt: (text: string, key: string, iv: string, algorithm: string) => Promise<string>;
+};
+
+function getAes(): AesModule | null {
+  try {
+    const mod = require('react-native-aes-crypto');
+    return (mod?.default ?? mod) as AesModule;
+  } catch {
+    console.warn('[Encryption] Native AES unavailable — running in Expo Go');
+    return null;
+  }
+}
 
 const SECURE_STORE_KEY = 'insight_encryption_key';
 const LEGACY_SECURE_STORE_KEY = 'insight_encryption_key';
@@ -22,6 +37,10 @@ export class EncryptionService {
   static async generateKey(password: string, userId: string): Promise<string> {
     // Use PBKDF2 to derive a 256-bit key from password
     // pbkdf2(password, salt, iterations, keyLength, algorithm)
+    const Aes = getAes();
+    if (!Aes) {
+      throw new Error('Native encryption is not available in Expo Go');
+    }
     const key = await Aes.pbkdf2(password, userId, 10000, 256, 'sha512');
     console.log('[Encryption] Key generated using PBKDF2');
     return key;
@@ -103,6 +122,10 @@ export class EncryptionService {
       const iv = Array.from(ivBytes).map(b => b.toString(16).padStart(2, '0')).join('');
       
       // Encrypt using native AES-256-CBC
+      const Aes = getAes();
+      if (!Aes) {
+        throw new Error('Native encryption is not available in Expo Go');
+      }
       const encrypted = await Aes.encrypt(text, key, iv, 'aes-256-cbc');
       
       // Store IV with encrypted data (format: iv:encrypted)
@@ -136,6 +159,10 @@ export class EncryptionService {
       }
 
       const [iv, encrypted] = parts;
+      const Aes = getAes();
+      if (!Aes) {
+        return encryptedText;
+      }
       const decrypted = await Aes.decrypt(encrypted, key, iv, 'aes-256-cbc');
 
       if (!decrypted) {

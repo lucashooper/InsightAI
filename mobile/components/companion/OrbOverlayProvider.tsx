@@ -170,7 +170,7 @@ export function OrbSlot({
   if (USE_CLOUD_MASCOT) {
     return (
       <View style={[{ width: size, height: size }, style]} pointerEvents="none">
-        <CloudMascot size={size} personality={personality} isRoast={isRoast} shadow={size >= 56} />
+        <CloudMascot size={size} personality={personality} isRoast={isRoast} shadow={false} glow={false} />
       </View>
     );
   }

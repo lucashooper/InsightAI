@@ -33,7 +33,8 @@ export default function InsightCompanionMark({
         size={size}
         personality={personality}
         isRoast={roast}
-        shadow={!compact}
+        shadow={false}
+        glow={false}
         animated={animated ?? !compact}
       />
     </View>

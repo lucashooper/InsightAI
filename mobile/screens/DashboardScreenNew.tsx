@@ -46,7 +46,6 @@ import { isPromptCompletedToday } from '../utils/promptCompletion';
 
 // Temporarily disabled for Expo Go testing
 // import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
-const insightLogo = require('../public/Insight-Logo-nobg.webp');
 
 const { width } = Dimensions.get('window');
 
@@ -484,7 +483,6 @@ export default function DashboardScreenNew() {
         <HomeStagger delay={STAGGER.header} active={homeAnimationActive}>
         <View style={[styles.header, { paddingTop: insets.top + PREMIUM.layout.headerTop }]}>
           <View style={styles.headerLeft}>
-            <Image source={insightLogo} style={styles.headerLogo} resizeMode="contain" />
             <Text style={[styles.headerTitle, { color: theme.colors.primaryText }]}>{APP_NAME}</Text>
           </View>
           <View style={styles.headerIcons}>
@@ -809,13 +807,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  headerLogo: {
-    width: 72,
-    height: 72,
-  },
   headerTitle: {
     ...TYPO.title,
-    marginLeft: -12,
   },
   logoIcon: {
     width: isTablet ? 80 : 64,

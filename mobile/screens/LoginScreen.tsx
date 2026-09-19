@@ -30,6 +30,8 @@ const DEMO_LOGIN_ALIASES: Record<string, string> = {
   millie: 'millie@app.com',
   'millie smith': 'millie@app.com',
   david: 'millie@app.com',
+  jay: 'jay@insight.app',
+  'jay leung': 'jay@insight.app',
 };
 
 export default function LoginScreen({ navigation }: any) {

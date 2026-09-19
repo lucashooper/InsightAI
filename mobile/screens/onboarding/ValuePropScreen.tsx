@@ -6,10 +6,9 @@ import OnboardingAmbientBackground from '../../components/onboarding/OnboardingA
 import OnboardingButton from '../../components/onboarding/OnboardingButton';
 import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
 import CachedImage from '../../components/shared/CachedImage';
-import { INSIGHT_LOGO } from '../../constants/appAssets';
 import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { sf } from '../../utils/responsive';
+import { isTablet, sf } from '../../utils/responsive';
 import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
 import { safeGoBack } from '../../utils/navigationSafety';
 
@@ -43,9 +42,6 @@ export default function ValuePropScreen({ navigation }: any) {
       {navigation.canGoBack() && (
         <OnboardingBackButton onPress={() => safeGoBack(navigation)} />
       )}
-
-      {/* Logo */}
-      <CachedImage source={INSIGHT_LOGO} style={styles.logo} contentFit="contain" recyclingKey="value-prop-logo" />
 
       <View style={styles.content}>
         <View style={styles.mainContent}>
@@ -185,20 +181,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
   },
-  logo: {
-    width: 100,
-    height: 100,
-    opacity: 0.9,
-    position: 'absolute',
-    top: 60,
-    alignSelf: 'center',
-    zIndex: 10,
-  },
   content: {
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
-    paddingTop: 80,
+    paddingTop: isTablet ? 88 : 72,
   },
   mainContent: {
     alignItems: 'center',

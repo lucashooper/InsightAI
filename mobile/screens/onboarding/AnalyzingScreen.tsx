@@ -1,259 +1,178 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Easing, Dimensions, TouchableOpacity } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Circle } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import OnboardingAmbientBackground from '../../components/onboarding/OnboardingAmbientBackground';
-import OnboardingButton from '../../components/onboarding/OnboardingButton';
 import OnboardingBackButton from '../../components/onboarding/OnboardingBackButton';
-import { useTheme, isDarkTheme } from '../../contexts/ThemeContext';
-import { isTablet } from '../../utils/responsive';
 import { analytics } from '../../services/analytics';
 import { useOnboarding } from '../../contexts/OnboardingContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useOnboardingBottomInset } from '../../utils/onboardingInsets';
 import { safeGoBack } from '../../utils/navigationSafety';
-
-const { width } = Dimensions.get('window');
+import { isTablet, sf } from '../../utils/responsive';
 
 type Props = {
-    navigation: NativeStackNavigationProp<any>;
-    route?: any;
+  navigation: NativeStackNavigationProp<any>;
+  route?: any;
 };
 
 const TOTAL_DURATION = 11000;
-
-const CHECKLIST_ITEMS = [
-    { labelKey: 'emotionalPatterns', pct: 0 },
-    { labelKey: 'responses', pct: 25 },
-    { labelKey: 'stressMarkers', pct: 55 },
-    { labelKey: 'personalPlan', pct: 80 },
-];
+const RING = isTablet ? 220 : 188;
+const STROKE = 11;
+const RADIUS = (RING - STROKE) / 2;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 export default function AnalyzingScreen({ navigation, route }: Props) {
-    const { theme } = useTheme();
-    const { userName } = useOnboarding();
-    const { t } = useLanguage();
-    const bottomInset = useOnboardingBottomInset();
-    const answers = route?.params?.answers ?? {};
-    const skipPersonality = route?.params?.skipPersonality ?? false;
-    const [percentage, setPercentage] = useState(0);
-    const [completedItems, setCompletedItems] = useState<number[]>([]);
-    const [activeItem, setActiveItem] = useState(0);
-    const [isComplete, setIsComplete] = useState(false);
-    const progressAnim = useRef(new Animated.Value(0)).current;
-    const statusFade = useRef(new Animated.Value(1)).current;
-    const ctaFade = useRef(new Animated.Value(0)).current;
-    const [statusText, setStatusText] = useState(
-        t('onboarding.analyzing.status', { label: t(`onboarding.analyzing.${CHECKLIST_ITEMS[0].labelKey}`) }),
-    );
-    const activeItemRef = useRef(0);
+  const { userName } = useOnboarding();
+  const { t } = useLanguage();
+  const bottomInset = useOnboardingBottomInset();
+  const [percentage, setPercentage] = useState(0);
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const didAdvance = useRef(false);
 
-    useEffect(() => {
-        analytics.trackOnboardingScreen('analyzing', 'viewed', userName || undefined);
-        // Always run animation on mount - simpler and more reliable
-        const listenerId = progressAnim.addListener(({ value }) => {
-            const pct = Math.round(value);
-            setPercentage(pct);
+  const advance = () => {
+    if (didAdvance.current) return;
+    didAdvance.current = true;
+    analytics.trackOnboardingScreen('analyzing', 'completed', userName || undefined);
+    navigation.navigate('InsightIntro', {
+      answers: route?.params?.answers || {},
+      skipPersonality: route?.params?.skipPersonality || false,
+    });
+  };
 
-            // Activate / complete checklist items based on percentage thresholds
-            CHECKLIST_ITEMS.forEach((item, index) => {
-                if (pct >= item.pct && index > activeItemRef.current) {
-                    activeItemRef.current = index;
-                    setActiveItem(index);
-                    // Fade status text
-                    Animated.timing(statusFade, {
-                        toValue: 0,
-                        duration: 150,
-                        useNativeDriver: true,
-                    }).start(() => {
-                        setStatusText(t('onboarding.analyzing.status', { label: t(`onboarding.analyzing.${item.labelKey}`) }));
-                        Animated.timing(statusFade, {
-                            toValue: 1,
-                            duration: 250,
-                            useNativeDriver: true,
-                        }).start();
-                    });
-                }
-                // Mark previous item as completed when we pass to the next threshold
-                if (index > 0 && pct >= item.pct) {
-                    setCompletedItems(prev => {
-                        if (!prev.includes(index - 1)) return [...prev, index - 1];
-                        return prev;
-                    });
-                }
-            });
-        });
-
-        // Run animation
-        Animated.timing(progressAnim, {
-            toValue: 100,
-            duration: TOTAL_DURATION,
-            easing: Easing.bezier(0.1, 0.3, 0.25, 1),
-            useNativeDriver: false,
-        }).start(() => {
-            // Animation complete — show the continue button
-            setIsComplete(true);
-            setPercentage(100);
-            setCompletedItems([0, 1, 2, 3]);
-            Animated.timing(ctaFade, {
-                toValue: 1,
-                duration: 500,
-                useNativeDriver: true,
-            }).start();
-        });
-
-        return () => {
-            progressAnim.removeListener(listenerId);
-        };
-    }, []);
-
-    const progressWidth = progressAnim.interpolate({
-        inputRange: [0, 100],
-        outputRange: ['0%', '100%'],
+  useEffect(() => {
+    analytics.trackOnboardingScreen('analyzing', 'viewed', userName || undefined);
+    const listenerId = progressAnim.addListener(({ value }) => {
+      setPercentage(Math.round(value));
     });
 
-    const textColor = isDarkTheme(theme.name) ? '#ffffff' : '#1a1a2e';
-    const subColor = isDarkTheme(theme.name) ? 'rgba(255,255,255,0.5)' : '#6b7280';
+    Animated.timing(progressAnim, {
+      toValue: 100,
+      duration: TOTAL_DURATION,
+      easing: Easing.bezier(0.1, 0.3, 0.25, 1),
+      useNativeDriver: false,
+    }).start(() => {
+      setPercentage(100);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setTimeout(advance, 520);
+    });
 
-    return (
-        <View style={styles.container}>
-            <OnboardingAmbientBackground />
+    return () => {
+      progressAnim.removeListener(listenerId);
+    };
+  }, []);
 
-            <OnboardingBackButton onPress={() => navigation.canGoBack() && safeGoBack(navigation)} />
-            
-            <View style={styles.content}>
-                {/* Big Percentage */}
-                <Text style={[styles.percentageText, { color: textColor }]}>
-                    {percentage}%
-                </Text>
+  const dashOffset = progressAnim.interpolate({
+    inputRange: [0, 100],
+    outputRange: [CIRCUMFERENCE, 0],
+  });
 
-                {/* Status subtitle */}
-                <Animated.Text style={[styles.statusSubtitle, { color: subColor, opacity: statusFade }]}>
-                    {statusText}
-                </Animated.Text>
+  return (
+    <View style={styles.container}>
+      <OnboardingAmbientBackground />
+      <OnboardingBackButton onPress={() => navigation.canGoBack() && safeGoBack(navigation)} />
 
-                {/* Progress Bar */}
-                <View style={styles.progressBarContainer}>
-                    <View style={[styles.progressTrack, { backgroundColor: isDarkTheme(theme.name) ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
-                        <Animated.View style={[styles.progressFillWrap, { width: progressWidth }]}>
-                            <LinearGradient
-                                colors={['#f87171', '#a855f7', '#6366f1']}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={styles.progressFill}
-                            />
-                        </Animated.View>
-                    </View>
-                </View>
-
-                {/* Checklist */}
-                <View style={styles.checklist}>
-                    {CHECKLIST_ITEMS.map((item, index) => {
-                        const itemCompleted = completedItems.includes(index) || isComplete;
-                        const itemActive = activeItem === index && !itemCompleted;
-                        return (
-                            <View key={index} style={styles.checklistItem}>
-                                <Text style={[styles.checklistDot, { color: subColor }]}>•</Text>
-                                <Text style={[
-                                    styles.checklistLabel,
-                                    { color: itemActive ? textColor : subColor },
-                                    itemCompleted && { color: subColor },
-                                ]}>
-                                    {t(`onboarding.analyzing.${item.labelKey}`)}
-                                </Text>
-                                {itemCompleted && (
-                                    <Ionicons name="checkmark-circle" size={18} color="#a855f7" style={{ marginLeft: 'auto' }} />
-                                )}
-                            </View>
-                        );
-                    })}
-                </View>
-            </View>
-
-            {/* Continue button — fades in only after reaching 100% */}
-            <Animated.View style={[styles.ctaContainer, { opacity: ctaFade, paddingBottom: bottomInset }]}>
-                <OnboardingButton
-                    label={t('common.continue')}
-                    disabled={!isComplete}
-                    onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        analytics.trackOnboardingScreen('analyzing', 'completed', userName || undefined);
-                        const answers = route?.params?.answers || {};
-                        const skipPersonality = route?.params?.skipPersonality || false;
-                        navigation.navigate('InsightIntro', {
-                            answers,
-                            skipPersonality,
-                        });
-                    }}
-                />
-            </Animated.View>
+      <View style={styles.content}>
+        <View style={styles.ringWrap}>
+          <Svg width={RING} height={RING}>
+            <Circle
+              cx={RING / 2}
+              cy={RING / 2}
+              r={RADIUS}
+              stroke="rgba(91, 141, 239, 0.18)"
+              strokeWidth={STROKE}
+              fill="none"
+            />
+            <AnimatedCircle
+              cx={RING / 2}
+              cy={RING / 2}
+              r={RADIUS}
+              stroke="#5B8DEF"
+              strokeWidth={STROKE}
+              fill="none"
+              strokeLinecap="round"
+              strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
+              strokeDashoffset={dashOffset}
+              transform={`rotate(-90 ${RING / 2} ${RING / 2})`}
+            />
+          </Svg>
+          <Text style={styles.percentage}>{percentage}%</Text>
         </View>
-    );
+        <Text style={styles.headline}>{t('onboarding.analyzing.headline')}</Text>
+      </View>
+
+      <View style={[styles.privacy, { paddingBottom: bottomInset + 8 }]}>
+        <View style={styles.lockBadge}>
+          <Ionicons name="lock-closed" size={16} color="#34C759" />
+        </View>
+        <Text style={styles.privacyTitle}>{t('onboarding.analyzing.privacy')}</Text>
+        <Text style={styles.privacyHint}>{t('onboarding.analyzing.privacyHint')}</Text>
+      </View>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: 'transparent',
-    },
-    content: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 32,
-    },
-    percentageText: {
-        fontSize: 72,
-        fontWeight: '800',
-        letterSpacing: -2,
-        marginBottom: 12,
-    },
-    statusSubtitle: {
-        fontSize: 18,
-        fontWeight: '500',
-        textAlign: 'center',
-        marginBottom: 40,
-    },
-    progressBarContainer: {
-        width: '100%',
-        marginBottom: 48,
-    },
-    progressTrack: {
-        height: 8,
-        borderRadius: 999,
-        overflow: 'hidden',
-    },
-    progressFillWrap: {
-        height: '100%',
-        borderRadius: 999,
-        overflow: 'hidden',
-    },
-    progressFill: {
-        flex: 1,
-        borderRadius: 999,
-    },
-    checklist: {
-        width: '100%',
-        gap: 16,
-    },
-    checklistItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-    },
-    checklistDot: {
-        fontSize: 16,
-        fontWeight: '700',
-    },
-    checklistLabel: {
-        fontSize: 16,
-        fontWeight: '500',
-        flex: 1,
-    },
-    ctaContainer: {
-        paddingHorizontal: 24,
-    },
+  container: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  ringWrap: {
+    width: RING,
+    height: RING,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 28,
+  },
+  percentage: {
+    position: 'absolute',
+    fontSize: sf(34),
+    fontWeight: '700',
+    letterSpacing: -1,
+    color: '#1a1a2e',
+  },
+  headline: {
+    fontSize: sf(26),
+    fontWeight: '700',
+    letterSpacing: -0.8,
+    textAlign: 'center',
+    color: '#1a1a2e',
+    lineHeight: sf(32),
+  },
+  privacy: {
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    paddingTop: 8,
+  },
+  lockBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(52, 199, 89, 0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  privacyTitle: {
+    fontSize: sf(15),
+    fontWeight: '700',
+    color: '#1a1a2e',
+    textAlign: 'center',
+  },
+  privacyHint: {
+    marginTop: 4,
+    fontSize: sf(13),
+    color: 'rgba(26, 26, 46, 0.55)',
+    textAlign: 'center',
+    lineHeight: sf(18),
+  },
 });

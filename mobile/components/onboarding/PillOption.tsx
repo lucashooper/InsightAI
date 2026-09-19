@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, View, Platform } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { SvgXml } from 'react-native-svg';
@@ -18,13 +18,14 @@ const GoogleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><
 
 interface PillOptionProps {
   label: string;
+  hint?: string;
   icon?: string;
   emoji?: string;
   selected: boolean;
   onPress: () => void;
 }
 
-export default function PillOption({ label, icon, emoji, selected, onPress }: PillOptionProps) {
+export default function PillOption({ label, hint, icon, emoji, selected, onPress }: PillOptionProps) {
   const isSocialMedia = ['Instagram', 'Facebook', 'TikTok', 'YouTube', 'Google'].includes(label);
 
   const getSvgLogo = () => {
@@ -46,7 +47,7 @@ export default function PillOption({ label, icon, emoji, selected, onPress }: Pi
   };
 
   return (
-    <TouchableOpacity activeOpacity={0.75} onPress={handlePress} style={styles.container}>
+    <TouchableOpacity activeOpacity={0.82} onPress={handlePress} style={styles.container}>
       <View style={[styles.pill, selected ? styles.pillSelected : styles.pillDefault]}>
         <View style={styles.leftGroup}>
           {emoji || icon || isSocialMedia ? (
@@ -64,7 +65,10 @@ export default function PillOption({ label, icon, emoji, selected, onPress }: Pi
               ) : null}
             </View>
           ) : null}
-          <Text style={[styles.label, selected && styles.labelSelected]}>{label}</Text>
+          <View style={styles.copy}>
+            <Text style={[styles.label, selected && styles.labelSelected]}>{label}</Text>
+            {hint ? <Text style={styles.hint}>{hint}</Text> : null}
+          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -79,14 +83,19 @@ const styles = StyleSheet.create({
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-start',
     paddingVertical: isTablet ? ss(14) : 14,
-    paddingHorizontal: isTablet ? ss(18) : 18,
-    borderRadius: isTablet ? 20 : 18,
+    paddingHorizontal: isTablet ? ss(16) : 16,
+    borderRadius: isTablet ? 22 : 20,
+    gap: 10,
   },
   leftGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: isTablet ? 16 : 14,
+    gap: isTablet ? 14 : 12,
+    flex: 1,
+  },
+  copy: {
     flex: 1,
   },
   iconChip: {
@@ -112,25 +121,25 @@ const styles = StyleSheet.create({
   },
   pillSelected: {
     backgroundColor: ONBOARDING_SURFACE.fillSelected,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: ONBOARDING_SURFACE.borderSelected,
-    shadowColor: 'rgba(120, 80, 200, 0.12)',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
-    elevation: 3,
-    ...(Platform.OS === 'android' ? { borderWidth: 1.5 } : null),
   },
   label: {
-    flex: 1,
+    flex: undefined,
     fontSize: sf(16),
-    fontWeight: '500',
+    fontWeight: '600',
     color: ONBOARDING_TEXT.primary,
     letterSpacing: -0.2,
   },
   labelSelected: {
-    fontWeight: '600',
+    fontWeight: '700',
     color: ONBOARDING_TEXT.primary,
+  },
+  hint: {
+    marginTop: 2,
+    fontSize: sf(13),
+    lineHeight: sf(18),
+    color: ONBOARDING_TEXT.secondary,
   },
   emoji: {
     fontSize: si(18),

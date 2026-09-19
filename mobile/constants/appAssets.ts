@@ -7,7 +7,7 @@ import { PAYWALL_PHONE_IMAGES, PRODUCT_REVEAL_PHONE } from './phoneMockups';
 export const HOME_PAGE_GRADIENT = require('../public/home-page-gradient.png');
 export const SPLASH_BACKGROUND = require('../public/abstract-dark-background.jpg');
 export const SPLASH_LOADING_WORDMARK = require('../public/Insight-Loading-Text-White-Version.png');
-export const INSIGHT_LOGO = require('../public/Insight-Logo-nobg.webp');
+export const INSIGHT_LOGO = require('../public/Insight-Logo-nobg-New.png');
 export const MIRA_ORB = require('../public/Mira-Orb-No-Background.png');
 export const INSIGHT_ORB = require('../public/InsightAI-Orb.png');
 
@@ -26,7 +26,7 @@ export const ALL_PRELOAD_IMAGES = [
   require('../public/gradient-ellipse.png'),
   require('../public/gradient-ellipse-noise.png'),
   require('../public/purple-ellipse-blur.png'),
-  require('../public/InsightAI-New-Logo.png'),
+  require('../public/Insight-Logo-nobg-New.png'),
   require('../public/InsightAI-Onboarding-MAIN.png'),
   require('../public/Insight-Main-Phone-New.png'),
   require('../public/Modern-Iphone-Insight-LANDING.png'),

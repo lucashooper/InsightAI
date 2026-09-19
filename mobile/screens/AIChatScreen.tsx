@@ -1221,7 +1221,8 @@ export default function AIChatScreen({ navigation }: any) {
           id: `assistant-${Date.now()}`,
           role: 'assistant',
           content: response,
-          isTyping: true,
+          displayedContent: isVoiceEnabled ? undefined : response,
+          isTyping: isVoiceEnabled,
           timestamp: new Date(),
         };
 
