@@ -1507,6 +1507,18 @@ export default function AIChatScreen({ navigation }: any) {
         <View style={[styles.headerSide, styles.headerSideRight]}>
           <TouchableOpacity
             style={styles.headerBtn}
+            onPress={() => navigation.navigate('VentVoice')}
+            activeOpacity={0.7}
+            accessibilityLabel={t('vent.openVent')}
+          >
+            <Ionicons
+              name="radio-outline"
+              size={22}
+              color={isRoast ? ROAST_PALETTE.icon : (isDark ? 'rgba(255,255,255,0.72)' : 'rgba(0,0,0,0.45)')}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.headerBtn}
             onPress={() => setShowPersonality(true)}
             onLongPress={() => setShowVoicePicker(true)}
             delayLongPress={400}

@@ -1,18 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Animated } from 'react-native';
-
-let ExpoSpeechRecognitionModule: any = null;
-let useSpeechRecognitionEvent: ((event: string, handler: (ev: any) => void) => void) | null = null;
-
-try {
-  const speechModule = require('expo-speech-recognition');
-  ExpoSpeechRecognitionModule = speechModule.ExpoSpeechRecognitionModule;
-  useSpeechRecognitionEvent = speechModule.useSpeechRecognitionEvent;
-} catch {
-  // Expo Go / unsupported build
-}
-
-function useNoopSpeechEvent(_event: string, _handler: (ev: any) => void) {}
+import {
+  getSpeechRecognitionModule,
+  useNoopSpeechEvent,
+} from '../utils/speechRecognitionLazy';
 
 type Options = {
   locale?: string;
@@ -22,10 +13,13 @@ type Options = {
 };
 
 export function useSpeechToText({ locale = 'en-US', onTranscript, getBaseText, t }: Options) {
+  const speech = getSpeechRecognitionModule();
+  const ExpoSpeechRecognitionModule = speech?.ExpoSpeechRecognitionModule ?? null;
+  const useEvent = speech?.useSpeechRecognitionEvent ?? useNoopSpeechEvent;
+
   const [isRecording, setIsRecording] = useState(false);
   const baseRef = useRef('');
   const waveAnims = useRef(Array.from({ length: 5 }, () => new Animated.Value(0.3))).current;
-  const useEvent = useSpeechRecognitionEvent ?? useNoopSpeechEvent;
 
   const pulseWave = useCallback(() => {
     const animations = waveAnims.map((anim, i) =>
@@ -97,13 +91,13 @@ export function useSpeechToText({ locale = 'en-US', onTranscript, getBaseText, t
       continuous: true,
     });
     setIsRecording(true);
-  }, [getBaseText, isRecording, locale, stopWave, t]);
+  }, [ExpoSpeechRecognitionModule, getBaseText, isRecording, locale, stopWave, t]);
 
   useEffect(() => () => {
     if (isRecording && ExpoSpeechRecognitionModule) {
       ExpoSpeechRecognitionModule.stop();
     }
-  }, [isRecording]);
+  }, [ExpoSpeechRecognitionModule, isRecording]);
 
   return { isRecording, toggleRecording, waveAnims, speechAvailable: !!ExpoSpeechRecognitionModule };
 }

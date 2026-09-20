@@ -4,7 +4,15 @@
     "owner": "crupid",
     "slug": "insight-app",
     "ios": {
-      "buildNumber": "123"
+      "buildNumber": "134",
+      "bundleIdentifier": "com.crupid.mobile",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSMicrophoneUsageDescription": "Insight uses the microphone for voice journaling, Vent Mode conversations, and speech-to-text notes.",
+        "NSSpeechRecognitionUsageDescription": "Insight uses speech recognition to convert your voice into text for journal entries and Vent Mode.",
+        "NSPhotoLibraryUsageDescription": "Insight needs access to your photo library so you can select a profile picture for your account.",
+        "NSFaceIDUsageDescription": "Insight uses Face ID to quickly unlock your journal so only you can access your entries."
+      }
     },
     "extra": {
       "eas": {

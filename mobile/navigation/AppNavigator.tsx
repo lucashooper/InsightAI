@@ -430,7 +430,7 @@ export default function AppNavigator() {
       if (activeRootRoute?.name === 'MainTabs') return;
 
       const currentRoute = navigationRef.getCurrentRoute();
-      const modalRoutes = new Set(['Profile', 'EntryDetail', 'CreateEntry', 'AIChat', 'EmailVerified']);
+      const modalRoutes = new Set(['Profile', 'EntryDetail', 'CreateEntry', 'AIChat', 'VentVoice', 'EmailVerified']);
       if (currentRoute && !modalRoutes.has(currentRoute.name)) {
         console.log('[NAV] Force navigating to MainTabs from:', currentRoute.name);
         navigationRef.reset({
@@ -599,6 +599,11 @@ export default function AppNavigator() {
           <Stack.Screen name="EmotionDetail" component={EmotionDetailScreen} options={{ headerShown: false }} />
           <Stack.Screen name="AmbientSounds" component={AmbientSoundsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="AIChat" component={AIChatScreen} options={{ headerShown: false, animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
+          <Stack.Screen
+            name="VentVoice"
+            getComponent={() => require('../screens/VentVoiceScreen').default}
+            options={{ headerShown: false, animation: 'slide_from_bottom', gestureDirection: 'vertical' }}
+          />
           <Stack.Screen name="Playbook" component={PlaybookScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="Explore" component={ExploreScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="Journey" component={JourneyScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />

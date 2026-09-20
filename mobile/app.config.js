@@ -38,13 +38,13 @@ module.exports = ({ config }) => ({
   userInterfaceStyle: "light",
   ios: {
     supportsTablet: true,
-      buildNumber: "122",
+    buildNumber: "133",
     bundleIdentifier: "com.crupid.mobile",
     scheme: "insight",
     infoPlist: {
-      NSMicrophoneUsageDescription: "Insight uses the microphone for voice notes.",
-      NSSpeechRecognitionUsageDescription: "Insight uses speech recognition to convert your voice into text for taking notes and searching your content.",
-      NSPhotoLibraryUsageDescription: "Insight needs access to your photo library so you can select a profile picture. For example, you can choose a photo from your library to personalize your account profile shown on the Settings screen. Only the photo you select is uploaded — your other photos are never accessed or stored.",
+      NSMicrophoneUsageDescription: "Insight uses the microphone for voice journaling, Vent Mode conversations, and speech-to-text notes.",
+      NSSpeechRecognitionUsageDescription: "Insight uses speech recognition to convert your voice into text for journal entries and Vent Mode.",
+      NSPhotoLibraryUsageDescription: "Insight needs access to your photo library so you can select a profile picture for your account.",
       ITSAppUsesNonExemptEncryption: false,
       NSFaceIDUsageDescription: "Insight uses Face ID to quickly unlock your journal so only you can access your entries.",
       CFBundleURLTypes: [

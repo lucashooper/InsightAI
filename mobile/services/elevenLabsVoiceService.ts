@@ -1,3 +1,5 @@
+import Constants from 'expo-constants';
+import * as FileSystem from 'expo-file-system';
 import { Audio, AVPlaybackStatus } from '../utils/audioCompat';
 
 export type ElevenLabsVoice = {
@@ -80,10 +82,14 @@ let loggedApiKeyOnce = false;
 function getApiKey(): string | null {
   if (cachedApiKey !== undefined) return cachedApiKey;
 
-  const fromExtra = Constants.expoConfig?.extra?.EXPO_PUBLIC_ELEVENLABS_API_KEY;
-  const fromEnv = process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY;
-  const key = fromExtra || fromEnv;
-  cachedApiKey = key && key.length > 10 ? key : null;
+  try {
+    const fromExtra = Constants.expoConfig?.extra?.EXPO_PUBLIC_ELEVENLABS_API_KEY;
+    const fromEnv = process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY;
+    const key = fromExtra || fromEnv;
+    cachedApiKey = key && key.length > 10 ? key : null;
+  } catch {
+    cachedApiKey = null;
+  }
 
   if (!loggedApiKeyOnce) {
     loggedApiKeyOnce = true;

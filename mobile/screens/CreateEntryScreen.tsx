@@ -54,18 +54,15 @@ import {
   type GoDeeperMessage,
 } from '../services/goDeeperConversationService';
 import { safeGoBack } from '../utils/navigationSafety';
-// Conditionally import speech recognition (crashes in Expo Go where native module isn't available)
-let ExpoSpeechRecognitionModule: any = null;
-let useSpeechRecognitionEvent: any = (_event: string, _handler: any) => {};
-try {
-  const speechModule = require('expo-speech-recognition');
-  ExpoSpeechRecognitionModule = speechModule.ExpoSpeechRecognitionModule;
-  useSpeechRecognitionEvent = speechModule.useSpeechRecognitionEvent;
-} catch (e) {
-  console.log('[CreateEntry] Speech recognition not available (Expo Go)');
-}
+import {
+  getSpeechRecognitionModule,
+  useNoopSpeechEvent,
+} from '../utils/speechRecognitionLazy';
 
 export default function CreateEntryScreen({ navigation, route }: any) {
+  const speech = getSpeechRecognitionModule();
+  const ExpoSpeechRecognitionModule = speech?.ExpoSpeechRecognitionModule ?? null;
+  const useSpeechRecognitionEvent = speech?.useSpeechRecognitionEvent ?? useNoopSpeechEvent;
   const { user } = useAuth();
   const { theme } = useTheme();
   const { t, locale } = useLanguage();

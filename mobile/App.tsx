@@ -47,6 +47,7 @@ import type { ThemeName } from './contexts/ThemeContext';
 import { OnboardingProvider } from './contexts/OnboardingContext';
 import { AppLockProvider, useAppLock } from './contexts/AppLockContext';
 import AppNavigator from './navigation/AppNavigator';
+import StartupErrorBoundary from './components/shared/StartupErrorBoundary';
 import LockScreen from './components/LockScreen';
 import PremiumSplashOverlay from './components/shared/PremiumSplashOverlay';
 import { analytics } from './services/analytics';
@@ -223,12 +224,14 @@ export default function App() {
             <AuthProvider>
               <PreloadProvider>
                 <OnboardingProvider>
-                  <AppContent
-                    onReady={({ showBrandSplash: brand }) => {
-                      setShowBrandSplash(brand);
-                      setAppReady(true);
-                    }}
-                  />
+                  <StartupErrorBoundary>
+                    <AppContent
+                      onReady={({ showBrandSplash: brand }) => {
+                        setShowBrandSplash(brand);
+                        setAppReady(true);
+                      }}
+                    />
+                  </StartupErrorBoundary>
                 </OnboardingProvider>
               </PreloadProvider>
             </AuthProvider>
