@@ -6,13 +6,15 @@ import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system';
 import { supabase } from '../lib/supabase';
 import { Audio, AVPlaybackStatus, type SoundInstance } from '../utils/audioCompat';
+import { fetchWithTimeout, FetchTimeoutError } from '../utils/fetchWithTimeout';
 import {
   VENT_DEFAULT_VOICE_ID,
+  VENT_FALLBACK_VOICE_ID,
   VENT_SYSTEM_PROMPTS,
+  VENT_VOICE_IDS,
   type VoiceToneMode,
 } from '../constants/ventVoice';
 import {
-  createAndPlayElevenLabsSound,
   fetchElevenLabsAudioUri,
   isElevenLabsAvailable,
   stopElevenLabsPlayback,
@@ -20,6 +22,8 @@ import {
 import { GROQ_CHAT_MODEL } from '../constants/groqConfig';
 
 const LOG_PREFIX = '[VentVoice]';
+const REQUEST_TIMEOUT_MS = 30_000;
+const MAX_ATTEMPTS = 2;
 
 const supabaseUrl =
   Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL ||
@@ -78,34 +82,54 @@ export function subscribeVentSpeechLevel(listener: (level: number) => void): () 
 }
 
 export async function configureVentAudioSession(): Promise<void> {
-  await Audio.setAudioModeAsync({
-    allowsRecordingIOS: true,
-    playsInSilentModeIOS: true,
-    staysActiveInBackground: false,
-    shouldDuckAndroid: true,
-    playThroughEarpieceAndroid: false,
+  try {
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: true,
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+      shouldDuckAndroid: true,
+      playThroughEarpieceAndroid: false,
+    });
+  } catch (err) {
+    console.warn('[VentVoice] Audio session setup warning:', err);
+  }
+}
+
+async function writeBase64ToCache(audioBase64: string): Promise<string> {
+  const cacheDir = FileSystem.cacheDirectory;
+  if (!cacheDir) throw new Error('Cache unavailable');
+
+  const uri = `${cacheDir}vent-elevenlabs-${Date.now()}.mp3`;
+  await FileSystem.writeAsStringAsync(uri, audioBase64, {
+    encoding: FileSystem.EncodingType.Base64,
   });
+  return uri;
 }
 
 async function synthesizeViaEdge(text: string, voiceId: string): Promise<string> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error('Not authenticated');
 
-  const response = await fetch(FUNCTION_URL, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${session.access_token}`,
-      apikey: supabaseAnonKey,
-      'Content-Type': 'application/json',
+  const response = await fetchWithTimeout(
+    FUNCTION_URL,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: supabaseAnonKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text, voiceId }),
     },
-    body: JSON.stringify({ text, voiceId }),
-  });
+    REQUEST_TIMEOUT_MS,
+  );
 
   const raw = await response.text();
   if (!response.ok) {
     let detail = raw.slice(0, 200);
     try {
-      detail = JSON.parse(raw).error || detail;
+      const parsed = JSON.parse(raw);
+      detail = parsed.error || parsed.detail || detail;
     } catch {
       // keep slice
     }
@@ -113,24 +137,21 @@ async function synthesizeViaEdge(text: string, voiceId: string): Promise<string>
   }
 
   const data = JSON.parse(raw) as { audioBase64: string; latencyMs?: number };
-  log('Edge TTS complete', { latencyMs: data.latencyMs });
+  if (!data.audioBase64) throw new Error('Vent TTS returned empty audio');
 
-  const cacheDir = FileSystem.cacheDirectory;
-  if (!cacheDir) throw new Error('Cache unavailable');
-
-  const uri = `${cacheDir}vent-elevenlabs-${Date.now()}.mp3`;
-  await FileSystem.writeAsStringAsync(uri, data.audioBase64, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
-  return uri;
+  log('Edge TTS complete', { latencyMs: data.latencyMs, voiceId });
+  return writeBase64ToCache(data.audioBase64);
 }
 
-async function resolveAudioUri(text: string, voiceId: string): Promise<string> {
+async function resolveAudioUriOnce(text: string, voiceId: string): Promise<string> {
   if (FUNCTION_URL) {
     try {
       return await synthesizeViaEdge(text, voiceId);
     } catch (err) {
-      log('Edge TTS failed, trying client fallback', { error: err instanceof Error ? err.message : err });
+      log('Edge TTS failed, trying client fallback', {
+        voiceId,
+        error: err instanceof Error ? err.message : err,
+      });
     }
   }
 
@@ -138,7 +159,39 @@ async function resolveAudioUri(text: string, voiceId: string): Promise<string> {
     return fetchElevenLabsAudioUri(text, voiceId);
   }
 
-  throw new Error('Vent voice unavailable — configure ELEVENLABS_API_KEY on Supabase or EXPO_PUBLIC_ELEVENLABS_API_KEY locally.');
+  throw new Error('Vent voice unavailable');
+}
+
+async function resolveAudioUri(text: string, voiceId: string): Promise<string> {
+  const voiceCandidates = [voiceId, VENT_FALLBACK_VOICE_ID].filter(
+    (id, index, arr) => arr.indexOf(id) === index,
+  );
+
+  let lastError: unknown;
+
+  for (const candidate of voiceCandidates) {
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      try {
+        if (attempt > 0) {
+          await new Promise((r) => setTimeout(r, 900));
+        }
+        return await resolveAudioUriOnce(text, candidate);
+      } catch (err) {
+        lastError = err;
+        log('TTS attempt failed', {
+          attempt: attempt + 1,
+          voiceId: candidate,
+          error: err instanceof Error ? err.message : err,
+        });
+      }
+    }
+  }
+
+  if (lastError instanceof FetchTimeoutError) {
+    throw new Error('Voice is briefly unavailable. Try again.');
+  }
+  if (lastError instanceof Error) throw lastError;
+  throw new Error('Voice is briefly unavailable. Try again.');
 }
 
 function startLevelSimulation(): void {
@@ -158,6 +211,38 @@ function samplePlaybackLevel(positionMs: number, prevMs: number, prevTime: numbe
   emitLevel(0.25 + base * 0.6);
 }
 
+async function playVentSound(uri: string): Promise<SoundInstance> {
+  await configureVentAudioSession();
+
+  const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: false, volume: 1.0 });
+  activeSound = sound;
+
+  let prevPos = 0;
+  let prevTime = Date.now();
+
+  sound.setOnPlaybackStatusUpdate((status: AVPlaybackStatus) => {
+    if (!status.isLoaded) return;
+    if (status.isPlaying && status.positionMillis != null) {
+      samplePlaybackLevel(status.positionMillis, prevPos, prevTime);
+      prevPos = status.positionMillis;
+      prevTime = Date.now();
+    }
+    if (status.didJustFinish) {
+      setVentSpeaking(false);
+      sound.unloadAsync().catch(() => {});
+      if (activeSound === sound) activeSound = null;
+    }
+  });
+
+  const loaded = await sound.getStatusAsync();
+  if (!loaded.isLoaded) {
+    throw new Error('Voice audio failed to load');
+  }
+
+  await sound.playAsync();
+  return sound;
+}
+
 export async function stopVentPlayback(): Promise<void> {
   setVentSpeaking(false);
   if (activeSound) {
@@ -174,35 +259,22 @@ export async function stopVentPlayback(): Promise<void> {
 
 export async function speakVentReply(
   text: string,
-  voiceId: string = VENT_DEFAULT_VOICE_ID,
+  tone: VoiceToneMode = 'supportive_listener',
 ): Promise<void> {
   const cleaned = text.replace(/\*\*/g, '').replace(/[_#]/g, '').trim();
   if (!cleaned) return;
 
   await stopVentPlayback();
+
+  const voiceId = VENT_VOICE_IDS[tone] || VENT_DEFAULT_VOICE_ID;
+  const uri = await resolveAudioUri(cleaned, voiceId);
+
   setVentSpeaking(true);
   startLevelSimulation();
-
-  const uri = await resolveAudioUri(cleaned, voiceId);
-  let prevPos = 0;
-  let prevTime = Date.now();
-
-  const { sound } = await createAndPlayElevenLabsSound(uri, (status: AVPlaybackStatus) => {
-    if (!status.isLoaded) return;
-    if (status.isPlaying && status.positionMillis != null) {
-      samplePlaybackLevel(status.positionMillis, prevPos, prevTime);
-      prevPos = status.positionMillis;
-      prevTime = Date.now();
-    }
-    if (status.didJustFinish) {
-      setVentSpeaking(false);
-    }
-  });
-
-  activeSound = sound;
+  await playVentSound(uri);
 }
 
-async function callGroqForVent(
+async function callGroqForVentOnce(
   tone: VoiceToneMode,
   history: VentChatMessage[],
   userText: string,
@@ -219,21 +291,25 @@ async function callGroqForVent(
   ];
 
   const url = `${supabaseUrl}/functions/v1/groq-proxy`;
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${session.access_token}`,
-      apikey: supabaseAnonKey,
-      'Content-Type': 'application/json',
+  const response = await fetchWithTimeout(
+    url,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: supabaseAnonKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messages,
+        model: GROQ_CHAT_MODEL,
+        temperature: tone === 'unfiltered_roast' ? 0.95 : 0.75,
+        max_tokens: 220,
+        reasoning_effort: 'low',
+      }),
     },
-    body: JSON.stringify({
-      messages,
-      model: GROQ_CHAT_MODEL,
-      temperature: tone === 'unfiltered_roast' ? 0.95 : 0.75,
-      max_tokens: 220,
-      reasoning_effort: 'low',
-    }),
-  });
+    REQUEST_TIMEOUT_MS,
+  );
 
   const raw = await response.text();
   if (!response.ok) {
@@ -248,6 +324,26 @@ async function callGroqForVent(
 
   if (!content) throw new Error('Empty response from vent AI');
   return content;
+}
+
+async function callGroqForVent(
+  tone: VoiceToneMode,
+  history: VentChatMessage[],
+  userText: string,
+): Promise<string> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    try {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, 700));
+      return await callGroqForVentOnce(tone, history, userText);
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  if (lastError instanceof FetchTimeoutError) {
+    throw new Error('Voice is briefly unavailable. Try again.');
+  }
+  throw lastError instanceof Error ? lastError : new Error('Voice is briefly unavailable. Try again.');
 }
 
 export async function processVentTurn(
@@ -265,7 +361,7 @@ export async function processVentTurn(
     { role: 'assistant', content: reply },
   ];
 
-  await speakVentReply(reply);
+  await speakVentReply(reply, tone);
   return { reply, updatedHistory };
 }
 
@@ -274,13 +370,17 @@ export async function warmVentSession(): Promise<void> {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
-    await fetch(FUNCTION_URL, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-        apikey: supabaseAnonKey,
+    await fetchWithTimeout(
+      FUNCTION_URL,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: supabaseAnonKey,
+        },
       },
-    });
+      REQUEST_TIMEOUT_MS,
+    );
   } catch {
     // non-fatal warm-up
   }

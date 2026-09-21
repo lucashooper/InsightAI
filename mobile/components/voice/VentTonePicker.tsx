@@ -13,6 +13,7 @@ import {
   VENT_TONE_EMOJI,
   VENT_TONE_LABELS,
   VENT_TONE_MODES,
+  VENT_TEXT_PRIMARY,
   type VoiceToneMode,
 } from '../../constants/ventVoice';
 
@@ -32,7 +33,7 @@ export default function VentTonePicker({ tone, onChange, t }: Props) {
         <Text style={styles.pillLabel} numberOfLines={1}>
           {t(`vent.tone.${tone}`) || VENT_TONE_LABELS[tone]}
         </Text>
-        <Ionicons name="chevron-down" size={14} color="rgba(255,255,255,0.55)" />
+        <Ionicons name="chevron-down" size={14} color="rgba(26,26,26,0.45)" />
       </Pressable>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
@@ -59,7 +60,7 @@ export default function VentTonePicker({ tone, onChange, t }: Props) {
                       </Text>
                     </View>
                     {selected ? (
-                      <Ionicons name="checkmark-circle" size={20} color="#A78BFA" />
+                      <Ionicons name="checkmark-circle" size={20} color="#8B5CF6" />
                     ) : null}
                   </TouchableOpacity>
                 );
@@ -77,38 +78,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.82)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(255,255,255,0.95)',
     maxWidth: 220,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
   pillEmoji: { fontSize: 14 },
   pillLabel: {
-    color: 'rgba(255,255,255,0.92)',
+    color: VENT_TEXT_PRIMARY,
     fontSize: 13,
     fontWeight: '600',
     flexShrink: 1,
   },
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: 'rgba(0,0,0,0.25)',
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#16161D',
+    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,
     paddingTop: 18,
     paddingBottom: 28,
     paddingHorizontal: 18,
     borderTopWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: 'rgba(0,0,0,0.06)',
   },
   sheetTitle: {
-    color: '#fff',
+    color: VENT_TEXT_PRIMARY,
     fontSize: 17,
     fontWeight: '700',
     marginBottom: 12,
@@ -123,12 +129,12 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   optionSelected: {
-    backgroundColor: 'rgba(139,92,246,0.16)',
+    backgroundColor: 'rgba(139,92,246,0.08)',
   },
   optionEmoji: { fontSize: 20 },
   optionTextWrap: { flex: 1 },
   optionLabel: {
-    color: '#fff',
+    color: VENT_TEXT_PRIMARY,
     fontSize: 15,
     fontWeight: '600',
   },

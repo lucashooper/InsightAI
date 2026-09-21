@@ -1,0 +1,77 @@
+# Fastlane — build release IPA and upload to TestFlight (GitHub Actions / local CI)
+#
+# Required env (App Store Connect API Key):
+#   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_CONTENT (base64 .p8 contents)
+#
+# Required env (code signing — choose ONE approach):
+#   A) Manual cert/profile (GitHub Actions workflow imports these):
+#      BUILD_CERTIFICATE_BASE64, P12_PASSWORD, PROVISIONING_PROFILE_BASE64
+#   B) fastlane match:
+#      MATCH_GIT_URL, MATCH_PASSWORD, MATCH_GIT_BASIC_AUTHORIZATION (optional)
+#
+# Optional:
+#   IOS_BUNDLE_IDENTIFIER, APPLE_TEAM_ID, ASC_APP_ID, BUILD_NUMBER, XCODE_WORKSPACE, XCODE_SCHEME
+
+default_platform(:ios)
+
+def api_key
+  app_store_connect_api_key(
+    key_id: ENV.fetch("ASC_KEY_ID"),
+    issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+    key_content: ENV.fetch("ASC_KEY_CONTENT"),
+    is_key_content_base64: true,
+  )
+end
+
+def resolve_xcodeproj
+  workspace = ENV.fetch("XCODE_WORKSPACE")
+  Dir.glob(File.join(File.dirname(workspace), "*.xcodeproj")).first ||
+    UI.user_error!("No .xcodeproj found next to #{workspace}")
+end
+
+platform :ios do
+  before_all do
+    setup_ci if ENV["CI"]
+  end
+
+  desc "Build App Store IPA and upload to TestFlight"
+  lane :beta do
+    workspace = ENV.fetch("XCODE_WORKSPACE")
+    scheme = ENV.fetch("XCODE_SCHEME")
+    xcodeproj = resolve_xcodeproj
+
+    if ENV["BUILD_NUMBER"]
+      increment_build_number(
+        build_number: ENV["BUILD_NUMBER"],
+        xcodeproj: xcodeproj,
+      )
+    end
+
+    if ENV["MATCH_GIT_URL"]
+      match(
+        type: "appstore",
+        readonly: true,
+        app_identifier: ENV.fetch("IOS_BUNDLE_IDENTIFIER", "com.crupid.mobile"),
+        api_key: api_key,
+      )
+    end
+
+    build_app(
+      workspace: workspace,
+      scheme: scheme,
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: "./build",
+      output_name: "Insight.ipa",
+      clean: true,
+      include_bitcode: false,
+      xcargs: "DEVELOPMENT_TEAM=#{ENV.fetch('APPLE_TEAM_ID', 'HMLV274G9F')}",
+    )
+
+    upload_to_testflight(
+      api_key: api_key,
+      skip_waiting_for_build_processing: true,
+      distribute_external: false,
+    )
+  end
+end

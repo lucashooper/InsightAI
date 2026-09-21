@@ -1,0 +1,4 @@
+app_identifier(ENV.fetch("IOS_BUNDLE_IDENTIFIER", "com.crupid.mobile"))
+apple_id(ENV["APPLE_ID"]) if ENV["APPLE_ID"]
+itc_team_id(ENV.fetch("ASC_APP_ID", "6755717396"))
+team_id(ENV.fetch("APPLE_TEAM_ID", "HMLV274G9F"))

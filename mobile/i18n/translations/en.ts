@@ -653,6 +653,7 @@ const en: TranslationTree = {
     micMessage: 'Allow microphone access to use Vent Mode.',
     errorTitle: 'Vent Mode error',
     errorGeneric: 'Something went wrong. Try again.',
+    voiceUnavailable: 'Voice is briefly unavailable. Try again.',
     expoFallback: 'Voice input needs a dev build with speech recognition.',
   },
   playbook: {

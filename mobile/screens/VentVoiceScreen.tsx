@@ -14,13 +14,18 @@ import { safeGoBack } from '../utils/navigationSafety';
 import VoiceMascot from '../components/voice/VoiceMascot';
 import VentTonePicker from '../components/voice/VentTonePicker';
 import { useVentVoiceSession } from '../hooks/useVentVoiceSession';
-import { VENT_SCREEN_BG, type VentSessionStatus } from '../constants/ventVoice';
+import {
+  VENT_SCREEN_BG,
+  VENT_TEXT_PRIMARY,
+  VENT_TEXT_SECONDARY,
+  type VentSessionStatus,
+} from '../constants/ventVoice';
 
 function statusDotColor(status: VentSessionStatus): string {
-  if (status === 'connecting' || status === 'thinking') return '#6B7280';
+  if (status === 'connecting' || status === 'thinking') return '#9CA3AF';
   if (status === 'listening') return '#34D399';
-  if (status === 'speaking') return '#60A5FA';
-  return '#9CA3AF';
+  if (status === 'speaking') return '#8B5CF6';
+  return '#D1D5DB';
 }
 
 function statusLabel(status: VentSessionStatus, t: (key: string) => string): string {
@@ -54,27 +59,29 @@ export default function VentVoiceScreen() {
     isMuted,
     toggleMute,
     speechAvailable,
+    errorMessage,
     onMicPressIn,
     onMicPressOut,
     isHolding,
   } = useVentVoiceSession({ t });
 
   const hint = useMemo(() => {
+    if (errorMessage) return errorMessage;
     if (!speechAvailable) return t('vent.expoFallback');
     if (isMuted) return t('vent.muted');
     if (status === 'idle') return t('vent.holdToTalk');
     return statusLabel(status, t);
-  }, [isMuted, speechAvailable, status, t]);
+  }, [errorMessage, isMuted, speechAvailable, status, t]);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom + 12 }]}>
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.iconBtn}
+          style={styles.glassBtn}
           onPress={() => safeGoBack(navigation)}
           accessibilityLabel={t('vent.close')}
         >
-          <Ionicons name="close" size={26} color="rgba(255,255,255,0.88)" />
+          <Ionicons name="close" size={24} color={VENT_TEXT_PRIMARY} />
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
@@ -89,7 +96,7 @@ export default function VentVoiceScreen() {
 
       <View style={styles.center}>
         <VoiceMascot status={status} size={210} />
-        <Text style={styles.hint}>{hint}</Text>
+        <Text style={[styles.hint, errorMessage ? styles.hintError : null]}>{hint}</Text>
         {transcript ? (
           <Text style={styles.userTranscript} numberOfLines={3}>
             "{transcript}"
@@ -105,11 +112,13 @@ export default function VentVoiceScreen() {
 
       <View style={styles.controls}>
         <TouchableOpacity style={styles.secondaryBtn} onPress={toggleCaptions}>
-          <Ionicons
-            name={showCaptions ? 'text' : 'text-outline'}
-            size={20}
-            color="rgba(255,255,255,0.75)"
-          />
+          <View style={styles.glassChip}>
+            <Ionicons
+              name={showCaptions ? 'text' : 'text-outline'}
+              size={20}
+              color={VENT_TEXT_PRIMARY}
+            />
+          </View>
           <Text style={styles.secondaryLabel}>{t('vent.captions')}</Text>
         </TouchableOpacity>
 
@@ -126,23 +135,36 @@ export default function VentVoiceScreen() {
         >
           <Ionicons
             name={isMuted ? 'mic-off' : isHolding ? 'mic' : 'mic-outline'}
-            size={34}
+            size={32}
             color="#fff"
           />
         </Pressable>
 
         <TouchableOpacity style={styles.secondaryBtn} onPress={toggleMute}>
-          <Ionicons
-            name={isMuted ? 'volume-mute' : 'volume-high-outline'}
-            size={20}
-            color="rgba(255,255,255,0.75)"
-          />
+          <View style={styles.glassChip}>
+            <Ionicons
+              name={isMuted ? 'volume-mute' : 'volume-high-outline'}
+              size={20}
+              color={VENT_TEXT_PRIMARY}
+            />
+          </View>
           <Text style={styles.secondaryLabel}>{isMuted ? t('vent.unmute') : t('vent.mute')}</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
+
+const glass = {
+  backgroundColor: 'rgba(255,255,255,0.82)',
+  borderWidth: 1,
+  borderColor: 'rgba(255,255,255,0.95)',
+  shadowColor: '#000',
+  shadowOpacity: 0.06,
+  shadowRadius: 12,
+  shadowOffset: { width: 0, height: 4 },
+  elevation: 3,
+};
 
 const styles = StyleSheet.create({
   root: {
@@ -156,13 +178,13 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     gap: 8,
   },
-  iconBtn: {
+  glassBtn: {
     width: 44,
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    ...glass,
   },
   headerCenter: {
     flex: 1,
@@ -181,7 +203,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   statusText: {
-    color: 'rgba(255,255,255,0.72)',
+    color: VENT_TEXT_SECONDARY,
     fontSize: 13,
     fontWeight: '600',
   },
@@ -193,13 +215,16 @@ const styles = StyleSheet.create({
   },
   hint: {
     marginTop: 28,
-    color: 'rgba(255,255,255,0.55)',
+    color: VENT_TEXT_SECONDARY,
     fontSize: 15,
     textAlign: 'center',
   },
+  hintError: {
+    color: 'rgba(26,26,26,0.72)',
+  },
   userTranscript: {
     marginTop: 14,
-    color: 'rgba(255,255,255,0.78)',
+    color: 'rgba(26,26,26,0.65)',
     fontSize: 16,
     textAlign: 'center',
     fontStyle: 'italic',
@@ -209,13 +234,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 16,
+    ...glass,
   },
   captionText: {
-    color: 'rgba(255,255,255,0.92)',
+    color: VENT_TEXT_PRIMARY,
     fontSize: 15,
     lineHeight: 22,
     textAlign: 'center',
@@ -233,22 +256,29 @@ const styles = StyleSheet.create({
     borderRadius: 42,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(139,92,246,0.85)',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: '#8B5CF6',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
     shadowColor: '#8B5CF6',
-    shadowOpacity: 0.35,
-    shadowRadius: 18,
+    shadowOpacity: 0.22,
+    shadowRadius: 16,
     shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
+    elevation: 6,
   },
   micBtnActive: {
-    backgroundColor: 'rgba(52,211,153,0.9)',
-    borderColor: 'rgba(255,255,255,0.28)',
-    transform: [{ scale: 1.06 }],
+    backgroundColor: '#7C3AED',
+    transform: [{ scale: 1.04 }],
   },
   micBtnMuted: {
-    backgroundColor: 'rgba(107,114,128,0.7)',
+    backgroundColor: '#9CA3AF',
+  },
+  glassChip: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...glass,
   },
   secondaryBtn: {
     width: 72,
@@ -256,7 +286,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   secondaryLabel: {
-    color: 'rgba(255,255,255,0.62)',
+    color: VENT_TEXT_SECONDARY,
     fontSize: 11,
     fontWeight: '600',
   },

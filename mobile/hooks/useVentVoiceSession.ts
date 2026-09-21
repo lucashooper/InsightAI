@@ -34,6 +34,7 @@ export function useVentVoiceSession({ t }: Options) {
   const [showCaptions, setShowCaptions] = useState(true);
   const [history, setHistory] = useState<VentChatMessage[]>([]);
   const [isMuted, setIsMuted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [speechAvailable] = useState(!!ExpoSpeechRecognitionModule);
 
   const pendingTranscript = useRef('');
@@ -56,6 +57,7 @@ export function useVentVoiceSession({ t }: Options) {
 
     processingRef.current = true;
     setStatus('thinking');
+    setErrorMessage(null);
 
     try {
       const { reply, updatedHistory } = await processVentTurn(
@@ -67,11 +69,12 @@ export function useVentVoiceSession({ t }: Options) {
       setLiveCaption(reply);
       setTranscript('');
       pendingTranscript.current = '';
+      setErrorMessage(null);
     } catch (err) {
       processingRef.current = false;
       setStatus('idle');
-      const message = err instanceof Error ? err.message : t('vent.errorGeneric');
-      Alert.alert(t('vent.errorTitle'), message);
+      const message = err instanceof Error ? err.message : t('vent.voiceUnavailable');
+      setErrorMessage(message.includes('briefly unavailable') ? t('vent.voiceUnavailable') : message);
     }
   }, [t]);
 
@@ -145,6 +148,7 @@ export function useVentVoiceSession({ t }: Options) {
     pendingTranscript.current = '';
     setTranscript('');
     isHoldingRef.current = true;
+    setErrorMessage(null);
     setStatus('listening');
 
     await configureVentAudioSession();
@@ -200,6 +204,7 @@ export function useVentVoiceSession({ t }: Options) {
     isMuted,
     toggleMute,
     speechAvailable,
+    errorMessage,
     onMicPressIn,
     onMicPressOut,
     isHolding: status === 'listening',

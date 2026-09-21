@@ -7,6 +7,15 @@ export type VoiceToneMode =
 
 export const VENT_DEFAULT_VOICE_ID = 'dfeOmy6Uay63tNhyO99j';
 
+/** Free-tier fallback if the primary voice is unavailable on the ElevenLabs plan. */
+export const VENT_FALLBACK_VOICE_ID = 'EXAVITQu4vr4xnSDxMaL';
+
+export const VENT_VOICE_IDS: Record<VoiceToneMode, string> = {
+  unfiltered_roast: VENT_DEFAULT_VOICE_ID,
+  supportive_listener: VENT_DEFAULT_VOICE_ID,
+  strict_psychologist: VENT_DEFAULT_VOICE_ID,
+};
+
 export const VENT_TONE_MODES: VoiceToneMode[] = [
   'unfiltered_roast',
   'supportive_listener',
@@ -34,7 +43,9 @@ export const VENT_SYSTEM_PROMPTS: Record<VoiceToneMode, string> = {
     "You are Insight's companion mascot — a CBT-focused advisor analyzing cognitive distortions and grounded self-reflection. Name the distortion when you see it, offer one reframe, and keep responses under 3 sentences. Never use markdown.",
 };
 
-export const VENT_SCREEN_BG = '#0D0D12';
+export const VENT_SCREEN_BG = '#F9F9FB';
+export const VENT_TEXT_PRIMARY = '#1A1A1A';
+export const VENT_TEXT_SECONDARY = 'rgba(26,26,26,0.55)';
 
 export type VentSessionStatus =
   | 'connecting'
