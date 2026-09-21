@@ -38,7 +38,8 @@ module.exports = ({ config }) => ({
   userInterfaceStyle: "light",
   ios: {
     supportsTablet: true,
-    buildNumber: "133",
+    icon: "./assets/icon.png",
+    buildNumber: "140",
     bundleIdentifier: "com.crupid.mobile",
     scheme: "insight",
     infoPlist: {
@@ -57,8 +58,8 @@ module.exports = ({ config }) => ({
   },
   android: {
     adaptiveIcon: {
-      foregroundImage: "./assets/icon.png",
-      backgroundColor: "#0D0B18"
+      foregroundImage: "./assets/adaptive-icon.png",
+      backgroundColor: "#000000"
     },
     versionCode: 118,
     permissions: [
