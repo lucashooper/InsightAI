@@ -8,7 +8,10 @@ import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
 import { navigateToPlaybook } from '../utils/navigateToPlaybook';
 import { mobileAiService } from '../services/mobileAiService';
-import { checkAIConsent } from '../services/aiConsentService';
+import { checkAIConsent, shouldBlockAI } from '../services/aiConsentService';
+import AIConsentModal from '../components/privacy/AIConsentModal';
+import EffortLevelBadge from '../components/insights/EffortLevelBadge';
+import { normalizeEffortLevel, inferEffortLevel } from '../utils/effortLevel';
 import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import ImmersiveAnalysisOverlay from '../components/shared/ImmersiveAnalysisOverlay';
@@ -18,7 +21,8 @@ import PremiumUpsellOverlay from '../components/PremiumUpsellOverlay';
 import PremiumDialog, { type PremiumDialogAction } from '../components/shared/PremiumDialog';
 import * as Haptics from 'expo-haptics';
 import { isTablet, sf, ss, si } from '../utils/responsive';
-import SunoGradient from '../components/onboarding/SunoGradient';
+import AppBackdrop from '../components/ui/AppBackdrop';
+import PremiumButton from '../components/shared/PremiumButton';
 import { decryptEntryFieldsCached } from '../utils/decryptBatch';
 import { setCachedEntry, entryVersion } from '../utils/decryptCache';
 import MoodIcon from '../components/checkin/MoodIcon';
@@ -137,6 +141,8 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
     icon?: keyof typeof Ionicons.glyphMap;
     actions: PremiumDialogAction[];
   } | null>(null);
+  const [consentModalVisible, setConsentModalVisible] = useState(false);
+  const pendingAnalysisEntryRef = useRef<any>(undefined);
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [showMoodPicker, setShowMoodPicker] = useState(false);
   // The orb layer renders above the native stack — hide it under the in-tree picker backdrop.
@@ -372,7 +378,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
     setAnalyzing(false);
   };
 
-  const handleAnalyzeEntry = async (entryData?: any) => {
+  const handleAnalyzeEntry = async (entryData?: any, options?: { skipConsentCheck?: boolean }) => {
     const targetEntry = entryData || entry;
     if (!targetEntry?.content || analyzing) return;
 
@@ -380,6 +386,20 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
     Keyboard.dismiss();
 
     if (!user?.id) return;
+
+    if (!options?.skipConsentCheck) {
+      const consent = await checkAIConsent();
+      if (consent.needsConsent) {
+        pendingAnalysisEntryRef.current = entryData;
+        setConsentModalVisible(true);
+        return;
+      }
+      const blocked = await shouldBlockAI();
+      if (blocked.blocked) {
+        Alert.alert(t('settings.aiAnalysis'), blocked.reason || t('settings.aiDisabledMessage'));
+        return;
+      }
+    }
 
     const tier = await fetchSubscriptionTier(user.id, user.email);
     const isUnlimited = isUnlimitedTier(tier) || __DEV__;
@@ -837,7 +857,7 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
       {isDarkTheme(theme.name) ? (
         <View style={[StyleSheet.absoluteFill, { backgroundColor: theme.colors.background }]} />
       ) : (
-        <SunoGradient themeColors={theme.colors.backgroundGradient as string[]} />
+        <AppBackdrop />
       )}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => safeGoBack(navigation)} style={styles.backButton}>
@@ -854,30 +874,16 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
               <Ionicons name="happy-outline" size={24} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : theme.colors.primaryText} />
             )}
           </TouchableOpacity>
-          <TouchableOpacity 
-            onPress={() => handleAnalyzeEntry()}
-            disabled={analyzing}
-            style={[
-              styles.analyzeHeaderButton,
-              (!editableContent?.trim() || analyzing) && styles.analyzeHeaderButtonDisabled
-            ]}
-            activeOpacity={0.8}
-          >
-            {analyzing ? (
-              <ActivityIndicator size="small" color="#ffffff" />
-            ) : (
-              <LinearGradient
-                colors={['#8b5cf6', '#7c3aed']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.analyzeHeaderGradient}
-              >
-                <Text style={styles.analyzeHeaderText}>
-                  {structuredInsights ? t('editor.reanalyze') : t('editor.analyze')}
-                </Text>
-              </LinearGradient>
-            )}
-          </TouchableOpacity>
+          {analyzing ? (
+            <ActivityIndicator size="small" color={theme.colors.primaryText} />
+          ) : (
+            <PremiumButton
+              label={structuredInsights ? t('editor.reanalyze') : t('editor.finishEntry')}
+              onPress={() => handleAnalyzeEntry()}
+              disabled={!editableContent?.trim()}
+              style={styles.analyzeHeaderButton}
+            />
+          )}
         </View>
       </View>
 
@@ -1034,7 +1040,18 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
             <View style={styles.inlineInsightsSection}>
               <View style={styles.insightsDivider} />
               <View style={styles.insightsHeaderRow}>
-                <Text style={[styles.inlineInsightsTitle, { color: theme.colors.primaryText }]}>{t('entry.insights')}</Text>
+                <View style={styles.insightsHeaderLeft}>
+                  <Text style={[styles.inlineInsightsTitle, { color: theme.colors.primaryText }]}>{t('entry.insights')}</Text>
+                  <TouchableOpacity
+                    onPress={() =>
+                      Alert.alert(t('entry.aiPipelineInfoTitle'), t('entry.aiPipelineInfoBody'))
+                    }
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={styles.aiInfoButton}
+                  >
+                    <Ionicons name="information-circle-outline" size={20} color={theme.colors.secondaryText} />
+                  </TouchableOpacity>
+                </View>
                 <TouchableOpacity
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -1099,9 +1116,9 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                 const strengthCards = structuredInsights.insights_report.insightCards.filter(
                   (card: any) => card.type === 'strength' || card.type === 'win'
                 );
-                const growthCards = structuredInsights.insights_report.insightCards.filter(
-                  (card: any) => card.type === 'growth' || card.type === 'reflection'
-                );
+                const growthCards = structuredInsights.insights_report.insightCards
+                  .filter((card: any) => card.type === 'growth' || card.type === 'reflection')
+                  .slice(0, 1);
                 
                 return (
                   <View style={styles.insightCardsContainer} onLayout={(e) => { insightsSectionY.current = e.nativeEvent.layout.y; }}>
@@ -1195,11 +1212,11 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
                               return (
                                 <View key={index} style={[styles.insightCard, { backgroundColor: isHighlighted ? 'rgba(217, 119, 6, 0.08)' : theme.colors.cardBackground, borderWidth: isHighlighted ? 2 : 1, borderColor: isHighlighted ? '#d97706' : theme.colors.border }]}>
                                   <View style={styles.insightCardContent}>
-                                    <View style={[styles.insightBadge, { backgroundColor: theme.colors.surface }]}>
-                                      <Text style={[styles.insightBadgeText, { color: theme.colors.secondaryText }]}>
-                                        {card.short_label || card.type.toUpperCase()}
-                                      </Text>
-                                    </View>
+                                    <EffortLevelBadge
+                                      effortLevel={normalizeEffortLevel(
+                                        card.effort_level || inferEffortLevel(card.text || ''),
+                                      )}
+                                    />
                                     <Text style={[styles.insightCardText, { color: theme.colors.secondaryText }]}>
                                       {card.text
                                         .replace(/The user/g, 'You')
@@ -1441,6 +1458,17 @@ export default function EntryDetailScreenNew({ route, navigation }: any) {
         actions={premiumDialog?.actions ?? [{ label: t('common.ok'), variant: 'primary' }]}
         onDismiss={() => setPremiumDialog(null)}
       />
+
+      <AIConsentModal
+        visible={consentModalVisible}
+        onClose={(granted) => {
+          setConsentModalVisible(false);
+          if (granted) {
+            handleAnalyzeEntry(pendingAnalysisEntryRef.current, { skipConsentCheck: true });
+          }
+          pendingAnalysisEntryRef.current = undefined;
+        }}
+      />
     </View>
   );
 }
@@ -1545,9 +1573,10 @@ const styles = StyleSheet.create({
     lineHeight: sf(21),
   },
   contentInput: {
-    fontSize: sf(17),
+    fontSize: 18,
+    fontWeight: '600',
     color: 'rgba(255, 255, 255, 0.95)',
-    lineHeight: sf(28),
+    lineHeight: 26,
     minHeight: isTablet ? 300 : 200,
     padding: 0,
   },
@@ -1565,6 +1594,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: isTablet ? 20 : 16,
+  },
+  insightsHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  aiInfoButton: {
+    padding: 2,
   },
   inlineInsightsTitle: {
     fontSize: sf(20),

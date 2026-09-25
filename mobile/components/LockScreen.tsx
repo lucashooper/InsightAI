@@ -1,27 +1,27 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Animated,
-  Dimensions,
   StatusBar,
   Alert,
   Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import CachedImage from './shared/CachedImage';
-import { INSIGHT_LOGO } from '../constants/appAssets';
 import { useAppLock } from '../contexts/AppLockContext';
 import { useLanguage } from '../contexts/LanguageContext';
-
-const { width } = Dimensions.get('window');
+import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
+import AppBackdrop from './ui/AppBackdrop';
+import CloudMascot from './companion/CloudMascot';
+import { INK, SURFACE } from '../constants/typography';
 
 export default function LockScreen() {
   const { unlock, unlockWithBiometric, isBiometricEnabled, isBiometricAvailable, forgotPin } = useAppLock();
   const { t } = useLanguage();
+  const { theme } = useTheme();
+  const dark = isDarkTheme(theme.name);
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const shakeAnim = useRef(new Animated.Value(0)).current;
@@ -29,11 +29,24 @@ export default function LockScreen() {
 
   const PIN_LENGTH = 4;
 
-  // Dismiss keyboard and try biometric on mount
+  const colors = useMemo(
+    () => ({
+      title: dark ? '#FFFFFF' : INK.primary,
+      subtitle: dark ? 'rgba(255,255,255,0.5)' : INK.secondary,
+      keyBg: dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.92)',
+      keyBorder: dark ? 'rgba(255,255,255,0.1)' : SURFACE.lightBorder,
+      keyText: dark ? '#FFFFFF' : INK.primary,
+      deleteIcon: dark ? 'rgba(255,255,255,0.7)' : INK.secondary,
+      dotBorder: dark ? 'rgba(255,255,255,0.3)' : 'rgba(17,17,21,0.2)',
+      dotFilled: '#8b5cf6',
+      forgot: dark ? 'rgba(255,255,255,0.4)' : INK.tertiary,
+    }),
+    [dark],
+  );
+
   useEffect(() => {
-    // CRITICAL: Dismiss any open keyboard when PIN screen appears
     Keyboard.dismiss();
-    
+
     if (isBiometricEnabled && isBiometricAvailable) {
       setTimeout(() => {
         unlockWithBiometric();
@@ -41,7 +54,6 @@ export default function LockScreen() {
     }
   }, []);
 
-  // Animate dots when pin changes
   useEffect(() => {
     if (pin.length > 0 && pin.length <= PIN_LENGTH) {
       Animated.spring(dotAnims[pin.length - 1], {
@@ -81,7 +93,6 @@ export default function LockScreen() {
       const success = await unlock(newPin);
       if (!success) {
         setError(t('components.lock.incorrectPin'));
-        // Shake animation
         Animated.sequence([
           Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
           Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
@@ -90,10 +101,9 @@ export default function LockScreen() {
           Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
         ]).start();
 
-        // Reset after shake
         setTimeout(() => {
           setPin('');
-          dotAnims.forEach(a => a.setValue(0));
+          dotAnims.forEach((a) => a.setValue(0));
         }, 300);
       }
     }
@@ -106,14 +116,17 @@ export default function LockScreen() {
           key={i}
           style={[
             styles.dot,
-            pin.length > i && styles.dotFilled,
+            { borderColor: colors.dotBorder },
+            pin.length > i && { backgroundColor: colors.dotFilled, borderColor: colors.dotFilled },
             {
-              transform: [{
-                scale: dotAnims[i].interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [1, 1.2],
-                }),
-              }],
+              transform: [
+                {
+                  scale: dotAnims[i].interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [1, 1.2],
+                  }),
+                },
+              ],
             },
           ]}
         />
@@ -142,7 +155,7 @@ export default function LockScreen() {
                 return (
                   <TouchableOpacity
                     key={keyIndex}
-                    style={styles.key}
+                    style={[styles.key, { backgroundColor: colors.keyBg, borderColor: colors.keyBorder }]}
                     onPress={() => handleKeyPress('biometric')}
                     activeOpacity={0.6}
                   >
@@ -155,11 +168,11 @@ export default function LockScreen() {
                 return (
                   <TouchableOpacity
                     key={keyIndex}
-                    style={styles.key}
+                    style={[styles.key, { backgroundColor: colors.keyBg, borderColor: colors.keyBorder }]}
                     onPress={() => handleKeyPress('delete')}
                     activeOpacity={0.6}
                   >
-                    <Ionicons name="backspace-outline" size={28} color="rgba(255,255,255,0.7)" />
+                    <Ionicons name="backspace-outline" size={28} color={colors.deleteIcon} />
                   </TouchableOpacity>
                 );
               }
@@ -167,11 +180,11 @@ export default function LockScreen() {
               return (
                 <TouchableOpacity
                   key={keyIndex}
-                  style={styles.key}
+                  style={[styles.key, { backgroundColor: colors.keyBg, borderColor: colors.keyBorder }]}
                   onPress={() => handleKeyPress(key)}
                   activeOpacity={0.6}
                 >
-                  <Text style={styles.keyText}>{key}</Text>
+                  <Text style={[styles.keyText, { color: colors.keyText }]}>{key}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -182,14 +195,17 @@ export default function LockScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      
+    <View style={[styles.container, dark && styles.containerDark]}>
+      {!dark ? <AppBackdrop /> : null}
+      <StatusBar barStyle={dark ? 'light-content' : 'dark-content'} />
+
       <View style={styles.content}>
-        <CachedImage source={INSIGHT_LOGO} style={styles.logo} contentFit="contain" recyclingKey="lock-screen-logo" />
-        
-        <Text style={styles.title}>{t('components.lock.welcome')}</Text>
-        <Text style={styles.subtitle}>{t('components.lock.enterPin')}</Text>
+        <View style={styles.mascotWrap}>
+          <CloudMascot size={120} tint="#B8D4FF" valence={0.72} shadow animated />
+        </View>
+
+        <Text style={[styles.title, { color: colors.title }]}>{t('components.lock.welcome')}</Text>
+        <Text style={[styles.subtitle, { color: colors.subtitle }]}>{t('components.lock.enterPin')}</Text>
 
         {renderDots()}
 
@@ -198,10 +214,7 @@ export default function LockScreen() {
         {renderKeypad()}
 
         {isBiometricEnabled && isBiometricAvailable && (
-          <TouchableOpacity
-            style={styles.biometricHint}
-            onPress={() => handleKeyPress('biometric')}
-          >
+          <TouchableOpacity style={styles.biometricHint} onPress={() => handleKeyPress('biometric')}>
             <Text style={styles.biometricHintText}>{t('components.lock.useFaceId')}</Text>
           </TouchableOpacity>
         )}
@@ -225,11 +238,11 @@ export default function LockScreen() {
                     }
                   },
                 },
-              ]
+              ],
             );
           }}
         >
-          <Text style={styles.forgotPinText}>{t('components.lock.forgotTitle')}</Text>
+          <Text style={[styles.forgotPinText, { color: colors.forgot }]}>{t('components.lock.forgotTitle')}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -239,6 +252,8 @@ export default function LockScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  containerDark: {
     backgroundColor: '#000',
   },
   content: {
@@ -247,20 +262,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 40,
   },
-  logo: {
-    width: 160,
-    height: 160,
-    marginBottom: 24,
+  mascotWrap: {
+    marginBottom: 20,
   },
   title: {
     fontSize: 28,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: '600',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: 'rgba(255,255,255,0.5)',
     marginBottom: 32,
   },
   dotsContainer: {
@@ -273,12 +284,7 @@ const styles = StyleSheet.create({
     height: 16,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.3)',
     backgroundColor: 'transparent',
-  },
-  dotFilled: {
-    backgroundColor: '#8b5cf6',
-    borderColor: '#8b5cf6',
   },
   errorText: {
     color: '#ef4444',
@@ -304,11 +310,14 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   keyEmpty: {
     width: 72,
@@ -317,7 +326,6 @@ const styles = StyleSheet.create({
   keyText: {
     fontSize: 28,
     fontWeight: '500',
-    color: '#fff',
   },
   biometricHint: {
     marginTop: 24,
@@ -334,7 +342,6 @@ const styles = StyleSheet.create({
   },
   forgotPinText: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.4)',
     fontWeight: '500',
   },
 });

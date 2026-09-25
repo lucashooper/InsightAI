@@ -80,13 +80,16 @@ export function computeWeeklyMoodStats(points: MoodTrendPoint[]) {
   };
 }
 
-export function pickDateLabelIndices(count: number): number[] {
+/** Pick at most 4 evenly spaced x-axis labels to prevent overlap. */
+export function pickDateLabelIndices(count: number, maxLabels = 4): number[] {
   if (count <= 0) return [];
-  if (count <= 5) return Array.from({ length: count }, (_, i) => i);
-  if (count <= 8) return [0, Math.floor(count / 2), count - 1];
-  const step = Math.max(1, Math.floor((count - 1) / 4));
+  if (count <= maxLabels) return Array.from({ length: count }, (_, i) => i);
+
   const indices = new Set<number>([0, count - 1]);
-  for (let i = step; i < count - 1; i += step) indices.add(i);
-  indices.add(count - 1);
-  return [...indices].sort((a, b) => a - b);
+  const innerSlots = maxLabels - 2;
+  for (let i = 1; i <= innerSlots; i += 1) {
+    indices.add(Math.round((i * (count - 1)) / (innerSlots + 1)));
+  }
+
+  return [...indices].sort((a, b) => a - b).slice(0, maxLabels);
 }

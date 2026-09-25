@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
   },
   labelPrimary: { color: '#fff' },
   labelSecondaryDark: { color: 'rgba(255,255,255,0.88)' },
-  labelSecondaryLight: { color: '#5b21b6' },
+  labelSecondaryLight: { color: '#1C1A22' },
   labelGhostDark: { color: PREMIUM.text.secondary },
   labelGhostLight: { color: 'rgba(26,26,26,0.55)' },
 });

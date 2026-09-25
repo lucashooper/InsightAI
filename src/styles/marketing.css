@@ -4727,6 +4727,17 @@ body:has(.marketing-page--light),
   background: rgba(255, 255, 255, 0.88) !important;
 }
 
+@media (max-width: 768px) {
+  .float-slow,
+  .float-phone,
+  .float-phone-delayed,
+  .hero-phone-float,
+  .hero-mascot {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .float-slow,
   .float-phone,

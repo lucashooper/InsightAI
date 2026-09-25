@@ -8,8 +8,9 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme, isDarkTheme } from '../contexts/ThemeContext';
+import AppBackdrop from '../components/ui/AppBackdrop';
+import { INK } from '../constants/typography';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import StandardContainer from '../components/shared/StandardContainer';
 import GlassCard from '../components/ui/GlassCard';
@@ -32,12 +33,11 @@ export default function EmotionDetailScreen() {
   const route = useRoute();
   const params = route.params as EmotionDetailRouteParams;
   
-  const { emotion, percentage, entries, accentGlow = '#8b5cf6', gradientColors } = params;
-  const pageGradient = gradientColors ?? [
-    `${accentGlow}66`,
-    `${accentGlow}33`,
-    '#0D0B18',
-  ];
+  const { emotion, percentage, entries, accentGlow = '#8b5cf6' } = params;
+  const dark = isDarkTheme(theme.name);
+  const textPrimary = dark ? theme.colors.primaryText : INK.primary;
+  const textSecondary = dark ? theme.colors.secondaryText : '#4A4A5A';
+  const iconColor = dark ? accentGlow : '#7c3aed';
   
   console.log('[EmotionDetail] Opened:', { emotion, percentage, entriesCount: entries?.length || 0 });
 
@@ -152,22 +152,16 @@ export default function EmotionDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={pageGradient}
-        style={StyleSheet.absoluteFill}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-      />
+      <AppBackdrop />
 
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => safeGoBack(navigation)}
         >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color={textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('auxiliary.emotionDetail.title')}</Text>
+        <Text style={[styles.headerTitle, { color: textPrimary }]}>{t('auxiliary.emotionDetail.title')}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -177,52 +171,50 @@ export default function EmotionDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Emotion Header */}
-        <GlassCard style={styles.emotionHeaderCard} noPad contentStyle={styles.emotionHeaderInner}>
-          <View style={[styles.emotionOrb, { borderColor: `${accentGlow}88` }]}>
-            <Text style={styles.emotionOrbPct}>{percentage}%</Text>
+        <GlassCard variant="nested" style={styles.emotionHeaderCard} noPad contentStyle={styles.emotionHeaderInner}>
+          <View style={[styles.emotionOrb, { borderColor: `${accentGlow}44`, backgroundColor: `${accentGlow}14` }]}>
+            <Text style={[styles.emotionOrbPct, { color: textPrimary }]}>{percentage}%</Text>
           </View>
-          <Text style={styles.emotionName}>
+          <Text style={[styles.emotionName, { color: textPrimary }]}>
             {translateEmotion(t, emotion)}
           </Text>
-          <Text style={styles.emotionPercentage}>
+          <Text style={[styles.emotionPercentage, { color: textSecondary }]}>
             {t('auxiliary.emotionDetail.seenIn', { percentage })}
           </Text>
         </GlassCard>
 
         {/* Empathetic Summary */}
-        <GlassCard style={styles.section}>
+        <GlassCard variant="nested" style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="heart-outline" size={20} color={accentGlow} />
-            <Text style={styles.sectionTitle}>{t('auxiliary.emotionDetail.understanding')}</Text>
+            <Ionicons name="heart-outline" size={20} color={iconColor} />
+            <Text style={[styles.sectionTitle, { color: textPrimary }]}>{t('auxiliary.emotionDetail.understanding')}</Text>
           </View>
-          <Text style={styles.sectionBody}>
+          <Text style={[styles.sectionBody, { color: textSecondary }]}>
             {empatheticSummary}
           </Text>
         </GlassCard>
 
-        {/* Contextual Interpretation */}
-        <GlassCard style={styles.section}>
+        <GlassCard variant="nested" style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="analytics-outline" size={20} color={accentGlow} />
-            <Text style={styles.sectionTitle}>{t('auxiliary.emotionDetail.contextPatterns')}</Text>
+            <Ionicons name="analytics-outline" size={20} color={iconColor} />
+            <Text style={[styles.sectionTitle, { color: textPrimary }]}>{t('auxiliary.emotionDetail.contextPatterns')}</Text>
           </View>
-          <Text style={styles.sectionBody}>
+          <Text style={[styles.sectionBody, { color: textSecondary }]}>
             {contextualInterpretation}
           </Text>
         </GlassCard>
 
-        {/* Actionable Suggestions */}
-        <GlassCard style={styles.section}>
+        <GlassCard variant="nested" style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="bulb-outline" size={20} color={accentGlow} />
-            <Text style={styles.sectionTitle}>{t('auxiliary.emotionDetail.whatMightHelp')}</Text>
+            <Ionicons name="bulb-outline" size={20} color={iconColor} />
+            <Text style={[styles.sectionTitle, { color: textPrimary }]}>{t('auxiliary.emotionDetail.whatMightHelp')}</Text>
           </View>
           {suggestions.map((suggestion, index) => (
             <View key={index} style={styles.suggestionItem}>
               <View style={styles.suggestionBullet}>
-                <View style={[styles.suggestionDot, { backgroundColor: accentGlow }]} />
+                <View style={[styles.suggestionDot, { backgroundColor: iconColor }]} />
               </View>
-              <Text style={styles.suggestionText}>
+              <Text style={[styles.suggestionText, { color: textSecondary }]}>
                 {suggestion}
               </Text>
             </View>
@@ -231,43 +223,43 @@ export default function EmotionDetailScreen() {
 
         {/* Related Entries */}
         {entries && entries.length > 0 && (
-          <GlassCard style={styles.section}>
+          <GlassCard variant="nested" style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="journal-outline" size={20} color={accentGlow} />
-              <Text style={styles.sectionTitle}>
+              <Ionicons name="journal-outline" size={20} color={iconColor} />
+              <Text style={[styles.sectionTitle, { color: textPrimary }]}>
                 {t('auxiliary.emotionDetail.recentEntries', { count: entries.length })}
               </Text>
             </View>
             {entries.slice(0, 5).map((entry, index) => (
               <TouchableOpacity
                 key={entry.id || index}
-                style={styles.entryItem}
+                style={[styles.entryItem, { borderBottomColor: theme.colors.border }]}
                 onPress={() => navigation.navigate('EntryDetail', { entry })}
               >
-                <Text style={styles.entryDate}>
+                <Text style={[styles.entryDate, { color: textSecondary }]}>
                   {formatDate(entry.created_at, {
                     month: 'short',
                     day: 'numeric',
                   })}
                 </Text>
-                <Text style={styles.entryTitle} numberOfLines={1}>
+                <Text style={[styles.entryTitle, { color: textPrimary }]} numberOfLines={1}>
                   {entry.title || t('auxiliary.emotionDetail.untitled')}
                 </Text>
-                <Text style={styles.entrySnippet} numberOfLines={2}>
+                <Text style={[styles.entrySnippet, { color: textSecondary }]} numberOfLines={2}>
                   {entry.content}
                 </Text>
               </TouchableOpacity>
             ))}
-            
+
             {entries.length > 5 && (
               <TouchableOpacity
                 style={styles.viewAllEntriesBtn}
                 onPress={() => navigation.navigate('Journal', { filterEmotion: emotion })}
               >
-                <Text style={[styles.viewAllText, { color: accentGlow }]}>
+                <Text style={[styles.viewAllText, { color: iconColor }]}>
                   {t('auxiliary.emotionDetail.viewAll', { count: entries.length })}
                 </Text>
-                <Ionicons name="arrow-forward" size={16} color={accentGlow} />
+                <Ionicons name="arrow-forward" size={16} color={iconColor} />
               </TouchableOpacity>
             )}
           </GlassCard>
@@ -283,10 +275,7 @@ export default function EmotionDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D0B18',
-  },
-  emotionGradient: {
-    ...StyleSheet.absoluteFill,
+    backgroundColor: 'transparent',
   },
   header: {
     flexDirection: 'row',
@@ -305,7 +294,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
   },
   headerSpacer: {
     width: 40,
@@ -319,6 +307,12 @@ const styles = StyleSheet.create({
   },
   emotionHeaderCard: {
     marginBottom: 16,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   emotionHeaderInner: {
     alignItems: 'center',
@@ -337,16 +331,14 @@ const styles = StyleSheet.create({
   },
   emotionOrbPct: {
     fontSize: 20,
-    fontWeight: '800',
-    color: '#fff',
+    fontWeight: '700',
   },
   emotionName: {
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: '600',
     textTransform: 'capitalize',
     marginBottom: 6,
     letterSpacing: -0.5,
-    color: '#fff',
     textAlign: 'center',
   },
   emotionPercentage: {

@@ -11,6 +11,7 @@ import { usePreloadedData } from '../contexts/PreloadContext';
 import { supabase } from '../lib/supabase';
 import { sf } from '../utils/responsive';
 import StandardContainer from '../components/shared/StandardContainer';
+import AppBackdrop from '../components/ui/AppBackdrop';
 import LanguagePicker from '../components/LanguagePicker';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -263,11 +264,8 @@ export default function ProfileScreen({ navigation }: any) {
   );
 
   return (
-    <View style={[styles.wrapper, { backgroundColor: theme.colors.background }]}>
-      <LinearGradient
-        colors={theme.colors.backgroundGradient as any}
-        style={styles.backgroundGradient}
-      />
+    <View style={styles.wrapper}>
+      <AppBackdrop />
       <ScrollView
         style={styles.container}
         contentContainerStyle={{ paddingBottom: tabBarClearance }}

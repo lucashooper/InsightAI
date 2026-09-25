@@ -611,7 +611,7 @@ const en: TranslationTree = {
     emotionalLandscape: 'Emotional landscape',
     tapToExplore: 'Tap to explore',
     mostRecurring: 'Most recurring',
-    patternsToAddress: 'Patterns to Address',
+    patternsToAddress: 'Insights',
     whatsWorking: "What's Working",
     rememberWhenTitle: "You've been here before",
     viewThatEntry: 'View That Entry',

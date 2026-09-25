@@ -10,7 +10,7 @@ import {
   ScrollView,
   Animated,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import PillButton from '../components/ui/PillButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
@@ -213,28 +213,15 @@ export default function PromptEntryScreen({ navigation, route }: any) {
           >
             <Ionicons name={isRecording ? 'mic' : 'mic-outline'} size={22} color={isRecording ? '#ef4444' : '#c4b5fd'} />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.saveButton, !content.trim() && styles.saveButtonDisabled, styles.saveButtonFlex]}
+          <PillButton
+            label={isSaving ? t('auxiliary.common.saving') : t('auxiliary.promptEntry.saveReflection')}
             onPress={handleSave}
             disabled={!content.trim() || isSaving}
-            activeOpacity={0.85}
-          >
-            <LinearGradient
-              colors={content.trim() ? ['#8b5cf6', '#7c3aed'] : ['#6b7280', '#4b5563']}
-              style={styles.saveButtonGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              {isSaving ? (
-                <Text style={styles.saveButtonText}>{t('auxiliary.common.saving')}</Text>
-              ) : (
-                <>
-                  <Ionicons name="checkmark-circle" size={22} color="#ffffff" />
-                  <Text style={styles.saveButtonText}>{t('auxiliary.promptEntry.saveReflection')}</Text>
-                </>
-              )}
-            </LinearGradient>
-          </TouchableOpacity>
+            loading={isSaving}
+            block
+            icon={isSaving ? undefined : 'checkmark-circle'}
+            style={styles.saveButtonFlex}
+          />
         </View>
       </KeyboardAvoidingView>
 
@@ -328,8 +315,9 @@ const styles = StyleSheet.create({
     minHeight: 220,
   },
   textInput: {
-    fontSize: sf(16),
-    lineHeight: sf(24),
+    fontSize: 18,
+    fontWeight: '600',
+    lineHeight: 26,
     minHeight: 200,
     padding: 16,
   },

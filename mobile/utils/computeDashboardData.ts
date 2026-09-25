@@ -1,5 +1,6 @@
 import { AppLanguage } from '../i18n/types';
 import { groupPatternItems, groupsToDisplayItems } from './patternGrouping';
+import { inferEffortLevel, normalizeEffortLevel } from './effortLevel';
 
 /**
  * When the user has insights analyzed in the current locale, dashboard patterns
@@ -45,7 +46,13 @@ export function notesSignature(notes: any[] | null | undefined): string {
 }
 
 export function computePatternsData(notes: any[]) {
-  const rawPatterns: Array<{ text: string; entryId: string; originLabel: string; date: string }> = [];
+  const rawPatterns: Array<{
+    text: string;
+    entryId: string;
+    originLabel: string;
+    date: string;
+    effortLevel?: ReturnType<typeof normalizeEffortLevel>;
+  }> = [];
   const rawStrengths: Array<{ text: string; entryId: string; originLabel: string; date: string }> = [];
 
   for (const n of notes) {
@@ -54,9 +61,15 @@ export function computePatternsData(notes: any[]) {
     const entryDate = new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const originLabel = getOriginLabel(n);
 
-    const addRawPattern = (text: string) => {
+    const addRawPattern = (text: string, effortLevel?: ReturnType<typeof normalizeEffortLevel>) => {
       if (!text || text === '{}' || text.length < 5) return;
-      rawPatterns.push({ text: text.substring(0, 300), entryId: n.id, originLabel, date: entryDate });
+      rawPatterns.push({
+        text: text.substring(0, 300),
+        entryId: n.id,
+        originLabel,
+        date: entryDate,
+        effortLevel: effortLevel || inferEffortLevel(text),
+      });
     };
     const addRawStrength = (text: string) => {
       if (!text || text === '{}' || text.length < 5) return;
@@ -90,7 +103,10 @@ export function computePatternsData(notes: any[]) {
       cards.forEach((card: any) => {
         if (card.type === 'growth' || card.type === 'reflection') {
           const text = typeof card === 'string' ? card : String(card.text || card.description || '');
-          addRawPattern(text);
+          const effort = card.effort_level
+            ? normalizeEffortLevel(card.effort_level)
+            : inferEffortLevel(text);
+          addRawPattern(text, effort);
         }
       });
     }

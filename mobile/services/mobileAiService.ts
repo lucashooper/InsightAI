@@ -21,6 +21,37 @@ import {
 import { decryptEntriesInChunks } from '../utils/decryptBatch';
 import { looksEncryptedContent } from '../utils/encryptionFormat';
 import { GROQ_CHAT_MODEL } from '../constants/groqConfig';
+import { EffortLevel, inferEffortLevel, normalizeEffortLevel } from '../utils/effortLevel';
+
+export type InsightCardType = 'strength' | 'win' | 'growth' | 'reflection';
+
+export type InsightCard = {
+  type: InsightCardType;
+  text: string;
+  short_label?: string;
+  effort_level?: EffortLevel;
+};
+
+function normalizeInsightCards(cards: InsightCard[] | undefined, entryContent: string): InsightCard[] {
+  if (!Array.isArray(cards)) return [];
+
+  const strengthCards = cards.filter((c) => c.type === 'strength' || c.type === 'win');
+  let growthCards = cards.filter((c) => c.type === 'growth' || c.type === 'reflection');
+
+  const trimmed = entryContent.trim();
+  const isSimpleEntry = trimmed.length < 120 || trimmed.split(/\s+/).length < 25;
+
+  if (isSimpleEntry) {
+    growthCards = [];
+  } else {
+    growthCards = growthCards.slice(0, 1).map((card) => ({
+      ...card,
+      effort_level: normalizeEffortLevel(card.effort_level || inferEffortLevel(card.text || '')),
+    }));
+  }
+
+  return [...strengthCards, ...growthCards];
+}
 
 async function fetchDecryptedJournalEntries(userId: string, limit: number) {
   const { data: entries, error } = await supabase
@@ -111,6 +142,7 @@ export interface EnhancedAIAnalysis {
   analysis_locale?: string;
   insights_report?: {
     conversationalSummary: string;
+    insightCards?: InsightCard[];
     keyTakeaways: Array<{
       insight: string;
       sentiment: 'positive' | 'opportunity';
@@ -344,7 +376,9 @@ CRITICAL INSTRUCTIONS:
 6. **Personalize suggestions** - Tailor coping strategies to the specific triggers and patterns you identify
 7. **ALWAYS use second person "You"** - NEVER use "their", "the user", "he", "she", or any third person references. Always address the person directly as "You" or "Your"
 8. **Grammar check** - Ensure possessives are correct (e.g., "Your contentment" not "You's contentment")
-9. **Warm, empathetic tone** - Write like a supportive therapist or coach, not a cold data analyst
+9. **Warm, empathetic, low-pressure tone** - Write like a supportive therapist or coach, not a cold data analyst
+10. **STRICT GROUNDING** - Do NOT overreach, diagnose, or extrapolate beyond what the user explicitly stated. Base all observations strictly on facts directly mentioned in the text. If an entry is short or lacks detail, respond with light validation (e.g., "Sounds like a restful day") rather than inventing underlying issues or forced recommendations. If a pattern isn't clearly supported by the text, omit it entirely.
+11. **Gentle observations limit** - Include at most ONE 'growth' or 'reflection' insightCard per entry. For simple, venting, or low-detail entries, include ZERO growth/reflection cards — only strengths/wins and a warm summary.
 
 Provide a comprehensive JSON response with the EXACT structure below:
 
@@ -399,8 +433,9 @@ Provide a comprehensive JSON response with the EXACT structure below:
     "insightCards": [
       {
         "type": "strength" | "win" | "growth" | "reflection",
-        "text": "A specific, personalized insight addressing the user directly with 'You'. For strengths/wins, highlight what they did well. For growth/reflection, point out patterns or opportunities.",
-        "short_label": "STRENGTH" | "WIN" | "GROWTH" | "REFLECTION"
+        "text": "A specific, personalized insight addressing the user directly with 'You'. For strengths/wins, highlight what they did well. For growth/reflection, one gentle observation only.",
+        "short_label": "STRENGTH" | "WIN" | "GROWTH" | "REFLECTION",
+        "effort_level": "quick_win" | "mindset_shift" | "deep_routine" (REQUIRED for growth/reflection cards only — quick_win = instant zero-resistance action; mindset_shift = gentle reflection; deep_routine = structural habit change)
       }
     ],
     "keyTakeaways": [
@@ -428,21 +463,20 @@ Entry text: ${content}`;
     const systemInstruction = `You are an expert mental health AI assistant trained in CBT, DBT, and positive psychology. 
     
     CRITICAL OUTPUT RULES:
-    1. You MUST provide at least 3-5 items in 'insightCards' array.
-    2. You MUST include a balanced mix of types: at least 1-2 'strength' or 'win' cards AND 1-2 'growth' or 'reflection' cards.
-    3. Card types:
+    1. Provide 2-4 'insightCards' total — always include 'strength' and/or 'win' cards celebrating what went well.
+    2. Include at most ONE 'growth' or 'reflection' card. For brief, venting, or simple entries with little detail, include ZERO growth/reflection cards.
+    3. Every growth/reflection card MUST include effort_level: "quick_win" | "mindset_shift" | "deep_routine".
+    4. Card types:
        - 'strength': Highlight capabilities, resilience, or positive traits they demonstrated
        - 'win': Celebrate specific achievements or positive moments
-       - 'growth': Point out patterns or behaviors that could be improved
-       - 'reflection': Invite deeper thinking about emotions, triggers, or recurring themes
-    4. Each card's 'text' should be 1-3 sentences, specific to their entry, and address them as 'You'.
-    5. You MUST also provide 3-5 items in 'keyTakeaways' for backward compatibility.
-    6. **STRICT GRAMMAR RULE**: ALWAYS use second person ("You", "Your"). NEVER use "their", "the user", "he", "she", or third person. Example: "Your contentment suggests..." NOT "You's contentment" or "their contentment".
-    7. **Tone**: Write with warmth, encouragement, and empathy, like a supportive therapist speaking directly to the person.
-    8. **POSITIVITY BIAS**: Always lead with strengths and wins. Frame challenges as growth opportunities. Key Themes should be ENCOURAGING and GROWTH-ORIENTED, not negative labels. For example:
-       - GOOD: "Building social confidence", "Embracing new experiences", "Developing self-compassion"
-       - BAD: "Social anxiety and self-perception", "Missed opportunities and self-doubt", "Accidental loss of personal data"
-    9. Even when addressing struggles, use empowering language that highlights their awareness and potential for growth.${getAiLanguageInstruction(getCurrentLanguage())}`;
+       - 'growth': One gentle, optional observation — only if clearly supported by the text
+       - 'reflection': One gentle cognitive invitation — only if clearly supported by the text
+    5. Each card's 'text' should be 1-2 sentences, specific to their entry, and address them as 'You'.
+    6. Provide 2-4 items in 'keyTakeaways' for backward compatibility.
+    7. **STRICT GRAMMAR RULE**: ALWAYS use second person ("You", "Your"). NEVER use third person.
+    8. **Tone**: Warm, empathetic, low-pressure — never preachy or overwhelming.
+    9. **STRICT GROUNDING**: Do NOT diagnose, assume hidden problems, or recommend changes not grounded in the entry. When uncertain, omit the growth/reflection card.
+    10. **POSITIVITY BIAS**: Lead with strengths. Key Themes should be encouraging, not negative labels.${getAiLanguageInstruction(getCurrentLanguage())}`;
 
     try {
       console.log('[mobileAiService] Calling groq-proxy for journal analysis...');
@@ -479,6 +513,17 @@ Entry text: ${content}`;
 
       const processingTime = Date.now() - startTime;
 
+      const normalizedCards = normalizeInsightCards(
+        parsed.insights_report?.insightCards,
+        content,
+      );
+      const insightsReport = parsed.insights_report
+        ? {
+            ...parsed.insights_report,
+            insightCards: normalizedCards,
+          }
+        : undefined;
+
       const enhancedAnalysis: EnhancedAIAnalysis = {
         mood_analysis: {
           primary_emotion: parsed.mood_analysis?.primary_emotion || 'neutral',
@@ -502,7 +547,7 @@ Entry text: ${content}`;
         },
         processing_time: processingTime,
         confidence: parsed.confidence || 70,
-        insights_report: parsed.insights_report,
+        insights_report: insightsReport,
         analysis_locale: getCurrentLanguage(),
       };
 

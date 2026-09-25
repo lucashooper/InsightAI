@@ -25,8 +25,8 @@ export const INK = {
 
 /** Neutral surfaces for buttons and chips. */
 export const SURFACE = {
-  charcoal: '#1C1A22',
-  charcoalPressed: '#2A2733',
+  charcoal: '#111115',
+  charcoalPressed: '#1C1A22',
   light: 'rgba(255, 255, 255, 0.78)',
   lightSolid: '#F4F2F7',
   lightBorder: 'rgba(28, 26, 34, 0.06)',

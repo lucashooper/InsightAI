@@ -13,6 +13,7 @@ import { supabase } from '../lib/supabase';
 import { checkAIConsent, updateAIConsent } from '../services/aiConsentService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import StandardContainer from '../components/shared/StandardContainer';
+import AppBackdrop from '../components/ui/AppBackdrop';
 import PageHeader from '../components/shared/PageHeader';
 import LanguagePicker from '../components/LanguagePicker';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -510,12 +511,8 @@ export default function SettingsScreen({ navigation }: any) {
 
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {/* Background Gradient */}
-      <LinearGradient
-        colors={theme.colors.backgroundGradient as any}
-        style={styles.backgroundGradient}
-      />
+    <View style={styles.container}>
+      <AppBackdrop />
 
       <PageHeader title={t('settings.pageTitle')} />
 
@@ -821,9 +818,30 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* Privacy & Data - Simple row */}
+        {/* Privacy & Data */}
         <View style={styles.section}>
           <View style={[styles.card, { backgroundColor: theme.colors.cardBackground, borderColor: theme.colors.border }]}>
+            <TouchableOpacity
+              style={styles.settingRow}
+              onPress={() => toggleAIConsent(!(aiConsentGranted ?? false))}
+              activeOpacity={0.7}
+              disabled={loadingAiConsent}
+            >
+              <View style={styles.settingLeft}>
+                <Text style={[styles.settingLabel, { color: theme.colors.primaryText }]}>{t('settings.aiAnalysis')}</Text>
+                <Text style={[styles.settingDescription, { color: theme.colors.secondaryText }]}>
+                  {t('settings.aiAnalysisDesc')}
+                </Text>
+              </View>
+              {loadingAiConsent ? (
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              ) : (
+                <View style={[styles.toggle, aiConsentGranted && styles.toggleActive]}>
+                  <View style={[styles.toggleThumb, aiConsentGranted && styles.toggleThumbActive]} />
+                </View>
+              )}
+            </TouchableOpacity>
+            <View style={[styles.settingDivider, { backgroundColor: theme.colors.border }]} />
             <TouchableOpacity 
               style={styles.settingRow}
               onPress={() => {

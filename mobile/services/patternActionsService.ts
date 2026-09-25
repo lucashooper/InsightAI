@@ -65,3 +65,7 @@ export function isPatternHidden(action: PatternAction | undefined): boolean {
 export function isPatternWorking(action: PatternAction | undefined): boolean {
   return action?.status === 'working';
 }
+
+export function isPatternArchived(action: PatternAction | undefined): boolean {
+  return action?.status === 'dismissed' || action?.status === 'resolved';
+}

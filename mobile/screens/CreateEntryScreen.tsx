@@ -43,6 +43,8 @@ import { useFadeReveal } from '../hooks/useFadeReveal';
 import { useAnimatedPlaceholder } from '../hooks/useAnimatedPlaceholder';
 import EntryQuickActionsMenu from '../components/editor/EntryQuickActionsMenu';
 import PremiumDialog from '../components/shared/PremiumDialog';
+import PremiumButton from '../components/shared/PremiumButton';
+import AppBackdrop from '../components/ui/AppBackdrop';
 import { getTodayPrompt } from '../data/dailyPrompts';
 import { resolveProAccess } from '../utils/entitlements';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -773,7 +775,8 @@ export default function CreateEntryScreen({ navigation, route }: any) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={styles.container}>
+      <AppBackdrop />
       <View style={styles.mainContent}>
       {/* Header */}
       <View style={styles.header}>
@@ -805,28 +808,16 @@ export default function CreateEntryScreen({ navigation, route }: any) {
               <Ionicons name="happy-outline" size={24} color={isDarkTheme(theme.name) ? 'rgba(255, 255, 255, 0.7)' : theme.colors.primaryText} />
             )}
           </TouchableOpacity>
-          <TouchableOpacity 
-            onPress={handleAnalyze}
-            disabled={content.trim().length < 5 || isAnalyzing}
-            activeOpacity={0.8}
-            style={[
-              { borderRadius: 12, overflow: 'hidden', minWidth: 80, alignItems: 'center', shadowColor: '#8b5cf6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 },
-              (content.trim().length < 5 || isAnalyzing) && { opacity: 0.4 }
-            ]}
-          >
-            <LinearGradient
-              colors={['#8b5cf6', '#7c3aed']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={{ paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, minWidth: 80, alignItems: 'center' }}
-            >
-              {isAnalyzing ? (
-                <ActivityIndicator size="small" color="#ffffff" />
-              ) : (
-                <Text style={{ color: '#ffffff', fontSize: 15, fontWeight: '600' }}>{t('editor.analyze')}</Text>
-              )}
-            </LinearGradient>
-          </TouchableOpacity>
+          {isAnalyzing ? (
+            <ActivityIndicator size="small" color={theme.colors.primaryText} />
+          ) : (
+            <PremiumButton
+              label={t('editor.finishEntry')}
+              onPress={handleAnalyze}
+              disabled={content.trim().length < 5}
+              style={styles.finishEntryButton}
+            />
+          )}
         </View>
       </View>
 
@@ -1376,11 +1367,15 @@ const styles = StyleSheet.create({
   },
   contentInput: {
     flex: 1,
-    fontSize: 17,
+    fontSize: 18,
+    fontWeight: '600',
     lineHeight: 26,
     paddingHorizontal: 24,
     paddingTop: 18,
     paddingBottom: 100,
+  },
+  finishEntryButton: {
+    minWidth: 112,
   },
   contentInputWrap: {
     flex: 1,

@@ -205,7 +205,7 @@ export default function InsightsHeroCard({
             source={illustrationSource}
             style={styles.illustration as ImageStyle}
             contentFit="cover"
-            contentPosition="bottom right"
+            contentPosition="right center"
             transition={200}
           />
           <LinearGradient
@@ -381,18 +381,20 @@ const styles = StyleSheet.create({
   },
   illustration: {
     position: 'absolute',
-    bottom: 0,
+    top: 0,
     right: 0,
-    width: ILLUSTRATION_SIZE,
-    height: ILLUSTRATION_SIZE,
+    bottom: 0,
+    width: '52%',
+    height: '100%',
     zIndex: 1,
   },
   illustrationFade: {
     position: 'absolute',
-    bottom: 0,
+    top: 0,
     right: 0,
-    width: ILLUSTRATION_SIZE,
-    height: ILLUSTRATION_SIZE,
+    bottom: 0,
+    width: '52%',
+    height: '100%',
     zIndex: 2,
   },
   contentRow: {

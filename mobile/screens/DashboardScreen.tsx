@@ -40,7 +40,9 @@ import { isTablet, sf, ss, iPadWideContentStyle, screenPadding } from '../utils/
 import { yieldToUI } from '../utils/yieldToUI';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { notesSignature, computeDeferredDashboardData, filterNotesForDisplayLocale } from '../utils/computeDashboardData';
-import { sectionSubtitleForItems } from '../utils/patternGrouping';
+import { groupDisplayItemsByMacroTheme, sectionSubtitleForItems } from '../utils/patternGrouping';
+import { effortMatchesFilter } from '../utils/effortLevel';
+import MacroPatternGroupCard from '../components/analytics/MacroPatternGroupCard';
 import {
   getDashboardDeferredCache,
   setDashboardDeferredCache,
@@ -65,6 +67,7 @@ function patternEmojiForSummary(summary: string): string {
 import {
   clearPatternAction,
   getPatternKey,
+  isPatternArchived,
   isPatternHidden,
   isPatternWorking,
   loadPatternActions,
@@ -161,6 +164,8 @@ export default function DashboardScreen() {
   const [patternsToAddress, setPatternsToAddress] = useState<any[]>([]);
   const [whatsWorking, setWhatsWorking] = useState<any[]>([]);
   const [patternsExpanded, setPatternsExpanded] = useState(false);
+  const [patternFilter, setPatternFilter] = useState<'all' | 'quick_win' | 'mindset' | 'archived'>('all');
+  const [expandedMacroGroups, setExpandedMacroGroups] = useState<Record<string, boolean>>({});
   const [workingPatternsExpanded, setWorkingPatternsExpanded] = useState(false);
   const [patternActions, setPatternActions] = useState<Record<string, PatternAction>>({});
   const [workingExpanded, setWorkingExpanded] = useState(false);
@@ -201,6 +206,28 @@ export default function DashboardScreen() {
     setPatternActions(await loadPatternActions());
   }, []);
 
+  const macroPatternGroups = useMemo(
+    () => groupDisplayItemsByMacroTheme(patternsToAddress),
+    [patternsToAddress],
+  );
+
+  const visibleMacroPatternGroups = useMemo(() => {
+    if (patternFilter === 'archived') {
+      return macroPatternGroups.filter((group) =>
+        group.children.some((child) =>
+          isPatternArchived(patternActions[getPatternKey(child.summary)]),
+        ),
+      );
+    }
+    return macroPatternGroups.filter((group) => {
+      const hidden = group.children.every((child) =>
+        isPatternHidden(patternActions[getPatternKey(child.summary)]),
+      );
+      if (hidden) return false;
+      return effortMatchesFilter(group.effortLevel, patternFilter);
+    });
+  }, [macroPatternGroups, patternActions, patternFilter]);
+
   const visiblePatternsToAddress = patternsToAddress.filter(
     (pattern) => !isPatternHidden(patternActions[getPatternKey(pattern.summary)]),
   );
@@ -229,6 +256,32 @@ export default function DashboardScreen() {
   const handleDismissPattern = async (pattern: any) => {
     setPatternActions(await setPatternAction(pattern.summary, 'dismissed'));
   };
+
+  const handleArchiveMacroGroup = async (summary: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setPatternActions(await setPatternAction(summary, 'dismissed'));
+  };
+
+  const toggleMacroGroup = (groupId: string) => {
+    setExpandedMacroGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
+  };
+
+  const openPatternEntry = (entryId: string, highlight?: string) => {
+    const entry = allNotes.find((n: any) => n.id === entryId);
+    if (entry) {
+      navigation.navigate('EntryDetail', { entry, highlightText: highlight });
+    }
+  };
+
+  const patternFilterOptions: Array<{
+    id: 'all' | 'quick_win' | 'mindset' | 'archived';
+    label: string;
+  }> = [
+    { id: 'all', label: t('dashboard.patternFilterAll') },
+    { id: 'quick_win', label: `⚡ ${t('dashboard.patternFilterQuickWins')}` },
+    { id: 'mindset', label: `🌱 ${t('dashboard.patternFilterMindset')}` },
+    { id: 'archived', label: t('dashboard.patternFilterArchived') },
+  ];
 
   const handleResolvePattern = async (pattern: any) => {
     setPatternActions(await setPatternAction(pattern.summary, 'resolved'));
@@ -904,7 +957,7 @@ export default function DashboardScreen() {
         <View style={[styles.stickySectionBar, { top: insets.top + 4, backgroundColor: isDarkTheme(theme.name) ? 'rgba(12,12,16,0.92)' : 'rgba(255,255,255,0.92)' }]}>
           <Text style={[styles.stickySectionText, { color: theme.colors.primaryText }]}>
             {stickySection === 'patterns'
-              ? t('dashboard.patternsToAddressCount', { count: visiblePatternsToAddress.length })
+              ? t('dashboard.patternsToAddressCount', { count: visibleMacroPatternGroups.length })
               : t('dashboard.whatsWorkingCount', { count: whatsWorking.length })}
           </Text>
         </View>
@@ -1055,10 +1108,10 @@ export default function DashboardScreen() {
                               style={[styles.bubbleGradient, { borderColor: `rgba(${palette.highlight}, 0.62)` }]}
                             >
                               <LinearGradient
-                                colors={['rgba(255,255,255,0.5)', 'rgba(255,255,255,0.12)', 'rgba(255,255,255,0)']}
-                                locations={[0, 0.42, 1]}
-                                start={{ x: 0.2, y: 0 }}
-                                end={{ x: 0.72, y: 0.78 }}
+                                colors={['rgba(255,255,255,0.22)', 'rgba(255,255,255,0.08)', 'rgba(255,255,255,0)']}
+                                locations={[0, 0.38, 1]}
+                                start={{ x: 0.18, y: 0.04 }}
+                                end={{ x: 0.78, y: 0.82 }}
                                 style={styles.bubbleSheen}
                                 pointerEvents="none"
                               />
@@ -1129,118 +1182,100 @@ export default function DashboardScreen() {
                 )}
               </GlassCard>
 
-            {/* Patterns to Address */}
-            {visiblePatternsToAddress.length > 0 && (
+            {/* Gentle Observations */}
+            {patternsToAddress.length > 0 && (
               <View onLayout={(e) => { patternsSectionY.current = e.nativeEvent.layout.y; }}>
               <GlassCard tint="coral" noPad contentStyle={glassCardInnerPad} style={styles.sectionCard}>
                 <GlassCardHeader
-                  title={t('dashboard.patternsToAddressCount', { count: visiblePatternsToAddress.length })}
+                  title={t('dashboard.patternsToAddressCount', { count: visibleMacroPatternGroups.length })}
                   subtitle={sectionSubtitleForItems(visiblePatternsToAddress, t('dashboard.prioritiesSubtitle'))}
                   onPress={() => setPatternsExpanded(!patternsExpanded)}
                   expanded={patternsExpanded}
                   showChevron
                 />
+
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.patternFilterRow}
+                >
+                  {patternFilterOptions.map((option) => {
+                    const active = patternFilter === option.id;
+                    return (
+                      <TouchableOpacity
+                        key={option.id}
+                        style={[
+                          styles.patternFilterPill,
+                          {
+                            backgroundColor: active ? 'rgba(139, 92, 246, 0.16)' : theme.colors.surface,
+                            borderColor: active ? 'rgba(139, 92, 246, 0.45)' : theme.colors.border,
+                          },
+                        ]}
+                        onPress={() => setPatternFilter(option.id)}
+                        activeOpacity={0.8}
+                      >
+                        <Text
+                          style={[
+                            styles.patternFilterPillText,
+                            { color: active ? '#7c3aed' : theme.colors.secondaryText },
+                          ]}
+                        >
+                          {option.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
                 
                 <View style={styles.sectionCardBody}>
-                  {visiblePatternsToAddress.slice(0, patternsExpanded ? visiblePatternsToAddress.length : 2).map((pattern) => (
-                    <View key={pattern.id} style={styles.patternCardWrap}>
-                      <TouchableOpacity
-                        onPress={() => {
-                          const entry = allNotes.find((n: any) => n.id === pattern.entryId);
-                          if (entry) {
-                            navigation.navigate('EntryDetail', { entry, highlightText: pattern.summary });
+                  {visibleMacroPatternGroups.length === 0 ? (
+                    <Text style={[styles.patternArchivedEmpty, { color: theme.colors.secondaryText }]}>
+                      {patternFilter === 'archived'
+                        ? t('dashboard.patternArchivedEmpty')
+                        : t('dashboard.patternFilterEmpty')}
+                    </Text>
+                  ) : (
+                    visibleMacroPatternGroups
+                      .slice(0, patternsExpanded ? visibleMacroPatternGroups.length : 2)
+                      .map((group) => (
+                        <MacroPatternGroupCard
+                          key={group.id}
+                          group={group}
+                          expanded={Boolean(expandedMacroGroups[group.id])}
+                          onToggle={() => toggleMacroGroup(group.id)}
+                          onOpenEntry={openPatternEntry}
+                          onArchive={handleArchiveMacroGroup}
+                          patternEmojiForSummary={patternEmojiForSummary}
+                          isWorking={(summary) =>
+                            isPatternWorking(patternActions[getPatternKey(summary)])
                           }
-                        }}
-                        activeOpacity={0.7}
-                      >
-                        <GlassCard variant="nested" style={styles.patternCard}>
-                        <View style={styles.patternTitleRow}>
-                          <Text
-                            style={[styles.patternSummary, { color: theme.colors.primaryText, flexShrink: 1 }]}
-                            numberOfLines={1}
-                            ellipsizeMode="tail"
-                          >
-                            {patternEmojiForSummary(pattern.summary)} {pattern.summary}
-                          </Text>
-                          {(pattern.rawCount || pattern.count) > 1 ? (
-                            <View style={styles.frequencyBadgeTrailing}>
-                              <Ionicons name="flame" size={13} color="#ef4444" />
-                              <Text style={styles.frequencyText}>x{pattern.rawCount || pattern.count}</Text>
-                            </View>
-                          ) : null}
-                        </View>
-                        {pattern.description ? (
-                          <Text style={[styles.patternDescription, { color: theme.colors.secondaryText }]} numberOfLines={3}>
-                            {pattern.description}
-                          </Text>
-                        ) : null}
-                        {pattern.originLabel && !pattern.originLabel.includes('related entries') ? (
-                          <Text style={[styles.patternOrigin, { color: theme.colors.tertiaryText }]} numberOfLines={1}>
-                            {t('dashboard.patternFrom', { label: pattern.originLabel })}
-                          </Text>
-                        ) : pattern.count > 1 ? (
-                          <Text style={[styles.patternOrigin, { color: theme.colors.tertiaryText }]} numberOfLines={1}>
-                            {t('dashboard.patternMentionedAcross', { count: pattern.count })}
-                          </Text>
-                        ) : null}
-                        </GlassCard>
-                      </TouchableOpacity>
-                      <View style={styles.patternActionRow}>
-                        <TouchableOpacity
-                          style={[
-                            styles.patternCheckRow,
-                            isPatternWorking(patternActions[getPatternKey(pattern.summary)]) && styles.patternCheckRowActive,
-                          ]}
-                          onPress={() => handlePatternWorkingToggle(pattern)}
-                          activeOpacity={0.7}
-                        >
-                          <View style={[
-                            styles.patternCheckbox,
-                            { borderColor: theme.colors.border },
-                            isPatternWorking(patternActions[getPatternKey(pattern.summary)]) && styles.patternCheckboxActive,
-                          ]}>
-                            {isPatternWorking(patternActions[getPatternKey(pattern.summary)]) ? (
-                              <Ionicons name="checkmark" size={14} color="#ffffff" />
-                            ) : null}
-                          </View>
-                          <Text style={[styles.patternCheckLabel, { color: theme.colors.secondaryText }]}>
-                            {t('dashboard.patternWorkingOn')}
-                          </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          onPress={() => showPatternActionMenu(pattern)}
-                          style={styles.patternMenuBtn}
-                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                        >
-                          <Ionicons name="ellipsis-horizontal" size={18} color={theme.colors.secondaryText} />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  ))}
-
-                  {!patternsExpanded && visiblePatternsToAddress.length > 2 && (
-                    <TouchableOpacity
-                      style={styles.viewAllButtonPurple}
-                      onPress={() => setPatternsExpanded(true)}
-                      activeOpacity={0.85}
-                    >
-                      <LinearGradient colors={['#8b5cf6', '#7c3aed']} style={styles.viewAllButtonGradient}>
-                        <Text style={styles.viewAllTextPurple}>{t('dashboard.viewMoreFocusAreas', { count: visiblePatternsToAddress.length - 2 })}</Text>
-                        <Ionicons name="chevron-forward" size={14} color="#fff" />
-                      </LinearGradient>
-                    </TouchableOpacity>
+                          onWorkingToggle={(summary) =>
+                            handlePatternWorkingToggle({ summary })
+                          }
+                          showPatternActionMenu={showPatternActionMenu}
+                        />
+                      ))
                   )}
-                  {patternsExpanded && visiblePatternsToAddress.length > 2 && (
-                    <TouchableOpacity
-                      style={styles.viewAllButtonPurple}
+
+                  {!patternsExpanded && visibleMacroPatternGroups.length > 2 && (
+                    <PremiumButton
+                      label={t('dashboard.viewMoreFocusAreas', { count: visibleMacroPatternGroups.length - 2 })}
+                      onPress={() => setPatternsExpanded(true)}
+                      variant="secondary"
+                      block
+                      icon="chevron-forward"
+                      style={styles.viewAllButtonSoft}
+                    />
+                  )}
+                  {patternsExpanded && visibleMacroPatternGroups.length > 2 && (
+                    <PremiumButton
+                      label={t('dashboard.showLess')}
                       onPress={() => setPatternsExpanded(false)}
-                      activeOpacity={0.85}
-                    >
-                      <LinearGradient colors={['#8b5cf6', '#7c3aed']} style={styles.viewAllButtonGradient}>
-                        <Text style={styles.viewAllTextPurple}>{t('dashboard.showLess')}</Text>
-                        <Ionicons name="chevron-up" size={14} color="#fff" />
-                      </LinearGradient>
-                    </TouchableOpacity>
+                      variant="secondary"
+                      block
+                      icon="chevron-up"
+                      style={styles.viewAllButtonSoft}
+                    />
                   )}
                 </View>
               </GlassCard>
@@ -1346,28 +1381,24 @@ export default function DashboardScreen() {
                   ))}
 
                   {!workingExpanded && whatsWorking.length > 2 && (
-                    <TouchableOpacity
-                      style={styles.viewAllButtonPurple}
+                    <PremiumButton
+                      label={t('dashboard.viewMoreStrengths', { count: whatsWorking.length - 2 })}
                       onPress={() => setWorkingExpanded(true)}
-                      activeOpacity={0.85}
-                    >
-                      <LinearGradient colors={['#8b5cf6', '#7c3aed']} style={styles.viewAllButtonGradient}>
-                        <Text style={styles.viewAllTextPurple}>{t('dashboard.viewMoreStrengths', { count: whatsWorking.length - 2 })}</Text>
-                        <Ionicons name="chevron-forward" size={14} color="#fff" />
-                      </LinearGradient>
-                    </TouchableOpacity>
+                      variant="secondary"
+                      block
+                      icon="chevron-forward"
+                      style={styles.viewAllButtonSoft}
+                    />
                   )}
                   {workingExpanded && whatsWorking.length > 2 && (
-                    <TouchableOpacity
-                      style={styles.viewAllButtonPurple}
+                    <PremiumButton
+                      label={t('dashboard.showLess')}
                       onPress={() => setWorkingExpanded(false)}
-                      activeOpacity={0.85}
-                    >
-                      <LinearGradient colors={['#8b5cf6', '#7c3aed']} style={styles.viewAllButtonGradient}>
-                        <Text style={styles.viewAllTextPurple}>{t('dashboard.showLess')}</Text>
-                        <Ionicons name="chevron-up" size={14} color="#fff" />
-                      </LinearGradient>
-                    </TouchableOpacity>
+                      variant="secondary"
+                      block
+                      icon="chevron-up"
+                      style={styles.viewAllButtonSoft}
+                    />
                   )}
                 </View>
               </GlassCard>
@@ -3080,6 +3111,28 @@ const styles = StyleSheet.create({
   patternCardWrap: {
     marginBottom: 12,
   },
+  patternFilterRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  patternFilterPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  patternFilterPillText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  patternArchivedEmpty: {
+    fontSize: 14,
+    lineHeight: 20,
+    paddingHorizontal: 4,
+    paddingBottom: 8,
+  },
   patternHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -3294,6 +3347,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
+  },
+  viewAllButtonSoft: {
+    marginTop: 8,
   },
   viewAllButtonPurple: {
     marginTop: 8,

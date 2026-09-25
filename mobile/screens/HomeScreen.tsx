@@ -38,6 +38,7 @@ import { getMoodIndicator, MoodIndicator } from '../utils/moodIndicators';
 import { isTablet, sf, ss, iPadWideContentStyle } from '../utils/responsive';
 import { PREMIUM } from '../constants/premiumUI';
 import JournalEntryOptionsSheet from '../components/journal/JournalEntryOptionsSheet';
+import PremiumButton from '../components/shared/PremiumButton';
 import { isGratitudeEntry } from '../utils/journalEntryFilters';
 import { stripJournalPromptTag, isPromptDrivenEntry } from '../constants/branding';
 
@@ -609,20 +610,12 @@ const renderEntry = ({ item }: { item: DiaryEntry }) => {
                 )}
               </View>
               {hasInsights && (
-                <LinearGradient
-                  colors={['#8b5cf6', '#7c3aed']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.viewInsightsButton}
-                >
-                  <TouchableOpacity
-                    style={styles.viewInsightsButtonInner}
-                    onPress={() => navigation.navigate('EntryDetail', { entry: item })}
-                  >
-                    <Text style={styles.viewInsightsText}>{t('journal.viewInsights')}</Text>
-                    <Ionicons name="arrow-forward" size={14} color="#ffffff" />
-                  </TouchableOpacity>
-                </LinearGradient>
+                <PremiumButton
+                  label={t('journal.viewInsights')}
+                  onPress={() => navigation.navigate('EntryDetail', { entry: item })}
+                  variant="secondary"
+                  icon="arrow-forward"
+                />
               )}
             </View>
       </>

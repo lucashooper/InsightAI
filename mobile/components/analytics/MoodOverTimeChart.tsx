@@ -74,7 +74,8 @@ function formatPointDate(point: MoodTrendPoint): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-const LABEL_WIDTH = 56;
+const LABEL_WIDTH = 52;
+const MIN_LABEL_GAP = 16;
 
 function labelStyleForIndex(
   index: number,
@@ -147,7 +148,30 @@ export default function MoodOverTimeChart({
   chartOpacity,
 }: Props) {
   const weekly = useMemo(() => computeWeeklyMoodStats(points), [points]);
-  const labelIndices = useMemo(() => pickDateLabelIndices(points.length), [points.length]);
+  const labelIndices = useMemo(() => {
+    const raw = pickDateLabelIndices(points.length, 4);
+    if (raw.length <= 1) return raw;
+
+    const filtered: number[] = [raw[0]];
+    for (let i = 1; i < raw.length; i += 1) {
+      const prevX = indexToX(filtered[filtered.length - 1], points.length);
+      const nextX = indexToX(raw[i], points.length);
+      if (nextX - prevX >= LABEL_WIDTH + MIN_LABEL_GAP) {
+        filtered.push(raw[i]);
+      }
+    }
+
+    const last = raw[raw.length - 1];
+    if (filtered[filtered.length - 1] !== last) {
+      const prevX = indexToX(filtered[filtered.length - 1], points.length);
+      const lastX = indexToX(last, points.length);
+      if (lastX - prevX >= LABEL_WIDTH + MIN_LABEL_GAP) {
+        filtered.push(last);
+      }
+    }
+
+    return filtered;
+  }, [points.length]);
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
@@ -356,7 +380,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: sf(17),
-    fontWeight: '700',
+    fontWeight: '600',
     letterSpacing: -0.3,
     marginBottom: 4,
   },

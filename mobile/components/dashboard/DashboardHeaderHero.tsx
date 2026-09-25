@@ -49,8 +49,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: sf(32),
-    fontWeight: '700' as const,
-    letterSpacing: -0.7,
+    fontWeight: '600' as const,
+    letterSpacing: -0.45,
     lineHeight: sf(38),
   },
 });

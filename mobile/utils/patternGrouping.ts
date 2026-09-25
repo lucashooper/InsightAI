@@ -1,8 +1,12 @@
+import { EffortLevel, inferEffortLevel, normalizeEffortLevel } from './effortLevel';
+import { getPatternKey } from '../services/patternActionsService';
+
 export type PatternRawItem = {
   text: string;
   entryId: string;
   originLabel: string;
   date: string;
+  effortLevel?: EffortLevel;
 };
 
 export type PatternGroup = {
@@ -26,6 +30,16 @@ export type PatternDisplayItem = {
   rawCount: number;
   priority: 'HIGH' | 'MEDIUM' | 'LOW';
   sectionHint?: string;
+  effortLevel?: EffortLevel;
+};
+
+export type MacroPatternGroup = {
+  id: string;
+  summary: string;
+  description: string | null;
+  entryCount: number;
+  effortLevel: EffortLevel;
+  children: PatternDisplayItem[];
 };
 
 type PrimaryTopic =
@@ -472,6 +486,16 @@ export function groupsToDisplayItems(
       const count = group.entryIds.length;
       const rawCount = onTopicTexts.length > 0 ? onTopicTexts.length : group.texts.length;
 
+      const dominantEffort = normalizeEffortLevel(
+        group.texts
+          .map((text) => inferEffortLevel(text))
+          .sort(
+            (a, b) =>
+              group.texts.filter((t) => inferEffortLevel(t) === b).length -
+              group.texts.filter((t) => inferEffortLevel(t) === a).length,
+          )[0],
+      );
+
       return {
         id: `${idPrefix}_${index}`,
         summary,
@@ -487,6 +511,7 @@ export function groupsToDisplayItems(
         rawCount,
         priority: getPriority(count, rawCount),
         sectionHint: hintForTopic(group.primaryTopic, idPrefix === 'pattern' ? 'pattern' : 'strength'),
+        effortLevel: dominantEffort,
       };
     })
     .sort((a, b) => b.rawCount - a.rawCount || b.count - a.count)
@@ -499,4 +524,41 @@ export function sectionSubtitleForItems(
 ): string {
   if (!items.length) return fallback;
   return items[0].sectionHint || fallback;
+}
+
+function uniqueEntryIds(items: PatternDisplayItem[]): string[] {
+  const ids = new Set<string>();
+  items.forEach((item) => {
+    (item.entryIds?.length ? item.entryIds : [item.entryId]).forEach((id) => ids.add(id));
+  });
+  return Array.from(ids);
+}
+
+export function groupDisplayItemsByMacroTheme(items: PatternDisplayItem[]): MacroPatternGroup[] {
+  const map = new Map<string, MacroPatternGroup>();
+
+  items.forEach((item) => {
+    const key = getPatternKey(item.summary);
+    const existing = map.get(key);
+    if (existing) {
+      existing.children.push(item);
+      existing.entryCount = uniqueEntryIds(existing.children).length;
+      if (!existing.description && item.description) {
+        existing.description = item.description;
+      }
+    } else {
+      map.set(key, {
+        id: key,
+        summary: item.summary,
+        description: item.description,
+        entryCount: uniqueEntryIds([item]).length,
+        effortLevel: item.effortLevel || inferEffortLevel(item.description || item.summary),
+        children: [item],
+      });
+    }
+  });
+
+  return Array.from(map.values()).sort(
+    (a, b) => b.entryCount - a.entryCount || b.children.length - a.children.length,
+  );
 }

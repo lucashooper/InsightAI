@@ -85,10 +85,10 @@ const styles = StyleSheet.create({
     height: 0,
   },
   titleLarge: {
-    fontSize: sf(34),
-    fontWeight: '800' as const,
-    letterSpacing: -0.8,
-    lineHeight: sf(40),
+    fontSize: sf(32),
+    fontWeight: '600' as const,
+    letterSpacing: -0.45,
+    lineHeight: sf(38),
     color: PREMIUM.text.primary,
   },
   title: {

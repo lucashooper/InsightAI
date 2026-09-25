@@ -20,6 +20,8 @@ import StandardContainer from './StandardContainer';
 import InsightsHeroCard from '../insights/InsightsHeroCard';
 import PremiumButton from './PremiumButton';
 import { isTablet, sf, iPadContentStyle, screenPadding } from '../../utils/responsive';
+import EffortLevelBadge from '../insights/EffortLevelBadge';
+import { inferEffortLevel, normalizeEffortLevel } from '../../utils/effortLevel';
 
 type LoadingProps = {
   variant: 'loading';
@@ -226,9 +228,9 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
 
             {/* Growth & Reflections Accordion */}
             {(() => {
-              const growthCards = props.insights?.insights_report?.insightCards?.filter(
+              const growthCards = (props.insights?.insights_report?.insightCards?.filter(
                 (card: any) => card.type === 'growth' || card.type === 'reflection'
-              ) || [];
+              ) || []).slice(0, 1);
               
               if (growthCards.length === 0) return null;
 
@@ -256,11 +258,11 @@ export default function ImmersiveAnalysisOverlay(props: Props) {
 
                   {growthExpanded && growthCards.slice(0, growthShowAll ? growthCards.length : (isTablet ? 1 : growthCards.length)).map((card: any, idx: number) => (
                     <StandardContainer key={idx} tint="violet" variant="recap" style={[styles.insightCard, { marginTop: 10 }]}>
-                      <View style={[styles.growthBadge, { backgroundColor: subtleBg }]}>
-                        <Text style={[styles.growthBadgeText, { color: textSecondary }]}>
-                          {card.short_label || card.type.toUpperCase()}
-                        </Text>
-                      </View>
+                      <EffortLevelBadge
+                        effortLevel={normalizeEffortLevel(
+                          card.effort_level || inferEffortLevel(card.text || ''),
+                        )}
+                      />
                       <Text style={[styles.insightDescription, { color: textPrimary }]}>
                         {card.text
                           .replace(/The user/g, 'You')
